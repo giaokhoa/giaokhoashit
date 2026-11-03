@@ -23,7 +23,7 @@ biến nằm ở `apps/api`; web không tự "gác" nghiệp vụ bằng cách g
 | Chuông thông báo ở header **ĐƯỢC GIỮ** như hiện tại. (Quyết định cũ "bỏ hẳn chuông, thông báo ở sidebar" ngày 23/10/2026 đã bị THAY THẾ — không làm theo nữa.) | Sổ mục C, chốt 25/10/2026 23:09; issue #174 |
 | Phân tầng tuỳ chọn thông báo trên UI: học sinh chỉ thấy tuỳ chọn TỐI THIỂU (tắt tiếng theo khoá); trang admin cấp site có mục cài đặt loại sự kiện được gửi. Ẩn ở UI không thay thế chặn ở API — API là nơi chặn thật. | Sổ mục C, chốt 25/10/2026 23:09; issue #174 (lát NB-7) |
 | Luồng tạo khoá: lớp học tạo TRƯỚC, khoá nằm trong lớp. GV chưa có lớp mà tạo khoá thì wizard chèn bước tạo lớp nội tuyến (một trường tên) — KHÔNG sinh lớp mặc định ẩn. | Sổ mục A, chốt 25/10/2026 15:51; issue #184 |
-| Bề mặt học sinh làm bài **không hiển thị nguồn sách** của câu hỏi; phụ huynh/học sinh chỉ thấy điểm ĐÃ CÔNG BỐ (digest PH không mang điểm qua kênh ngoài — luật tối thiểu hoá kênh ngoài là luật cứng). | Sổ mục B + C (P4); issue #130/#133 |
+| Bề mặt học sinh làm bài **không hiển thị nguồn sách** của câu hỏi; học sinh chỉ thấy điểm ĐÃ CÔNG BỐ của chính mình. **Phụ huynh không thấy điểm/bài làm** (hợp đồng đích ở `docs/keycloak-auth-contract.md`: phụ huynh chỉ đọc thông báo lớp/khoá của con và nhắn giáo viên có quan hệ hợp lệ; digest PH không mang điểm qua kênh ngoài — luật tối thiểu hoá kênh ngoài là luật cứng). Bề mặt phụ huynh hiện tại còn hiển thị điểm đã công bố của con — sai lệch thuộc việc thu hẹp quyền phụ huynh, ghi ở `docs/access-verification-fixtures.md`. | Sổ mục B + C (P4); issue #130/#133; đính chính phạm vi phụ huynh theo hợp đồng Keycloak |
 | Blog và hỏi-đáp: **ĐÃ GỠ** khỏi sản phẩm (không còn mục Blog trong điều hướng, không còn bề mặt hỏi-đáp). Không dựng lại hai bề mặt này khi chưa có lệnh mới. | Chốt 25/10/2026 21:55; issue #173 |
 | Đóng băng mở rộng: chỉ hoàn thiện chức năng đang có; không tự thêm bề mặt/hướng mới (nội dung hệ thống công khai, TENANT-2/3/4…) khi chưa có lệnh. | Sổ mục A, chốt 25/10/2026 15:07 |
 
@@ -48,5 +48,9 @@ biến nằm ở `apps/api`; web không tự "gác" nghiệp vụ bằng cách g
   (client gửi kèm credentials cùng nguồn — xem `src/lib/api.ts` và
   `lib/auth-client.ts`); phía server, `lib/server-api.ts` đọc cùng cookie
   đó cho loader/SSR. Không còn token Bearer ở localStorage (đã chuyển sang
-  cookie từ PR #257).
+  cookie từ PR #257). **Đích theo hợp đồng** (`docs/keycloak-auth-contract.md`):
+  phiên OIDC phía server do BFF trong API giữ kết quả OIDC của Keycloak,
+  web chỉ mang opaque cookie và không giữ token nào — trạng thái **chưa
+  triển khai runtime**, cookie phiên Better Auth ở trên là hiện tại tạm
+  thời và thuộc danh sách xoá.
 - Dev: `pnpm dev` (proxy `/api` sang backend cổng 3000).

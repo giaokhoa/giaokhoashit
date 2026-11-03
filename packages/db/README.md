@@ -24,7 +24,7 @@ dưới đây là trạng thái thường trực.
 
 | Quyết định | Nguồn |
 |---|---|
-| Multi-tenant bằng shared DB: mọi bảng nghiệp vụ mang `tenant_id` và được PostgreSQL **RLS ép fail-closed** (policy theo GUC `app.tenant_id`; thiếu ngữ cảnh tenant = không thấy dữ liệu). Tenant = TRUNG TÂM; trang chính là tenant nền tảng. | Sổ mục A; issue #166, TENANT-0 |
+| Multi-tenant bằng shared DB: mọi bảng nghiệp vụ mang `tenant_id` và được PostgreSQL **RLS ép fail-closed** (policy theo GUC `app.tenant_id`; thiếu ngữ cảnh tenant = không thấy dữ liệu). Tenant = TRUNG TÂM; tenant nền tảng chỉ là không gian kỹ thuật của platform — không chứa GV/HS tự do, không phải một trung tâm, và platform không có quyền ngầm trong tenant (mô hình realm/danh tính ở `docs/keycloak-auth-contract.md`). | Sổ mục A; issue #166, TENANT-0; đính chính mô tả platform theo hợp đồng Keycloak |
 | Khoá chính mặc định **UUIDv7** cho các bảng nghiệp vụ (trừ ngoại lệ đã chốt, vd bảng OAuth của Better Auth). Số lượng bảng/số mặc định uuidv7/số policy RLS là bất biến được spec ở apps/api khoá cứng — thay đổi schema phải cập nhật các đếm đó bằng con số đếm thật trên baseline cuối. | Nền uuidv7 toàn hệ; spec `uuidv7-primary-keys-flow` |
 | Lớp–khoá: một khoá thuộc đúng một lớp (`course.class_id`); roster lớp nằm ở cohort đi kèm lớp (không bảng roster riêng) — schema phải giữ quan hệ này, không tạo đường ghi danh song song thứ hai. | Sổ mục A; issue #184 |
 | Dữ liệu chuẩn GDPT neo bằng UUIDv5 theo khoá tự nhiên; 4 FK từ dữ liệu chuẩn dùng `restrict` (không cascade) để import diff không xoá được dữ liệu đã neo. | Phương án D, chốt 25/10/2026; issue #161 |
