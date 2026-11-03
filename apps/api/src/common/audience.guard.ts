@@ -5,8 +5,7 @@ import { IS_PLATFORM_ROUTE_KEY } from './platform-route.decorator';
 import { IS_PUBLIC_KEY } from './public.decorator';
 
 /**
- * Guard tách audience token (issue #584) — chạy ngay sau
- * `JwtAuthGuard`, trước `TenantGuard`.
+ * Guard tách audience token (issue #584) — chạy ngay sau `JwtAuthGuard`, trước `TenantGuard`.
  *
  * Luật chỉ có hai chiều, không có ngoại lệ theo user hay capability:
  * - Token mang audience `platform` (cấp từ bề mặt đăng nhập quản

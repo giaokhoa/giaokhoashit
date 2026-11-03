@@ -12,12 +12,10 @@ import type { CredentialBridgeService } from '../../../src/modules/auth/better-a
 import type { TotpService } from '../../../src/modules/auth/totp.service';
 
 /**
- * E2E đăng nhập xã hội Google + Facebook cho Better Auth (issue #7,
- * chặng 2.3) — provider THẬT của Better Auth nhưng biên HTTP ra ngoài
- * (token endpoint, JWKS, debug_token, /me) được giả lập bằng cách thay
- * `globalThis.fetch`: không cần bí mật thật, vẫn đi trọn đường callback
- * → verify id_token (RS256 qua JWKS tự ký) → liên kết tài khoản → cổng
- * MFA sau callback.
+ * E2E đăng nhập xã hội Google + Facebook cho Better Auth (issue #7, chặng 2.3) — provider THẬT của Better Auth nhưng
+ * biên HTTP ra ngoài (token endpoint, JWKS, debug_token, /me) được giả lập bằng cách thay `globalThis.fetch`: không cần
+ * bí mật thật, vẫn đi trọn đường callback → verify id_token (RS256 qua JWKS tự ký) → liên kết tài khoản → cổng MFA sau
+ * callback.
  *
  * Quy tắc nghiệp vụ thể hiện ở đây (chốt trong hồ sơ chương trình GĐ2):
  *  - email đã có tài khoản + email do provider xác thực (Google) →
@@ -31,9 +29,8 @@ import type { TotpService } from '../../../src/modules/auth/totp.service';
  *    KHÔNG tồn tại session dùng được trong lúc chờ bước hai, redirect
  *    mang `twoFactorRedirect=true` + cookie chờ bước hai.
  *
- * Biến môi trường phải tồn tại TRƯỚC khi AppModule được nạp
- * (ConfigModule validate ngay lúc import) nên các import của AppModule
- * đều là import động bên trong beforeAll — như spec nền BA.
+ * Biến môi trường phải tồn tại TRƯỚC khi AppModule được nạp (ConfigModule validate ngay lúc import) nên các import của
+ * AppModule đều là import động bên trong beforeAll — như spec nền BA.
  */
 
 process.env.BETTER_AUTH_ENABLED = 'true';
@@ -303,10 +300,9 @@ describe('Better Auth — đăng nhập xã hội Google/Facebook (e2e, provider
       lastName: 'Mfa',
       password: seedPass
     });
-    // Bật MFA qua chính TotpService của hệ: factor TOTP đã xác nhận
-    // trong `user_totp` là tín hiệu duy nhất cổng MFA nhìn (trước đây
-    // ca này chèn thẳng bản ghi two_factor — kho đó không còn là
-    // nguồn trạng thái nữa nên cổng không kích hoạt nếu chỉ có nó).
+    // Bật MFA qua chính TotpService của hệ: factor TOTP đã xác nhận trong `user_totp` là tín hiệu duy nhất cổng MFA
+    // nhìn (trước đây ca này chèn thẳng bản ghi two_factor — kho đó không còn là nguồn trạng thái nữa nên cổng không
+    // kích hoạt nếu chỉ có nó).
     const { secret } = await totp.setup(seeded.id, 'ba3googlemfa');
     await totp.confirm(seeded.id, await generate({ secret }));
     currentGoogleIdToken = mintGoogleIdToken({ sub: 'google-sub-mfa', email, emailVerified: true });
@@ -317,16 +313,16 @@ describe('Better Auth — đăng nhập xã hội Google/Facebook (e2e, provider
     expect(res.status).toBe(302);
     const location = res.headers.location as string;
     expect(location).toContain('twoFactorRedirect=true');
-    // Tiêu chí cứng của spike: KHÔNG tồn tại phiên authenticated trong
-    // lúc chờ bước hai — cookie session rỗng và không có dòng session.
+    // Tiêu chí cứng của spike: KHÔNG tồn tại phiên authenticated trong lúc chờ bước hai — cookie session rỗng và không
+    // có dòng session.
     expect(sessionCookieValue(res)).toBeNull();
     const sessions = await countRows(
       `SELECT count(*)::int AS n FROM session WHERE user_id = $1`,
       [seeded.id],
     );
     expect(sessions).toBe(0);
-    // Hiện vật bước hai đúng định dạng plugin twoFactor ghi: cookie chờ
-    // ký + verification 2fa-* trỏ về user và bộ đếm lần thử = 0.
+    // Hiện vật bước hai đúng định dạng plugin twoFactor ghi: cookie chờ ký + verification 2fa-* trỏ về user và bộ đếm
+    // lần thử = 0.
     const setCookies = (res.headers['set-cookie'] as unknown as string[] | undefined) ?? [];
     expect(setCookies.some((c) => c.startsWith('better-auth.two_factor='))).toBe(true);
     const pending = await pg.query<{ identifier: string; value: string }>(

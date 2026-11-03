@@ -8,28 +8,20 @@ import type { BetterAuthService } from '../../../src/modules/auth/better-auth/be
 import type { CredentialBridgeService } from '../../../src/modules/auth/better-auth/credential-bridge.service';
 
 /**
- * Flow test của nền Better Auth (issue #7, Giai đoạn 1) — chạy với cờ
- * BETTER_AUTH_ENABLED bật. Đường auth cũ vẫn là đường chính của hệ; spec
- * này chứng minh các cổng đạt của giai đoạn trên code thật: đăng nhập
- * username qua Better Auth, phiên ghi IP/User-Agent, guard mỏng nhận
- * cookie trên route nghiệp vụ, suspended bị chặn dù phiên còn hạn, huỷ
- * phiên hiệu lực ngay, endpoint đổi trạng thái thiếu Origin bị 403 (kèm
- * cookie — kiểm tra Origin của 1.7.12 chỉ kích hoạt khi request mang
- * cookie, xem Giai đoạn 0), phiên tạo theo chương trình cho login-as,
- * cầu nối hash từ hệ cũ, và route auth cũ vẫn chạy khi cờ bật. Hai cổng
- * của điểm nối tiếp 2.1 (issue #7): gọi linkExistingPasswordHash đồng
- * thời hai lần chỉ sinh đúng một dòng credential, và lỗi ép tại bước
- * tạo account thì rollback cả dòng user (không để user mồ côi).
- * Vòng fix sau review của 2.1: internalAdapter dựng trong transaction
- * không mang database hook của plugin username nên cầu nối tự gác
- * luật username của plugin — spec có ca username sai định dạng/độ dài
- * bị từ chối không sinh user, và ca username chữ hoa hợp lệ được lưu
- * hạ thường, đăng nhập được, trùng thì bị chặn.
+ * Flow test của nền Better Auth (issue #7, Giai đoạn 1) — chạy với cờ BETTER_AUTH_ENABLED bật. Đường auth cũ vẫn là
+ * đường chính của hệ; spec này chứng minh các cổng đạt của giai đoạn trên code thật: đăng nhập username qua Better
+ * Auth, phiên ghi IP/User-Agent, guard mỏng nhận cookie trên route nghiệp vụ, suspended bị chặn dù phiên còn hạn, huỷ
+ * phiên hiệu lực ngay, endpoint đổi trạng thái thiếu Origin bị 403 (kèm cookie — kiểm tra Origin của 1.7.12 chỉ kích
+ * hoạt khi request mang cookie, xem Giai đoạn 0), phiên tạo theo chương trình cho login-as, cầu nối hash từ hệ cũ, và
+ * route auth cũ vẫn chạy khi cờ bật. Hai cổng của điểm nối tiếp 2.1 (issue #7): gọi linkExistingPasswordHash đồng thời
+ * hai lần chỉ sinh đúng một dòng credential, và lỗi ép tại bước tạo account thì rollback cả dòng user (không để user mồ
+ * côi). Vòng fix sau review của 2.1: internalAdapter dựng trong transaction không mang database hook của plugin
+ * username nên cầu nối tự gác luật username của plugin — spec có ca username sai định dạng/độ dài bị từ chối không sinh
+ * user, và ca username chữ hoa hợp lệ được lưu hạ thường, đăng nhập được, trùng thì bị chặn.
  *
- * Biến môi trường phải tồn tại TRƯỚC khi AppModule được nạp
- * (ConfigModule validate cấu hình ngay khi module được import), nên các
- * import của AppModule và của helpers (vốn import AppModule) đều là
- * import động bên trong beforeAll — không import tĩnh ở đầu file.
+ * Biến môi trường phải tồn tại TRƯỚC khi AppModule được nạp (ConfigModule validate cấu hình ngay khi module được
+ * import), nên các import của AppModule và của helpers (vốn import AppModule) đều là import động bên trong beforeAll —
+ * không import tĩnh ở đầu file.
  */
 process.env.BETTER_AUTH_ENABLED = 'true';
 process.env.BETTER_AUTH_SECRET = 'e2e-better-auth-secret-0123456789abcdef';
@@ -66,7 +58,6 @@ async function createMountedTestApp(): Promise<INestApplication> {
   return app;
 }
 
-/** Lấy cặp cookie phiên Better Auth từ header set-cookie của một response. */
 function sessionCookieFrom(setCookie: string[] | undefined): string {
   const raw = (setCookie ?? []).find((value) => value.includes('better-auth.session_token='));
   if (!raw) throw new Error(`no Better Auth session cookie in: ${JSON.stringify(setCookie)}`);
@@ -122,12 +113,10 @@ describe('Nền tảng Better Auth (issue #7 giai đoạn 1)', () => {
   });
 
   it('từ chối username sai định dạng tại bridge (quy tắc username của plugin chạy trong bridge)', async () => {
-    // Điểm chặn vòng review của điểm 2.1: internalAdapter dựng trong
-    // transaction KHÔNG mang database hook của plugin username, nên
-    // cầu nối tự validate theo đúng luật plugin. Username chứa khoảng
-    // trắng + ký tự `!` là định dạng mà endpoint đăng nhập username
-    // không bao giờ chấp nhận — để lọt là sinh user không đăng nhập
-    // được. Phải bị từ chối TRƯỚC khi bất kỳ bản ghi nào được ghi.
+    // Điểm chặn vòng review của điểm 2.1: internalAdapter dựng trong transaction KHÔNG mang database hook của plugin
+    // username, nên cầu nối tự validate theo đúng luật plugin. Username chứa khoảng trắng + ký tự `!` là định dạng mà
+    // endpoint đăng nhập username không bao giờ chấp nhận — để lọt là sinh user không đăng nhập được. Phải bị từ chối
+    // TRƯỚC khi bất kỳ bản ghi nào được ghi.
     await expect(
       bridge.createUserWithCredential({
         email: 'badname-format@example.com',
@@ -179,16 +168,16 @@ describe('Nền tảng Better Auth (issue #7 giai đoạn 1)', () => {
     // Chuẩn hoá hạ thường của plugin vẫn áp ở tầng schema field.
     const rows = await pg.query('select username from users where id = $1', [created.id]);
     expect(rows.rows[0].username).toBe(mixed.toLowerCase());
-    // User tạo qua cầu nối phải đăng nhập được bằng username đã
-    // chuẩn hoá — tiêu chí mà điểm chặn của vòng review bảo vệ.
+    // User tạo qua cầu nối phải đăng nhập được bằng username đã chuẩn hoá — tiêu chí mà điểm chặn của vòng review bảo
+    // vệ.
     const res = await http(app)
       .post('/api/v1/auth/sign-in/username')
       .set('Origin', TRUSTED_ORIGIN)
       .send({ username: mixed.toLowerCase(), password: FLOW_PASSWORD });
     expect(res.status).toBe(200);
     expect(res.body.user.username).toBe(mixed.toLowerCase());
-    // Trùng username bị chặn kể cả khi khác hoa/thường (hook của
-    // plugin so trên dạng đã hạ thường; tầng DB còn UNIQUE gác cuối).
+    // Trùng username bị chặn kể cả khi khác hoa/thường (hook của plugin so trên dạng đã hạ thường; tầng DB còn UNIQUE
+    // gác cuối).
     await expect(
       bridge.createUserWithCredential({
         email: `dup-${suffix}@example.com`,
@@ -297,12 +286,10 @@ describe('Nền tảng Better Auth (issue #7 giai đoạn 1)', () => {
   it('bridge người dùng sẵn có: hash argon2 hiện tại đăng nhập qua Better Auth không đổi', async () => {
     const token = await helpers.adminToken(app);
     const legacy = await helpers.createUserViaApi(app, token);
-    // Từ chặng 2.6 (issue #7), tạo user qua API đã TỰ đồng bộ
-    // credential (UsersService gọi cầu nối sau khi ghi mật khẩu) nên
-    // user mới không còn ở trạng thái "chưa có credential". Ca này
-    // kiểm đường LINK cho user tồn tại từ trước thời đồng bộ (hash
-    // nằm ở users.password_hash, chưa có dòng account) — xoá dòng
-    // credential vừa được tự đồng bộ để dựng lại đúng trạng thái đó.
+    // Từ chặng 2.6 (issue #7), tạo user qua API đã TỰ đồng bộ credential (UsersService gọi cầu nối sau khi ghi mật
+    // khẩu) nên user mới không còn ở trạng thái "chưa có credential". Ca này kiểm đường LINK cho user tồn tại từ trước
+    // thời đồng bộ (hash nằm ở users.password_hash, chưa có dòng account) — xoá dòng credential vừa được tự đồng bộ để
+    // dựng lại đúng trạng thái đó.
     await pg.query("delete from account where user_id = $1 and provider_id = 'credential'", [legacy.id]);
     expect(await bridge.linkExistingPasswordHash(legacy.id)).toBe(true);
     expect(await bridge.linkExistingPasswordHash(legacy.id)).toBe(false);
@@ -323,9 +310,8 @@ describe('Nền tảng Better Auth (issue #7 giai đoạn 1)', () => {
       bridge.linkExistingPasswordHash(legacy.id),
       bridge.linkExistingPasswordHash(legacy.id),
     ]);
-    // Đúng một lời gọi thực sự chèn (true); lời còn lại nhận false thay
-    // vì văng lỗi trùng UNIQUE (user_id, provider_id) — chèn idempotent
-    // của điểm 2.1 (hồ sơ Giai đoạn 2).
+    // Đúng một lời gọi thực sự chèn (true); lời còn lại nhận false thay vì văng lỗi trùng UNIQUE (user_id, provider_id)
+    // — chèn idempotent của điểm 2.1 (hồ sơ Giai đoạn 2).
     expect(results.filter((r) => r === true)).toHaveLength(1);
     expect(results.filter((r) => r === false)).toHaveLength(1);
     const rows = await pg.query(
@@ -337,11 +323,9 @@ describe('Nền tảng Better Auth (issue #7 giai đoạn 1)', () => {
 
   it('lỗi khi tạo tài khoản rollback người dùng (không còn user mồ côi)', async () => {
     const orphanName = helpers.uniqueName('baorphan');
-    // Ép lỗi tại đúng bước chèn account BÊN TRONG transaction của cầu
-    // nối: trigger chặn INSERT vào account khi user của nó mang
-    // username của test này. Dòng user đã chèn ngay trước đó trong
-    // cùng transaction phải bị rollback theo — tiêu chí "không còn
-    // user mồ côi" của điểm 2.1 (hồ sơ Giai đoạn 2).
+    // Ép lỗi tại đúng bước chèn account BÊN TRONG transaction của cầu nối: trigger chặn INSERT vào account khi user của
+    // nó mang username của test này. Dòng user đã chèn ngay trước đó trong cùng transaction phải bị rollback theo —
+    // tiêu chí "không còn user mồ côi" của điểm 2.1 (hồ sơ Giai đoạn 2).
     await pg.query(`
       create or replace function test_fail_account_insert() returns trigger as $fn$
       begin
@@ -371,8 +355,8 @@ describe('Nền tảng Better Auth (issue #7 giai đoạn 1)', () => {
       await pg.query('drop function if exists test_fail_account_insert()');
     }
     expect(caught).toBeTruthy();
-    // Thông điệp lỗi phải là lỗi bị ép tại bước account (không phải
-    // lỗi khác tình cờ) — duyệt cả chuỗi cause vì tầng ORM có thể bọc.
+    // Thông điệp lỗi phải là lỗi bị ép tại bước account (không phải lỗi khác tình cờ) — duyệt cả chuỗi cause vì tầng
+    // ORM có thể bọc.
     const texts: string[] = [];
     let current: unknown = caught;
     while (current && typeof current === 'object' && texts.length < 6) {

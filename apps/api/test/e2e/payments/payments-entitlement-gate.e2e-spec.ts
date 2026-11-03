@@ -6,13 +6,12 @@ import {
   adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWORD,
 } from '../../support/identity-access-helpers';
 import { createCategory, createCourse, createEnrolInstance, grantActiveTeacherPlan } from '../../support/course-enrolment-helpers';
-// Từ issue #539, nhịp quét matching chạy ở worker nên tiến trình API trong test
-// không còn tự quét: mỗi vòng chờ dẫn một nhịp qua cầu dẫn này rồi mới đọc trạng thái.
+// Từ issue #539, nhịp quét matching chạy ở worker nên tiến trình API trong test không còn tự quét: mỗi vòng chờ dẫn một
+// nhịp qua cầu dẫn này rồi mới đọc trạng thái.
 import { closeSepaySweepDriver, driveCohortSync, driveSepaySweep } from '../../support/sepay-sweep-driver';
 
 /**
- * Chốt chặn component cấp quyền ở pipeline thanh toán (issue #419) —
- * bộ ca bám LUẬT NGHIỆP VỤ:
+ * Chốt chặn component cấp quyền ở pipeline thanh toán (issue #419) — bộ ca bám LUẬT NGHIỆP VỤ:
  *
  *  1. Giá và bên hưởng của một giao dịch cấp quyền lợi chỉ lấy từ
  *     đối tượng phía server (instance có phí / cấu hình học phí trên
@@ -32,10 +31,9 @@ import { closeSepaySweepDriver, driveCohortSync, driveSepaySweep } from '../../s
  *     `/payments/plans` rồi tiền về đúng → kích hoạt quyền lợi như
  *     trước.
  *
- * Đổi luật (bỏ chốt ở điểm tạo, bỏ đối chiếu ở điểm kích hoạt) thì
- * ca tương ứng phải đỏ — các ca (b) dùng payment do đường chính
- * thức tạo rồi phẫu thuật số tiền/tenant trong DB để mô phỏng
- * payment đã bị can thiệp trước khi tới điểm kích hoạt.
+ * Đổi luật (bỏ chốt ở điểm tạo, bỏ đối chiếu ở điểm kích hoạt) thì ca tương ứng phải đỏ — các ca (b) dùng payment do
+ * đường chính thức tạo rồi phẫu thuật số tiền/tenant trong DB để mô phỏng payment đã bị can thiệp trước khi tới điểm
+ * kích hoạt.
  */
 const WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET ?? '';
 const SEPAY_KEY = '<redacted>';
@@ -143,11 +141,9 @@ describe('Chốt chặn component cấp quyền: endpoint chung bị cấm + đ�
     expect(manual.status).toBeLessThan(300);
     manualAccountId = (manual.body as { id: string }).id;
 
-    // Đường mua gói chọn tài khoản đang bật của tenant platform:
-    // tắt tạm các tài khoản khác của tenant đó (fixture các spec
-    // khác để lại) để lựa chọn xác định duy nhất là tài khoản của
-    // spec này; khôi phục nguyên trạng ở afterAll — cùng khuôn của
-    // spec mua gói hiện hữu.
+    // Đường mua gói chọn tài khoản đang bật của tenant platform: tắt tạm các tài khoản khác của tenant đó (fixture các
+    // spec khác để lại) để lựa chọn xác định duy nhất là tài khoản của spec này; khôi phục nguyên trạng ở afterAll —
+    // cùng khuôn của spec mua gói hiện hữu.
     const platform = await pg.query<{ id: string }>("select id from tenants where kind = 'platform'");
     const platformTenantId = platform.rows[0]!.id;
     const others = await pg.query<{ id: string }>(
@@ -159,9 +155,8 @@ describe('Chốt chặn component cấp quyền: endpoint chung bị cấm + đ�
       await pg.query('update payment_accounts set enabled = false where id = any($1)', [disabledAccountIds]);
     }
 
-    // Lớp có học phí: chủ lớp là giáo viên (cần quyền lợi gói giáo
-    // viên đang hoạt động để qua luật slot khoá của lớp, cùng tiền
-    // đề fixture của spec học phí lớp hiện hữu).
+    // Lớp có học phí: chủ lớp là giáo viên (cần quyền lợi gói giáo viên đang hoạt động để qua luật slot khoá của lớp,
+    // cùng tiền đề fixture của spec học phí lớp hiện hữu).
     classTeacher = await person();
     const current = await http(app).get('/api/v1/tenants/current').set('Authorization', `Bearer ${admin}`);
     const tenantId = (current.body as { id: string }).id;
@@ -181,9 +176,8 @@ describe('Chốt chặn component cấp quyền: endpoint chung bị cấm + đ�
     const pinRes = await http(app).patch(`/api/v1/classes/${feeClassId}`)
       .set('Authorization', `Bearer ${classTeacher.token}`).send({ feePaymentAccountId: sepayAccountId });
     expect(pinRes.status).toBe(200);
-    // Trần thời gian riêng cho hook: chuỗi fixture dài (boot app +
-    // dựng tài khoản/lớp/khoá) có thể vượt trần 30 giây mặc định
-    // của suite khi máy chạy nhiều suite song song.
+    // Trần thời gian riêng cho hook: chuỗi fixture dài (boot app + dựng tài khoản/lớp/khoá) có thể vượt trần 30 giây
+    // mặc định của suite khi máy chạy nhiều suite song song.
   }, 180000);
 
   afterAll(async () => {
@@ -223,9 +217,8 @@ describe('Chốt chặn component cấp quyền: endpoint chung bị cấm + đ�
     const { course, buyer, payment } = await createSepayFeeCourse();
     expect(payment.amount).toBe(FEE_COST);
     await pg.query('update payments set amount = 1 where id = $1', [payment.id]);
-    // Tiền về đúng bằng số tiền (đã bị sửa) của payment + đúng mã +
-    // đúng tài khoản: khớp đủ 3 điều kiện với chính payment — chỉ
-    // phép đối chiếu giá phía server mới chặn được kích hoạt.
+    // Tiền về đúng bằng số tiền (đã bị sửa) của payment + đúng mã + đúng tài khoản: khớp đủ 3 điều kiện với chính
+    // payment — chỉ phép đối chiếu giá phía server mới chặn được kích hoạt.
     await postIpn(ipnBody(payment.paymentCode!, 1));
     await waitPaymentStatus(payment.id, 'needs_review');
     expect(await enrolmentActive(course.id, buyer.token)).toBe(false);
@@ -307,9 +300,8 @@ describe('Chốt chặn component cấp quyền: endpoint chung bị cấm + đ�
     const tamperedFixture = await createSepayFeeCourse();
     await postIpn(ipnBody(tamperedFixture.payment.paymentCode!, FEE_COST - 1000));
     await waitPaymentStatus(tamperedFixture.payment.id, 'needs_review');
-    // Payment rơi vào hàng đợi vì tiền về sai số tiền; sau đó bản
-    // ghi bị can thiệp tiếp (số tiền hạ xuống 1 đồng) — quyết định
-    // khớp tay không được phép kích hoạt một payment như vậy.
+    // Payment rơi vào hàng đợi vì tiền về sai số tiền; sau đó bản ghi bị can thiệp tiếp (số tiền hạ xuống 1 đồng) —
+    // quyết định khớp tay không được phép kích hoạt một payment như vậy.
     await pg.query('update payments set amount = 1 where id = $1', [tamperedFixture.payment.id]);
     const blocked = await http(app).post(`/api/v1/payments/${tamperedFixture.payment.id}/review`)
       .set('Authorization', `Bearer ${admin}`)

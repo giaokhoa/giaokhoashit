@@ -206,9 +206,8 @@ describe('Ngân hàng ma trận MB-1 (issue #111)', () => {
     expect(copy.version).toBe(1);
     expect(copy.cells).toHaveLength(2);
 
-    // Sửa ô trên bản copy: ô Biết 2 → 3 câu. Bản copy đã ready nên
-    // sửa ô fork sang version 2 (bất biến version) — ô thuộc version
-    // mới mang danh tính mới, lấy lại từ đáp án PATCH.
+    // Sửa ô trên bản copy: ô Biết 2 → 3 câu. Bản copy đã ready nên sửa ô fork sang version 2 (bất biến version) — ô
+    // thuộc version mới mang danh tính mới, lấy lại từ đáp án PATCH.
     const bietCell = copy.cells.find((c) => c.cognitiveLevel === 'biet')!;
     const patchRes = await http(app).patch(`/api/v1/exam-matrices/${copy.id}/cells/${bietCell.id}`)
       .set(bearer(team.member.token)).send({ questionCount: 3 });

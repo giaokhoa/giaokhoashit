@@ -7,16 +7,14 @@ import {
   roleIdByShortname, STRONG_PASSWORD, systemContextId,
 } from '../../support/identity-access-helpers';
 import { createCategory, createCourse, createEnrolInstance } from '../../support/course-enrolment-helpers';
-// Từ issue #539, nhịp quét matching chạy ở worker nên tiến trình API trong test
-// không còn tự quét: mỗi vòng chờ dẫn một nhịp qua cầu dẫn này rồi mới đọc trạng thái.
+// Từ issue #539, nhịp quét matching chạy ở worker nên tiến trình API trong test không còn tự quét: mỗi vòng chờ dẫn một
+// nhịp qua cầu dẫn này rồi mới đọc trạng thái.
 import { closeSepaySweepDriver, driveSepaySweep } from '../../support/sepay-sweep-driver';
 
 /**
- * Lát 1 VietQR (issue #189, hồ sơ payment-vietqr §6.4) — bộ nghiệm thu
- * 6.4.1–6.4.7: IPN SePay (verify hai lớp, idempotency, matching 3 điều
- * kiện), QR động, che config 6.4.5, cách ly tenant 6.4.6, cổng cộng dồn
- * hoàn + đảo quyền lợi 6.4.7. Riêng vector vàng 6.4.4 nằm ở spec unit
- * `src/modules/payments/vietqr.spec.ts`.
+ * Lát 1 VietQR (issue #189, hồ sơ payment-vietqr §6.4) — bộ nghiệm thu 6.4.1–6.4.7: IPN SePay (verify hai lớp,
+ * idempotency, matching 3 điều kiện), QR động, che config 6.4.5, cách ly tenant 6.4.6, cổng cộng dồn hoàn + đảo quyền
+ * lợi 6.4.7. Riêng vector vàng 6.4.4 nằm ở spec unit `src/modules/payments/vietqr.spec.ts`.
  */
 /** Secret webhook gateway 'manual' (cổng verify fail-closed của H1, PR #191): vitest config cấp qua env, spec đọc cùng giá trị để gắn header. */
 const WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET ?? '';
@@ -92,14 +90,11 @@ describe('VietQR lát 1: pipeline IPN SePay cho enrol_fee (issue #189, §6.4)', 
   }
 
   /**
-   * Chờ chuỗi đối soát của một payment chốt xong: sự kiện nhà cung
-   * cấp đã sang trạng thái 'matched' — matching chỉ chốt 'matched' ở
-   * cuối nhịp xử lý của nó, sau khi đã kích hoạt quyền lợi, lật trạng
-   * thái payment và ghi sự kiện outbox `payment_succeeded` — đồng
-   * thời sự kiện outbox đó đã tồn tại. Sau mốc này không còn khâu bất
-   * đồng bộ nào trong chuỗi payment có thể đổi các số đếm được khẳng
-   * định, nên việc đếm sau replay IPN chờ tín hiệu này thay cho sleep
-   * cố định (cùng khuôn với spec payments-class-fee).
+   * Chờ chuỗi đối soát của một payment chốt xong: sự kiện nhà cung cấp đã sang trạng thái 'matched' — matching chỉ chốt
+   * 'matched' ở cuối nhịp xử lý của nó, sau khi đã kích hoạt quyền lợi, lật trạng thái payment và ghi sự kiện outbox
+   * `payment_succeeded` — đồng thời sự kiện outbox đó đã tồn tại. Sau mốc này không còn khâu bất đồng bộ nào trong
+   * chuỗi payment có thể đổi các số đếm được khẳng định, nên việc đếm sau replay IPN chờ tín hiệu này thay cho sleep cố
+   * định (cùng khuôn với spec payments-class-fee).
    */
   async function waitForPaymentReconciled(paymentId: string, timeoutMs = 12000): Promise<void> {
     const deadline = Date.now() + timeoutMs;
@@ -218,10 +213,9 @@ describe('VietQR lát 1: pipeline IPN SePay cho enrol_fee (issue #189, §6.4)', 
     const replay = await postIpn(body);
     expect(replay.status).toBeLessThan(300);
     expect(replay.body.duplicate).toBe(true);
-    // Replay bị từ chối ĐỒNG BỘ ngay trong response (duplicate) nên
-    // không phát sinh xử lý nền nào từ phía nó; phía chuỗi đầu thì chờ
-    // tín hiệu chốt đối soát tường minh rồi mới đếm — thay sleep cố
-    // định 1.500ms không gắn với tín hiệu hoàn tất nào.
+    // Replay bị từ chối ĐỒNG BỘ ngay trong response (duplicate) nên không phát sinh xử lý nền nào từ phía nó; phía
+    // chuỗi đầu thì chờ tín hiệu chốt đối soát tường minh rồi mới đếm — thay sleep cố định 1.500ms không gắn với tín
+    // hiệu hoàn tất nào.
     await waitForPaymentReconciled(payment.id);
 
     const events = await pg.query(
@@ -321,10 +315,9 @@ describe('VietQR lát 1: pipeline IPN SePay cho enrol_fee (issue #189, §6.4)', 
     expect(hook.body.status).toBe('succeeded');
     expect(await enrolmentActive(course.id, buyerToken)).toBe(true);
 
-    // Lát 3 (issue #189): hoàn tiền là vòng đời duyệt — tạo yêu cầu
-    // (`POST :id/refunds`) → duyệt (một cấp tự duyệt / hai cấp khác
-    // người tạo) → xác nhận chi (`settle`) mới tính tiền đã ra. Hoàn
-    // một phần dưới ngưỡng: MỘT cấp — `approved` ngay khi tạo.
+    // Lát 3 (issue #189): hoàn tiền là vòng đời duyệt — tạo yêu cầu (`POST :id/refunds`) → duyệt (một cấp tự duyệt /
+    // hai cấp khác người tạo) → xác nhận chi (`settle`) mới tính tiền đã ra. Hoàn một phần dưới ngưỡng: MỘT cấp —
+    // `approved` ngay khi tạo.
     const partial1 = await http(app).post(`/api/v1/payments/${payment.id}/refunds`).set('Authorization', `Bearer ${admin}`)
       .send({ amount: 40000, reason: 'partial', externalTransactionId: `ft-out-${Date.now()}-1` });
     expect(partial1.status).toBeLessThan(300);
@@ -354,8 +347,8 @@ describe('VietQR lát 1: pipeline IPN SePay cho enrol_fee (issue #189, §6.4)', 
     expect(exceeding.status).toBe(400);
     expect(JSON.stringify(exceeding.body)).toContain('payment.refund_exceeds_total');
 
-    // Phần còn lại 20.000 làm cộng dồn đạt 100% → HAI CẤP: tạo bởi
-    // manager thứ hai (ở `requested`), admin duyệt, admin xác nhận chi.
+    // Phần còn lại 20.000 làm cộng dồn đạt 100% → HAI CẤP: tạo bởi manager thứ hai (ở `requested`), admin duyệt, admin
+    // xác nhận chi.
     const mgr2 = await createUserViaApi(app, admin);
     await assignRole(app, admin, mgr2.id, await roleIdByShortname(app, admin, 'manager'), await systemContextId(app, admin));
     const mgr2Token = (await login(app, mgr2.username, STRONG_PASSWORD)).accessToken;

@@ -7,8 +7,8 @@ import {
 } from '../../support/identity-access-helpers';
 import { createCategory, createCourse, createEnrolInstance } from '../../support/course-enrolment-helpers';
 import { TenantConfigService } from '../../../src/modules/tenants/tenant-config.service';
-// Từ issue #539, nhịp quét matching chạy ở worker nên tiến trình API trong test
-// không còn tự quét: mỗi vòng chờ dẫn một nhịp qua cầu dẫn này rồi mới đọc trạng thái.
+// Từ issue #539, nhịp quét matching chạy ở worker nên tiến trình API trong test không còn tự quét: mỗi vòng chờ dẫn một
+// nhịp qua cầu dẫn này rồi mới đọc trạng thái.
 import { closeSepaySweepDriver, driveSepaySweep } from '../../support/sepay-sweep-driver';
 
 /**
@@ -51,10 +51,9 @@ import { closeSepaySweepDriver, driveSepaySweep } from '../../support/sepay-swee
  * phải đỏ.
  */
 const WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET ?? '';
-// Định danh SePay RIÊNG của spec này — tuyệt đối không trùng xid/số
-// tài khoản với các spec payments khác (DB test dùng chung cho cả
-// suite; hai tài khoản cùng xid sẽ làm định tuyến IPN lệch tài khoản
-// và khoản thu của spec khác rơi vào needs_review oan).
+// Định danh SePay RIÊNG của spec này — tuyệt đối không trùng xid/số tài khoản với các spec payments khác (DB test dùng
+// chung cho cả suite; hai tài khoản cùng xid sẽ làm định tuyến IPN lệch tài khoản và khoản thu của spec khác rơi vào
+// needs_review oan).
 const SEPAY_KEY = 'sk-test-sepay-slice3-3e7a';
 const SEPAY_XID = 'xid-test-slice3-001';
 const BANK_ACCOUNT = '113366667777';
@@ -302,8 +301,8 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
     expect(rejected.body.rejectionReason).toBe('Chưa đủ chứng từ hoàn');
     expect(rejected.body.rejectedAt).toBeTruthy();
 
-    // Ngân sách đã giải phóng: tạo yêu cầu hoàn đủ 100% được (nếu dòng
-    // rejected còn giữ chỗ, 60.000 + 100.000 > 100.000 sẽ bị chặn).
+    // Ngân sách đã giải phóng: tạo yêu cầu hoàn đủ 100% được (nếu dòng rejected còn giữ chỗ, 60.000 + 100.000 > 100.000
+    // sẽ bị chặn).
     const full = await createRefund(admin, payment.id, { amount: 100000, reason: 'Hoàn toàn bộ sau khi bổ sung chứng từ' });
     expect(full.status).toBeLessThan(300);
     expect(full.body.status).toBe('requested');
@@ -326,8 +325,8 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
 
   it('6. thứ tự đình chỉ-trước-ghi-sau: khâu đình chỉ lỗi → chưa ghi gì (refund còn approved, payment còn succeeded), gọi lại được', async () => {
     const { course, buyerToken, payment } = await manualSucceededPayment();
-    // Người xác nhận chi CHỈ có payment:manageaccounts (vai tuỳ biến),
-    // không có enrol:manage — khâu đình chỉ ghi danh sẽ ném lỗi quyền.
+    // Người xác nhận chi CHỈ có payment:manageaccounts (vai tuỳ biến), không có enrol:manage — khâu đình chỉ ghi danh
+    // sẽ ném lỗi quyền.
     const roleId = await createRoleViaApi(app, admin);
     const sysCtx = await systemContextId(app, admin);
     await setOverride(app, admin, roleId, 'payment:manageaccounts', sysCtx, 1);
@@ -344,8 +343,8 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
 
     const failed = await settleRefund(cashierToken, payment.id, created.body.id, { externalTransactionId: `FT-S3-ORD-${Date.now()}` });
     expect(failed.status).toBe(403);
-    // Chưa ghi gì: dòng hoàn còn approved/chưa settled, khoản thu còn
-    // succeeded, ghi danh còn active — trạng thái nhất quán để gọi lại.
+    // Chưa ghi gì: dòng hoàn còn approved/chưa settled, khoản thu còn succeeded, ghi danh còn active — trạng thái nhất
+    // quán để gọi lại.
     const refunds = await listRefunds(payment.id);
     expect(refunds).toHaveLength(1);
     expect(refunds[0]!.status).toBe('approved');
@@ -401,8 +400,8 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
     expect((await http(app).get(`/api/v1/payments/${payment.id}`).set('Authorization', `Bearer ${admin}`)).body.status).toBe('succeeded');
     expect(await enrolmentActive(course.id, buyerToken)).toBe(true);
 
-    // Debit không khớp dòng hoàn nào → needs_review của chủ tài khoản
-    // (platform) và hiện thành mục sự kiện mồ côi trong hàng đợi.
+    // Debit không khớp dòng hoàn nào → needs_review của chủ tài khoản (platform) và hiện thành mục sự kiện mồ côi trong
+    // hàng đợi.
     const orphanTx = `sepay-debit-${Date.now()}-b`;
     await postIpn(ipnBody({
       transaction_id: orphanTx, transfer_type: 'debit', amount: 7777,
@@ -420,7 +419,6 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
   });
 
   it('8. hàng đợi theo chủ tiền: trung tâm chỉ thấy khoản chờ của mình, tự xử lý và tự hoàn học phí; hai phía không chạm tiền của nhau', async () => {
-    // --- Dựng trung tâm + người vận hành của trung tâm ----------------
     const slug = `ctr-${uniqueName('c').toLowerCase()}`;
     const tenantRes = await http(app).post('/api/v1/tenants').set('Authorization', `Bearer ${admin}`)
       .send({ name: 'Trung tâm (spec lát 3)', slug, kind: 'school' });
@@ -451,15 +449,13 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
       return (res.body as { accessToken: string }).accessToken;
     };
     const adminC = await switchTo(admin);
-    // Token platform của admin đã bị thu hồi sau lần chuyển phiên —
-    // đăng nhập lại cho các thao tác phía platform.
+    // Token platform của admin đã bị thu hồi sau lần chuyển phiên — đăng nhập lại cho các thao tác phía platform.
     admin = (await login(app, ADMIN.username, ADMIN.password)).accessToken;
     const mgrLogin = await login(app, centerMgr.username, STRONG_PASSWORD);
     const mgrC = await switchTo(mgrLogin.accessToken);
     const buyerLogin = await login(app, buyerUser.username, STRONG_PASSWORD);
     const buyerC = await switchTo(buyerLogin.accessToken);
 
-    // --- Nội dung + tài khoản nhận tiền CỦA trung tâm ------------------
     const centerAccountId = await createSepayAccount(adminC, CENTER_XID, CENTER_KEY, CENTER_BANK);
     const { course, instance } = await createFeeCourse(adminC, centerAccountId);
 
@@ -475,9 +471,8 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
     await waitPaymentStatus(p1.id, 'needs_review');
     expect(await enrolmentActive(course.id, buyerC)).toBe(false);
 
-    // Tách bạch hiển thị: manager platform (không thuộc trung tâm)
-    // không thấy khoản chờ của trung tâm; quản lý trung tâm thấy đúng
-    // khoản đó kèm điều kiện lệch số tiền.
+    // Tách bạch hiển thị: manager platform (không thuộc trung tâm) không thấy khoản chờ của trung tâm; quản lý trung
+    // tâm thấy đúng khoản đó kèm điều kiện lệch số tiền.
     const platformMgr = await secondManager();
     const platformQueue = await http(app).get('/api/v1/payments/review-queue').set('Authorization', `Bearer ${platformMgr.token}`);
     expect(platformQueue.status).toBe(200);
@@ -489,8 +484,8 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
     expect(item1!.tenantId).toBe(tenantId);
     expect(item1!.mismatches).toContain('amount_mismatch');
 
-    // Trung tâm tự khớp tay về succeeded: quyền lợi kích hoạt, vết xử
-    // lý ghi người xử lý của trung tâm + quyết định + lý do.
+    // Trung tâm tự khớp tay về succeeded: quyền lợi kích hoạt, vết xử lý ghi người xử lý của trung tâm + quyết định +
+    // lý do.
     const resolved = await http(app).post(`/api/v1/payments/${p1.id}/review`).set('Authorization', `Bearer ${mgrC}`)
       .send({ decision: 'matched', reason: 'Đã đối chiếu sao kê ngân hàng của trung tâm' });
     expect(resolved.status).toBeLessThan(300);
@@ -511,8 +506,8 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
     expect(rejectedRes.body.reviewDecision).toBe('rejected');
     expect(rejectedRes.body.reviewHandledBy).toBe(centerMgr.id);
 
-    // Trung tâm TỰ hoàn học phí bằng cổng neo tại tenant của mình
-    // (sửa nền của lát này): tạo + xác nhận chi trọn vòng một cấp.
+    // Trung tâm TỰ hoàn học phí bằng cổng neo tại tenant của mình (sửa nền của lát này): tạo + xác nhận chi trọn vòng
+    // một cấp.
     const p3 = await createFeePayment(buyerC, instance.id);
     await centerIpn(p3.paymentCode, 100000);
     await waitPaymentStatus(p3.id, 'succeeded');
@@ -523,8 +518,8 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
     expect(ownSettled.status).toBeLessThan(300);
     expect(ownSettled.body.status).toBe('settled');
 
-    // Không chạm chéo: manager platform hoàn học phí của trung tâm →
-    // 403; quản lý trung tâm hoàn khoản thu platform → 403.
+    // Không chạm chéo: manager platform hoàn học phí của trung tâm → 403; quản lý trung tâm hoàn khoản thu platform →
+    // 403.
     const cross1 = await createRefund(platformMgr.token, p3.id, { amount: 1000, reason: 'platform chạm học phí' });
     expect(cross1.status).toBe(403);
     const platformPayment = await manualSucceededPayment();
@@ -563,10 +558,9 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
   });
 
   it('10. hồi quy: hai dòng hoàn bù nhau (60.000 + 40.000) xác nhận chi ĐỒNG THỜI → lượt làm đủ 100% đình chỉ thật, kết cục nhất quán', async () => {
-    // Hai vòng độc lập (mỗi vòng một khoản thu mới) để cửa sổ đua
-    // phải lộ diện rõ: trên code quyết định đình chỉ bằng lượt đọc
-    // NGOÀI khoá, cả hai lượt đều thấy tổng settled = 0 nên không
-    // lượt nào đình chỉ, nhưng transaction vào sau vẫn lật refunded.
+    // Hai vòng độc lập (mỗi vòng một khoản thu mới) để cửa sổ đua phải lộ diện rõ: trên code quyết định đình chỉ bằng
+    // lượt đọc NGOÀI khoá, cả hai lượt đều thấy tổng settled = 0 nên không lượt nào đình chỉ, nhưng transaction vào sau
+    // vẫn lật refunded.
     for (let round = 1; round <= 2; round++) {
       const { course, buyerToken, payment } = await manualSucceededPayment();
       const mgr2 = await secondManager();
@@ -580,9 +574,8 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
       expect(r60.body.status).toBe('approved');
       expect(r60.body.approvalLevel).toBe(1);
 
-      // Đợt 2: 40.000 bù đủ 100% → hai cấp (requested), duyệt bởi
-      // người khác người tạo → approved. Cả hai dòng cùng chờ ở
-      // approved, chưa dòng nào settled, ghi danh còn active.
+      // Đợt 2: 40.000 bù đủ 100% → hai cấp (requested), duyệt bởi người khác người tạo → approved. Cả hai dòng cùng chờ
+      // ở approved, chưa dòng nào settled, ghi danh còn active.
       const r40 = await createRefund(admin, payment.id, { amount: 40000, reason: `Hoàn đợt 2 bù đủ 100% (vòng ${round})` });
       expect(r40.status).toBeLessThan(300);
       expect(r40.body.status).toBe('requested');
@@ -592,13 +585,10 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
       expect(approved40.body.status).toBe('approved');
       expect(await enrolmentActive(course.id, buyerToken)).toBe(true);
 
-      // Xác nhận chi ĐỒNG THỜI cả hai dòng (Promise.all): bất kể
-      // thứ tự xen kẽ, kết cục cuối phải là MỘT trạng thái nhất
-      // quán — cả hai settled; đúng dòng làm cộng dồn đạt 100% ghi
-      // nhận đảo quyền lợi; khoản thu refunded VÀ ghi danh THẬT SỰ
-      // bị đình chỉ (không được refunded trong khi ghi danh còn
-      // active — đó là trạng thái tiền đã ghi hoàn mà quyền lợi
-      // vẫn chạy).
+      // Xác nhận chi ĐỒNG THỜI cả hai dòng (Promise.all): bất kể thứ tự xen kẽ, kết cục cuối phải là MỘT trạng thái
+      // nhất quán — cả hai settled; đúng dòng làm cộng dồn đạt 100% ghi nhận đảo quyền lợi; khoản thu refunded VÀ ghi
+      // danh THẬT SỰ bị đình chỉ (không được refunded trong khi ghi danh còn active — đó là trạng thái tiền đã ghi hoàn
+      // mà quyền lợi vẫn chạy).
       const [s60, s40] = await Promise.all([
         settleRefund(admin, payment.id, r60.body.id),
         settleRefund(admin, payment.id, r40.body.id, { externalTransactionId: `FT-S3-RACE-${round}-B-${Date.now()}` }),
@@ -622,8 +612,8 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
     const { payment } = await manualSucceededPayment();
     const mgrA = await secondManager();
     const mgrB = await secondManager();
-    // Hoàn 100% → cộng dồn đạt 100% → hai cấp, dòng chờ ở requested;
-    // người tạo là admin nên cả hai quản lý đều đủ tư cách duyệt.
+    // Hoàn 100% → cộng dồn đạt 100% → hai cấp, dòng chờ ở requested; người tạo là admin nên cả hai quản lý đều đủ tư
+    // cách duyệt.
     const created = await createRefund(admin, payment.id, { amount: 100000, reason: 'Hoàn toàn bộ — đua duyệt' });
     expect(created.status).toBeLessThan(300);
     expect(created.body.status).toBe('requested');
@@ -640,20 +630,19 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
     const refunds = await listRefunds(payment.id);
     expect(refunds).toHaveLength(1);
     expect(refunds[0]!.status).toBe('approved');
-    // Người duyệt ghi trên dòng là đúng người thắng — lượt thua không
-    // ghi đè lặng lẽ như dạng đua đọc-rồi-cập-nhật vô điều kiện.
+    // Người duyệt ghi trên dòng là đúng người thắng — lượt thua không ghi đè lặng lẽ như dạng đua đọc-rồi-cập-nhật vô
+    // điều kiện.
     expect(refunds[0]!.approvedBy).toBe(a.status < 300 ? mgrA.id : mgrB.id);
   });
 
-  // Ca 12 (đối soát reconcile: gọi thẳng PaymentsService.reconcile và
-  // đối chiếu với phép đếm SQL độc lập — bề mặt nội bộ, không có route
-  // HTTP) nằm ở tầng integration:
-  // test/integration/payments/payments-reconcile.int-spec.ts (issue #483).
+  // Ca 12 (đối soát reconcile: gọi thẳng PaymentsService.reconcile và đối chiếu với phép đếm SQL độc lập — bề mặt nội
+  // bộ, không có route HTTP) nằm ở tầng integration: test/integration/payments/payments-reconcile.int-spec.ts (issue
+  // #483).
 
   it('13. hàng đợi needs_review: nhiều dòng cùng một tenant chỉ tra cấu hình ngưỡng quá hạn một lần trong một lần dựng hàng đợi', async () => {
     const tenantConfig = app.get(TenantConfigService);
-    // Hai debit lạ mới → hai dòng needs_review nữa của tenant chủ tài
-    // khoản SePay (tenant nền tảng) trong cùng hàng đợi.
+    // Hai debit lạ mới → hai dòng needs_review nữa của tenant chủ tài khoản SePay (tenant nền tảng) trong cùng hàng
+    // đợi.
     await postIpn(ipnBody());
     await postIpn(ipnBody());
 
@@ -667,18 +656,15 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
       return original(tenantId, component, name);
     };
     try {
-      // Hàng đợi đọc qua HTTP GET /payments/review-queue (endpoint trả
-      // đúng mảng mà listReviewQueue dựng cho người gọi); việc đếm
-      // lượt tra cấu hình ở trên vẫn quan sát được vì request chạy
-      // trong cùng một instance ứng dụng.
+      // Hàng đợi đọc qua HTTP GET /payments/review-queue (endpoint trả đúng mảng mà listReviewQueue dựng cho người
+      // gọi); việc đếm lượt tra cấu hình ở trên vẫn quan sát được vì request chạy trong cùng một instance ứng dụng.
       const queueRes = await http(app).get('/api/v1/payments/review-queue').set('Authorization', `Bearer ${admin}`);
       expect(queueRes.status).toBe(200);
       expect((queueRes.body as unknown[]).length).toBeGreaterThanOrEqual(2);
     } finally {
       config.getEffectiveValue = original;
     }
-    // Có tra cấu hình cho ít nhất một tenant, và không tenant nào bị
-    // tra hai lần trong cùng một lần dựng hàng đợi.
+    // Có tra cấu hình cho ít nhất một tenant, và không tenant nào bị tra hai lần trong cùng một lần dựng hàng đợi.
     expect(seenTenants.length).toBeGreaterThanOrEqual(1);
     expect(new Set(seenTenants).size).toBe(seenTenants.length);
   });

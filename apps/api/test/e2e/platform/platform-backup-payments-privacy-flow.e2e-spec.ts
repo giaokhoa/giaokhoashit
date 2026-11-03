@@ -80,10 +80,8 @@ describe('Dịch vụ platform: tương đương backup→restore, luỹ đẳng
     expect((steps.body as { name: string }[]).map((s) => s.name)).toEqual(
       expect.arrayContaining(['courses', 'enrol', 'groups', 'grades', 'completion', 'files']));
 
-    // CLASS-0 (đóng gói PR #200): restore-as-new tạo khoá dạy thật
-    // không lớp qua createCourse nên bị từ chối sạch 400
-    // course.class_required — đường khôi phục còn lại là vào khoá đích
-    // có sẵn (đã thuộc một lớp).
+    // CLASS-0 (đóng gói PR #200): restore-as-new tạo khoá dạy thật không lớp qua createCourse nên bị từ chối sạch 400
+    // course.class_required — đường khôi phục còn lại là vào khoá đích có sẵn (đã thuộc một lớp).
     const restoreNew = await http(app).post('/api/v1/backup/restore').set('Authorization', `Bearer ${admin}`)
       .send({ backupJobId: backup.body.id, mode: 'new' });
     expect(restoreNew.status).toBe(400);
@@ -173,10 +171,9 @@ describe('Dịch vụ platform: tương đương backup→restore, luỹ đẳng
     expect(replay.body.duplicate).toBe(true);
     const enrolments2 = await http(app).get(`/api/v1/courses/${course.id}/enrolments`).set('Authorization', `Bearer ${admin}`);
     expect((enrolments2.body as { userId: string }[]).filter((e) => e.userId === buyer.id)).toHaveLength(1);
-    // Refund là giao dịch bù trừ riêng; payment gốc giữ nguyên amount.
-    // Lát 3 (issue #189): hoàn đủ 100% đi qua vòng đời duyệt hai cấp +
-    // xác nhận chi — tạo yêu cầu ở `requested`, manager thứ hai duyệt,
-    // admin xác nhận chi thì payment mới lật `refunded`.
+    // Refund là giao dịch bù trừ riêng; payment gốc giữ nguyên amount. Lát 3 (issue #189): hoàn đủ 100% đi qua vòng đời
+    // duyệt hai cấp + xác nhận chi — tạo yêu cầu ở `requested`, manager thứ hai duyệt, admin xác nhận chi thì payment
+    // mới lật `refunded`.
     const refund = await http(app).post(`/api/v1/payments/${payment.body.id}/refunds`).set('Authorization', `Bearer ${admin}`).send({ amount: 50000, reason: 'changed mind' });
     expect(refund.status).toBeLessThan(300);
     expect(refund.body.status).toBe('requested');
@@ -255,7 +252,7 @@ describe('Dịch vụ platform: tương đương backup→restore, luỹ đẳng
     const cm = await createCm(app, admin, course.id, section1.id, { name: 'Reading BK', completion: 1, completionManual: true });
     const group = await createGroupViaApi(app, admin, course.id, 'Group BK');
     const courseCtx = await courseContextId(app, admin, course.id);
-    // --- Question bank ở context của khoá: cây category 2 cấp + câu hỏi 2 version.
+    // Question bank ở context của khoá: cây category 2 cấp + câu hỏi 2 version.
     const parentCat = await http(app).post('/api/v1/questions/categories').set('Authorization', `Bearer ${admin}`)
       .send({ name: `Bank parent ${suffix}`, contextId: courseCtx });
     expect(parentCat.status).toBeLessThan(300);
@@ -269,14 +266,14 @@ describe('Dịch vụ platform: tương đương backup→restore, luỹ đẳng
     const edit = await http(app).patch(`/api/v1/questions/${qid}`).set('Authorization', `Bearer ${admin}`)
       .send({ questionText: tfBody('Version two text.', [false, true, false, true]).questionText, solution: tfBody('Version two text.', [false, true, false, true]).solution });
     expect(edit.body.entry.latestVersion).toBe(2);
-    // --- Competency dùng chung mức site (lá competency trỏ vào đây; KHÔNG nằm trong archive).
+    // Competency dùng chung mức site (lá competency trỏ vào đây; KHÔNG nằm trong archive).
     const fw = await http(app).post('/api/v1/competencies/frameworks').set('Authorization', `Bearer ${admin}`)
       .send({ shortName: `BKFW ${suffix}`, scale: { values: ['Not competent', 'Competent'], proficient: [1] } });
     expect(fw.status).toBe(201);
     const comp = await http(app).post(`/api/v1/competencies/frameworks/${fw.body.id}/competencies`).set('Authorization', `Bearer ${admin}`)
       .send({ shortName: 'BK teamwork' });
     expect(comp.status).toBe(201);
-    // --- Hai badge của khoá: B tham chiếu A (badge), khoá (course), cm (activity) và competency.
+    // Hai badge của khoá: B tham chiếu A (badge), khoá (course), cm (activity) và competency.
     const badgeA = await http(app).post('/api/v1/badges').set('Authorization', `Bearer ${admin}`)
       .send({ name: `BK Badge A ${suffix}`, type: 2, courseId: course.id, issuerName: 'LMS' });
     expect(badgeA.status).toBeLessThan(300);
@@ -295,7 +292,7 @@ describe('Dịch vụ platform: tương đương backup→restore, luỹ đẳng
           { criteriaType: 'badge', params: { badgeId: badgeA.body.id } },
         ],
       });
-    // --- Calendar: sự kiện khoá, sự kiện nhóm, chuỗi lặp của khoá và subscription của khoá.
+    // Calendar: sự kiện khoá, sự kiện nhóm, chuỗi lặp của khoá và subscription của khoá.
     const soon = new Date(Date.now() + 3600_000).toISOString();
     const courseEv = await http(app).post('/api/v1/calendar/events').set('Authorization', `Bearer ${admin}`)
       .send({ name: `BK course lecture ${suffix}`, eventType: 'course', courseId: course.id, timeStart: soon });
@@ -330,8 +327,8 @@ describe('Dịch vụ platform: tương đương backup→restore, luỹ đẳng
     expect(contributors.calendar!.events!.length).toBeGreaterThanOrEqual(4);
     expect(contributors.calendar!.subscriptions).toHaveLength(1);
 
-    // CLASS-0 (PR #200): restore-as-new bị chặn (xem ca DoD ở trên) —
-    // khôi phục bằng replace vào một khoá đích trống có sẵn.
+    // CLASS-0 (PR #200): restore-as-new bị chặn (xem ca DoD ở trên) — khôi phục bằng replace vào một khoá đích trống có
+    // sẵn.
     const freshTarget = await createCourse(app, admin, cat.id);
     const restore = await http(app).post('/api/v1/backup/restore').set('Authorization', `Bearer ${admin}`)
       .send({ backupJobId: backup.body.id, mode: 'replace', targetCourseId: freshTarget.id });
@@ -366,10 +363,9 @@ describe('Dịch vụ platform: tương đương backup→restore, luỹ đẳng
     expect(restoredQuestions.body[0].question.id).toBe(newQ!.newId);
     const restoredVersions = await http(app).get(`/api/v1/questions/${newQ!.newId}/versions`).set('Authorization', `Bearer ${admin}`);
     expect(restoredVersions.body).toHaveLength(2);
-    // questionText nay là tài liệu Tiptap: trích text thuần để so với bản gốc.
-    // Trích ĐỆ QUY qua mọi khối lồng nhau: statementList chứa các
-    // statement, mỗi statement chứa paragraph — helper cũ chỉ map một
-    // cấp nên mệnh đề TF-A đóng góp dòng rỗng ('Version two text.\n').
+    // questionText nay là tài liệu Tiptap: trích text thuần để so với bản gốc. Trích ĐỆ QUY qua mọi khối lồng nhau:
+    // statementList chứa các statement, mỗi statement chứa paragraph — helper cũ chỉ map một cấp nên mệnh đề TF-A đóng
+    // góp dòng rỗng ('Version two text.\n').
     const blockTexts = (block: { type?: string; text?: string; content?: { type?: string; text?: string; content?: never[] }[] }): string[] => {
       if (block.type === 'text') return [block.text ?? ''];
       if (block.type === 'statementList') return (block.content ?? []).flatMap((s) => blockTexts(s as never));
@@ -381,10 +377,9 @@ describe('Dịch vụ platform: tương đương backup→restore, luỹ đẳng
     expect(docText(restoredVersions.body[1].questionText)).toBe(
       ['Version two text.', 'Version two text. — ý 1', 'Version two text. — ý 2', 'Version two text. — ý 3', 'Version two text. — ý 4'].join('\n'),
     );
-    // Nội dung chấm của version khôi phục đi theo archive ở dạng TF-A:
-    // KHÔNG có dòng question_answers (đáp án nằm ở thân câu + solution
-    // phía answerKey) và không có options trueAnswer kiểu TF-B cũ —
-    // version 2 của câu này có solution [Sai, Đúng, Sai, Đúng].
+    // Nội dung chấm của version khôi phục đi theo archive ở dạng TF-A: KHÔNG có dòng question_answers (đáp án nằm ở
+    // thân câu + solution phía answerKey) và không có options trueAnswer kiểu TF-B cũ — version 2 của câu này có
+    // solution [Sai, Đúng, Sai, Đúng].
     expect(restoredQuestions.body[0].answers).toHaveLength(0);
     expect(restoredQuestions.body[0].options).toBeNull();
     expect((restoredQuestions.body[0].answerKey.solution as { answers: { statementId: string; value: boolean }[] }).answers).toEqual([

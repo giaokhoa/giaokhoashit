@@ -14,20 +14,15 @@ import { OutboxService } from '../../../src/infra/events/outbox.service';
 import { tenantAls } from '../../../src/modules/tenants/tenant-als';
 
 /**
- * Spec đặc tả hoá (characterization) cho bề mặt vật chất hoá cohort
- * dùng chung `@lms/enrol` ở phía API (issue #527).
+ * Spec đặc tả hoá (characterization) cho bề mặt vật chất hoá cohort dùng chung `@lms/enrol` ở phía API (issue #527).
  *
- * Bối cảnh: đường đồng bộ cohort — thành viên cohort được vật chất
- * hoá thành ghi danh cấp khoá, rời cohort thì ghi danh bị rút hoặc
- * đình chỉ — trước đây sống trọn trong `EnrolService` của API và
- * phụ thuộc hai cơ chế đăng ký lúc khởi tạo tiến trình (probe dữ
- * liệu liên quan do CompletionModule/GradesModule đăng ký, hook tái
- * tổng hợp hoàn thành do CompletionModule đăng ký). Sau khi trích
- * xuất, toàn bộ funnel chạy qua bề mặt dùng chung ở tầng dữ liệu;
- * spec này ghim NGUYÊN hành vi quan sát được của đường đồng bộ qua
- * đúng hai handler sự kiện của API (`EnrolService.onCohortMemberAdded`
- * /`onCohortMemberRemoved`, cũng là hai handler mà consumer outbox
- * đồng bộ cohort của API gọi):
+ * Bối cảnh: đường đồng bộ cohort — thành viên cohort được vật chất hoá thành ghi danh cấp khoá, rời cohort thì ghi danh
+ * bị rút hoặc đình chỉ — trước đây sống trọn trong `EnrolService` của API và phụ thuộc hai cơ chế đăng ký lúc khởi tạo
+ * tiến trình (probe dữ liệu liên quan do CompletionModule/GradesModule đăng ký, hook tái tổng hợp hoàn thành do
+ * CompletionModule đăng ký). Sau khi trích xuất, toàn bộ funnel chạy qua bề mặt dùng chung ở tầng dữ liệu; spec này
+ * ghim NGUYÊN hành vi quan sát được của đường đồng bộ qua đúng hai handler sự kiện của API
+ * (`EnrolService.onCohortMemberAdded` /`onCohortMemberRemoved`, cũng là hai handler mà consumer outbox đồng bộ cohort
+ * của API gọi):
  *
  * - thêm thành viên: ghi danh ACTIVE, gán vai của instance tại
  *   context khoá với truy vết nguồn của instance, sự kiện
@@ -67,9 +62,8 @@ import { tenantAls } from '../../../src/modules/tenants/tenant-als';
  *   viên cho người có cấp quyền giảng dạy bao phủ khoá bằng lỗi 400
  *   mã `access.role_context_conflict`.
  *
- * Fixture dựng bằng SQL trực tiếp (tenant/context/khoá/cohort/
- * instance/người dùng) với id ngẫu nhiên theo từng ca để các ca
- * không giẫm nhau; khẳng định đọc thẳng từ cơ sở dữ liệu.
+ * Fixture dựng bằng SQL trực tiếp (tenant/context/khoá/cohort/ instance/người dùng) với id ngẫu nhiên theo từng ca để
+ * các ca không giẫm nhau; khẳng định đọc thẳng từ cơ sở dữ liệu.
  */
 
 interface ConsumerInternals {
@@ -166,9 +160,8 @@ describe('Vật chất hoá cohort dùng chung — đặc tả hoá hành vi ở
   }
 
   /**
-   * Dựng hình dạng dòng enrol (camelCase) mà funnel nhận từ các
-   * đường gọi trong tiến trình — cùng khuôn ca kiểm funnel trực
-   * tiếp ở trên, dùng cho các ca lái thẳng bề mặt dùng chung.
+   * Dựng hình dạng dòng enrol (camelCase) mà funnel nhận từ các đường gọi trong tiến trình — cùng khuôn ca kiểm funnel
+   * trực tiếp ở trên, dùng cho các ca lái thẳng bề mặt dùng chung.
    */
   function instanceLiteral(graph: CourseGraph): Parameters<CohortMaterializationSurface['unenrolInternal']>[0] {
     return {
@@ -182,8 +175,8 @@ describe('Vật chất hoá cohort dùng chung — đặc tả hoá hành vi ở
     app = await createTestApp();
     enrol = app.get(EnrolService);
     consumer = app.get(CompletionReaggregationOutboxConsumer) as unknown as ConsumerInternals;
-    // Dừng nhịp tự động của consumer tái tổng hợp: spec lái tick()
-    // thủ công để tất định, theo khuôn các spec consumer hiện hữu.
+    // Dừng nhịp tự động của consumer tái tổng hợp: spec lái tick() thủ công để tất định, theo khuôn các spec consumer
+    // hiện hữu.
     if (consumer.timer) {
       clearInterval(consumer.timer);
       consumer.timer = null;
@@ -289,8 +282,8 @@ describe('Vật chất hoá cohort dùng chung — đặc tả hoá hành vi ở
     );
     const instanceRes = await pg.query('SELECT * FROM enrol WHERE id = $1', [graph.instanceId]);
     expect(instanceRes.rows).toHaveLength(1);
-    // Dựng đúng hình dạng EnrolRow (camelCase) mà funnel nhận từ các
-    // đường gọi trong tiến trình — chỉ các trường funnel thật sự đọc.
+    // Dựng đúng hình dạng EnrolRow (camelCase) mà funnel nhận từ các đường gọi trong tiến trình — chỉ các trường funnel
+    // thật sự đọc.
     const instance = {
       id: graph.instanceId, courseId: graph.courseId, enrol: 'cohort', status: 0,
       roleId: studentRoleId, enrolPeriod: 0, customInt1: graph.cohortId,
@@ -435,8 +428,8 @@ describe('Vật chất hoá cohort dùng chung — đặc tả hoá hành vi ở
 
     await removeMember(graph, userId);
 
-    // Trước khi consumer chạy: chưa có hoàn thành — đường tái tổng
-    // hợp nay đi qua sự kiện, không còn chạy đồng bộ trong lúc rút.
+    // Trước khi consumer chạy: chưa có hoàn thành — đường tái tổng hợp nay đi qua sự kiện, không còn chạy đồng bộ trong
+    // lúc rút.
     const before = await pg.query(
       "SELECT status FROM course_completions WHERE user_id = $1 AND course = $2 AND status = 'complete'",
       [userId, graph.courseId],
@@ -463,8 +456,8 @@ describe('Vật chất hoá cohort dùng chung — đặc tả hoá hành vi ở
     await addMember(graph, userId);
     await removeMember(graph, userId);
 
-    // Yêu cầu tái tổng hợp đã nằm trong outbox TRƯỚC khi consumer
-    // khởi tạo, và trước khi consumer chạy thì khoá chưa hoàn thành.
+    // Yêu cầu tái tổng hợp đã nằm trong outbox TRƯỚC khi consumer khởi tạo, và trước khi consumer chạy thì khoá chưa
+    // hoàn thành.
     expect(await outboxOf('course_completion_reaggregation_requested', userId)).toHaveLength(1);
     const before = await pg.query(
       "SELECT status FROM course_completions WHERE user_id = $1 AND course = $2 AND status = 'complete'",
@@ -472,10 +465,9 @@ describe('Vật chất hoá cohort dùng chung — đặc tả hoá hành vi ở
     );
     expect(before.rows).toHaveLength(0);
 
-    // Trạng thái khởi tạo thật của một tiến trình mới: watermark
-    // trong bộ nhớ chưa có và khoá watermark trong Redis vắng —
-    // consumer phải tự quyết mốc bắt đầu qua đường OnModuleInit
-    // của chính nó, không được neo qua yêu cầu đã ghi ở trên.
+    // Trạng thái khởi tạo thật của một tiến trình mới: watermark trong bộ nhớ chưa có và khoá watermark trong Redis
+    // vắng — consumer phải tự quyết mốc bắt đầu qua đường OnModuleInit của chính nó, không được neo qua yêu cầu đã ghi
+    // ở trên.
     const databaseName = new URL(process.env.DATABASE_URL!).pathname.replace(/^\//, '');
     const redis = new Redis(process.env.REDIS_URL!);
     await redis.del(`lms:completion-reaggregation:${databaseName}:seq`);
@@ -486,8 +478,8 @@ describe('Vật chất hoá cohort dùng chung — đặc tả hoá hành vi ở
     );
     try {
       fresh.onModuleInit();
-      // Consumer quét theo nhịp 1 giây của chính nó: chờ nó tiêu
-      // thụ yêu cầu đã ghi trước và biến khoá thành hoàn thành.
+      // Consumer quét theo nhịp 1 giây của chính nó: chờ nó tiêu thụ yêu cầu đã ghi trước và biến khoá thành hoàn
+      // thành.
       const deadline = Date.now() + 20_000;
       let status: string | undefined;
       while (Date.now() < deadline) {
@@ -511,22 +503,17 @@ describe('Vật chất hoá cohort dùng chung — đặc tả hoá hành vi ở
     const userId = await insertUser();
     await addMember(graph, userId);
 
-    // Bề mặt dựng bằng tay cầm DB bọc quanh tay cầm thật: ngay khi
-    // transaction của unenrolInternal commit xong — thời điểm sự
-    // kiện trở nên nhìn thấy được với mọi kết nối khác — mà TRƯỚC
-    // khi hàm chạy bất kỳ bước nào tiếp theo, đọc lại từ kết nối
-    // độc lập của spec xem sự kiện và dòng ghi danh có cùng tồn
-    // tại hay không. Consumer quét mỗi giây chỉ được phép quan
-    // sát sự kiện khi dòng ghi danh đã biến mất, vì tiêu chí
-    // 'unenrol' đọc chính dòng đó.
+    // Bề mặt dựng bằng tay cầm DB bọc quanh tay cầm thật: ngay khi transaction của unenrolInternal commit xong — thời
+    // điểm sự kiện trở nên nhìn thấy được với mọi kết nối khác — mà TRƯỚC khi hàm chạy bất kỳ bước nào tiếp theo, đọc
+    // lại từ kết nối độc lập của spec xem sự kiện và dòng ghi danh có cùng tồn tại hay không. Consumer quét mỗi giây
+    // chỉ được phép quan sát sự kiện khi dòng ghi danh đã biến mất, vì tiêu chí 'unenrol' đọc chính dòng đó.
     const realDb = app.get(SpaceDatabaseService).routedKysely;
     const observed: { current: { eventVisible: boolean; enrolmentPresent: boolean } | null } = { current: null };
     const wrappedDb = new Proxy(realDb, {
       get(target, prop) {
         if (prop === 'transaction') {
-          // Kysely: `db.transaction()` trả về builder, callback chạy
-          // ở `.execute()` — quan sát đặt SAU execute (transaction
-          // đã commit) như khuôn cũ đặt sau `transaction(cb)`.
+          // Kysely: `db.transaction()` trả về builder, callback chạy ở `.execute()` — quan sát đặt SAU execute
+          // (transaction đã commit) như khuôn cũ đặt sau `transaction(cb)`.
           return () => ({
             execute: async (callback: (trx: unknown) => Promise<unknown>): Promise<unknown> => {
               const result = await target.transaction().execute(callback as never) as unknown;
@@ -551,11 +538,9 @@ describe('Vật chất hoá cohort dùng chung — đặc tả hoá hành vi ở
     const realOutbox = app.get(OutboxService);
     const surface = new CohortMaterializationSurface({
       db: wrappedDb,
-      // Cổng outbox của bề mặt đi qua `enqueueKysely` của
-      // `OutboxService` như `EnrolService` vẫn dựng cho bề mặt của
-      // nó: bề mặt này chạy trên transaction Kysely, nên cổng được
-      // điều hợp về đúng phương thức Kysely của service (cổng của
-      // bề mặt giữ tên `enqueue` theo hợp đồng của chính nó).
+      // Cổng outbox của bề mặt đi qua `enqueueKysely` của `OutboxService` như `EnrolService` vẫn dựng cho bề mặt của
+      // nó: bề mặt này chạy trên transaction Kysely, nên cổng được điều hợp về đúng phương thức Kysely của service
+      // (cổng của bề mặt giữ tên `enqueue` theo hợp đồng của chính nó).
       outbox: {
         enqueue: (tx, input) => realOutbox.enqueueKysely(tx, input),
         enqueueStandalone: (input) => app.get(SpaceDatabaseService).routedKysely.transaction().execute((trx) => realOutbox.enqueueKysely(trx, input)),
@@ -578,10 +563,9 @@ describe('Vật chất hoá cohort dùng chung — đặc tả hoá hành vi ở
     const userId = await insertUser();
     await addMember(graph, userId);
 
-    // Cổng outbox giả lập lỗi ngay khi ghi sự kiện tái tổng hợp —
-    // sự kiện này được ghi sau lệnh xoá trong cùng transaction,
-    // nên rollback phải cuốn theo cả việc xoá lẫn sự kiện
-    // user_unenrolled đã ghi trước đó trong transaction.
+    // Cổng outbox giả lập lỗi ngay khi ghi sự kiện tái tổng hợp — sự kiện này được ghi sau lệnh xoá trong cùng
+    // transaction, nên rollback phải cuốn theo cả việc xoá lẫn sự kiện user_unenrolled đã ghi trước đó trong
+    // transaction.
     const realOutbox = app.get(OutboxService);
     const failingOutbox: SharedOutboxPort = {
       enqueue: async (tx, input) => {

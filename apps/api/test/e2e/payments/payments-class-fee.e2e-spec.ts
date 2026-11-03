@@ -7,8 +7,8 @@ import {
 } from '../../support/identity-access-helpers';
 import { createCategory, createCourse, grantActiveTeacherPlan } from '../../support/course-enrolment-helpers';
 import { createGradeItem, setGrade } from '../../support/assessment-helpers';
-// Từ issue #539, nhịp quét matching chạy ở worker nên tiến trình API trong test
-// không còn tự quét: mỗi vòng chờ dẫn một nhịp qua cầu dẫn này rồi mới đọc trạng thái.
+// Từ issue #539, nhịp quét matching chạy ở worker nên tiến trình API trong test không còn tự quét: mỗi vòng chờ dẫn một
+// nhịp qua cầu dẫn này rồi mới đọc trạng thái.
 import { closeSepaySweepDriver, driveCohortSync, driveSepaySweep } from '../../support/sepay-sweep-driver';
 
 /**
@@ -107,16 +107,12 @@ describe('CLASS-3: học phí theo lớp qua pipeline class_fee (issue #184)', (
   }
 
   /**
-   * Chờ hệ quả ghi danh của một payment gói lớp được vật chất hoá tới
-   * trạng thái khẳng định được (issue #219). Trạng thái payment lật
-   * 'succeeded' chỉ chốt ở tầng payment: khâu kích hoạt cộng người
-   * mua vào backing cohort chạy trước khi lật trạng thái, nhưng việc
-   * vật chất hoá ghi danh ACTIVE xuống từng khoá của lớp là hệ quả của
-   * cohort sync bất đồng bộ phía sau. Khẳng định roster + ACTIVE mọi
-   * khoá phải chờ theo điều kiện trên chính hệ quả đó (người mua có
-   * trong roster VÀ ghi danh ACTIVE ở mọi khoá), theo cùng mẫu chờ
-   * của waitPaymentStatus — khẳng định ngay sau tín hiệu trạng thái
-   * từng đỏ ngẫu nhiên ở khoá thứ hai.
+   * Chờ hệ quả ghi danh của một payment gói lớp được vật chất hoá tới trạng thái khẳng định được (issue #219). Trạng
+   * thái payment lật 'succeeded' chỉ chốt ở tầng payment: khâu kích hoạt cộng người mua vào backing cohort chạy trước
+   * khi lật trạng thái, nhưng việc vật chất hoá ghi danh ACTIVE xuống từng khoá của lớp là hệ quả của cohort sync bất
+   * đồng bộ phía sau. Khẳng định roster + ACTIVE mọi khoá phải chờ theo điều kiện trên chính hệ quả đó (người mua có
+   * trong roster VÀ ghi danh ACTIVE ở mọi khoá), theo cùng mẫu chờ của waitPaymentStatus — khẳng định ngay sau tín hiệu
+   * trạng thái từng đỏ ngẫu nhiên ở khoá thứ hai.
    */
   async function waitForClassEnrolmentActive(classId: string, userId: string, token: string, courseIds: string[], timeoutMs = 12000): Promise<void> {
     const deadline = Date.now() + timeoutMs;
@@ -136,15 +132,11 @@ describe('CLASS-3: học phí theo lớp qua pipeline class_fee (issue #184)', (
   }
 
   /**
-   * Chờ chuỗi đối soát của một payment SePay chốt xong (issue #219):
-   * sự kiện nhà cung cấp của payment đã sang trạng thái 'matched' —
-   * matching chỉ chốt 'matched' ở cuối nhịp xử lý của nó, sau khi đã
-   * kích hoạt quyền lợi, lật trạng thái payment và ghi sự kiện outbox
-   * `payment_succeeded` — đồng thời sự kiện outbox đó đã tồn tại. Sau
-   * mốc này không còn khâu bất đồng bộ nào trong chuỗi payment có thể
-   * đổi các đếm thành viên cohort / sự kiện outbox được khẳng định,
-   * nên việc đếm sau replay IPN chờ tín hiệu này thay cho sleep cố
-   * định.
+   * Chờ chuỗi đối soát của một payment SePay chốt xong (issue #219): sự kiện nhà cung cấp của payment đã sang trạng
+   * thái 'matched' — matching chỉ chốt 'matched' ở cuối nhịp xử lý của nó, sau khi đã kích hoạt quyền lợi, lật trạng
+   * thái payment và ghi sự kiện outbox `payment_succeeded` — đồng thời sự kiện outbox đó đã tồn tại. Sau mốc này không
+   * còn khâu bất đồng bộ nào trong chuỗi payment có thể đổi các đếm thành viên cohort / sự kiện outbox được khẳng định,
+   * nên việc đếm sau replay IPN chờ tín hiệu này thay cho sleep cố định.
    */
   async function waitForPaymentReconciled(paymentId: string, timeoutMs = 12000): Promise<void> {
     const deadline = Date.now() + timeoutMs;
@@ -194,12 +186,10 @@ describe('CLASS-3: học phí theo lớp qua pipeline class_fee (issue #184)', (
     const tenantId = (current.body as { id: string }).id;
     await http(app).post(`/api/v1/tenants/${tenantId}/members`)
       .set('Authorization', `Bearer ${admin}`).send({ userId: teacher.id });
-    // Giáo viên của spec làm chủ 3 lớp với nhiều khoá ở tenant
-    // platform: theo đặc tả slot đã duyệt của issue #189, giáo viên
-    // không có gói chỉ làm chủ được mức nền 1 khoá — cấp quyền lợi
-    // gói giáo viên đang hoạt động làm tiền đề fixture (xem
-    // grantActiveTeacherPlan). Tài khoản fixture do helper tạo ở
-    // trạng thái tắt nên không chen vào luật chọn tài khoản của spec.
+    // Giáo viên của spec làm chủ 3 lớp với nhiều khoá ở tenant platform: theo đặc tả slot đã duyệt của issue #189, giáo
+    // viên không có gói chỉ làm chủ được mức nền 1 khoá — cấp quyền lợi gói giáo viên đang hoạt động làm tiền đề
+    // fixture (xem grantActiveTeacherPlan). Tài khoản fixture do helper tạo ở trạng thái tắt nên không chen vào luật
+    // chọn tài khoản của spec.
     await grantActiveTeacherPlan(pg, teacher.id);
 
     const sepay = await http(app).post('/api/v1/payments/accounts').set('Authorization', `Bearer ${admin}`)
@@ -239,10 +229,9 @@ describe('CLASS-3: học phí theo lớp qua pipeline class_fee (issue #184)', (
     expect(byTeacher.status).toBe(200);
     expect((byTeacher.body as { feeCost: number }).feeCost).toBe(FEE);
 
-    // Ghim tài khoản nhận SePay cho lớp A (cùng khuôn instance fee ghim
-    // paymentAccountId): các ca IPN phía dưới cần payment sinh mã + QR
-    // trên ĐÚNG tài khoản này — đường tài khoản mặc định của tenant
-    // không có thứ tự xác định trong DB dùng chung của suite.
+    // Ghim tài khoản nhận SePay cho lớp A (cùng khuôn instance fee ghim paymentAccountId): các ca IPN phía dưới cần
+    // payment sinh mã + QR trên ĐÚNG tài khoản này — đường tài khoản mặc định của tenant không có thứ tự xác định trong
+    // DB dùng chung của suite.
     const pinned = await setFee(classA, { feePaymentAccountId: sepayAccountId });
     expect(pinned.status).toBe(200);
     expect((pinned.body as { feePaymentAccountId: string }).feePaymentAccountId).toBe(sepayAccountId);
@@ -282,9 +271,8 @@ describe('CLASS-3: học phí theo lớp qua pipeline class_fee (issue #184)', (
     const first = await postIpn(body);
     expect((first.body as { success: boolean }).success).toBe(true);
     await waitPaymentStatus(payment.id, 'succeeded');
-    // Chờ hệ quả ghi danh vật chất hoá xong rồi mới khẳng định
-    // (issue #219): trạng thái succeeded chưa đảm bảo ghi danh ở
-    // từng khoá của lớp đã ACTIVE — xem waitForClassEnrolmentActive.
+    // Chờ hệ quả ghi danh vật chất hoá xong rồi mới khẳng định (issue #219): trạng thái succeeded chưa đảm bảo ghi danh
+    // ở từng khoá của lớp đã ACTIVE — xem waitForClassEnrolmentActive.
     await waitForClassEnrolmentActive(classA, buyer.id, buyer.token, [courseA1, courseA2]);
 
     expect(await rosterIds(classA)).toContain(buyer.id);
@@ -302,11 +290,9 @@ describe('CLASS-3: học phí theo lớp qua pipeline class_fee (issue #184)', (
     // Replay IPN (SePay retry): duplicate, roster vẫn đúng một dòng cho người mua.
     const replay = await postIpn(body);
     expect((replay.body as { duplicate?: boolean }).duplicate).toBe(true);
-    // Chờ chuỗi đối soát của payment chốt xong rồi mới đếm (issue
-    // #219; thay sleep cố định 1.200ms trước đây): replay bị từ chối
-    // đồng bộ ở tầng IPN, nhưng các đếm dưới đây chỉ có nghĩa khi
-    // nhịp matching của lượt IPN đầu đã chốt hẳn — xem
-    // waitForPaymentReconciled.
+    // Chờ chuỗi đối soát của payment chốt xong rồi mới đếm (issue #219; thay sleep cố định 1.200ms trước đây): replay
+    // bị từ chối đồng bộ ở tầng IPN, nhưng các đếm dưới đây chỉ có nghĩa khi nhịp matching của lượt IPN đầu đã chốt hẳn
+    // — xem waitForPaymentReconciled.
     await waitForPaymentReconciled(payment.id);
     const cohort = await pg.query('select cohort_id from classes where id = $1', [classA]);
     const members = await pg.query(
@@ -399,8 +385,8 @@ describe('CLASS-3: học phí theo lớp qua pipeline class_fee (issue #184)', (
     expect(ueBefore.rows).toHaveLength(1);
     expect(ueBefore.rows[0].status).toBe(0);
 
-    // Hoàn một phần (lát 3, issue #189 — vòng đời duyệt hoàn): tạo yêu
-    // cầu một cấp rồi xác nhận chi — giữ nguyên quyền lợi.
+    // Hoàn một phần (lát 3, issue #189 — vòng đời duyệt hoàn): tạo yêu cầu một cấp rồi xác nhận chi — giữ nguyên quyền
+    // lợi.
     const partial = await http(app).post(`/api/v1/payments/${payment.id}/refunds`).set('Authorization', `Bearer ${admin}`)
       .send({ amount: 50000, reason: 'partial', externalTransactionId: `ft-cf-out-${Date.now()}-1` });
     expect(partial.status).toBeLessThan(300);
@@ -412,9 +398,8 @@ describe('CLASS-3: học phí theo lớp qua pipeline class_fee (issue #184)', (
     expect(await rosterIds(classB)).toContain(buyer.id);
     expect(await enrolmentActive(courseB1, buyer.token)).toBe(true);
 
-    // Hoàn đủ phần còn lại: lần hoàn chạm 100% → hai cấp (tạo ở
-    // `requested`, manager thứ hai duyệt) rồi xác nhận chi → đình chỉ
-    // khỏi lớp tại mốc settled.
+    // Hoàn đủ phần còn lại: lần hoàn chạm 100% → hai cấp (tạo ở `requested`, manager thứ hai duyệt) rồi xác nhận chi →
+    // đình chỉ khỏi lớp tại mốc settled.
     const mgr2 = await createUserViaApi(app, admin);
     await assignRole(app, admin, mgr2.id, await roleIdByShortname(app, admin, 'manager'), await systemContextId(app, admin));
     const mgr2Token = (await login(app, mgr2.username, STRONG_PASSWORD)).accessToken;

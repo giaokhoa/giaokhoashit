@@ -105,8 +105,8 @@ describe('Rào stored-XSS nội dung (làm sạch nội dung trang + scheme URL 
     const created = await http(app).post(`/api/v1/courses/${f.courseId}/pages`).set('Authorization', `Bearer ${admin}`)
       .send({ sectionId: f.sectionId, name: 'Bài đọc cũ', content: '<p>Nội dung sạch</p>' });
     expect(created.status).toBe(201);
-    // Mô phỏng dữ kiện đã lưu trước khi có cổng làm sạch ở đường ghi:
-    // ghi đè content thẳng xuống DB, bỏ qua hoàn toàn tầng service.
+    // Mô phỏng dữ kiện đã lưu trước khi có cổng làm sạch ở đường ghi: ghi đè content thẳng xuống DB, bỏ qua hoàn toàn
+    // tầng service.
     await pg.query('UPDATE pages SET content = $1 WHERE id = $2', [PAYLOAD, created.body.id]);
 
     const read = await http(app).get(`/api/v1/pages/${created.body.id}`).set('Authorization', `Bearer ${f.studentToken}`);

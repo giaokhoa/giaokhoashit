@@ -17,12 +17,10 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Issue #567 (con A của đợt trang Permissions #571): endpoint đọc ma
- * trận quyền mọi vai tại một context `GET /access/capability-matrix`
- * và test ghim ngữ nghĩa Kế thừa của `POST /access/overrides`. Mọi ca
- * lái qua HTTP thật; kết quả của endpoint mới được đối chiếu chéo với
- * đường đọc ma trận từng vai hiện hành và với bảng gốc
- * `role_capabilities` bằng SQL độc lập.
+ * Issue #567 (con A của đợt trang Permissions #571): endpoint đọc ma trận quyền mọi vai tại một context `GET
+ * /access/capability-matrix` và test ghim ngữ nghĩa Kế thừa của `POST /access/overrides`. Mọi ca lái qua HTTP thật; kết
+ * quả của endpoint mới được đối chiếu chéo với đường đọc ma trận từng vai hiện hành và với bảng gốc `role_capabilities`
+ * bằng SQL độc lập.
  */
 describe('Access: ma trận quyền mọi vai theo context và ngữ nghĩa Kế thừa của đặt một ô (issue #567)', () => {
   let app: INestApplication;
@@ -66,9 +64,8 @@ describe('Access: ma trận quyền mọi vai theo context và ngữ nghĩa Kế
   }
 
   /**
-   * Tập ghi đè đã lưu của MỘT vai tại MỘT context, đọc qua đường đọc
-   * từng vai hiện hành rồi lọc tay theo context — nguồn đối chiếu
-   * độc lập với endpoint ma trận mới.
+   * Tập ghi đè đã lưu của MỘT vai tại MỘT context, đọc qua đường đọc từng vai hiện hành rồi lọc tay theo context —
+   * nguồn đối chiếu độc lập với endpoint ma trận mới.
    */
   async function savedOverridesAt(roleId: string, contextId: string): Promise<{ capability: string; permission: number }[]> {
     const res = await http(app).get(`/api/v1/access/roles/${roleId}/capabilities`).set('Authorization', `Bearer ${admin}`);
@@ -94,8 +91,7 @@ describe('Access: ma trận quyền mọi vai theo context và ngữ nghĩa Kế
     expect(rolesRes.status).toBe(200);
     expect((res.body.roles as MatrixRole[]).length).toBe((rolesRes.body as unknown[]).length);
 
-    // Hai vai mẫu: tập ghi đè trong ma trận khớp đúng đường đọc từng
-    // vai lọc tay theo context, và khớp giá trị đã đặt.
+    // Hai vai mẫu: tập ghi đè trong ma trận khớp đúng đường đọc từng vai lọc tay theo context, và khớp giá trị đã đặt.
     expect((await matrixRole(systemId, roleOne)).overrides).toEqual(await savedOverridesAt(roleOne, systemId));
     expect((await matrixRole(systemId, roleTwo)).overrides).toEqual(await savedOverridesAt(roleTwo, systemId));
     expect((await matrixRole(systemId, roleOne)).overrides).toEqual([
@@ -113,16 +109,14 @@ describe('Access: ma trận quyền mọi vai theo context và ngữ nghĩa Kế
     const otherContextId = (await createContextViaApi(app, admin, 40, uuidv7(), systemId)).id;
     await setOverride(app, admin, roleId, cap, otherContextId, 1);
 
-    // Tại context hệ thống: vai vẫn xuất hiện nhưng tập ghi đè rỗng —
-    // ghi đè duy nhất của vai nằm ở context khác.
+    // Tại context hệ thống: vai vẫn xuất hiện nhưng tập ghi đè rỗng — ghi đè duy nhất của vai nằm ở context khác.
     expect((await matrixRole(systemId, roleId)).overrides).toEqual([]);
     // Tại đúng context kia: ghi đè xuất hiện nguyên vẹn.
     expect((await matrixRole(otherContextId, roleId)).overrides).toEqual([
       { capability: cap, permission: 1 },
     ]);
 
-    // Số người giữ đếm PHÂN BIỆT: hai người giữ vai, trong đó một
-    // người giữ ở cả hai context — đếm vẫn là 2.
+    // Số người giữ đếm PHÂN BIỆT: hai người giữ vai, trong đó một người giữ ở cả hai context — đếm vẫn là 2.
     const userA = await createUserViaApi(app, admin);
     const userB = await createUserViaApi(app, admin);
     await assignRole(app, admin, userA.id, roleId, systemId);
@@ -139,8 +133,7 @@ describe('Access: ma trận quyền mọi vai theo context và ngữ nghĩa Kế
     expect(denied.body.code).toBe('access.capability_denied');
     expect(denied.headers['content-type']).toContain('application/problem+json');
 
-    // Context đúng khuôn UUID nhưng không tồn tại: cùng hành vi 404
-    // của các đường đọc hiện hành trong module.
+    // Context đúng khuôn UUID nhưng không tồn tại: cùng hành vi 404 của các đường đọc hiện hành trong module.
     const missing = await matrix(uuidv7());
     expect(missing.status).toBe(404);
     expect(missing.body.code).toBe('access.context_not_found');
@@ -155,8 +148,8 @@ describe('Access: ma trận quyền mọi vai theo context và ngữ nghĩa Kế
     const cap = catalog[0].name;
     const roleId = await createRoleViaApi(app, admin);
 
-    // Đặt Cho phép rồi đặt lại Kế thừa qua chính endpoint đặt một ô:
-    // ô trở về kế thừa là dòng ghi đè bị xoá, không phải một dòng 0.
+    // Đặt Cho phép rồi đặt lại Kế thừa qua chính endpoint đặt một ô: ô trở về kế thừa là dòng ghi đè bị xoá, không phải
+    // một dòng 0.
     await setOverride(app, admin, roleId, cap, systemId, 1);
     expect((await matrixRole(systemId, roleId)).overrides).toEqual([
       { capability: cap, permission: 1 },
@@ -169,8 +162,7 @@ describe('Access: ma trận quyền mọi vai theo context và ngữ nghĩa Kế
       [roleId, systemId, cap]);
     expect(Number(afterInherit.rows[0].n)).toBe(0);
 
-    // Ô chưa từng có ghi đè: đặt Kế thừa vẫn thành công (helper ném
-    // lỗi nếu HTTP khác 2xx) và không sinh dòng nào.
+    // Ô chưa từng có ghi đè: đặt Kế thừa vẫn thành công (helper ném lỗi nếu HTTP khác 2xx) và không sinh dòng nào.
     const freshRoleId = await createRoleViaApi(app, admin);
     await setOverride(app, admin, freshRoleId, cap, systemId, 0);
     expect((await matrixRole(systemId, freshRoleId)).overrides).toEqual([]);

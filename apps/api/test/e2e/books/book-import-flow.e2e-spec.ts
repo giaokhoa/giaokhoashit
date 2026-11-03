@@ -8,17 +8,13 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * K0b (issue #67) — nạp dữ liệu SGK "Kết nối tri thức với cuộc sống"
- * (Toán 1) vào cây sách + ánh xạ sang chương trình GDPT 2018.
- * Oracle: file dataset đã kiểm chứng nguyên văn với mục lục in trong
- * cuốn SGK Toán 1 (Tập 1 + Tập 2) và mục lục Sách giáo viên Toán 1 của
- * NXB Giáo dục Việt Nam (nguồn khai ở Bước 0 trên issue #67) — bản sao
- * vendor tại `src/modules/books/book-data/`. Spec đối chiếu
- * TỪNG bản ghi qua API cây sách: đúng chủ đề/tựa bài/thứ tự, ánh xạ
- * đúng mã bản ghi chương trình, và YCCĐ của bài đúng bằng hợp YCCĐ của
- * các node chương trình được ánh xạ (đọc từ cây chương trình, truy vết
- * qua source_ref chứa mã bản ghi). Kèm khẳng định phủ định của issue:
- * không node SGK nào lọt vào cây chương trình chuẩn.
+ * K0b (issue #67) — nạp dữ liệu SGK "Kết nối tri thức với cuộc sống" (Toán 1) vào cây sách + ánh xạ sang chương trình
+ * GDPT 2018. Oracle: file dataset đã kiểm chứng nguyên văn với mục lục in trong cuốn SGK Toán 1 (Tập 1 + Tập 2) và mục
+ * lục Sách giáo viên Toán 1 của NXB Giáo dục Việt Nam (nguồn khai ở Bước 0 trên issue #67) — bản sao vendor tại
+ * `src/modules/books/book-data/`. Spec đối chiếu TỪNG bản ghi qua API cây sách: đúng chủ đề/tựa bài/thứ tự, ánh xạ đúng
+ * mã bản ghi chương trình, và YCCĐ của bài đúng bằng hợp YCCĐ của các node chương trình được ánh xạ (đọc từ cây chương
+ * trình, truy vết qua source_ref chứa mã bản ghi). Kèm khẳng định phủ định của issue: không node SGK nào lọt vào cây
+ * chương trình chuẩn.
  */
 
 interface BookRecord {
@@ -48,13 +44,11 @@ const programFile = JSON.parse(
 ) as { records: ProgramRecord[] };
 
 /**
- * Text của một YCCĐ dạng doc — ORACLE trích độc lập trong spec (không
- * dùng code nạp, giữ tính độc lập của oracle): mỗi paragraph là một
- * dòng, listItem cho dòng của paragraph của nó rồi tới các dòng của
- * bulletList lồng bên trong (đệ quy); các dòng nối bằng '\n', cắt
- * khoảng trắng hai đầu — đúng semantics text canonical mà hệ lưu vào
- * `learning_outcomes.content` nay là cột jsonb lưu trực tiếp tài liệu
- * này; text canonical trích từ tài liệu bằng đúng semantics này.
+ * Text của một YCCĐ dạng doc — ORACLE trích độc lập trong spec (không dùng code nạp, giữ tính độc lập của oracle): mỗi
+ * paragraph là một dòng, listItem cho dòng của paragraph của nó rồi tới các dòng của bulletList lồng bên trong (đệ
+ * quy); các dòng nối bằng '\n', cắt khoảng trắng hai đầu — đúng semantics text canonical mà hệ lưu vào
+ * `learning_outcomes.content` nay là cột jsonb lưu trực tiếp tài liệu này; text canonical trích từ tài liệu bằng đúng
+ * semantics này.
  */
 function docOutcomeText(doc: OutcomeDoc): string {
   const lines: string[] = [];
@@ -69,7 +63,6 @@ function docOutcomeText(doc: OutcomeDoc): string {
   return lines.join('\n').trim();
 }
 
-/** Các dòng YCCĐ kỳ vọng của một bản ghi (phần tử dạng doc trích text bằng docOutcomeText). */
 function outcomeTexts(r: ProgramRecord): string[] {
   if (r.outcomes.length > 0) {
     return r.outcomes.map((o) => (typeof o === 'string' ? o : docOutcomeText(o)));
@@ -166,11 +159,9 @@ describe('K0b book import (verified Toán 1 TOC → book tree + programme mappin
   });
 
   it('từ chối nhập khi thiếu dataset chương trình, rồi nhập sau khi có', async () => {
-    // Thứ tự spec trong cùng DB không bảo đảm: nếu dataset chương trình
-    // chưa từng được nạp ở DB này, lượt nạp SGK phải lỗi cứng
-    // book_mapping_unresolved và KHÔNG ghi dở; nếu đã nạp rồi thì
-    // lượt nạp SGK chạy thẳng. Cả hai đường đều phải kết thúc ở trạng
-    // thái đã nạp xong chương trình rồi mới nạp SGK thành công.
+    // Thứ tự spec trong cùng DB không bảo đảm: nếu dataset chương trình chưa từng được nạp ở DB này, lượt nạp SGK phải
+    // lỗi cứng book_mapping_unresolved và KHÔNG ghi dở; nếu đã nạp rồi thì lượt nạp SGK chạy thẳng. Cả hai đường đều
+    // phải kết thúc ở trạng thái đã nạp xong chương trình rồi mới nạp SGK thành công.
     const probe = await http(app).get('/api/v1/curriculum/program-import').set(bearer(admin));
     const toanRow = (probe.body as { datasetKey: string; importedRecords: number }[]).find((r) => r.datasetKey === 'toan');
     if ((toanRow?.importedRecords ?? 0) === 0) {

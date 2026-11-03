@@ -8,13 +8,10 @@ import { addExamSlot, createExamDraft, pinExam } from '../../support/exam-pin-he
 import { createGradeItem, setGrade } from '../../support/assessment-helpers';
 
 /**
- * PH-1 — Bề mặt phụ huynh chỉ-xem (issue #130, Đợt 6): 4 khối rút gọn
- * (research phụ huynh/HS mục 4.3) + kết quả đã công bố theo môn, trên nền
- * PH-0 (cổng công bố + liên kết giám hộ + audit) và DASH1 (hàm kết quả
- * mới đã công bố dùng chung). Nguyên tắc cứng mục 5.1: chỉ-xem, chỉ con
- * mình (đoán ID → 404 đồng nhất), chỉ dữ liệu ĐÃ CÔNG BỐ (chưa công bố
- * vắng tuyệt đối cả trong JSON thô), không xếp hạng/so sánh, không hiện
- * 0 thay cho chưa chấm.
+ * PH-1 — Bề mặt phụ huynh chỉ-xem (issue #130, Đợt 6): 4 khối rút gọn (research phụ huynh/HS mục 4.3) + kết quả đã công
+ * bố theo môn, trên nền PH-0 (cổng công bố + liên kết giám hộ + audit) và DASH1 (hàm kết quả mới đã công bố dùng
+ * chung). Nguyên tắc cứng mục 5.1: chỉ-xem, chỉ con mình (đoán ID → 404 đồng nhất), chỉ dữ liệu ĐÃ CÔNG BỐ (chưa công
+ * bố vắng tuyệt đối cả trong JSON thô), không xếp hạng/so sánh, không hiện 0 thay cho chưa chấm.
  */
 describe('PH-1: bề mặt phụ huynh chỉ-xem (issue #130)', () => {
   let app: INestApplication;
@@ -140,7 +137,7 @@ describe('PH-1: bề mặt phụ huynh chỉ-xem (issue #130)', () => {
     const { user: guardian, token: guardianToken } = await freshGuardian();
     await link(teacher, guardian.id, student.id);
 
-    // --- Khối (a): ba việc với hạn/quá hạn khác nhau; kỳ vọng tính động theo biên tuần.
+    // Khối (a): ba việc với hạn/quá hạn khác nhau; kỳ vọng tính động theo biên tuần.
     const now = new Date();
     const { start, end } = weekBounds(now);
     const inWeek = (d: Date) => d >= start && d <= end;
@@ -166,8 +163,8 @@ describe('PH-1: bề mặt phụ huynh chỉ-xem (issue #130)', () => {
       overdue: fixtures.filter((f) => statusOf(f) === 'overdue').length,
     };
 
-    // --- Khối (c): gieo thẳng notifications — 1 thông báo lớp của khoá này,
-    // 1 thông báo ĐIỂM của khoá này (phải bị loại), 1 thông báo của khoá khác.
+    // Khối (c): gieo thẳng notifications — 1 thông báo lớp của khoá này, 1 thông báo ĐIỂM của khoá này (phải bị
+    // loại), 1 thông báo của khoá khác.
     const seedNotif = async (subject: string, eventType: string, contextUrl: string | null) => {
       await pg.query(
         `insert into notifications (user_id_from, user_id_to, subject, full_message, small_message, component, event_type, context_url, context_url_name, created_at, time_read)
@@ -180,14 +177,14 @@ describe('PH-1: bề mặt phụ huynh chỉ-xem (issue #130)', () => {
     const other = await courseWithPeople();
     await seedNotif('Thông báo khoá khác', 'announcement', `/courses/${other.course.id}`);
 
-    // --- Khối (d): bật theo dõi hoàn thành cho đúng module quiz + ghi nhận con đã hoàn thành.
+    // Khối (d): bật theo dõi hoàn thành cho đúng module quiz + ghi nhận con đã hoàn thành.
     await pg.query('update course_modules set completion = case when id = $1 then 1 else 0 end where course = $2', [quiz.cmId, course.id]);
     await pg.query(
       'insert into course_modules_completion (course_module_id, user_id, completion_state) values ($1, $2, 1)',
       [quiz.cmId, student.id],
     );
 
-    // --- Khối (b): item manual chấm TRƯỚC lần xem đầu — lần đầu không dội "mới".
+    // Khối (b): item manual chấm TRƯỚC lần xem đầu — lần đầu không dội "mới".
     const manualItem = await createGradeItem(app, admin, course.id, { itemName: 'Điểm manual PH1', gradeMax: 10 });
     await setGrade(app, admin, manualItem.id, student.id, 6, 'Bí mật chưa công bố');
     const policy = await http(app).put(`/api/v1/grade-items/${manualItem.id}/posting-policy`)
@@ -212,8 +209,8 @@ describe('PH-1: bề mặt phụ huynh chỉ-xem (issue #130)', () => {
       }
     }
 
-    // Khối thông báo: chỉ thông báo lớp của khoá này; thông báo điểm bị
-    // loại tuyệt đối (kể cả chuỗi chủ đề trong JSON thô).
+    // Khối thông báo: chỉ thông báo lớp của khoá này; thông báo điểm bị loại tuyệt đối (kể cả chuỗi chủ đề trong JSON
+    // thô).
     expect(firstBody.announcements.map((a) => a.subject)).toContain('Thông báo lớp PH1');
     expect(JSON.stringify(firstBody)).not.toContain('Điểm mới PH1');
     expect(JSON.stringify(firstBody)).not.toContain('Thông báo khoá khác');
@@ -344,10 +341,9 @@ describe('PH-1: bề mặt phụ huynh chỉ-xem (issue #130)', () => {
     expect((myStudents.body as { student: { id: string } }[]).map((x) => x.student.id).sort())
       .toEqual([a.student.id, b.student.id].sort());
 
-    // Xem con A lần đầu (tạo mốc), chấm thêm điểm mới → bề mặt con A thấy
-    // điểm mới đó. (Khối "mới" dùng chung cơ chế DASH1: điểm cũ cùng khoá
-    // có thể mọc lại khi trọng số tổng hợp đổi — khiếm khuyết đã ghi nhận
-    // trên issue #130 để xử lý ở engine điểm, không khoá cứng tại đây.)
+    // Xem con A lần đầu (tạo mốc), chấm thêm điểm mới → bề mặt con A thấy điểm mới đó. (Khối "mới" dùng chung cơ chế
+    // DASH1: điểm cũ cùng khoá có thể mọc lại khi trọng số tổng hợp đổi — khiếm khuyết đã ghi nhận trên issue #130 để
+    // xử lý ở engine điểm, không khoá cứng tại đây.)
     expect((await overview(guardianToken, a.student.id)).status).toBe(200);
     const itemA2 = await createGradeItem(app, admin, a.course.id, { itemName: 'Điểm mới của con A', gradeMax: 10 });
     await setGrade(app, admin, itemA2.id, a.student.id, 9);

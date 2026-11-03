@@ -5,22 +5,14 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Chặn lạm dụng đường gửi tin (lát M2, issue #212; chính sách P2 đã
- * chốt ở issue #33):
- *   (1) trần độ dài một tin đọc qua site-config
- *       `core/messagingmaxmessagelength` (mặc định 10.000) — đếm theo
- *       ký tự người dùng thấy (grapheme), vượt trần → 400
- *       `messaging.message_too_long`;
- *   (2) throttle gửi theo từng người dùng bằng Redis — cửa sổ bùng
- *       phát (`messagingsendburstlimit` tin /
- *       `messagingsendburstwindowseconds` giây) + cửa sổ duy trì
- *       (`messagingsendperminutelimit` tin/phút), mọi mức qua
- *       site-config; vượt → 429 `messaging.rate_limited`, hết cửa sổ
- *       thì gửi lại được.
- * Mỗi ca dùng một CẶP người dùng mới (kết bạn + hội thoại 1–1 riêng)
- * nên bộ đếm throttle theo userId không rò giữa các ca; mọi ghi đè
- * site-config đều được xoá trong finally/afterAll để không rò sang
- * spec khác (suite chạy tuần tự theo file nhưng dùng chung DB/Redis).
+ * Chặn lạm dụng đường gửi tin (lát M2, issue #212; chính sách P2 đã chốt ở issue #33): (1) trần độ dài một tin đọc qua
+ * site-config `core/messagingmaxmessagelength` (mặc định 10.000) — đếm theo ký tự người dùng thấy (grapheme), vượt trần
+ * → 400 `messaging.message_too_long`; (2) throttle gửi theo từng người dùng bằng Redis — cửa sổ bùng phát
+ * (`messagingsendburstlimit` tin / `messagingsendburstwindowseconds` giây) + cửa sổ duy trì
+ * (`messagingsendperminutelimit` tin/phút), mọi mức qua site-config; vượt → 429 `messaging.rate_limited`, hết cửa sổ
+ * thì gửi lại được. Mỗi ca dùng một CẶP người dùng mới (kết bạn + hội thoại 1–1 riêng) nên bộ đếm throttle theo userId
+ * không rò giữa các ca; mọi ghi đè site-config đều được xoá trong finally/afterAll để không rò sang spec khác (suite
+ * chạy tuần tự theo file nhưng dùng chung DB/Redis).
  */
 
 interface Person { id: string; username: string; token: string }
@@ -142,8 +134,7 @@ describe('Messaging — trần độ dài + throttle gửi tin (M2, issue #212)'
       const limited = await send(a.token, conversationId, 'tin thứ tư trong cửa sổ');
       expect(limited.status).toBe(429);
       expect(limited.body.code).toBe('messaging.rate_limited');
-      // Người còn lại trong cùng hội thoại KHÔNG bị dính throttle của
-      // người gửi (bộ đếm theo từng người dùng).
+      // Người còn lại trong cùng hội thoại KHÔNG bị dính throttle của người gửi (bộ đếm theo từng người dùng).
       const other = await send(b.token, conversationId, 'tin của người còn lại');
       expect(other.status).toBe(201);
       // Hết cửa sổ 2 giây → gửi lại được.
@@ -180,8 +171,8 @@ describe('Messaging — trần độ dài + throttle gửi tin (M2, issue #212)'
       const { a, conversationId } = await pair();
       const first = await send(a.token, conversationId, 'tin gửi lạc quan', 'm2-retry-1');
       expect(first.status).toBe(201);
-      // Trần burst = 1 đã cạn, nhưng lượt THỬ LẠI cùng khoá phải trả
-      // chính tin đã lưu (điểm trả trùng nằm trước cổng throttle).
+      // Trần burst = 1 đã cạn, nhưng lượt THỬ LẠI cùng khoá phải trả chính tin đã lưu (điểm trả trùng nằm trước cổng
+      // throttle).
       const retry = await send(a.token, conversationId, 'tin gửi lạc quan', 'm2-retry-1');
       expect(retry.status).toBe(201);
       expect(retry.body.id).toBe(first.body.id);

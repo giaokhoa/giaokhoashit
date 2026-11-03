@@ -8,9 +8,8 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
 import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWORD } from '../../support/identity-access-helpers';
 
 /**
- * Kiểm chứng nền tảng khóa chính UUIDv7.
- * Nguồn: báo cáo nghiên cứu nội bộ postgresql-18-uuidv7 §4.6 — đây là test
- * kiểm chứng nền tảng, KHÔNG phải oracle Moodle.
+ * Kiểm chứng nền tảng khóa chính UUIDv7. Nguồn: báo cáo nghiên cứu nội bộ postgresql-18-uuidv7 §4.6 — đây là test kiểm
+ * chứng nền tảng, KHÔNG phải oracle Moodle.
  */
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const CONN = process.env.DATABASE_URL;
@@ -36,8 +35,8 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
     );
     expect(cat.rows[0].v).toBe(7);
     const course = await pg.query(
-      // is_template=true: hàng khoá trần chỉ để kiểm PK — từ CLASS-0
-      // (PR #200) khoá dạy thật không lớp bị CHECK course_class_required_check chặn.
+      // is_template=true: hàng khoá trần chỉ để kiểm PK — từ CLASS-0 (PR #200) khoá dạy thật không lớp bị CHECK
+      // course_class_required_check chặn.
       `insert into course (category, tenant_id, full_name, short_name, is_template) values ($1, (select tenant_id from course_categories where id = $1), $2, $3, true) returning id, uuid_extract_version(id) as v`,
       [cat.rows[0].id, `${run} course`, `${run}c`],
     );
@@ -204,11 +203,9 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
     expect(sqlText.match(/DEFAULT uuidv7\(\)/g)?.length).toBe(187);
     // Chỉ hai cột seq phụ được dùng identity; không PK nghiệp vụ nào dùng sequence/identity.
     expect(sqlText.match(/GENERATED ALWAYS AS IDENTITY/g)?.length).toBe(2);
-    // Sequence DUY NHẤT được phép trong baseline: payment_code_seq —
-    // sequence sinh mã thanh toán VietQR (lát 1, issue #189, nghiên cứu
-    // §2.4/§6.3: mã sinh một lần, không bao giờ tái sử dụng), KHÔNG phải
-    // sequence của khoá chính. Sequence nào khác xuất hiện là hồi quy
-    // định danh, không phải ngoại lệ mới.
+    // Sequence DUY NHẤT được phép trong baseline: payment_code_seq — sequence sinh mã thanh toán VietQR (lát 1, issue
+    // #189, nghiên cứu §2.4/§6.3: mã sinh một lần, không bao giờ tái sử dụng), KHÔNG phải sequence của khoá chính.
+    // Sequence nào khác xuất hiện là hồi quy định danh, không phải ngoại lệ mới.
     const sequenceNames = [...sqlText.matchAll(/CREATE SEQUENCE "[^"]+"\."([^"]+)"/g)].map((m) => m[1]);
     expect(sequenceNames).toEqual(['payment_code_seq']);
   });
@@ -257,13 +254,12 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
     for (const row of defaults.rows) {
       if (TEXT_ID_ALLOWLIST.includes(row.table_name)) {
         if (row.table_name === 'oauth_client') {
-          // id TEXT là khoá NỘI BỘ do PostgreSQL sinh
-          // (gen_random_uuid()) — instance chạy generateId:false nên
-          // adapter chèn DEFAULT cho cột này (đính chính).
+          // id TEXT là khoá NỘI BỘ do PostgreSQL sinh (gen_random_uuid()) — instance chạy generateId:false nên adapter
+          // chèn DEFAULT cho cột này (đính chính).
           expect(row.column_default, `table ${row.table_name}`).toBe('gen_random_uuid()');
         } else {
-          // oauth_client_assertion: id TEXT không default — giá trị
-          // xác định do provider cấp (băm (jti, client_id)), DB không sinh.
+          // oauth_client_assertion: id TEXT không default — giá trị xác định do provider cấp (băm (jti, client_id)), DB
+          // không sinh.
           expect(row.column_default, `table ${row.table_name}`).toBeNull();
         }
         continue;
@@ -273,8 +269,8 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
     expect(
       defaults.rows.filter((row) => TEXT_ID_ALLOWLIST.includes(row.table_name)).map((row) => row.table_name).sort(),
     ).toEqual([...TEXT_ID_ALLOWLIST].sort());
-    // Bảng nối thuần túy: không cột id — PK phức hợp từ hai FK,
-    // trừ hai bảng mà PK đồng thời là FK duy nhất thì giữ PK một cột.
+    // Bảng nối thuần túy: không cột id — PK phức hợp từ hai FK, trừ hai bảng mà PK đồng thời là FK duy nhất thì giữ PK
+    // một cột.
     const joinTables: Record<string, number> = {
       cohort_members: 2,
       groupings_groups: 2,
@@ -410,8 +406,8 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
       const last: PageRow = r.rows[r.rows.length - 1]!;
       cursor = { t: last.created_at, id: last.id };
       if (pages === 2) {
-        // Chèn giữa chừng với timestamp muộn hơn mọi dòng gốc: không được làm
-        // trùng/sót các dòng gốc (dòng mới có thể xuất hiện ở trang sau).
+        // Chèn giữa chừng với timestamp muộn hơn mọi dòng gốc: không được làm trùng/sót các dòng gốc (dòng mới có thể
+        // xuất hiện ở trang sau).
         for (let i = 0; i < 3; i += 1) {
           await pg.query(
             `insert into event_log (event_type, created_at, payload) values ($1, $2, '{}'::jsonb)`,
@@ -445,8 +441,8 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
     const course = await createCourse(app, admin, cat.id);
     await pg.query('begin');
     try {
-      // Tắt seqscan trong transaction kiểm chứng để khẳng định index dùng được
-      // cho predicate FK (bảng kiểm chứng nhỏ nên planner mặc định chọn seqscan).
+      // Tắt seqscan trong transaction kiểm chứng để khẳng định index dùng được cho predicate FK (bảng kiểm chứng nhỏ
+      // nên planner mặc định chọn seqscan).
       await pg.query('set local enable_seqscan = off');
       const plan = await pg.query(`explain (format json) select * from course where category = $1`, [course.category]);
       const planText = JSON.stringify(plan.rows[0]['QUERY PLAN']);
@@ -497,9 +493,8 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
   });
 
   it('(8b) id người dùng tuân cùng hợp đồng — và id người dùng sai định dạng là 400, không bao giờ là 500 từ guard năng lực', async () => {
-    // CapabilityGuard chạy trước pipe validate và tra context theo :id thô:
-    // id không phải UUID từng làm guard ném lỗi DB (500). Regression test
-    // cho hành vi đúng của hợp đồng: 400 ở biên validate.
+    // CapabilityGuard chạy trước pipe validate và tra context theo :id thô: id không phải UUID từng làm guard ném lỗi
+    // DB (500). Regression test cho hành vi đúng của hợp đồng: 400 ở biên validate.
     const created = await createUserViaApi(app, admin);
     expect(created.id).toMatch(UUID_RE);
 

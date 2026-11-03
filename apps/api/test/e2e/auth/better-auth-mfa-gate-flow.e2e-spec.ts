@@ -35,10 +35,9 @@ import type { MailMessage } from '../../../src/modules/mail/mail.types';
  * - (e) Hồi quy: người chưa bật MFA đăng nhập như cũ ở mọi đường;
  *   người bị đình chỉ vẫn bị guard chặn trên route nghiệp vụ.
  *
- * Biến môi trường phải tồn tại TRƯỚC khi AppModule được nạp nên các
- * import của AppModule đều là import động bên trong beforeAll — như
- * các spec Better Auth khác. Provider Google được giả lập ở biên HTTP
- * bằng cách thay `globalThis.fetch` (JWKS/token) như spec social.
+ * Biến môi trường phải tồn tại TRƯỚC khi AppModule được nạp nên các import của AppModule đều là import động bên trong
+ * beforeAll — như các spec Better Auth khác. Provider Google được giả lập ở biên HTTP bằng cách thay `globalThis.fetch`
+ * (JWKS/token) như spec social.
  */
 process.env.BETTER_AUTH_ENABLED = 'true';
 const BA_SECRET = 'mfa-gate-e2e-secret-mfa-gate-e2e-secret-42';
@@ -78,7 +77,6 @@ async function createMountedTestApp(): Promise<INestApplication> {
   return app;
 }
 
-/** Cặp cookie theo tên từ header set-cookie của một đáp ứng (null khi cookie vắng hoặc bị xoá rỗng). */
 function cookiePairFrom(setCookie: string[] | undefined, name: string): string | null {
   const raw = (setCookie ?? []).find((value) => value.startsWith(`${name}=`));
   if (!raw) return null;
@@ -87,9 +85,8 @@ function cookiePairFrom(setCookie: string[] | undefined, name: string): string |
 }
 
 /**
- * Đáp ứng có mang cookie phiên SỐNG nào không — kiểm mọi entry,
- * không phụ thuộc thứ tự: entry xoá cookie của cổng (tên + giá trị
- * rỗng) không tính là phiên sống.
+ * Đáp ứng có mang cookie phiên SỐNG nào không — kiểm mọi entry, không phụ thuộc thứ tự: entry xoá cookie của cổng (tên
+ * + giá trị rỗng) không tính là phiên sống.
  */
 function hasLiveSessionCookie(setCookie: string[] | undefined): boolean {
   return (setCookie ?? [])
@@ -177,12 +174,9 @@ describe('Cổng MFA thống nhất của Better Auth (user_totp là nguồn duy
   }
 
   /**
-   * Chờ tới khi có mail gửi cho địa chỉ này: nội dung mail được dựng
-   * từ dòng outbox `auth_mail_requested` của chính địa chỉ đó bằng
-   * `renderAuthMail` dùng chung ở `@lms/contracts` — hàm mà
-   * processor ở phía worker gọi khi gửi thật (khâu gửi đã chuyển
-   * sang hàng đợi ở worker, issue #517; dòng outbox được ghi đồng bộ
-   * trong request nên thường có ngay).
+   * Chờ tới khi có mail gửi cho địa chỉ này: nội dung mail được dựng từ dòng outbox `auth_mail_requested` của chính địa
+   * chỉ đó bằng `renderAuthMail` dùng chung ở `@lms/contracts` — hàm mà processor ở phía worker gọi khi gửi thật (khâu
+   * gửi đã chuyển sang hàng đợi ở worker, issue #517; dòng outbox được ghi đồng bộ trong request nên thường có ngay).
    */
   async function waitForMailTo(email: string, timeoutMs = 9000): Promise<MailMessage> {
     const deadline = Date.now() + timeoutMs;
@@ -280,8 +274,7 @@ describe('Cổng MFA thống nhất của Better Auth (user_totp là nguồn duy
     const sessionProbe = await http(app).get('/api/v1/auth/get-session').set('Cookie', twoFactorCookie!);
     expect(sessionProbe.body ?? null).toBeNull();
 
-    // Kho của plugin twoFactor KHÔNG tham gia: không bản ghi
-    // two_factor nào được tạo — bước hoàn tất kiểm mã thẳng vào
+    // Kho của plugin twoFactor KHÔNG tham gia: không bản ghi two_factor nào được tạo — bước hoàn tất kiểm mã thẳng vào
     // `user_totp` (nguồn duy nhất), không có hình chiếu nào để lệch.
     const record = await pg.query<{ n: number }>(
       'select count(*)::int as n from two_factor where user_id = $1',
@@ -396,9 +389,8 @@ describe('Cổng MFA thống nhất của Better Auth (user_totp là nguồn duy
   it('(c) social callback: tài khoản đã liên kết + có MFA bị gác ở callback; qua TOTP mới có phiên', async () => {
     const user = await createUser('mfagatesocial');
     const secret = await enableMfa(user.id, user.username);
-    // sub duy nhất mỗi lượt chạy: sub cố định sẽ khớp vào account đã
-    // liên kết của một lượt chạy trước trên cùng DB test (callback
-    // khớp theo account trước khi khớp theo email).
+    // sub duy nhất mỗi lượt chạy: sub cố định sẽ khớp vào account đã liên kết của một lượt chạy trước trên cùng DB test
+    // (callback khớp theo account trước khi khớp theo email).
     currentGoogleIdToken = mintGoogleIdToken({ sub: `mfagate-${helpers.uniqueName('gsub')}`, email: user.email });
 
     const start = await http(app)

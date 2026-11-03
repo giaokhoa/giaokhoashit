@@ -8,11 +8,9 @@ import { addExamSlot, createExamDraft, pinExam } from '../../support/exam-pin-he
 /**
  * Cổng công bố điểm cho điểm TỔNG của bài kiểm tra (issue #411).
  *
- * Quy tắc nghiệp vụ: học viên chỉ thấy điểm ĐÃ CÔNG BỐ. Điểm từng câu
- * vốn đã được gác bằng mặt nạ xem lại (reviewMarks theo cửa sổ), nhưng
- * điểm tổng (grade/sumGrades trong tóm tắt lượt và myGrade ở trang bài
- * kiểm tra) từng bị trả thẳng vô điều kiện ở mọi đường đọc phía chủ
- * lượt. Spec này khoá cả HAI điều kiện độc lập của cổng che điểm tổng:
+ * Quy tắc nghiệp vụ: học viên chỉ thấy điểm ĐÃ CÔNG BỐ. Điểm từng câu vốn đã được gác bằng mặt nạ xem lại (reviewMarks
+ * theo cửa sổ), nhưng điểm tổng (grade/sumGrades trong tóm tắt lượt và myGrade ở trang bài kiểm tra) từng bị trả thẳng
+ * vô điều kiện ở mọi đường đọc phía chủ lượt. Spec này khoá cả HAI điều kiện độc lập của cổng che điểm tổng:
  *
  *  - (a) mặt nạ điểm ĐÓNG + hạng mục điểm đã công bố (chính sách auto)
  *    → phía học viên vẫn null: điều kiện mặt nạ một mình đã đủ che.
@@ -27,9 +25,8 @@ import { addExamSlot, createExamDraft, pinExam } from '../../support/exam-pin-he
  *    chưa công bố vẫn thấy đủ số thật ở view lượt, danh sách lượt và
  *    trang kết quả lớp — cổng che chỉ áp phía chủ lượt.
  *
- * Mặt nạ mở trong spec này = reviewMarks 4368 (đủ bốn cửa sổ xem lại)
- * và reviewAttempt 4368 để nội dung lượt luôn xem được; các lượt đều
- * được đọc ngay sau khi nộp, tức trong cửa sổ "ngay sau nộp".
+ * Mặt nạ mở trong spec này = reviewMarks 4368 (đủ bốn cửa sổ xem lại) và reviewAttempt 4368 để nội dung lượt luôn xem
+ * được; các lượt đều được đọc ngay sau khi nộp, tức trong cửa sổ "ngay sau nộp".
  */
 describe('Cổng công bố điểm cho điểm tổng của quiz (#411)', () => {
   let app: INestApplication;
@@ -172,8 +169,8 @@ describe('Cổng công bố điểm cho điểm tổng của quiz (#411)', () =>
   }
 
   /**
-   * Đọc cả ba bề mặt phía học viên của một lượt và khẳng định điểm
-   * tổng ở tất cả đều bằng giá trị kỳ vọng (số thật hoặc null).
+   * Đọc cả ba bề mặt phía học viên của một lượt và khẳng định điểm tổng ở tất cả đều bằng giá trị kỳ vọng (số thật hoặc
+   * null).
    */
   async function expectStudentTotals(ctx: Ctx, pinId: string, attemptId: string, expected: { sumGrades: number | null; grade: number | null; myGrade: number | null }): Promise<void> {
     const view = await http(app).get(`/api/v1/quiz-attempts/${attemptId}`).set('Authorization', `Bearer ${ctx.student}`);
@@ -216,8 +213,8 @@ describe('Cổng công bố điểm cho điểm tổng của quiz (#411)', () =>
     expect(submitBody.attempt.grade).toBeNull();
     await expectStudentTotals(ctx, pinId, attemptId, { sumGrades: null, grade: null, myGrade: null });
 
-    // Cùng dữ kiện, chỉ đổi trạng thái công bố → số thật hiện ra:
-    // chứng tỏ chính điều kiện công bố là thứ đang gác ở nửa trên.
+    // Cùng dữ kiện, chỉ đổi trạng thái công bố → số thật hiện ra: chứng tỏ chính điều kiện công bố là thứ đang gác ở
+    // nửa trên.
     await publishItem(cmId);
     await expectStudentTotals(ctx, pinId, attemptId, { sumGrades: 1, grade: 10, myGrade: 10 });
   });
@@ -238,8 +235,8 @@ describe('Cổng công bố điểm cho điểm tổng của quiz (#411)', () =>
     await setManualPolicy(cmId);
     const { attemptId, submitBody } = await playMixed(ctx, pinId);
 
-    // Tổng bán phần thật của lượt là 1 (câu trắc nghiệm đúng, tự luận
-    // chưa chấm) — phía học viên không được thấy cả ở view vừa nộp.
+    // Tổng bán phần thật của lượt là 1 (câu trắc nghiệm đúng, tự luận chưa chấm) — phía học viên không được thấy cả ở
+    // view vừa nộp.
     expect(submitBody.attempt.sumGrades).toBeNull();
     expect(submitBody.attempt.grade).toBeNull();
     await expectStudentTotals(ctx, pinId, attemptId, { sumGrades: null, grade: null, myGrade: null });

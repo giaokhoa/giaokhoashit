@@ -5,28 +5,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DeprecatedRouteAliasInterceptor } from './deprecated-route-alias.interceptor';
 
 /**
- * Kiểm chứng interceptor alias dùng chung — triển khai duy nhất của
- * khuôn alias đường-cũ — trên cả bốn bề mặt nó phục vụ: (1) hành
- * động đổi tên theo danh sách hành động đóng (issue #345) và path
- * làm phẳng (issue #346); (2) các path cũ của module điểm (issue
- * #342); (3) bề mặt alias `exam-papers` của cụm đề (issue #343);
- * (4) các path alias cũ của cụm messaging/notifications (issue
- * #344). Trên mọi bề mặt: lượt gọi qua path cũ phải được gắn header
- * Deprecation/Sunset và sinh đúng một bản ghi log có cấu trúc
- * `deprecated_route_alias` trỏ từ alias sang canonical; lượt gọi qua
- * path canonical không bị gắn header và không sinh log alias. Đây
- * là lưới cho điều kiện gỡ alias (dựa trên log alias) nên cặp
- * alias/canonical trong log phải khớp đúng bảng đích của từng bề
- * mặt, và thứ tự khớp (cụ thể trước tổng quát) phải phân loại đúng
- * các ca dễ bị mẫu tổng quát nuốt như `dossiers/mine`,
- * `:id/dossiers` hay `bulk-remove`.
+ * Kiểm chứng interceptor alias dùng chung — triển khai duy nhất của khuôn alias đường-cũ — trên cả bốn bề mặt nó phục
+ * vụ: (1) hành động đổi tên theo danh sách hành động đóng (issue #345) và path làm phẳng (issue #346); (2) các path cũ
+ * của module điểm (issue #342); (3) bề mặt alias `exam-papers` của cụm đề (issue #343); (4) các path alias cũ của cụm
+ * messaging/notifications (issue #344). Trên mọi bề mặt: lượt gọi qua path cũ phải được gắn header Deprecation/Sunset
+ * và sinh đúng một bản ghi log có cấu trúc `deprecated_route_alias` trỏ từ alias sang canonical; lượt gọi qua path
+ * canonical không bị gắn header và không sinh log alias. Đây là lưới cho điều kiện gỡ alias (dựa trên log alias) nên
+ * cặp alias/canonical trong log phải khớp đúng bảng đích của từng bề mặt, và thứ tự khớp (cụ thể trước tổng quát) phải
+ * phân loại đúng các ca dễ bị mẫu tổng quát nuốt như `dossiers/mine`, `:id/dossiers` hay `bulk-remove`.
  */
 describe('Khối DeprecatedRouteAliasInterceptor', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  /** Dựng ngữ cảnh HTTP giả: request mang url/method cho trước, response ghi lại các header được gắn. */
   function buildContext(url: string, method = 'GET') {
     const headers = new Map<string, string>();
     const context = {
@@ -59,7 +51,6 @@ describe('Khối DeprecatedRouteAliasInterceptor', () => {
     expect(logged.path).toBe(url);
   }
 
-  /** Chạy interceptor trên một URL canonical và khẳng định không gắn header, không sinh log alias. */
   async function assertCanonicalUntouched(url: string, method = 'POST') {
     const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
     const interceptor = new DeprecatedRouteAliasInterceptor();

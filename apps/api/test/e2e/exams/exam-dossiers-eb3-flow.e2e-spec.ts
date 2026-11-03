@@ -101,7 +101,6 @@ describe('EB-3 duyệt hồ sơ + đặc tả đề + bảo mật đề định 
     member = await mkStaffUser();
     member2 = await mkStaffUser();
 
-    // --- ma trận + kho câu (khuôn EB-2) -------------------------------------
     const contexts = await http(app).get('/api/v1/access/contexts').set(bearer(admin));
     const systemCtx = (contexts.body as { id: string; contextLevel: number }[]).find((c) => c.contextLevel === 10)!;
     const subjRes = await http(app).post('/api/v1/curriculum/subjects').set(bearer(admin))
@@ -205,11 +204,9 @@ describe('EB-3 duyệt hồ sơ + đặc tả đề + bảo mật đề định 
   }
 
   /**
-   * Gieo một bộ hồ sơ LỊCH SỬ trực tiếp vào DB — đúng hình thái dữ
-   * liệu còn lại sau khi đường hồ sơ đóng (hồ sơ được lập/nộp/duyệt
-   * ở thời đường còn mở). Bản đặc tả chụp lấy từ endpoint đặc tả
-   * trực tiếp của chính đề (cùng view model mà đường nộp hồ sơ từng
-   * chụp tại lúc nộp).
+   * Gieo một bộ hồ sơ LỊCH SỬ trực tiếp vào DB — đúng hình thái dữ liệu còn lại sau khi đường hồ sơ đóng (hồ sơ được
+   * lập/nộp/duyệt ở thời đường còn mở). Bản đặc tả chụp lấy từ endpoint đặc tả trực tiếp của chính đề (cùng view model
+   * mà đường nộp hồ sơ từng chụp tại lúc nộp).
    */
   async function insertHistoricalDossier(args: {
     paper: PaperBody; targetBankId: string; proposerId: string; status: string;
@@ -245,11 +242,9 @@ describe('EB-3 duyệt hồ sơ + đặc tả đề + bảo mật đề định 
     const paper = await mkMemberPaper();
     const dossierId = await insertHistoricalDossier({ paper, targetBankId: teamBank.id, proposerId: member.id, status: 'pending' });
 
-    // Hàng chờ TRƯỚC: bề mặt này qua cổng bank (đồng bộ tư cách thành
-    // viên bank của người gọi) — tổ trưởng thấy bộ; thành viên khác
-    // của tổ chỉ thấy bộ của mình (không có bộ này) và mở trực tiếp
-    // bị 404. Đặt trước chi tiết vì cổng xem chi tiết đọc tư cách đã
-    // được đồng bộ, đúng thứ tự thao tác thật của người duyệt.
+    // Hàng chờ TRƯỚC: bề mặt này qua cổng bank (đồng bộ tư cách thành viên bank của người gọi) — tổ trưởng thấy bộ;
+    // thành viên khác của tổ chỉ thấy bộ của mình (không có bộ này) và mở trực tiếp bị 404. Đặt trước chi tiết vì cổng
+    // xem chi tiết đọc tư cách đã được đồng bộ, đúng thứ tự thao tác thật của người duyệt.
     const queue = await http(app).get(`/api/v1/exams/banks/${teamBank.id}/dossiers`).set(bearer(leader.token));
     expect(queue.status).toBe(200);
     expect((queue.body as DossierBody[]).map((d) => d.id)).toContain(dossierId);
@@ -333,8 +328,7 @@ describe('EB-3 duyệt hồ sơ + đặc tả đề + bảo mật đề định 
     const paper = await mkMemberPaper();
     const dossierId = await insertHistoricalDossier({ paper, targetBankId: teamBank.id, proposerId: member.id, status: 'pending' });
 
-    // Chạm bề mặt hàng chờ trước để tư cách bank của tổ trưởng được
-    // đồng bộ (như TC1) rồi mới đọc chi tiết.
+    // Chạm bề mặt hàng chờ trước để tư cách bank của tổ trưởng được đồng bộ (như TC1) rồi mới đọc chi tiết.
     const queue = await http(app).get(`/api/v1/exams/banks/${teamBank.id}/dossiers`).set(bearer(leader.token));
     expect((queue.body as DossierBody[]).map((d) => d.id)).toContain(dossierId);
     const off = await http(app).get(`/api/v1/exams/dossiers/${dossierId}`).set(bearer(leader.token));
@@ -444,8 +438,8 @@ describe('EB-3 duyệt hồ sơ + đặc tả đề + bảo mật đề định 
       return staff;
     })();
 
-    // Luồng vào bank thật: người dùng mở bank trước (bước này đồng bộ
-    // tư cách thành viên bank trường cho staff) rồi mới mở đề.
+    // Luồng vào bank thật: người dùng mở bank trước (bước này đồng bộ tư cách thành viên bank trường cho staff) rồi mới
+    // mở đề.
     for (const viewer of [teacher10, teacher11, plainStaff]) {
       const list = await http(app).get(`/api/v1/exams/banks/${schoolBank.id}/exams`).set(bearer(viewer.token));
       expect(list.status).toBe(200);

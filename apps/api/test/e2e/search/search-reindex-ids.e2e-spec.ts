@@ -8,23 +8,17 @@ import { createCategory, createCourse } from '../../support/course-enrolment-hel
 import { courseContextId } from '../../support/engagement-helpers';
 
 /**
- * Dựng lại chỉ mục tìm kiếm qua HTTP — phần bề mặt endpoint của
- * spec integration `test/integration/search/search-reindex-ids.int-spec.ts`
- * (issue #483).
+ * Dựng lại chỉ mục tìm kiếm qua HTTP — phần bề mặt endpoint của spec integration
+ * `test/integration/search/search-reindex-ids.int-spec.ts` (issue #483).
  *
- * Endpoint `POST /api/v1/search/reindex` được gác bằng capability
- * `search:manage` ở chế độ bảo trì: vai không có quyền bị chặn, admin
- * gọi được và nhận `{ indexed }` — số tài liệu khâu dựng lại vừa nạp.
- * Bộ đếm này phải dịch đúng theo điều kiện hợp lệ của từng area:
- * thêm một nội dung contentbank `public` thì tăng đúng 1; thêm một
- * nội dung `draft` thì không đổi; đình chỉ một user đang hoạt động
- * thì giảm đúng 1.
+ * Endpoint `POST /api/v1/search/reindex` được gác bằng capability `search:manage` ở chế độ bảo trì: vai không có quyền
+ * bị chặn, admin gọi được và nhận `{ indexed }` — số tài liệu khâu dựng lại vừa nạp. Bộ đếm này phải dịch đúng theo
+ * điều kiện hợp lệ của từng area: thêm một nội dung contentbank `public` thì tăng đúng 1; thêm một nội dung `draft` thì
+ * không đổi; đình chỉ một user đang hoạt động thì giảm đúng 1.
  *
- * Các khẳng định theo từng id trong kho tài liệu (tập id đủ điều
- * kiện của từng area, `countDocs` so với số dòng thật của bảng
- * `search_documents`) không có bề mặt HTTP — route tìm kiếm không
- * phơi bày tập tài liệu của chỉ mục — nên nằm ở spec integration
- * đi kèm, nơi act gọi thẳng `SearchService.reindexAll()`.
+ * Các khẳng định theo từng id trong kho tài liệu (tập id đủ điều kiện của từng area, `countDocs` so với số dòng thật
+ * của bảng `search_documents`) không có bề mặt HTTP — route tìm kiếm không phơi bày tập tài liệu của chỉ mục — nên nằm
+ * ở spec integration đi kèm, nơi act gọi thẳng `SearchService.reindexAll()`.
  */
 describe('Search reindex — dựng lại toàn bộ chỉ mục qua HTTP', () => {
   let app: INestApplication;
@@ -41,9 +35,8 @@ describe('Search reindex — dựng lại toàn bộ chỉ mục qua HTTP', () =
   }
 
   it('dựng lại qua HTTP: bộ đếm indexed chỉ tính nội dung đủ điều kiện và dịch đúng khi điều kiện thay đổi', async () => {
-    // Fixture: một user đang hoạt động (sẽ bị đình chỉ ở bước cuối),
-    // một khoá học, một giáo viên và hai nội dung contentbank —
-    // một public, một draft — làm mốc cho bộ đếm.
+    // Fixture: một user đang hoạt động (sẽ bị đình chỉ ở bước cuối), một khoá học, một giáo viên và hai nội dung
+    // contentbank — một public, một draft — làm mốc cho bộ đếm.
     const activeUser = await createUserViaApi(app, admin);
     const cat = await createCategory(app, admin);
     const course = await createCourse(app, admin, cat.id);
@@ -88,8 +81,7 @@ describe('Search reindex — dựng lại toàn bộ chỉ mục qua HTTP', () =
     expect(third.status).toBe(201);
     expect(third.body.indexed).toBe(base + 1);
 
-    // Đình chỉ user đang hoạt động: user rời tập đủ điều kiện của
-    // area users, bộ đếm giảm đúng 1.
+    // Đình chỉ user đang hoạt động: user rời tập đủ điều kiện của area users, bộ đếm giảm đúng 1.
     const suspend = await http(app).post(`/api/v1/users/${activeUser.id}/suspend`).set('Authorization', `Bearer ${admin}`).send({});
     expect(suspend.status).toBeLessThan(300);
     const fourth = await reindex(admin);

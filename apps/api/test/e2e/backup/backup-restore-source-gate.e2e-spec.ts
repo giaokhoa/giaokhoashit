@@ -8,13 +8,10 @@ import { createCategory, createCourse } from '../../support/course-enrolment-hel
 import { courseContextId } from '../../support/engagement-helpers';
 
 /**
- * Cổng đọc tại khoá NGUỒN cho đường restore backup: restore là đường
- * chép toàn bộ dữ kiện của khoá nguồn (ngân hàng câu hỏi kèm đáp án và
- * lời giải, điểm, ghi danh, tệp) sang khoá khác, nên người gọi phải qua
- * cùng cổng đọc job như các đường đọc (`backup:backupcourse` hoặc
- * `backup:restorecourse` tại context của khoá thuộc job) TRƯỚC mọi xử
- * lý archive và trước mọi kiểm tra phía đích. Biết ID của job không
- * đồng nghĩa có quyền trên dữ kiện của job.
+ * Cổng đọc tại khoá NGUỒN cho đường restore backup: restore là đường chép toàn bộ dữ kiện của khoá nguồn (ngân hàng câu
+ * hỏi kèm đáp án và lời giải, điểm, ghi danh, tệp) sang khoá khác, nên người gọi phải qua cùng cổng đọc job như các
+ * đường đọc (`backup:backupcourse` hoặc `backup:restorecourse` tại context của khoá thuộc job) TRƯỚC mọi xử lý archive
+ * và trước mọi kiểm tra phía đích. Biết ID của job không đồng nghĩa có quyền trên dữ kiện của job.
  *
  * Kịch bản: giáo viên có `backup:restorecourse` tại khoá ĐÍCH của mình
  * (quyền mặc định của editingteacher tại context khoá) nhưng không có
@@ -64,9 +61,8 @@ describe('Cổng đọc nguồn khôi phục sao lưu', () => {
     admin = await adminToken(app);
     const suffix = `${Date.now()}`;
 
-    // Khoá NGUỒN thuộc danh mục riêng, có ngân hàng câu hỏi trong
-    // context của khoá (1 danh mục + 1 câu đúng/sai kèm lời giải qua
-    // solution) để archive chứa dữ kiện nhạy cảm thật.
+    // Khoá NGUỒN thuộc danh mục riêng, có ngân hàng câu hỏi trong context của khoá (1 danh mục + 1 câu đúng/sai kèm lời
+    // giải qua solution) để archive chứa dữ kiện nhạy cảm thật.
     const sourceCat = await createCategory(app, admin, { name: `Source cat ${suffix}` });
     const source = await createCourse(app, admin, sourceCat.id);
     sourceCourseId = source.id;
@@ -86,9 +82,8 @@ describe('Cổng đọc nguồn khôi phục sao lưu', () => {
     expect(backup.body.status).toBe('completed');
     backupJobId = backup.body.id as string;
 
-    // Khoá ĐÍCH thuộc danh mục khác; actor là editingteacher tại khoá
-    // đích (có sẵn backup:restorecourse tại context khoá đích theo
-    // archetype) và không có quyền gì ở phía nguồn.
+    // Khoá ĐÍCH thuộc danh mục khác; actor là editingteacher tại khoá đích (có sẵn backup:restorecourse tại context
+    // khoá đích theo archetype) và không có quyền gì ở phía nguồn.
     const targetCat = await createCategory(app, admin, { name: `Target cat ${suffix}` });
     const target = await createCourse(app, admin, targetCat.id);
     targetCourseId = target.id;
@@ -134,9 +129,8 @@ describe('Cổng đọc nguồn khôi phục sao lưu', () => {
       .set('Authorization', `Bearer ${actor}`)
       .send({ backupJobId, mode: 'new' });
     expect(denied.status).toBe(403);
-    // Mã lỗi phải là của cổng NGUỒN: trước khi vá, lời gọi này bị chặn
-    // ở kiểm tra capability tại context danh mục của khoá nguồn với mã
-    // access.capability_denied (hoặc chạy qua nếu có quyền danh mục).
+    // Mã lỗi phải là của cổng NGUỒN: trước khi vá, lời gọi này bị chặn ở kiểm tra capability tại context danh mục của
+    // khoá nguồn với mã access.capability_denied (hoặc chạy qua nếu có quyền danh mục).
     expect(denied.body.code).toBe('backup.job_forbidden');
   });
 
@@ -152,8 +146,7 @@ describe('Cổng đọc nguồn khôi phục sao lưu', () => {
     expect(restore.body.status).toBe('completed');
     expect(restore.body.targetCourseId).toBe(targetCourseId);
 
-    // Dữ kiện nguồn đã sang đích: danh mục câu hỏi kèm câu hỏi của
-    // khoá nguồn xuất hiện trong context của khoá đích.
+    // Dữ kiện nguồn đã sang đích: danh mục câu hỏi kèm câu hỏi của khoá nguồn xuất hiện trong context của khoá đích.
     const cats = await http(app).get('/api/v1/questions/categories')
       .query({ contextId: targetCtxId }).set('Authorization', `Bearer ${admin}`);
     expect((cats.body as { id: string }[]).length).toBeGreaterThanOrEqual(1);

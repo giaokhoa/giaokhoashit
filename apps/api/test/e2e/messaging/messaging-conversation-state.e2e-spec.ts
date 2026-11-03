@@ -217,9 +217,8 @@ describe('Messaging M5 — ghim / lưu trữ / tắt tiếng theo hội thoại 
     // Huy hiệu chỉ tính hội thoại KHÔNG tắt tiếng (convD).
     expect(await unreadConversationCount(a.token)).toBe(1);
 
-    // Trong danh sách, convB hiện cờ muted nhưng số chưa đọc bằng 0
-    // theo vũ trụ chuẩn duy nhất (issue #592) — tin vẫn tới, mốc đã
-    // đọc không đổi, chỉ số đếm là 0 cho tới khi bật lại tiếng.
+    // Trong danh sách, convB hiện cờ muted nhưng số chưa đọc bằng 0 theo vũ trụ chuẩn duy nhất (issue #592) — tin vẫn
+    // tới, mốc đã đọc không đổi, chỉ số đếm là 0 cho tới khi bật lại tiếng.
     const list = await listConversations(a.token);
     expect(list.find((c) => c.id === convB)).toMatchObject({ muted: true, unread: 0 });
     expect(list.find((c) => c.id === convD)).toMatchObject({ muted: false, unread: 1 });
@@ -230,12 +229,10 @@ describe('Messaging M5 — ghim / lưu trữ / tắt tiếng theo hội thoại 
   });
 
   it('tắt tiếng: tin vẫn tới và đọc được bình thường trong hội thoại đã tắt tiếng', async () => {
-    // Phần cổng thông báo của ca này (thành viên đã tắt tiếng không
-    // nhận message_new, bỏ tắt tiếng thì thông báo trở lại) đã chuyển
-    // cùng consumer sang tầng integration của worker (issue con #520
-    // của #491). Ở tầng API chỉ còn khẳng định phần hành vi của chính
-    // API: tắt tiếng không chặn đường tin — tin gửi vào hội thoại đã
-    // tắt tiếng vẫn được lưu và đọc lại đầy đủ.
+    // Phần cổng thông báo của ca này (thành viên đã tắt tiếng không nhận message_new, bỏ tắt tiếng thì thông báo trở
+    // lại) đã chuyển cùng consumer sang tầng integration của worker (issue con #520 của #491). Ở tầng API chỉ còn khẳng
+    // định phần hành vi của chính API: tắt tiếng không chặn đường tin — tin gửi vào hội thoại đã tắt tiếng vẫn được lưu
+    // và đọc lại đầy đủ.
     await setState(a.token, convD, { muted: true });
     await send(d.token, convD, 'tin khi đang tắt tiếng 1');
     await send(d.token, convD, 'tin khi đang tắt tiếng 2');

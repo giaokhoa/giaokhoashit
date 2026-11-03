@@ -20,10 +20,8 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
  *    mục (của người khác → 404 không lộ tồn tại); clear-read chỉ dọn
  *    mục đã đọc.
  *
- * Dữ liệu được gieo thẳng vào bảng notifications qua pg để kiểm soát
- * tất định thời điểm tạo (khoá ngày) — đường phát thông báo thật từ
- * sự kiện nghiệp vụ đã được spec của N1 (notifications-providers-flow)
- * kiểm chứng riêng.
+ * Dữ liệu được gieo thẳng vào bảng notifications qua pg để kiểm soát tất định thời điểm tạo (khoá ngày) — đường phát
+ * thông báo thật từ sự kiện nghiệp vụ đã được spec của N1 (notifications-providers-flow) kiểm chứng riêng.
  */
 describe('Trung tâm thông báo v2 (N2, issue #51)', () => {
   let app: INestApplication;
@@ -36,10 +34,8 @@ describe('Trung tâm thông báo v2 (N2, issue #51)', () => {
     admin = await adminToken(app);
     pg = new Client({ connectionString: process.env.DATABASE_URL });
     await pg.connect();
-    // TENANT-1 (#196): thông báo gieo thẳng phải mang tenant của người
-    // nhận (user tạo qua API thuộc tenant platform) — dòng không gắn
-    // tenant chỉ hiển thị ở ngữ cảnh platform tường minh, không thuộc
-    // phiên tenant của user.
+    // TENANT-1 (#196): thông báo gieo thẳng phải mang tenant của người nhận (user tạo qua API thuộc tenant platform) —
+    // dòng không gắn tenant chỉ hiển thị ở ngữ cảnh platform tường minh, không thuộc phiên tenant của user.
     const t = await pg.query<{ id: string }>(`select id from tenants where kind = 'platform'`);
     platformTenantId = t.rows[0]!.id;
   });

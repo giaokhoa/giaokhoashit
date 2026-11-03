@@ -9,11 +9,9 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Đặc trưng hoá DL-07 (issue #489): đường đọc danh sách user lắp
- * profile view cho từng user — hình dạng view, thứ tự theo phân trang
- * của repository, luật lộ email theo từng người xem và giá trị trường
- * tuỳ chỉnh phải giữ nguyên khi chuyển sang loader theo lô. Mọi khẳng
- * định ở đây chạy trên hành vi HIỆN TẠI và phải vẫn đạt sau refactor.
+ * Đặc trưng hoá DL-07 (issue #489): đường đọc danh sách user lắp profile view cho từng user — hình dạng view, thứ tự
+ * theo phân trang của repository, luật lộ email theo từng người xem và giá trị trường tuỳ chỉnh phải giữ nguyên khi
+ * chuyển sang loader theo lô. Mọi khẳng định ở đây chạy trên hành vi HIỆN TẠI và phải vẫn đạt sau refactor.
  */
 describe('Users: đặc trưng hoá danh sách hồ sơ người dùng (DL-07, issue #489)', () => {
   let app: INestApplication;
@@ -23,9 +21,8 @@ describe('Users: đặc trưng hoá danh sách hồ sơ người dùng (DL-07, i
   const created: { id: string; username: string; email: string }[] = [];
   let fieldShortName: string;
   let viewerId: string;
-  // Tiền tố username duy nhất của lượt chạy này: DB test dùng chung
-  // giữa các suite nên danh sách user toàn cục rất dài — spec chỉ
-  // đọc trang chứa đúng các user của mình qua bộ lọc search.
+  // Tiền tố username duy nhất của lượt chạy này: DB test dùng chung giữa các suite nên danh sách user toàn cục rất dài
+  // — spec chỉ đọc trang chứa đúng các user của mình qua bộ lọc search.
   const usernamePrefix = uniqueName('dl07user');
 
   beforeAll(async () => {
@@ -50,11 +47,9 @@ describe('Users: đặc trưng hoá danh sách hồ sơ người dùng (DL-07, i
     await customFields.createField(category.id, {
       shortName: fieldShortName, name: 'Trường đặc trưng DL-07', type: 'text',
     });
-    // DB test dùng chung giữa các suite: khu vực hồ sơ có thể đã có
-    // field bắt buộc do suite khác tạo (vd field department, khai
-    // required trong configData) — khi ghi giá trị phải cấp đủ mọi
-    // field bắt buộc hiện có với giá trị hợp lệ theo type của field,
-    // nếu không setValuesForInstance chặn cả lượt ghi.
+    // DB test dùng chung giữa các suite: khu vực hồ sơ có thể đã có field bắt buộc do suite khác tạo (vd field
+    // department, khai required trong configData) — khi ghi giá trị phải cấp đủ mọi field bắt buộc hiện có với giá trị
+    // hợp lệ theo type của field, nếu không setValuesForInstance chặn cả lượt ghi.
     const allFields = await customFields.listFields(USER_COMPONENT, USER_AREA);
     const requiredFill: Record<string, string> = {};
     for (const f of allFields) {

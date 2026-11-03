@@ -110,8 +110,8 @@ async function createMountedMcpApp(mountDeps?: (app: INestApplication) => McpMou
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication();
   enableTrustedProxy(app as NestExpressApplication);
-  // Mount MCP trước init — đúng thứ tự như main.ts (trước prefix/route của Nest);
-  // deps mặc định lấy qua facade McpDepsService của McpModule (issue #138).
+  // Mount MCP trước init — đúng thứ tự như main.ts (trước prefix/route của Nest); deps mặc định lấy qua facade
+  // McpDepsService của McpModule (issue #138).
   mountMcp(app as NestExpressApplication, mountDeps ? mountDeps(app) : app.get(McpDepsService).createMountDeps());
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
@@ -175,10 +175,8 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
     teacherB = await mkStaffUser();
     student = await mkUser();
     const banksRes = await callTool(app, teacherA.token, 'list_my_banks', {});
-    // list_my_banks dùng đúng listBanks của REST: sau issue #123 bank
-    // personal của giáo viên khác không còn xuất hiện trong danh sách;
-    // bank GHI của MCP là bank personal CỦA CHÍNH chủ token (lọc theo
-    // ownerId như trước).
+    // list_my_banks dùng đúng listBanks của REST: sau issue #123 bank personal của giáo viên khác không còn xuất hiện
+    // trong danh sách; bank GHI của MCP là bank personal CỦA CHÍNH chủ token (lọc theo ownerId như trước).
     const personal = (banksRes.structured?.banks as any[]).find((b) => b.scope === 'personal' && b.kind === 'question' && b.ownerId === teacherA.id);
     bankA = personal.id as string;
     catA = personal.defaultCategoryId as string;
@@ -200,12 +198,9 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
   });
 
   it('tools/list ở cả hai kỷ nguyên: đúng danh mục tool hiện hành (5 của MCP-0 + 6 của MCP-1)', async () => {
-    // Danh mục tool là MỘT sổ đăng ký dùng chung cho cả hai kỷ
-    // nguyên (gác theo scope ở từng lần gọi, không gác theo kỷ
-    // nguyên): MCP-1 (issue #163) thêm create_questions_batch,
-    // create_stimulus_with_questions, publish_questions,
-    // search_questions, check_duplicates, search_curriculum_outcomes
-    // vào cùng danh mục 5 tool của MCP-0.
+    // Danh mục tool là MỘT sổ đăng ký dùng chung cho cả hai kỷ nguyên (gác theo scope ở từng lần gọi, không gác theo kỷ
+    // nguyên): MCP-1 (issue #163) thêm create_questions_batch, create_stimulus_with_questions, publish_questions,
+    // search_questions, check_duplicates, search_curriculum_outcomes vào cùng danh mục 5 tool của MCP-0.
     const EXPECTED_TOOLS = [
       'check_duplicates', 'create_question', 'create_questions_batch',
       'create_stimulus_with_questions', 'get_question', 'list_categories',
@@ -340,8 +335,8 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
   }
 
   it('truefalse chùm TF-A qua dạng answers chuẩn: map Đúng/Sai đủ 4 mệnh đề chấm đúng (và ngược lại)', async () => {
-    // TF-A (lát P5): thân câu + 4 mệnh đề, mỗi mệnh đề kèm giá trị
-    // Đúng/Sai; tool MCP dựng statementList id s1..s4 theo thứ tự gửi.
+    // TF-A (lát P5): thân câu + 4 mệnh đề, mỗi mệnh đề kèm giá trị Đúng/Sai; tool MCP dựng statementList id s1..s4 theo
+    // thứ tự gửi.
     const res = await callTool(app, teacherA.token, 'create_question', {
       bankId: bankA, categoryId: catA, qtype: 'truefalse',
       questionText: 'Xét các mệnh đề về Mặt Trời.',
@@ -405,8 +400,8 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
     });
     const draftQ = draftRes.structured!.questionId as string;
 
-    // Soạn slot đề với câu còn draft: bị chặn ở cổng resolve (chưa có
-    // version ready nào để ghim) — mã cổng của họ Đề sau gộp (#226).
+    // Soạn slot đề với câu còn draft: bị chặn ở cổng resolve (chưa có version ready nào để ghim) — mã cổng của họ Đề
+    // sau gộp (#226).
     draft0.slots.push({ questionId: draftQ });
     const denied = await http(app).put(`/api/v1/exams/${draft0.examId}/slots`).set(bearer(teacherA.token)).send({ slots: draft0.slots });
     expect(denied.status).toBe(400);
@@ -433,10 +428,9 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
     expect(draftRes.isError).toBe(false);
     expect(await questions.listUsableQuestionIdsInCategory(poolCat)).toEqual([]);
 
-    // Mô hình gộp Đề: slot của đề luôn là câu CỤ THỂ đã ghim version —
-    // không còn slot ngẫu nhiên theo category ở bề mặt soạn đề (rút
-    // ngẫu nhiên chỉ qua sinh đề từ ma trận, xem quiz-matrix-flow).
-    // Gửi slot chỉ có categoryId → schema chặn 400.
+    // Mô hình gộp Đề: slot của đề luôn là câu CỤ THỂ đã ghim version — không còn slot ngẫu nhiên theo category ở bề mặt
+    // soạn đề (rút ngẫu nhiên chỉ qua sinh đề từ ma trận, xem quiz-matrix-flow). Gửi slot chỉ có categoryId → schema
+    // chặn 400.
     const draft0 = await createExamDraft(app, teacherA.token, uniqueName('mcpExamCat'));
     const slot = await http(app).put(`/api/v1/exams/${draft0.examId}/slots`).set(bearer(teacherA.token))
       .send({ slots: [{ categoryId: poolCat, maxMark: 2 }] });
@@ -444,8 +438,8 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
   });
 
   it('cổng draft 4: startAttempt follow_latest không lùi về version của câu draft', async () => {
-    // Câu ready tạo qua REST, dựng usage, rồi hạ về draft: attempt bắt
-    // đầu sau đó phải báo thiếu version thay vì phục vụ bản draft.
+    // Câu ready tạo qua REST, dựng usage, rồi hạ về draft: attempt bắt đầu sau đó phải báo thiếu version thay vì phục
+    // vụ bản draft.
     const systemCtx = await systemContextId(app, admin);
     const catRes = await http(app).post('/api/v1/questions/categories').set(bearer(admin))
       .send({ name: uniqueName('mcpGateCat'), contextId: systemCtx });
@@ -549,8 +543,8 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
 
   it('idempotency: phát lại trả kết quả cũ; cùng key khác payload → conflict; trùng exact → verdict, không nhân đôi', async () => {
     const key = uniqueName('key');
-    // Thân câu duy nhất theo lượt chạy (đếm theo thân câu nên phải
-    // phân biệt được với dữ liệu của lượt chạy trước trên cùng DB).
+    // Thân câu duy nhất theo lượt chạy (đếm theo thân câu nên phải phân biệt được với dữ liệu của lượt chạy trước trên
+    // cùng DB).
     const idemText = `Câu kiểm idempotency ${uniqueName('mcpIdem')}.`;
     const payload = {
       bankId: bankA, categoryId: catA, qtype: 'multichoice',
@@ -600,8 +594,8 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
   });
 
   it('#316: chống trùng TF-A qua MCP gồm giá trị Đ/S từng mệnh đề — khác Đ/S thì tạo mới, giống hệt thì duplicate_exact', async () => {
-    // Thân câu + mệnh đề duy nhất theo lượt chạy (chống trùng đếm theo
-    // nội dung nên phải phân biệt được với dữ liệu của lượt chạy trước).
+    // Thân câu + mệnh đề duy nhất theo lượt chạy (chống trùng đếm theo nội dung nên phải phân biệt được với dữ liệu của
+    // lượt chạy trước).
     const stem = `Nhận định MCP ${uniqueName('tf316')}`;
     const tfPayload = (values: boolean[]) => ({
       bankId: bankA, categoryId: catA, qtype: 'truefalse',
@@ -621,10 +615,9 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
     expect(identical.structured!.status).toBe('duplicate_exact');
     expect(identical.structured!.existingQuestionId).toBe(firstId);
 
-    // Cùng chữ, khác Đ/S ở ý 4 → KHÔNG trùng hoàn toàn: tạo câu mới
-    // (chỉ gần trùng theo thân câu), và hash của payload phải khớp
-    // hash của version đã lưu — chứng minh bằng lần tạo thứ hai y hệt
-    // bản khác-Đ/S cũng bị bắt trùng hoàn toàn với chính nó.
+    // Cùng chữ, khác Đ/S ở ý 4 → KHÔNG trùng hoàn toàn: tạo câu mới (chỉ gần trùng theo thân câu), và hash của payload
+    // phải khớp hash của version đã lưu — chứng minh bằng lần tạo thứ hai y hệt bản khác-Đ/S cũng bị bắt trùng hoàn
+    // toàn với chính nó.
     const flipped = await callTool(app, teacherA.token, 'create_question', tfPayload([true, true, true, false]));
     expect(flipped.isError, flipped.text).toBe(false);
     expect(flipped.structured!.status).toBe('created');
@@ -675,10 +668,8 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
     expect(JSON.stringify(mine.structured)).not.toContain('source_kind');
     expect(JSON.stringify(mine.structured)).not.toContain('source_ref');
 
-    // Cổng đọc là assertQuestionReadable của REST dùng chung: từ issue
-    // #123, câu thuộc bank personal của người khác → not found ở MỌI
-    // bề mặt (REST và MCP parity — MCP không tự thêm luật riêng);
-    // học viên cũng not found như trước.
+    // Cổng đọc là assertQuestionReadable của REST dùng chung: từ issue #123, câu thuộc bank personal của người khác →
+    // not found ở MỌI bề mặt (REST và MCP parity — MCP không tự thêm luật riêng); học viên cũng not found như trước.
     const foreignTeacher = await callTool(app, teacherB.token, 'get_question', { questionId: draftMcId });
     expect(foreignTeacher.isError).toBe(true);
     expect(foreignTeacher.structured!.error.code).toBe('question.not_found');
@@ -946,8 +937,7 @@ describe('MCP rate limit (app riêng, hạn tạo = 2/giờ)', () => {
 
   beforeAll(async () => {
     app2 = await createMountedMcpApp((a) => {
-      // Deps chuẩn từ facade của McpModule, chỉ ghi đè rate limiter
-      // bằng hạn chặt cho ca kiểm giới hạn (issue #138).
+      // Deps chuẩn từ facade của McpModule, chỉ ghi đè rate limiter bằng hạn chặt cho ca kiểm giới hạn (issue #138).
       const base = a.get(McpDepsService).createMountDeps();
       return {
         ...base,
@@ -982,8 +972,8 @@ describe('MCP submit_contribution thiếu scope (app riêng, trần không có l
 
   beforeAll(async () => {
     app3 = await createMountedMcpApp((a) => {
-      // Deps chuẩn từ facade của McpModule (issue #138), chỉ thu hẹp
-      // trần scope để kiểm cổng insufficient_scope của submit_contribution.
+      // Deps chuẩn từ facade của McpModule (issue #138), chỉ thu hẹp trần scope để kiểm cổng insufficient_scope của
+      // submit_contribution.
       const deps = a.get(McpDepsService).createMountDeps();
       return { ...deps, grantedScopes: ['lms.questions.read', 'lms.questions.draft'] };
     });

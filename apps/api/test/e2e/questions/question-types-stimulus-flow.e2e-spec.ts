@@ -56,8 +56,8 @@ describe('Dạng câu hỏi và ngữ liệu', () => {
   }
 
 
-  // Payload câu TF-A: thân là `stem`, 4 mệnh đề mang cùng giá trị
-  // `allValue`; response đúng toàn phần là JSON map cả 4 ý theo giá trị đó.
+  // Payload câu TF-A: thân là `stem`, 4 mệnh đề mang cùng giá trị `allValue`; response đúng toàn phần là JSON map cả 4
+  // ý theo giá trị đó.
   const tfBody = (stem: string, allValue: boolean, stimulusId?: string) => ({
     qtype: 'truefalse',
     questionText: {
@@ -86,12 +86,10 @@ describe('Dạng câu hỏi và ngữ liệu', () => {
 
   /** Chạy trọn một lượt làm cho một câu: usage 1 slot → start → submit → finish; trả attempt đã chốt. */
   async function runAttempt(questionId: string, response: string | null, maxMark?: number): Promise<Record<string, never>> {
-    // Mẫu dựng sau khi #60 (chủ sở hữu) + #55 (cổng tạo usage qua HTTP
-    // đòi question:useall) cùng có mặt: usage của lượt làm do hoạt động
-    // tạo ở tầng service với actor là chính học sinh — chủ sở hữu là học
-    // sinh nên start/submit/finish qua route thô bình thường; tạo qua
-    // HTTP bằng tài khoản học sinh bị cổng #55 chặn 404 (đúng chủ đích:
-    // usage thô qua HTTP là đường đọc đáp án, chỉ đội ngân hàng dùng).
+    // Mẫu dựng sau khi #60 (chủ sở hữu) + #55 (cổng tạo usage qua HTTP đòi question:useall) cùng có mặt: usage của lượt
+    // làm do hoạt động tạo ở tầng service với actor là chính học sinh — chủ sở hữu là học sinh nên start/submit/finish
+    // qua route thô bình thường; tạo qua HTTP bằng tài khoản học sinh bị cổng #55 chặn 404 (đúng chủ đích: usage thô
+    // qua HTTP là đường đọc đáp án, chỉ đội ngân hàng dùng).
     const created = await app.get(QuestionsService).createUsage(studentId, {
       component: 'mod_quiz', slots: [{ questionId, ...(maxMark !== undefined ? { maxMark } : {}) }],
     });
@@ -257,9 +255,8 @@ describe('Dạng câu hỏi và ngữ liệu', () => {
       ],
     });
     expect(noneCorrect.status).toBe(400);
-    // Tầng nghiệp vụ cũng giữ đúng luật này cho các đường không qua
-    // HTTP (đây là cổng mà đường nạp nội bộ chạm phải): mã lỗi nghiệp
-    // vụ của service là question.bad_answer_data.
+    // Tầng nghiệp vụ cũng giữ đúng luật này cho các đường không qua HTTP (đây là cổng mà đường nạp nội bộ chạm phải):
+    // mã lỗi nghiệp vụ của service là question.bad_answer_data.
     const me = await http(app).get('/api/v1/users/me').set('Authorization', `Bearer ${admin}`);
     const svc = app.get(QuestionsService);
     await expect(svc.createQuestion(me.body.id as string, {
@@ -282,8 +279,8 @@ describe('Dạng câu hỏi và ngữ liệu', () => {
     expect(q.status).toBeLessThan(300);
     const qid = (q.body as { question: { id: string } }).question.id;
     const byText = new Map((q.body as { answers: { id: string; answer: DocLike }[] }).answers.map((a) => [docText(a.answer), a.id]));
-    // Chọn cả đáp án đúng lẫn đáp án sai trong một response → 0 điểm
-    // (ca này phải đỏ nếu engine quay lại cộng tỉ trọng từng phần).
+    // Chọn cả đáp án đúng lẫn đáp án sai trong một response → 0 điểm (ca này phải đỏ nếu engine quay lại cộng tỉ trọng
+    // từng phần).
     const both = await runAttempt(qid, `${byText.get('Paris')},${byText.get('London')}`);
     expect(both).toMatchObject({ state: 'gradedwrong', fraction: 0 });
     const only = await runAttempt(qid, `${byText.get('Paris')}`);
@@ -307,8 +304,7 @@ describe('Dạng câu hỏi và ngữ liệu', () => {
     expect(exact).toMatchObject({ state: 'gradedright', fraction: 1 });
     // Đáp án đúng hiển thị là đáp án được chấp nhận đầu tiên theo thứ tự lưu.
     expect((exact as unknown as { rightAnswer: string }).rightAnswer).toBe('frog');
-    // Mẫu 'F*og' KHÔNG còn khớp như wildcard: học sinh gõ nguyên văn
-    // 'F*og' hay 'Fat dog' đều không ăn điểm.
+    // Mẫu 'F*og' KHÔNG còn khớp như wildcard: học sinh gõ nguyên văn 'F*og' hay 'Fat dog' đều không ăn điểm.
     const wild = await runAttempt(qid, 'F*og');
     expect(wild).toMatchObject({ state: 'gradedwrong', fraction: 0 });
     const fatDog = await runAttempt(qid, 'Fat dog');
@@ -354,8 +350,8 @@ describe('Dạng câu hỏi và ngữ liệu', () => {
     expect(docText(body.options.graderInfo)).toContain('3 ý chính');
     expect(docText(body.options.responseTemplate)).toContain('Thân bài');
     expect(body.options.minWordLimit).toBe(10);
-    // Guidance + lời giải mẫu nằm ở bản ghi phía đáp án (answerKey),
-    // KHÔNG còn trên dòng version (quyết 12:12 ngày 26/10/2026).
+    // Guidance + lời giải mẫu nằm ở bản ghi phía đáp án (answerKey), KHÔNG còn trên dòng version (quyết 12:12 ngày
+    // 26/10/2026).
     expect(docText(body.answerKey.guidance)).toBe('Đọc kỹ yêu cầu trước khi viết.');
     expect(docText(body.answerKey.solution.answer)).toContain('Ba ý chính');
     expect(body.latestVersion).not.toHaveProperty('guidance');
@@ -398,8 +394,8 @@ describe('Dạng câu hỏi và ngữ liệu', () => {
     });
     expect(q.status).toBeLessThan(300);
     expect(docText((q.body as { latestVersion: { questionText: DocLike } }).latestVersion.questionText)).toBe('Chọn đáp án đúng nhất\nCâu hỏi có hai đoạn.');
-    // Node image ĐÃ thuộc lát hợp đồng (QE-1 + nối files ở QE-2): tài liệu có
-    // ảnh hợp lệ phải được tạo và round-trip nguyên vẹn cả attrs.
+    // Node image ĐÃ thuộc lát hợp đồng (QE-1 + nối files ở QE-2): tài liệu có ảnh hợp lệ phải được tạo và round-trip
+    // nguyên vẹn cả attrs.
     const imageDoc = {
       type: 'doc',
       content: [
@@ -413,8 +409,8 @@ describe('Dạng câu hỏi và ngữ liệu', () => {
     });
     expect(withImage.status).toBeLessThan(300);
     expect((withImage.body as { latestVersion: { questionText: unknown } }).latestVersion.questionText).toEqual(imageDoc);
-    // Node heading vẫn NGOÀI lát hợp đồng hiện tại (richTextDocumentSchema chỉ
-    // gồm paragraph, bulletList, blockMath, image) — hợp đồng tài liệu từ chối.
+    // Node heading vẫn NGOÀI lát hợp đồng hiện tại (richTextDocumentSchema chỉ gồm paragraph, bulletList, blockMath,
+    // image) — hợp đồng tài liệu từ chối.
     const withHeading = await createQuestion({
       categoryId, qtype: 'multichoice', questionText: { type: 'doc', content: [{ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Tiêu đề' }] }] },
       answers: four,

@@ -8,14 +8,11 @@ import {
 /**
  * Issue #123 — siết riêng tư ngân hàng CÁ NHÂN ở tầng QB:
  *
- * Ngân hàng riêng của từng giáo viên là khu vực riêng ("của tôi").
- * Trước lát này, cổng đọc chỉ dựa `question:useall` tại context bank —
- * context bank personal là con của context hệ thống nên GV staff khác
- * kế thừa quyền xuống bank personal của đồng nghiệp: listBanks liệt kê
- * bank personal của GV khác (mọi kind), GET chi tiết bank trả 200, đọc
- * được câu/attribution/ma trận trong bank riêng của đồng nghiệp ở cả
- * REST lẫn MCP (bằng chứng phán quyết MCP-0 6391128869 + EB-1
- * 6391268932).
+ * Ngân hàng riêng của từng giáo viên là khu vực riêng ("của tôi"). Trước lát này, cổng đọc chỉ dựa `question:useall`
+ * tại context bank — context bank personal là con của context hệ thống nên GV staff khác kế thừa quyền xuống bank
+ * personal của đồng nghiệp: listBanks liệt kê bank personal của GV khác (mọi kind), GET chi tiết bank trả 200, đọc được
+ * câu/attribution/ma trận trong bank riêng của đồng nghiệp ở cả REST lẫn MCP (bằng chứng phán quyết MCP-0 6391128869 +
+ * EB-1 6391268932).
  *
  * Ma trận ca của spec này:
  *  - Chủ sở hữu: 200/201 mọi đường (bank, câu, category, attribution,
@@ -181,7 +178,7 @@ describe('Riêng tư cá nhân của ngân hàng (issue #123)', () => {
     teamBank = teamRes.body as BankBody;
     questionTeam = await createQuestion(teacherA.token, teamBank.defaultCategoryId!, 'Câu của tổ', 'Câu hỏi của tổ chuyên môn?');
 
-    // --- Vòng 2: fixtures editingteacher -------------------------------------
+    // Vòng 2: fixtures editingteacher
     editorA = await mkEditorUser();
     editorB = await mkEditorUser();
     bankEA = (await listBanks(editorA.token)).find((b) => b.scope === 'personal')!;
@@ -320,9 +317,8 @@ describe('Riêng tư cá nhân của ngân hàng (issue #123)', () => {
     expect((patch.body as { code?: string }).code).toBe('question.not_found');
     const still = await http(app).get(`/api/v1/questions/${qid}`).set(bearer(editorA.token));
     expect(still.status).toBe(200);
-    // Câu còn nguyên: thân câu vẫn là nội dung gốc, không có dấu vết
-    // của lần PATCH lạ (câu hỏi không còn trường tên — bất biến kiểm
-    // trên chính nội dung thân câu).
+    // Câu còn nguyên: thân câu vẫn là nội dung gốc, không có dấu vết của lần PATCH lạ (câu hỏi không còn trường tên —
+    // bất biến kiểm trên chính nội dung thân câu).
     expect(JSON.stringify(still.body)).toContain('PRIV123-EDITOR-SECRET');
     expect(JSON.stringify(still.body)).not.toContain('PRIV123-HACKED-TEXT');
     expect((still.body as { entry: { latestVersion: number } }).entry.latestVersion).toBe(1);

@@ -3,13 +3,10 @@ import { tenantAls } from '../modules/tenants/tenant-als';
 import { TenantAwarePool } from './tenant-pool';
 
 /**
- * TENANT-1 (issue #196), bước 2 của kế hoạch 6397026244: chứng minh SỐNG
- * đường đi của truy vấn qua `TenantAwarePool` TRƯỚC khi lật RLS
- * fail-closed. Điều kiện tiên quyết của fail-closed là MỌI truy vấn trên
- * pool dùng chung phải mang GUC của ngữ cảnh ALS hiện tại. Mã ứng dụng
- *  không checkout tường minh cho truy vấn thường — nó gọi
- * `pool.query(...)`, và pg hiện thực `Pool.query` bằng cách gọi nội bộ
- * `this.connect()`. Spec này khoá chặt cả hai đường:
+ * TENANT-1 (issue #196), bước 2 của kế hoạch 6397026244: chứng minh SỐNG đường đi của truy vấn qua `TenantAwarePool`
+ * TRƯỚC khi lật RLS fail-closed. Điều kiện tiên quyết của fail-closed là MỌI truy vấn trên pool dùng chung phải mang
+ * GUC của ngữ cảnh ALS hiện tại. Mã ứng dụng không checkout tường minh cho truy vấn thường — nó gọi `pool.query(...)`,
+ * và pg hiện thực `Pool.query` bằng cách gọi nội bộ `this.connect()`. Spec này khoá chặt cả hai đường:
  *
  *  - `pool.query` trong ngữ cảnh tenant/platform/ngoài ngữ cảnh đều
  *    thấy đúng GUC của ngữ cảnh đó (nếu `Pool.query` lách qua
@@ -82,8 +79,8 @@ describe('TenantAwarePool — GUC theo ngữ cảnh ALS (TENANT-1 #196, bước 
       }
     });
     expect(inTenant).toEqual({ tenant_id: TENANT_A, platform: 'off' });
-    // Cùng pool (max: 1) — kết nối vật lý vừa trả lại được dùng lại cho
-    // pool.query ngoài ngữ cảnh: GUC phải trở về rỗng/off, không rò A.
+    // Cùng pool (max: 1) — kết nối vật lý vừa trả lại được dùng lại cho pool.query ngoài ngữ cảnh: GUC phải trở về
+    // rỗng/off, không rò A.
     await expect(readGucViaPoolQuery()).resolves.toEqual({ tenant_id: '', platform: 'off' });
   });
 });

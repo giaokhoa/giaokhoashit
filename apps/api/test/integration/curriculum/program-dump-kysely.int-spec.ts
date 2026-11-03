@@ -8,12 +8,9 @@ import {
 } from '../../../src/modules/curriculum/program-dump';
 
 /**
- * Spec tích hợp ĐÓNG THỬ NGHIỆM T-12 (issue #646, nhóm G6):
- * `sql.raw` thi hành một script SQL NHIỀU câu lệnh (artifact
- * chương trình thật: 13.856 câu INSERT, không tham số, không
- * BEGIN/COMMIT, không SET LOCAL) bên trong MỘT transaction của
- * Kysely, với các câu builder (select trước, select + update neo
- * sau) chạy cùng transaction đó.
+ * Spec tích hợp ĐÓNG THỬ NGHIỆM T-12 (issue #646, nhóm G6): `sql.raw` thi hành một script SQL NHIỀU câu lệnh (artifact
+ * chương trình thật: 13.856 câu INSERT, không tham số, không BEGIN/COMMIT, không SET LOCAL) bên trong MỘT transaction
+ * của Kysely, với các câu builder (select trước, select + update neo sau) chạy cùng transaction đó.
  *
  * Cơ sở hành vi: script không có tham số nên driver `pg` dùng
  * giao thức đơn giản (simple protocol) cho câu truy vấn — giao
@@ -69,7 +66,6 @@ afterAll(async () => {
   await dropTestDatabase(adminUrl, ROLLBACK_DB).catch(() => undefined);
 });
 
-/** Đếm dòng một bảng qua chính handle Kysely đang kiểm chứng. */
 async function countRows(db: CentreDb, table: keyof typeof EXPECTED_COUNTS): Promise<number> {
   const result = await sql<{ n: number }>`select count(*)::int as n from ${sql.table(table)}`.execute(db);
   return result.rows[0]?.n ?? -1;

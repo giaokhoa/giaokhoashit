@@ -4,10 +4,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { adminToken, createTestApp, http } from '../../support/identity-access-helpers';
 
 /**
- * Version bất biến của ma trận (issue #228, lát S1) — đối chiếu tiêu
- * chí nghiệm thu S1 của issue: "ma trận có versions bất biến — sửa
- * ma trận tạo version mới, nội dung version cũ đọc lại được nguyên
- * vẹn; spec chứng minh sửa không ghi đè mất nội dung cũ".
+ * Version bất biến của ma trận (issue #228, lát S1) — đối chiếu tiêu chí nghiệm thu S1 của issue: "ma trận có versions
+ * bất biến — sửa ma trận tạo version mới, nội dung version cũ đọc lại được nguyên vẹn; spec chứng minh sửa không ghi đè
+ * mất nội dung cũ".
  *
  * Luật được khoá ở đây:
  *  - Tạo ma trận sinh ngay hàng version 1 bất biến; ô thuộc về đúng

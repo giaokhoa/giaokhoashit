@@ -8,10 +8,9 @@ import {
 import { createCategory, createCourse, getFirstSectionId } from '../../support/course-enrolment-helpers';
 
 /**
- * Truy vết copy + truy nguồn hai chiều cho cả ba thực thể ngân hàng
- * (issue #228, lát S2) — đối chiếu tiêu chí nghiệm thu của issue:
- * "ma trận và đề có đủ truy vết copy như câu hỏi; truy vấn được hai
- * chiều câu hỏi ↔ đề ↔ ma trận ↔ sách".
+ * Truy vết copy + truy nguồn hai chiều cho cả ba thực thể ngân hàng (issue #228, lát S2) — đối chiếu tiêu chí nghiệm
+ * thu của issue: "ma trận và đề có đủ truy vết copy như câu hỏi; truy vấn được hai chiều câu hỏi ↔ đề ↔ ma trận ↔
+ * sách".
  *
  * Luật được khoá ở đây:
  *  - Copy ma trận ghi bank nguồn + tác giả gốc tại lúc copy và tăng

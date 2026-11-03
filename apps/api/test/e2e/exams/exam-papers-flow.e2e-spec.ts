@@ -72,9 +72,8 @@ describe('Ngân hàng đề thi (feat #113 EB-1)', () => {
   async function bankOfKind(token: string, kind: 'question' | 'exam', scope: string, ownerId?: string): Promise<BankBody> {
     const res = await http(app).get(`/api/v1/question-banks?kind=${kind}`).set(bearer(token));
     expect(res.status).toBe(200);
-    // Bank cá nhân phải lọc thêm theo ownerId: listBanks của QB liệt kê cả bank
-    // cá nhân của GV staff khác (chúng có question:useall qua thừa kế) — lấy
-    // bank đầu tiên theo scope là lấy nhầm bank người khác (bài học CI EB-1).
+    // Bank cá nhân phải lọc thêm theo ownerId: listBanks của QB liệt kê cả bank cá nhân của GV staff khác (chúng có
+    // question:useall qua thừa kế) — lấy bank đầu tiên theo scope là lấy nhầm bank người khác (bài học CI EB-1).
     const bank = (res.body as BankBody[]).find(
       (b) => b.scope === scope && b.bankKind === kind && (scope !== 'personal' || b.ownerId === ownerId),
     );
@@ -268,8 +267,8 @@ describe('Ngân hàng đề thi (feat #113 EB-1)', () => {
     const paper = await createPaper(owner.token, eBank.id, 'Đề riêng của chủ', [{ questionId: q1 }]);
     await setStatus(owner.token, paper.paper.id, 'ready');
 
-    // GV khác: bank cá nhân của chủ không nằm trong danh sách bank của mình,
-    // đọc thẳng đề ready của bank kín cũng bị chặn (không có exam:view tại bank đó).
+    // GV khác: bank cá nhân của chủ không nằm trong danh sách bank của mình, đọc thẳng đề ready của bank kín cũng bị
+    // chặn (không có exam:view tại bank đó).
     const otherView = await http(app).get(`/api/v1/exams/${paper.paper.id}`).set(bearer(other.token));
     expect(otherView.status).toBe(403);
     const otherPatch = await http(app).patch(`/api/v1/exams/${paper.paper.id}`).set(bearer(other.token)).send({ name: 'Chiếm đề' });
@@ -314,8 +313,8 @@ describe('Ngân hàng đề thi (feat #113 EB-1)', () => {
     expect(draftDeploy.status).toBe(400);
     expect((draftDeploy.body as { code?: string }).code).toBe('exam.pin_requires_ready');
 
-    // Xoá một đề đã ghim (chưa có lượt): pin bị xoá theo đề (FK
-    // cascade exam_pins.exam_id) — hoạt động biến mất khỏi khoá.
+    // Xoá một đề đã ghim (chưa có lượt): pin bị xoá theo đề (FK cascade exam_pins.exam_id) — hoạt động biến mất khỏi
+    // khoá.
     const paper3 = await createPaper(owner.token, eBank.id, 'Đề sẽ xoá', [{ questionId: q1 }]);
     await setStatus(owner.token, paper3.paper.id, 'ready');
     const quiz3 = await pinOk(owner.token, course.id, sectionId, paper3.paper.id, 'Quiz đề xoá');
@@ -347,8 +346,8 @@ describe('Ngân hàng đề thi (feat #113 EB-1)', () => {
     expect(emptyReady.status).toBe(400);
     expect((emptyReady.body as { code?: string }).code).toBe('exam.ready_requires_slots');
 
-    // Ghim cùng một đề hai lần vào một khoá: hai pin độc lập (không
-    // còn khái niệm deploy đè lên quiz dựng tay của mô hình cũ).
+    // Ghim cùng một đề hai lần vào một khoá: hai pin độc lập (không còn khái niệm deploy đè lên quiz dựng tay của mô
+    // hình cũ).
     const paper = await createPaper(owner.token, eBank.id, 'Đề ghim hai lần', [{ questionId: q1 }]);
     await setStatus(owner.token, paper.paper.id, 'ready');
     const pin1 = await pinOk(owner.token, course.id, sectionId, paper.paper.id, 'Lần ghim 1');

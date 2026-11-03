@@ -80,9 +80,8 @@ async function openStream(url: string, headers: Record<string, string> = {}): Pr
       throw new Error(`không nhận được sự kiện unread=${expected}; đã nhận: ${JSON.stringify(unreadEvents())}`);
     },
     async waitForUnreadAfter(index: number, expected: number, timeoutMs = 8000): Promise<void> {
-      // Chờ sự kiện MỚI (từ vị trí index trở đi) — vì lịch sử đã chứa sẵn
-      // các giá trị cũ (snapshot 0, lần tăng 1 trước đó), chờ theo giá
-      // trị đơn thuần sẽ khớp ngay sự kiện cũ và kết luận sai.
+      // Chờ sự kiện MỚI (từ vị trí index trở đi) — vì lịch sử đã chứa sẵn các giá trị cũ (snapshot 0, lần tăng 1 trước
+      // đó), chờ theo giá trị đơn thuần sẽ khớp ngay sự kiện cũ và kết luận sai.
       const deadline = Date.now() + timeoutMs;
       while (Date.now() < deadline) {
         if (unreadEvents().slice(index).includes(expected)) return;
@@ -144,14 +143,11 @@ describe('Luồng SSE số thông báo chưa đọc', () => {
     await sendNotificationTo(userA.id, 'Huy hiệu cho A');
     await streamA.waitForUnread(1);
 
-    // Không cần chờ thêm cho "tín hiệu tới B": chu trình đã khép kín
-    // ở hai đầu chờ tường minh ngay trên đây. Lời gọi gửi thông báo
-    // trả về đồng bộ kênh popup 'delivered' (sendNotificationTo đã
-    // khẳng định), và stream của A đã hiện số 1 qua cùng một lần phát
-    // pub/sub — kênh unread-changed phát theo từng người dùng, một
-    // lần phát sai sang B (nếu có) đi qua đúng lần phát mà stream của
-    // A vừa nhận được. Sleep cố định 600ms ở đây trước đây không gắn
-    // với tín hiệu hoàn tất nào khác.
+    // Không cần chờ thêm cho "tín hiệu tới B": chu trình đã khép kín ở hai đầu chờ tường minh ngay trên đây. Lời gọi
+    // gửi thông báo trả về đồng bộ kênh popup 'delivered' (sendNotificationTo đã khẳng định), và stream của A đã hiện
+    // số 1 qua cùng một lần phát pub/sub — kênh unread-changed phát theo từng người dùng, một lần phát sai sang B (nếu
+    // có) đi qua đúng lần phát mà stream của A vừa nhận được. Sleep cố định 600ms ở đây trước đây không gắn với tín
+    // hiệu hoàn tất nào khác.
     expect(streamB.unreadEvents()).toEqual([0]);
   });
 

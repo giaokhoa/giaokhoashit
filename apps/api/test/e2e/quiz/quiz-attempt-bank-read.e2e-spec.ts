@@ -8,19 +8,14 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser, getFirstS
 import { addExamSlot, createExamDraft, pinExam } from '../../support/exam-pin-helpers';
 
 /**
- * Issue #141 — kiểm chứng yêu cầu nghiệp vụ: phân quyền đọc câu hỏi phải
- * theo cây CONTEXT của hoạt động (kiểu Moodle), KHÔNG theo nhãn scope
- * của bank. Nếu đường attempt lỡ gác theo bank/scope thì học sinh không
- * đọc được câu khi làm bài.
+ * Issue #141 — kiểm chứng yêu cầu nghiệp vụ: phân quyền đọc câu hỏi phải theo cây CONTEXT của hoạt động (kiểu Moodle),
+ * KHÔNG theo nhãn scope của bank. Nếu đường attempt lỡ gác theo bank/scope thì học sinh không đọc được câu khi làm bài.
  *
- * Oracle: với TỪNG nguồn bank — bank trường (school), bank tổ (team),
- * bank cá nhân của giáo viên (personal) — giáo viên đưa câu (gồm câu kèm
- * ngữ liệu/stimulus) vào slot quiz của một khoá; học sinh đã ghi danh
- * bắt đầu attempt thì phải ĐỌC được trọn vẹn thân câu + đáp án + ngữ
- * liệu, trả lời và nộp được, điểm chốt đúng. Học sinh ngoài khoá bị
- * chặn ở cổng hoạt động. Và bề mặt duyệt ngân hàng (*ForViewer của #55,
- * siết thêm ở #123) VẪN 404 với học sinh đối với chính các câu đó —
- * đọc được trong attempt không được rò sang duyệt bank.
+ * Oracle: với TỪNG nguồn bank — bank trường (school), bank tổ (team), bank cá nhân của giáo viên (personal) — giáo viên
+ * đưa câu (gồm câu kèm ngữ liệu/stimulus) vào slot quiz của một khoá; học sinh đã ghi danh bắt đầu attempt thì phải ĐỌC
+ * được trọn vẹn thân câu + đáp án + ngữ liệu, trả lời và nộp được, điểm chốt đúng. Học sinh ngoài khoá bị chặn ở cổng
+ * hoạt động. Và bề mặt duyệt ngân hàng (*ForViewer của #55, siết thêm ở #123) VẪN 404 với học sinh đối với chính các
+ * câu đó — đọc được trong attempt không được rò sang duyệt bank.
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -190,8 +185,7 @@ describe('Đọc câu hỏi lượt làm qua các nguồn ngân hàng (issue #14
   }
 
   async function createQuizWithSlots(teacherToken: string, courseId: string, sectionId: string, name: string, questionIds: string[]): Promise<string> {
-    // Hành trình gộp Đề (#226): soạn đề trong bank của giáo viên →
-    // ready → ghim vào khoá; trả id của lần ghim.
+    // Hành trình gộp Đề (#226): soạn đề trong bank của giáo viên → ready → ghim vào khoá; trả id của lần ghim.
     const draft = await createExamDraft(app, teacherToken, name, 10);
     for (const questionId of questionIds) {
       await addExamSlot(app, teacherToken, draft, { questionId });
@@ -240,9 +234,8 @@ describe('Đọc câu hỏi lượt làm qua các nguồn ngân hàng (issue #14
     const ansMc = await http(app).post(`/api/v1/quiz-attempts/${view.attempt.id}/responses`).set(bearer(ctx.student.token))
       .send({ questionAttemptId: mc.questionAttemptId, response: correct.id });
     expect(ansMc.status, JSON.stringify(ansMc.body)).toBeLessThan(300);
-    // Câu TF-A 4 mệnh đề, solution toàn Đúng: response phải là map
-    // statementId→boolean khớp solution — 'true' là định dạng TF-B cũ,
-    // chấm 0 ý đúng nên sumGrades chỉ còn điểm MC.
+    // Câu TF-A 4 mệnh đề, solution toàn Đúng: response phải là map statementId→boolean khớp solution — 'true' là định
+    // dạng TF-B cũ, chấm 0 ý đúng nên sumGrades chỉ còn điểm MC.
     const ansTf = await http(app).post(`/api/v1/quiz-attempts/${view.attempt.id}/responses`).set(bearer(ctx.student.token))
       .send({ questionAttemptId: tf.questionAttemptId, response: JSON.stringify({ s1: true, s2: true, s3: true, s4: true }) });
     expect(ansTf.status, JSON.stringify(ansTf.body)).toBeLessThan(300);

@@ -3,10 +3,9 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Lưới an toàn cho việc áp chuẩn đường dẫn cụm messaging/notifications
- * (issue #344, cụm R6-A2): đổi họ `messages/messages` về `messages`,
- * đổi `notifications/read-all` thành `notifications/mark-read`, giữ
- * nguyên mọi path còn lại của module messaging.
+ * Lưới an toàn cho việc áp chuẩn đường dẫn cụm messaging/notifications (issue #344, cụm R6-A2): đổi họ
+ * `messages/messages` về `messages`, đổi `notifications/read-all` thành `notifications/mark-read`, giữ nguyên mọi path
+ * còn lại của module messaging.
  *
  * Ba khẳng định chính, tất cả đều dựng từ chính khai báo decorator
  * trong `messaging.controller.ts` (không chạy server, không cần DB):
@@ -21,24 +20,18 @@ import { describe, expect, it } from 'vitest';
  *   controller ở cả phía canonical lẫn phía alias, để không bị route
  *   tham số nuốt.
  *
- * Cách đếm cấp tài nguyên của bản đồ đích (ghi rõ để đội đánh giá
- * phân xử): tiền tố controller (`messages`/`notifications`) là gốc
- * của cụm; lồng tối đa 2 cấp tài nguyên dưới gốc cộng tối đa 1
- * segment hành động. Theo cách đếm này, các path sâu còn lại (ví dụ
- * `messages/conversations/:id/messages` = conversations + messages,
- * `messages/contacts/requests/:userId/accept` = contacts + requests +
- * hành động) đã đạt chuẩn nên giữ nguyên; chỉ họ lặp segment và hậu
- * tố `-all` là vi phạm phải đổi. Đích xuất file của cụm khác
- * (`courses/:courseId/progress/reports` — gốc + progress + reports)
- * đã được duyệt theo cùng cách đếm này.
+ * Cách đếm cấp tài nguyên của bản đồ đích (ghi rõ để đội đánh giá phân xử): tiền tố controller
+ * (`messages`/`notifications`) là gốc của cụm; lồng tối đa 2 cấp tài nguyên dưới gốc cộng tối đa 1 segment hành động.
+ * Theo cách đếm này, các path sâu còn lại (ví dụ `messages/conversations/:id/messages` = conversations + messages,
+ * `messages/contacts/requests/:userId/accept` = contacts + requests + hành động) đã đạt chuẩn nên giữ nguyên; chỉ họ
+ * lặp segment và hậu tố `-all` là vi phạm phải đổi. Đích xuất file của cụm khác (`courses/:courseId/progress/reports` —
+ * gốc + progress + reports) đã được duyệt theo cùng cách đếm này.
  */
 
 /**
- * Bảng route kỳ vọng của module messaging (canonical + alias): 58
- * cặp (method, path) dạng OpenAPI, chụp từ khai báo decorator sau
- * khi lát đổi hoàn tất và viết literal tại đây làm mốc đối chiếu bất
- * biến của lát. Route thứ 58 là hồ sơ người cho panel chat 1–1
- * (issue #592): `GET /messages/users/{id}/profile`.
+ * Bảng route kỳ vọng của module messaging (canonical + alias): 58 cặp (method, path) dạng OpenAPI, chụp từ khai báo
+ * decorator sau khi lát đổi hoàn tất và viết literal tại đây làm mốc đối chiếu bất biến của lát. Route thứ 58 là hồ sơ
+ * người cho panel chat 1–1 (issue #592): `GET /messages/users/{id}/profile`.
  */
 const EXPECTED_ROUTES: string[] = [
   'DELETE /messages/contacts/{userId}',
@@ -122,10 +115,8 @@ const CANONICAL_TARGETS: string[] = [
 ];
 
 /**
- * Dựng bảng route từ khai báo decorator trong file controller:
- * mỗi khối `@Controller({ path: '...' })` góp các method decorator
- * của nó; `@Sse` tính như GET; tham số `:id` đổi thành `{id}` theo
- * dạng OpenAPI như bảng kỳ vọng.
+ * Dựng bảng route từ khai báo decorator trong file controller: mỗi khối `@Controller({ path: '...' })` góp các method
+ * decorator của nó; `@Sse` tính như GET; tham số `:id` đổi thành `{id}` theo dạng OpenAPI như bảng kỳ vọng.
  */
 function routesFromSource(source: string): string[] {
   const routes: string[] = [];

@@ -1,12 +1,10 @@
 /**
- * `KyselyModule` — wiring NestJS tự dựng cho các handle Kysely, thay
- * vai trò mà module kết nối cơ sở dữ liệu của NestJS từng giữ cho
- * phía bộ máy cũ.
+ * `KyselyModule` — wiring NestJS tự dựng cho các handle Kysely, thay vai trò mà module kết nối cơ sở dữ liệu của NestJS
+ * từng giữ cho phía bộ máy cũ.
  *
- * Vì sao tự dựng: Kysely không phát hành module NestJS chính thức;
- * pattern được nhà phát hành tài liệu hoá là tự tạo provider giữ
- * instance `Kysely` được dựng bằng factory của dự án. Module này
- * bám đúng khuôn `forRoot` quen thuộc của hệ:
+ * Vì sao tự dựng: Kysely không phát hành module NestJS chính thức; pattern được nhà phát hành tài liệu hoá là tự tạo
+ * provider giữ instance `Kysely` được dựng bằng factory của dự án. Module này bám đúng khuôn `forRoot` quen thuộc của
+ * hệ:
  *
  *   - `KyselyModule.forRoot({ centre: pool, controlPlane: pool, systemBank: pool })`
  *     nhận các `Pool` do tầng ứng dụng tạo sẵn (pool quyết định ngữ
@@ -22,11 +20,9 @@
  *     `destroy()` đóng luôn pool đã truyền vào, nên pool truyền cho
  *     `forRoot` thuộc quyền sở hữu của module từ thời điểm đăng ký.
  *
- * Trạng thái hiện hành: module và decorator có spec tích hợp kiểm
- * chứng (`kysely-foundation.int-spec.ts`) và sẵn sàng cho phía tiêu
- * thụ cần inject handle theo kho; đường khởi động của ứng dụng
- * chính nối handle kho trung tâm qua khung định tuyến
- * (`SpaceDatabaseService`) ở `AppModule`, không qua module này.
+ * Trạng thái hiện hành: module và decorator có spec tích hợp kiểm chứng (`kysely-foundation.int-spec.ts`) và sẵn sàng
+ * cho phía tiêu thụ cần inject handle theo kho; đường khởi động của ứng dụng chính nối handle kho trung tâm qua khung
+ * định tuyến (`SpaceDatabaseService`) ở `AppModule`, không qua module này.
  */
 import {
   Inject,
@@ -49,18 +45,15 @@ import { KYSELY_CENTRE, KYSELY_CONTROL_PLANE, KYSELY_SYSTEM_BANK } from './injec
 const KYSELY_INSTANCES = 'KYSELY_INSTANCES';
 
 /**
- * Hình tối thiểu của một instance Kysely mà provider dọn dẹp cần:
- * chỉ thao tác `destroy()`. Khai theo cấu trúc thay vì import kiểu
- * `Kysely` vì package `kysely` là phụ thuộc của `@lms/db`, không
- * phải của `apps/api` — các handle đi vào module đều qua factory
- * của `@lms/db` nên kiểu đầy đủ vẫn được giữ ở nơi khai báo chúng.
+ * Hình tối thiểu của một instance Kysely mà provider dọn dẹp cần: chỉ thao tác `destroy()`. Khai theo cấu trúc thay vì
+ * import kiểu `Kysely` vì package `kysely` là phụ thuộc của `@lms/db`, không phải của `apps/api` — các handle đi vào
+ * module đều qua factory của `@lms/db` nên kiểu đầy đủ vẫn được giữ ở nơi khai báo chúng.
  */
 type DestroyableKysely = { destroy(): Promise<void> };
 
 /**
- * Provider dọn dẹp vòng đời: gọi `destroy()` trên mọi instance
- * Kysely của module khi ứng dụng đóng, để pool của từng kho được
- * đóng đúng một lần cùng tiến trình.
+ * Provider dọn dẹp vòng đời: gọi `destroy()` trên mọi instance Kysely của module khi ứng dụng đóng, để pool của từng
+ * kho được đóng đúng một lần cùng tiến trình.
  */
 @Injectable()
 class KyselyShutdownService implements OnApplicationShutdown {

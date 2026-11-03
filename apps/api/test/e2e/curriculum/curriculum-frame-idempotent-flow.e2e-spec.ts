@@ -8,13 +8,10 @@ import { createCategory } from '../../support/course-enrolment-helpers';
 import { contextIdByLevelInstance } from '../../support/engagement-helpers';
 
 /**
- * K0a (việc nối tiếp issue #66) — nạp khung chương trình phải IDEMPOTENT
- * theo node: nạp lại một node đã có section trong khoá thì bỏ qua node
- * đó (không sinh section trùng mang cùng neo), và kết quả trả về chỉ
- * đếm các section THẬT SỰ vừa tạo. Trộn node cũ + node mới trong một
- * lượt nạp: chỉ node mới thành section, neo cũ giữ nguyên vị trí.
- * Mô hình người dùng thử bám spec nạp khung gốc: coursecreator tại
- * context danh mục.
+ * K0a (việc nối tiếp issue #66) — nạp khung chương trình phải IDEMPOTENT theo node: nạp lại một node đã có section
+ * trong khoá thì bỏ qua node đó (không sinh section trùng mang cùng neo), và kết quả trả về chỉ đếm các section THẬT SỰ
+ * vừa tạo. Trộn node cũ + node mới trong một lượt nạp: chỉ node mới thành section, neo cũ giữ nguyên vị trí. Mô hình
+ * người dùng thử bám spec nạp khung gốc: coursecreator tại context danh mục.
  */
 
 interface TreeNode {
@@ -71,8 +68,8 @@ describe('Áp lại khung chương trình K0a luỹ đẳng theo từng node', (
     const teacher = await createUserViaApi(app, admin);
     await assignRole(app, admin, teacher.id, await roleIdByShortname(app, admin, 'coursecreator'), categoryCtxId);
     teacherToken = (await login(app, teacher.username, STRONG_PASSWORD)).accessToken;
-    // CLASS-0 (đóng gói PR #200): lớp do admin tạo, chủ lớp là GV này
-    // (xem spec curriculum-frame-apply — cùng lý do class:create).
+    // CLASS-0 (đóng gói PR #200): lớp do admin tạo, chủ lớp là GV này (xem spec curriculum-frame-apply — cùng lý do
+    // class:create).
     const cls = await http(app).post('/api/v1/classes').set(bearer(admin)).send({ name: uniqueName('cls'), ownerId: teacher.id });
     expect(cls.status).toBe(201);
     classId = cls.body.id as string;

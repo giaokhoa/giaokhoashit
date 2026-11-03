@@ -2,10 +2,9 @@ import type { INestApplication } from '@nestjs/common';
 import { http } from './identity-access-helpers';
 
 /**
- * Helper soạn đề + ghim dùng chung cho các spec hậu gộp Đề (#226):
- * hành trình người dùng thật — tạo ĐỀ trong bank đề cá nhân của giáo
- * viên → thêm slots (mỗi lần thêm tạo version mới của đề) → đề ready
- * → GHIM vào khoá qua exam-pins (pin mang vai trò của quiz cũ).
+ * Helper soạn đề + ghim dùng chung cho các spec hậu gộp Đề (#226): hành trình người dùng thật — tạo ĐỀ trong bank đề cá
+ * nhân của giáo viên → thêm slots (mỗi lần thêm tạo version mới của đề) → đề ready → GHIM vào khoá qua exam-pins (pin
+ * mang vai trò của quiz cũ).
  */
 export interface ExamDraft {
   examId: string;
@@ -25,7 +24,6 @@ export async function personalExamBankId(app: INestApplication, token: string): 
   return bank.id;
 }
 
-/** Tạo đề nháp (chưa slot) trong bank cá nhân của giáo viên. */
 export async function createExamDraft(
   app: INestApplication, token: string, name: string, totalScore = 10,
 ): Promise<ExamDraft> {
@@ -61,7 +59,6 @@ export async function pinExam(
   return res.body as Record<string, any>;
 }
 
-/** Tạo một câu hỏi trắc nghiệm sẵn sàng trong bank câu hỏi cá nhân của người dùng. */
 export async function createReadyQuestion(app: INestApplication, token: string, name: string): Promise<string> {
   const me = await http(app).get('/api/v1/users/me').set(bearer(token));
   const ownerId = me.body.id as string;

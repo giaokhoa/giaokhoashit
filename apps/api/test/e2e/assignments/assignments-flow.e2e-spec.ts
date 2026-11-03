@@ -273,8 +273,8 @@ describe('Nộp file bài tập (mod_assign)', () => {
       .set('Authorization', `Bearer ${ctx.teacher}`).send({ grade: 11 });
     expect(gradeTooHigh.status).toBe(400);
 
-    // Chấm NHÁP chưa khoá: học sinh vẫn mở lại được (lần nộp tăng) — gói nháp cũ thành stale,
-    // trả bài cho lần nộp cũ → 409 không có gì để trả.
+    // Chấm NHÁP chưa khoá: học sinh vẫn mở lại được (lần nộp tăng) — gói nháp cũ thành stale, trả bài cho lần nộp cũ →
+    // 409 không có gì để trả.
     const draftSaved = await http(app).post(`/api/v1/assignments/${assignment.id}/submissions/${ctx.student.id}/grade`)
       .set('Authorization', `Bearer ${ctx.teacher}`).send({ grade: 7 });
     expect(draftSaved.status).toBe(201);

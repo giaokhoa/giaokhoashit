@@ -69,10 +69,9 @@ describe('Ngang bằng admin ngân hàng (feat #70 follow-up)', () => {
   async function personalBank(token: string, kind: string, ownerId: string): Promise<BankBody | undefined> {
     const res = await http(app).get(`/api/v1/question-banks?kind=${kind}`).set(bearer(token));
     expect(res.status, JSON.stringify(res.body)).toBe(200);
-    // Lọc theo CHỦ SỞ HỮU: danh sách của staff hiện còn lẫn bank cá
-    // nhân của người khác (kế thừa question:useall qua cây context) —
-    // đó là phạm vi của issue #123 đang thi công riêng, không thuộc
-    // parity này. Parity khẳng định trên bank CỦA CHÍNH actor.
+    // Lọc theo CHỦ SỞ HỮU: danh sách của staff hiện còn lẫn bank cá nhân của người khác (kế thừa question:useall qua
+    // cây context) — đó là phạm vi của issue #123 đang thi công riêng, không thuộc parity này. Parity khẳng định trên
+    // bank CỦA CHÍNH actor.
     return (res.body as BankBody[]).find((b) => b.scope === 'personal' && b.ownerId === ownerId);
   }
 

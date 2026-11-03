@@ -6,14 +6,11 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
 import { contextIdByLevelInstance, courseContextId, setCourseCompletionCriteria } from '../../support/engagement-helpers';
 
 /**
- * Tiêu chí hoàn thành khoá học — trọn bộ 8 loại của Moodle (issue #23).
- * Oracle: MOODLE_503_STABLE completion/criteria/* (completion_criteria_self,
- * completion_criteria_course, completion_criteria_duration,
- * completion_criteria_role, completion_criteria_unenrol) và biểu mẫu
- * cài đặt hoàn thành khoá học (course/completion_form.php): self = người học
- * tự đánh dấu cho mình; role = người giữ vai được nêu tên đánh dấu cho người học
- * ("manual completion by others"); course = khoá tiên quyết đã hoàn thành;
- * duration = N ngày sau khi ghi danh; unenrol = hoàn thành khi đã huỷ ghi danh.
+ * Tiêu chí hoàn thành khoá học — trọn bộ 8 loại của Moodle (issue #23). Oracle: MOODLE_503_STABLE completion/criteria/*
+ * (completion_criteria_self, completion_criteria_course, completion_criteria_duration, completion_criteria_role,
+ * completion_criteria_unenrol) và biểu mẫu cài đặt hoàn thành khoá học (course/completion_form.php): self = người học
+ * tự đánh dấu cho mình; role = người giữ vai được nêu tên đánh dấu cho người học ("manual completion by others");
+ * course = khoá tiên quyết đã hoàn thành; duration = N ngày sau khi ghi danh; unenrol = hoàn thành khi đã huỷ ghi danh.
  */
 describe('Tiêu chí hoàn thành — đủ 8 loại Moodle', () => {
   let app: INestApplication;
@@ -199,9 +196,8 @@ describe('Tiêu chí hoàn thành — đủ 8 loại Moodle', () => {
       .post(`/api/v1/courses/${course.id}/completion/criteria/${criteriaId}/mark`)
       .set('Authorization', `Bearer ${bearer}`).send({ userId: student.id, complete });
 
-    // Người đánh dấu giữ vai giáo viên tại context HỆ THỐNG (gốc của
-    // đường tổ tiên của context khoá học) có thể đánh dấu — role_assign của Moodle kế thừa
-    // xuống cây, đúng như cách PermissionEvaluator phân giải capability.
+    // Người đánh dấu giữ vai giáo viên tại context HỆ THỐNG (gốc của đường tổ tiên của context khoá học) có thể đánh
+    // dấu — role_assign của Moodle kế thừa xuống cây, đúng như cách PermissionEvaluator phân giải capability.
     const sysMarker = await createUserViaApi(app, admin);
     await assignRole(app, admin, sysMarker.id, teacherRoleId, await systemContextId(app, admin));
     const sysToken = (await login(app, sysMarker.username, STRONG_PASSWORD)).accessToken;
@@ -213,9 +209,8 @@ describe('Tiêu chí hoàn thành — đủ 8 loại Moodle', () => {
     expect(unBySystem.status).toBeLessThan(300);
     expect(await myStatus(token, course.id)).not.toBe('complete');
 
-    // Tương tự với một lần gán tại context LỚP (CLASS) của khoá (phần giữa
-    // of the path since CLASS-0, PR #200): context khoá neo dưới context
-    // lớp nên gán vai tại lớp phủ mọi khoá trong lớp.
+    // Tương tự với một lần gán tại context LỚP (CLASS) của khoá (phần giữa of the path since CLASS-0, PR #200): context
+    // khoá neo dưới context lớp nên gán vai tại lớp phủ mọi khoá trong lớp.
     const classMarker = await createUserViaApi(app, admin);
     await assignRole(app, admin, classMarker.id, teacherRoleId, await contextIdByLevelInstance(app, admin, 45, course.classId!));
     const classToken = (await login(app, classMarker.username, STRONG_PASSWORD)).accessToken;
@@ -227,9 +222,8 @@ describe('Tiêu chí hoàn thành — đủ 8 loại Moodle', () => {
     expect(unByClass.status).toBeLessThan(300);
     expect(await myStatus(token, course.id)).not.toBe('complete');
 
-    // Ngược lại, context DANH MỤC không còn nằm trên đường tổ tiên của
-    // khoá (CLASS-0 neo khoá dưới lớp, danh mục chỉ là phân loại hành
-    // chính): gán vai tại danh mục của chính khoá cũng KHÔNG còn quyền.
+    // Ngược lại, context DANH MỤC không còn nằm trên đường tổ tiên của khoá (CLASS-0 neo khoá dưới lớp, danh mục chỉ là
+    // phân loại hành chính): gán vai tại danh mục của chính khoá cũng KHÔNG còn quyền.
     const catMarker = await createUserViaApi(app, admin);
     await assignRole(app, admin, catMarker.id, teacherRoleId, await contextIdByLevelInstance(app, admin, 40, cat.id));
     const catToken = (await login(app, catMarker.username, STRONG_PASSWORD)).accessToken;
@@ -237,8 +231,8 @@ describe('Tiêu chí hoàn thành — đủ 8 loại Moodle', () => {
     expect(byCategory.status).toBe(403);
     expect(byCategory.body.code).toBe('completion.role_marker_forbidden');
 
-    // Và một lần gán trong một nhánh KHÔNG LIÊN QUAN (một danh mục khác) cũng
-    // không nằm trên đường của khoá này: vẫn bị cấm.
+    // Và một lần gán trong một nhánh KHÔNG LIÊN QUAN (một danh mục khác) cũng không nằm trên đường của khoá này: vẫn bị
+    // cấm.
     const otherCat = await createCategory(app, admin);
     const strayMarker = await createUserViaApi(app, admin);
     await assignRole(app, admin, strayMarker.id, teacherRoleId, await contextIdByLevelInstance(app, admin, 40, otherCat.id));
@@ -258,11 +252,9 @@ describe('Tiêu chí hoàn thành — đủ 8 loại Moodle', () => {
     const del = await http(app).delete(`/api/v1/courses/${course.id}/enrol/instances/${instance.id}/users/${student.id}`)
       .set('Authorization', `Bearer ${admin}`);
     expect(del.status).toBeLessThan(300);
-    // Việc tổng hợp lại completion sau unenrol đi qua sự kiện outbox
-    // course_completion_reaggregation_requested và consumer đích
-    // danh phía API (không còn hook đồng bộ trong giao dịch rút):
-    // chờ trạng thái quan sát được chuyển thành hoàn thành, khẳng
-    // định cuối giữ nguyên như khi cơ chế còn đồng bộ.
+    // Việc tổng hợp lại completion sau unenrol đi qua sự kiện outbox course_completion_reaggregation_requested và
+    // consumer đích danh phía API (không còn hook đồng bộ trong giao dịch rút): chờ trạng thái quan sát được chuyển
+    // thành hoàn thành, khẳng định cuối giữ nguyên như khi cơ chế còn đồng bộ.
     let status = await userStatus(course.id, student.id);
     for (let attempt = 0; attempt < 40 && status !== 'complete'; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 250));

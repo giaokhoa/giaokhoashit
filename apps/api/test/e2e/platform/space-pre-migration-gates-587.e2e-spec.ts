@@ -9,11 +9,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createControlPlaneKysely } from '@lms/db/control-plane';
 
 /**
- * Better Auth phải bật ngay từ lúc AppModule được import (ConfigModule
- * kiểm chứng cấu hình khi import module, như khuôn của spec
- * better-auth-flow): đặt biến môi trường ở đầu file, rồi import
- * helpers ĐỘNG trong beforeAll — import tĩnh helpers sẽ kéo AppModule
- * vào trước khi các biến này được gán.
+ * Better Auth phải bật ngay từ lúc AppModule được import (ConfigModule kiểm chứng cấu hình khi import module, như khuôn
+ * của spec better-auth-flow): đặt biến môi trường ở đầu file, rồi import helpers ĐỘNG trong beforeAll — import tĩnh
+ * helpers sẽ kéo AppModule vào trước khi các biến này được gán.
  */
 const BETTER_AUTH_SECRET = 'test-better-auth-secret-at-least-32-chars';
 process.env.BETTER_AUTH_ENABLED = 'true';
@@ -24,13 +22,10 @@ type Helpers = typeof import('../../support/identity-access-helpers');
 let helpers: Helpers;
 
 /**
- * Dựng app test đúng khuôn bootstrap thật (main.ts): mount handler
- * Better Auth TRƯỚC khi init, kèm khung định tuyến kho để đường
- * ghi đăng nhập đi đúng kho đích tại địa chỉ trung tâm ở kho
- * riêng — `helpers.createTestApp` không mount Better Auth nên ca
- * (e) không dùng được nó. Mọi import của AppModule đều động bên
- * trong hàm này (gọi từ beforeAll, sau khi biến môi trường Better
- * Auth đã gán ở đầu file).
+ * Dựng app test đúng khuôn bootstrap thật (main.ts): mount handler Better Auth TRƯỚC khi init, kèm khung định tuyến kho
+ * để đường ghi đăng nhập đi đúng kho đích tại địa chỉ trung tâm ở kho riêng — `helpers.createTestApp` không mount
+ * Better Auth nên ca (e) không dùng được nó. Mọi import của AppModule đều động bên trong hàm này (gọi từ beforeAll, sau
+ * khi biến môi trường Better Auth đã gán ở đầu file).
  */
 async function createMountedTestApp(): Promise<INestApplication> {
   const { Test } = await import('@nestjs/testing');
@@ -57,7 +52,6 @@ async function createMountedTestApp(): Promise<INestApplication> {
   return app;
 }
 
-/** Lấy cặp cookie phiên Better Auth từ header set-cookie của một response đăng nhập. */
 function sessionCookieFrom(setCookie: string[] | undefined): string {
   const raw = (setCookie ?? []).find((value) => value.includes('better-auth.session_token='));
   if (!raw) throw new Error(`no Better Auth session cookie in: ${JSON.stringify(setCookie)}`);
@@ -65,11 +59,9 @@ function sessionCookieFrom(setCookie: string[] | undefined): string {
 }
 
 /**
- * Ký giá trị cookie phiên Better Auth đúng định dạng mà handler của
- * nó kiểm chứng khi đọc (`<token>.<base64 HMAC-SHA256(secret,
- * token)>`, rồi encodeURIComponent toàn bộ — xem better-call
- * `serializeSignedCookie`/`getSignedCookie`): cookie không ký thì
- * `getSession` trả null ngay trước khi tra bảng phiên.
+ * Ký giá trị cookie phiên Better Auth đúng định dạng mà handler của nó kiểm chứng khi đọc (`<token>.<base64
+ * HMAC-SHA256(secret, token)>`, rồi encodeURIComponent toàn bộ — xem better-call
+ * `serializeSignedCookie`/`getSignedCookie`): cookie không ký thì `getSession` trả null ngay trước khi tra bảng phiên.
  */
 function signedBetterAuthCookie(token: string): string {
   const signature = createHmac('sha256', BETTER_AUTH_SECRET).update(token).digest('base64');
@@ -77,20 +69,14 @@ function signedBetterAuthCookie(token: string): string {
 }
 
 /**
- * Ca đầu-cuối của CÁC CỔNG TIỀN DI TRÚ (Phần A, issue #587):
- * ứng dụng thật (toàn bộ chuỗi guard) chạy với một trung tâm kiểm
- * chứng ở kho riêng dựng riêng cho đợt này — database mới trên
- * cùng cụm test (`lms_test_centre_a_587`), role ứng dụng riêng,
- * CONNECT của PUBLIC bị thu hồi, baseline nghiệp vụ áp bằng role
- * chủ kho; sổ đăng ký nằm ở database control plane riêng
- * (`lms_test_cp_587`) mà ứng dụng đọc qua biến
- * `CONTROL_PLANE_DATABASE_URL` đặt trước khi ứng dụng khởi động.
- * Tenant tương ứng được tạo bằng chính API công khai ở kho chung,
- * rồi dòng tenant (và dòng user + dòng membership của từng tài
- * khoản kiểm chứng) được sao vào kho riêng — đúng trạng thái sau
- * di trú mà đợt di trú dữ kiện (#587) sẽ tạo: dữ kiện của trung
- * tâm nằm ở kho của nó. Địa chỉ của trung tâm là tên miền con
- * mang slug (`<slug>.test.local`) theo quy ước địa chỉ của hệ.
+ * Ca đầu-cuối của CÁC CỔNG TIỀN DI TRÚ (Phần A, issue #587): ứng dụng thật (toàn bộ chuỗi guard) chạy với một trung tâm
+ * kiểm chứng ở kho riêng dựng riêng cho đợt này — database mới trên cùng cụm test (`lms_test_centre_a_587`), role ứng
+ * dụng riêng, CONNECT của PUBLIC bị thu hồi, baseline nghiệp vụ áp bằng role chủ kho; sổ đăng ký nằm ở database control
+ * plane riêng (`lms_test_cp_587`) mà ứng dụng đọc qua biến `CONTROL_PLANE_DATABASE_URL` đặt trước khi ứng dụng khởi
+ * động. Tenant tương ứng được tạo bằng chính API công khai ở kho chung, rồi dòng tenant (và dòng user + dòng membership
+ * của từng tài khoản kiểm chứng) được sao vào kho riêng — đúng trạng thái sau di trú mà đợt di trú dữ kiện (#587) sẽ
+ * tạo: dữ kiện của trung tâm nằm ở kho của nó. Địa chỉ của trung tâm là tên miền con mang slug (`<slug>.test.local`)
+ * theo quy ước địa chỉ của hệ.
  *
  * Các ca khoá đúng các cổng tiền di trú của Phần A:
  * (a) đối chứng dương — token mang claim của trung tâm kho riêng
@@ -134,10 +120,8 @@ const CP_PASSWORD = 'cp-test-587';
 const CENTRE_A_DATABASE = 'lms_test_centre_a_587';
 const CENTRE_A_ROLE = 'lms_centre_a_587_app';
 const CENTRE_A_PASSWORD = 'centre-a-test-587';
-// Slug của trung tâm mang hậu tố ngẫu nhiên theo lượt chạy:
-// tenant tương ứng được tạo thật trong database nghiệp vụ test
-// DÙNG CHUNG của tầng e2e, nên slug cố định sẽ va chạm khi chạy
-// lại spec trên cùng một database.
+// Slug của trung tâm mang hậu tố ngẫu nhiên theo lượt chạy: tenant tương ứng được tạo thật trong database nghiệp vụ
+// test DÙNG CHUNG của tầng e2e, nên slug cố định sẽ va chạm khi chạy lại spec trên cùng một database.
 const RUN_SUFFIX = Math.random().toString(36).slice(2, 8);
 const CENTRE_A_SLUG = `trung-tam-a-587-${RUN_SUFFIX}`;
 const HOST_A = `${CENTRE_A_SLUG}.test.local`;
@@ -146,7 +130,6 @@ const CENTRE_A_FIRST_NAME = 'DauAnKhoA587';
 
 const UUIDV7_SHIM = `CREATE OR REPLACE FUNCTION uuidv7() RETURNS uuid AS $$ DECLARE ts_ms bigint := (extract(epoch from clock_timestamp()) * 1000)::bigint; b bytea; BEGIN b := decode(lpad(to_hex(ts_ms), 12, '0'), 'hex') || gen_random_bytes(10); b := set_byte(b, 6, (get_byte(b, 6) & 15) | 112); b := set_byte(b, 8, (get_byte(b, 8) & 63) | 128); RETURN encode(b, 'hex')::uuid; END; $$ LANGUAGE plpgsql VOLATILE`;
 
-/** Dựng URL kết nối tới một database trên cùng cụm với database nghiệp vụ test. */
 function clusterUrl(database: string, username?: string, secret?: string): string {
   const base = new URL(process.env.DATABASE_URL!);
   base.pathname = `/${database}`;
@@ -155,7 +138,6 @@ function clusterUrl(database: string, username?: string, secret?: string): strin
   return base.toString();
 }
 
-/** Bọc một định danh Postgres trong dấu nháy kép cho các câu lệnh quản trị của ca test. */
 function quoted(identifier: string): string {
   return `"${identifier.replace(/"/g, '""')}"`;
 }
@@ -170,7 +152,6 @@ async function withClient<T>(connectionString: string, fn: (client: Client) => P
   }
 }
 
-/** Áp một file migration SQL (tách theo dấu phân đoạn của file) lên một database qua kết nối cho trước. */
 async function applySqlFile(connectionString: string, filePath: string, withUuidShim: boolean): Promise<void> {
   await withClient(connectionString, async (client) => {
     if (withUuidShim) {
@@ -188,7 +169,6 @@ async function applySqlFile(connectionString: string, filePath: string, withUuid
   });
 }
 
-/** Áp bộ migration riêng của control plane từ rỗng (đọc chính các file SQL đã sinh trong repo). */
 async function applyControlPlaneMigrations(connectionString: string): Promise<void> {
   const outDir = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'control-plane');
   const folders = readdirSync(outDir, { withFileTypes: true })
@@ -200,15 +180,14 @@ async function applyControlPlaneMigrations(connectionString: string): Promise<vo
   }
 }
 
-/** Áp baseline nghiệp vụ vào một kho riêng bằng kết nối của chính role chủ kho đó. */
 async function applyBusinessBaseline(connectionString: string): Promise<void> {
   const baseline = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre', '20261025163710_baseline', 'migration.sql');
   await applySqlFile(connectionString, baseline, true);
 }
 
 /**
- * Sao một dòng (đọc từ kho chung) vào cùng bảng ở kho đích với
- * nguyên bộ cột — mô phỏng phần dữ kiện đã di trú của trung tâm.
+ * Sao một dòng (đọc từ kho chung) vào cùng bảng ở kho đích với nguyên bộ cột — mô phỏng phần dữ kiện đã di trú của
+ * trung tâm.
  */
 async function copyRow(
   sourceUrl: string,
@@ -258,7 +237,6 @@ async function copyMemberToCentre(userId: string, tenantId: string, marker: stri
   }
 }
 
-/** Đếm dòng theo một cột định danh trong một bảng ở một kho (nền platform tường minh). */
 async function countRows(
   connectionString: string,
   table: string,
@@ -308,9 +286,8 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
   };
 
   beforeAll(async () => {
-    // Cấp phát control plane + kho riêng trên cụm test, đúng khuôn
-    // ca tích hợp của khung (issue #581): role riêng cho từng kho,
-    // CONNECT của PUBLIC bị thu hồi.
+    // Cấp phát control plane + kho riêng trên cụm test, đúng khuôn ca tích hợp của khung (issue #581): role riêng cho
+    // từng kho, CONNECT của PUBLIC bị thu hồi.
     await withClient(clusterUrl('postgres'), async (admin) => {
       for (const database of [CP_DATABASE, CENTRE_A_DATABASE]) {
         await admin.query(`DROP DATABASE IF EXISTS ${quoted(database)} WITH (FORCE)`);
@@ -330,13 +307,11 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
     await applyControlPlaneMigrations(clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD));
     await applyBusinessBaseline(clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD));
 
-    // Ứng dụng phải thấy control plane và bí mật kho riêng ngay từ
-    // lúc khởi động.
+    // Ứng dụng phải thấy control plane và bí mật kho riêng ngay từ lúc khởi động.
     process.env.CONTROL_PLANE_DATABASE_URL = clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD);
     process.env.SPACE_TEST_A_587_URL = clusterUrl('postgres', CENTRE_A_ROLE, CENTRE_A_PASSWORD);
 
-    // Dòng đăng ký kho riêng trong sổ (seed của ứng dụng đã ghi
-    // hai dòng kho chung của Trang chính và trường mặc định).
+    // Dòng đăng ký kho riêng trong sổ (seed của ứng dụng đã ghi hai dòng kho chung của Trang chính và trường mặc định).
     const cpPool = new Pool({ connectionString: clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD) });
     const cpDb = createControlPlaneKysely(cpPool);
     try {
@@ -362,17 +337,14 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
       await cpDb.destroy();
     }
 
-    // Import helpers ĐỘNG sau khi biến môi trường Better Auth đã
-    // được gán ở đầu file (xem chú thích ở đầu file).
+    // Import helpers ĐỘNG sau khi biến môi trường Better Auth đã được gán ở đầu file (xem chú thích ở đầu file).
     helpers = await import('../../support/identity-access-helpers');
-    // App mount handler Better Auth kèm định tuyến kho (ca (e)
-    // đăng nhập qua handler này, không qua createTestApp).
+    // App mount handler Better Auth kèm định tuyến kho (ca (e) đăng nhập qua handler này, không qua createTestApp).
     app = await createMountedTestApp();
     adminToken = (await helpers.login(app, 'admin', 'Admin123!')).accessToken;
 
-    // Tenant của trung tâm tạo bằng API công khai ở kho chung
-    // (đường hiện tại), rồi dòng tenant được sao vào kho riêng —
-    // trạng thái sau di trú.
+    // Tenant của trung tâm tạo bằng API công khai ở kho chung (đường hiện tại), rồi dòng tenant được sao vào kho riêng
+    // — trạng thái sau di trú.
     const createdA = (await must(
       await helpers.http(app).post('/api/v1/tenants').set(auth(adminToken)).send({
         name: 'Trung tâm A (spec 587)',
@@ -390,10 +362,8 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
       tenantAId,
     );
 
-    // Giáo viên chính là thành viên của trung tâm A: tạo ở kho
-    // chung, thêm membership bằng API, rồi sao dòng user + dòng
-    // membership vào kho A và đóng dấu phân biệt lên dòng user ở
-    // kho A.
+    // Giáo viên chính là thành viên của trung tâm A: tạo ở kho chung, thêm membership bằng API, rồi sao dòng user +
+    // dòng membership vào kho A và đóng dấu phân biệt lên dòng user ở kho A.
     const teacher = await helpers.createUserViaApi(app, adminToken);
     teacherUsername = teacher.username;
     teacherId = teacher.id;
@@ -403,9 +373,8 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
     );
     await copyMemberToCentre(teacher.id, tenantAId, CENTRE_A_FIRST_NAME);
 
-    // Phiên Better Auth của giáo viên gieo thẳng vào kho đích (bảng
-    // `session` của kho A): ca cookie kiểm chứng đường đọc của
-    // guard, không phụ thuộc đường ghi đăng nhập.
+    // Phiên Better Auth của giáo viên gieo thẳng vào kho đích (bảng `session` của kho A): ca cookie kiểm chứng đường
+    // đọc của guard, không phụ thuộc đường ghi đăng nhập.
     betterAuthSessionToken = `ba587-${RUN_SUFFIX}-${randomUUID()}`;
     await withClient(clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD), async (client) => {
       await client.query("SELECT set_config('app.platform', 'on', false)");
@@ -415,8 +384,7 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
       );
     });
 
-    // Token của giáo viên cho tenant A qua đường chuyển tenant như
-    // người dùng thật — token này mang claim centre_id.
+    // Token của giáo viên cho tenant A qua đường chuyển tenant như người dùng thật — token này mang claim centre_id.
     const teacherApex = await helpers.login(app, teacherUsername, helpers.STRONG_PASSWORD);
     const switched = (await must(
       await helpers.http(app).post(`/api/v1/auth/switch-tenant/${tenantAId}`).set(auth(teacherApex.accessToken)),
@@ -424,9 +392,8 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
     )) as { accessToken: string };
     teacherTokenA = switched.accessToken;
 
-    // Tài khoản chỉ còn ở kho riêng: tạo ở kho chung, sao vào kho
-    // A, rồi XOÁ khỏi kho chung (membership trước, user sau) —
-    // trạng thái sau di trú mà phía kho chung không còn dấu vết.
+    // Tài khoản chỉ còn ở kho riêng: tạo ở kho chung, sao vào kho A, rồi XOÁ khỏi kho chung (membership trước, user
+    // sau) — trạng thái sau di trú mà phía kho chung không còn dấu vết.
     const dedicatedOnly = await helpers.createUserViaApi(app, adminToken);
     dedicatedOnlyId = dedicatedOnly.id;
     dedicatedOnlyUsername = dedicatedOnly.username;
@@ -444,14 +411,10 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
       await client.query('DELETE FROM users WHERE id = $1', [dedicatedOnlyId]);
     });
 
-    // Tài khoản chỉ ở kho riêng dùng cho ca đăng nhập Better Auth
-    // (e): tạo CẶP user + account credential qua cầu nối (kho
-    // chung, vì cầu nối chạy ngoài ngữ cảnh trung tâm), thêm
-    // membership, sao user + membership + dòng account credential
-    // vào kho A kèm dấu phân biệt, rồi xoá sạch khỏi kho chung
-    // (account trước, membership sau, user cuối) — trạng thái sau
-    // di trú mà phía kho chung không còn dấu vết nào để đường ghi
-    // có thể "ăn gian" bằng kho chung.
+    // Tài khoản chỉ ở kho riêng dùng cho ca đăng nhập Better Auth (e): tạo CẶP user + account credential qua cầu nối
+    // (kho chung, vì cầu nối chạy ngoài ngữ cảnh trung tâm), thêm membership, sao user + membership + dòng account
+    // credential vào kho A kèm dấu phân biệt, rồi xoá sạch khỏi kho chung (account trước, membership sau, user cuối) —
+    // trạng thái sau di trú mà phía kho chung không còn dấu vết nào để đường ghi có thể "ăn gian" bằng kho chung.
     const { CredentialBridgeService: BridgeClass } = await import(
       '../../../src/modules/auth/better-auth/credential-bridge.service'
     );
@@ -488,10 +451,8 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
       await client.query('DELETE FROM users WHERE id = $1', [dedicatedOnlyBaId]);
     });
 
-    // Tài khoản CHỈ ở kho chung dùng cho ca (f) và (g): tạo cặp
-    // user + account credential qua cầu nối ở kho chung và KHÔNG
-    // sao đi đâu cả — tài khoản đăng nhập được ở địa chỉ platform
-    // nhưng không tồn tại ở kho riêng.
+    // Tài khoản CHỈ ở kho chung dùng cho ca (f) và (g): tạo cặp user + account credential qua cầu nối ở kho chung và
+    // KHÔNG sao đi đâu cả — tài khoản đăng nhập được ở địa chỉ platform nhưng không tồn tại ở kho riêng.
     const sharedBaUsername = helpers.uniqueName('sharedba587');
     const sharedBaCreated = await bridge.createUserWithCredential({
       email: `${sharedBaUsername}@example.com`,
@@ -503,8 +464,7 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
     sharedOnlyBaId = sharedBaCreated.id;
     sharedOnlyBaUsername = sharedBaUsername;
 
-    // Tài khoản sẽ bị thu hồi: tạo, sao vào kho A, lấy token
-    // chuyển tenant khi membership còn hiệu lực — ca thu hồi sẽ
+    // Tài khoản sẽ bị thu hồi: tạo, sao vào kho A, lấy token chuyển tenant khi membership còn hiệu lực — ca thu hồi sẽ
     // kết thúc membership ở kho đích rồi dùng lại chính token này.
     const revoked = await helpers.createUserViaApi(app, adminToken);
     await must(
@@ -545,16 +505,14 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
   });
 
   it('token JWT cũ không claim của tài khoản chỉ còn ở kho riêng bị từ chối 401 auth.centre_mismatch', async () => {
-    // Tài khoản thật sự chỉ còn ở kho riêng: kho chung không còn
-    // dòng user lẫn dòng membership, kho đích còn đủ cả hai.
+    // Tài khoản thật sự chỉ còn ở kho riêng: kho chung không còn dòng user lẫn dòng membership, kho đích còn đủ cả hai.
     expect(await countRows(process.env.DATABASE_URL!, 'users', 'id', dedicatedOnlyId)).toBe(0);
     expect(await countRows(process.env.DATABASE_URL!, 'tenant_memberships', 'user_id', dedicatedOnlyId)).toBe(0);
     const centreUrl = clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD);
     expect(await countRows(centreUrl, 'users', 'id', dedicatedOnlyId)).toBe(1);
     expect(await countRows(centreUrl, 'tenant_memberships', 'user_id', dedicatedOnlyId)).toBe(1);
 
-    // Token cũ: mang tid nhưng KHÔNG mang centre_id, đúng hình
-    // dạng phiên cấp trước khi trung tâm tách kho.
+    // Token cũ: mang tid nhưng KHÔNG mang centre_id, đúng hình dạng phiên cấp trước khi trung tâm tách kho.
     const jwtService = app.get(JwtService);
     const oldToken = await jwtService.signAsync({
       sub: dedicatedOnlyId,
@@ -570,8 +528,7 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
   });
 
   it('thành viên đã bị thu hồi ở kho đích bị từ chối 401 tenant.membership_inactive', async () => {
-    // Thu hồi xảy ra SAU khi token được cấp: kết thúc membership
-    // của tài khoản trong kho đích, token cũ vẫn còn hạn.
+    // Thu hồi xảy ra SAU khi token được cấp: kết thúc membership của tài khoản trong kho đích, token cũ vẫn còn hạn.
     const revokedUserId = decodeJwtPayload(revokedTokenA)['sub'] as string;
     const centreUrl = clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD);
     await withClient(centreUrl, async (client) => {
@@ -589,18 +546,17 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
   });
 
   it('đăng nhập Better Auth tại địa chỉ kho riêng của tài khoản chỉ ở kho riêng ghi phiên vào kho đích', async () => {
-    // Tài khoản thật sự chỉ còn ở kho riêng: kho chung không còn
-    // dòng user lẫn dòng account credential, kho đích còn đủ cả hai.
+    // Tài khoản thật sự chỉ còn ở kho riêng: kho chung không còn dòng user lẫn dòng account credential, kho đích còn đủ
+    // cả hai.
     expect(await countRows(process.env.DATABASE_URL!, 'users', 'id', dedicatedOnlyBaId)).toBe(0);
     expect(await countRows(process.env.DATABASE_URL!, 'account', 'user_id', dedicatedOnlyBaId)).toBe(0);
     const centreUrl = clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD);
     expect(await countRows(centreUrl, 'users', 'id', dedicatedOnlyBaId)).toBe(1);
     expect(await countRows(centreUrl, 'account', 'user_id', dedicatedOnlyBaId)).toBe(1);
 
-    // Đăng nhập bằng đúng luồng web Better Auth tại địa chỉ của
-    // chính trung tâm: kiểm chứng credential và ghi phiên đều phải
-    // đi kho đích — kho chung không còn tài khoản này nên mọi lần
-    // đọc/ghi rơi về kho chung đều thất bại ngay tại đây.
+    // Đăng nhập bằng đúng luồng web Better Auth tại địa chỉ của chính trung tâm: kiểm chứng credential và ghi phiên đều
+    // phải đi kho đích — kho chung không còn tài khoản này nên mọi lần đọc/ghi rơi về kho chung đều thất bại ngay tại
+    // đây.
     const signIn = await helpers
       .http(app)
       .post('/api/v1/auth/sign-in/username')
@@ -613,8 +569,7 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
     expect(await countRows(centreUrl, 'session', 'user_id', dedicatedOnlyBaId)).toBe(1);
     expect(await countRows(process.env.DATABASE_URL!, 'session', 'user_id', dedicatedOnlyBaId)).toBe(0);
 
-    // Cookie phiên vừa ghi đọc được hồ sơ mang dấu kho đích qua
-    // địa chỉ của chính trung tâm.
+    // Cookie phiên vừa ghi đọc được hồ sơ mang dấu kho đích qua địa chỉ của chính trung tâm.
     const me = await helpers
       .http(app)
       .get('/api/v1/users/me')
@@ -625,8 +580,7 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
   });
 
   it('phiên cookie Better Auth ở kho riêng đọc được hồ sơ qua địa chỉ của chính trung tâm', async () => {
-    // Cookie phải ký đúng định dạng của Better Auth (xem hàm
-    // signedBetterAuthCookie ở đầu file): cookie không ký bị
+    // Cookie phải ký đúng định dạng của Better Auth (xem hàm signedBetterAuthCookie ở đầu file): cookie không ký bị
     // getSession bỏ qua trước khi tra bảng phiên.
     const me = await helpers
       .http(app)
@@ -639,10 +593,8 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
   });
 
   it('tài khoản chỉ ở kho chung bị từ chối khi đăng nhập Better Auth tại địa chỉ của trung tâm kho riêng', async () => {
-    // Tài khoản có credential hẳn hoi ở kho chung và không tồn
-    // tại ở kho riêng: kiểm chứng credential tại địa chỉ của
-    // trung tâm chỉ được chạm kho đích, không được rơi về kho
-    // chung theo bất kỳ đường nào.
+    // Tài khoản có credential hẳn hoi ở kho chung và không tồn tại ở kho riêng: kiểm chứng credential tại địa chỉ của
+    // trung tâm chỉ được chạm kho đích, không được rơi về kho chung theo bất kỳ đường nào.
     expect(await countRows(process.env.DATABASE_URL!, 'users', 'id', sharedOnlyBaId)).toBe(1);
     expect(await countRows(process.env.DATABASE_URL!, 'account', 'user_id', sharedOnlyBaId)).toBe(1);
     const centreUrl = clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD);
@@ -664,8 +616,8 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
   });
 
   it('đăng nhập Better Auth tại địa chỉ platform giữ nguyên hành vi: tài khoản kho chung vào được, tài khoản chỉ ở kho riêng bị từ chối', async () => {
-    // Không đặt Host của trung tâm: request mang địa chỉ mặc định
-    // (không trích được slug) — đúng đường platform hiện tại.
+    // Không đặt Host của trung tâm: request mang địa chỉ mặc định (không trích được slug) — đúng đường platform hiện
+    // tại.
     const centreUrl = clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD);
 
     // Tài khoản kho chung đăng nhập được và phiên ghi ở kho chung.
@@ -678,8 +630,8 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
     expect(await countRows(process.env.DATABASE_URL!, 'session', 'user_id', sharedOnlyBaId)).toBe(1);
     expect(await countRows(centreUrl, 'session', 'user_id', sharedOnlyBaId)).toBe(0);
 
-    // Tài khoản chỉ ở kho riêng không tồn tại ở kho chung nên bị
-    // từ chối tại địa chỉ platform như mọi tài khoản không tồn tại.
+    // Tài khoản chỉ ở kho riêng không tồn tại ở kho chung nên bị từ chối tại địa chỉ platform như mọi tài khoản không
+    // tồn tại.
     const dedicatedSignIn = await helpers
       .http(app)
       .post('/api/v1/auth/sign-in/username')

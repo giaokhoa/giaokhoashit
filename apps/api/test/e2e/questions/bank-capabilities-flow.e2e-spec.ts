@@ -8,12 +8,9 @@ import {
 import { RolesService } from '../../../src/modules/access/roles.service';
 
 /**
- * Khuôn capability chung của ba thực thể ngân hàng (issue #228, lát
- * S3) — đối chiếu tiêu chí nghiệm thu của issue: "đủ bộ capability
- * theo quy ước <area>:<name> cho cả ba thực thể
- * (use/add/edit/copy/share/moderate và các capability quản trị tương
- * ứng); bỏ việc neo quyền xem/sửa ma trận vào area quiz:*; chuẩn hoá
- * tên capability của đề về cùng khuôn".
+ * Khuôn capability chung của ba thực thể ngân hàng (issue #228, lát S3) — đối chiếu tiêu chí nghiệm thu của issue: "đủ
+ * bộ capability theo quy ước <area>:<name> cho cả ba thực thể (use/add/edit/copy/share/moderate và các capability quản
+ * trị tương ứng); bỏ việc neo quyền xem/sửa ma trận vào area quiz:*; chuẩn hoá tên capability của đề về cùng khuôn".
  *
  * Luật được khoá ở đây:
  *  - Registry chỉ còn matrix:use/add/edit/copy/share/moderate cho ma

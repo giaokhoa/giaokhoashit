@@ -26,9 +26,8 @@ import {
  *  (6) seed: tenant-zero + tenant trường mặc định tồn tại, admin khởi
  *      tạo là thành viên của cả hai.
  *
- * Hai tenant A/B dựng bằng chính API công khai với token admin khởi
- * tạo (platform manager); mọi thao tác trong tenant đi qua chuyển
- * phiên (switch-tenant) như người dùng thật.
+ * Hai tenant A/B dựng bằng chính API công khai với token admin khởi tạo (platform manager); mọi thao tác trong tenant
+ * đi qua chuyển phiên (switch-tenant) như người dùng thật.
  */
 describe('Cô lập tenant (TENANT-0, #168)', () => {
   let app: INestApplication;
@@ -90,12 +89,9 @@ describe('Cô lập tenant (TENANT-0, #168)', () => {
     for (const uid of [teacherId, memberAOnlyId, guardianAUser.id, studentAUser.id, adminId]) await addMember(tenantA, uid);
     for (const uid of [teacherId, guardianBUser.id, studentBUser.id, adminId]) await addMember(tenantB, uid);
 
-    // TENANT-1 (#196, điểm N2): trong cây tenant KHÔNG còn lối tắt
-    // site admin — admin muốn làm việc trong tenant A/B phải có vai
-    // thật neo tại context tenant như mọi người. Phía platform gán
-    // vai manager cho admin tại context của cả hai tenant TRƯỚC khi
-    // gieo nội dung (đúng mô hình vận hành: tenant admin giữ vai
-    // manager tại context tenant).
+    // TENANT-1 (#196, điểm N2): trong cây tenant KHÔNG còn lối tắt site admin — admin muốn làm việc trong tenant A/B
+    // phải có vai thật neo tại context tenant như mọi người. Phía platform gán vai manager cho admin tại context của cả
+    // hai tenant TRƯỚC khi gieo nội dung (đúng mô hình vận hành: tenant admin giữ vai manager tại context tenant).
     const allContexts = await must(await http(app).get('/api/v1/access/contexts').set(auth(adminZero)), 'list contexts') as { id: string; contextLevel: number; instanceId: string }[];
     const tenantCtxA = allContexts.find((c) => c.contextLevel === 20 && c.instanceId === tenantA);
     const tenantCtxB = allContexts.find((c) => c.contextLevel === 20 && c.instanceId === tenantB);
@@ -239,9 +235,8 @@ describe('Cô lập tenant (TENANT-0, #168)', () => {
     expect(currentB.id).toBe(tenantB);
     const membersB = await http(app).get(`/api/v1/tenants/${tenantB}/members`).set(auth(pair.accessToken));
     expect(membersB.status).toBe(403);
-    // Phiên cũ bị chốt theo claim: access token cũ vẫn mang tenant A
-    // (đúng vòng đời token ngắn hạn hiện hữu), nhưng refresh token của
-    // family cũ đã bị thu hồi — không gia hạn tiếp được ở tenant cũ.
+    // Phiên cũ bị chốt theo claim: access token cũ vẫn mang tenant A (đúng vòng đời token ngắn hạn hiện hữu), nhưng
+    // refresh token của family cũ đã bị thu hồi — không gia hạn tiếp được ở tenant cũ.
     const staleCurrent = await must(await http(app).get('/api/v1/tenants/current').set(auth(teacherTokenA)), 'current with old token') as { id: string };
     expect(staleCurrent.id).toBe(tenantA);
     const staleRefresh = await http(app).post('/api/v1/auth/refresh').send({ refreshToken: teacherRefreshA });
@@ -278,9 +273,8 @@ describe('Cô lập tenant (TENANT-0, #168)', () => {
   });
 
   it('(7) N2 (TENANT-1): site admin là thành viên nhưng KHÔNG có vai trong cây tenant → bị chặn như người thường', async () => {
-    // Một site admin thứ hai: manager tại context HỆ THỐNG (quyền
-    // platform đầy đủ) + thành viên của tenant A, nhưng không một gán
-    // vai nào neo trong cây A.
+    // Một site admin thứ hai: manager tại context HỆ THỐNG (quyền platform đầy đủ) + thành viên của tenant A, nhưng
+    // không một gán vai nào neo trong cây A.
     const support = await createUserViaApi(app, adminZero);
     const contexts = await must(await http(app).get('/api/v1/access/contexts').set(auth(adminZero)), 'list contexts') as { id: string; contextLevel: number; instanceId: string | null }[];
     const systemCtx = contexts.find((c) => c.contextLevel === 10);
@@ -293,17 +287,14 @@ describe('Cô lập tenant (TENANT-0, #168)', () => {
 
     const supportLogin = await login(app, support.username, STRONG_PASSWORD);
     const pair = await must(await http(app).post(`/api/v1/auth/switch-tenant/${tenantA}`).set(auth(supportLogin.accessToken)), 'support switch to A') as { accessToken: string };
-    // Trong cây A: lối tắt site admin đã tắt — các bề mặt check
-    // capability TẠI context trong cây (category:manage tại context
-    // tenant/context danh mục) chặn thẳng tay dù actor là site
-    // admin, vì không có vai neo tại chỗ.
+    // Trong cây A: lối tắt site admin đã tắt — các bề mặt check capability TẠI context trong cây (category:manage tại
+    // context tenant/context danh mục) chặn thẳng tay dù actor là site admin, vì không có vai neo tại chỗ.
     const createCat = await http(app).post('/api/v1/courses/categories').set(auth(pair.accessToken)).send({ name: 'Danh mục N2 không được phép' });
     expect(createCat.status).toBe(403);
     const patchCat = await http(app).patch(`/api/v1/courses/categories/${categoryA}`).set(auth(pair.accessToken)).send({ name: 'Đổi tên trái phép' });
     expect(patchCat.status).toBe(403);
-    // Ngoài cây tenant, cùng tài khoản vẫn là site admin nguyên vẹn:
-    // quản trị tenant từ phía platform (nhánh platform của
-    // assertTenantViewer, thiết kế TENANT-0) vẫn mở như cũ.
+    // Ngoài cây tenant, cùng tài khoản vẫn là site admin nguyên vẹn: quản trị tenant từ phía platform (nhánh platform
+    // của assertTenantViewer, thiết kế TENANT-0) vẫn mở như cũ.
     const tenants = await http(app).get('/api/v1/tenants').set(auth(supportLogin.accessToken));
     expect(tenants.status).toBe(200);
     const membersFromPlatform = await http(app).get(`/api/v1/tenants/${tenantA}/members`).set(auth(supportLogin.accessToken));
@@ -366,10 +357,8 @@ describe('Cô lập tenant (TENANT-0, #168)', () => {
   });
 
   it('(10) đáp ứng người dùng của tenant chỉ gồm đúng 7 trường hồ sơ, không chứa passwordHash', async () => {
-    // Hợp đồng hình dạng của bề mặt người dùng tenant: đúng 7 trường
-    // phía tiêu thụ cần — thừa hay thiếu một trường đều là đổi hợp
-    // đồng. Trước đợt sửa này cả hai đáp ứng trả nguyên dòng `users`
-    // (15 trường, gồm `passwordHash`).
+    // Hợp đồng hình dạng của bề mặt người dùng tenant: đúng 7 trường phía tiêu thụ cần — thừa hay thiếu một trường đều
+    // là đổi hợp đồng. Trước đợt sửa này cả hai đáp ứng trả nguyên dòng `users` (15 trường, gồm `passwordHash`).
     const expectedKeys = ['deleted', 'email', 'firstName', 'id', 'lastName', 'suspended', 'username'];
 
     const list = await http(app).get(`/api/v1/tenants/${tenantA}/users`).set(auth(adminZero));
@@ -410,10 +399,9 @@ describe('Cô lập tenant (TENANT-0, #168)', () => {
   });
 
   it('(11) quét sâu các bề mặt trả dữ liệu người dùng: không bề mặt nào chứa passwordHash', async () => {
-    // Tiêu chí toàn cục của đợt sửa: `passwordHash` không được xuất
-    // hiện trong BẤT KỲ đáp ứng HTTP nào — quét đệ quy theo khoá ở
-    // mọi mức lồng trên các bề mặt tiêu biểu trả dữ liệu người dùng,
-    // kèm quét dạng chuỗi cho dạng snake_case của tên cột.
+    // Tiêu chí toàn cục của đợt sửa: `passwordHash` không được xuất hiện trong BẤT KỲ đáp ứng HTTP nào — quét đệ quy
+    // theo khoá ở mọi mức lồng trên các bề mặt tiêu biểu trả dữ liệu người dùng, kèm quét dạng chuỗi cho dạng
+    // snake_case của tên cột.
     const containsKeyDeep = (value: unknown, key: string): boolean => {
       if (Array.isArray(value)) return value.some((v) => containsKeyDeep(v, key));
       if (value && typeof value === 'object') {

@@ -25,18 +25,13 @@ import { SearchService } from '../../../src/modules/search/search.service';
  *   bảng `search_documents` tại cùng thời điểm, và bằng độ dài của
  *   `listDocs`.
  *
- * Đưa điều kiện lọc về tầng ứng dụng hoặc làm lệch tập id thì các
- * khẳng định theo fixture phải đỏ.
+ * Đưa điều kiện lọc về tầng ứng dụng hoặc làm lệch tập id thì các khẳng định theo fixture phải đỏ.
  *
- * Ca này tách nguyên văn từ `test/e2e/search/search-reindex-ids.e2e-spec.ts`
- * (issue #483): act gọi thẳng `SearchService.reindexAll()` và assert
- * đọc kho tài liệu nội bộ (`listDocs`/`countDocs` + số dòng thật của
- * bảng) — bề mặt nội bộ không có tương đương HTTP (route tìm kiếm
- * không phơi bày tập tài liệu của chỉ mục), nên ca thuộc tầng
- * integration. Bản e2e của cùng file giữ act qua HTTP
- * `POST /search/reindex` với khẳng định trên bộ đếm `indexed` mà
- * endpoint trả về. Fixture dựng qua HTTP như file gốc — bước chuẩn
- * bị không quyết định tầng của test.
+ * Ca này tách nguyên văn từ `test/e2e/search/search-reindex-ids.e2e-spec.ts` (issue #483): act gọi thẳng
+ * `SearchService.reindexAll()` và assert đọc kho tài liệu nội bộ (`listDocs`/`countDocs` + số dòng thật của bảng) — bề
+ * mặt nội bộ không có tương đương HTTP (route tìm kiếm không phơi bày tập tài liệu của chỉ mục), nên ca thuộc tầng
+ * integration. Bản e2e của cùng file giữ act qua HTTP `POST /search/reindex` với khẳng định trên bộ đếm `indexed` mà
+ * endpoint trả về. Fixture dựng qua HTTP như file gốc — bước chuẩn bị không quyết định tầng của test.
  */
 describe('Search reindex — tập id theo area và số đếm tài liệu ở SQL', () => {
   let app: INestApplication;
@@ -96,8 +91,7 @@ describe('Search reindex — tập id theo area và số đếm tài liệu ở 
     expect(contentIds.has(publicItem.body.id as string)).toBe(true);
     expect(contentIds.has(draftItem.body.id as string)).toBe(false);
 
-    // Số đếm ở SQL: bằng số dòng thật của bảng tại cùng thời điểm và
-    // bằng số tài liệu listDocs trả về.
+    // Số đếm ở SQL: bằng số dòng thật của bảng tại cùng thời điểm và bằng số tài liệu listDocs trả về.
     const counted = await search.countDocs();
     const tableCount = await pg.query('select count(*)::int as total from search_documents');
     expect(counted).toBe((tableCount.rows[0] as { total: number }).total);

@@ -137,9 +137,8 @@ describe('Exam contributions S4 (issue #228): QB-4 đầy đủ cho đề + ch�
     expect(approveNew.status, JSON.stringify(approveNew.body)).toBe(201);
     const targetId = (approveNew.body as ContributionBody).resultExamId!;
     expect(targetId).toBeTruthy();
-    // Bản copy duyệt đóng góp hạ cánh ready ngay tại bank đích (quy
-    // tắc hoàn thiện: duyệt đóng góp đạt là đường vào bank ở dạng đã
-    // hoàn thiện) — dùng thẳng làm đề đích cho bản đề xuất cập nhật.
+    // Bản copy duyệt đóng góp hạ cánh ready ngay tại bank đích (quy tắc hoàn thiện: duyệt đóng góp đạt là đường vào
+    // bank ở dạng đã hoàn thiện) — dùng thẳng làm đề đích cho bản đề xuất cập nhật.
     const targetView = await http(app).get(`/api/v1/exams/${targetId}`).set(bearer(admin));
     expect((targetView.body as PaperBody).paper.status).toBe('ready');
 
@@ -375,9 +374,8 @@ describe('Exam contributions S4 (issue #228): QB-4 đầy đủ cho đề + ch�
     expect(approve1.status, JSON.stringify(approve1.body)).toBe(201);
     const landedId = (approve1.body as { resultMatrixId: string }).resultMatrixId;
 
-    // Đề xuất lần 2 (sau khi lần 1 đã chốt): bank đích nay có bản
-    // copy CÙNG NỘI DUNG → near_duplicate_of trỏ đúng bản đã vào
-    // bank; duyệt lần 2 bị chặn 409 vì bản đó suy từ chính nguồn.
+    // Đề xuất lần 2 (sau khi lần 1 đã chốt): bank đích nay có bản copy CÙNG NỘI DUNG → near_duplicate_of trỏ đúng bản
+    // đã vào bank; duyệt lần 2 bị chặn 409 vì bản đó suy từ chính nguồn.
     const propose2 = await http(app).post(`/api/v1/exam-matrices/${matrixId}/contributions`).set(bearer(owner.token))
       .send({ targetBankId: schoolMatrixBank.id });
     expect(propose2.status, JSON.stringify(propose2.body)).toBe(201);

@@ -11,23 +11,17 @@ import { courseContextId } from '../../support/engagement-helpers';
 /**
  * Danh sách ma trận theo môn — phân quyền NEO TẠI BANK (issue #376).
  *
- * Luồng nghiệp vụ được kiểm: `GET /exam-matrices/by-subject/:subjectId`
- * từng gác hai cổng liên tiếp tại context của MÔN (đọc môn qua
- * `curriculum:view`, rồi đòi `matrix:use` tại context môn) nên giáo
- * viên làm việc với môn hệ thống — môn neo tại context hệ thống, nơi
- * giáo viên không giữ vai trò nào — luôn nhận 403 dù có đầy đủ quyền
- * tại bank chứa ma trận. Học thuyết neo bank (điểm neo quyền duy nhất
- * của ma trận là bank chứa nó; context môn chỉ là phạm vi dữ liệu)
- * đòi bề mặt này: đọc môn dạng tham chiếu thuần tuý, bỏ cổng tại
- * context môn, và lọc từng ma trận theo quyền của chính nó —
- * bank-local (`bankLocalMatrixCaps.view`) với ma trận có bank, quy
- * tắc legacy (`PermissionEvaluator` với `matrix:use` tại context của
- * chính ma trận) với ma trận chưa thuộc bank nào/bank đã xoá.
+ * Luồng nghiệp vụ được kiểm: `GET /exam-matrices/by-subject/:subjectId` từng gác hai cổng liên tiếp tại context của MÔN
+ * (đọc môn qua `curriculum:view`, rồi đòi `matrix:use` tại context môn) nên giáo viên làm việc với môn hệ thống — môn
+ * neo tại context hệ thống, nơi giáo viên không giữ vai trò nào — luôn nhận 403 dù có đầy đủ quyền tại bank chứa ma
+ * trận. Học thuyết neo bank (điểm neo quyền duy nhất của ma trận là bank chứa nó; context môn chỉ là phạm vi dữ liệu)
+ * đòi bề mặt này: đọc môn dạng tham chiếu thuần tuý, bỏ cổng tại context môn, và lọc từng ma trận theo quyền của chính
+ * nó — bank-local (`bankLocalMatrixCaps.view`) với ma trận có bank, quy tắc legacy (`PermissionEvaluator` với
+ * `matrix:use` tại context của chính ma trận) với ma trận chưa thuộc bank nào/bank đã xoá.
  *
- * Diễn viên dựng theo ĐÚNG mô hình dữ liệu mẫu (hồi quy D-3 của issue
- * #233): giáo viên giữ vai `editingteacher` tại context KHOÁ mình
- * dạy, KHÔNG có vai nào tại context hệ thống. Các khẳng định đối
- * chiếu cả danh sách id lẫn bankId của từng ma trận trả về.
+ * Diễn viên dựng theo ĐÚNG mô hình dữ liệu mẫu (hồi quy D-3 của issue #233): giáo viên giữ vai `editingteacher` tại
+ * context KHOÁ mình dạy, KHÔNG có vai nào tại context hệ thống. Các khẳng định đối chiếu cả danh sách id lẫn bankId của
+ * từng ma trận trả về.
  */
 const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
@@ -73,8 +67,8 @@ describe('Danh sách ma trận theo môn neo quyền tại bank (issue #376)', (
     expect(currRes.status, JSON.stringify(currRes.body)).toBe(201);
     curriculumId = (currRes.body as { id: string }).id;
 
-    // Hai khoá học để gán vai editingteacher tại context khoá (mô
-    // hình seed): giáo viên KHÔNG có vai nào tại context hệ thống.
+    // Hai khoá học để gán vai editingteacher tại context khoá (mô hình seed): giáo viên KHÔNG có vai nào tại context hệ
+    // thống.
     const category = await createCategory(app, admin);
     const courseA = await createCourse(app, admin, category.id);
     const courseB = await createCourse(app, admin, category.id);
@@ -111,8 +105,8 @@ describe('Danh sách ma trận theo môn neo quyền tại bank (issue #376)', (
     matrixAId = await createMatrix(teacherA.token, `Ma trận 376 của A ${suffix}`, bankAId);
     matrixBId = await createMatrix(teacherB.token, `Ma trận 376 của B ${suffix}`, bankBId);
 
-    // Bank ma trận của TỔ (cohort: tổ trưởng + một thành viên; A và B
-    // không thuộc tổ) và ma trận của tổ do tổ trưởng tạo.
+    // Bank ma trận của TỔ (cohort: tổ trưởng + một thành viên; A và B không thuộc tổ) và ma trận của tổ do tổ trưởng
+    // tạo.
     const cohortRes = await http(app).post('/api/v1/cohorts').set(auth(admin)).send({ name: uniqueName('Tổ 376') });
     expect(cohortRes.status, JSON.stringify(cohortRes.body)).toBe(201);
     const cohortId = (cohortRes.body as { id: string }).id;
@@ -126,18 +120,16 @@ describe('Danh sách ma trận theo môn neo quyền tại bank (issue #376)', (
     const teamBankId = (teamBankRes.body as { id: string }).id;
     matrixTeamId = await createMatrix(teamLeader.token, `Ma trận 376 của tổ ${suffix}`, teamBankId);
 
-    // Ma trận LEGACY: tạo tay KHÔNG gắn bank (nhánh legacy của đường
-    // tạo — cổng tại context môn, admin qua được) nên bankId = null và
-    // contextId của ma trận là context hệ thống của môn.
+    // Ma trận LEGACY: tạo tay KHÔNG gắn bank (nhánh legacy của đường tạo — cổng tại context môn, admin qua được) nên
+    // bankId = null và contextId của ma trận là context hệ thống của môn.
     matrixLegacyId = await createMatrix(admin, `Ma trận 376 legacy ${suffix}`);
 
     // Người không có quyền nào ở bất kỳ đâu.
     const nb = await createUserViaApi(app, admin, { username: `nb376_${suffix}` });
     nobody = { id: nb.id, token: (await login(app, `nb376_${suffix}`, STRONG_PASSWORD)).accessToken };
 
-    // Người có quyền legacy: vai tuỳ biến chỉ mang `matrix:use` tại
-    // context hệ thống — qua cổng legacy của ma trận chưa thuộc bank,
-    // nhưng không phải thành viên của bất kỳ bank nào ở trên.
+    // Người có quyền legacy: vai tuỳ biến chỉ mang `matrix:use` tại context hệ thống — qua cổng legacy của ma trận chưa
+    // thuộc bank, nhưng không phải thành viên của bất kỳ bank nào ở trên.
     const legacyRoleId = await createRoleViaApi(app, admin);
     await setOverride(app, admin, legacyRoleId, 'matrix:use', systemCtxId, 1);
     const lv = await createUserViaApi(app, admin, { username: `lv376_${suffix}` });
@@ -150,10 +142,8 @@ describe('Danh sách ma trận theo môn neo quyền tại bank (issue #376)', (
   it('(a)+(b) giáo viên có quyền tại bank cá nhân, không quyền tại context môn/hệ thống: 200 và thấy đúng ma trận của bank mình, không thấy ma trận bank cá nhân của đồng nghiệp', async () => {
     const { status, body } = await listBySubject(teacherA.token);
     expect(status).toBe(200);
-    // Đúng tập ma trận: chỉ ma trận trong bank cá nhân của A. Ma trận
-    // của B (bank personal của người khác), ma trận tổ (A không phải
-    // thành viên) và ma trận legacy (A không có matrix:use tại
-    // context của ma trận) đều vắng mặt.
+    // Đúng tập ma trận: chỉ ma trận trong bank cá nhân của A. Ma trận của B (bank personal của người khác), ma trận tổ
+    // (A không phải thành viên) và ma trận legacy (A không có matrix:use tại context của ma trận) đều vắng mặt.
     expect(body.map((m) => m.id)).toEqual([matrixAId]);
     // Đối chiếu bank chứa: mọi ma trận trả về thuộc bank của A.
     expect(body.every((m) => m.bankId === bankAId)).toBe(true);

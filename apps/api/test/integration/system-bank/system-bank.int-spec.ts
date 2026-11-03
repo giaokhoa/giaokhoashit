@@ -13,31 +13,21 @@ import { checksumPackage } from '../../../src/modules/system-bank/system-bank-pa
 import { SystemBankService } from '../../../src/modules/system-bank/system-bank.service';
 
 /**
- * Ca tích hợp của KHO NGÂN HÀNG HỆ THỐNG (issue #585): service phía
- * ngân hàng + repository phía trung tâm chạy trên database thật, tự
- * cấp phát trên cùng cụm với database nghiệp vụ test, toàn bộ bằng
- * TÊN MỚI của riêng đợt này: một database kho ngân hàng
- * (`lms_test_bank_585`) với role riêng và một database trung tâm
- * (`lms_test_centre_585`) với role riêng, CONNECT của PUBLIC bị thu
- * hồi và chỉ cấp lại cho role của kho đó, migration kho ngân hàng áp
- * vào kho ngân hàng và baseline nghiệp vụ (đã gồm 3 bảng vệ tinh
- * trung tâm) áp vào kho trung tâm, đều bằng chính role chủ kho như
+ * Ca tích hợp của KHO NGÂN HÀNG HỆ THỐNG (issue #585): service phía ngân hàng + repository phía trung tâm chạy trên
+ * database thật, tự cấp phát trên cùng cụm với database nghiệp vụ test, toàn bộ bằng TÊN MỚI của riêng đợt này: một
+ * database kho ngân hàng (`lms_test_bank_585`) với role riêng và một database trung tâm (`lms_test_centre_585`) với
+ * role riêng, CONNECT của PUBLIC bị thu hồi và chỉ cấp lại cho role của kho đó, migration kho ngân hàng áp vào kho ngân
+ * hàng và baseline nghiệp vụ (đã gồm 3 bảng vệ tinh trung tâm) áp vào kho trung tâm, đều bằng chính role chủ kho như
  * đường triển khai thật. Shim `uuidv7()` chỉ áp khi server dưới PG18.
  *
- * Các ca khoá các tiêu chí nghiệm thu ở tầng service/repository:
- * (1) sửa câu hệ thống tạo version mới, version cũ đọc lại không
- * đổi, checksum tính lại khớp checksum lưu; (2) rút câu: khám phá
- * không còn thấy câu, sự kiện rút được ghi, danh sách trung tâm đã
- * nhập đọc được từ dòng importer; (3) gói YCCĐ: phát hành từ cây
- * chương trình rồi cài lại — nội dung cập nhật tại chỗ theo id, vết
- * cài ghi phiên bản trước; (4) cài gói khi môn chưa có ở trung tâm
- * thì fail-closed; (5) cài gói khi trung tâm đã có chương trình
- * (môn, khối) khác id thì fail-closed; (6) đường giao thông báo
- * rút câu phía trung tâm: mỗi trung tâm liệt kê được sự kiện chưa
- * ghi nhận của đúng câu mình đã nhập mà không cần biết trước id sự
- * kiện, ghi nhận xong thì hết ở trung tâm mình và còn nguyên ở
- * trung tâm khác. Đường nhập bản chụp (cần QuestionsService thật)
- * và đường bank-off thuộc tầng e2e.
+ * Các ca khoá các tiêu chí nghiệm thu ở tầng service/repository: (1) sửa câu hệ thống tạo version mới, version cũ đọc
+ * lại không đổi, checksum tính lại khớp checksum lưu; (2) rút câu: khám phá không còn thấy câu, sự kiện rút được ghi,
+ * danh sách trung tâm đã nhập đọc được từ dòng importer; (3) gói YCCĐ: phát hành từ cây chương trình rồi cài lại — nội
+ * dung cập nhật tại chỗ theo id, vết cài ghi phiên bản trước; (4) cài gói khi môn chưa có ở trung tâm thì fail-closed;
+ * (5) cài gói khi trung tâm đã có chương trình (môn, khối) khác id thì fail-closed; (6) đường giao thông báo rút câu
+ * phía trung tâm: mỗi trung tâm liệt kê được sự kiện chưa ghi nhận của đúng câu mình đã nhập mà không cần biết trước id
+ * sự kiện, ghi nhận xong thì hết ở trung tâm mình và còn nguyên ở trung tâm khác. Đường nhập bản chụp (cần
+ * QuestionsService thật) và đường bank-off thuộc tầng e2e.
  */
 const BANK_DATABASE = 'lms_test_bank_585';
 const BANK_ROLE = 'lms_bank_test_585';
@@ -146,11 +136,9 @@ describe('Kho ngân hàng hệ thống (issue #585)', () => {
           : undefined,
     } as never);
     const connection = bankConnection;
-    // Repository chuyển sang package `@lms/db` (hạng mục G10, issue
-    // #650): kho ngân hàng nhận handle Kysely của adapter kết nối
-    // kèm hàm dựng lỗi 503 chưa-cấu-hình đúng hình dạng module dùng;
-    // repository phía trung tâm nhận MỘT handle Kysely trên pool
-    // trung tâm của spec, dùng chung với stub `withPlatform`.
+    // Repository chuyển sang package `@lms/db` (hạng mục G10, issue #650): kho ngân hàng nhận handle Kysely của adapter
+    // kết nối kèm hàm dựng lỗi 503 chưa-cấu-hình đúng hình dạng module dùng; repository phía trung tâm nhận MỘT handle
+    // Kysely trên pool trung tâm của spec, dùng chung với stub `withPlatform`.
     centreKysely = createCentreKysely(centrePool);
     const repo = new SystemBankRepository(connection.kysely, () =>
       new ServiceUnavailableException({
@@ -193,18 +181,16 @@ describe('Kho ngân hàng hệ thống (issue #585)', () => {
       source_kind: 'program',
       source_ref: 'CT Toán 12',
     }).execute();
-  // Migrate cả baseline nghiệp vụ (983 statement) nên hook vượt quá
-  // hookTimeout 30s mặc định của project int — nới riêng cho hook này.
+  // Migrate cả baseline nghiệp vụ (983 statement) nên hook vượt quá hookTimeout 30s mặc định của project int — nới
+  // riêng cho hook này.
   }, 180000);
 
   afterAll(async () => {
-    // Đóng pool của kết nối kho ngân hàng TRƯỚC khi xoá database, nếu
-    // không các kết nối idle bị DROP DATABASE ... WITH (FORCE) cắt
-    // ngang (FATAL 57P01) và vitest báo lỗi dù mọi ca đã xanh.
+    // Đóng pool của kết nối kho ngân hàng TRƯỚC khi xoá database, nếu không các kết nối idle bị DROP DATABASE ... WITH
+    // (FORCE) cắt ngang (FATAL 57P01) và vitest báo lỗi dù mọi ca đã xanh.
     await bankConnection?.onModuleDestroy();
     await bankPool?.end();
-    // destroy() của handle Kysely trung tâm đóng luôn pool của nó —
-    // không end pool lần nữa.
+    // destroy() của handle Kysely trung tâm đóng luôn pool của nó — không end pool lần nữa.
     await centreKysely?.destroy();
     const adminUrl = clusterUrl('postgres');
     for (const [database, role] of [
@@ -280,14 +266,12 @@ describe('Kho ngân hàng hệ thống (issue #585)', () => {
       { source_question_id: questionId, centre_slug: 'trung-tam-b', imported_by: ADMIN_ID },
     ]).execute();
     await service.withdrawQuestion(ADMIN_ID, questionId, { reason: 'Nội dung lỗi thời' });
-    // Trung tâm A liệt kê mà không biết trước id sự kiện: sự kiện
-    // rút của câu vừa nhập hiện ra từ chính danh sách này.
+    // Trung tâm A liệt kê mà không biết trước id sự kiện: sự kiện rút của câu vừa nhập hiện ra từ chính danh sách này.
     const pendingA = await tenantAls.run({ spaceSlug: 'trung-tam-a' }, () => service.listPendingEvents(ADMIN_ID));
     const mine = pendingA.filter((event) => event.sourceQuestionId === questionId);
     expect(mine).toHaveLength(1);
     expect(mine[0]!.type).toBe('question_withdrawn');
-    // Ghi nhận bằng id lấy từ danh sách: danh sách của A hết sự
-    // kiện đó, trung tâm B chưa ghi nhận nên vẫn thấy.
+    // Ghi nhận bằng id lấy từ danh sách: danh sách của A hết sự kiện đó, trung tâm B chưa ghi nhận nên vẫn thấy.
     await tenantAls.run({ spaceSlug: 'trung-tam-a' }, () => service.acknowledgeEvent(ADMIN_ID, mine[0]!.id));
     const pendingAfterAck = await tenantAls.run({ spaceSlug: 'trung-tam-a' }, () => service.listPendingEvents(ADMIN_ID));
     expect(pendingAfterAck.find((event) => event.sourceQuestionId === questionId)).toBeUndefined();

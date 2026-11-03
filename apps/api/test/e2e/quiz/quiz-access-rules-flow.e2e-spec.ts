@@ -173,9 +173,8 @@ describe('Quy tắc truy cập quiz + ghi đè (giai đoạn 2)', () => {
 
   it('không có trễ giữa các lượt trong mô hình ghim: lượt đã xong không bao giờ chặn lượt tiếp theo', async () => {
     const ctx = await setup();
-    // delay1/delay2 của quiz cũ đã bỏ hẳn khỏi mô hình pin (hồ sơ gộp
-    // #226): làm xong một lượt thì bắt đầu lượt mới được ngay, không
-    // có mốc chờ và nextAttemptAt luôn null.
+    // delay1/delay2 của quiz cũ đã bỏ hẳn khỏi mô hình pin (hồ sơ gộp #226): làm xong một lượt thì bắt đầu lượt mới
+    // được ngay, không có mốc chờ và nextAttemptAt luôn null.
     const quizId = await createQuizWithSlot(ctx, {});
     await finishAttemptCorrectly(ctx, ctx.student, quizId);
     const info = await http(app).get(`/api/v1/exam-pins/${quizId}`).set('Authorization', `Bearer ${ctx.student}`);
@@ -203,8 +202,8 @@ describe('Quy tắc truy cập quiz + ghi đè (giai đoạn 2)', () => {
     expect(ambiguous.status).toBe(400);
     expect(ambiguous.body.code).toBe('quiz.override_target');
 
-    // Mở cửa sổ riêng cho một học sinh = cửa sổ kiểm tra bù → reason
-    // bắt buộc theo quy tắc của chính Chặng 2 (quiz.override_reason_required).
+    // Mở cửa sổ riêng cho một học sinh = cửa sổ kiểm tra bù → reason bắt buộc theo quy tắc của chính Chặng 2
+    // (quiz.override_reason_required).
     const created = await http(app).post(`/api/v1/exam-pins/${quizId}/overrides`).set('Authorization', `Bearer ${ctx.teacher}`)
       .send({ userId: ctx.studentId, timeOpen: new Date(Date.now() - 60_000).toISOString(), reason: 'Kiểm tra bù — mở cửa sổ riêng cho học sinh' });
     expect(created.status === 200 || created.status === 201).toBe(true);
@@ -279,9 +278,8 @@ describe('Quy tắc truy cập quiz + ghi đè (giai đoạn 2)', () => {
 
   it('tuỳ chọn xem lại cổng các khía cạnh theo cửa sổ cho chủ sở hữu; giáo viên không bị cổng', async () => {
     const ctx = await setup();
-    // Cửa sổ hiện tại ngay sau nộp = "ngay sau" (2 phút): correctness/marks
-    // chỉ bật ở cửa sổ SAU ĐÓ → ẩn; rightAnswer bật mọi cửa sổ → hiện;
-    // reviewAttempt = 0 → nội dung câu bị ẩn hẳn ở mọi cửa sổ sau nộp.
+    // Cửa sổ hiện tại ngay sau nộp = "ngay sau" (2 phút): correctness/marks chỉ bật ở cửa sổ SAU ĐÓ → ẩn; rightAnswer
+    // bật mọi cửa sổ → hiện; reviewAttempt = 0 → nội dung câu bị ẩn hẳn ở mọi cửa sổ sau nộp.
     const quizId = await createQuizWithSlot(ctx, {
       reviewCorrectness: 0x00100 | 0x00010,
       reviewMarks: 0x00100 | 0x00010,
@@ -369,8 +367,8 @@ describe('Quy tắc truy cập quiz + ghi đè (giai đoạn 2)', () => {
     const created = await http(app).post(`/api/v1/exam-pins/${quizId}/overrides`).set('Authorization', `Bearer ${ctx.teacher}`)
       .send({ userId: ctx.studentId, attempts: 3 });
     expect(created.status === 200 || created.status === 201).toBe(true);
-    // PATCH cộng giờ mà không bổ sung reason → bị từ chối như đường tạo
-    // (trước vòng fix này PATCH trả 200 — vòng qua cổng reason).
+    // PATCH cộng giờ mà không bổ sung reason → bị từ chối như đường tạo (trước vòng fix này PATCH trả 200 — vòng qua
+    // cổng reason).
     const patched = await http(app).patch(`/api/v1/exam-pin-overrides/${created.body.id}`).set('Authorization', `Bearer ${ctx.teacher}`)
       .send({ timeLimitSeconds: 3600 });
     expect(patched.status).toBe(400);
@@ -412,13 +410,12 @@ describe('Quy tắc truy cập quiz + ghi đè (giai đoạn 2)', () => {
     const gov = await http(app).post(`/api/v1/exam-pins/${quizId}/overrides`).set('Authorization', `Bearer ${ctx.teacher}`)
       .send({ groupId, timeClose: lateClose });
     expect(gov.status === 200 || gov.status === 201).toBe(true);
-    // Đóng cửa sổ gốc của quiz về quá khứ: theo mốc riêng của học sinh
-    // thì đã "sau khi đóng", nhưng cả đợt còn ca muộn chưa thi.
+    // Đóng cửa sổ gốc của quiz về quá khứ: theo mốc riêng của học sinh thì đã "sau khi đóng", nhưng cả đợt còn ca muộn
+    // chưa thi.
     const patch = await http(app).patch(`/api/v1/exam-pins/${quizId}`).set('Authorization', `Bearer ${ctx.teacher}`)
       .send({ timeClose: new Date(Date.now() - 60_000).toISOString() });
     expect(patch.status).toBe(200);
-    // Già hoá time_finish qua cửa sổ "ngay sau nộp" (2 phút) để cửa sổ
-    // xét theo mốc đóng của đợt, không theo mốc nộp.
+    // Già hoá time_finish qua cửa sổ "ngay sau nộp" (2 phút) để cửa sổ xét theo mốc đóng của đợt, không theo mốc nộp.
     await pg.query(`UPDATE exam_attempts SET time_finish = now() - interval '10 minutes' WHERE id = $1`, [submitted.attempt.id]);
     const view1 = await http(app).get(`/api/v1/quiz-attempts/${submitted.attempt.id}`).set('Authorization', `Bearer ${ctx.student}`);
     expect(view1.body.questions[0].rightAnswer).toBeNull(); // chưa lộ đáp án

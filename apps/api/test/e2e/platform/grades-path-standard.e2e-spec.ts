@@ -45,8 +45,8 @@ describe('Chuẩn đường dẫn điểm (issue #342)', () => {
     const item = await createGradeItem(app, admin, course.id, { itemName: 'Path standard item', gradeMax: 10 });
     await setGrade(app, admin, item.id, student.id, 8);
 
-    // Bắt đầu theo dõi log cảnh báo sau khi dựng xong bằng canonical,
-    // để các bản ghi bắt được chỉ đến từ các lượt gọi alias dưới đây.
+    // Bắt đầu theo dõi log cảnh báo sau khi dựng xong bằng canonical, để các bản ghi bắt được chỉ đến từ các lượt gọi
+    // alias dưới đây.
     const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
 
     // GET alias danh sách item: vẫn trả 200 như canonical, kèm header sắp bỏ.
@@ -66,16 +66,15 @@ describe('Chuẩn đường dẫn điểm (issue #342)', () => {
     expect(canonicalList.status).toBe(200);
     expect(canonicalList.headers['deprecation']).toBeUndefined();
 
-    // POST alias xuất vnEdu với thân rỗng: bị kiểm chứng chặn 400
-    // (chứng minh lượt gọi tới được handler/pipe của alias), và vẫn
-    // mang header sắp bỏ dù bị từ chối.
+    // POST alias xuất vnEdu với thân rỗng: bị kiểm chứng chặn 400 (chứng minh lượt gọi tới được handler/pipe của
+    // alias), và vẫn mang header sắp bỏ dù bị từ chối.
     const aliasExport = await http(app).post(`/api/v1/courses/${course.id}/grades/export/vnedu`).set('Authorization', `Bearer ${admin}`)
       .send({});
     expect(aliasExport.status).toBe(400);
     expect(aliasExport.headers['deprecation']).toBe('true');
 
-    // Trong các log cảnh báo đã ghi phải có ít nhất một bản ghi JSON
-    // của sự kiện deprecated_route_alias cho alias danh sách item.
+    // Trong các log cảnh báo đã ghi phải có ít nhất một bản ghi JSON của sự kiện deprecated_route_alias cho alias danh
+    // sách item.
     const aliasLogs = warn.mock.calls
       .map((call) => String(call[0]))
       .flatMap((message) => {

@@ -4,8 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { adminToken, assignRole, createRoleViaApi, createTestApp, createUserViaApi, http, login, roleIdByShortname, STRONG_PASSWORD, systemContextId, uniqueName } from '../../support/identity-access-helpers';
 
 /**
- * Kiểm thử luồng Users & profile.
- * Oracle: lib/tests/user_test.php (MOODLE_503_STABLE) — test_search_no_identity_fields,
+ * Kiểm thử luồng Users & profile. Oracle: lib/tests/user_test.php (MOODLE_503_STABLE) — test_search_no_identity_fields,
  * test_search_deleted_users, test_validate; báo cáo §2#2 (xoá mềm, guest, định danh theo capability).
  */
 describe('Người dùng: quy tắc định danh, xoá mềm, tuỳ chọn, sự kiện outbox', () => {
@@ -97,13 +96,11 @@ describe('Người dùng: quy tắc định danh, xoá mềm, tuỳ chọn, sự
 });
 
 /**
- * Góc nhìn truy cập tự phục vụ (GET /users/me/capabilities).
- * Oracle: Hệ con Access (blueprint §2#1 + báo cáo §3.3) — việc phân giải capability
- * là việc của PermissionEvaluator; endpoint này chỉ phơi bày
- * góc nhìn đã phân giải của chính NGƯỜI GỌI (cờ site-admin, các lần gán vai kèm
- * thông tin context, capability đã phân giải theo từng context liên quan) để client
- * hiển thị đúng những gì người dùng thao tác được thay vì dò endpoint.
- * Nó không nhận tham số người dùng: dữ liệu của người dùng khác không tới được ở đây.
+ * Góc nhìn truy cập tự phục vụ (GET /users/me/capabilities). Oracle: Hệ con Access (blueprint §2#1 + báo cáo §3.3) —
+ * việc phân giải capability là việc của PermissionEvaluator; endpoint này chỉ phơi bày góc nhìn đã phân giải của chính
+ * NGƯỜI GỌI (cờ site-admin, các lần gán vai kèm thông tin context, capability đã phân giải theo từng context liên quan)
+ * để client hiển thị đúng những gì người dùng thao tác được thay vì dò endpoint. Nó không nhận tham số người dùng: dữ
+ * liệu của người dùng khác không tới được ở đây.
  */
 describe('Người dùng: view năng lực tự phục vụ', () => {
   let app: INestApplication;
@@ -162,11 +159,9 @@ describe('Người dùng: view năng lực tự phục vụ', () => {
 });
 
 /**
- * Cờ hiện vật học tập trong ảnh chụp quyền (issue #176, nhánh A của dấu
- * chân học tập): huy hiệu đã cấp chưa thu hồi HOẶC kế hoạch học tập của
- * chính mình → true; chỉ có huy hiệu đã thu hồi hoặc không có gì → false.
- * Hàng huy hiệu/kế hoạch chèn trực tiếp bằng SQL (như test outbox phía
- * trên) để không phụ thuộc luồng cấp huy hiệu/tạo kế hoạch qua API.
+ * Cờ hiện vật học tập trong ảnh chụp quyền (issue #176, nhánh A của dấu chân học tập): huy hiệu đã cấp chưa thu hồi
+ * HOẶC kế hoạch học tập của chính mình → true; chỉ có huy hiệu đã thu hồi hoặc không có gì → false. Hàng huy hiệu/kế
+ * hoạch chèn trực tiếp bằng SQL (như test outbox phía trên) để không phụ thuộc luồng cấp huy hiệu/tạo kế hoạch qua API.
  */
 describe('Người dùng: hasLearnerArtifacts trong view năng lực tự phục vụ', () => {
   let app: INestApplication;
@@ -232,9 +227,8 @@ describe('Người dùng: mật khẩu đặt qua cập nhật hồ sơ được
   it('từ chối đặt mật khẩu tự phục vụ qua PATCH /users/:id và giữ mật khẩu cũ hoạt động', async () => {
     const user = await createUserViaApi(app, admin);
     const { accessToken } = await login(app, user.username, STRONG_PASSWORD);
-    // Một phiên hợp lệ (kịch bản phiên bị đánh cắp) không được phép tự
-    // đặt mật khẩu qua đường sửa hồ sơ — đường này không có tái xác
-    // thực bằng mật khẩu hiện tại.
+    // Một phiên hợp lệ (kịch bản phiên bị đánh cắp) không được phép tự đặt mật khẩu qua đường sửa hồ sơ — đường này
+    // không có tái xác thực bằng mật khẩu hiện tại.
     const res = await http(app).patch(`/api/v1/users/${user.id}`)
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ password: 'Attacker123!' });
@@ -254,8 +248,8 @@ describe('Người dùng: mật khẩu đặt qua cập nhật hồ sơ được
       .set('Authorization', `Bearer ${admin}`)
       .send({ password: 'ResetPass123!' });
     expect(res.status).toBe(200);
-    // Family refresh cấp trước lần đặt lại mật khẩu phải chết: dùng
-    // lại refresh token cũ bị từ chối như token không hợp lệ.
+    // Family refresh cấp trước lần đặt lại mật khẩu phải chết: dùng lại refresh token cũ bị từ chối như token không hợp
+    // lệ.
     const reuse = await http(app).post('/api/v1/auth/refresh').send({ refreshToken: session.refreshToken });
     expect(reuse.status).toBe(401);
     expect(reuse.body.code).toBe('auth.refresh_invalid');

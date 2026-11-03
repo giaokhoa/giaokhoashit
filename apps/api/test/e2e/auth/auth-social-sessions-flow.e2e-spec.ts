@@ -6,8 +6,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWORD, uniqueName } from '../../support/identity-access-helpers';
 
 /**
- * Đợt Auth: đăng nhập xã hội (auth_oauth2), MFA trên luồng session-cookie,
- * và quản lý phiên của tôi (report_usersessions).
+ * Đợt Auth: đăng nhập xã hội (auth_oauth2), MFA trên luồng session-cookie, và quản lý phiên của tôi
+ * (report_usersessions).
  *
  * Oracle:
  * - Moodle `auth/oauth2/tests/auth_test.php::test_oauth2_complete_login`
@@ -19,11 +19,9 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
  * - Moodle `report/usersessions` (locallib.php + tests/lib_test.php):
  *   người dùng thấy các phiên của chính mình và có thể chấm dứt các phiên khác.
  *
- * Provider chỉ được giả lập tại biên HTTP của nó: một máy chủ HTTP cục bộ
- * đóng vai các endpoint token + userinfo của Google/Facebook (nối qua
- * các ghi đè env OAUTH_*_URL); mọi bước bên trong hệ thống này —
- * trạng thái authorize, callback, khớp/tạo tài khoản, đăng nhập liên kết,
- * bàn giao (handoff), phiên — đều chạy thật.
+ * Provider chỉ được giả lập tại biên HTTP của nó: một máy chủ HTTP cục bộ đóng vai các endpoint token + userinfo của
+ * Google/Facebook (nối qua các ghi đè env OAUTH_*_URL); mọi bước bên trong hệ thống này — trạng thái authorize,
+ * callback, khớp/tạo tài khoản, đăng nhập liên kết, bàn giao (handoff), phiên — đều chạy thật.
  */
 
 /** Hồ sơ userinfo giả lập theo authorization code: test đăng ký hồ sơ, máy chủ giả trả về khi code được đổi và userinfo được gọi. */
@@ -72,7 +70,6 @@ function startMockProvider(): Promise<{ server: Server; baseUrl: string }> {
   });
 }
 
-/** Mã TOTP hiện tại cho secret (cùng thư viện otplib với server). */
 async function currentTotpCode(secret: string): Promise<string> {
   return generate({ secret });
 }
@@ -88,7 +85,6 @@ async function wrongTotpCode(secret: string): Promise<string> {
   throw new Error('no wrong-code candidate available');
 }
 
-/** Bật MFA cho user qua API, trả secret để sinh mã trong test. */
 async function enableMfaViaApi(app: INestApplication, accessToken: string): Promise<string> {
   const setup = await http(app).post('/api/v1/auth/mfa/totp/setup').set('Authorization', `Bearer ${accessToken}`);
   expect(setup.status).toBe(201);
@@ -107,10 +103,9 @@ describe('Đợt xác thực: đăng nhập social OAuth2, luồng phiên MFA, p
   beforeAll(async () => {
     const mock = await startMockProvider();
     provider = mock.server;
-    // Cấu hình issuer + trỏ điểm cuối provider vào máy chủ giả lập TRƯỚC
-    // khi dựng app (ConfigModule đọc env lúc khởi tạo). Tên biến bí mật
-    // được ghép từ mảnh khi gán để mã kiểm thử không chứa nguyên văn
-    // thông tin định danh của issuer.
+    // Cấu hình issuer + trỏ điểm cuối provider vào máy chủ giả lập TRƯỚC khi dựng app (ConfigModule đọc env lúc khởi
+    // tạo). Tên biến bí mật được ghép từ mảnh khi gán để mã kiểm thử không chứa nguyên văn thông tin định danh của
+    // issuer.
     const envKey = (...parts: string[]): string => parts.join('_');
     process.env.OAUTH_GOOGLE_CLIENT_ID = 'test-google-client-id';
     process.env[envKey('OAUTH', 'GOOGLE', 'CLIENT', 'SECRET')] = 'test-google-client-secret';
@@ -130,7 +125,6 @@ describe('Đợt xác thực: đăng nhập social OAuth2, luồng phiên MFA, p
     provider.close();
   });
 
-  /** Chạy trọn luồng authorize → callback cho một code đã đăng ký hồ sơ; trả đáp ứng callback thô. */
   async function runCallback(issuer: 'google' | 'facebook', code: string, accessToken?: string) {
     const authorizeReq = http(app).get(`/api/v1/auth/oauth/${issuer}/${accessToken ? 'link' : 'authorize'}`);
     if (accessToken) authorizeReq.set('Authorization', `Bearer ${accessToken}`);
@@ -143,7 +137,6 @@ describe('Đợt xác thực: đăng nhập social OAuth2, luồng phiên MFA, p
     return http(app).get(`/api/v1/auth/oauth/${issuer}/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state!)}`);
   }
 
-  /** Đổi mã bàn giao trong Location của callback lấy đáp ứng đăng nhập. */
   async function exchangeHandoff(location: string) {
     const handoff = new URL(location, 'http://localhost').searchParams.get('handoff');
     expect(handoff).toBeTruthy();
@@ -312,15 +305,14 @@ describe('Đợt xác thực: đăng nhập social OAuth2, luồng phiên MFA, p
 
   it('phiên của tôi: danh sách đánh dấu phiên hiện tại, phiên khác thu hồi được từng cái và hàng loạt (report_usersessions)', async () => {
     const user = await createUserViaApi(app, admin);
-    // Đăng nhập token qua /auth/token kèm User-Agent biết trước: họ token
-    // của lần đăng nhập này phải mang đúng thông tin máy khách đó.
+    // Đăng nhập token qua /auth/token kèm User-Agent biết trước: họ token của lần đăng nhập này phải mang đúng thông
+    // tin máy khách đó.
     const firstRes = await http(app).post('/api/v1/auth/token')
       .set('User-Agent', 'Mozilla/5.0 (Token Browser)')
       .send({ username: user.username, password: STRONG_PASSWORD });
     expect(firstRes.status).toBe(201);
     const first = { accessToken: firstRes.body.accessToken as string, refreshToken: firstRes.body.refreshToken as string, userId: firstRes.body.user.id as string };
-    // Lần đăng nhập token thứ hai đi qua đường passport /auth/login để phủ
-    // cả hai đường cấp họ token.
+    // Lần đăng nhập token thứ hai đi qua đường passport /auth/login để phủ cả hai đường cấp họ token.
     const secondRes = await http(app).post('/api/v1/auth/login')
       .set('User-Agent', 'Mozilla/5.0 (Passport Browser)')
       .send({ username: user.username, password: STRONG_PASSWORD });

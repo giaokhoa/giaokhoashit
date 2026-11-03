@@ -102,17 +102,15 @@ describe('Vòng đời lớp (CLASS-0, #184)', () => {
     teacher = (await login(app, teacherUser.username, STRONG_PASSWORD)).accessToken;
     grader = (await login(app, graderUser.username, STRONG_PASSWORD)).accessToken;
 
-    // Mọi user của spec là thành viên tenant-zero (trang chính) — cổng
-    // membership của PermissionEvaluator vô hiệu mọi gán vai trong cây
-    // tenant khi thiếu membership hiệu lực (TENANT-0, #168).
+    // Mọi user của spec là thành viên tenant-zero (trang chính) — cổng membership của PermissionEvaluator vô hiệu mọi
+    // gán vai trong cây tenant khi thiếu membership hiệu lực (TENANT-0, #168).
     const current = await must(await http(app).get('/api/v1/tenants/current').set(auth(admin)), 'current tenant') as { id: string };
     for (const userId of [teacherId, graderId, student1Id, student2Id, student3Id]) {
       await http(app).post(`/api/v1/tenants/${current.id}/members`).set(auth(admin)).send({ userId });
     }
-    // Giáo viên của spec làm chủ một lớp NHIỀU khoá: theo đặc tả slot
-    // đã duyệt của issue #189, giáo viên ở tenant platform không có
-    // gói chỉ làm chủ được mức nền 1 khoá — cấp quyền lợi gói giáo
-    // viên đang hoạt động làm tiền đề fixture (xem grantActiveTeacherPlan).
+    // Giáo viên của spec làm chủ một lớp NHIỀU khoá: theo đặc tả slot đã duyệt của issue #189, giáo viên ở tenant
+    // platform không có gói chỉ làm chủ được mức nền 1 khoá — cấp quyền lợi gói giáo viên đang hoạt động làm tiền đề
+    // fixture (xem grantActiveTeacherPlan).
     await grantActiveTeacherPlan(pg, teacherId);
 
     categoryId = (await createCategory(app, admin)).id;
@@ -220,15 +218,11 @@ describe('Vòng đời lớp (CLASS-0, #184)', () => {
     expect(await cohortUeStatus(course3, student2Id)).toBe(0);
   });
 
-  // (6) bền vững đã chuyển sang tầng integration của worker cùng
-  // consumer đồng bộ cohort (issue con #528 của #519):
-  // `apps/worker/test/integration/enrol/cohort-sync-events-delivery.int-spec.ts`
-  // giữ nguyên khẳng định nghiệp vụ (cohort_members + outbox ghi
-  // thẳng vào DB, không qua in-process → relay → hàng đợi →
-  // consumer vật chất hoá ghi danh) trên đường thật của production.
-  // Đường polling phía API đã gỡ nên ca này không còn chạy được ở
-  // tầng e2e của API (tiến trình API không còn consumer nào quét
-  // outbox cho hai loại sự kiện cohort).
+  // (6) bền vững đã chuyển sang tầng integration của worker cùng consumer đồng bộ cohort (issue con #528 của #519):
+  // `apps/worker/test/integration/enrol/cohort-sync-events-delivery.int-spec.ts` giữ nguyên khẳng định nghiệp vụ
+  // (cohort_members + outbox ghi thẳng vào DB, không qua in-process → relay → hàng đợi → consumer vật chất hoá ghi
+  // danh) trên đường thật của production. Đường polling phía API đã gỡ nên ca này không còn chạy được ở tầng e2e của
+  // API (tiến trình API không còn consumer nào quét outbox cho hai loại sự kiện cohort).
 
   it('(7) đình chỉ thủ công theo khoá mang vết modifierId = giáo viên; kích hoạt lại xoá vết về đồng bộ', async () => {
     const instance = await cohortInstance(course1);
@@ -249,8 +243,8 @@ describe('Vòng đời lớp (CLASS-0, #184)', () => {
       'manual reactivate in one course',
     ) as { status: number };
     expect(reactivated.status).toBe(0);
-    // Kích hoạt lại thủ công cũng là thao tác của người — vết modifierId
-    // vẫn là giáo viên (job đối soát chỉ đọc vết trên dòng SUSPENDED).
+    // Kích hoạt lại thủ công cũng là thao tác của người — vết modifierId vẫn là giáo viên (job đối soát chỉ đọc vết
+    // trên dòng SUSPENDED).
     expect(await cohortUeStatus(course1, student2Id)).toBe(0);
   });
 

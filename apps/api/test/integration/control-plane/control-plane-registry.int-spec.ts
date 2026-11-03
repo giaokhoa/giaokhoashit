@@ -14,36 +14,25 @@ import { UsersService } from '../../../src/modules/users/users.service';
 import { createTestApp } from '../../support/identity-access-helpers';
 
 /**
- * Ca tích hợp của CONTROL PLANE (issue #580): sổ đăng ký không gian,
- * registry phiên bản schema và tách quyền kết nối giữa hai database.
+ * Ca tích hợp của CONTROL PLANE (issue #580): sổ đăng ký không gian, registry phiên bản schema và tách quyền kết nối
+ * giữa hai database.
  *
- * Môi trường của ca tự cấp phát như đường triển khai thật: một
- * database control plane MỚI (`lms_test_cp_580`) trên cùng cụm với
- * database nghiệp vụ test, một role kết nối riêng chỉ có quyền trên
- * database đó, bộ migration riêng của control plane áp từ rỗng bằng
- * chính file SQL đã sinh, rồi mới khởi động ứng dụng với
- * `CONTROL_PLANE_DATABASE_URL` trỏ vào đó — để cả đường gieo dữ kiện
- * lúc bootstrap cũng được kiểm chứng trên cùng một lượt chạy.
+ * Môi trường của ca tự cấp phát như đường triển khai thật: một database control plane MỚI (`lms_test_cp_580`) trên cùng
+ * cụm với database nghiệp vụ test, một role kết nối riêng chỉ có quyền trên database đó, bộ migration riêng của control
+ * plane áp từ rỗng bằng chính file SQL đã sinh, rồi mới khởi động ứng dụng với `CONTROL_PLANE_DATABASE_URL` trỏ vào đó
+ * — để cả đường gieo dữ kiện lúc bootstrap cũng được kiểm chứng trên cùng một lượt chạy.
  *
- * Cô lập kết nối được kiểm ở ĐÚNG bước mở kết nối, hai chiều: ca
- * cũng khoá CONNECT trên chính database nghiệp vụ test (thu hồi
- * PUBLIC, cấp lại cho role của đường dữ kiện và một role nghiệp vụ
- * thường `lms_biz_test_580`) như script cấp phát làm ở môi trường
- * triển khai, rồi khẳng định role control plane chết ngay tại
- * `connect()`. ACL của database nghiệp vụ được trả về mặc định ở
- * afterAll để không ảnh hưởng các ca khác dùng chung cụm test.
- * Giới hạn phạm vi của các ca kết nối: chúng chứng minh cô lập với
- * role KHÔNG phải superuser — tại thời điểm của issue này, role
- * runtime của ứng dụng trong compose vẫn là superuser của cụm, mà
- * superuser thì bỏ qua mọi kiểm tra quyền kết nối. Việc tách role
- * runtime thành role thường riêng và role migration riêng thuộc
- * issue #586; từ đó cô lập ở bước mở kết nối được kiểm chứng bằng
- * chính các role thật của mô hình mới trong ca tích hợp của đội
- * kho (test/integration/fleet).
+ * Cô lập kết nối được kiểm ở ĐÚNG bước mở kết nối, hai chiều: ca cũng khoá CONNECT trên chính database nghiệp vụ test
+ * (thu hồi PUBLIC, cấp lại cho role của đường dữ kiện và một role nghiệp vụ thường `lms_biz_test_580`) như script cấp
+ * phát làm ở môi trường triển khai, rồi khẳng định role control plane chết ngay tại `connect()`. ACL của database
+ * nghiệp vụ được trả về mặc định ở afterAll để không ảnh hưởng các ca khác dùng chung cụm test. Giới hạn phạm vi của
+ * các ca kết nối: chúng chứng minh cô lập với role KHÔNG phải superuser — tại thời điểm của issue này, role runtime của
+ * ứng dụng trong compose vẫn là superuser của cụm, mà superuser thì bỏ qua mọi kiểm tra quyền kết nối. Việc tách role
+ * runtime thành role thường riêng và role migration riêng thuộc issue #586; từ đó cô lập ở bước mở kết nối được kiểm
+ * chứng bằng chính các role thật của mô hình mới trong ca tích hợp của đội kho (test/integration/fleet).
  *
- * Shim `uuidv7()` chỉ áp khi server PostgreSQL dưới 18 (môi trường
- * chạy local bằng PG16): PG18 — bản ở CI và production — có sẵn hàm
- * này, shim sẽ che mất hàm gốc nên tuyệt đối không áp ở đó.
+ * Shim `uuidv7()` chỉ áp khi server PostgreSQL dưới 18 (môi trường chạy local bằng PG16): PG18 — bản ở CI và production
+ * — có sẵn hàm này, shim sẽ che mất hàm gốc nên tuyệt đối không áp ở đó.
  */
 const CP_DATABASE = 'lms_test_cp_580';
 const CP_ROLE = 'lms_cp_test_580';
@@ -52,7 +41,6 @@ const BIZ_ROLE = 'lms_biz_test_580';
 
 const UUIDV7_SHIM = `CREATE OR REPLACE FUNCTION uuidv7() RETURNS uuid AS $$ DECLARE ts_ms bigint := (extract(epoch from clock_timestamp()) * 1000)::bigint; b bytea; BEGIN b := decode(lpad(to_hex(ts_ms), 12, '0'), 'hex') || gen_random_bytes(10); b := set_byte(b, 6, (get_byte(b, 6) & 15) | 112); b := set_byte(b, 8, (get_byte(b, 8) & 63) | 128); RETURN encode(b, 'hex')::uuid; END; $$ LANGUAGE plpgsql VOLATILE`;
 
-/** Dựng URL kết nối tới một database trên cùng cụm với database nghiệp vụ test. */
 function clusterUrl(database: string, username?: string, secret?: string): string {
   const base = new URL(process.env.DATABASE_URL!);
   base.pathname = `/${database}`;
@@ -61,7 +49,6 @@ function clusterUrl(database: string, username?: string, secret?: string): strin
   return base.toString();
 }
 
-/** Bọc một định danh Postgres trong dấu nháy kép cho các câu lệnh quản trị của ca test. */
 function quoted(identifier: string): string {
   return `"${identifier.replace(/"/g, '""')}"`;
 }
@@ -76,7 +63,6 @@ async function withClient<T>(connectionString: string, fn: (client: Client) => P
   }
 }
 
-/** Áp bộ migration riêng của control plane từ rỗng (đọc chính file SQL đã sinh trong repo). */
 async function applyControlPlaneMigrations(connectionString: string): Promise<void> {
   const outDir = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'control-plane');
   const folders = readdirSync(outDir, { withFileTypes: true })
@@ -105,9 +91,8 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
   let adminId: string;
   let guestId: string;
   let createdSpaceId: string;
-  // Database nghiệp vụ test và role kết nối của đường dữ kiện, suy
-  // từ chính DATABASE_URL của môi trường test (không gán cứng tên,
-  // để ca chạy đúng trên mọi môi trường trỏ DB riêng).
+  // Database nghiệp vụ test và role kết nối của đường dữ kiện, suy từ chính DATABASE_URL của môi trường test (không gán
+  // cứng tên, để ca chạy đúng trên mọi môi trường trỏ DB riêng).
   let businessDatabase: string;
   let businessRole: string;
 
@@ -115,12 +100,11 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
     const businessUrl = new URL(process.env.DATABASE_URL!);
     businessDatabase = decodeURIComponent(businessUrl.pathname.replace(/^\//, ''));
     businessRole = decodeURIComponent(businessUrl.username);
-    // Cấp phát database + role của control plane trên cụm test, đúng
-    // các bước script control-plane-setup làm ở môi trường triển khai.
+    // Cấp phát database + role của control plane trên cụm test, đúng các bước script control-plane-setup làm ở môi
+    // trường triển khai.
     await withClient(clusterUrl('postgres'), async (admin) => {
-      // Dọn grant còn sót của một lượt chạy trước bị ngắt giữa chừng:
-      // role nghiệp vụ mẫu còn giữ quyền CONNECT trên database
-      // nghiệp vụ thì DROP ROLE ở dưới sẽ vấp phụ thuộc.
+      // Dọn grant còn sót của một lượt chạy trước bị ngắt giữa chừng: role nghiệp vụ mẫu còn giữ quyền CONNECT trên
+      // database nghiệp vụ thì DROP ROLE ở dưới sẽ vấp phụ thuộc.
       const staleBizRole = await admin.query(`SELECT 1 FROM pg_roles WHERE rolname = '${BIZ_ROLE}'`);
       if ((staleBizRole.rowCount ?? 0) > 0) {
         await admin.query(`REVOKE CONNECT ON DATABASE ${quoted(businessDatabase)} FROM ${BIZ_ROLE}`);
@@ -133,10 +117,8 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
       await admin.query(`CREATE DATABASE ${CP_DATABASE} OWNER ${CP_ROLE}`);
       await admin.query(`REVOKE CONNECT ON DATABASE ${CP_DATABASE} FROM PUBLIC`);
       await admin.query(`GRANT CONNECT ON DATABASE ${CP_DATABASE} TO ${CP_ROLE}`);
-      // Khoá cả chiều ngược trên chính database nghiệp vụ, đúng
-      // bước script cấp phát làm: thu hồi CONNECT của PUBLIC, chỉ
-      // cấp lại cho role của đường dữ kiện và role nghiệp vụ thường
-      // dùng làm mẫu kiểm chứng trong ca này.
+      // Khoá cả chiều ngược trên chính database nghiệp vụ, đúng bước script cấp phát làm: thu hồi CONNECT của PUBLIC,
+      // chỉ cấp lại cho role của đường dữ kiện và role nghiệp vụ thường dùng làm mẫu kiểm chứng trong ca này.
       await admin.query(`REVOKE CONNECT ON DATABASE ${quoted(businessDatabase)} FROM PUBLIC`);
       await admin.query(`GRANT CONNECT ON DATABASE ${quoted(businessDatabase)} TO ${quoted(businessRole)}`);
       await admin.query(`GRANT CONNECT ON DATABASE ${quoted(businessDatabase)} TO ${BIZ_ROLE}`);
@@ -157,11 +139,9 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
     await app.close();
     delete process.env.CONTROL_PLANE_DATABASE_URL;
     await withClient(clusterUrl('postgres'), async (admin) => {
-      // Trả ACL của database nghiệp vụ về mặc định (PUBLIC được kết
-      // nối) trước khi dọn: các ca khác dùng chung cụm test không bị
-      // ảnh hưởng bởi khoá của ca này. Grant riêng đã cấp cho role
-      // nghiệp vụ mẫu phải thu hồi tường minh, nếu không DROP ROLE
-      // sẽ vấp phụ thuộc trên ACL của database nghiệp vụ.
+      // Trả ACL của database nghiệp vụ về mặc định (PUBLIC được kết nối) trước khi dọn: các ca khác dùng chung cụm test
+      // không bị ảnh hưởng bởi khoá của ca này. Grant riêng đã cấp cho role nghiệp vụ mẫu phải thu hồi tường minh, nếu
+      // không DROP ROLE sẽ vấp phụ thuộc trên ACL của database nghiệp vụ.
       await admin.query(`GRANT CONNECT ON DATABASE ${quoted(businessDatabase)} TO PUBLIC`);
       await admin.query(`REVOKE CONNECT ON DATABASE ${quoted(businessDatabase)} FROM ${BIZ_ROLE}`);
       await admin.query(`DROP DATABASE IF EXISTS ${CP_DATABASE} WITH (FORCE)`);
@@ -181,8 +161,7 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
     const school = await registry.getBySlug(adminId, 'truong-mac-dinh');
     expect(school.kind).toBe('center');
     expect(school.storageMode).toBe('shared');
-    // Cả hai đang ở kho chung hiện tại: tên database đích là chính
-    // database nghiệp vụ mà ứng dụng đang chạy.
+    // Cả hai đang ở kho chung hiện tại: tên database đích là chính database nghiệp vụ mà ứng dụng đang chạy.
     const businessDatabase = new URL(process.env.DATABASE_URL!).pathname.replace(/^\//, '');
     expect(platform.databaseName).toBe(businessDatabase);
     expect(school.databaseName).toBe(businessDatabase);
@@ -265,18 +244,16 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
   });
 
   it('cập nhật tên database sang tên đã có ở dòng khác bị từ chối 409, kể cả khi dòng kia ở kho chung', async () => {
-    // Dòng kho chung đã gieo sẵn (trang-chinh) trỏ vào database
-    // nghiệp vụ test; chỉ mục unique từng phần không phủ hàng
-    // shared nên chỉ lớp kiểm tra ở tầng ứng dụng mới bắt được ca
-    // này — đúng lỗ hổng của đường cập nhật trước vòng sửa #611.
+    // Dòng kho chung đã gieo sẵn (trang-chinh) trỏ vào database nghiệp vụ test; chỉ mục unique từng phần không phủ hàng
+    // shared nên chỉ lớp kiểm tra ở tầng ứng dụng mới bắt được ca này — đúng lỗ hổng của đường cập nhật trước vòng sửa
+    // #611.
     const businessDatabase = new URL(process.env.DATABASE_URL!).pathname.replace(/^\//, '');
     const sharedClash = await registry
       .updateRegistration(adminId, createdSpaceId, { databaseName: businessDatabase })
       .catch((error: unknown) => error);
     expect(sharedClash).toBeInstanceOf(ConflictException);
     expect((sharedClash as ConflictException).getResponse()).toMatchObject({ code: 'control_plane.database_name_taken' });
-    // Trùng với một dòng dedicated khác cũng bị từ chối, còn đổi
-    // về chính tên hiện tại thì không tính là trùng.
+    // Trùng với một dòng dedicated khác cũng bị từ chối, còn đổi về chính tên hiện tại thì không tính là trùng.
     const other = await registry.createRegistration(adminId, {
       slug: 'trung-tam-test-611-khac',
       name: 'Trung tâm test 611 khác',
@@ -294,12 +271,10 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
   });
 
   it('chỉ đổi storageMode sang dedicated mà giữ nguyên tên database đã có ở dòng kho chung khác cũng bị từ chối 409', async () => {
-    // Hai không gian gieo sẵn đều ở kho chung và cùng trỏ vào
-    // database nghiệp vụ test; chỉ số duy nhất riêng phần không phủ
-    // hàng shared nên đường cập nhật chỉ kiểm tra khi đổi tên sẽ bỏ
-    // qua ca chỉ đổi chế độ lưu trữ — lỗ hổng vòng chấm lại hẹp
-    // PR #611: lật một dòng shared sang dedicated mà giữ nguyên tên
-    // sẽ tạo một hàng dedicated mang tên đã có ở dòng shared kia.
+    // Hai không gian gieo sẵn đều ở kho chung và cùng trỏ vào database nghiệp vụ test; chỉ số duy nhất riêng phần không
+    // phủ hàng shared nên đường cập nhật chỉ kiểm tra khi đổi tên sẽ bỏ qua ca chỉ đổi chế độ lưu trữ — lỗ hổng vòng
+    // chấm lại hẹp PR #611: lật một dòng shared sang dedicated mà giữ nguyên tên sẽ tạo một hàng dedicated mang tên đã
+    // có ở dòng shared kia.
     const school = await registry.getBySlug(adminId, 'truong-mac-dinh');
     expect(school.storageMode).toBe('shared');
     const rejected = await registry
@@ -314,12 +289,10 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
   });
 
   it('chỉ đổi storageMode của dòng gieo đầu tiên sang dedicated cũng bị từ chối 409 (ca tự khớp)', async () => {
-    // Ca tự khớp của truy vấn LIMIT 1 (phán quyết vòng chấm lại hẹp
-    // thứ hai PR #611): trang-chinh là dòng gieo đầu tiên trong hai
-    // dòng cùng tên database; truy vấn không loại trừ dòng đang sửa
-    // có thể trả về chính dòng này và bỏ qua va chạm với dòng còn
-    // lại. Ca trên lật dòng gieo thứ hai; ca này lật dòng gieo đầu
-    // tiên để kiểm tra đường loại trừ trong truy vấn.
+    // Ca tự khớp của truy vấn LIMIT 1 (phán quyết vòng chấm lại hẹp thứ hai PR #611): trang-chinh là dòng gieo đầu tiên
+    // trong hai dòng cùng tên database; truy vấn không loại trừ dòng đang sửa có thể trả về chính dòng này và bỏ qua va
+    // chạm với dòng còn lại. Ca trên lật dòng gieo thứ hai; ca này lật dòng gieo đầu tiên để kiểm tra đường loại trừ
+    // trong truy vấn.
     const platform = await registry.getBySlug(adminId, 'trang-chinh');
     expect(platform.storageMode).toBe('shared');
     const rejected = await registry
@@ -334,10 +307,9 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
   });
 
   it('tra cứu loại trừ theo tên database trả về dòng khác, không trả chính dòng bị loại', async () => {
-    // Chứng minh xác định cho phương thức loại trừ: với hai dòng cùng
-    // tên, tra cứu loại trừ dòng nào cũng phải trả về đúng dòng còn
-    // lại; với tên chỉ một dòng dùng, tra cứu loại trừ chính dòng đó
-    // phải trả về rỗng — không bao giờ tự khớp.
+    // Chứng minh xác định cho phương thức loại trừ: với hai dòng cùng tên, tra cứu loại trừ dòng nào cũng phải trả về
+    // đúng dòng còn lại; với tên chỉ một dòng dùng, tra cứu loại trừ chính dòng đó phải trả về rỗng — không bao giờ tự
+    // khớp.
     const platform = await registry.getBySlug(adminId, 'trang-chinh');
     const school = await registry.getBySlug(adminId, 'truong-mac-dinh');
     const repository = app.get(ControlPlaneRepository);
@@ -431,23 +403,19 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
   it('registry phiên bản schema: xoá phiên bản bằng null thì dòng đăng ký cũng đồng bộ về null', async () => {
     const cleared = await registry.updateSchemaRegistry(adminId, createdSpaceId, { currentVersion: null });
     expect(cleared.currentVersion).toBeNull();
-    // Hai nơi lưu phiên bản (registry của kho và trường phiên bản
-    // trên dòng đăng ký — đường đọc định tuyến) phải cùng đọc ra
-    // null sau khi xoá, không nơi nào giữ giá trị cũ.
+    // Hai nơi lưu phiên bản (registry của kho và trường phiên bản trên dòng đăng ký — đường đọc định tuyến) phải cùng
+    // đọc ra null sau khi xoá, không nơi nào giữ giá trị cũ.
     const reread = await registry.getSchemaRegistry(adminId, createdSpaceId);
     expect(reread.currentVersion).toBeNull();
     expect((await registry.getBySlug(adminId, 'trung-tam-test-580')).schemaVersion).toBeNull();
   });
 
   it('hai lượt cập nhật registry chồng lấn vào hai trường độc lập không làm mất giá trị của nhau', async () => {
-    // Dựng chồng lấn xác định bằng một transaction thô giữ khoá
-    // dòng của registry: cả hai lượt ghi của service đều phải ĐỌC
-    // trạng thái hiện tại trước khi lượt nào ghi được (lượt ghi bị
-    // chặn ở bước upsert cho tới khi transaction thô commit). Với
-    // cơ chế đọc-ngoài-transaction rồi ghi đè toàn dòng, lượt ghi
-    // sau mang theo ảnh cũ và xoá mất trường lượt trước vừa ghi;
-    // với cơ chế đọc-trong-transaction sau khoá dòng đăng ký, lượt
-    // sau đọc lại trạng thái tươi và cả hai trường cùng tồn tại.
+    // Dựng chồng lấn xác định bằng một transaction thô giữ khoá dòng của registry: cả hai lượt ghi của service đều phải
+    // ĐỌC trạng thái hiện tại trước khi lượt nào ghi được (lượt ghi bị chặn ở bước upsert cho tới khi transaction thô
+    // commit). Với cơ chế đọc-ngoài-transaction rồi ghi đè toàn dòng, lượt ghi sau mang theo ảnh cũ và xoá mất trường
+    // lượt trước vừa ghi; với cơ chế đọc-trong-transaction sau khoá dòng đăng ký, lượt sau đọc lại trạng thái tươi và
+    // cả hai trường cùng tồn tại.
     const gate = new Client({ connectionString: clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD) });
     await gate.connect();
     try {
@@ -461,8 +429,7 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
         lastRestoreStatus: 'success',
         lastRestoreAt: '2026-10-30T11:05:00+07:00',
       });
-      // Khoảng chờ dư dả để cả hai lượt đều tới bước ghi và bị chặn
-      // ở khoá của transaction thô trước khi mở cổng.
+      // Khoảng chờ dư dả để cả hai lượt đều tới bước ghi và bị chặn ở khoá của transaction thô trước khi mở cổng.
       await new Promise((resolve) => setTimeout(resolve, 750));
       await gate.query('COMMIT');
       await Promise.all([backupWrite, restoreWrite]);
@@ -477,13 +444,10 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
   });
 
   it('lượt ghi migration chồng lấn với lượt ghi trạng thái sao lưu không làm mất giá trị của nhau', async () => {
-    // Bất biến được gác ở đây là THỨ TỰ KHOÁ THỐNG NHẤT trên dòng
-    // đăng ký của không gian: mọi thao tác ghi của control plane
-    // khoá dòng đăng ký (FOR UPDATE) TRƯỚC TIÊN, rồi mới chạm vào
-    // registry — nhờ vậy hai lượt ghi đồng thời nối tiếp nhau ở
-    // đúng một điểm và lượt sau luôn hợp nhất trên trạng thái
-    // tươi. `recordMigrationRun` (sau bản sửa của issue #586)
-    // tuân theo đúng thứ tự đó như `updateSchemaRegistry`.
+    // Bất biến được gác ở đây là THỨ TỰ KHOÁ THỐNG NHẤT trên dòng đăng ký của không gian: mọi thao tác ghi của control
+    // plane khoá dòng đăng ký (FOR UPDATE) TRƯỚC TIÊN, rồi mới chạm vào registry — nhờ vậy hai lượt ghi đồng thời nối
+    // tiếp nhau ở đúng một điểm và lượt sau luôn hợp nhất trên trạng thái tươi. `recordMigrationRun` (sau bản sửa của
+    // issue #586) tuân theo đúng thứ tự đó như `updateSchemaRegistry`.
     //
     // Kỹ thuật cổng hai pha, có chứng minh ở từng pha (nhận diện
     // phiên bị cổng chặn qua `pg_blocking_pids`, không dùng
@@ -505,16 +469,11 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
     // tươi: phiên bản mới và trạng thái sao lưu mới cùng tồn tại
     // trong các khẳng định cuối ca.
     //
-    // Vì sao cổng không đặt trên dòng registry như ca cũ: ca cũ
-    // cho hai lượt xuất phát cùng lúc sau một khoảng chờ cố định
-    // và đo thực tế cho thấy nó KHÔNG có sức phân biệt — câu chèn
-    // lượt chạy vào bảng con của `space_registry` tự nó đã lấy
-    // khoá KEY SHARE của khoá ngoại trên dòng cha, nên cặp ghi
-    // này tự nối tiếp nhau ở mọi thứ tự xuất phát dù
-    // `recordMigrationRun` có khoá tường minh hay không; gỡ dòng
-    // khoá ra ca cũ vẫn xanh. Cổng trên dòng cha + ép thứ tự
-    // xuất phát như trên là điểm duy nhất mà dòng khoá tường
-    // minh tạo ra khác biệt quan sát được.
+    // Vì sao cổng không đặt trên dòng registry như ca cũ: ca cũ cho hai lượt xuất phát cùng lúc sau một khoảng chờ cố
+    // định và đo thực tế cho thấy nó KHÔNG có sức phân biệt — câu chèn lượt chạy vào bảng con của `space_registry` tự
+    // nó đã lấy khoá KEY SHARE của khoá ngoại trên dòng cha, nên cặp ghi này tự nối tiếp nhau ở mọi thứ tự xuất phát dù
+    // `recordMigrationRun` có khoá tường minh hay không; gỡ dòng khoá ra ca cũ vẫn xanh. Cổng trên dòng cha + ép thứ tự
+    // xuất phát như trên là điểm duy nhất mà dòng khoá tường minh tạo ra khác biệt quan sát được.
     const gate = new Client({ connectionString: clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD) });
     await gate.connect();
     const gatePid = (await gate.query<{ pid: number }>('SELECT pg_backend_pid() AS pid')).rows[0]!.pid;
@@ -542,8 +501,7 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
         lastBackupStatus: 'failed',
         lastBackupAt: '2026-10-30T12:00:00+07:00',
       });
-      // Pha 1: lượt sao lưu đã tới câu khoá dòng đăng ký và đang
-      // bị chính cổng chặn.
+      // Pha 1: lượt sao lưu đã tới câu khoá dòng đăng ký và đang bị chính cổng chặn.
       const phase1 = await waitForBlocked((rows) => rows.some((row) => row.blockers.includes(gatePid)));
       expect(phase1.some((row) => row.blockers.includes(gatePid))).toBe(true);
       const backupPid = phase1.find((row) => row.blockers.includes(gatePid))!.pid;
@@ -554,13 +512,10 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
         status: 'success',
         steps: [{ name: 'apply-v-lock', status: 'success' }],
       });
-      // Pha 2: lượt migration cũng phải bị chặn ở câu khoá dòng
-      // đăng ký của nó — bị cổng chặn trực tiếp, hoặc xếp hàng
-      // sau lượt sao lưu trong hàng đợi khoá của dòng (`pg_blocking_pids`
-      // của một phiên xếp hàng chỉ nêu phiên đứng ngay trước nó,
-      // không nhất thiết nêu cổng). Thiếu dòng khoá đó thì lượt
-      // migration chạy thẳng qua và commit xong, không phiên thứ
-      // hai nào xuất hiện trong hạn chờ.
+      // Pha 2: lượt migration cũng phải bị chặn ở câu khoá dòng đăng ký của nó — bị cổng chặn trực tiếp, hoặc xếp hàng
+      // sau lượt sao lưu trong hàng đợi khoá của dòng (`pg_blocking_pids` của một phiên xếp hàng chỉ nêu phiên đứng
+      // ngay trước nó, không nhất thiết nêu cổng). Thiếu dòng khoá đó thì lượt migration chạy thẳng qua và commit xong,
+      // không phiên thứ hai nào xuất hiện trong hạn chờ.
       const phase2 = await waitForBlocked((rows) =>
         rows.some(
           (row) => row.pid !== backupPid && (row.blockers.includes(gatePid) || row.blockers.includes(backupPid)),
@@ -589,10 +544,8 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
   });
 
   it('role của control plane bị từ chối ngay ở bước mở kết nối vào kho nghiệp vụ', async () => {
-    // Khẳng định tách riêng bước mở kết nối: dùng Client thô và chỉ
-    // gọi connect() — lỗi phải sinh ra ngay tại đây với thông điệp
-    // từ chối ở mức database, không phải lỗi quyền trên bảng sau
-    // khi kết nối đã mở thành công.
+    // Khẳng định tách riêng bước mở kết nối: dùng Client thô và chỉ gọi connect() — lỗi phải sinh ra ngay tại đây với
+    // thông điệp từ chối ở mức database, không phải lỗi quyền trên bảng sau khi kết nối đã mở thành công.
     const client = new Client({ connectionString: clusterUrl(businessDatabase, CP_ROLE, CP_PASSWORD) });
     let connectError: unknown;
     try {
@@ -607,9 +560,8 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
   });
 
   it('role nghiệp vụ thường vẫn mở được kết nối vào kho nghiệp vụ sau khi khoá PUBLIC', async () => {
-    // Nửa còn lại của khoá: role nghiệp vụ hợp lệ (ở đây là role
-    // thường đóng vai role của đường dữ kiện) không bị khoá nhầm —
-    // kết nối mở được và truy vấn tối thiểu chạy được.
+    // Nửa còn lại của khoá: role nghiệp vụ hợp lệ (ở đây là role thường đóng vai role của đường dữ kiện) không bị khoá
+    // nhầm — kết nối mở được và truy vấn tối thiểu chạy được.
     const database = await withClient(clusterUrl(businessDatabase, BIZ_ROLE, CP_PASSWORD), async (client) => {
       const result = await client.query<{ current_database: string }>('SELECT current_database()');
       return result.rows[0]!.current_database;
@@ -618,11 +570,9 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
   });
 
   it('role nghiệp vụ không phải superuser bị từ chối ngay ở bước mở kết nối vào database control plane', async () => {
-    // Ca này chứng minh cô lập chiều ngược với role nghiệp vụ
-    // THƯỜNG (không phải superuser). Role runtime của ứng dụng
-    // trong compose hiện là superuser của cụm nên không bị ACL kết
-    // nối ràng buộc — giới hạn đó thuộc việc hạ role runtime ở
-    // tầng hạ tầng, ngoài phạm vi ca này.
+    // Ca này chứng minh cô lập chiều ngược với role nghiệp vụ THƯỜNG (không phải superuser). Role runtime của ứng dụng
+    // trong compose hiện là superuser của cụm nên không bị ACL kết nối ràng buộc — giới hạn đó thuộc việc hạ role
+    // runtime ở tầng hạ tầng, ngoài phạm vi ca này.
     const client = new Client({ connectionString: clusterUrl(CP_DATABASE, BIZ_ROLE, CP_PASSWORD) });
     let connectError: unknown;
     try {
@@ -645,12 +595,9 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
       storageMode: 'dedicated',
       connectionRoleRef: 'lms_centre_parallel_589_app',
     });
-    // Bốn thao tác ghi chạy cùng lúc trên cùng một dòng (hai đổi
-    // trạng thái qua lại, hai cập nhật tên): ảnh before của mỗi
-    // dòng lịch sử phải đúng bằng ảnh after của dòng lịch sử ngay
-    // trước nó theo thứ tự ghi thật — đọc dòng hiện tại ngoài
-    // transaction sẽ làm các dòng cùng chụp một ảnh cũ và chuỗi
-    // đứt ở điểm nối.
+    // Bốn thao tác ghi chạy cùng lúc trên cùng một dòng (hai đổi trạng thái qua lại, hai cập nhật tên): ảnh before của
+    // mỗi dòng lịch sử phải đúng bằng ảnh after của dòng lịch sử ngay trước nó theo thứ tự ghi thật — đọc dòng hiện tại
+    // ngoài transaction sẽ làm các dòng cùng chụp một ảnh cũ và chuỗi đứt ở điểm nối.
     await Promise.allSettled([
       registry.changeStatus(adminId, space.id, { status: 'active' }),
       registry.updateRegistration(adminId, space.id, { name: 'Tên đồng thời một' }),
@@ -658,9 +605,8 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
       registry.updateRegistration(adminId, space.id, { name: 'Tên đồng thời hai' }),
     ]);
     const history = await registry.listHistory(adminId, space.id);
-    // Ít nhất hai thao tác đổi trạng thái nối tiếp nhau thật sự
-    // phải có mặt (một thao tác đổi về đúng trạng thái hiện tại là
-    // thao tác rỗng, không ghi lịch sử — số dòng vì vậy dao động).
+    // Ít nhất hai thao tác đổi trạng thái nối tiếp nhau thật sự phải có mặt (một thao tác đổi về đúng trạng thái hiện
+    // tại là thao tác rỗng, không ghi lịch sử — số dòng vì vậy dao động).
     expect(history.length).toBeGreaterThanOrEqual(3);
     const chronological = [...history].reverse();
     for (let i = 1; i < chronological.length; i += 1) {
@@ -690,8 +636,7 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
     const rejected = results.filter((result) => result.status === 'rejected');
     expect(fulfilled).toHaveLength(1);
     expect(rejected).toHaveLength(3);
-    // Các lượt thua nhận lỗi xung đột nghiệp vụ (409), không phải
-    // lỗi máy chủ do vấp ràng buộc unique ở tầng database.
+    // Các lượt thua nhận lỗi xung đột nghiệp vụ (409), không phải lỗi máy chủ do vấp ràng buộc unique ở tầng database.
     for (const result of rejected) {
       expect((result as PromiseRejectedResult).reason).toBeInstanceOf(ConflictException);
     }

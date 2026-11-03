@@ -10,10 +10,8 @@ const CAP = 'course:update';
 const ALLOW = 1, PREVENT = -1, PROHIBIT = -1000;
 
 /**
- * Kiểm thử luồng capability CHUẨN VÀNG (GOLDEN).
- * Oracle: lib/tests/accesslib_test.php (MOODLE_503_STABLE) —
- * test_permission_evaluation, test_assign_capability, test_role_assign,
- * test_is_siteadmin, test_get_guest_role.
+ * Kiểm thử luồng capability CHUẨN VÀNG (GOLDEN). Oracle: lib/tests/accesslib_test.php (MOODLE_503_STABLE) —
+ * test_permission_evaluation, test_assign_capability, test_role_assign, test_is_siteadmin, test_get_guest_role.
  */
 describe('Quyền truy cập: đánh giá năng lực trên cây ngữ cảnh (golden)', () => {
   let app: INestApplication;
@@ -104,9 +102,8 @@ describe('Quyền truy cập: đánh giá năng lực trên cây ngữ cảnh (g
     expect(await hasCapability(app, admin, adminId, 'site:config', systemId)).toBe(true);
   });
 
-  // Ca "guest account evaluates through the guest role only" gọi thẳng
-  // PermissionEvaluator với ngữ cảnh khách (isGuest) — không có tương
-  // đương HTTP trực tiếp — nên nằm ở tầng integration:
+  // Ca "guest account evaluates through the guest role only" gọi thẳng PermissionEvaluator với ngữ cảnh khách (isGuest)
+  // — không có tương đương HTTP trực tiếp — nên nằm ở tầng integration:
   // test/integration/access/access-capability-evaluator.int-spec.ts (issue #483).
 
   it('đổi override làm đổi kết quả (đánh dấu dirty vô hiệu cache)', async () => {

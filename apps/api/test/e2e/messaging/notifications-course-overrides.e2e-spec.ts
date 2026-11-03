@@ -14,12 +14,10 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
  *    vào user_preferences dưới khoá `notif.course.<courseId>`; khoá
  *    ngoài phạm vi → 404; gỡ mute khôi phục ngay.
  *
- * Ca kiểm chứng đường consumer thật của NB-4 (khoá bị mute thì
- * thông báo thường của khoá đó không được sinh và có dispatch log
- * 'skipped-course-mute'; khoá khác vẫn nhận bình thường; hai loại
- * P3 — điểm mới và sắp hết hạn ghi danh — của chính khoá bị mute
- * vẫn tới; gỡ mute khôi phục) đã chuyển sang tầng integration của
- * worker cùng consumer thông báo sự kiện (issue con #520 của #491):
+ * Ca kiểm chứng đường consumer thật của NB-4 (khoá bị mute thì thông báo thường của khoá đó không được sinh và có
+ * dispatch log 'skipped-course-mute'; khoá khác vẫn nhận bình thường; hai loại P3 — điểm mới và sắp hết hạn ghi danh —
+ * của chính khoá bị mute vẫn tới; gỡ mute khôi phục) đã chuyển sang tầng integration của worker cùng consumer thông báo
+ * sự kiện (issue con #520 của #491):
  * `apps/worker/test/integration/notifications/notification-events-delivery.int-spec.ts`.
  */
 describe('Ghi đè thông báo theo khoá (NB-4, issue #174)', () => {

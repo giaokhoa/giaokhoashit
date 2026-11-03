@@ -1,8 +1,6 @@
 /**
- * Ca tích hợp của FACADE KYSELY ĐỊNH TUYẾN phía API (issue #639):
- * chứng minh `routedKysely` của `SpaceDatabaseService` giữ đúng
- * hợp đồng định tuyến — và giữ đúng ngữ nghĩa Kysely —
- * qua Proxy uỷ thác theo ngữ cảnh ALS:
+ * Ca tích hợp của FACADE KYSELY ĐỊNH TUYẾN phía API (issue #639): chứng minh `routedKysely` của `SpaceDatabaseService`
+ * giữ đúng hợp đồng định tuyến — và giữ đúng ngữ nghĩa Kysely — qua Proxy uỷ thác theo ngữ cảnh ALS:
  *
  *   - `getKyselyForSpace` trả handle kho chung cho slug kho chung,
  *     handle kho riêng khác instance cho slug kho riêng, và cùng
@@ -21,15 +19,12 @@
  *     `space_routing.prepared_revoked` (fail-closed, không rơi im
  *     lặng về kho chung).
  *
- * Nếu bất kỳ điểm nào gãy, facade CHƯA được chứng minh và pilot
- * không được xây trên nó (issue #639 yêu cầu dừng và trình phương
- * án provider `current()` thay vì tự tuyên bố ngoại lệ).
+ * Nếu bất kỳ điểm nào gãy, facade CHƯA được chứng minh và pilot không được xây trên nó (issue #639 yêu cầu dừng và
+ * trình phương án provider `current()` thay vì tự tuyên bố ngoại lệ).
  *
- * Môi trường: tự cấp phát control plane + hai kho riêng + một kho
- * đóng vai kho chung bằng harness của `@lms/db` (database dựng từ
- * rỗng bằng Migrator của package, không phụ thuộc database test
- * của CI). Chuỗi bí mật cố ý trỏ về database `postgres` để bộ
- * phân giải phải chốt đích theo `databaseName` trong sổ.
+ * Môi trường: tự cấp phát control plane + hai kho riêng + một kho đóng vai kho chung bằng harness của `@lms/db`
+ * (database dựng từ rỗng bằng Migrator của package, không phụ thuộc database test của CI). Chuỗi bí mật cố ý trỏ về
+ * database `postgres` để bộ phân giải phải chốt đích theo `databaseName` trong sổ.
  */
 import type { ConfigService } from '@nestjs/config';
 import { Client } from 'pg';
@@ -55,10 +50,9 @@ const TENANT_SHARED_ID = '01963900-0000-7000-8000-0000000000c3';
 const TENANT_TX_COMMIT_ID = '01963900-0000-7000-8000-0000000000d4';
 const TENANT_TX_ROLLBACK_ID = '01963900-0000-7000-8000-0000000000e5';
 /**
- * Timeout nhàn rỗi của service chính — dài để sweeper không đóng
- * pool giữa các ca (mỗi ca tự chuẩn bị lại slug của mình trước
- * khi dùng facade, nhưng pool không được đóng giữa chừng). Ca
- * fail-closed dùng service riêng với timeout ngắn (xem cuối file).
+ * Timeout nhàn rỗi của service chính — dài để sweeper không đóng pool giữa các ca (mỗi ca tự chuẩn bị lại slug của mình
+ * trước khi dùng facade, nhưng pool không được đóng giữa chừng). Ca fail-closed dùng service riêng với timeout ngắn
+ * (xem cuối file).
  */
 const POOL_IDLE_TIMEOUT_MS = 300_000;
 /** Timeout nhàn rỗi của service riêng cho ca fail-closed (mẫu của ca #581). */
@@ -264,10 +258,8 @@ describe('Facade Kysely định tuyến phía API (integration)', () => {
   });
 
   it('slug kho riêng bị thu hồi pool thì truy vấn trong ngữ cảnh cũ fail-closed', async () => {
-    // Service riêng với timeout nhàn rỗi ngắn (mẫu của ca #581):
-    // chuẩn bị slug, dùng một lần, chờ sweeper đóng pool, rồi truy
-    // vấn lại trong ngữ cảnh còn mang slug cũ phải ném lỗi thu hồi
-    // thay vì rơi im lặng về kho chung.
+    // Service riêng với timeout nhàn rỗi ngắn (mẫu của ca #581): chuẩn bị slug, dùng một lần, chờ sweeper đóng pool,
+    // rồi truy vấn lại trong ngữ cảnh còn mang slug cũ phải ném lỗi thu hồi thay vì rơi im lặng về kho chung.
     const shortService = new SpaceDatabaseService(
       fakeConfig({
         SPACE_DB_POOL_MAX: 2,
@@ -284,8 +276,8 @@ describe('Facade Kysely định tuyến phía API (integration)', () => {
       });
       await new Promise((resolve) => setTimeout(resolve, SHORT_IDLE_TIMEOUT_MS + 2400));
       await tenantAls.run({ spaceSlug: CENTRE_B_SLUG }, async () => {
-        // Mã lỗi nằm ở thuộc tính `code` của SpaceRoutingError (mẫu
-        // khẳng định của ca #581), không nằm trong thông điệp.
+        // Mã lỗi nằm ở thuộc tính `code` của SpaceRoutingError (mẫu khẳng định của ca #581), không nằm trong thông
+        // điệp.
         let readError: unknown;
         try {
           shortService.routedKysely.selectFrom('tenants');

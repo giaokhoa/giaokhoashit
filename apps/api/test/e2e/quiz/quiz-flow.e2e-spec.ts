@@ -85,8 +85,8 @@ describe('Hoạt động quiz (mod_quiz)', () => {
       return res.body.question.id as string;
     }
 
-  // Câu TF-A dùng chung của spec: thân + 4 mệnh đề đều ĐÚNG; response
-  // đúng toàn phần là JSON map cả 4 ý true, sai toàn phần là cả 4 ý false.
+  // Câu TF-A dùng chung của spec: thân + 4 mệnh đề đều ĐÚNG; response đúng toàn phần là JSON map cả 4 ý true, sai toàn
+  // phần là cả 4 ý false.
   const tfText = (stem: string) => ({
     type: 'doc',
     content: [
@@ -126,9 +126,8 @@ describe('Hoạt động quiz (mod_quiz)', () => {
     return { course, sectionId, teacher, teacherId: teacherUser.id, student, studentToken, bankCatId, randomCatId, qRandom, qMc, qTf, qSa, qEssay };
   }
 
-  // Cấu hình tổ chức của lần ghim được giữ lại từ body tạo quiz để
-  // pinQuiz dùng khi ghim (tách bạch: tạo ĐỀ chỉ lấy name + grade →
-  // totalScore của version; ghim lấy các trường tổ chức còn lại).
+  // Cấu hình tổ chức của lần ghim được giữ lại từ body tạo quiz để pinQuiz dùng khi ghim (tách bạch: tạo ĐỀ chỉ lấy
+  // name + grade → totalScore của version; ghim lấy các trường tổ chức còn lại).
   const pinBodies = new Map<string, Record<string, unknown>>();
   const slotLists = new Map<string, { questionId: string; maxMark?: number }[]>();
 
@@ -218,11 +217,9 @@ describe('Hoạt động quiz (mod_quiz)', () => {
       .send({ sectionId: ctx.sectionId, examId: quizId });
     expect(denied.status).toBe(403);
 
-    // Slots: mc sửa điểm 5 (default là 2 — điểm slot phải thắng), tf giữ
-    // default 1, slot thứ ba là một câu truefalse CỐ ĐỊNH của pool cũ
-    // 2 điểm, essay giữ default 3. Tổng 11. (Đường rút câu ngẫu nhiên
-    // theo category của quiz_slots đã bỏ hẳn theo hồ sơ gộp — nhu cầu
-    // ngẫu nhiên đi qua ma trận, xem quiz-matrix-flow.)
+    // Slots: mc sửa điểm 5 (default là 2 — điểm slot phải thắng), tf giữ default 1, slot thứ ba là một câu truefalse CỐ
+    // ĐỊNH của pool cũ 2 điểm, essay giữ default 3. Tổng 11. (Đường rút câu ngẫu nhiên theo category của quiz_slots đã
+    // bỏ hẳn theo hồ sơ gộp — nhu cầu ngẫu nhiên đi qua ma trận, xem quiz-matrix-flow.)
     await addSlot(ctx.teacher, quizId, { questionId: ctx.qMc, maxMark: 5 });
     await addSlot(ctx.teacher, quizId, { questionId: ctx.qTf });
     await addSlot(ctx.teacher, quizId, { questionId: ctx.qRandom, maxMark: 2 });
@@ -252,8 +249,7 @@ describe('Hoạt động quiz (mod_quiz)', () => {
       for (const a of q.answers) expect(a).not.toHaveProperty('fraction');
     }
 
-    // Trả lời: mc chọn "Paris" (đúng), tf true (đúng), slot 3 true
-    // (đáp án đúng của R1), essay viết bài.
+    // Trả lời: mc chọn "Paris" (đúng), tf true (đúng), slot 3 true (đáp án đúng của R1), essay viết bài.
     const mcQ = view.questions[0]!;
     const paris = mcQ.answers.find((a) => JSON.stringify(a.text).includes('Paris'))!;
     view = await answerSlot(ctx.studentToken, attemptId, view, 1, paris.id);
@@ -374,9 +370,8 @@ describe('Hoạt động quiz (mod_quiz)', () => {
       expect(w.mark).toBe(0);
       expect(w.attemptNumber).toBe(1);
     }
-    // Câu 2 và câu 3 cùng sai 1 — hoà thì theo số slot tăng dần.
-    // Không còn tên câu hỏi (quyết 11:28): nhãn thống kê là trích đoạn
-    // nội dung — câu TF-A gồm stem + cả 4 mệnh đề; câu SA là thân câu.
+    // Câu 2 và câu 3 cùng sai 1 — hoà thì theo số slot tăng dần. Không còn tên câu hỏi (quyết 11:28): nhãn thống kê là
+    // trích đoạn nội dung — câu TF-A gồm stem + cả 4 mệnh đề; câu SA là thân câu.
     expect(stats[1]).toMatchObject({ slot: 2, questionId: ctx.qTf, questionName: 'Water is wet.\nWater is wet. — ý 1\nWater is wet. — ý 2\nWater is wet. — ý 3\nWater is wet. — ý 4', wrongCount: 1, fullyWrongCount: 1, gradedCount: 2 });
     expect(stats[1]!.wrongStudents.map((w) => w.userId)).toEqual([ctx.student.id]);
     expect(stats[2]).toMatchObject({ slot: 3, questionId: ctx.qSa, questionName: 'Capital of Vietnam?', wrongCount: 1, fullyWrongCount: 1, gradedCount: 2 });
@@ -453,8 +448,8 @@ describe('Hoạt động quiz (mod_quiz)', () => {
     expect(late.status).toBe(403);
     expect(late.body.code).toBe('quiz.closed');
 
-    // Giới hạn thời gian: bắt đầu lượt, lùi time_start về quá khứ trong
-    // DB, tương tác tiếp theo phải chốt lượt phía server.
+    // Giới hạn thời gian: bắt đầu lượt, lùi time_start về quá khứ trong DB, tương tác tiếp theo phải chốt lượt phía
+    // server.
     const timedRes = await createQuiz(ctx.teacher, ctx.course.id, {
       sectionId: ctx.sectionId, name: 'Timed quiz', timeLimitSeconds: 600, grade: 10,
     });
@@ -511,8 +506,8 @@ describe('Hoạt động quiz (mod_quiz)', () => {
     const pin = await pinQuiz(ctx.teacher, ctx.course.id, examId);
     const pinId = pin.id;
 
-    // Sửa slot trên ĐỀ tạo version mới; pin vẫn ghim version cũ nên
-    // tổng điểm hiệu lực của pin chưa đổi (đóng băng theo version).
+    // Sửa slot trên ĐỀ tạo version mới; pin vẫn ghim version cũ nên tổng điểm hiệu lực của pin chưa đổi (đóng băng theo
+    // version).
     const editedRes = await http(app).put(`/api/v1/exams/${examId}/slots`).set('Authorization', `Bearer ${ctx.teacher}`)
       .send({ slots: [{ questionId: ctx.qTf, maxMark: 4 }, { questionId: ctx.qSa, maxMark: 2 }] });
     expect(editedRes.status).toBe(200);
@@ -558,8 +553,8 @@ describe('Hoạt động quiz (mod_quiz)', () => {
 
   it('hồi quy F1: xem trước và lượt thật chia sẻ MỘT dãy đánh số — không xung đột, không usage mồ côi', async () => {
     const ctx = await setup();
-    // Một người có cả hai quyền: giáo viên đã có editingteacher (preview);
-    // gán thêm role student tại context khoá để có quiz:attempt.
+    // Một người có cả hai quyền: giáo viên đã có editingteacher (preview); gán thêm role student tại context khoá để có
+    // quiz:attempt.
     const contexts = await http(app).get('/api/v1/access/contexts').set('Authorization', `Bearer ${admin}`);
     const courseCtx = (contexts.body as { id: string; contextLevel: number; instanceId: string }[])
       .find((c) => c.contextLevel === 50 && c.instanceId === ctx.course.id)!;
@@ -581,9 +576,8 @@ describe('Hoạt động quiz (mod_quiz)', () => {
       expect((usages.rows[0] as { n: number }).n).toBe((attempts.rows[0] as { n: number }).n);
     }
 
-    // Chiều 1: preview trước (số 1) rồi làm thật — bản cũ đánh số lượt
-    // thật là 1 theo dãy riêng của cờ preview=false ⇒ va chạm ràng buộc
-    // duy nhất ⇒ 500 và để lại usage mồ côi.
+    // Chiều 1: preview trước (số 1) rồi làm thật — bản cũ đánh số lượt thật là 1 theo dãy riêng của cờ preview=false ⇒
+    // va chạm ràng buộc duy nhất ⇒ 500 và để lại usage mồ côi.
     const quizARes = await createQuiz(ctx.teacher, ctx.course.id, { sectionId: ctx.sectionId, name: 'F1 quiz A', grade: 10 });
     let quizA = quizARes.body.id as string;
     await addSlot(ctx.teacher, quizA, { questionId: ctx.qTf, maxMark: 1 });
@@ -596,8 +590,7 @@ describe('Hoạt động quiz (mod_quiz)', () => {
     expect(realAfter.attempt.attemptNumber).toBe(2);
     await expectNoOrphanUsage(quizA);
 
-    // Chiều 2: làm thật trước (số 1) rồi preview — cũng phải bắt đầu
-    // được và mang số tiếp theo trong cùng dãy.
+    // Chiều 2: làm thật trước (số 1) rồi preview — cũng phải bắt đầu được và mang số tiếp theo trong cùng dãy.
     const quizBRes = await createQuiz(ctx.teacher, ctx.course.id, { sectionId: ctx.sectionId, name: 'F1 quiz B', grade: 10 });
     let quizB = quizBRes.body.id as string;
     await addSlot(ctx.teacher, quizB, { questionId: ctx.qTf, maxMark: 1 });
@@ -633,9 +626,8 @@ describe('Hoạt động quiz (mod_quiz)', () => {
     const patch = await http(app).patch(`/api/v1/exam-pins/${quizId}`).set('Authorization', `Bearer ${ctx.teacher}`).send({ timeClose: past });
     expect(patch.status).toBe(200);
 
-    // Học sinh nộp thêm đáp án slot 2 (đáp án ĐÚNG) sau giờ đóng: bản cũ
-    // lưu và tính điểm (isOverdue chỉ xét timeLimit); bản sửa phải chốt
-    // lượt phía server, đáp án muộn không được lưu.
+    // Học sinh nộp thêm đáp án slot 2 (đáp án ĐÚNG) sau giờ đóng: bản cũ lưu và tính điểm (isOverdue chỉ xét
+    // timeLimit); bản sửa phải chốt lượt phía server, đáp án muộn không được lưu.
     const slot2 = view.questions.find((q) => q.slot === 2)!;
     const late = await http(app).post(`/api/v1/quiz-attempts/${attemptId}/responses`).set('Authorization', `Bearer ${ctx.studentToken}`)
       .send({ questionAttemptId: slot2.questionAttemptId, response: 'Hanoi' });
@@ -676,9 +668,8 @@ describe('Hoạt động quiz (mod_quiz)', () => {
     let view = start.body as AttemptViewBody;
     const attemptId = view.attempt.id;
     view = await answerSlot(ctx.studentToken, attemptId, view, 1, TF_ALL_TRUE);
-    // Bản cũ: lỗi grades.item_locked từ pushGrade truyền thẳng ra ⇒
-    // học sinh nhận 403 dù lượt đã chốt. Bản sửa: nộp vẫn 201, lượt
-    // finished, chỉ điểm là không ghi được vào item đang khoá.
+    // Bản cũ: lỗi grades.item_locked từ pushGrade truyền thẳng ra ⇒ học sinh nhận 403 dù lượt đã chốt. Bản sửa: nộp vẫn
+    // 201, lượt finished, chỉ điểm là không ghi được vào item đang khoá.
     const submit = await http(app).post(`/api/v1/quiz-attempts/${attemptId}/submit`).set('Authorization', `Bearer ${ctx.studentToken}`).send({});
     expect(submit.status).toBe(201);
     const submitted = submit.body as AttemptViewBody;

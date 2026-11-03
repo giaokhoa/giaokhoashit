@@ -10,15 +10,12 @@ import { createCategory as createCourseCategory, createCourse } from '../../supp
 /**
  * Issue #55 — gác quyền ĐỌC ngân hàng câu hỏi theo capability.
  *
- * Oracle: chuẩn các cổng đã chốt ở #44/#48 — vai không có capability đọc
- * ngân hàng (`question:useall` tại context của category chứa dữ liệu)
- * nhận 404 mang mã của tài nguyên không tồn tại, và response TUYỆT ĐỐI
- * không chứa nội dung câu hỏi/đáp án (không oracle tồn tại). Giáo viên
- * có `editingteacher` tại context khoá đọc được ngân hàng của khoá đó
- * nhưng không đọc được ngân hàng ở context hệ thống — cùng quy tắc mà
- * các đường ghi (question:add/editall/managecategory) đã áp. Luồng làm
- * bài của học sinh qua question engine (hoạt động tạo usage, học sinh
- * start/submit/finish) không đổi.
+ * Oracle: chuẩn các cổng đã chốt ở #44/#48 — vai không có capability đọc ngân hàng (`question:useall` tại context của
+ * category chứa dữ liệu) nhận 404 mang mã của tài nguyên không tồn tại, và response TUYỆT ĐỐI không chứa nội dung câu
+ * hỏi/đáp án (không oracle tồn tại). Giáo viên có `editingteacher` tại context khoá đọc được ngân hàng của khoá đó
+ * nhưng không đọc được ngân hàng ở context hệ thống — cùng quy tắc mà các đường ghi
+ * (question:add/editall/managecategory) đã áp. Luồng làm bài của học sinh qua question engine (hoạt động tạo usage, học
+ * sinh start/submit/finish) không đổi.
  */
 describe('Cổng đọc ngân hàng câu hỏi (issue #55)', () => {
 
@@ -179,11 +176,9 @@ describe('Cổng đọc ngân hàng câu hỏi (issue #55)', () => {
     const detail = await http(app).get(`/api/v1/questions/${questionId}`).set('Authorization', `Bearer ${teacher}`);
     expect(detail.status).toBe(200);
     expect(detail.body.question.id).toBe(questionId);
-    // Câu dùng chung là TF-A: TF-A KHÔNG có dòng question_answers
-    // (đáp án nằm ở thân câu + solution phía answerKey) nên answers
-    // rỗng là đúng mô hình — khẳng định solution từng mệnh đề thay
-    // vì đếm answers. Version 2 chỉ đổi stem, giữ nguyên tập id nên
-    // solution kế thừa từ version 1 (toàn Đúng) theo luật S6.
+    // Câu dùng chung là TF-A: TF-A KHÔNG có dòng question_answers (đáp án nằm ở thân câu + solution phía answerKey) nên
+    // answers rỗng là đúng mô hình — khẳng định solution từng mệnh đề thay vì đếm answers. Version 2 chỉ đổi stem, giữ
+    // nguyên tập id nên solution kế thừa từ version 1 (toàn Đúng) theo luật S6.
     expect((detail.body.answerKey.solution as { answers: { statementId: string; value: boolean }[] }).answers).toEqual([
       { statementId: 's1', value: true },
       { statementId: 's2', value: true },
@@ -250,15 +245,12 @@ describe('Cổng đọc ngân hàng câu hỏi (issue #55)', () => {
   });
 
   it('luồng làm bài của học viên qua engine không bị động tới (usage do hoạt động tạo)', async () => {
-    // Mẫu dựng sau khi #60 + #55 cùng có mặt trên main: usage của lượt
-    // làm thật do HOẠT ĐỘNG tạo ở tầng service với actor là chính học
-    // sinh (mô hình mà assertCanCreateUsage của #55 ghi: cổng tạo chỉ áp
-    // ở controller, quiz tạo usage ở tầng service bằng actor là học
-    // sinh) — chủ sở hữu usage là học sinh nên các thao tác thô
-    // start/submit/finish của chính chủ qua cổng #60 bình thường.
-    // Trước đây spec cho admin tạo usage qua HTTP rồi học sinh thao
-    // tác: lệch chủ sở hữu nên #60 chặn 404 — đó là đổi mẫu dựng dữ
-    // liệu, mọi assertion hành vi bên dưới giữ nguyên.
+    // Mẫu dựng sau khi #60 + #55 cùng có mặt trên main: usage của lượt làm thật do HOẠT ĐỘNG tạo ở tầng service với
+    // actor là chính học sinh (mô hình mà assertCanCreateUsage của #55 ghi: cổng tạo chỉ áp ở controller, quiz tạo
+    // usage ở tầng service bằng actor là học sinh) — chủ sở hữu usage là học sinh nên các thao tác thô
+    // start/submit/finish của chính chủ qua cổng #60 bình thường. Trước đây spec cho admin tạo usage qua HTTP rồi học
+    // sinh thao tác: lệch chủ sở hữu nên #60 chặn 404 — đó là đổi mẫu dựng dữ liệu, mọi assertion hành vi bên dưới giữ
+    // nguyên.
     const created = await app.get(QuestionsService).createUsage(studentId, {
       component: 'mod_quiz', slots: [{ questionId }],
     });
@@ -268,9 +260,8 @@ describe('Cổng đọc ngân hàng câu hỏi (issue #55)', () => {
     const start = await http(app).post(`/api/v1/question-usages/${usageId}/attempts/${attemptId}/start`)
       .set('Authorization', `Bearer ${student}`);
     expect(start.status).toBeLessThan(300);
-    // Câu dùng chung là TF-A 4 mệnh đề (solution toàn Đúng): response
-    // phải là map statementId→boolean, không phải 'true' của TF-B cũ —
-    // 'true' chấm 0 ý đúng nên lượt này sẽ gradedwrong thay vì gradedright.
+    // Câu dùng chung là TF-A 4 mệnh đề (solution toàn Đúng): response phải là map statementId→boolean, không phải
+    // 'true' của TF-B cũ — 'true' chấm 0 ý đúng nên lượt này sẽ gradedwrong thay vì gradedright.
     const tfAllTrue = JSON.stringify({ s1: true, s2: true, s3: true, s4: true });
     const submit = await http(app).post(`/api/v1/question-usages/${usageId}/attempts/${attemptId}/submit`)
       .set('Authorization', `Bearer ${student}`).send({ response: tfAllTrue });
@@ -288,8 +279,8 @@ describe('Cổng đọc ngân hàng câu hỏi (issue #55)', () => {
       .send({ categoryId: courseCatId, ...tfBody('S6 inheritance stem') });
     expect(q.status).toBeLessThan(300);
     const qid = q.body.question.id as string;
-    // Nhánh 1 — đổi stem nhưng giữ nguyên tập id, không gửi solution:
-    // kế thừa được, version mới vẫn mang solution cũ (toàn Đúng).
+    // Nhánh 1 — đổi stem nhưng giữ nguyên tập id, không gửi solution: kế thừa được, version mới vẫn mang solution cũ
+    // (toàn Đúng).
     const same = await http(app).patch(`/api/v1/questions/${qid}`).set('Authorization', `Bearer ${admin}`)
       .send({ questionText: tfBody('S6 inheritance stem v2').questionText });
     expect(same.status).toBe(200);
@@ -301,9 +292,8 @@ describe('Cổng đọc ngân hàng câu hỏi (issue #55)', () => {
       { statementId: 's3', value: true },
       { statementId: 's4', value: true },
     ]);
-    // Nhánh 2 — đổi tập id (s5 thay s4) mà không gửi solution: 400,
-    // không tạo version mới mang solution cũ lệch tập (lệch tập sẽ
-    // làm engine chấm sai âm thầm vì nó dựng danh sách ý từ solution).
+    // Nhánh 2 — đổi tập id (s5 thay s4) mà không gửi solution: 400, không tạo version mới mang solution cũ lệch tập
+    // (lệch tập sẽ làm engine chấm sai âm thầm vì nó dựng danh sách ý từ solution).
     const changedText = JSON.parse(JSON.stringify(tfBody('S6 inheritance stem v3').questionText)) as {
       content: { content: { attrs: { id: string } }[] }[];
     };

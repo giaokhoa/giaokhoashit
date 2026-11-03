@@ -88,8 +88,7 @@ describe('Huy hiệu và năng lực', () => {
     // Trước khi hoàn thành: chưa thoả mãn theo ALL.
     let evaluation = await http(app).post(`/api/v1/badges/${badgeId}/evaluate`).set('Authorization', `Bearer ${admin}`).send({ userId: student.id });
     expect(evaluation.body.satisfied).toBe(false);
-    // Hoàn thành hoạt động thì hoàn thành khoá học → cả hai lá đều đúng →
-    // hook hoàn thành tự động cấp huy hiệu.
+    // Hoàn thành hoạt động thì hoàn thành khoá học → cả hai lá đều đúng → hook hoàn thành tự động cấp huy hiệu.
     await markCmComplete(app, admin, course.id, cm.id, student.id);
     const studentToken = (await login(app, student.username, STRONG_PASSWORD)).accessToken;
     const mine = await http(app).get('/api/v1/badges/mine').set('Authorization', `Bearer ${studentToken}`);
@@ -223,10 +222,9 @@ describe('Huy hiệu và năng lực', () => {
     const field = await http(app).post('/api/v1/custom-fields/fields').set('Authorization', `Bearer ${admin}`)
       .send({ categoryId: cat.body.id, shortName, name: 'Badge department', type: 'text', configData: {} });
     expect(field.status).toBe(201);
-    // DB kiểm thử của api tồn tại qua các lượt chạy và được dùng chung bởi các spec của suite này
-    // : một spec khác có thể đã khai báo các trường core_user BẮT BUỘC
-    // (ví dụ một select `department`), và việc tạo người dùng kiểm chứng mọi
-    // trường bắt buộc — hãy thoả mãn chúng theo cách tổng quát.
+    // DB kiểm thử của api tồn tại qua các lượt chạy và được dùng chung bởi các spec của suite này : một spec khác có
+    // thể đã khai báo các trường core_user BẮT BUỘC (ví dụ một select `department`), và việc tạo người dùng kiểm chứng
+    // mọi trường bắt buộc — hãy thoả mãn chúng theo cách tổng quát.
     const fieldsRes = await http(app).get('/api/v1/custom-fields/fields?component=core_user&area=user').set('Authorization', `Bearer ${admin}`);
     expect(fieldsRes.status).toBe(200);
     const requiredValues: Record<string, string> = {};
@@ -346,8 +344,8 @@ describe('Huy hiệu và năng lực', () => {
     await http(app).post(`/api/v1/competencies/plans/${planId}/activate`).set('Authorization', `Bearer ${ownerToken}`).send({});
     const requested = await http(app).post(`/api/v1/competencies/plans/${planId}/request-review`).set('Authorization', `Bearer ${ownerToken}`).send({});
     expect(requested.body.status).toBe(2);
-    // Chủ sở hữu không thể review kế hoạch của chính mình (không có capability review) — một
-    // giáo viên có capability review tại một assignment thật thì có thể.
+    // Chủ sở hữu không thể review kế hoạch của chính mình (không có capability review) — một giáo viên có capability
+    // review tại một assignment thật thì có thể.
     const startByOwner = await http(app).post(`/api/v1/competencies/plans/${planId}/start-review`).set('Authorization', `Bearer ${ownerToken}`).send({});
     expect(startByOwner.status).toBe(403);
     const started = await http(app).post(`/api/v1/competencies/plans/${planId}/start-review`).set('Authorization', `Bearer ${admin}`).send({});

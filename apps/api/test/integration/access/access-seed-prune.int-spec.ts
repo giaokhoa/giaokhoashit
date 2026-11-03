@@ -8,12 +8,10 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Issue #35: định danh capability không có tiền tố (`<area>:<name>`).
- * Rào chắn hồi quy cho đồng bộ seed: cơ sở dữ liệu từng được seed theo một
- * sơ đồ đặt tên có tiền tố cũ không được giữ các dòng lỗi thời sau khi seed lại —
- * cả trong `capabilities` lẫn trong `role_capabilities` (bất kỳ context nào).
- * Tên cũ được lắp ghép bằng nối chuỗi có chủ đích, để spec này tự nó
- * không mang literal capability có tiền tố.
+ * Issue #35: định danh capability không có tiền tố (`<area>:<name>`). Rào chắn hồi quy cho đồng bộ seed: cơ sở dữ liệu
+ * từng được seed theo một sơ đồ đặt tên có tiền tố cũ không được giữ các dòng lỗi thời sau khi seed lại — cả trong
+ * `capabilities` lẫn trong `role_capabilities` (bất kỳ context nào). Tên cũ được lắp ghép bằng nối chuỗi có chủ đích,
+ * để spec này tự nó không mang literal capability có tiền tố.
  */
 describe('Access: seed cắt bỏ các định nghĩa năng lực đã cũ (issue #35)', () => {
   let app: INestApplication;
@@ -33,8 +31,8 @@ describe('Access: seed cắt bỏ các định nghĩa năng lực đã cũ (issu
     // Một context thứ hai, không thuộc hệ thống: các ghi đè lỗi thời ở đó cũng phải ra đi.
     const catId = (await createContextViaApi(app, admin, 40, uuidv7(), systemId)).id;
 
-    // Mô phỏng trạng thái trước khi đổi tên: các định nghĩa và ghi đè mà tên của chúng
-    // mang một trong các tiền tố đã loại bỏ (ba sơ đồ cũ).
+    // Mô phỏng trạng thái trước khi đổi tên: các định nghĩa và ghi đè mà tên của chúng mang một trong các tiền tố đã
+    // loại bỏ (ba sơ đồ cũ).
     const staleCourse = 'moodle/' + 'course:update';
     const staleQuiz = 'mod/' + 'quiz:attempt';
     const staleCompletion = 'lms/' + 'completion:manage';

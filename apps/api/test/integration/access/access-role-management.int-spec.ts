@@ -7,15 +7,11 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Issue #545 (đợt 1 của chuỗi vai trò & phân quyền): bốn bổ sung backend
- * cho module access — (1) `GET /access/roles` kèm số người giữ phân
- * biệt và tổng hợp năng lực phía server; (2) `PUT
- * /access/roles/:id/capabilities` lưu ma trận thay toàn bộ, nguyên tử;
- * (3) `GET /access/assignments` lọc theo role, tìm theo người dùng,
- * phân trang phía server, mỗi dòng kèm tên/email; (4) chốt chặn xoá
- * role dựng sẵn và role đang còn người giữ. Mọi ca lái qua HTTP thật
- * và đối chiếu chéo với dữ kiện gốc trong hai bảng `role_assignments`
- * / `role_capabilities` bằng truy vấn SQL độc lập.
+ * Issue #545 (đợt 1 của chuỗi vai trò & phân quyền): bốn bổ sung backend cho module access — (1) `GET /access/roles`
+ * kèm số người giữ phân biệt và tổng hợp năng lực phía server; (2) `PUT /access/roles/:id/capabilities` lưu ma trận
+ * thay toàn bộ, nguyên tử; (3) `GET /access/assignments` lọc theo role, tìm theo người dùng, phân trang phía server,
+ * mỗi dòng kèm tên/email; (4) chốt chặn xoá role dựng sẵn và role đang còn người giữ. Mọi ca lái qua HTTP thật và đối
+ * chiếu chéo với dữ kiện gốc trong hai bảng `role_assignments` / `role_capabilities` bằng truy vấn SQL độc lập.
  */
 describe('Access: tổng hợp vai trò, ma trận thay toàn bộ, bảng gán vai và chốt xoá (issue #545)', () => {
   let app: INestApplication;
@@ -38,7 +34,6 @@ describe('Access: tổng hợp vai trò, ma trận thay toàn bộ, bảng gán 
   });
   afterAll(async () => { await pg.end(); await app.close(); });
 
-  /** Ba năng lực mẫu có kiểu đã biết trước: một read, một write cùng resource với nó, một write khác resource. */
   function sampleCapabilities() {
     const readCap = catalog.find((c) => c.capType === 'read');
     const writeSameResource = catalog.find((c) => c.capType === 'write' && resourceOf(c.name) === resourceOf(readCap!.name));
@@ -74,8 +69,8 @@ describe('Access: tổng hợp vai trò, ma trận thay toàn bộ, bảng gán 
     const userA = await createUserViaApi(app, admin);
     const userB = await createUserViaApi(app, admin);
 
-    // Người A giữ vai ở HAI context (hai dòng gán), người B giữ ở một
-    // context: số người giữ phải là 2 theo người phân biệt, không phải 3 dòng.
+    // Người A giữ vai ở HAI context (hai dòng gán), người B giữ ở một context: số người giữ phải là 2 theo người phân
+    // biệt, không phải 3 dòng.
     await assignRole(app, admin, userA.id, roleId, systemId);
     await assignRole(app, admin, userA.id, roleId, catContextId);
     await assignRole(app, admin, userB.id, roleId, systemId);
@@ -133,8 +128,8 @@ describe('Access: tổng hợp vai trò, ma trận thay toàn bộ, bảng gán 
         .set('Authorization', `Bearer ${admin}`)
         .send({ contextId, overrides });
 
-    // Thay toàn bộ: capB đổi sang PREVENT, capC thêm mới PROHIBIT, capD
-    // gửi INHERIT tường minh; capA vắng mặt trong tập gửi lên.
+    // Thay toàn bộ: capB đổi sang PREVENT, capC thêm mới PROHIBIT, capD gửi INHERIT tường minh; capA vắng mặt trong tập
+    // gửi lên.
     const applied = await put([
       { capability: capB.name, permission: -1 },
       { capability: capC.name, permission: -1000 },
@@ -148,8 +143,8 @@ describe('Access: tổng hợp vai trò, ma trận thay toàn bộ, bảng gán 
       { capability: capC.name, permission: -1000 },
     ].sort((a, b) => a.capability.localeCompare(b.capability));
     expect(applied.body.overrides).toEqual(expectedSaved);
-    // Tập đã lưu đọc lại qua API và qua bảng gốc đều bằng đúng tập mới:
-    // capA đã trở về kế thừa (không còn dòng), capD không sinh dòng.
+    // Tập đã lưu đọc lại qua API và qua bảng gốc đều bằng đúng tập mới: capA đã trở về kế thừa (không còn dòng), capD
+    // không sinh dòng.
     expect(await savedOverridesAt(roleId, contextId)).toEqual(expectedSaved);
     const pgRows = await pg.query<{ capability: string; permission: number }>(
       'select capability, permission from role_capabilities where role_id = $1 and context_id = $2 order by capability',
@@ -201,8 +196,8 @@ describe('Access: tổng hợp vai trò, ma trận thay toàn bộ, bảng gán 
     const list = (query: Record<string, string | number>) =>
       http(app).get('/api/v1/access/assignments').query(query).set('Authorization', `Bearer ${admin}`);
 
-    // Lọc theo vai: đúng 3 dòng của vai này, mỗi dòng kèm tên/email và
-    // giữ nguyên các trường của dòng gán (component, updatedAt).
+    // Lọc theo vai: đúng 3 dòng của vai này, mỗi dòng kèm tên/email và giữ nguyên các trường của dòng gán (component,
+    // updatedAt).
     const byRole = await list({ roleId });
     expect(byRole.status).toBe(200);
     expect(byRole.body.total).toBe(3);
@@ -236,8 +231,7 @@ describe('Access: tổng hợp vai trò, ma trận thay toàn bộ, bảng gán 
     expect(byContext.body.total).toBe(1);
     expect((byContext.body.assignments as { contextId: string }[])[0].contextId).toBe(catContextId);
 
-    // Phân trang: 5 dòng của một vai riêng, trang 2 dòng — tổng khớp 5,
-    // ba trang gộp lại đủ 5 dòng không trùng nhau.
+    // Phân trang: 5 dòng của một vai riêng, trang 2 dòng — tổng khớp 5, ba trang gộp lại đủ 5 dòng không trùng nhau.
     const pageRoleId = await createRoleViaApi(app, admin);
     for (let i = 0; i < 5; i += 1) {
       const pageUser = await createUserViaApi(app, admin);

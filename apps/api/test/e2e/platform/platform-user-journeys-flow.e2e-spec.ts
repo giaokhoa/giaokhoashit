@@ -55,14 +55,11 @@ describe('Hành trình người dùng platform (dẫn từ Behat): tìm kiếm, 
     // Behat "two results": truy vấn khớp → thấy kết quả của khoá mình tham gia.
     const hits = await http(app).get(`/api/v1/search?q=${tokenA}`).set('Authorization', `Bearer ${studentToken}`);
     expect((hits.body as { area: string; itemId: string }[]).some((d) => d.area === 'courses' && d.itemId === courseA.id)).toBe(true);
-    // Behat "cannot see users on other courses" gắn với user-picker của form
-    // tìm kiếm PHP (autocomplete chỉ liệt kê user của khoá đang chọn trong
-    // "Search within") — đó là chi tiết cài đặt UI, bỏ qua theo quy ước dịch
-    // oracle. Phần nghiệp vụ tương ứng ở mức API
-    // (tài liệu users chỉ hiện với người có user:viewdetails tại
-    // context của user đó) đã được kiểm ở flow test PROHIBIT/re-check của
-    // search; ở đây chỉ khẳng định control: tài liệu của outsider THẬT SỰ có
-    // trong index (admin thấy), để các assertion "không thấy" không rỗng.
+    // Behat "cannot see users on other courses" gắn với user-picker của form tìm kiếm PHP (autocomplete chỉ liệt kê
+    // user của khoá đang chọn trong "Search within") — đó là chi tiết cài đặt UI, bỏ qua theo quy ước dịch oracle. Phần
+    // nghiệp vụ tương ứng ở mức API (tài liệu users chỉ hiện với người có user:viewdetails tại context của user đó) đã
+    // được kiểm ở flow test PROHIBIT/re-check của search; ở đây chỉ khẳng định control: tài liệu của outsider THẬT SỰ
+    // có trong index (admin thấy), để các assertion "không thấy" không rỗng.
     void tokenB; void courseB;
     const asAdmin = await http(app).get(`/api/v1/search?q=${outsider.username}`).set('Authorization', `Bearer ${admin}`);
     expect((asAdmin.body as { area: string; itemId: string }[]).some((d) => d.area === 'users' && d.itemId === outsider.id)).toBe(true);
@@ -82,8 +79,8 @@ describe('Hành trình người dùng platform (dẫn từ Behat): tìm kiếm, 
     const sourceContent = await http(app).get(`/api/v1/courses/${source.id}/content`).set('Authorization', `Bearer ${admin}`);
     const sourceSections = (sourceContent.body.sections as unknown[]).length;
 
-    // Behat: restore vào khoá có sẵn — "I should see Course 2" (danh tính
-    // đích giữ nguyên) và "I should see Test forum name" (nội dung nguồn có mặt).
+    // Behat: restore vào khoá có sẵn — "I should see Course 2" (danh tính đích giữ nguyên) và "I should see Test forum
+    // name" (nội dung nguồn có mặt).
     const target = await createCourse(app, admin, cat.id, { fullName: uniqueName('JourneyTarget') });
     const merge = await http(app).post('/api/v1/backup/restore').set('Authorization', `Bearer ${admin}`)
       .send({ backupJobId: backup.body.id, mode: 'merge', targetCourseId: target.id });
@@ -94,11 +91,9 @@ describe('Hành trình người dùng platform (dẫn từ Behat): tìm kiếm, 
     const targetModuleNames = (targetContent.body.sections as { modules: { name: string }[] }[]).flatMap((s) => s.modules.map((m) => m.name));
     expect(targetModuleNames).toContain('Journey Reading');
 
-    // Behat: restore thành khoá mới — đủ section của nguồn, không thừa
-    // ("Section 15" có, "Section 16" không). Từ CLASS-0 (PR #200),
-    // restore-as-new bị từ chối vì khoá mới phải thuộc một lớp
-    // (400 course.class_required); tương đương Behat đạt bằng replace
-    // vào một khoá đích trống.
+    // Behat: restore thành khoá mới — đủ section của nguồn, không thừa ("Section 15" có, "Section 16" không). Từ
+    // CLASS-0 (PR #200), restore-as-new bị từ chối vì khoá mới phải thuộc một lớp (400 course.class_required); tương
+    // đương Behat đạt bằng replace vào một khoá đích trống.
     const restoreNew = await http(app).post('/api/v1/backup/restore').set('Authorization', `Bearer ${admin}`)
       .send({ backupJobId: backup.body.id, mode: 'new' });
     expect(restoreNew.status).toBe(400);
@@ -118,9 +113,8 @@ describe('Hành trình người dùng platform (dẫn từ Behat): tìm kiếm, 
     const userB = await createUserViaApi(app, admin);
     const userC = await createUserViaApi(app, admin);
     const tokenOf = async (u: { username: string }) => (await login(app, u.username, STRONG_PASSWORD)).accessToken;
-    // Token phải lấy TRƯỚC khi dựng request ngoài: lồng một request supertest
-    // (login) vào tham số của request khác làm hai Test dùng chung HTTP
-    // server chưa listen và đóng lẫn nhau (lỗi 'address' of null).
+    // Token phải lấy TRƯỚC khi dựng request ngoài: lồng một request supertest (login) vào tham số của request khác làm
+    // hai Test dùng chung HTTP server chưa listen và đóng lẫn nhau (lỗi 'address' of null).
     const [tokA, tokB, tokC] = [await tokenOf(userA), await tokenOf(userB), await tokenOf(userC)];
     const reqA = await http(app).post('/api/v1/privacy/requests').set('Authorization', `Bearer ${tokA}`).send({ type: 'export' });
     const reqB = await http(app).post('/api/v1/privacy/requests').set('Authorization', `Bearer ${tokB}`).send({ type: 'export' });
@@ -133,8 +127,8 @@ describe('Hành trình người dùng platform (dẫn từ Behat): tìm kiếm, 
     expect(byId.get(reqA.body.id)).toBe('pending');
     expect(byId.get(reqB.body.id)).toBe('pending');
 
-    // Duyệt → Approved (hệ thống xử lý ngay sau duyệt nên trạng thái cuối là
-    // completed kèm gói export); từ chối → Rejected và không xử lý tiếp được.
+    // Duyệt → Approved (hệ thống xử lý ngay sau duyệt nên trạng thái cuối là completed kèm gói export); từ chối →
+    // Rejected và không xử lý tiếp được.
     const doneA = await http(app).post(`/api/v1/privacy/requests/${reqA.body.id}/decide`).set('Authorization', `Bearer ${admin}`).send({ decision: 'approved' });
     expect(doneA.body.status).toBe('completed');
     const filesA = await http(app).get(`/api/v1/privacy/requests/${reqA.body.id}/files`).set('Authorization', `Bearer ${admin}`);

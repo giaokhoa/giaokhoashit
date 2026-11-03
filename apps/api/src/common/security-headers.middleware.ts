@@ -18,8 +18,8 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-    // Middleware của Nest nhận req.path đã rút gọn theo route đã khớp;
-    // đường đầy đủ của request nằm ở originalUrl (bỏ phần query).
+    // Middleware của Nest nhận req.path đã rút gọn theo route đã khớp; đường đầy đủ của request nằm ở originalUrl (bỏ
+    // phần query).
     const fullPath = (req.originalUrl ?? req.url ?? '').split('?')[0];
     if (fullPath.startsWith('/api/v1/')) {
       res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");

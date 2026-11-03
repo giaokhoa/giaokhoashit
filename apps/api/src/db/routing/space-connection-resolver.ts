@@ -1,8 +1,7 @@
 import { onSpaceRegistryChanged } from './space-routing-events';
 
 /**
- * Bộ phân giải đích kết nối theo trung tâm (issue #581) — thành phần
- * đầu tiên của khung định tuyến ở tầng dữ kiện.
+ * Bộ phân giải đích kết nối theo trung tâm (issue #581) — thành phần đầu tiên của khung định tuyến ở tầng dữ kiện.
  *
  * Luồng phân giải cho một slug không gian:
  * 1. Tra bộ nhớ đệm trong tiến trình: mục đệm còn hạn (TTL ngắn cấu
@@ -36,19 +35,14 @@ import { onSpaceRegistryChanged } from './space-routing-events';
  *    đã giao đúng trong tiến trình không bao giờ bị một lần đọc
  *    bắt đầu trước thay đổi ghi đè.
  *
- * Trạng thái vòng đời (`suspended`/`closed`) KHÔNG chặn phân giải:
- * đích vẫn phải phân giải được để đường vận hành (xuất dữ kiện,
- * khôi phục, kiểm đếm) còn vào được kho của trung tâm đã ngưng;
- * việc từ chối traffic NGHIỆP VỤ theo trạng thái là luật của tầng
- * ứng dụng phía trên, kết quả phân giải mang theo `status` để tầng
- * đó quyết.
+ * Trạng thái vòng đời (`suspended`/`closed`) KHÔNG chặn phân giải: đích vẫn phải phân giải được để đường vận hành (xuất
+ * dữ kiện, khôi phục, kiểm đếm) còn vào được kho của trung tâm đã ngưng; việc từ chối traffic NGHIỆP VỤ theo trạng thái
+ * là luật của tầng ứng dụng phía trên, kết quả phân giải mang theo `status` để tầng đó quyết.
  *
- * Kết quả phân giải còn mang theo `spaceId` — định danh của chính
- * dòng đăng ký (khoá chính của sổ): tầng ứng dụng gắn phiên làm
- * việc vào đúng một trung tâm đã đăng ký bằng định danh này
- * (claim `centre_id` của access token được cấp cho phiên của
- * trung tâm ở kho riêng và được đối chiếu với `spaceId` ở mỗi
- * request tới địa chỉ của trung tâm — issue #582).
+ * Kết quả phân giải còn mang theo `spaceId` — định danh của chính dòng đăng ký (khoá chính của sổ): tầng ứng dụng gắn
+ * phiên làm việc vào đúng một trung tâm đã đăng ký bằng định danh này (claim `centre_id` của access token được cấp cho
+ * phiên của trung tâm ở kho riêng và được đối chiếu với `spaceId` ở mỗi request tới địa chỉ của trung tâm — issue
+ * #582).
  */
 
 /** Một dòng đăng ký không gian ở dạng bộ phân giải cần — hình chiếu tối thiểu của dòng sổ đăng ký. */
@@ -71,7 +65,6 @@ export interface SpaceRegistryEntry {
 /** Đường đọc sổ đăng ký mà bộ phân giải phụ thuộc — tầng gọi cấp cách đọc thật (control plane). */
 export type SpaceRegistryReader = (slug: string) => Promise<SpaceRegistryEntry | undefined>;
 
-/** Đích kết nối đã phân giải cho một không gian. */
 export interface ResolvedSpaceConnection {
   slug: string;
   /** Định danh của dòng đăng ký đã phân giải (khoá chính của sổ) — tầng ứng dụng đối chiếu với claim `centre_id` của token. */
@@ -79,16 +72,13 @@ export interface ResolvedSpaceConnection {
   /** Trạng thái vòng đời tại thời điểm phân giải — tầng ứng dụng dùng để chặn traffic nghiệp vụ khi cần. */
   status: string;
   schemaVersion: string | null;
-  /** Tên database đích theo sổ đăng ký. */
   databaseName: string;
   /** shared = kho chung hiện tại; dedicated = kho riêng của trung tâm. */
   mode: 'shared' | 'dedicated';
-  /** Role kết nối của kho đích theo sổ đăng ký. */
   connectionRole: string;
   /**
-   * Chuỗi kết nối tới kho riêng — chỉ có ở chế độ `dedicated`.
-   * Đã được chốt đích về `databaseName` của sổ và kiểm chứng role.
-   * Giá trị là bí mật kết nối: cấm ghi ra log.
+   * Chuỗi kết nối tới kho riêng — chỉ có ở chế độ `dedicated`. Đã được chốt đích về `databaseName` của sổ và kiểm chứng
+   * role. Giá trị là bí mật kết nối: cấm ghi ra log.
    */
   connectionString?: string;
 }
@@ -110,14 +100,12 @@ export interface SpaceConnectionResolverDeps {
   /** Hạn sống của một mục đệm (mili giây) — lưới dự phòng ngoài kênh sự kiện vô hiệu hoá. */
   cacheTtlMs: number;
   /**
-   * Giải một tham chiếu bí mật thành giá trị chuỗi kết nối. Mặc
-   * định: chỉ hỗ trợ dạng `env:<TÊN_BIẾN>` đọc từ `process.env` —
-   * đúng dạng tham chiếu mà sổ đăng ký đang lưu.
+   * Giải một tham chiếu bí mật thành giá trị chuỗi kết nối. Mặc định: chỉ hỗ trợ dạng `env:<TÊN_BIẾN>` đọc từ
+   * `process.env` — đúng dạng tham chiếu mà sổ đăng ký đang lưu.
    */
   resolveSecretRef?: (secretRef: string) => string | undefined;
 }
 
-/** Giải tham chiếu bí mật mặc định: `env:<TÊN_BIẾN>` → giá trị biến môi trường tương ứng. */
 function defaultResolveSecretRef(secretRef: string): string | undefined {
   if (!secretRef.startsWith('env:')) return undefined;
   const name = secretRef.slice('env:'.length);
@@ -132,11 +120,9 @@ interface CacheEntry {
 export class SpaceConnectionResolver {
   private readonly cache = new Map<string, CacheEntry>();
   /**
-   * Số thế hệ vô hiệu hoá theo slug — tăng mỗi lần slug đó bị vô
-   * hiệu hoá (theo slug hoặc toàn bộ). Đây là dấu vết duy nhất mà
-   * sự kiện vô hiệu hoá để lại cho một lần đọc sổ đang bay: khi sự
-   * kiện tới, mục đệm của slug vốn đang trống nên thao tác xoá đệm
-   * không để lại gì để lần đọc đó nhận biết lúc nó hoàn tất.
+   * Số thế hệ vô hiệu hoá theo slug — tăng mỗi lần slug đó bị vô hiệu hoá (theo slug hoặc toàn bộ). Đây là dấu vết duy
+   * nhất mà sự kiện vô hiệu hoá để lại cho một lần đọc sổ đang bay: khi sự kiện tới, mục đệm của slug vốn đang trống
+   * nên thao tác xoá đệm không để lại gì để lần đọc đó nhận biết lúc nó hoàn tất.
    */
   private readonly invalidationGenerations = new Map<string, number>();
   private readonly resolveSecretRef: (secretRef: string) => string | undefined;
@@ -144,25 +130,21 @@ export class SpaceConnectionResolver {
 
   constructor(private readonly deps: SpaceConnectionResolverDeps) {
     this.resolveSecretRef = deps.resolveSecretRef ?? defaultResolveSecretRef;
-    // Vô hiệu hoá theo sự kiện: nơi ghi sổ phát sự kiện kèm slug sau
-    // mỗi lần commit thay đổi — xoá đúng mục đệm của slug đó để lần
-    // phân giải kế tiếp đọc lại sổ.
+    // Vô hiệu hoá theo sự kiện: nơi ghi sổ phát sự kiện kèm slug sau mỗi lần commit thay đổi — xoá đúng mục đệm của
+    // slug đó để lần phân giải kế tiếp đọc lại sổ.
     this.unsubscribe = onSpaceRegistryChanged((slug) => this.invalidate(slug));
   }
 
-  /** Ngừng nghe sự kiện đổi sổ (gọi khi chủ sở hữu kết thúc vòng đời). */
   dispose(): void {
     this.unsubscribe();
   }
 
   /**
-   * Xoá đệm: truyền slug thì xoá đúng mục của slug đó, không truyền
-   * thì xoá toàn bộ (đường vận hành khi nghi ngờ sổ đã đổi hàng loạt
-   * ngoài kênh sự kiện).
+   * Xoá đệm: truyền slug thì xoá đúng mục của slug đó, không truyền thì xoá toàn bộ (đường vận hành khi nghi ngờ sổ đã
+   * đổi hàng loạt ngoài kênh sự kiện).
    *
-   * Mọi lần vô hiệu hoá đều tăng số thế hệ của (các) slug liên quan:
-   * số thế hệ là dấu vết mà một lần đọc sổ đang bay đối chiếu được
-   * sau khi đọc xong — xem chốt thế hệ trong `resolve`.
+   * Mọi lần vô hiệu hoá đều tăng số thế hệ của (các) slug liên quan: số thế hệ là dấu vết mà một lần đọc sổ đang bay
+   * đối chiếu được sau khi đọc xong — xem chốt thế hệ trong `resolve`.
    */
   invalidate(slug?: string): void {
     if (slug) {
@@ -176,7 +158,6 @@ export class SpaceConnectionResolver {
     }
   }
 
-  /** Số thế hệ vô hiệu hoá hiện tại của một slug (0 khi slug chưa từng bị vô hiệu hoá). */
   private generationOf(slug: string): number {
     return this.invalidationGenerations.get(slug) ?? 0;
   }
@@ -199,18 +180,13 @@ export class SpaceConnectionResolver {
   async resolve(slug: string): Promise<ResolvedSpaceConnection> {
     const cached = this.cache.get(slug);
     if (cached && cached.expiresAt > Date.now()) return cached.target;
-    // Chốt thế hệ chống đua vô hiệu hoá: sự kiện đổi sổ có thể tới
-    // TRONG LÚC lần đọc sổ dưới đây còn đang chờ — lần đọc bắt đầu
-    // trước khi thay đổi được commit thì trả ảnh chụp cũ (ngữ nghĩa
-    // READ COMMITTED), và lúc sự kiện tới, mục đệm của slug vốn đang
-    // trống nên thao tác xoá đệm không ngăn được kết quả cũ bị đệm
-    // lại khi lần đọc hoàn tất (đích cũ sống lại tới hết TTL). Vì
-    // vậy: ghi slug vào bản đồ thế hệ rồi chụp số thế hệ ngay trước
-    // khi đọc (việc ghi trước bảo đảm đường vô hiệu hoá toàn bộ
-    // cũng chạm được slug này); sau khi đọc xong mà thế hệ đã đổi
-    // thì bỏ kết quả vừa đọc và đọc lại dưới thế hệ mới, lặp cho
-    // tới khi một lần đọc trọn vẹn không bị sự kiện nào xen vào
-    // mới đệm và trả kết quả đó.
+    // Chốt thế hệ chống đua vô hiệu hoá: sự kiện đổi sổ có thể tới TRONG LÚC lần đọc sổ dưới đây còn đang chờ — lần đọc
+    // bắt đầu trước khi thay đổi được commit thì trả ảnh chụp cũ (ngữ nghĩa READ COMMITTED), và lúc sự kiện tới, mục
+    // đệm của slug vốn đang trống nên thao tác xoá đệm không ngăn được kết quả cũ bị đệm lại khi lần đọc hoàn tất (đích
+    // cũ sống lại tới hết TTL). Vì vậy: ghi slug vào bản đồ thế hệ rồi chụp số thế hệ ngay trước khi đọc (việc ghi
+    // trước bảo đảm đường vô hiệu hoá toàn bộ cũng chạm được slug này); sau khi đọc xong mà thế hệ đã đổi thì bỏ kết
+    // quả vừa đọc và đọc lại dưới thế hệ mới, lặp cho tới khi một lần đọc trọn vẹn không bị sự kiện nào xen vào mới đệm
+    // và trả kết quả đó.
     if (!this.invalidationGenerations.has(slug)) this.invalidationGenerations.set(slug, 0);
     for (;;) {
       const generation = this.generationOf(slug);
@@ -266,10 +242,8 @@ export class SpaceConnectionResolver {
         `Connection secret for space ${entry.slug} is not a valid connection URL`,
       );
     }
-    // Role trong chuỗi kết nối phải đúng role sổ đã đăng ký cho kho
-    // này: kết nối bằng role khác (dù kết nối được) là đi chệch sổ —
-    // fail-closed tại đây thay vì để tầng dữ kiện chạy bằng quyền
-    // không thuộc về kho của trung tâm.
+    // Role trong chuỗi kết nối phải đúng role sổ đã đăng ký cho kho này: kết nối bằng role khác (dù kết nối được) là đi
+    // chệch sổ — fail-closed tại đây thay vì để tầng dữ kiện chạy bằng quyền không thuộc về kho của trung tâm.
     const role = decodeURIComponent(url.username);
     if (role !== entry.connectionRoleRef) {
       throw new SpaceRoutingError(
@@ -277,9 +251,8 @@ export class SpaceConnectionResolver {
         `Connection role for space ${entry.slug} does not match the registered role`,
       );
     }
-    // Đích cuối cùng lấy theo sổ: thay tên database trong chuỗi gốc
-    // bằng databaseName đã đăng ký (chuỗi gốc có thể trỏ bất kỳ
-    // database nào của cụm — thường là database mặc định của role).
+    // Đích cuối cùng lấy theo sổ: thay tên database trong chuỗi gốc bằng databaseName đã đăng ký (chuỗi gốc có thể trỏ
+    // bất kỳ database nào của cụm — thường là database mặc định của role).
     url.pathname = `/${entry.databaseName}`;
     return { ...base, mode: 'dedicated', connectionString: url.toString() };
   }

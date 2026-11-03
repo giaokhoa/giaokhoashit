@@ -74,7 +74,6 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
     return { courseId: course.id, sectionId, teacher, students };
   }
 
-  /** Text thuần của một tài liệu rich text (để đối chiếu đáp án theo nội dung). */
   function plainText(doc: unknown): string {
     if (!doc || typeof doc !== 'object') return '';
     const node = doc as { type?: string; text?: string; content?: unknown[] };
@@ -83,9 +82,8 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
   }
 
   /**
-   * Tạo câu trắc nghiệm trong bank câu hỏi CÁ NHÂN của giáo viên với đáp
-   * án đúng đặt tại vị trí `correctIndex` (mặc định đáp án đầu). Trả id
-   * câu + id version 1.
+   * Tạo câu trắc nghiệm trong bank câu hỏi CÁ NHÂN của giáo viên với đáp án đúng đặt tại vị trí `correctIndex` (mặc
+   * định đáp án đầu). Trả id câu + id version 1.
    */
   async function createQuestion(token: string, name: string, correctIndex = 0): Promise<{ questionId: string; versionId: string }> {
     const me = await http(app).get('/api/v1/users/me').set(bearer(token));
@@ -133,7 +131,6 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
     questions: { slot: number; questionAttemptId: string; fraction: number | null; answers: { id: string; text: unknown }[] }[];
   }
 
-  /** Bắt đầu lượt, chọn đáp án theo TEXT của đáp án, nộp bài. Trả view đã nộp. */
   async function finishAttemptChoosing(token: string, pinId: string, answerText: string): Promise<AttemptViewBody> {
     const start = await http(app).post(`/api/v1/exam-pins/${pinId}/attempts`).set(bearer(token)).send({});
     if (start.status !== 200 && start.status !== 201) throw new Error(`start failed: ${start.status} ${JSON.stringify(start.body)}`);
@@ -167,8 +164,8 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
     expect(slotBefore.hasNewerVersion).toBe(false);
     expect(slotBefore.pinnedVersionNumber).toBe(1);
 
-    // Giáo viên sửa câu q1 → câu có version 2 (ready). Huy hiệu ở soạn
-    // đề phải hiện: slot vẫn ghim v1, bản ready mới nhất là v2.
+    // Giáo viên sửa câu q1 → câu có version 2 (ready). Huy hiệu ở soạn đề phải hiện: slot vẫn ghim v1, bản ready mới
+    // nhất là v2.
     await editQuestionCorrect(ctx.teacher, q1.questionId, 0);
     const after = await http(app).get(`/api/v1/exams/${draft.examId}`).set(bearer(ctx.teacher));
     const slotAfter = (after.body.slots as Record<string, any>[]).find((s) => s.questionId === q1.questionId)!;
@@ -176,8 +173,7 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
     expect(slotAfter.latestReadyVersionNumber).toBe(2);
     expect(slotAfter.pinnedVersionNumber).toBe(1);
 
-    // Tạo exam version mới: q1 giữ nguyên (slot tự ghim lại lên bản
-    // ready mới nhất của câu), q2 đổi điểm 1 → 3.
+    // Tạo exam version mới: q1 giữ nguyên (slot tự ghim lại lên bản ready mới nhất của câu), q2 đổi điểm 1 → 3.
     const newExamView = await setExamSlots(ctx.teacher, draft.examId, [
       { questionId: q1.questionId, maxMark: 1 },
       { questionId: q2.questionId, maxMark: 3 },
@@ -207,8 +203,8 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
     expect(diff2.fromMaxMark).toBe(1);
     expect(diff2.toMaxMark).toBe(3);
 
-    // Áp cập nhật: pin chuyển sang exam version mới, huy hiệu tắt, vết
-    // được ghi (ai/khi nào kiểm qua DB: đúng actor, đúng from → to).
+    // Áp cập nhật: pin chuyển sang exam version mới, huy hiệu tắt, vết được ghi (ai/khi nào kiểm qua DB: đúng actor,
+    // đúng from → to).
     const applied = await http(app).post(`/api/v1/exam-pins/${pinId}/version-update`).set(bearer(ctx.teacher))
       .send({ toExamVersionId: targetVersionId });
     expect(applied.status === 200 || applied.status === 201).toBe(true);
@@ -269,10 +265,8 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
     const pin = await pinExam(app, ctx.teacher, ctx.courseId, draft, { sectionId: ctx.sectionId });
     const pinId = pin.id as string;
 
-    // Lượt XEM TRƯỚC của giáo viên (preview: true) không phải lượt
-    // làm thật: sau khi xem trước, cập nhật version của pin vẫn đi
-    // được — điều kiện kiểm tra không bị khoá bởi hành vi của chính
-    // giáo viên.
+    // Lượt XEM TRƯỚC của giáo viên (preview: true) không phải lượt làm thật: sau khi xem trước, cập nhật version của
+    // pin vẫn đi được — điều kiện kiểm tra không bị khoá bởi hành vi của chính giáo viên.
     const previewStart = await http(app).post(`/api/v1/exam-pins/${pinId}/attempts`).set(bearer(ctx.teacher)).send({ preview: true });
     expect([200, 201], JSON.stringify(previewStart.body)).toContain(previewStart.status);
     const v2 = await setExamSlots(ctx.teacher, draft.examId, [{ questionId: q.questionId, maxMark: 2 }]);
@@ -280,9 +274,8 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
       .send({ toExamVersionId: v2.version.id });
     expect(applyAfterPreview.status === 200 || applyAfterPreview.status === 201, JSON.stringify(applyAfterPreview.body)).toBe(true);
 
-    // Lượt làm THẬT đang dở (học sinh bắt đầu, chưa trả lời/chưa
-    // nộp): điều kiện kiểm tra phải đứng yên từ lúc học sinh đầu
-    // tiên bắt đầu làm → pin bị khoá như đã có lượt nộp.
+    // Lượt làm THẬT đang dở (học sinh bắt đầu, chưa trả lời/chưa nộp): điều kiện kiểm tra phải đứng yên từ lúc học sinh
+    // đầu tiên bắt đầu làm → pin bị khoá như đã có lượt nộp.
     const start = await http(app).post(`/api/v1/exam-pins/${pinId}/attempts`).set(bearer(ctx.students[0]!.token)).send({});
     expect([200, 201], JSON.stringify(start.body)).toContain(start.status);
     expect((start.body as AttemptViewBody).attempt.state).not.toBe('finished');
@@ -311,9 +304,8 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
     expect(s1.questions[0]!.fraction).toBe(1);
     expect(s2.questions[0]!.fraction).toBe(0);
 
-    // Giáo viên sửa đáp án của câu (version 2 đổi đáp án đúng sang B):
-    // các attempt đã có KHÔNG đổi version, KHÔNG đổi điểm — cập nhật
-    // không tự áp lên người đã làm.
+    // Giáo viên sửa đáp án của câu (version 2 đổi đáp án đúng sang B): các attempt đã có KHÔNG đổi version, KHÔNG đổi
+    // điểm — cập nhật không tự áp lên người đã làm.
     await editQuestionCorrect(ctx.teacher, q.questionId, 1);
     const s1After = await http(app).get(`/api/v1/quiz-attempts/${s1.attempt.id}`).set(bearer(ctx.teacher));
     expect(s1After.body.questions[0].fraction).toBe(1);
@@ -321,8 +313,8 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
     const s2After = await http(app).get(`/api/v1/quiz-attempts/${s2.attempt.id}`).set(bearer(ctx.teacher));
     expect(s2After.body.questions[0].fraction).toBe(0);
 
-    // Học sinh thứ ba bắt đầu SAU khi câu đã sửa, trên pin pinned: vẫn
-    // nhận đúng version đã ghim của pin (không trôi theo bản mới).
+    // Học sinh thứ ba bắt đầu SAU khi câu đã sửa, trên pin pinned: vẫn nhận đúng version đã ghim của pin (không trôi
+    // theo bản mới).
     const s3 = await finishAttemptChoosing(ctx.students[2]!.token, pinId, 'Đáp án A');
     expect(await pinnedQuestionVersionOf(s3.attempt.id)).toBe(q.versionId);
     expect(s3.questions[0]!.fraction).toBe(1);
@@ -423,8 +415,7 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
     expect(floatPin.body.versionMode).toBe('float_latest_ready');
     const floatPinId = floatPin.body.id as string;
 
-    // Đổi preset rời regular trong lúc đang float bị chặn; tắt float
-    // trước thì đổi được.
+    // Đổi preset rời regular trong lúc đang float bị chặn; tắt float trước thì đổi được.
     const badPatch = await http(app).patch(`/api/v1/exam-pins/${floatPinId}`).set(bearer(ctx.teacher)).send({ preset: 'periodic' });
     expect(badPatch.status).toBe(400);
     expect(badPatch.body.code).toBe('exam.version_mode_not_allowed');
@@ -438,9 +429,8 @@ describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #2
     expect(badFloat.status).toBe(400);
     expect(badFloat.body.code).toBe('exam.version_mode_not_allowed');
 
-    // Hành vi float: lượt bắt đầu trước khi câu sửa ghim v1; câu sửa
-    // xong, lượt bắt đầu sau phân giải bản ready mới nhất (v2); lượt
-    // đã bắt đầu không trôi theo.
+    // Hành vi float: lượt bắt đầu trước khi câu sửa ghim v1; câu sửa xong, lượt bắt đầu sau phân giải bản ready mới
+    // nhất (v2); lượt đã bắt đầu không trôi theo.
     const floatPin2 = await mkPin({ preset: 'regular', versionMode: 'float_latest_ready' });
     const floatPin2Id = floatPin2.body.id as string;
     const early = await finishAttemptChoosing(ctx.students[0]!.token, floatPin2Id, 'Đáp án A');

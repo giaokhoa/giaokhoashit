@@ -43,10 +43,8 @@ describe('Nhắn tin và lịch', () => {
   }
 
   /**
-   * Hai user thành liên hệ ĐÃ ĐƯỢC DUYỆT của nhau qua luồng yêu cầu–chấp
-   * nhận (Lớp B của issue #33 thay danh bạ một chiều): requester gửi yêu
-   * cầu, accepter chấp nhận — chỉ khi đó quan hệ mới tồn tại và cổng
-   * liên lạc mới mở.
+   * Hai user thành liên hệ ĐÃ ĐƯỢC DUYỆT của nhau qua luồng yêu cầu–chấp nhận (Lớp B của issue #33 thay danh bạ một
+   * chiều): requester gửi yêu cầu, accepter chấp nhận — chỉ khi đó quan hệ mới tồn tại và cổng liên lạc mới mở.
    */
   async function befriend(requester: { id: string; token: string }, accepter: { id: string; token: string }) {
     const req = await http(app).post(`/api/v1/messages/contacts/${accepter.id}`).set('Authorization', `Bearer ${requester.token}`).send({});
@@ -58,10 +56,9 @@ describe('Nhắn tin và lịch', () => {
   }
 
   /**
-   * Bộ phân tích ICS tối thiểu trong test — cùng quy ước với parser phía
-   * worker (apps/worker/src/domain/ics.ts): tách VEVENT, đọc
-   * UID/SUMMARY/DESCRIPTION/DTSTART/DTEND dạng UTC, gỡ escape \, và \n.
-   * Dùng để chứng minh file export parse lại được (round-trip).
+   * Bộ phân tích ICS tối thiểu trong test — cùng quy ước với parser phía worker (apps/worker/src/domain/ics.ts): tách
+   * VEVENT, đọc UID/SUMMARY/DESCRIPTION/DTSTART/DTEND dạng UTC, gỡ escape \, và \n. Dùng để chứng minh file export
+   * parse lại được (round-trip).
    */
   function parseExportedIcs(text: string) {
     const parseDate = (value: string) => new Date(`${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T${value.slice(9, 11)}:${value.slice(11, 13)}:${value.slice(13, 15)}Z`);
@@ -91,8 +88,8 @@ describe('Nhắn tin và lịch', () => {
 
   it('trò chuyện: hai người trao đổi tin nhắn; số chưa đọc theo dõi trò chuyện và đọc sẽ xoá chúng (api_test mark_all_read)', async () => {
     const { a, b, aToken, bToken } = await twoUsers();
-    // Cổng liên hệ (mô hình contacts-only): hai người dùng trước hết là
-    // liên hệ đã được chấp nhận của nhau (người nhận đã gửi yêu cầu, người gửi đã chấp nhận).
+    // Cổng liên hệ (mô hình contacts-only): hai người dùng trước hết là liên hệ đã được chấp nhận của nhau (người nhận
+    // đã gửi yêu cầu, người gửi đã chấp nhận).
     await befriend({ id: b.id, token: bToken }, { id: a.id, token: aToken });
     const conv = await http(app).post('/api/v1/messages/conversations').set('Authorization', `Bearer ${aToken}`)
       .send({ type: 1, memberIds: [b.id] });
@@ -157,9 +154,8 @@ describe('Nhắn tin và lịch', () => {
       .send({ text: 'Edited!' });
     expect(patch.status).toBe(403);
     expect(patch.body.code).toBe('messaging.message_immutable');
-    // DELETE nay là DELETE-FOR-ME (vòng đời theo vai, lớp (a)): dòng
-    // KHÔNG bị đánh dấu đã xoá — chỉ một cờ theo từng người dùng ẩn nó khỏi
-    // người viết. Phản hồi là dòng nguyên vẹn chưa bị đụng tới.
+    // DELETE nay là DELETE-FOR-ME (vòng đời theo vai, lớp (a)): dòng KHÔNG bị đánh dấu đã xoá — chỉ một cờ theo từng
+    // người dùng ẩn nó khỏi người viết. Phản hồi là dòng nguyên vẹn chưa bị đụng tới.
     const del = await http(app).delete(`/api/v1/messages/${messageId}`).set('Authorization', `Bearer ${aToken}`);
     expect(del.status).toBe(200);
     expect(del.body.id).toBe(messageId);
@@ -169,14 +165,13 @@ describe('Nhắn tin và lịch', () => {
     // NGƯỜI VIẾT ngừng nhìn thấy nó…
     const viewA = await http(app).get(`/api/v1/messages/conversations/${conv.body.id}`).set('Authorization', `Bearer ${aToken}`);
     expect((viewA.body.messages as { id: string }[]).map((m) => m.id)).not.toContain(messageId);
-    // …nhưng NGƯỜI NHẬN vẫn thấy nó đầy đủ: delete-for-me không bao giờ
-    // rò rỉ sang phía bên kia (đó là việc của thu hồi).
+    // …nhưng NGƯỜI NHẬN vẫn thấy nó đầy đủ: delete-for-me không bao giờ rò rỉ sang phía bên kia (đó là việc của thu
+    // hồi).
     const viewB = await http(app).get(`/api/v1/messages/conversations/${conv.body.id}`).set('Authorization', `Bearer ${bToken}`);
     const forB = (viewB.body.messages as { id: string; fullMessage: string }[]).find((m) => m.id === messageId);
     expect(forB?.fullMessage).toBe('Words I regret');
-    // RECALL (lớp (b), vẫn nằm trong cửa sổ mặc định 15 phút)
-    // vô hiệu hoá nội dung đối với người nhận: dòng vẫn ở lại dưới dạng
-    // phần giữ chỗ kèm vết thu hồi, nội dung của nó bị xoá trắng.
+    // RECALL (lớp (b), vẫn nằm trong cửa sổ mặc định 15 phút) vô hiệu hoá nội dung đối với người nhận: dòng vẫn ở lại
+    // dưới dạng phần giữ chỗ kèm vết thu hồi, nội dung của nó bị xoá trắng.
     const recall = await http(app).post(`/api/v1/messages/${messageId}/recall`).set('Authorization', `Bearer ${aToken}`).send({});
     expect(recall.status).toBe(201);
     expect(recall.body.recalledBy).toBe(a.id);
@@ -233,9 +228,8 @@ describe('Nhắn tin và lịch', () => {
   it('thông báo: phân phối provider tôn trọng tuỳ chọn (provider × kênh × loggedin); tắt popup không lưu gì (DoD)', async () => {
     const user = await createUserViaApi(app, admin);
     const { accessToken } = await login(app, user.username, STRONG_PASSWORD);
-    // NB-7: đặt tuỳ chọn theo loại qua API chỉ còn cho nhân sự — ca
-    // kiểm này nhắm cơ chế phát theo tuỳ chọn nên fixture mang vai
-    // teacher ở context hệ thống; phần chặn học sinh có spec riêng.
+    // NB-7: đặt tuỳ chọn theo loại qua API chỉ còn cho nhân sự — ca kiểm này nhắm cơ chế phát theo tuỳ chọn nên fixture
+    // mang vai teacher ở context hệ thống; phần chặn học sinh có spec riêng.
     await assignRole(app, admin, user.id, await roleIdByShortname(app, admin, 'teacher'), await systemContextId(app, admin));
     // Mốc cơ sở: tuỳ chọn mặc định phát thông báo trong ứng dụng.
     const first = await http(app).post('/api/v1/notifications/send').set('Authorization', `Bearer ${admin}`)
@@ -249,8 +243,8 @@ describe('Nhắn tin và lịch', () => {
     const convs = await http(app).get('/api/v1/messages/conversations').set('Authorization', `Bearer ${accessToken}`);
     expect(convs.body).toHaveLength(0);
 
-    // Tắt popup cho badge_awarded (mô hình v2, NB-2): không có gì được
-    // lưu, nhật ký phát ghi lại việc chặn này, email vẫn nằm trong hàng đợi.
+    // Tắt popup cho badge_awarded (mô hình v2, NB-2): không có gì được lưu, nhật ký phát ghi lại việc chặn này, email
+    // vẫn nằm trong hàng đợi.
     const pref = await http(app).put('/api/v1/messages/preferences').set('Authorization', `Bearer ${accessToken}`)
       .send({ provider: 'badge_awarded', popupEnabled: false });
     expect(pref.status).toBe(200);
@@ -463,8 +457,8 @@ describe('Nhắn tin và lịch', () => {
     expect(dentistParsed.description).toBe('Checkup, cleaning');
     expect(download.text).toContain('DTSTAMP:');
 
-    // Người dùng đã ghi danh còn lại: thấy sự kiện site/course + sự kiện riêng tư của mình, nhưng
-    // KHÔNG thấy sự kiện nhóm (không phải thành viên) và KHÔNG thấy sự kiện riêng tư của thành viên kia.
+    // Người dùng đã ghi danh còn lại: thấy sự kiện site/course + sự kiện riêng tư của mình, nhưng KHÔNG thấy sự kiện
+    // nhóm (không phải thành viên) và KHÔNG thấy sự kiện riêng tư của thành viên kia.
     const otherDownload = await http(app).get('/api/v1/calendar/exports?format=ics').set('Authorization', `Bearer ${otherToken}`);
     const otherSummaries = parseExportedIcs(otherDownload.text).map((e) => e.summary);
     expect(otherSummaries).toContain('Export site day');
@@ -512,8 +506,8 @@ describe('Nhắn tin và lịch', () => {
     const listing = await http(app).get('/api/v1/calendar/events').set('Authorization', `Bearer ${aToken}`);
     expect(JSON.stringify(listing.body)).not.toContain(token);
 
-    // URL công khai hoạt động mà không cần header Authorization nào cả và chỉ mang
-    // các sự kiện mà chủ token được phép thấy.
+    // URL công khai hoạt động mà không cần header Authorization nào cả và chỉ mang các sự kiện mà chủ token được phép
+    // thấy.
     const viaUrl = await http(app).get(created.body.exportUrl as string);
     expect(viaUrl.status).toBe(200);
     expect(viaUrl.headers['content-type']).toContain('text/calendar');
@@ -666,16 +660,15 @@ describe('Nhắn tin và lịch', () => {
     expect(history.status).toBe(200);
     expect((history.body.messages as { fullMessage: string }[]).map((m) => m.fullMessage)).toContain('Hello contact');
 
-    // Thông báo hệ thống KHÔNG bị gác cổng: thông báo của admin vẫn
-    // tới được người lạ trong khi cổng đang bật.
+    // Thông báo hệ thống KHÔNG bị gác cổng: thông báo của admin vẫn tới được người lạ trong khi cổng đang bật.
     const fresh = await twoUsers();
     const notify = await http(app).post('/api/v1/notifications/send').set('Authorization', `Bearer ${admin}`)
       .send({ userId: fresh.b.id, provider: 'grade_updated', subject: 'Grade posted', body: 'Your grade is in' });
     expect(notify.status).toBe(201);
     expect(notify.body.notificationId).not.toBeNull();
 
-    // Không để lại ghi đè nào đã lưu: cơ sở dữ liệu kiểm thử dùng chung phải trở về
-    // giá trị mặc định đã đăng ký (tắt, source 'default') cho các suite khác.
+    // Không để lại ghi đè nào đã lưu: cơ sở dữ liệu kiểm thử dùng chung phải trở về giá trị mặc định đã đăng ký (tắt,
+    // source 'default') cho các suite khác.
     const cleared = await http(app).delete('/api/v1/site-config/core/messagingallusers').set('Authorization', `Bearer ${admin}`);
     expect(cleared.status).toBe(200);
     expect(cleared.body).toMatchObject({ value: false, source: 'default' });
@@ -727,8 +720,8 @@ describe('Nhắn tin và lịch', () => {
       .send({ text: 'Hello team' });
     expect(hello.status).toBe(201);
 
-    // m3 tham gia nhóm (admin, API groups) → mở ra sẽ đồng bộ họ vào, và
-    // cuộc trò chuyện cũng xuất hiện trong danh sách của họ.
+    // m3 tham gia nhóm (admin, API groups) → mở ra sẽ đồng bộ họ vào, và cuộc trò chuyện cũng xuất hiện trong danh sách
+    // của họ.
     await addGroupMember(app, admin, course.id, group.id, m3.id);
     const openedByM3 = await http(app).get(`/api/v1/messages/conversations/${conversationId}`).set('Authorization', `Bearer ${m3Token}`);
     expect(openedByM3.status).toBe(200);
@@ -736,8 +729,8 @@ describe('Nhắn tin và lịch', () => {
     const m3List = await http(app).get('/api/v1/messages/conversations').set('Authorization', `Bearer ${m3Token}`);
     expect((m3List.body as { id: string }[]).map((c) => c.id)).toContain(conversationId);
 
-    // m2 rời nhóm → lần mở tiếp theo đồng bộ họ ra ngoài; tin nhắn cũ
-    // vẫn ở lại, và m2 không còn mở được cuộc trò chuyện nữa.
+    // m2 rời nhóm → lần mở tiếp theo đồng bộ họ ra ngoài; tin nhắn cũ vẫn ở lại, và m2 không còn mở được cuộc trò
+    // chuyện nữa.
     const removed = await http(app).delete(`/api/v1/courses/${course.id}/groups/${group.id}/members/${m2.id}`).set('Authorization', `Bearer ${admin}`);
     expect([200, 204]).toContain(removed.status);
     const openedByM1 = await http(app).get(`/api/v1/messages/conversations/${conversationId}`).set('Authorization', `Bearer ${m1Token}`);

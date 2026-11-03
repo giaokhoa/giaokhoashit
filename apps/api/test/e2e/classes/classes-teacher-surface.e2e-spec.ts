@@ -117,8 +117,8 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     for (const userId of [teacherId, coTeacherId, rosterMgrId, knownStudentId, joinerAId, joinerBId, joinerCId]) {
       await http(app).post(`/api/v1/tenants/${current.id}/members`).set(auth(admin)).send({ userId });
     }
-    // GV tạo được lớp của mình: vai editingteacher tại context tenant
-    // mang archetype có class:create (đúng đường GV thật trên seed).
+    // GV tạo được lớp của mình: vai editingteacher tại context tenant mang archetype có class:create (đúng đường GV
+    // thật trên seed).
     const tenantCtx = await pg.query<{ id: string }>('select id from context where context_level = 20 and instance_id = $1', [current.id]);
     const editingTeacherRoleId = await roleIdByShortname(app, admin, 'editingteacher');
     await must(
@@ -370,8 +370,7 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
       courses: { id: string }[];
     };
 
-    // Chủ lớp: vai owner, đủ cờ quản trị, thấy mọi khoá trong lớp và
-    // tổng số học sinh đúng bằng roster thật.
+    // Chủ lớp: vai owner, đủ cờ quản trị, thấy mọi khoá trong lớp và tổng số học sinh đúng bằng roster thật.
     const ownerView = await must(
       await http(app).get(`/api/v1/classes/${classId}/overview`).set(auth(teacher)),
       'owner overview',
@@ -387,8 +386,7 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(ownerView.rosterCount).toBe(rosterNow.length);
     expect(Object.keys(ownerView).sort()).toEqual(['canManageRoster', 'canShare', 'class', 'courses', 'rosterCount', 'viewerRole']);
 
-    // Đồng GV được gán vai chấm bài ở ca (5): vai staff, không quản
-    // roster, vẫn thấy mọi khoá của lớp để điều hướng.
+    // Đồng GV được gán vai chấm bài ở ca (5): vai staff, không quản roster, vẫn thấy mọi khoá của lớp để điều hướng.
     const staffView = await must(
       await http(app).get(`/api/v1/classes/${classId}/overview`).set(auth(coTeacher)),
       'co-teacher overview',
@@ -398,8 +396,8 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(staffView.canShare).toBe(false);
     expect(staffView.courses.map((c) => c.id)).toContain(courseId);
 
-    // Học sinh trong roster: vai member, không cờ quản trị nào, mã
-    // vào lớp bị ẩn, và chỉ thấy đúng khoá mình đang ghi danh ACTIVE.
+    // Học sinh trong roster: vai member, không cờ quản trị nào, mã vào lớp bị ẩn, và chỉ thấy đúng khoá mình đang ghi
+    // danh ACTIVE.
     const memberView = await must(
       await http(app).get(`/api/v1/classes/${classId}/overview`).set(auth(knownStudent)),
       'student overview',
@@ -410,22 +408,18 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(memberView.class.joinCode).toBeNull();
     expect(memberView.courses.map((c) => c.id)).toEqual([courseId]);
 
-    // Đình chỉ học sinh ở CHÍNH khoá đó (qua phương thức cohort) →
-    // khoá biến mất khỏi gói của học sinh dù em vẫn còn trong roster;
-    // kích hoạt lại thì khoá trở lại. Đây là bất biến "chỉ khoá đang
-    // học" của dashboard phía học sinh.
+    // Đình chỉ học sinh ở CHÍNH khoá đó (qua phương thức cohort) → khoá biến mất khỏi gói của học sinh dù em vẫn còn
+    // trong roster; kích hoạt lại thì khoá trở lại. Đây là bất biến "chỉ khoá đang học" của dashboard phía học sinh.
     const instances = await must(
       await http(app).get(`/api/v1/courses/${courseId}/enrol/instances`).set(auth(teacher)),
       'list enrol instances',
     ) as { id: string; enrol: string }[];
     const cohortInstance = instances.find((i) => i.enrol === 'cohort');
     expect(cohortInstance).toBeDefined();
-    // Trạng thái ghi danh lan truyền bất đồng bộ (consumer quét
-    // outbox đồng bộ cohort) nên đọc overview ngay sau lời gọi đình
-    // chỉ/kích hoạt có thể gặp trạng thái chưa lan truyền — ca này
-    // từng đỏ ngẫu nhiên đúng ở hai khẳng định phía dưới. Chờ có điều
-    // kiện trên chính bề mặt overview tới khi khớp trạng thái kỳ
-    // vọng, rồi chạy các khẳng định gốc nguyên văn trên kết quả đó.
+    // Trạng thái ghi danh lan truyền bất đồng bộ (consumer quét outbox đồng bộ cohort) nên đọc overview ngay sau lời
+    // gọi đình chỉ/kích hoạt có thể gặp trạng thái chưa lan truyền — ca này từng đỏ ngẫu nhiên đúng ở hai khẳng định
+    // phía dưới. Chờ có điều kiện trên chính bề mặt overview tới khi khớp trạng thái kỳ vọng, rồi chạy các khẳng định
+    // gốc nguyên văn trên kết quả đó.
     async function overviewWhen(want: (view: Overview) => boolean, label: string): Promise<Overview> {
       const deadline = Date.now() + 20000;
       for (;;) {
@@ -456,9 +450,8 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     );
     expect(restoredView.courses.map((c) => c.id)).toEqual([courseId]);
 
-    // Người ngoài lớp (tài khoản mới, chưa từng có quan hệ gì với
-    // lớp này): 404 như mọi đường đọc của lớp, không lộ sự tồn tại
-    // của lớp.
+    // Người ngoài lớp (tài khoản mới, chưa từng có quan hệ gì với lớp này): 404 như mọi đường đọc của lớp, không lộ sự
+    // tồn tại của lớp.
     const outsiderUser = await createUserViaApi(app, admin);
     const outsiderToken = (await login(app, outsiderUser.username, STRONG_PASSWORD)).accessToken;
     const outsider = await http(app).get(`/api/v1/classes/${classId}/overview`).set(auth(outsiderToken));
@@ -476,8 +469,7 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(ownerItem).toBeTruthy();
     expect(ownerItem).toMatchObject({ canCreate: true, canUpdate: true, canDelete: true, canManageRoster: true });
 
-    // Học sinh trong roster: thấy lớp của mình nhưng mọi cờ quản trị
-    // (kể cả khả năng tạo lớp ở cấp tenant) đều false.
+    // Học sinh trong roster: thấy lớp của mình nhưng mọi cờ quản trị (kể cả khả năng tạo lớp ở cấp tenant) đều false.
     const memberList = await must(await http(app).get('/api/v1/classes').set(auth(knownStudent)), 'member class list') as ListItem[];
     const memberItem = memberList.find((c) => c.id === classId);
     expect(memberItem).toBeTruthy();
@@ -489,8 +481,7 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(graderItem).toBeTruthy();
     expect(graderItem).toMatchObject({ canCreate: false, canUpdate: false, canDelete: false, canManageRoster: false });
 
-    // Cờ chỉ là hiển thị — gác thật ở API không đổi: học viên gọi
-    // thẳng cả bốn mutation của lớp đều bị chặn 403.
+    // Cờ chỉ là hiển thị — gác thật ở API không đổi: học viên gọi thẳng cả bốn mutation của lớp đều bị chặn 403.
     const create = await http(app).post('/api/v1/classes').set(auth(knownStudent)).send({ name: uniqueName('Lớp của học viên') });
     expect(create.status).toBe(403);
     const patch = await http(app).patch(`/api/v1/classes/${classId}`).set(auth(knownStudent)).send({ name: 'Đổi tên lén' });
@@ -515,8 +506,8 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     const mgrRoster = await must(await http(app).get(`/api/v1/classes/${classId}/roster`).set(auth(rosterMgr)), 'roster manager roster') as RosterEntry[];
     expect(mgrRoster.find((m) => m.userId === knownStudentId)?.email).toBe(knownStudentEmail);
 
-    // Đồng GV chỉ có vai chấm bài (không quản roster): đọc được danh
-    // sách theo tên nhưng email/username của mọi dòng đều bị làm rỗng.
+    // Đồng GV chỉ có vai chấm bài (không quản roster): đọc được danh sách theo tên nhưng email/username của mọi dòng
+    // đều bị làm rỗng.
     const graderRoster = await must(await http(app).get(`/api/v1/classes/${classId}/roster`).set(auth(coTeacher)), 'grader roster') as RosterEntry[];
     expect(graderRoster.length).toBeGreaterThan(0);
     for (const entry of graderRoster) {
@@ -527,8 +518,7 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(graderEntry).toBeTruthy();
     expect(`${graderEntry!.lastName} ${graderEntry!.firstName}`).toBe('Đã Biết');
 
-    // Học sinh trong lớp: vẫn đọc được danh sách bạn học theo tên,
-    // không dòng nào kèm trường liên hệ.
+    // Học sinh trong lớp: vẫn đọc được danh sách bạn học theo tên, không dòng nào kèm trường liên hệ.
     const memberRoster = await must(await http(app).get(`/api/v1/classes/${classId}/roster`).set(auth(knownStudent)), 'member roster') as RosterEntry[];
     expect(memberRoster.map((m) => m.userId)).toContain(knownStudentId);
     for (const entry of memberRoster) {

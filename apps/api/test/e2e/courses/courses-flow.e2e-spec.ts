@@ -4,10 +4,8 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
 import { createCategory, createCm, createCourse, createEnrolInstance, createSection, enrolUser, fixtureClassId, getFirstSectionId } from '../../support/course-enrolment-helpers';
 
 /**
- * Luồng Courses.
- * Oracle: course/tests/category_test.php (test_create_coursecat,
- * test_hierarchy, test_delete) và course/tests/courselib_test.php
- * (test_create_course, test_create_course_sections, test_create_module,
+ * Luồng Courses. Oracle: course/tests/category_test.php (test_create_coursecat, test_hierarchy, test_delete) và
+ * course/tests/courselib_test.php (test_create_course, test_create_course_sections, test_create_module,
  * test_course_module_deleted_event_exceptions / sự kiện vòng đời cm).
  */
 describe('Khoá học: danh mục, khoá học, section, module khoá học', () => {

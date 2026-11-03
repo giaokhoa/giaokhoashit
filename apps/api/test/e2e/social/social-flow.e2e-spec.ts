@@ -122,15 +122,14 @@ describe('Xã hội: thẻ, bình luận, đánh giá, ghi chú', () => {
     const raters: string[] = [];
     for (let i = 0; i < 3; i++) {
       const u = await createUserViaApi(app, admin);
-      // Người chấm (rater) hành động tại context hệ thống ở đây (item demo cấp site): việc cấp
-      // capability rate qua một lần gán vai thật ở cấp hệ thống
-      // là việc của admin; đơn giản hơn: chấm tại một context nơi vai người dùng ảo
+      // Người chấm (rater) hành động tại context hệ thống ở đây (item demo cấp site): việc cấp capability rate qua một
+      // lần gán vai thật ở cấp hệ thống là việc của admin; đơn giản hơn: chấm tại một context nơi vai người dùng ảo
       // được áp dụng — chính là context hệ thống.
       raters.push((await login(app, u.username, STRONG_PASSWORD)).accessToken);
     }
     const systemCtx = await contextIdByLevelInstance(app, admin, 10, null);
-    // Id item duy nhất theo lượt chạy: lms_test tồn tại qua các lượt chạy, và bản tổng hợp
-    // tính theo từng item — id cố định sẽ tích lũy rating từ các lượt chạy trước.
+    // Id item duy nhất theo lượt chạy: lms_test tồn tại qua các lượt chạy, và bản tổng hợp tính theo từng item — id cố
+    // định sẽ tích lũy rating từ các lượt chạy trước.
     const [itemA, itemB, itemC, itemBad] = [uuidv7(), uuidv7(), uuidv7(), uuidv7()];
     const rate = async (token: string, itemId: string, rating: number) => {
       const res = await http(app).post('/api/v1/ratings').set('Authorization', `Bearer ${token}`)

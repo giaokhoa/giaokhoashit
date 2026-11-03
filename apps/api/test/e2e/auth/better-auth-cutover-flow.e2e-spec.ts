@@ -9,9 +9,8 @@ import type { CredentialBridgeService } from '../../../src/modules/auth/better-a
 import type { MailMessage } from '../../../src/modules/mail/mail.types';
 
 /**
- * Flow test của chặng chuẩn bị cutover (issue #7, chặng 2.6 + phần
- * 2.7-prep): app chạy ở cửa sổ bake — `BETTER_AUTH_ENABLED=true` và
- * `AUTH_CUTOVER_STAGE=bake`. Các cổng nghiệp vụ được chứng minh:
+ * Flow test của chặng chuẩn bị cutover (issue #7, chặng 2.6 + phần 2.7-prep): app chạy ở cửa sổ bake —
+ * `BETTER_AUTH_ENABLED=true` và `AUTH_CUTOVER_STAGE=bake`. Các cổng nghiệp vụ được chứng minh:
  *
  * - login-as phát PHIÊN Better Auth qua cookie đã ký thay cho cặp
  *   token (đáp ứng không mang token nào; cookie trần bị từ chối;
@@ -34,8 +33,8 @@ import type { MailMessage } from '../../../src/modules/mail/mail.types';
  *   là quay lại hệ cũ trọn vẹn). Hash ở hai kho phải TRÙNG NHAU
  *   (chép nguyên hash, không băm lại).
  *
- * Biến môi trường phải tồn tại TRƯỚC khi AppModule được nạp nên các
- * import của AppModule/helpers đều là import động trong beforeAll.
+ * Biến môi trường phải tồn tại TRƯỚC khi AppModule được nạp nên các import của AppModule/helpers đều là import động
+ * trong beforeAll.
  */
 process.env.BETTER_AUTH_ENABLED = 'true';
 process.env.BETTER_AUTH_SECRET = 'cutover-e2e-secret-0123456789abcdef';
@@ -74,7 +73,6 @@ async function createMountedTestApp(): Promise<INestApplication> {
   return app;
 }
 
-/** Lấy cookie phiên Better Auth (dạng `name=value`) từ header set-cookie. */
 function sessionCookieFrom(setCookie: string[] | undefined): string {
   const raw = (setCookie ?? []).find((value) => value.includes('better-auth.session_token='));
   if (!raw) throw new Error(`no Better Auth session cookie in: ${JSON.stringify(setCookie)}`);
@@ -114,12 +112,9 @@ describe('Chuẩn bị cutover Better Auth — cửa sổ bake (issue #7 giai đ
   }
 
   /**
-   * Chờ tới khi có mail gửi cho địa chỉ này: nội dung mail được dựng
-   * từ dòng outbox `auth_mail_requested` của chính địa chỉ đó bằng
-   * `renderAuthMail` dùng chung ở `@lms/contracts` — hàm mà
-   * processor ở phía worker gọi khi gửi thật (khâu gửi đã chuyển
-   * sang hàng đợi ở worker, issue #517; dòng outbox được ghi đồng bộ
-   * trong request nên thường có ngay).
+   * Chờ tới khi có mail gửi cho địa chỉ này: nội dung mail được dựng từ dòng outbox `auth_mail_requested` của chính địa
+   * chỉ đó bằng `renderAuthMail` dùng chung ở `@lms/contracts` — hàm mà processor ở phía worker gọi khi gửi thật (khâu
+   * gửi đã chuyển sang hàng đợi ở worker, issue #517; dòng outbox được ghi đồng bộ trong request nên thường có ngay).
    */
   async function waitForMailTo(email: string, timeoutMs = 9000): Promise<MailMessage> {
     const deadline = Date.now() + timeoutMs;
@@ -249,16 +244,14 @@ describe('Chuẩn bị cutover Better Auth — cửa sổ bake (issue #7 giai đ
   it('điểm vào liên kết seed: syncCredentialPassword liên kết một lần, rồi no-op, và sửa credential cũ', async () => {
     const adminAccess = await helpers.adminToken(app);
     const created = await helpers.createUserViaApi(app, adminAccess);
-    // Trạng thái của tài khoản mẫu đã tồn tại từ lần seed trước thời
-    // đồng bộ: có hash ở hệ cũ, chưa có dòng credential.
+    // Trạng thái của tài khoản mẫu đã tồn tại từ lần seed trước thời đồng bộ: có hash ở hệ cũ, chưa có dòng credential.
     await pg.query("delete from account where user_id = $1 and provider_id = 'credential'", [created.id]);
     expect(await bridge.syncCredentialPassword(created.id)).toBe(true);
     expect(await bridge.syncCredentialPassword(created.id)).toBe(false);
     expect((await signInByUsername(created.username, helpers.STRONG_PASSWORD)).status).toBe(200);
 
-    // Credential lệch: hash phía hệ cũ đổi mà không qua service (mô
-    // phỏng một lần ghi cũ còn sót) — lần sync kế tiếp phải cập nhật
-    // dòng credential theo, không giữ mật khẩu cũ.
+    // Credential lệch: hash phía hệ cũ đổi mà không qua service (mô phỏng một lần ghi cũ còn sót) — lần sync kế tiếp
+    // phải cập nhật dòng credential theo, không giữ mật khẩu cũ.
     const { PasswordService: PasswordServiceClass } = await import('../../../src/modules/users/password.service');
     const staleHash = await app.get(PasswordServiceClass).hash(STALE_PASSWORD);
     await pg.query('update users set password_hash = $1 where id = $2', [staleHash, created.id]);
@@ -271,22 +264,19 @@ describe('Chuẩn bị cutover Better Auth — cửa sổ bake (issue #7 giai đ
     const adminAccess = await helpers.adminToken(app);
     const created = await helpers.createUserViaApi(app, adminAccess);
 
-    // Hai phiên Better Auth sống — đổi mật khẩu từ phiên một, thu hồi
-    // phiên còn lại (hành vi của endpoint change-password của BA).
+    // Hai phiên Better Auth sống — đổi mật khẩu từ phiên một, thu hồi phiên còn lại (hành vi của endpoint
+    // change-password của BA).
     const first = await signInByUsername(created.username, helpers.STRONG_PASSWORD);
     expect(first.status).toBe(200);
     const cookie1 = sessionCookieFrom(first.headers['set-cookie'] as unknown as string[]);
     const second = await signInByUsername(created.username, helpers.STRONG_PASSWORD);
     const cookie2 = sessionCookieFrom(second.headers['set-cookie'] as unknown as string[]);
 
-    // Endpoint /change-password của Better Auth còn bị route legacy
-    // cùng tên che ở tầng mount (bản legacy thắng khi cùng tồn tại —
-    // điểm giao nhau đã chốt trong kế hoạch; bản BA thắng sau khi gỡ
-    // legacy ở chặng 2.7), nên ca này gọi endpoint qua auth.api: vẫn
-    // là đúng mã endpoint + đúng chuỗi hook của Better Auth, chỉ bỏ
-    // qua tầng mount HTTP. Phần HTTP của đường legacy (đổi mật khẩu
-    // qua route cũ → đồng bộ xuôi qua UsersService) đã được ca đặt
-    // lại mật khẩu của admin ở trên phủ.
+    // Endpoint /change-password của Better Auth còn bị route legacy cùng tên che ở tầng mount (bản legacy thắng khi
+    // cùng tồn tại — điểm giao nhau đã chốt trong kế hoạch; bản BA thắng sau khi gỡ legacy ở chặng 2.7), nên ca này gọi
+    // endpoint qua auth.api: vẫn là đúng mã endpoint + đúng chuỗi hook của Better Auth, chỉ bỏ qua tầng mount HTTP.
+    // Phần HTTP của đường legacy (đổi mật khẩu qua route cũ → đồng bộ xuôi qua UsersService) đã được ca đặt lại mật
+    // khẩu của admin ở trên phủ.
     const { BetterAuthService: BetterAuthServiceClass } = await import(
       '../../../src/modules/auth/better-auth/better-auth.service'
     );
@@ -300,9 +290,8 @@ describe('Chuẩn bị cutover Better Auth — cửa sổ bake (issue #7 giai đ
     const otherSession = await http(app).get('/api/v1/auth/get-session').set('Cookie', cookie2);
     expect(otherSession.body ?? null).toBeNull();
 
-    // Điều kiện rollback: hash đã đồng bộ ngược nguyên trạng về kho
-    // hệ cũ — đăng nhập hệ cũ bằng mật khẩu MỚI được, mật khẩu cũ
-    // chết, và hash ở hai kho trùng nhau (chép nguyên, không băm lại).
+    // Điều kiện rollback: hash đã đồng bộ ngược nguyên trạng về kho hệ cũ — đăng nhập hệ cũ bằng mật khẩu MỚI được, mật
+    // khẩu cũ chết, và hash ở hai kho trùng nhau (chép nguyên, không băm lại).
     const hashes = await passwordHashes(created.id);
     expect(hashes.legacy).toBeTruthy();
     expect(hashes.legacy).toBe(hashes.credential);

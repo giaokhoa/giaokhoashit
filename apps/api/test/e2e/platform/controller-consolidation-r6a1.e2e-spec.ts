@@ -3,11 +3,9 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { adminToken, createTestApp, http } from '../../support/identity-access-helpers';
 
 /**
- * Lưới an toàn cho việc dọn controller trùng path của ba họ ngân hàng
- * (issue #343, cụm R6-A1): hợp nhất mỗi họ `exam-matrices`,
- * `question-banks`, `exams` về đúng một controller sở hữu và gom
- * toàn bộ bề mặt alias `exam-papers` về một controller alias duy
- * nhất.
+ * Lưới an toàn cho việc dọn controller trùng path của ba họ ngân hàng (issue #343, cụm R6-A1): hợp nhất mỗi họ
+ * `exam-matrices`, `question-banks`, `exams` về đúng một controller sở hữu và gom toàn bộ bề mặt alias `exam-papers` về
+ * một controller alias duy nhất.
  *
  * Khẳng định chính còn lại ở spec này (hành vi qua HTTP):
  * - Các khẳng định tĩnh của lát (mỗi tiền tố có đúng một controller
@@ -50,8 +48,7 @@ describe('Controller consolidation R6-A1 (issue #343) — hành vi alias', () =>
     expect(bankRes.status, JSON.stringify(bankRes.body)).toBeLessThan(300);
     const bankId = (bankRes.body as { id: string }).id;
 
-    // Bắt đầu theo dõi log cảnh báo từ đây để các bản ghi bắt được
-    // chỉ đến từ các lượt gọi alias bên dưới.
+    // Bắt đầu theo dõi log cảnh báo từ đây để các bản ghi bắt được chỉ đến từ các lượt gọi alias bên dưới.
     const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
 
     // GET canonical danh sách đề theo bank: 200, tuyệt đối không header sắp bỏ.
@@ -71,16 +68,14 @@ describe('Controller consolidation R6-A1 (issue #343) — hành vi alias', () =>
     expect(canonicalMine.status).toBe(200);
     expect(canonicalMine.headers['deprecation']).toBeUndefined();
 
-    // GET alias bề mặt hồ sơ đề (phần đã gộp từ controller hồ sơ cũ):
-    // 200, kèm header sắp bỏ.
+    // GET alias bề mặt hồ sơ đề (phần đã gộp từ controller hồ sơ cũ): 200, kèm header sắp bỏ.
     const aliasMine = await http(app).get('/api/v1/exam-papers/dossiers/mine').set('Authorization', `Bearer ${admin}`);
     expect(aliasMine.status).toBe(200);
     expect(aliasMine.body).toEqual(canonicalMine.body);
     expect(aliasMine.headers['deprecation']).toBe('true');
 
-    // Các bản ghi log alias đã sinh phải là JSON có cấu trúc của sự
-    // kiện deprecated_route_alias, trỏ đúng cặp alias → canonical
-    // cho cả hai bề mặt (đề theo bank và hồ sơ của tôi).
+    // Các bản ghi log alias đã sinh phải là JSON có cấu trúc của sự kiện deprecated_route_alias, trỏ đúng cặp alias →
+    // canonical cho cả hai bề mặt (đề theo bank và hồ sơ của tôi).
     const aliasLogs = warn.mock.calls
       .map((call) => String(call[0]))
       .flatMap((message) => {
