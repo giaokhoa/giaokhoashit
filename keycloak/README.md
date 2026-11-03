@@ -306,6 +306,21 @@ mẫu import, bộ cấp phát áp mọi thứ bằng Admin REST API:
   báo lỗi thay vì tự viết lại flow đang chạy (cùng kỷ luật
   với các realm có mẫu); quay lui khi cần là đặt lại
   `browserFlow` của realm về `browser` trong Admin Console.
+- Thu hồi phiên ở lượt chuyển đổi sang flow MFA: flow mới
+  vẫn giữ cookie ở mức ALTERNATIVE cùng cấp với subflow
+  form, nên phiên SSO `master` tạo từ trước khi áp lớp phủ
+  (khi `master` chưa bắt MFA) có thể tiếp tục bằng cookie
+  cũ mà bỏ qua mật khẩu + OTP. Để đóng đường này, ở lượt
+  cấp phát đầu tiên trỏ `browserFlow` sang
+  `lms-master-browser`, bộ cấp phát gọi endpoint chính
+  thức `POST /admin/realms/master/logout-all` ngay sau khi
+  trỏ flow để thu hồi toàn bộ phiên đăng nhập hiện có của
+  realm `master`. Đây là migration một lần: các lượt chạy
+  lại sau đó, khi `browserFlow` đã là flow MFA, không thu
+  hồi phiên nữa. Phiên đã thu hồi không khôi phục được —
+  người dùng đăng nhập lại và qua MFA như bình thường;
+  nếu quay lui `browserFlow` về `browser` rồi áp lại lớp
+  phủ, lượt chuyển đổi mới lại thu hồi phiên một lần nữa.
 - Required action `CONFIGURE_TOTP` được gắn cho **mọi** tài
   khoản thuộc realm `master` chưa có credential OTP — trừ
   đúng tài khoản đang gọi Admin API (`KC_ADMIN_USERNAME`).
@@ -359,7 +374,11 @@ kiểm, mã thoát khác 0 nếu có kiểm nào không đạt:
   `roles` và gán vai lạ cho thành viên — token của thành viên
   mang vai lạ khi drift còn hiệu lực; chạy lại bộ cấp phát
   thì cả hai ánh xạ thừa bị gỡ và token cấp sau đó chỉ còn
-  vai theo mẫu.
+  vai theo mẫu. Phía client role, bộ kiểm chứng khẳng định
+  ánh xạ thừa thật sự hiện diện trong `clientMappings` của
+  `platform-api` trước khi hoà giải, và một tài khoản nền
+  tảng mang cả hai client role cho thấy token nền tảng hết
+  mang vai lạ sau hoà giải.
 - MFA ở realm `master`: tạo tài khoản vận hành tương tác mới
   (vai `admin` của realm `master`), chạy lại bộ cấp phát và
   lái đăng nhập qua Admin Console — tài khoản bị gắn
@@ -367,7 +386,12 @@ kiểm, mã thoát khác 0 nếu có kiểm nào không đạt:
   khai báo MFA, khai báo xong thì vào được và lần đăng nhập
   sau bị hỏi mã OTP; đồng thời khẳng định tài khoản tự động
   hoá gọi Admin API không bị gắn required action và vẫn lấy
-  được token qua password grant sau lớp phủ.
+  được token qua password grant sau lớp phủ. Một pha riêng
+  dựng phiên SSO `master` dưới flow mặc định (chỉ mật khẩu),
+  chạy lại bộ cấp phát để chuyển đổi sang flow MFA, rồi
+  khẳng định phiên cũ bị thu hồi ở lượt chuyển đổi: danh
+  sách phiên của tài khoản trống và cookie cũ bị đưa về
+  trang đăng nhập thay vì vào thẳng Admin Console.
 
 Cách chạy bằng Docker (môi trường có Docker):
 
@@ -416,6 +440,19 @@ hoặc thói quen của bản cũ hơn), mẫu và bộ cấp phát đã theo
 - Realm PUT bỏ qua trường `authenticationFlows` một cách im
   lặng nhưng vẫn áp các trường vô hướng — bộ cấp phát dựa vào
   đúng hành vi này cho bước hoà giải vô hướng.
+- `POST /admin/realms/{realm}/logout-all` trả HTTP 200 và
+  thu hồi mọi phiên của realm — kể cả phiên gắn với token
+  password grant của chính tài khoản đang gọi Admin API.
+  Sau khi gọi endpoint này, token quản trị đang giữ không
+  còn hiệu lực và phải xin token mới; lớp phủ `master` xoá
+  token đã cache ngay sau lượt thu hồi phiên chuyển đổi.
+- Bản ghi scope-mappings của một client scope trả `{}` khi
+  scope chưa có ánh xạ nào: Keycloak bỏ hẳn trường
+  `realmMappings`/`clientMappings` khi tập tương ứng rỗng.
+  Bộ cấp phát hiểu trường vắng mặt là tập rỗng theo đúng
+  thiết kế này, nhưng vẫn fail-closed — dừng và báo lỗi —
+  khi HTTP lỗi hoặc trường có mặt mà sai kiểu dữ liệu, thay
+  vì diễn giải một lần đọc hỏng thành "không có ánh xạ".
 - Keycloak đánh dấu cookie của nó là `Secure` khi realm yêu
   cầu SSL với bên ngoài; kiểm chứng đăng nhập bằng curl trên
   HTTP thường sẽ mất cookie SSO vì curl không gửi cookie
