@@ -1,4 +1,5 @@
-/** Cầu ghi registry cho các công cụ vận hành đội kho (issue #586): các script CLI (`fleet-migration-runner.ts`,
+/**
+ * Cầu ghi registry cho các công cụ vận hành đội kho (issue #586): các script CLI (`fleet-migration-runner.ts`,
  * `fleet-backup.ts`, `fleet-restore-test.ts`) chạy NGOÀI vòng đời NestJS của ứng dụng, nên file này tự lắp
  * `ControlPlaneConnection` + `ControlPlaneRepository` của module control plane với một `ConfigService` tối giản đọc
  * thẳng `process.env` — dùng lại đúng repository và đúng bất biến ghi của tầng service, không dựng đường ghi song song.
@@ -78,8 +79,9 @@ export class FleetRegistryWriter {
     return this.repo.findSpaceByDatabaseName(databaseName);
   }
 
-  /** Tạo dòng đăng ký cho một trung tâm mới (bước 1 của pipeline cấp phát, issue #583) + dòng lịch sử `create` trong cùng
-   * transaction — cùng bất biến "sổ + lịch sử cùng thành/bại" với `ControlPlaneRegistryService.createRegistration`
+  /**
+   * Tạo dòng đăng ký cho một trung tâm mới (bước 1 của pipeline cấp phát, issue #583) + dòng lịch sử `create` trong
+   * cùng transaction — cùng bất biến "sổ + lịch sử cùng thành/bại" với `ControlPlaneRegistryService.createRegistration`
    * nhưng không qua gác capability của tầng HTTP (ranh giới tin cậy là quyền chạy script của đội vận hành). Trả về dòng
    * vừa tạo, hoặc undefined khi slug đã tồn tại — người gọi quyết định tiếp tục (chạy lại) hay báo xung đột, writer
    * không tự đoán.
@@ -118,7 +120,8 @@ export class FleetRegistryWriter {
     });
   }
 
-  /** Đổi trạng thái vòng đời của một dòng đăng ký (bước kích hoạt của pipeline cấp phát và thao tác tạm ngưng/mở lại,
+  /**
+   * Đổi trạng thái vòng đời của một dòng đăng ký (bước kích hoạt của pipeline cấp phát và thao tác tạm ngưng/mở lại,
    * issue #583) + dòng lịch sử `status_change` trong cùng transaction, khoá dòng trước khi đọc ảnh `before` — cùng
    * khuôn với `ControlPlaneRegistryService.changeStatus`. Trạng thái đích trùng trạng thái hiện tại thì không ghi gì
    * (không tạo lịch sử rỗng), trả về dòng hiện tại.
@@ -141,7 +144,8 @@ export class FleetRegistryWriter {
     });
   }
 
-  /** Ghi kết quả một lượt chạy migration: chèn dòng nhật ký lượt chạy; khi lượt thành công và có phiên bản đích thì đồng
+  /**
+   * Ghi kết quả một lượt chạy migration: chèn dòng nhật ký lượt chạy; khi lượt thành công và có phiên bản đích thì đồng
    * thời nâng phiên bản hiện tại ở cả registry lẫn dòng đăng ký — cùng bất biến và cùng thứ tự khoá với
    * `ControlPlaneRegistryService.recordMigrationRun` nhưng không qua gác capability của tầng HTTP.
    */
@@ -178,7 +182,8 @@ export class FleetRegistryWriter {
     });
   }
 
-  /** Đồng bộ phiên bản trên sổ về đúng sự thật đọc được trong database của kho mà KHÔNG bịa một dòng nhật ký lượt chạy:
+  /**
+   * Đồng bộ phiên bản trên sổ về đúng sự thật đọc được trong database của kho mà KHÔNG bịa một dòng nhật ký lượt chạy:
    * dùng khi runner phát hiện kho đã ở phiên bản đích nhưng sổ còn ghi phiên bản cũ (lệch sổ sau một lượt ghi dở dang)
    * — sự thật trong database thắng, sổ được sửa cho khớp.
    */
@@ -201,7 +206,8 @@ export class FleetRegistryWriter {
     });
   }
 
-  /** Ghi kết quả lượt sao lưu gần nhất của một kho, giữ nguyên mọi trường còn lại của registry. Trạng thái gần nhất LUÔN
+  /**
+   * Ghi kết quả lượt sao lưu gần nhất của một kho, giữ nguyên mọi trường còn lại của registry. Trạng thái gần nhất LUÔN
    * được ghi (để đọc được lượt vừa rồi thành hay bại), nhưng mốc `lastBackupAt` CHỈ tiến khi lượt thành công: mốc này
    * là căn cứ duy nhất của cổng kiểm quá hạn (`checkFleetBackups`), nên một lượt hỏng mà cũng đẩy mốc thì kho hỏng
    * triền miên sẽ trông như vừa sao lưu xong và cổng kiểm im lặng — báo xanh giả. Kho chưa từng thành công giữ mốc null
@@ -219,7 +225,8 @@ export class FleetRegistryWriter {
     await this.mergeRegistry(spaceId, { lastRestoreStatus: status, lastRestoreAt: at });
   }
 
-  /** Khuôn hợp nhất dùng chung: khoá dòng đăng ký, đọc registry hiện tại, ghi lại toàn bộ ảnh với đúng các trường được
+  /**
+   * Khuôn hợp nhất dùng chung: khoá dòng đăng ký, đọc registry hiện tại, ghi lại toàn bộ ảnh với đúng các trường được
    * truyền vào là thay đổi. Phiên bản hiện tại khi chưa có dòng registry thì lấy từ chính dòng đăng ký (ảnh phản chiếu
    * đang có hiệu lực).
    */
@@ -264,16 +271,18 @@ export class FleetRegistryWriter {
     await this.repo.upsertMembershipDirectory(values);
   }
 
-  /** Tra một mục THƯ MỤC MÃ THAM GIA theo mã (issue #587, hạng mục 3 — thiết kế C1) cho các đường vận hành ngoài vòng đời
-   * NestJS: công cụ lấp thư mục dùng để phân biệt "mã đã thuộc về chính không gian" với "mã đang thuộc về không gian
-   * khác" (va chạm phải báo cáo, cấm ghi đè).
+  /**
+   * Tra một mục THƯ MỤC MÃ THAM GIA theo mã (issue #587, hạng mục 3 — thiết kế C1) cho các đường vận hành ngoài vòng
+   * đời NestJS: công cụ lấp thư mục dùng để phân biệt "mã đã thuộc về chính không gian" với "mã đang thuộc về không
+   * gian khác" (va chạm phải báo cáo, cấm ghi đè).
    */
   async findJoinCodeDirectoryEntry(joinCode: string): Promise<{ joinCode: string; spaceSlug: string } | undefined> {
     return this.repo.findJoinCodeDirectory(joinCode);
   }
 
-  /** Đăng ký một mã tham gia vào thư mục cho một không gian (issue #587, hạng mục 3 — thiết kế C1) cho các đường vận hành
-   * ngoài vòng đời NestJS — cùng ngữ nghĩa ba trạng thái với `ControlPlaneRepository.claimJoinCodeDirectory`.
+  /**
+   * Đăng ký một mã tham gia vào thư mục cho một không gian (issue #587, hạng mục 3 — thiết kế C1) cho các đường vận
+   * hành ngoài vòng đời NestJS — cùng ngữ nghĩa ba trạng thái với `ControlPlaneRepository.claimJoinCodeDirectory`.
    */
   async claimJoinCodeDirectoryEntry(joinCode: string, spaceSlug: string): Promise<'claimed' | 'already' | 'conflict'> {
     return this.repo.claimJoinCodeDirectory(joinCode, spaceSlug);
@@ -284,9 +293,9 @@ export class FleetRegistryWriter {
   }
 }
 
-/** Ảnh chụp một dòng đăng ký để ghi lịch sử — cùng hình dạng với `ControlPlaneRegistryService.snapshot` (id, slug,
- * name, kind, status, databaseName, storageMode, connectionRoleRef, secretRef, schemaVersion, plan), không kèm mốc thời
- * gian.
+/**
+ * Ảnh chụp một dòng đăng ký để ghi lịch sử — cùng hình dạng với `ControlPlaneRegistryService.snapshot` (id, slug, name,
+ * kind, status, databaseName, storageMode, connectionRoleRef, secretRef, schemaVersion, plan), không kèm mốc thời gian.
  */
 function snapshotOf(row: SpaceRegistryRow): {
   id: string;

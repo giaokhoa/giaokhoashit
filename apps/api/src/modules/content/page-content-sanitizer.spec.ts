@@ -2,13 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { isSafeExternalResourceUrl, sanitizePageContent } from './page-content-sanitizer';
 
 /**
- * Gác XSS lưu trữ của nội dung trang đọc (mod_page) và URL tài nguyên
- * ngoài ở mức đơn vị: hàm làm sạch phải loại mọi cấu trúc thực thi
- * (thẻ script, thuộc tính sự kiện, URL nguy hiểm) trong khi giữ
- * nguyên định dạng học liệu hợp lệ — đổi allowlist theo hướng nới
- * (cho lại thẻ/thuộc tính thực thi) hoặc hướng siết quá tay (làm mất
- * định dạng hợp lệ) đều phải làm spec này đỏ. Luồng nghiệp vụ đầy đủ
- * (ghi qua API → học viên đọc/player) nằm ở
+ * Gác XSS lưu trữ của nội dung trang đọc (mod_page) và URL tài nguyên ngoài ở mức đơn vị: hàm làm sạch phải loại mọi
+ * cấu trúc thực thi (thẻ script, thuộc tính sự kiện, URL nguy hiểm) trong khi giữ nguyên định dạng học liệu hợp lệ —
+ * đổi allowlist theo hướng nới (cho lại thẻ/thuộc tính thực thi) hoặc hướng siết quá tay (làm mất định dạng hợp lệ) đều
+ * phải làm spec này đỏ. Luồng nghiệp vụ đầy đủ (ghi qua API → học viên đọc/player) nằm ở
  * `test/content-page-xss.e2e-spec.ts`.
  */
 describe('Hàm sanitizePageContent', () => {

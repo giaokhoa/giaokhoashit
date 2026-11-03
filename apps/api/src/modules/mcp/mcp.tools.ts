@@ -216,13 +216,11 @@ function normalizeMcpAnswers(
  * version ĐÃ lưu sinh hash, nếu không trùng exact không bao giờ khớp:
  * - multichoice/shortanswer/essay: thân câu như gửi + đáp án đã chuẩn
  *   hoá cờ (essay không có đáp án nên mảng rỗng khớp version đã lưu);
- * - truefalse TF-A: dữ kiện băm là từng mệnh đề kèm giá trị Đúng/Sai
- *   của chính mệnh đề đó (issue #316), ghép từ tài liệu + solution do
- *   `buildTruefalseContent` dựng bằng ĐÚNG hàm dùng chung
- *   `truefalseHashAnswers` với đường version đã lưu — hai câu TF-A
- *   cùng chữ nhưng khác Đ/S ở một mệnh đề cho hash khác nhau ở cả
- *   hai đường. Trả `null` khi câu TF-A sai hình (caller đã chặn trước bằng lỗi `bad_answer_data` ở đường tạo; đường soi
- *   trùng không ghi thì quy về verdict `none`).
+ * - truefalse TF-A: dữ kiện băm là từng mệnh đề kèm giá trị Đúng/Sai của chính mệnh đề đó (issue #316), ghép từ tài
+ *   liệu + solution do `buildTruefalseContent` dựng bằng ĐÚNG hàm dùng chung `truefalseHashAnswers` với đường version
+ *   đã lưu — hai câu TF-A cùng chữ nhưng khác Đ/S ở một mệnh đề cho hash khác nhau ở cả hai đường. Trả `null` khi câu
+ *   TF-A sai hình (caller đã chặn trước bằng lỗi `bad_answer_data` ở đường tạo; đường soi trùng không ghi thì quy về
+ *   verdict `none`).
  */
 function duplicateCheckInput(
   qtype: string,

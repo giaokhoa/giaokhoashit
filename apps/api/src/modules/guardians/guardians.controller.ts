@@ -118,7 +118,8 @@ export class GuardianController {
   }
 
   @Put('students/:studentId/digest-preference')
-  /** PUT /guardian/students/:studentId/digest-preference — phụ huynh đặt tần suất digest cho con này (weekly | daily |
+  /**
+   * PUT /guardian/students/:studentId/digest-preference — phụ huynh đặt tần suất digest cho con này (weekly | daily |
    * off); hiệu lực từ cửa sổ kế tiếp. Đây là dữ liệu tuỳ chọn của chính phụ huynh — không phải đường ghi lên dữ liệu
    * của con.
    */

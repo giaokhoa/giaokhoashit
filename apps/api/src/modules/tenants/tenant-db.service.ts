@@ -10,25 +10,18 @@ import { TenantContextService } from './tenant-context.service';
  *
  * Hai tầng cơ chế cùng dùng chung ALS `tenantAls`:
  *
- * 1. **Ngữ cảnh ALS (không transaction)** — `runInTenantContext` /
- *    `runInPlatformContext`: mọi kết nối PG mà `TenantAwarePool`
- *    checkout trong ngữ cảnh đều được gắn GUC `app.tenant_id` (hoặc cờ
- *    `app.platform = 'on'`) ở mức phiên và reset ở lần checkout kế tiếp,
- *    nên TOÀN BỘ truy vấn của request/job chạy dưới RLS fail-closed của
- *    đúng tenant đó mà không cần bọc transaction. Đây là đường mặc định
- *    của request HTTP (TenantGuard + TenantContextInterceptor nạp ngữ
- *    cảnh) và của các job/consumer được bọc tường minh.
+ * 1. **Ngữ cảnh ALS (không transaction)** — `runInTenantContext` / `runInPlatformContext`: mọi kết nối PG mà
+ *    `TenantAwarePool` checkout trong ngữ cảnh đều được gắn GUC `app.tenant_id` (hoặc cờ `app.platform = 'on'`) ở mức
+ *    phiên và reset ở lần checkout kế tiếp, nên TOÀN BỘ truy vấn của request/job chạy dưới RLS fail-closed của đúng
+ *    tenant đó mà không cần bọc transaction. Đây là đường mặc định của request HTTP (TenantGuard +
+ *    TenantContextInterceptor nạp ngữ cảnh) và của các job/consumer được bọc tường minh.
  *
- * 2. **Transaction tường minh** — `withTenant` / `withPlatform` /
- *    `withCurrent`: cho các thao tác cần nguyên tử nhiều câu lệnh; GUC
- *    đặt bằng `set_config(..., true)` trong transaction, đồng thời ngữ
- *    cảnh ALS được đặt quanh transaction để kết nối của chính
- *    transaction cũng được pool gắn GUC nhất quán. Các wrapper chạy
- *    trên handle Kysely định tuyến (`SpaceDatabaseService.routedKysely`)
- *    và ngữ cảnh ALS mà chúng dựng GIỮ LẠI `spaceSlug` của ngữ cảnh
- *    cha — giữ slug là điều kiện để `routedKysely` vẫn trỏ đúng kho
- *    riêng của trung tâm bên trong transaction (xem ghi chú ở
- *    `withTenant`).
+ * 2. **Transaction tường minh** — `withTenant` / `withPlatform` / `withCurrent`: cho các thao tác cần nguyên tử nhiều
+ *    câu lệnh; GUC đặt bằng `set_config(..., true)` trong transaction, đồng thời ngữ cảnh ALS được đặt quanh
+ *    transaction để kết nối của chính transaction cũng được pool gắn GUC nhất quán. Các wrapper chạy trên handle Kysely
+ *    định tuyến (`SpaceDatabaseService.routedKysely`) và ngữ cảnh ALS mà chúng dựng GIỮ LẠI `spaceSlug` của ngữ cảnh
+ *    cha — giữ slug là điều kiện để `routedKysely` vẫn trỏ đúng kho riêng của trung tâm bên trong transaction (xem ghi
+ *    chú ở `withTenant`).
  *
  * Role ứng dụng không có BYPASSRLS; đường platform là seam duy nhất vượt tenant và mọi thao tác qua đường này phải được
  * ghi audit ở tầng ứng dụng (TenantsService / SiteConfigService / event log).

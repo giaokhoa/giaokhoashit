@@ -29,10 +29,9 @@ export function normalizeIdentity(value: string): string { return value.trim().t
 /** Facade của UsersModule. Xác thực ≠ ghi danh ≠ gán role: service này chỉ sở hữu dữ liệu danh tính/hồ sơ. */
 @Injectable()
 /**
- * Quản lý tài khoản người dùng: tạo, hồ sơ, đình chỉ, xoá mềm và tuỳ chọn cá nhân.
- * Đối chiếu Moodle: lib/moodlelib.php (user_create_user, user_update_user) và user/lib.php.
- * Bất biến: user bị xoá là xoá mềm (deleted=1) để giữ toàn vẹn tham chiếu lịch sử;
- * username/email là duy nhất trong số user chưa xoá.
+ * Quản lý tài khoản người dùng: tạo, hồ sơ, đình chỉ, xoá mềm và tuỳ chọn cá nhân. Đối chiếu Moodle: lib/moodlelib.php
+ * (user_create_user, user_update_user) và user/lib.php. Bất biến: user bị xoá là xoá mềm (deleted=1) để giữ toàn vẹn
+ * tham chiếu lịch sử; username/email là duy nhất trong số user chưa xoá.
  */
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -80,18 +79,13 @@ export class UsersService {
    * Luồng tính (theo lô — KHÔNG gọi `hasCapability` lặp cho từng cặp context × capability nữa vì mỗi lần gọi như vậy
    * tốn vài truy vấn Postgres ngay cả khi cache nóng, làm một request ảnh chụp quyền phát sinh hàng nghìn truy vấn):
    *   1. Nạp một lần các gán vai trò của người dùng và toàn bộ vai trò.
-   *   2. Nạp theo lô mọi context liên quan: context của các gán vai
-   *      (khử trùng theo id — nhiều gán vai cùng một context chỉ đọc
-   *      một lần) rồi toàn bộ tổ tiên trên `path` của chúng, mỗi nhóm
-   *      đúng một truy vấn. Thứ tự hợp nhất tập context liên quan giữ
-   *      nguyên như trước: context hệ thống trước, rồi với từng gán
-   *      vai theo thứ tự liệt kê, các context trên path của nó theo
-   *      thứ tự lá → gốc, context đã có thì không chèn lại.
-   *   3. Phân giải capability cho mọi context liên quan trong một lần
-   *      qua `PermissionEvaluator.resolveCapabilitiesForContexts`
-   *      (nạp theo lô gán vai/override/cổng tenant rồi tính trong bộ
-   *      nhớ bằng đúng hàm thuần phân giải — kết quả bằng đúng phép
-   *      phân giải từng cặp trước đây).
+   *   2. Nạp theo lô mọi context liên quan: context của các gán vai (khử trùng theo id — nhiều gán vai cùng một context
+   *      chỉ đọc một lần) rồi toàn bộ tổ tiên trên `path` của chúng, mỗi nhóm đúng một truy vấn. Thứ tự hợp nhất tập
+   *      context liên quan giữ nguyên như trước: context hệ thống trước, rồi với từng gán vai theo thứ tự liệt kê, các
+   *      context trên path của nó theo thứ tự lá → gốc, context đã có thì không chèn lại.
+   *   3. Phân giải capability cho mọi context liên quan trong một lần qua
+   *      `PermissionEvaluator.resolveCapabilitiesForContexts` (nạp theo lô gán vai/override/cổng tenant rồi tính trong
+   *      bộ nhớ bằng đúng hàm thuần phân giải — kết quả bằng đúng phép phân giải từng cặp trước đây).
    */
   async getMyAccess(userId: string, opts?: { isGuest?: boolean }): Promise<MyAccessView> {
     const isSiteAdmin = await this.evaluator.isSiteAdmin(userId);
@@ -286,20 +280,14 @@ export class UsersService {
    * Cập nhật hồ sơ (họ tên, email, …) với kiểm tra trùng email.
    *
    * Luồng riêng khi đầu vào có trường `password` (đặt mật khẩu qua đường sửa hồ sơ — tách bạch với luồng đổi mật khẩu
-   * chính thống): 1. Người sửa là chính chủ tài khoản (`actorId === id`) → TỪ CHỐI
-   *    bằng `user.password_self_change_forbidden`. Hàm này không có
-   *    tham số mật khẩu hiện tại nên không tồn tại bước tái xác thực;
-   *    nếu cho qua, một phiên bị đánh cắp là đủ để đổi mật khẩu và
-   *    chiếm tài khoản. Tự đổi mật khẩu chỉ đi qua luồng có tái xác
-   *    thực bằng mật khẩu hiện tại (AuthService.changePassword). 2. Người sửa là người khác (quản trị viên — đã qua
-   *    cổng
-   *    `user:update` tại assertCanUpdateProfile): kiểm chính sách →
-   *    băm → ghi hash trong transaction kèm sự kiện outbox → đồng bộ
-   *    credential sang hệ đăng nhập thứ hai → THU HỒI mọi family
-   *    refresh của tài khoản đích bằng đúng cơ chế
-   *    AuthRepository.revokeAllForUser của luồng chính thống, để
-   *    phiên cũ của tài khoản đích (kể cả phiên của kẻ đang chiếm
-   *    tài khoản) không còn xoay được token mới.
+   * chính thống): 1. Người sửa là chính chủ tài khoản (`actorId === id`) → TỪ CHỐI bằng
+   * `user.password_self_change_forbidden`. Hàm này không có tham số mật khẩu hiện tại nên không tồn tại bước tái xác
+   * thực; nếu cho qua, một phiên bị đánh cắp là đủ để đổi mật khẩu và chiếm tài khoản. Tự đổi mật khẩu chỉ đi qua luồng
+   * có tái xác thực bằng mật khẩu hiện tại (AuthService.changePassword). 2. Người sửa là người khác (quản trị viên — đã
+   * qua cổng `user:update` tại assertCanUpdateProfile): kiểm chính sách → băm → ghi hash trong transaction kèm sự kiện
+   * outbox → đồng bộ credential sang hệ đăng nhập thứ hai → THU HỒI mọi family refresh của tài khoản đích bằng đúng cơ
+   * chế AuthRepository.revokeAllForUser của luồng chính thống, để phiên cũ của tài khoản đích (kể cả phiên của kẻ đang
+   * chiếm tài khoản) không còn xoay được token mới.
    *
    * sửa hồ sơ) truyền vào. Đường nội bộ đã tái xác thực trước khi gọi hàm này (changePassword) không truyền actorId và
    * tự thu hồi family sau đó; bước thu hồi tại đây với đường đó là idempotent (đánh dấu thu hồi hai lần cho cùng kết
@@ -424,17 +412,13 @@ export class UsersService {
   }
 
   /**
-   * View hồ sơ của NHIỀU user cho cùng một người xem, nạp theo lô
-   * (DL-07, issue #489): context user của cả trang tra một truy vấn;
-   * context hệ thống và quyền xem định danh ở đó tính một lần;
-   * quyền xem định danh tại từng context user phân giải MỘT lần theo
-   * lô qua `resolveCapabilitiesForContexts` — phép phân giải đã được
-   * chứng minh tương đương `hasCapability` theo từng context (chỉ
-   * khác là không qua cache Redis); giá trị trường tuỳ chỉnh nạp một
-   * lượt cho cả trang. Thứ tự view giữ đúng thứ tự user đầu vào và
-   * luật lộ email giữ nguyên từng người: chính chủ, hoặc có quyền
-   * xem định danh tại context của user đó, hoặc tại context hệ
-   * thống — email chỉ xuất hiện trong view khi một trong ba đúng.
+   * View hồ sơ của NHIỀU user cho cùng một người xem, nạp theo lô (DL-07, issue #489): context user của cả trang tra
+   * một truy vấn; context hệ thống và quyền xem định danh ở đó tính một lần; quyền xem định danh tại từng context user
+   * phân giải MỘT lần theo lô qua `resolveCapabilitiesForContexts` — phép phân giải đã được chứng minh tương đương
+   * `hasCapability` theo từng context (chỉ khác là không qua cache Redis); giá trị trường tuỳ chỉnh nạp một lượt cho cả
+   * trang. Thứ tự view giữ đúng thứ tự user đầu vào và luật lộ email giữ nguyên từng người: chính chủ, hoặc có quyền
+   * xem định danh tại context của user đó, hoặc tại context hệ thống — email chỉ xuất hiện trong view khi một trong ba
+   * đúng.
    */
   async getProfileViews(targets: UserRow[], viewerId: string): Promise<UserProfileView[]> {
     if (!targets.length) return [];

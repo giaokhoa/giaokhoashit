@@ -6,17 +6,14 @@ import { notificationPolicySettingName } from './notification-providers';
 /**
  * NB-7 (issue #174): chính sách thông báo của ADMIN ở cấp site + phân tầng bề mặt tuỳ chọn theo vai.
  *
- * - notify() kiểm chính sách admin (site-config
- *   `notifications/provider_<tên>_enabled`) TRƯỚC tuỳ chọn người dùng:
- *   loại bị tắt thì không phát ở kênh nào, kể cả khi tuỳ chọn cá nhân
- *   đang bật, và ghi dispatch log 'skipped-admin-disabled'.
+ * - notify() kiểm chính sách admin (site-config `notifications/provider_<tên>_enabled`) TRƯỚC tuỳ chọn người dùng: loại
+ *   bị tắt thì không phát ở kênh nào, kể cả khi tuỳ chọn cá nhân đang bật, và ghi dispatch log
+ *   'skipped-admin-disabled'.
  * - Hai loại bắt buộc P2 không bị chính sách admin chặn (tầng luật ép
  *   bật; API site-config cũng từ chối đặt false cho chúng).
- * - Học sinh (không gán vai nhân sự, không phải site admin): PUT tuỳ
- *   chọn theo loại → 403 ở server; GET preferences chỉ trả phần tối
- *   thiểu (rỗng). Giáo viên/nhân sự giữ hành vi v2 ở phía vai của
- *   mình; tầng audience theo vai + context (issue #288) lọc tiếp bên
- *   trong bề mặt đó — các ca audience nằm ở cuối file này.
+ * - Học sinh (không gán vai nhân sự, không phải site admin): PUT tuỳ chọn theo loại → 403 ở server; GET preferences chỉ
+ *   trả phần tối thiểu (rỗng). Giáo viên/nhân sự giữ hành vi v2 ở phía vai của mình; tầng audience theo vai + context
+ *   (issue #288) lọc tiếp bên trong bề mặt đó — các ca audience nằm ở cuối file này.
  */
 describe('MessagingService — chính sách site của admin + tuỳ chọn tối thiểu của học viên (NB-7)', () => {
   function buildService(opts: {

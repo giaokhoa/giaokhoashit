@@ -1,4 +1,5 @@
-/** Runner migration của ĐỘI KHO (issue #586) — script CLI chạy bằng `pnpm --filter @lms/api fleet:migrate` trên máy
+/**
+ * Runner migration của ĐỘI KHO (issue #586) — script CLI chạy bằng `pnpm --filter @lms/api fleet:migrate` trên máy
  * triển khai (hoặc được lịch vận hành gọi), áp bộ migration hiện hành của repo lên MỌI kho trong sổ đăng ký của control
  * plane theo đợt an toàn:
  *

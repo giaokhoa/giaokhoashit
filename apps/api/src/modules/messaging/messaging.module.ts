@@ -56,13 +56,10 @@ import { NotificationUnreadStreamService } from './notification-unread-stream.se
     // Realtime (issue #33): gateway Socket.IO + lớp auth mỏng + tầng realtime phía kết nối (Redis adapter,
     // presence/typing).
     MessagingSocketAuth, MessagingRealtimeService, MessagingGateway,
-    // Cả hai consumer quét outbox đều đã chuyển sang worker: phân
-    // phối sự kiện messaging qua hàng đợi `messaging-realtime`
-    // (issue con #521 của #491; consumer hàng đợi ở worker, luật
-    // phân phối ở `@lms/messaging`) và thông báo sự kiện nghiệp vụ
-    // qua hàng đợi `notification-events` (issue con #520 của
-    // #491). Phía API không còn consumer polling nào đọc trực
-    // tiếp bảng outbox.
+    // Cả hai consumer quét outbox đều đã chuyển sang worker: phân phối sự kiện messaging qua hàng đợi
+    // `messaging-realtime` (issue con #521 của #491; consumer hàng đợi ở worker, luật phân phối ở `@lms/messaging`) và
+    // thông báo sự kiện nghiệp vụ qua hàng đợi `notification-events` (issue con #520 của #491). Phía API không còn
+    // consumer polling nào đọc trực tiếp bảng outbox.
   ],
   exports: [MessagingService],
 })

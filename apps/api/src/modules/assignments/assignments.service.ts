@@ -166,7 +166,9 @@ export class AssignmentsService {
       throw new BadRequestException({ message: 'A grade is required before returning this assignment', code: 'assign.grade_incomplete' });
     }
   }
-  /** View các tệp của bài nộp, kèm signed URL để client xem toàn màn (chỉ gọi sau khi đã kiểm quyền truy cập bài nộp). */
+  /**
+   * View các tệp của bài nộp, kèm signed URL để client xem toàn màn (chỉ gọi sau khi đã kiểm quyền truy cập bài nộp).
+   */
   private async submissionFilesView(submissionId: string, viewerId: string): Promise<AssignSubmissionFileView[]> {
     const links = await this.repo.listSubmissionFiles(submissionId);
     const out: AssignSubmissionFileView[] = [];
@@ -616,7 +618,10 @@ export class AssignmentsService {
     }
   }
 
-  /** Điểm suy từ rubric khi giáo viên chấm theo tiêu chí mà không nhập điểm tổng: tổng điểm tiêu chí quy về thang bài, làm tròn 0,1. */
+  /**
+   * Điểm suy từ rubric khi giáo viên chấm theo tiêu chí mà không nhập điểm tổng: tổng điểm tiêu chí quy về thang bài,
+   * làm tròn 0,1.
+   */
   private async suggestGradeFromEvaluations(assignment: AssignmentRow, evaluations: AssignRubricEvaluationInput[]): Promise<number | null> {
     const rubric = await this.repo.getRubric(assignment.id);
     if (!rubric) return null;

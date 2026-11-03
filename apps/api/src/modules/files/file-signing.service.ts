@@ -4,7 +4,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { OBJECT_STORAGE, supportsPresignedDownloads, type ObjectStorage } from './storage';
 
 @Injectable()
-/** Ký URL tải file có thời hạn: HMAC qua API cho kho local; adapter có năng lực presigned (S3) thì phát URL presigned
+/**
+ * Ký URL tải file có thời hạn: HMAC qua API cho kho local; adapter có năng lực presigned (S3) thì phát URL presigned
  * trỏ thẳng tới kho. Chữ ký không thay thế kiểm quyền — chỉ dùng cho các area được phép chia sẻ liên kết tạm thời; kiểm
  * quyền vẫn diễn ra ở server trước khi phát.
  */
@@ -23,7 +24,8 @@ export class FileSigningService {
     const mac = createHmac('sha256', this.secret).update(`${fileId}.${expiresAt}`).digest('base64url');
     return { token: `${expiresAt}.${mac}`, expiresAt };
   }
-  /** Phát hành đích tải xuống cho một file: adapter có năng lực presigned (S3) → URL presigned trỏ thẳng tới kho kèm hạn
+  /**
+   * Phát hành đích tải xuống cho một file: adapter có năng lực presigned (S3) → URL presigned trỏ thẳng tới kho kèm hạn
    * dùng; còn lại → URL tải qua API kèm chữ ký HMAC như hành vi cũ. Kiểm quyền tại context do FilesService thực hiện
    * TRƯỚC khi gọi hàm này.
    */

@@ -478,15 +478,12 @@ export class QuizService {
   /**
    * Áp cập nhật pin lên exam version mới nhất của đề (quiz:manage;
    * issue #254) — thao tác TƯỜNG MINH sau bước xem diff:
-   * 1. Luật khoá dùng chung với updatePin: pin đã có lượt làm thật thì
-   *    bị chặn `exam.pin_locked` (cập nhật chỉ áp cho người chưa làm;
-   *    lượt đã có giữ nguyên version và điểm — sửa hệ quả điểm của
-   *    chúng chỉ qua đường chấm lại theo đáp án). 2. Đích phải thuộc đúng đề của pin, là version MỚI NHẤT của đề và
-   *    đề phải đang `ready` (`exam.version_not_ready` /
-   *    `exam.version_not_latest`). 3. Đổi examVersionId của pin, đồng bộ gradeMax của grade item như
-   *    updatePin, ghi vết vào exam_pin_version_updates (ai/khi nào/từ
-   *    version nào lên version nào) và phát sự kiện
-   *    `exam_pin_version_updated`.
+   * 1. Luật khoá dùng chung với updatePin: pin đã có lượt làm thật thì bị chặn `exam.pin_locked` (cập nhật chỉ áp cho
+   *    người chưa làm; lượt đã có giữ nguyên version và điểm — sửa hệ quả điểm của chúng chỉ qua đường chấm lại theo
+   *    đáp án). 2. Đích phải thuộc đúng đề của pin, là version MỚI NHẤT của đề và đề phải đang `ready`
+   *    (`exam.version_not_ready` / `exam.version_not_latest`). 3. Đổi examVersionId của pin, đồng bộ gradeMax của grade
+   *    item như updatePin, ghi vết vào exam_pin_version_updates (ai/khi nào/từ version nào lên version nào) và phát sự
+   *    kiện `exam_pin_version_updated`.
    */
   async applyPinVersionUpdate(actorId: string, pinId: string, toExamVersionId: string): Promise<QuizView> {
     return this.pins.applyPinVersionUpdate(actorId, pinId, toExamVersionId);
@@ -497,11 +494,9 @@ export class QuizService {
    * của một câu đã được dùng chấm các lượt đã nộp bị sai: giáo viên tạo version mới của câu với đáp án đúng rồi chấm
    * lại theo version đó.
    *
-   * Ứng viên: lượt làm THẬT đã nộp (finished/needsgrading) có question
-   * attempt của câu này đã được chấm tự động và đang ghim version khác
-   * version đích. Lượt đang làm dở không bị đụng (chưa có điểm để sửa;
-   * chúng vẫn chấm theo version đã ghim khi bắt đầu, đúng kỷ luật
-   * ghim). Essay nằm ngoài đường này (chấm tay có đường riêng).
+   * Ứng viên: lượt làm THẬT đã nộp (finished/needsgrading) có question attempt của câu này đã được chấm tự động và đang
+   * ghim version khác version đích. Lượt đang làm dở không bị đụng (chưa có điểm để sửa; chúng vẫn chấm theo version đã
+   * ghim khi bắt đầu, đúng kỷ luật ghim). Essay nằm ngoài đường này (chấm tay có đường riêng).
    *
    * `dryRun` chỉ tính và trả điểm đổi của từng học sinh; áp thật chạy đúng cùng phép tính ở engine nên kết quả khớp
    * tuyệt đối. Khi áp: chấm lại qua engine (attempt chuyển ghim sang version đích + step hiệu chỉnh) → đồng bộ tổng
@@ -632,37 +627,24 @@ export class QuizService {
    * Ghi NGUYÊN TỬ một ma trận từ kết quả parse HỢP LỆ của đường nhập file (lát I-2, issue #233) — đầu ghi duy nhất của
    * luồng nhập:
    *
-   * 1. Đối chiếu cặp môn/chương trình như {@link createMatrix} bằng
-   *    đường đọc tham chiếu nội bộ (môn/chương trình chỉ là dữ liệu
-   *    tham chiếu của thao tác ghi). Cổng quyền của luồng là cổng
-   *    bank cá nhân {@link requirePersonalMatrixBankManage}: đã chạy
-   *    ở bước parse của chính request ghi
-   *    (MatrixImportService.previewImport) và chạy lại tại đây ngay
-   *    trước khi ghi — KHÔNG có cổng nào tại context của môn. 2. Bank đích = bank ma trận CÁ NHÂN của người nhập (tạo
-   *    lười như
-   *    đường copy mẫu); quyền ghi tại bank chốt bằng bộ quyền
-   *    bank-local như nhánh gắn bank của createMatrix; `tenant_id`
-   *    của ma trận suy từ bank (schema đã chốt: tenant suy từ bank
-   *    chủ). Ma trận vào bank ở trạng thái `draft`, không phải mẫu —
-   *    cùng vị thế với ma trận tạo tay, muốn lên bank chung phải đi
-   *    đường copy/đóng góp hiện có. 3. CHỐNG GHI TRÙNG hai tầng (lát schema của issue #233 đóng cửa
-   *    sổ đua của tầng một): tầng một đối chiếu chữ ký nội dung với
-   *    các ma trận chính người nhập đã có trong bank đích — trùng
-   *    toàn bộ thì trả ngay ma trận đã có, KHÔNG tạo bản thứ hai
-   *    (gửi lại cùng một file do double submit/retry không nhân đôi
-   *    dữ liệu). Tầng hai là ràng buộc duy nhất (bank_id,
-   *    content_signature) ở DB: chữ ký được ghi xuống cột
-   *    `content_signature` ngay trong transaction tạo ma trận, nên
-   *    hai request trùng chạy ĐỒNG THỜI tuyệt đối cũng chỉ một
-   *    transaction thắng; transaction thua chạm ràng buộc, rollback
-   *    toàn bộ, rồi đọc lại ma trận thắng cuộc theo (bank, chữ ký)
-   *    và trả về — người dùng không nhận lỗi, đúng hành vi "trùng
-   *    toàn bộ thì trả bản đã có". 4. Ghi ma trận + toàn bộ ô trong MỘT transaction: bất kỳ lỗi nào
-   *    giữa chừng (khoá ngoại, ràng buộc duy nhất của ô, check của
-   *    DB) đều rollback toàn bộ — không để lại ma trận mồ côi hay ô
-   *    ghi dở. Sự kiện outbox `exam_matrix_created` phát SAU khi
-   *    transaction đã commit, như createMatrix; riêng request thua
-   *    cuộc ở bước 3 không phát sự kiện vì không tạo dữ liệu nào.
+   * 1. Đối chiếu cặp môn/chương trình như {@link createMatrix} bằng đường đọc tham chiếu nội bộ (môn/chương trình chỉ
+   *    là dữ liệu tham chiếu của thao tác ghi). Cổng quyền của luồng là cổng bank cá nhân {@link
+   *    requirePersonalMatrixBankManage}: đã chạy ở bước parse của chính request ghi (MatrixImportService.previewImport)
+   *    và chạy lại tại đây ngay trước khi ghi — KHÔNG có cổng nào tại context của môn. 2. Bank đích = bank ma trận CÁ
+   *    NHÂN của người nhập (tạo lười như đường copy mẫu); quyền ghi tại bank chốt bằng bộ quyền bank-local như nhánh
+   *    gắn bank của createMatrix; `tenant_id` của ma trận suy từ bank (schema đã chốt: tenant suy từ bank chủ). Ma trận
+   *    vào bank ở trạng thái `draft`, không phải mẫu — cùng vị thế với ma trận tạo tay, muốn lên bank chung phải đi
+   *    đường copy/đóng góp hiện có. 3. CHỐNG GHI TRÙNG hai tầng (lát schema của issue #233 đóng cửa sổ đua của tầng
+   *    một): tầng một đối chiếu chữ ký nội dung với các ma trận chính người nhập đã có trong bank đích — trùng toàn bộ
+   *    thì trả ngay ma trận đã có, KHÔNG tạo bản thứ hai (gửi lại cùng một file do double submit/retry không nhân đôi
+   *    dữ liệu). Tầng hai là ràng buộc duy nhất (bank_id, content_signature) ở DB: chữ ký được ghi xuống cột
+   *    `content_signature` ngay trong transaction tạo ma trận, nên hai request trùng chạy ĐỒNG THỜI tuyệt đối cũng chỉ
+   *    một transaction thắng; transaction thua chạm ràng buộc, rollback toàn bộ, rồi đọc lại ma trận thắng cuộc theo
+   *    (bank, chữ ký) và trả về — người dùng không nhận lỗi, đúng hành vi "trùng toàn bộ thì trả bản đã có". 4. Ghi ma
+   *    trận + toàn bộ ô trong MỘT transaction: bất kỳ lỗi nào giữa chừng (khoá ngoại, ràng buộc duy nhất của ô, check
+   *    của DB) đều rollback toàn bộ — không để lại ma trận mồ côi hay ô ghi dở. Sự kiện outbox `exam_matrix_created`
+   *    phát SAU khi transaction đã commit, như createMatrix; riêng request thua cuộc ở bước 3 không phát sự kiện vì
+   *    không tạo dữ liệu nào.
    *
    * @throws BadRequestException khi chương trình không thuộc môn.
    * @throws ForbiddenException khi người nhập không có quyền phụ
@@ -941,18 +923,13 @@ export class QuizService {
   }
 
   /**
-   * Ghi một phiếu giấy đã được giáo viên xác nhận thành attempt của
-   * học sinh (cổng quiz:gradepaper, kiểm tại resolvePaperLayout của lô
-   * — hàm này tin layout do module paper-grading truyền vào sau khi đã
-   * kiểm quyền). Attempt là attempt THẬT của học sinh: usage dựng từ
-   * đúng các version đã ghim trên phiếu, đáp án nộp qua engine như
-   * attempt online, chốt bằng đúng đường finalizeAttempt (điểm chảy
-   * vào sổ điểm như thường). appliedSettings mang dấu nguồn giấy
-   * {source: 'paper-scan', scanId, batchId, variantCode} để báo cáo
-   * phân biệt được lượt thi giấy. responses[i] là chuỗi đáp án theo
-   * ngữ nghĩa engine cho slot i (multichoice: answerId đã chọn;
-   * truefalse TF-A: JSON bản đồ statementId → boolean quy từ 4 cặp ô
-   * Đ/S của slot; null: để trống).
+   * Ghi một phiếu giấy đã được giáo viên xác nhận thành attempt của học sinh (cổng quiz:gradepaper, kiểm tại
+   * resolvePaperLayout của lô — hàm này tin layout do module paper-grading truyền vào sau khi đã kiểm quyền). Attempt
+   * là attempt THẬT của học sinh: usage dựng từ đúng các version đã ghim trên phiếu, đáp án nộp qua engine như attempt
+   * online, chốt bằng đúng đường finalizeAttempt (điểm chảy vào sổ điểm như thường). appliedSettings mang dấu nguồn
+   * giấy {source: 'paper-scan', scanId, batchId, variantCode} để báo cáo phân biệt được lượt thi giấy. responses[i] là
+   * chuỗi đáp án theo ngữ nghĩa engine cho slot i (multichoice: answerId đã chọn; truefalse TF-A: JSON bản đồ
+   * statementId → boolean quy từ 4 cặp ô Đ/S của slot; null: để trống).
    */
   async recordPaperAttempt(actorId: string, pinId: string, input: {
     studentId: string;

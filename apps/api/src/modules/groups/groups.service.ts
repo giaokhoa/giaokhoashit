@@ -13,7 +13,8 @@ import { TenantsService } from '../tenants/tenants.service';
 import { type CentreTx } from '@lms/db';
 import { GroupsRepository, type CohortRow, type GroupRow, type GroupingRow } from '@lms/db/repositories/groups';
 
-/** Facade của GroupsModule (core_group + cohort của Moodle).
+/**
+ * Facade của GroupsModule (core_group + cohort của Moodle).
  *
  * Nhóm tách biệt là luật DỮ LIỆU, không phải bộ lọc UI (report §2#6): khi một khoá học (hoặc cm) ở chế độ
  * SEPARATEGROUPS, một user không có `group:accessallgroups` (hoặc `course:managegroups`, hoặc site admin) chỉ có thể
@@ -25,7 +26,8 @@ import { GroupsRepository, type CohortRow, type GroupRow, type GroupingRow } fro
  * EnrolModule lắng nghe và thực hiện ghi danh đồng bộ cohort — Groups không bao giờ import Enrol.
  */
 @Injectable()
-/** Nghiệp vụ nhóm và cohort. Quy tắc hiển thị (đối chiếu Moodle group/lib.php): ở chế độ nhóm tách biệt (separate
+/**
+ * Nghiệp vụ nhóm và cohort. Quy tắc hiển thị (đối chiếu Moodle group/lib.php): ở chế độ nhóm tách biệt (separate
  * groups), người không có capability accessallgroups chỉ thấy nhóm mình thuộc về và thành viên của chúng. Thay đổi
  * thành viên cohort phát sự kiện để enrol cohort-sync đồng bộ ghi danh.
  */
@@ -118,7 +120,8 @@ export class GroupsService implements OnModuleInit {
     await this.outbox.enqueueStandalone({ aggregate: 'group', type: 'group_deleted', payload: { groupId: id, courseId: group.courseId } });
   }
 
-  /** Người xem có đặc quyền thấy mọi nhóm của khoá học ở mọi chế độ hay không: site admin, hoặc có
+  /**
+   * Người xem có đặc quyền thấy mọi nhóm của khoá học ở mọi chế độ hay không: site admin, hoặc có
    * `group:accessallgroups`, hoặc có `course:managegroups` tại context khoá học (đối chiếu Moodle: người quản lý nhóm
    * không bị luật separate groups giới hạn).
    */
@@ -331,7 +334,8 @@ export class GroupsService implements OnModuleInit {
     if (actorId !== undefined) await this.requireCohortViewer(actorId, row);
     return row;
   }
-  /** Liệt kê cohort mà người gọi được xem: chỉ cohort của tenant hiệu lực (TENANT-0) mà người gọi có `cohort:view` hoặc
+  /**
+   * Liệt kê cohort mà người gọi được xem: chỉ cohort của tenant hiệu lực (TENANT-0) mà người gọi có `cohort:view` hoặc
    * `cohort:manage` tại context của chính cohort đó (H10, rà soát #134) — trước đây mọi user đã đăng nhập liệt kê được
    * cohort của toàn site dù registry đã có sẵn `cohort:view`.
    */

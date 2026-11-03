@@ -310,20 +310,13 @@ export class TenantsService {
   /**
    * Phân giải đích kho của một tenant theo `tenantId` (issue #587, hạng mục 3 — nửa tra cứu của thiết kế A1, dùng chung
    * cho các đường đọc quản trị ở service này và cho điểm ghi mã tham gia ở ClassesService):
-   * - Tìm dòng tenant để lấy `slug` — slug là khoá phân giải
-   *   không gian duy nhất của khung định tuyến — theo thứ tự của
-   *   `tenantRowForTargetResolution`: kho của không gian mà ngữ
-   *   cảnh đã phân giải tới trước (trung tâm cấp phát mới chỉ có
-   *   dòng tenant ở đó — tiền điều kiện TĐ6), dòng thư mục ở kho
-   *   chung sau. Không nơi nào có dòng tenant → trả `null` (bên
-   *   gọi giữ hành vi hiện tại: thân InContext tự ném
-   *   `tenant.not_found`).
-   * - Hỏi sổ đăng ký chế độ kho của slug: `dedicated: true` khi
-   *   trung tâm đã đăng ký kho riêng. Slug chưa đăng ký hoặc
-   *   tầng định tuyến chưa cấu hình → `dedicated: false` (thế
-   *   giới kho chung, cùng khuôn `createTenantUser`). Mọi lỗi
-   *   phân giải còn lại là lỗi cấu hình của một trung tâm kho
-   *   riêng đã đăng ký → ném ra nguyên trạng, fail-closed.
+   * - Tìm dòng tenant để lấy `slug` — slug là khoá phân giải không gian duy nhất của khung định tuyến — theo thứ tự của
+   *   `tenantRowForTargetResolution`: kho của không gian mà ngữ cảnh đã phân giải tới trước (trung tâm cấp phát mới chỉ
+   *   có dòng tenant ở đó — tiền điều kiện TĐ6), dòng thư mục ở kho chung sau. Không nơi nào có dòng tenant → trả
+   *   `null` (bên gọi giữ hành vi hiện tại: thân InContext tự ném `tenant.not_found`).
+   * - Hỏi sổ đăng ký chế độ kho của slug: `dedicated: true` khi trung tâm đã đăng ký kho riêng. Slug chưa đăng ký hoặc
+   *   tầng định tuyến chưa cấu hình → `dedicated: false` (thế giới kho chung, cùng khuôn `createTenantUser`). Mọi lỗi
+   *   phân giải còn lại là lỗi cấu hình của một trung tâm kho riêng đã đăng ký → ném ra nguyên trạng, fail-closed.
    *
    * @returns Slug của tenant và cờ kho riêng, hoặc `null` khi
    *   tenant không tồn tại ở kho nào.
@@ -348,25 +341,15 @@ export class TenantsService {
   /**
    * Dòng tenant dùng cho bước phân giải đích kho (issue #587, tiền điều kiện TĐ6): thứ tự tra cứu phản ánh nguyên tắc
    * dữ kiện nghiệp vụ đọc tại kho đích, tầng điều khiển chỉ giữ thư mục định tuyến: 1. Khi ngữ cảnh hiện tại đã phân
-   * giải tới một không gian
-   *    (`spaceSlug` do tầng gắn ngữ cảnh nạp từ Host của
-   *    request), đọc dòng tenant theo id TRONG kho của không
-   *    gian đó trước. Trung tâm cấp phát mới chỉ có dòng tenant
-   *    trong kho của chính nó — pipeline cấp phát không ghi dòng
-   *    nào vào kho chung — nên tra kho chung trước sẽ kết luận
-   *    sai "không tồn tại" cho đúng trung tâm đang phục vụ
-   *    request. Lượt đọc bọc ngữ cảnh platform NGOÀI
-   *    `withSpaceKysely` theo đúng khuôn `getTenantInSpace`:
-   *    bảng `tenants` mang RLS theo `app.tenant_id` và ngữ cảnh
-   *    của nơi gọi không đáng tin cho việc tra cứu này. Không
-   *    gian của ngữ cảnh chưa đăng ký hoặc tầng định tuyến chưa
-   *    cấu hình → lượt đọc coi như không có kết quả và rơi
-   *    xuống bước 2; lỗi phân giải còn lại (bí mật/role lệch
-   *    sổ) ném ra nguyên trạng — fail-closed. 2. Ngoài ngữ cảnh không gian, hoặc id không có trong kho
-   *    của không gian ngữ cảnh: tra dòng thư mục ở kho chung
-   *    trong ngữ cảnh platform như trước — đường của các tenant
-   *    đã di trú (dòng thư mục còn ở kho chung) và của mọi
-   *    request ở địa chỉ platform.
+   * giải tới một không gian (`spaceSlug` do tầng gắn ngữ cảnh nạp từ Host của request), đọc dòng tenant theo id TRONG
+   * kho của không gian đó trước. Trung tâm cấp phát mới chỉ có dòng tenant trong kho của chính nó — pipeline cấp phát
+   * không ghi dòng nào vào kho chung — nên tra kho chung trước sẽ kết luận sai "không tồn tại" cho đúng trung tâm đang
+   * phục vụ request. Lượt đọc bọc ngữ cảnh platform NGOÀI `withSpaceKysely` theo đúng khuôn `getTenantInSpace`: bảng
+   * `tenants` mang RLS theo `app.tenant_id` và ngữ cảnh của nơi gọi không đáng tin cho việc tra cứu này. Không gian của
+   * ngữ cảnh chưa đăng ký hoặc tầng định tuyến chưa cấu hình → lượt đọc coi như không có kết quả và rơi xuống bước 2;
+   * lỗi phân giải còn lại (bí mật/role lệch sổ) ném ra nguyên trạng — fail-closed. 2. Ngoài ngữ cảnh không gian, hoặc
+   * id không có trong kho của không gian ngữ cảnh: tra dòng thư mục ở kho chung trong ngữ cảnh platform như trước —
+   * đường của các tenant đã di trú (dòng thư mục còn ở kho chung) và của mọi request ở địa chỉ platform.
    */
   private async tenantRowForTargetResolution(tenantId: string): Promise<TenantRow | undefined> {
     const contextSlug = tenantAls.getStore()?.spaceSlug;

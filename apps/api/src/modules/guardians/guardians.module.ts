@@ -14,7 +14,8 @@ import { GuardianDigestService } from './guardian-digest.service';
 import { GuardianViewService } from './guardian-view.service';
 import { GuardiansService } from './guardians.service';
 
-/** GuardiansModule (PH-0, issue #116 + PH-1, issue #130 + PH-2, issue #159): liên kết giám hộ PH–HS + bề mặt đọc
+/**
+ * GuardiansModule (PH-0, issue #116 + PH-1, issue #130 + PH-2, issue #159): liên kết giám hộ PH–HS + bề mặt đọc
  * chỉ-xem của phụ huynh trên dữ liệu đã công bố + tuỳ chọn tần suất digest. Phụ thuộc Grades facade (sổ điểm + kết quả
  * VN đã qua cổng công bố), Access (PermissionEvaluator), Users, Events (outbox cho audit), Dashboard (tập khoá ghi danh
  * + hàm kết quả mới đã công bố dùng chung với DASH1) và Tenants.

@@ -173,16 +173,11 @@ const SHARED_CENTRE_KYSELY = 'SHARED_CENTRE_KYSELY';
   ],
   providers: [
     /**
-     * Gắn handle Kysely kho chung vào khung định tuyến theo trung
-     * tâm (issue #581): dựng pool kho chung rồi gắn handle Kysely
-     * dựng trên chính pool đó (không mở thêm pool, không đổi ngân
-     * sách kết nối). Handle mà mọi điểm tiêu thụ dùng là handle
-     * ĐỊNH TUYẾN của khung (`routedKysely`) — uỷ thác về kho chung
-     * cho mọi ngữ cảnh chưa mang trung tâm ở kho riêng (toàn bộ
-     * đường mặc định), và về kho của trung tâm khi ngữ cảnh đã
-     * được chuẩn bị theo trung tâm đó. Instance này không được
-     * `destroy()` riêng — vòng đời của nó đi theo vòng đời pool
-     * chung.
+     * Gắn handle Kysely kho chung vào khung định tuyến theo trung tâm (issue #581): dựng pool kho chung rồi gắn handle
+     * Kysely dựng trên chính pool đó (không mở thêm pool, không đổi ngân sách kết nối). Handle mà mọi điểm tiêu thụ
+     * dùng là handle ĐỊNH TUYẾN của khung (`routedKysely`) — uỷ thác về kho chung cho mọi ngữ cảnh chưa mang trung tâm
+     * ở kho riêng (toàn bộ đường mặc định), và về kho của trung tâm khi ngữ cảnh đã được chuẩn bị theo trung tâm đó.
+     * Instance này không được `destroy()` riêng — vòng đời của nó đi theo vòng đời pool chung.
      * - Pool là `TenantAwarePool` (TENANT-1, #196): pool tự gắn
      *   GUC tenant theo ngữ cảnh ALS ở mọi checkout.
      * - Ngân sách kết nối (issue #586): trần `DATABASE_POOL_MAX`

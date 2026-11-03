@@ -49,7 +49,8 @@ export class CoursesController {
     return this.courses.listTemplates(actor.id);
   }
   @Post(':id/copy')
-  /** POST /courses/:id/copy — nhân bản khoá theo bảng sao chép Re-run (K1): bản sao nháp, hạn lùi theo mốc mới khi có
+  /**
+   * POST /courses/:id/copy — nhân bản khoá theo bảng sao chép Re-run (K1): bản sao nháp, hạn lùi theo mốc mới khi có
    * startDate. Động từ chuẩn là `copy` theo danh sách hành động đóng (issue #345); path cũ `:id/duplicate` giữ qua
    * handler alias ngay dưới.
    */
@@ -58,7 +59,8 @@ export class CoursesController {
   }
   @Post(':id/duplicate')
   @UseInterceptors(DeprecatedRouteAliasInterceptor)
-  /** POST /courses/:id/duplicate — alias cũ của POST /courses/:id/copy: uỷ quyền nguyên vẹn cho handler canonical;
+  /**
+   * POST /courses/:id/duplicate — alias cũ của POST /courses/:id/copy: uỷ quyền nguyên vẹn cho handler canonical;
    * response mang header Deprecation/Sunset và lượt gọi được ghi log alias có cấu trúc (căn cứ điều kiện gỡ alias: 0
    * lượt gọi trong 14 ngày).
    */
@@ -181,7 +183,8 @@ export class CoursesController {
   }
   @Post(':id/modules/:cmId/duplicate')
   @UseInterceptors(DeprecatedRouteAliasInterceptor)
-  /** POST /courses/:id/modules/:cmId/duplicate — alias cũ của POST /courses/:id/modules/:cmId/copy: uỷ quyền nguyên vẹn
+  /**
+   * POST /courses/:id/modules/:cmId/duplicate — alias cũ của POST /courses/:id/modules/:cmId/copy: uỷ quyền nguyên vẹn
    * cho handler canonical; response mang header Deprecation/Sunset và lượt gọi được ghi log alias có cấu trúc (căn cứ
    * điều kiện gỡ alias: 0 lượt gọi trong 14 ngày).
    */

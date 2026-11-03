@@ -281,11 +281,9 @@ export class RolesService {
     return this.repo.listAssignments(filter, tx);
   }
   /**
-   * Liệt kê gán role cho bảng quản trị: lọc theo user/context/role,
-   * tìm kiếm theo người dùng, phân trang phía server, mỗi dòng kèm
-   * tên/email người dùng (ghép ở tầng repository). Đây là bề mặt đọc
-   * của endpoint `GET /access/assignments`; hàm `listAssignments` ở
-   * trên giữ nguyên cho các đường nội bộ cần toàn bộ dòng khớp bộ lọc
+   * Liệt kê gán role cho bảng quản trị: lọc theo user/context/role, tìm kiếm theo người dùng, phân trang phía server,
+   * mỗi dòng kèm tên/email người dùng (ghép ở tầng repository). Đây là bề mặt đọc của endpoint `GET
+   * /access/assignments`; hàm `listAssignments` ở trên giữ nguyên cho các đường nội bộ cần toàn bộ dòng khớp bộ lọc
    * không qua phân trang.
    *
    * @returns các dòng của trang hiện tại kèm tổng số dòng khớp bộ lọc
@@ -304,20 +302,15 @@ export class RolesService {
    * Liệt kê người dùng kèm toàn bộ gán vai của họ cho bảng người dùng
    * của trang vai trò (`GET /access/users-with-assignments`).
    *
-   * Đây là phép đọc gộp theo NGƯỜI DÙNG, bổ sung cho
-   * `listAssignmentsPage` vốn phân trang theo từng dòng gán: tầng
-   * repository đếm và cắt trang trên tập người dùng khớp cả ba bộ lọc
-   * (tìm kiếm, vai, trạng thái) rồi chỉ nạp dòng gán của trang đó;
-   * tầng này chỉ chuyển `createdAt` từ mốc thời gian của bản ghi sang
-   * chuỗi ISO của hợp đồng. Bất biến giữ nguyên từ hợp đồng: `total`
-   * đếm người dùng khớp lọc, mỗi người xuất hiện đúng một lần và mảng
-   * `assignments` của họ không bị cắt theo vai đang lọc.
+   * Đây là phép đọc gộp theo NGƯỜI DÙNG, bổ sung cho `listAssignmentsPage` vốn phân trang theo từng dòng gán: tầng
+   * repository đếm và cắt trang trên tập người dùng khớp cả ba bộ lọc (tìm kiếm, vai, trạng thái) rồi chỉ nạp dòng gán
+   * của trang đó; tầng này chỉ chuyển `createdAt` từ mốc thời gian của bản ghi sang chuỗi ISO của hợp đồng. Bất biến
+   * giữ nguyên từ hợp đồng: `total` đếm người dùng khớp lọc, mỗi người xuất hiện đúng một lần và mảng `assignments` của
+   * họ không bị cắt theo vai đang lọc.
    *
-   * Hàm chỉ đọc — không ghi dữ kiện, không phát sự kiện. Cổng năng
-   * lực `role:assign` tại context hệ thống do controller áp trước khi
-   * vào đây, cùng cổng với đường đọc bảng gán vai; người gọi thiếu
-   * năng lực bị guard chặn bằng lỗi `access.capability_denied` (403),
-   * không tới được hàm này.
+   * Hàm chỉ đọc — không ghi dữ kiện, không phát sự kiện. Cổng năng lực `role:assign` tại context hệ thống do controller
+   * áp trước khi vào đây, cùng cổng với đường đọc bảng gán vai; người gọi thiếu năng lực bị guard chặn bằng lỗi
+   * `access.capability_denied` (403), không tới được hàm này.
    *
    * @param filter - Ba bộ lọc tuỳ chọn phía server: `search` (họ tên,
    * email, tên đăng nhập), `roleId` (người có ít nhất một gán với
@@ -372,19 +365,14 @@ export class RolesService {
    * trong một lần gọi — đường ghi theo lô thay cho việc đặt từng ghi
    * đè qua `setCapabilityOverride`.
    *
-   * Flow: đọc role và context (vắng mặt thì 404 như các thao tác ghi
-   * đè hiện hành) → kiểm chứng TOÀN BỘ tập gửi lên trước khi ghi bất
-   * cứ thứ gì: một năng lực xuất hiện hai lần trong cùng tập bị từ
-   * chối (`access.duplicate_capability_override`), giá trị quyền
-   * ngoài bốn trạng thái bị từ chối (`access.invalid_permission`,
-   * cùng mã với đường đặt một ghi đè), tên năng lực ngoài danh mục
-   * bị từ chối (`access.unknown_capability`) → áp dụng nguyên tử
-   * trong một transaction: xoá trọn tập ghi đè cũ của cặp
-   * (role, context) rồi ghi lại đúng các phần tử có giá trị khác
-   * INHERIT (phần tử vắng mặt trong tập gửi lên và phần tử mang
-   * INHERIT tường minh đều kết thúc ở trạng thái không có ghi đè —
-   * tức kế thừa — đúng ngữ nghĩa của đường đặt một ghi đè) → đánh
-   * dấu dirty cho context như mọi thay đổi ghi đè khác.
+   * Flow: đọc role và context (vắng mặt thì 404 như các thao tác ghi đè hiện hành) → kiểm chứng TOÀN BỘ tập gửi lên
+   * trước khi ghi bất cứ thứ gì: một năng lực xuất hiện hai lần trong cùng tập bị từ chối
+   * (`access.duplicate_capability_override`), giá trị quyền ngoài bốn trạng thái bị từ chối
+   * (`access.invalid_permission`, cùng mã với đường đặt một ghi đè), tên năng lực ngoài danh mục bị từ chối
+   * (`access.unknown_capability`) → áp dụng nguyên tử trong một transaction: xoá trọn tập ghi đè cũ của cặp (role,
+   * context) rồi ghi lại đúng các phần tử có giá trị khác INHERIT (phần tử vắng mặt trong tập gửi lên và phần tử mang
+   * INHERIT tường minh đều kết thúc ở trạng thái không có ghi đè — tức kế thừa — đúng ngữ nghĩa của đường đặt một ghi
+   * đè) → đánh dấu dirty cho context như mọi thay đổi ghi đè khác.
    *
    * @returns tập ghi đè đã lưu của role tại context sau khi áp dụng,
    * sắp xếp theo tên năng lực.
@@ -434,21 +422,16 @@ export class RolesService {
     return this.repo.listRoleCapabilities(roleId);
   }
   /**
-   * Đọc ma trận quyền của MỌI vai tại đúng một context trong một
-   * lần gọi — bề mặt đọc cho trang Permissions toàn trang, thay cho
-   * vòng gọi ma trận riêng của từng vai qua `listRoleCapabilities`
-   * (vừa thừa số lần gọi, vừa kéo theo ghi đè của mọi context khác).
+   * Đọc ma trận quyền của MỌI vai tại đúng một context trong một lần gọi — bề mặt đọc cho trang Permissions toàn trang,
+   * thay cho vòng gọi ma trận riêng của từng vai qua `listRoleCapabilities` (vừa thừa số lần gọi, vừa kéo theo ghi đè
+   * của mọi context khác).
    *
-   * Luồng: xác thực context tồn tại trước (vắng mặt thì ném
-   * `access.context_not_found`, khớp hành vi của các đường đọc hiện
-   * hành của module khi đối tượng được hỏi không tồn tại) → đọc
-   * song song ba tập trong đúng lượt gọi này: danh sách vai, số
-   * người giữ phân biệt theo vai (cùng phép tổng hợp của danh sách
-   * vai) và toàn bộ dòng ghi đè thuộc đúng context được hỏi (một
-   * truy vấn cho cả context, không lặp theo vai) → ghép ghi đè theo
-   * vai. Vai không có ghi đè nào tại context vẫn xuất hiện với tập
-   * rỗng; ghi đè của context khác không bao giờ rò vào kết quả vì
-   * truy vấn đã neo đúng một context.
+   * Luồng: xác thực context tồn tại trước (vắng mặt thì ném `access.context_not_found`, khớp hành vi của các đường đọc
+   * hiện hành của module khi đối tượng được hỏi không tồn tại) → đọc song song ba tập trong đúng lượt gọi này: danh
+   * sách vai, số người giữ phân biệt theo vai (cùng phép tổng hợp của danh sách vai) và toàn bộ dòng ghi đè thuộc đúng
+   * context được hỏi (một truy vấn cho cả context, không lặp theo vai) → ghép ghi đè theo vai. Vai không có ghi đè nào
+   * tại context vẫn xuất hiện với tập rỗng; ghi đè của context khác không bao giờ rò vào kết quả vì truy vấn đã neo
+   * đúng một context.
    *
    * @param contextId - Định danh của context cần đọc ma trận.
    * @returns `contextId` đã đọc kèm một dòng cho mỗi vai trong hệ.

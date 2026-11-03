@@ -10,20 +10,16 @@ import { createCategory, createCourse, getFirstSectionId } from '../../support/c
  * Issue #69 (CB-1) — Kho học liệu tổ/trường trên khung Content Bank.
  *
  * Vòng đời được kiểm chứng tận API:
- * - học liệu scope tổ (cohort) bắt đầu ở draft, đồng nghiệp trong tổ
- *   KHÔNG thấy khi draft lẫn khi chờ duyệt; chỉ tác giả + người duyệt
- *   (tổ trưởng: contentbank:reviewcontent + cohort:manage tại context
- *   của tổ) thấy;
- * - gửi duyệt bắt metadata chương trình đủ (môn–khối–node + file) +
- *   metadata sư phạm (mô tả–từ khoá–đối tượng–vị trí trong bài, CB1-B3);
- *   scope trường bắt thêm trường bản quyền/nguồn gốc (CB1-B1): chưa đủ
- *   bản quyền thì chưa mở được scope trường;
+ * - học liệu scope tổ (cohort) bắt đầu ở draft, đồng nghiệp trong tổ KHÔNG thấy khi draft lẫn khi chờ duyệt; chỉ tác
+ *   giả + người duyệt (tổ trưởng: contentbank:reviewcontent + cohort:manage tại context của tổ) thấy;
+ * - gửi duyệt bắt metadata chương trình đủ (môn–khối–node + file) + metadata sư phạm (mô tả–từ khoá–đối tượng–vị trí
+ *   trong bài, CB1-B3); scope trường bắt thêm trường bản quyền/nguồn gốc (CB1-B1): chưa đủ bản quyền thì chưa mở được
+ *   scope trường;
  * - loại học liệu là 5 nhóm Điều 7 TT 09/2021 (CB1-B2) + cấp học độc
  *   lập; duyệt theo checklist tiêu chí Bộ, từ chối bắt buộc có lý do
  *   (CB1-B3); học liệu dẫn xuất giữ derived_from về học liệu gốc;
- * - duyệt xong học liệu mới hiện với thành viên tổ và cắm được vào khoá
- *   của đồng nghiệp bằng BẢN SAO file (module mod_resource + file riêng
- *   trong context của module; sửa bản gốc sau đó không đổi bản đã cắm);
+ * - duyệt xong học liệu mới hiện với thành viên tổ và cắm được vào khoá của đồng nghiệp bằng BẢN SAO file (module
+ *   mod_resource + file riêng trong context của module; sửa bản gốc sau đó không đổi bản đã cắm);
  * - sửa học liệu đã duyệt → quay về draft, biến mất khỏi danh sách của
  *   đồng nghiệp;
  * - scope trường tương tự (duyệt bởi người có reviewcontent ở hệ thống);

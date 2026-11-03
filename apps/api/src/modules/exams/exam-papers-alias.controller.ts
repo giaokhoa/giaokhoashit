@@ -17,7 +17,8 @@ import {
   type WithdrawExamDto,
 } from './dto/exams.dto';
 
-/** Controller alias giữ toàn bộ bề mặt `/exam-papers` chạy song song với bề mặt canonical `/exams` của cụm đề (issue
+/**
+ * Controller alias giữ toàn bộ bề mặt `/exam-papers` chạy song song với bề mặt canonical `/exams` của cụm đề (issue
  * #343).
  *
  * @remarks Chính sách alias: mọi handler trong file này là handler mỏng uỷ thác đúng các method của
@@ -27,9 +28,9 @@ import {
  * tiền tố canonical `exams` chỉ còn một controller sở hữu và toàn bộ bề mặt alias gom về lớp này.
  *
  * Mỗi lượt gọi qua alias đều đi qua `DeprecatedRouteAliasInterceptor` — interceptor alias dùng chung ở `common/`, mang
- * bảng alias của bề mặt `exam-papers`: response mang header `Deprecation: true` và
- * `Sunset: Sun, 01 Feb 2027 00:00:00 GMT`, và hệ thống ghi một bản ghi log có cấu trúc cho lượt gọi đó (sự kiện
- * `deprecated_route_alias`, kèm method, mẫu alias, mẫu canonical và path cụ thể).
+ * bảng alias của bề mặt `exam-papers`: response mang header `Deprecation: true` và `Sunset: Sun, 01 Feb 2027 00:00:00
+ * GMT`, và hệ thống ghi một bản ghi log có cấu trúc cho lượt gọi đó (sự kiện `deprecated_route_alias`, kèm method, mẫu
+ * alias, mẫu canonical và path cụ thể).
  *
  * Điều kiện gỡ alias: log có cấu trúc của các lượt gọi alias là căn cứ chính — khi log ghi nhận 0 lượt gọi alias trong
  * 14 ngày thì alias đủ điều kiện gỡ. Header Sunset chỉ là hạn ngoài thông báo cho client, không phải căn cứ tự động gỡ

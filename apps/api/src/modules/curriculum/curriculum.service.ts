@@ -7,7 +7,8 @@ import {
 } from '@lms/db/repositories/curriculum';
 import { programOutcomeDocText, programOutcomeTextToDoc, type ProgramOutcomeDoc } from './program-datasets';
 
-/** Hình dạng YCCĐ trả ra ngoài tầng service: cột `content` trong DB nay là tài liệu Tiptap (jsonb) nên mọi bề mặt đọc
+/**
+ * Hình dạng YCCĐ trả ra ngoài tầng service: cột `content` trong DB nay là tài liệu Tiptap (jsonb) nên mọi bề mặt đọc
  * KHÔNG được phơi tài liệu thô ở trường `content` — `content` ở đây luôn là text canonical trích từ tài liệu bằng đúng
  * hàm chuẩn của tầng nạp, giữ nguyên hợp đồng cũ cho mọi bề mặt tiêu thụ (bản đặc tả, khung khoá, tìm kiếm, liên kết
  * câu hỏi). Riêng bề mặt bảng chương trình cần render phân cấp cha–con nên nhận thêm `contentDoc` là tài liệu gốc; các
@@ -18,7 +19,8 @@ export type CurriculumOutcomeView = Omit<LearningOutcomeRow, 'content'> & {
   contentDoc: ProgramOutcomeDoc;
 };
 
-/** Chuyển một dòng YCCĐ từ DB thành hình dạng trả ra: text canonical trích từ tài liệu lưu trực tiếp, kèm tài liệu gốc
+/**
+ * Chuyển một dòng YCCĐ từ DB thành hình dạng trả ra: text canonical trích từ tài liệu lưu trực tiếp, kèm tài liệu gốc
  * cho bề mặt bảng. Dòng nào thiếu tài liệu (không xảy ra với dữ liệu đã chuyển đổi) được coi là tài liệu rỗng thay vì
  * ném lỗi ồn ào ở đường đọc.
  */
@@ -119,7 +121,8 @@ export class CurriculumService implements OnModuleInit {
       throw err;
     }
   }
-  /** Liệt kê môn học trong một context (cần quyền xem tại context đó; kèm `forCourseId` thì nhánh `course:update` tại
+  /**
+   * Liệt kê môn học trong một context (cần quyền xem tại context đó; kèm `forCourseId` thì nhánh `course:update` tại
    * khoá đích cũng đủ — bề mặt chọn khung trong quản trị khoá). `contextId` vắng thì mặc định về context hệ thống qua
    * `contextOrSystem`; cổng đọc giữ nguyên, không nới quyền: vẫn phải có `curriculum:view` tại context đã phân giải,
    * hoặc `course:update` tại khoá `forCourseId`.
@@ -282,7 +285,8 @@ export class CurriculumService implements OnModuleInit {
     await this.evaluator.requireCapability(actorId, CURRICULUM_VIEW, subjectContextId);
   }
 
-  /** Cây nội dung trọn vẹn của một chương trình: node lồng nhau theo parent_id, mỗi node kèm outcomes của chính nó; thứ
+  /**
+   * Cây nội dung trọn vẹn của một chương trình: node lồng nhau theo parent_id, mỗi node kèm outcomes của chính nó; thứ
    * tự theo position. Kèm `forCourseId` (bề mặt chọn khung) thì nhánh `course:update` tại khoá đích cũng được đọc — xem
    * assertCanRead.
    */
@@ -309,7 +313,8 @@ export class CurriculumService implements OnModuleInit {
     return { curriculum, subject, nodes: roots };
   }
 
-  /** Các đơn vị khung chọn được để nạp vào khoá (K0a): mọi node không phải `lesson` của cây, kèm toàn bộ YCCĐ trong
+  /**
+   * Các đơn vị khung chọn được để nạp vào khoá (K0a): mọi node không phải `lesson` của cây, kèm toàn bộ YCCĐ trong
    * subtree của nó theo đúng thứ tự cây (node cha trước, node con theo position, YCCĐ theo position). Đây là hình dạng
    * Courses dùng để dựng section bản sao có neo. Hàm này là đường NỘI BỘ của provider khung (không có route HTTP
    * riêng): cổng quyền là `course:update` tại khoá đích do Courses.applyCurriculumFrame kiểm TRƯỚC khi gọi — không đòi
@@ -375,7 +380,8 @@ export class CurriculumService implements OnModuleInit {
     return this.buildTree(curriculum, subject);
   }
 
-  /** Đọc THAM CHIẾU node theo id — bản nội bộ của {@link getNode}, cùng khuôn và cùng điều kiện dùng như {@link
+  /**
+   * Đọc THAM CHIẾU node theo id — bản nội bộ của {@link getNode}, cùng khuôn và cùng điều kiện dùng như {@link
    * getSubjectReference} (bản đặc tả của ma trận dùng node để dựng chủ đề/ĐVK sau khi wrapper của nó đã gác cổng xem ma
    * trận tại bank đích, hoặc sau khi phía gọi của đề đã gác cổng của đề).
    *
@@ -400,7 +406,8 @@ export class CurriculumService implements OnModuleInit {
       sourceKind: input.sourceKind ?? 'program', sourceRef: input.sourceRef ?? null, derivedFromId: input.derivedFromId ?? null,
     }));
   }
-  /** Liệt kê yêu cầu cần đạt của một node. Mặc định chỉ dòng HIỆN HÀNH (loại dòng đã rút — điểm lọc duy nhất ở
+  /**
+   * Liệt kê yêu cầu cần đạt của một node. Mặc định chỉ dòng HIỆN HÀNH (loại dòng đã rút — điểm lọc duy nhất ở
    * repository); `includeRetired` chỉ dành cho đường nội bộ cần thấy cả dòng đã rút. Mọi bề mặt tiêu thụ (bản đặc tả,
    * cây, picker) dùng mặc định.
    */
@@ -409,7 +416,8 @@ export class CurriculumService implements OnModuleInit {
     await this.evaluator.requireCapability(actorId, CURRICULUM_VIEW, subject.contextId);
     return (await this.repo.listOutcomes(nodeId, opts)).map(toCurriculumOutcomeView);
   }
-  /** Liệt kê THAM CHIẾU YCCĐ của một node — bản nội bộ của {@link listOutcomes}, cùng khuôn và cùng điều kiện dùng như
+  /**
+   * Liệt kê THAM CHIẾU YCCĐ của một node — bản nội bộ của {@link listOutcomes}, cùng khuôn và cùng điều kiện dùng như
    * {@link getSubjectReference}: không tự đòi `curriculum:view`, chỉ dùng cho caller đã gác cổng của luồng mình trước.
    * Ngữ nghĩa lọc giữ nguyên bản công khai: mặc định chỉ dòng hiện hành (loại dòng đã rút), `includeRetired` truyền
    * thẳng xuống repository như bản công khai.
@@ -420,7 +428,8 @@ export class CurriculumService implements OnModuleInit {
     await this.nodeChainOr404(nodeId);
     return (await this.repo.listOutcomes(nodeId, opts)).map(toCurriculumOutcomeView);
   }
-  /** Mã bản ghi chương trình của một node thuộc dataset (null khi node không thuộc bản ghi dataset nào) — căn cứ suy MÃ
+  /**
+   * Mã bản ghi chương trình của một node thuộc dataset (null khi node không thuộc bản ghi dataset nào) — căn cứ suy MÃ
    * YCCĐ VỊ TRÍ `<recordId>.<position 2 số>` cho bản đặc tả (một nguồn sự thật cho vị trí: backend tính, web không tự
    * suy). Đường nội bộ cho tầng quiz, không có cổng capability riêng — caller đã gác quyền của bề mặt của nó trước khi
    * gọi.
@@ -434,7 +443,8 @@ export class CurriculumService implements OnModuleInit {
     await this.evaluator.requireCapability(actorId, CURRICULUM_VIEW, subject.contextId);
     return toCurriculumOutcomeView(outcome);
   }
-  /** Đọc THAM CHIẾU YCCĐ theo id — bản nội bộ của {@link getOutcome}, cùng khuôn và cùng điều kiện dùng như {@link
+  /**
+   * Đọc THAM CHIẾU YCCĐ theo id — bản nội bộ của {@link getOutcome}, cùng khuôn và cùng điều kiện dùng như {@link
    * getSubjectReference} (bản đặc tả của ma trận tra YCCĐ gốc của dòng derived sau khi wrapper của nó đã gác cổng xem
    * ma trận tại bank đích, hoặc sau khi phía gọi của đề đã gác cổng của đề).
    *
@@ -590,7 +600,8 @@ export class CurriculumService implements OnModuleInit {
     }
   }
 
-  /** Chặn vòng cha–con gián tiếp (mục A.7): duyệt tổ tiên của cha mới trong cùng chương trình (tải danh sách node một
+  /**
+   * Chặn vòng cha–con gián tiếp (mục A.7): duyệt tổ tiên của cha mới trong cùng chương trình (tải danh sách node một
    * lần, duyệt trong bộ nhớ như getTree); gặp chính node đang sửa trên đường đi lên → 400. Tập visited cũng là phanh an
    * toàn nếu dữ liệu cũ đã có vòng.
    */

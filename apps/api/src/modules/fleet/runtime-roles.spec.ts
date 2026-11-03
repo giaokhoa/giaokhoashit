@@ -8,7 +8,8 @@ import {
   parseRoleEndpoint,
 } from './runtime-roles';
 
-/** Khoá hành vi của helper cấp phát role runtime/migration (issue #586): đích cấp phát chỉ suy ra từ URL, tư thế quyền
+/**
+ * Khoá hành vi của helper cấp phát role runtime/migration (issue #586): đích cấp phát chỉ suy ra từ URL, tư thế quyền
  * của hai role luôn ở khuôn tối thiểu (không superuser, runtime không sở hữu đối tượng), và quyền của runtime chỉ là
  * quyền dữ liệu kèm quyền mặc định gắn với role migration — đổi các bất biến này thì test phải đỏ, vì chúng là nền của
  * cô lập kết nối giữa các kho.

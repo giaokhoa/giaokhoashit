@@ -27,20 +27,14 @@ import {
  * (1) access token của phiên thuộc trung tâm kho riêng mang
  *     claim `centre_id` bằng định danh đăng ký của trung tâm;
  *     token của phiên ở kho chung không mang claim;
- * (2) token của trung tâm A mang tới địa chỉ của trung tâm B bị
- *     từ chối 401 `auth.centre_mismatch` TRƯỚC tầng dữ kiện —
- *     kiểm chứng bằng số kết nối thật vào kho B (không một kết
- *     nối nào của role kho B được mở bởi request bị từ chối);
- * (3) đăng nhập tại địa chỉ của trung tâm A đọc/ghi ở kho A:
- *     family refresh được tạo trong kho A (không tạo ở kho
- *     chung), tài khoản chỉ có ở kho chung thì đăng nhập tại địa
- *     chỉ A thất bại, và hồ sơ đọc tại địa chỉ A mang dữ kiện
- *     của kho A trong khi cùng token đọc ở địa chỉ gốc cho dữ
- *     kiện của kho chung;
- * (4) trung tâm bị đình chỉ trên sổ thì traffic nghiệp vụ tại
- *     địa chỉ của nó bị từ chối 403 `space.not_active`, dữ kiện
- *     trong kho của nó còn nguyên, và đường vận hành platform
- *     (quản trị viên site chính ở tenant platform) vẫn vào được;
+ * (2) token của trung tâm A mang tới địa chỉ của trung tâm B bị từ chối 401 `auth.centre_mismatch` TRƯỚC tầng dữ kiện —
+ *     kiểm chứng bằng số kết nối thật vào kho B (không một kết nối nào của role kho B được mở bởi request bị từ chối);
+ * (3) đăng nhập tại địa chỉ của trung tâm A đọc/ghi ở kho A: family refresh được tạo trong kho A (không tạo ở kho
+ *     chung), tài khoản chỉ có ở kho chung thì đăng nhập tại địa chỉ A thất bại, và hồ sơ đọc tại địa chỉ A mang dữ
+ *     kiện của kho A trong khi cùng token đọc ở địa chỉ gốc cho dữ kiện của kho chung;
+ * (4) trung tâm bị đình chỉ trên sổ thì traffic nghiệp vụ tại địa chỉ của nó bị từ chối 403 `space.not_active`, dữ kiện
+ *     trong kho của nó còn nguyên, và đường vận hành platform (quản trị viên site chính ở tenant platform) vẫn vào
+ *     được;
  * (5) trung tâm ở kho chung giữ nguyên hành vi hiện tại ở cả địa
  *     chỉ gốc lẫn tên miền con của nó.
  */
@@ -63,7 +57,9 @@ const HOST_A = `${CENTRE_A_SLUG}.test.local`;
 const HOST_B = `${CENTRE_B_SLUG}.test.local`;
 const SHARED_SLUG = 'truong-mac-dinh';
 const HOST_SHARED = `${SHARED_SLUG}.test.local`;
-/** Dấu phân biệt ghi thẳng vào dòng user ở kho A: hồ sơ đọc qua địa chỉ A phải mang dấu này, đọc ở kho chung thì không. */
+/**
+ * Dấu phân biệt ghi thẳng vào dòng user ở kho A: hồ sơ đọc qua địa chỉ A phải mang dấu này, đọc ở kho chung thì không.
+ */
 const CENTRE_A_FIRST_NAME = 'DauAnKhoA582';
 
 const UUIDV7_SHIM = `CREATE OR REPLACE FUNCTION uuidv7() RETURNS uuid AS $$ DECLARE ts_ms bigint := (extract(epoch from clock_timestamp()) * 1000)::bigint; b bytea; BEGIN b := decode(lpad(to_hex(ts_ms), 12, '0'), 'hex') || gen_random_bytes(10); b := set_byte(b, 6, (get_byte(b, 6) & 15) | 112); b := set_byte(b, 8, (get_byte(b, 8) & 63) | 128); RETURN encode(b, 'hex')::uuid; END; $$ LANGUAGE plpgsql VOLATILE`;

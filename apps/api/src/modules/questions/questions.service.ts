@@ -146,11 +146,9 @@ function badAnswerData(message: string): BadRequestException {
  * `question_answer_keys` (1-1 với version, cùng giao dịch ghi). Câu hỏi KHÔNG có tên — nhãn hiển thị là trích đoạn nội
  * dung. API nhận MỘT payload cấu trúc theo qtype; service bung payload ra các bảng khi lưu.
  *
- * Bất biến engine (questionusagebyactivity_test): một usage nhóm các attempt
- * theo (component, instanceId); bắt đầu một attempt PIN version latest hiện tại;
- * mọi chuyển đổi đều ghi một step (với step_data cho response);
- * deferredfeedback chấm khi kết thúc theo answers của version ĐÃ PIN
- * và options; trạng thái usage là tổng hợp của các attempt của nó.
+ * Bất biến engine (questionusagebyactivity_test): một usage nhóm các attempt theo (component, instanceId); bắt đầu một
+ * attempt PIN version latest hiện tại; mọi chuyển đổi đều ghi một step (với step_data cho response); deferredfeedback
+ * chấm khi kết thúc theo answers của version ĐÃ PIN và options; trạng thái usage là tổng hợp của các attempt của nó.
  */
 @Injectable()
 /**
@@ -428,23 +426,18 @@ export class QuestionsService {
    * các điểm quyết D ngày 26/10/2026 — cùng luật mà `createQuestionSchema` của contracts kiểm ở cửa HTTP; service kiểm
    * LẠI ở đây vì các đường nội bộ (MCP, nhân bản) không đi qua schema HTTP):
    *  - multichoice: đúng 4 lựa chọn (D-3) và đúng MỘT đáp án đúng.
-   *  - truefalse (TF-A, điểm quyết D-1): KHÔNG có dòng answers. Thân
-   *    câu (`questionText`, hoặc thân câu đã lưu khi sửa mà không gửi
-   *    thân mới) phải là tài liệu chốt đuôi bằng đúng 4 mệnh đề; đáp
-   *    án từng mệnh đề đi qua `solution.answers` phủ đúng tập mệnh đề
-   *    đó và được sắp lại theo đúng thứ tự mệnh đề trong thân câu khi
-   *    ghi vào `question_answer_keys.solution`. Đường sửa chỉ gửi
-   *    thân câu mới mà không gửi `solution` thì phía đáp án kế thừa
-   *    của version trước do `updateQuestion` ghép sau bước này — NHƯNG
-   *    chỉ khi tập statementId của thân mới == tập solution cũ phủ,
-   *    khác thì `updateQuestion` từ chối 400 (bề mặt soạn luôn gửi kèm
-   *    đáp án cùng thân câu nên không đi qua đường kế thừa này).
+   *  - truefalse (TF-A, điểm quyết D-1): KHÔNG có dòng answers. Thân câu (`questionText`, hoặc thân câu đã lưu khi sửa
+   *    mà không gửi thân mới) phải là tài liệu chốt đuôi bằng đúng 4 mệnh đề; đáp án từng mệnh đề đi qua
+   *    `solution.answers` phủ đúng tập mệnh đề đó và được sắp lại theo đúng thứ tự mệnh đề trong thân câu khi ghi vào
+   *    `question_answer_keys.solution`. Đường sửa chỉ gửi thân câu mới mà không gửi `solution` thì phía đáp án kế thừa
+   *    của version trước do `updateQuestion` ghép sau bước này — NHƯNG chỉ khi tập statementId của thân mới == tập
+   *    solution cũ phủ, khác thì `updateQuestion` từ chối 400 (bề mặt soạn luôn gửi kèm đáp án cùng thân câu nên không
+   *    đi qua đường kế thừa này).
    *  - shortanswer: ít nhất 1 đáp án được chấp nhận; MỌI dòng liệt kê
    *    đều là đáp án được chấp nhận (dòng `correct: false` bị từ chối —
    *    đáp án sai không có chỗ trong danh sách này).
-   *  - essay: không có dòng đáp án; options mang cấu hình trả lời +
-   *    graderInfo + responseTemplate; giới hạn từ phải hợp lệ
-   *    (min ≤ max). Lời giải mẫu đi qua `solution.answer`. guidance đi vào `answerKey` (bản ghi phía đáp án) cho MỌI
+   *  - essay: không có dòng đáp án; options mang cấu hình trả lời + graderInfo + responseTemplate; giới hạn từ phải hợp
+   *    lệ (min ≤ max). Lời giải mẫu đi qua `solution.answer`. guidance đi vào `answerKey` (bản ghi phía đáp án) cho MỌI
    *    qtype.
    *
    * @throws BadRequestException `question.bad_answer_data` khi phần đáp
@@ -673,10 +666,9 @@ export class QuestionsService {
   }
 
   /**
-   * Ánh xạ một dòng options đã nạp thành bản ghi phẳng của view theo
-   * qtype — phần thuần của optionsView, tách ra để loader theo lô
-   * (loadQuestionViews) dùng CHUNG đúng một ánh xạ với đường đọc đơn;
-   * version không có dòng options thì view mang `options: null`.
+   * Ánh xạ một dòng options đã nạp thành bản ghi phẳng của view theo qtype — phần thuần của optionsView, tách ra để
+   * loader theo lô (loadQuestionViews) dùng CHUNG đúng một ánh xạ với đường đọc đơn; version không có dòng options thì
+   * view mang `options: null`.
    */
   private optionsFromRow(
     qtype: string,
@@ -738,10 +730,9 @@ export class QuestionsService {
    * - Câu đầu tiên (theo thứ tự vào) thiếu entry hoặc thiếu version
    *   mới nhất thì ném đúng NotFoundException cùng mã như getQuestion
    *   (`question.entry_missing` / `question.version_missing`).
-   * - Hình dạng từng view do cùng các ánh xạ với assembleView dựng
-   *   (options qua optionsFromRow, answerKey mặc định cả hai null khi
-   *   version không có dòng phía đáp án, stimulus null khi version
-   *   không gắn hoặc không còn dòng ngữ liệu).
+   * - Hình dạng từng view do cùng các ánh xạ với assembleView dựng (options qua optionsFromRow, answerKey mặc định cả
+   *   hai null khi version không có dòng phía đáp án, stimulus null khi version không gắn hoặc không còn dòng ngữ
+   *   liệu).
    */
   private async loadQuestionViews(rows: QuestionRow[]): Promise<QuestionView[]> {
     if (!rows.length) return [];

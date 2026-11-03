@@ -17,7 +17,8 @@ export interface GuardianStudentView {
   student: { id: string; username: string; firstName: string; lastName: string; email: string };
 }
 
-/** Nghiệp vụ giám hộ (PH-0, issue #116): liên kết PH–HS do trường xác lập theo hồ sơ đã xác minh (TT 22 Đ.20.6; NĐ
+/**
+ * Nghiệp vụ giám hộ (PH-0, issue #116): liên kết PH–HS do trường xác lập theo hồ sơ đã xác minh (TT 22 Đ.20.6; NĐ
  * 13/2023 Đ.20 — quan hệ giám hộ phải được xác minh, không tự khai báo) và bề mặt đọc chỉ-xem của phụ huynh. Nguyên tắc
  * cứng của research (mục 5.1): chỉ-xem; chỉ dữ liệu của con mình; chỉ dữ liệu ĐÃ CÔNG BỐ; không xếp hạng/so sánh; không
  * hành động thay con. Mọi lần phụ huynh xem dữ liệu điểm của con đều ghi audit vào event_log qua outbox (aggregate
@@ -58,7 +59,8 @@ export class GuardiansService {
     }
   }
 
-  /** Cổng quản lý liên kết: actor phải có guardian:manage từ một gán vai THẬT ở bất kỳ context nào (tiền lệ CB-1 — admin
+  /**
+   * Cổng quản lý liên kết: actor phải có guardian:manage từ một gán vai THẬT ở bất kỳ context nào (tiền lệ CB-1 — admin
    * hệ thống, hoặc giáo viên có vai tại khoá/lớp của con). Học sinh không có vai giảng dạy thật nên không tự xác
    * lập/sửa liên kết cho chính mình.
    */
@@ -100,7 +102,10 @@ export class GuardiansService {
     return link;
   }
 
-  /** Liệt kê liên kết theo bộ lọc — bề mặt quản lý (guardian:manage) hoặc chính chủ xem phần liên quan tới mình. Trong request: chỉ liên kết của tenant hiệu lực. */
+  /**
+   * Liệt kê liên kết theo bộ lọc — bề mặt quản lý (guardian:manage) hoặc chính chủ xem phần liên quan tới mình. Trong
+   * request: chỉ liên kết của tenant hiệu lực.
+   */
   async listLinks(actorId: string, filters: { guardianUserId?: string; studentUserId?: string; status?: string }): Promise<GuardianLinkRow[]> {
     const involvesSelf = filters.guardianUserId === actorId || filters.studentUserId === actorId;
     if (!involvesSelf) await this.assertCanManageLinks(actorId);
@@ -109,7 +114,10 @@ export class GuardiansService {
     return active ? rows.filter((l) => l.tenantId === active) : rows;
   }
 
-  /** Thu hồi một liên kết (không xoá cứng — giữ vết cho audit); liên kết đã thu hồi hoặc thuộc tenant khác thì 404 nhất quán. */
+  /**
+   * Thu hồi một liên kết (không xoá cứng — giữ vết cho audit); liên kết đã thu hồi hoặc thuộc tenant khác thì 404 nhất
+   * quán.
+   */
   async revokeLink(actorId: string, linkId: string): Promise<GuardianLinkRow> {
     await this.assertCanManageLinks(actorId);
     const link = await this.repo.getLink(linkId);
@@ -138,7 +146,9 @@ export class GuardiansService {
     return out;
   }
 
-  /** Những người giám hộ đang liên kết với chính actor (học sinh tự xem — minh bạch liên kết theo research mục 5.3.4). */
+  /**
+   * Những người giám hộ đang liên kết với chính actor (học sinh tự xem — minh bạch liên kết theo research mục 5.3.4).
+   */
   async myGuardians(actorId: string): Promise<GuardianLinkRow[]> {
     return this.repo.listLinks({ studentUserId: actorId, status: 'active' });
   }
@@ -152,7 +162,8 @@ export class GuardiansService {
     return link;
   }
 
-  /** Cổng liên kết cho bề mặt PH-1 (issue #130): không có liên kết active tới đúng học sinh → 404 đồng nhất (kể cả khi
+  /**
+   * Cổng liên kết cho bề mặt PH-1 (issue #130): không có liên kết active tới đúng học sinh → 404 đồng nhất (kể cả khi
    * học sinh không tồn tại), để kẻ đoán ID không phân biệt được "không có liên kết" với "không có học sinh này" —
    * nguyên tắc cứng "chỉ con mình" của research mục 5.1.
    */

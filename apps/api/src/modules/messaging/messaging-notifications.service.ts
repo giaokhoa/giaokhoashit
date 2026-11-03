@@ -104,18 +104,13 @@ export interface NotificationChannelPort {
  * đổi tuỳ chọn hiệu lực ở lần phát kế tiếp. Trung tâm thông báo v2 (issue #51) gộp danh sách theo (loại × nguồn × ngày)
  * với phân trang keyset; số chưa đọc đẩy qua SSE (NotificationUnreadStreamService) thay cho polling.
  *
- * Cách lắp ráp (issue #295): service này là một CỤM của MessagingModule,
- * tách từ MessagingService cũ theo cụm ca sử dụng — tách cấu trúc thuần,
- * không đổi hành vi. MessagingService nay là facade giữ nguyên bề mặt
- * công khai và chữ ký constructor (khớp main hiện tại, gồm tham số
- * I18nService thứ 11 cho luật C-5), tự lắp ráp các service cụm trong
- * constructor của nó (các test đơn vị hiện hữu khởi tạo trực tiếp
- * `new MessagingService(...)` với đúng các phụ thuộc hạ tầng nên
- * facade là điểm lắp ráp để giữ nguyên hợp đồng khởi tạo đó) và
- * chuyển tiếp I18nService cho riêng cụm này, vì chỉ `notify()` của
- * cụm này dùng nó (phân giải nội dung kênh ngoài theo luật C-5);
- * các service cụm không đăng ký provider riêng trong module và module
- * wiring giữ nguyên như trước khi tách.
+ * Cách lắp ráp (issue #295): service này là một CỤM của MessagingModule, tách từ MessagingService cũ theo cụm ca sử
+ * dụng — tách cấu trúc thuần, không đổi hành vi. MessagingService nay là facade giữ nguyên bề mặt công khai và chữ ký
+ * constructor (khớp main hiện tại, gồm tham số I18nService thứ 11 cho luật C-5), tự lắp ráp các service cụm trong
+ * constructor của nó (các test đơn vị hiện hữu khởi tạo trực tiếp `new MessagingService(...)` với đúng các phụ thuộc hạ
+ * tầng nên facade là điểm lắp ráp để giữ nguyên hợp đồng khởi tạo đó) và chuyển tiếp I18nService cho riêng cụm này, vì
+ * chỉ `notify()` của cụm này dùng nó (phân giải nội dung kênh ngoài theo luật C-5); các service cụm không đăng ký
+ * provider riêng trong module và module wiring giữ nguyên như trước khi tách.
  */
 export class MessagingNotificationsService {
   private readonly logger = new Logger(MessagingNotificationsService.name);
@@ -176,17 +171,14 @@ export class MessagingNotificationsService {
    * registry khai mỗi provider thuộc phía người nhận nào (học sinh / nhân sự / phụ huynh / admin / mọi vai — truy vết
    * tại điểm phát), còn tập này trả lời user đang đứng ở những phía nào THẬT:
    *
-   * - `'admin'` + mọi phía còn lại khi user là site admin: context
-   *   quản trị phủ mọi audience — admin là người cấu hình chính sách
-   *   phát cấp site cho cả 20 loại (NB-7) và `admin_announcement`
-   *   có thể gửi đích danh cho bất kỳ ai kể cả chính admin, nên bề
-   *   mặt của admin giữ nguyên đầy đủ như trước lát này.
+   * - `'admin'` + mọi phía còn lại khi user là site admin: context quản trị phủ mọi audience — admin là người cấu hình
+   *   chính sách phát cấp site cho cả 20 loại (NB-7) và `admin_announcement` có thể gửi đích danh cho bất kỳ ai kể cả
+   *   chính admin, nên bề mặt của admin giữ nguyên đầy đủ như trước lát này.
    * - `'staff'` khi có gán vai nhân sự — CÙNG nguồn với cổng bề mặt
    *   đầy đủ ở trên (`hasStaffRoleAssignment`), không cơ chế song song.
-   * - `'student'` khi có context học sinh thật (ghi danh hiệu lực ∪
-   *   gán vai archetype student — `repo.hasStudentContext`): giáo
-   *   viên thuần không có context này nên không thấy loại chỉ học
-   *   sinh nhận; người vừa dạy vừa học thì có cả hai phía.
+   * - `'student'` khi có context học sinh thật (ghi danh hiệu lực ∪ gán vai archetype student —
+   *   `repo.hasStudentContext`): giáo viên thuần không có context này nên không thấy loại chỉ học sinh nhận; người vừa
+   *   dạy vừa học thì có cả hai phía.
    * - `'guardian'` khi có liên kết giám hộ đang hiệu lực trong vai
    *   phụ huynh (`repo.hasActiveGuardianLink`).
    */
@@ -360,10 +352,9 @@ export class MessagingNotificationsService {
   }
 
   /**
-   * Đặt ghi đè cho MỘT khoá ('all' | 'mute') — hiệu lực ngay ở lần
-   * phát kế tiếp, đối xứng với tuỳ chọn v2 theo provider. Chỉ đặt
-   * được cho khoá người dùng thật sự thuộc về; khoá ngoài phạm vi
-   * nhận 404 y hệt khoá không tồn tại (cùng kỷ luật roster).
+   * Đặt ghi đè cho MỘT khoá ('all' | 'mute') — hiệu lực ngay ở lần phát kế tiếp, đối xứng với tuỳ chọn v2 theo
+   * provider. Chỉ đặt được cho khoá người dùng thật sự thuộc về; khoá ngoài phạm vi nhận 404 y hệt khoá không tồn tại
+   * (cùng kỷ luật roster).
    */
   async setCourseNotificationOverride(
     userId: string,
@@ -387,12 +378,10 @@ export class MessagingNotificationsService {
   /**
    * Tạo notification cho user từ một provider (điểm vào chuẩn của các module khác).
    *
-   * LUẬT TỐI THIỂU HOÁ KÊNH NGOÀI (chuẩn Canvas, lát N1 issue #49;
-   * siết chặt theo quyết định C-5 của issue #219 — CẤM fallback
-   * nguyên văn tại điểm này): nội dung rời khỏi app (email/push)
-   * KHÔNG chứa dữ liệu học tập/riêng tư — không điểm số, không nội
-   * dung tin nhắn. Job phân phối kênh ngoài chỉ được mang đúng một
-   * trong ba thứ sau (phân giải tại `resolveExternalContent`):
+   * LUẬT TỐI THIỂU HOÁ KÊNH NGOÀI (chuẩn Canvas, lát N1 issue #49; siết chặt theo quyết định C-5 của issue #219 — CẤM
+   * fallback nguyên văn tại điểm này): nội dung rời khỏi app (email/push) KHÔNG chứa dữ liệu học tập/riêng tư — không
+   * điểm số, không nội dung tin nhắn. Job phân phối kênh ngoài chỉ được mang đúng một trong ba thứ sau (phân giải tại
+   * `resolveExternalContent`):
    *
    *  1. Bản tối thiểu hoá `externalSubject`/`externalBody` do phía
    *     gọi truyền — chỉ thay nội dung của job kênh ngoài, bản
@@ -401,14 +390,10 @@ export class MessagingNotificationsService {
    *     `externalPolicy: 'original-ok'` kèm lý do trong registry
    *     provider (`notification-providers.ts`); không khai báo =
    *     mặc định `'minimized'`.
-   *  3. BẢN TÓM TẮT MẶC ĐỊNH dựng từ mẫu i18n chung (chỉ nêu loại
-   *     sự kiện; `contextUrl` trên notification trong app giữ
-   *     nguyên nên kênh ngoài vẫn là đường dẫn vào app sau đăng
-   *     nhập) — áp dụng khi provider thuộc diện `'minimized'` mà
-   *     phía gọi thiếu bản tối thiểu hoá, kèm log cảnh báo để nơi
-   *     gọi chưa phân loại lộ diện khi vận hành. Riêng ở môi trường
-   *     test, trường hợp này NÉM LỖI thay vì thay thế, để bộ test
-   *     ép mọi nơi gọi phải được phân loại.
+   *  3. BẢN TÓM TẮT MẶC ĐỊNH dựng từ mẫu i18n chung (chỉ nêu loại sự kiện; `contextUrl` trên notification trong app giữ
+   *     nguyên nên kênh ngoài vẫn là đường dẫn vào app sau đăng nhập) — áp dụng khi provider thuộc diện `'minimized'`
+   *     mà phía gọi thiếu bản tối thiểu hoá, kèm log cảnh báo để nơi gọi chưa phân loại lộ diện khi vận hành. Riêng ở
+   *     môi trường test, trường hợp này NÉM LỖI thay vì thay thế, để bộ test ép mọi nơi gọi phải được phân loại.
    *
    * Đường `sendSystemNotification` áp cứng nhánh 3 qua cờ `forceExternalMinimized` (nội dung là văn bản tự do của quản
    * trị viên, không qua mẫu nào).
@@ -430,13 +415,10 @@ export class MessagingNotificationsService {
      */
     courseId?: string;
     /**
-     * Tenant của notification (TENANT-1, #196): nơi gọi biết đối tượng
-     * nguồn (khoá/conversation/liên kết giám hộ) thì truyền tường minh;
-     * không truyền thì lấy ngữ cảnh ALS của luồng, cuối cùng là tenant
-     * mặc định của người nhận theo membership active. Mọi dedupe_key
-     * dispatch mang tiền tố tenant, nối bằng dấu '-' — dedupe_key của
-     * kênh ngoài đồng thời là jobId BullMQ, mà BullMQ cấm ký tự ':'
-     * trong custom jobId (bài học TENANT-1: tiền tố '{tenant}:' làm
+     * Tenant của notification (TENANT-1, #196): nơi gọi biết đối tượng nguồn (khoá/conversation/liên kết giám hộ) thì
+     * truyền tường minh; không truyền thì lấy ngữ cảnh ALS của luồng, cuối cùng là tenant mặc định của người nhận theo
+     * membership active. Mọi dedupe_key dispatch mang tiền tố tenant, nối bằng dấu '-' — dedupe_key của kênh ngoài đồng
+     * thời là jobId BullMQ, mà BullMQ cấm ký tự ':' trong custom jobId (bài học TENANT-1: tiền tố '{tenant}:' làm
      * queue.add ném lỗi giữa notify, digest kẹt trạng thái queued).
      */
     tenantId?: string | null;
@@ -565,21 +547,15 @@ export class MessagingNotificationsService {
    * Phân giải nội dung mà job phân phối kênh ngoài ĐƯỢC PHÉP mang, theo luật C-5 (issue #219) — xem docblock của
    * `notify()` để có luật đầy đủ. Thứ tự áp dụng:
    *
-   *  1. Provider khai báo `'original-ok'` (và lần phát không bị áp
-   *     cứng) → bản tối thiểu hoá của phía gọi cho trường nào có
-   *     truyền, nội dung gốc cho trường còn lại (hành vi cũ, nay là
-   *     ngoại lệ theo khai báo tường minh kèm lý do ở registry).
-   *  2. Provider thuộc diện `'minimized'` (khai báo tường minh, mặc
-   *     định khi thiếu khai báo, hoặc bị áp cứng qua
-   *     `forceExternalMinimized`) và phía gọi truyền ĐỦ cặp
-   *     `externalSubject`/`externalBody` → bản tối thiểu hoá đó.
-   *  3. Còn lại (diện `'minimized'` mà bản tối thiểu hoá thiếu hoặc
-   *     thiếu một phần): ở môi trường test thì NÉM LỖI để lưới test
-   *     bắt nơi gọi chưa phân loại — trừ đường áp cứng, nơi thay thế
-   *     là hành vi đã thiết kế; ngoài môi trường test thì ghi log
-   *     cảnh báo và dùng BẢN TÓM TẮT MẶC ĐỊNH i18n cho (các) trường
-   *     còn thiếu — nội dung gốc không xuất hiện trong job ở bất kỳ
-   *     trường nào.
+   *  1. Provider khai báo `'original-ok'` (và lần phát không bị áp cứng) → bản tối thiểu hoá của phía gọi cho trường
+   *     nào có truyền, nội dung gốc cho trường còn lại (hành vi cũ, nay là ngoại lệ theo khai báo tường minh kèm lý do
+   *     ở registry).
+   *  2. Provider thuộc diện `'minimized'` (khai báo tường minh, mặc định khi thiếu khai báo, hoặc bị áp cứng qua
+   *     `forceExternalMinimized`) và phía gọi truyền ĐỦ cặp `externalSubject`/`externalBody` → bản tối thiểu hoá đó.
+   *  3. Còn lại (diện `'minimized'` mà bản tối thiểu hoá thiếu hoặc thiếu một phần): ở môi trường test thì NÉM LỖI để
+   *     lưới test bắt nơi gọi chưa phân loại — trừ đường áp cứng, nơi thay thế là hành vi đã thiết kế; ngoài môi trường
+   *     test thì ghi log cảnh báo và dùng BẢN TÓM TẮT MẶC ĐỊNH i18n cho (các) trường còn thiếu — nội dung gốc không
+   *     xuất hiện trong job ở bất kỳ trường nào.
    *
    * @returns Cặp subject/body mà job kênh ngoài được phép mang.
    * @throws Error ở môi trường test khi provider thuộc diện tối thiểu hoá mà phía gọi không truyền đủ bản tối thiểu hoá

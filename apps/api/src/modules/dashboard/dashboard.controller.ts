@@ -19,7 +19,8 @@ export class DashboardController {
   constructor(private readonly dashboard: DashboardService) {}
 
   @Get('overview')
-  /** GET /dashboard/overview?days=7 — MỘT response cho cả khối: việc sắp đến hạn của học sinh, điểm/phản hồi mới đã công
+  /**
+   * GET /dashboard/overview?days=7 — MỘT response cho cả khối: việc sắp đến hạn của học sinh, điểm/phản hồi mới đã công
    * bố kể từ lần xem trước (đồng thời cập nhật mốc xem trước phía server), hàng đợi chấm của giáo viên gộp theo khoá.
    */
   async overview(

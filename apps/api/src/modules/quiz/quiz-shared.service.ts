@@ -306,12 +306,10 @@ export class QuizSharedService {
    * ĐIỂM NEO QUYỀN DUY NHẤT của ma trận (MB-0, điểm E-8 của hồ sơ ngân hàng đề/ma trận): mọi kiểm tra quyền trên ma
    * trận đều đi qua đây. Nguồn quyền chốt là BANK — ma trận nằm trong bank nào thì quyền theo bank đó; context môn
    * (matrix.contextId) chỉ là PHẠM VI DỮ LIỆU. MB-1 (issue #111) đã cắm bank, với hai lưu ý thực thi:
-   * - Quyền tại bank đọc từ HAI VAI CHUYÊN DỤNG tại context bank
-   *   (QuestionBanksService.bankLocalMatrixCaps: matrix:use ↔ thành
-   *   viên + phụ trách; matrix:add và matrix:edit ↔ phụ trách),
-   *   KHÔNG qua PermissionEvaluator — evaluator kế thừa mặc định
-   *   archetype từ mọi context tổ tiên nên giáo viên có vai ở context
-   *   hệ thống sẽ lọt cổng bank kín của tổ dù không phải thành viên.
+   * - Quyền tại bank đọc từ HAI VAI CHUYÊN DỤNG tại context bank (QuestionBanksService.bankLocalMatrixCaps: matrix:use
+   *   ↔ thành viên + phụ trách; matrix:add và matrix:edit ↔ phụ trách), KHÔNG qua PermissionEvaluator — evaluator kế
+   *   thừa mặc định archetype từ mọi context tổ tiên nên giáo viên có vai ở context hệ thống sẽ lọt cổng bank kín của
+   *   tổ dù không phải thành viên.
    * - Ma trận chưa thuộc bank nào (hoặc bank đã bị xoá) giữ hành vi
    *   Chặng 3: PermissionEvaluator tại context môn.
    */

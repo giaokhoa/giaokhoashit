@@ -4,24 +4,17 @@
  * unit test không cần database thật. Theo mẫu `system-bank-provision.ts` cùng module.
  *
  * Vì sao cần bước ensure này (vòng sửa theo phán quyết trên PR #612):
- * - Ba bảng vệ tinh — `system_question_imports` (dòng nhập bản chụp +
- *   truy vết nguồn), `system_bank_event_receipts` (vết trung tâm đã
- *   nhận sự kiện) và `outcome_package_installs` (vết bản cài gói
- *   YCCĐ) — sống trong kho nghiệp vụ của trung tâm, được khai trong
- *   schema `@lms/db` và được tạo bởi file baseline
+ * - Ba bảng vệ tinh — `system_question_imports` (dòng nhập bản chụp + truy vết nguồn), `system_bank_event_receipts`
+ *   (vết trung tâm đã nhận sự kiện) và `outcome_package_installs` (vết bản cài gói YCCĐ) — sống trong kho nghiệp vụ của
+ *   trung tâm, được khai trong schema `@lms/db` và được tạo bởi file baseline
  *   `packages/db/migrations/centre/20261025163710_baseline/migration.sql`.
- * - Ba bảng được NỐI VÀO CUỐI file baseline sau khi baseline đã phát
- *   hành. bộ máy cũ bỏ qua cả thư mục baseline trên các database đã áp
- *   nó (production, preview), nên các database đó KHÔNG bao giờ nhận
- *   được 3 bảng qua đường migration — trong khi luồng sửa câu hỏi
- *   (`QuestionsService`) cập nhật `system_question_imports` trong
- *   cùng transaction của MỌI lần sửa câu: bảng vắng là mọi lần sửa
- *   câu đều gãy, không riêng tính năng ngân hàng.
- * - Bước ensure bù đúng phần đó: chạy trong chuỗi migrate NGAY SAU
- *   migration của kho nghiệp vụ, tạo đúng những gì còn thiếu. Mọi câu
- *   đều idempotent (`IF NOT EXISTS`, khoá ngoại canh bằng tra cứu
- *   `pg_constraint`) nên trên database mới (baseline đã tạo đủ) bước
- *   này là no-op, và chạy lặp ở mỗi lần stack khởi động là an toàn.
+ * - Ba bảng được NỐI VÀO CUỐI file baseline sau khi baseline đã phát hành. bộ máy cũ bỏ qua cả thư mục baseline trên
+ *   các database đã áp nó (production, preview), nên các database đó KHÔNG bao giờ nhận được 3 bảng qua đường migration
+ *   — trong khi luồng sửa câu hỏi (`QuestionsService`) cập nhật `system_question_imports` trong cùng transaction của
+ *   MỌI lần sửa câu: bảng vắng là mọi lần sửa câu đều gãy, không riêng tính năng ngân hàng.
+ * - Bước ensure bù đúng phần đó: chạy trong chuỗi migrate NGAY SAU migration của kho nghiệp vụ, tạo đúng những gì còn
+ *   thiếu. Mọi câu đều idempotent (`IF NOT EXISTS`, khoá ngoại canh bằng tra cứu `pg_constraint`) nên trên database mới
+ *   (baseline đã tạo đủ) bước này là no-op, và chạy lặp ở mỗi lần stack khởi động là an toàn.
  *
  * Kỷ luật đồng bộ: nội dung DDL ở đây (cột, ràng buộc, tên index, khoá ngoại) PHẢI khớp từng chữ với khối tạo 3 bảng ở
  * cuối file baseline — đổi schema của bảng vệ tinh thì sửa cả hai nơi trong cùng một lượt. Bảng tạo bởi role migration

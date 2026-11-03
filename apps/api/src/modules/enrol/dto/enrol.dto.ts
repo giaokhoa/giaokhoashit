@@ -9,7 +9,8 @@ import {
   type UpdateEnrolInstance,
 } from '@lms/contracts';
 
-/** Validation của Enrol dùng Zod qua Standard Schema — schema nền ở `@lms/contracts` là nguồn sự thật duy nhất (kể cả
+/**
+ * Validation của Enrol dùng Zod qua Standard Schema — schema nền ở `@lms/contracts` là nguồn sự thật duy nhất (kể cả
  * các trường phí của fee enrol: cost/currency/paymentAccountId, khoá ghi danh và cấu hình tin nhắn chào mừng của
  * instance).
  */

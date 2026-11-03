@@ -50,24 +50,15 @@ import {
  * cấu hình `siteadmins` của chính kho đó) — kho chung KHÔNG có dòng tenant của trung tâm này ở bất kỳ thời điểm nào.
  *
  * Các ca khoá:
- * (a) quản trị của trung tâm chỉ-có-ở-kho-riêng tạo được người
- *     dùng qua endpoint thật tại địa chỉ của trung tâm (201),
- *     người dùng nằm trong kho đích (không ở kho chung), ba
- *     lượt đọc quản trị tại địa chỉ của trung tâm thấy đúng dữ
- *     kiện ở kho đích, và mục thư mục thành viên ở control
- *     plane được ghi trong cùng thao tác như trước;
- * (a2) `siteadmins` hợp nhất một chiều trên cùng một Redis
- *     dùng chung: nạp cache từ kho chung trước rồi chấm trong
- *     ngữ cảnh kho riêng vẫn nhận diện đúng quản trị của kho
- *     riêng VÀ quản trị platform (lớp phủ một chiều giữ lượt
- *     đọc A1 của bề mặt platform, spec TĐ3), và sau khi cache
- *     của kho riêng đã nạp, ngữ cảnh kho chung vẫn chỉ thấy
- *     danh sách của kho chung — danh sách kho riêng không bao
- *     giờ rò sang;
- * (a3) cổng đăng nhập platform ghim kho chung: quản trị trung
- *     tâm gọi cổng platform tại địa chỉ trung tâm mình vẫn bị
- *     403 `auth.platform_admin_required` dù phép hợp nhất một
- *     chiều nhận diện quản trị đó trong ngữ cảnh kho riêng;
+ * (a) quản trị của trung tâm chỉ-có-ở-kho-riêng tạo được người dùng qua endpoint thật tại địa chỉ của trung tâm (201),
+ *     người dùng nằm trong kho đích (không ở kho chung), ba lượt đọc quản trị tại địa chỉ của trung tâm thấy đúng dữ
+ *     kiện ở kho đích, và mục thư mục thành viên ở control plane được ghi trong cùng thao tác như trước;
+ * (a2) `siteadmins` hợp nhất một chiều trên cùng một Redis dùng chung: nạp cache từ kho chung trước rồi chấm trong ngữ
+ * cảnh kho riêng vẫn nhận diện đúng quản trị của kho riêng VÀ quản trị platform (lớp phủ một chiều giữ lượt đọc A1 của
+ * bề mặt platform, spec TĐ3), và sau khi cache của kho riêng đã nạp, ngữ cảnh kho chung vẫn chỉ thấy danh sách của kho
+ * chung — danh sách kho riêng không bao giờ rò sang; (a3) cổng đăng nhập platform ghim kho chung: quản trị trung tâm
+ * gọi cổng platform tại địa chỉ trung tâm mình vẫn bị 403 `auth.platform_admin_required` dù phép hợp nhất một chiều
+ * nhận diện quản trị đó trong ngữ cảnh kho riêng;
  * (b) tenant ở kho chung giữ nguyên hành vi: tạo người dùng
  *     qua endpoint thật sinh tài khoản toàn cục ở kho chung
  *     kèm membership ở kho chung;

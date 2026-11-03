@@ -57,7 +57,10 @@ const SHARED_TENANT_ID = '01958100-0000-7000-8000-0000000000c3';
 /** Role thứ hai của kho A — đích đổi sổ của ca hồi quy xoay role/bí mật sau khi pool đã tạo. */
 const CENTRE_A2_ROLE = 'lms_centre_a2_581_app';
 const CENTRE_A2_PASSWORD = 'centre-a2-581';
-/** Id của dòng ghi mà ca hồi quy bị-thu-hồi cố ý ghi qua handle định tuyến: dòng này không được phép xuất hiện ở bất kỳ kho nào. */
+/**
+ * Id của dòng ghi mà ca hồi quy bị-thu-hồi cố ý ghi qua handle định tuyến: dòng này không được phép xuất hiện ở bất kỳ
+ * kho nào.
+ */
 const REVOKED_MARKER_ID = '01958100-0000-7000-8000-0000000000f6';
 /** Trần kết nối mỗi pool kho riêng trong ca này — nhỏ để ca trần kiểm được bằng số kết nối thật. */
 const POOL_MAX = 2;

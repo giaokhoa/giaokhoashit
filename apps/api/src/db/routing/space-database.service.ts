@@ -25,32 +25,20 @@ import { SpacePoolManager } from './space-pool-manager';
  *   khi nhàn rỗi — kỷ luật ngân sách kết nối của cụm.
  * - Service này: biến đích đã phân giải thành handle Kysely, và
  *   phơi ba đường dùng:
- *   1. `getKyselyForSpace(slug)` — lấy handle của một trung tâm
- *      theo định danh tường minh (đường vận hành, đường kiểm chứng,
- *      và bước CHUẨN BỊ mà tầng gắn ngữ cảnh — `SpaceContextGuard`
- *      cho request, bộ chạy job theo trung tâm cho job nền, issue
- *      #582 — gọi trước khi xử lý request/job của trung tâm đó).
- *   2. `routedKysely` — handle định tuyến theo ngữ cảnh: mỗi lần
- *      dùng sẽ uỷ thác sang handle của trung tâm mà ngữ cảnh ALS
- *      hiện tại mang (`spaceSlug`) nếu trung tâm đó đã được chuẩn
- *      bị và đang ở kho riêng. Hai trường hợp còn lại PHẢI phân
- *      biệt: ngữ cảnh mang một slug CHƯA từng được chuẩn bị thì uỷ
- *      thác về handle kho chung — đúng hợp đồng "phiên chỉ định
- *      tuyến được khi bước chuẩn bị đã chạy trước"; nhưng slug ĐÃ
- *      được chuẩn bị ở kho riêng mà trạng thái chuẩn bị bị khung
- *      thu hồi giữa phiên (pool bị đóng vì nhàn rỗi) thì lần dùng
- *      ném `SpaceRoutingError` (fail-closed) thay vì rơi về kho
- *      chung — bên gọi đã làm đúng nghĩa vụ chuẩn bị, khung không
- *      được im lặng đổi đích dữ kiện của nó sang kho khác. Nhờ cơ
- *      chế này các điểm tiêu thụ không phải sửa từng điểm gọi, và
- *      ngữ cảnh nào không do tầng gắn ngữ cảnh của issue #582 nạp
- *      `spaceSlug` thì toàn hệ chạy đúng đường kho chung.
- *   3. `withSpaceKysely(slug, fn)` — đường mở kết nối theo trung
- *      tâm cho tác vụ nền: chuẩn bị handle của trung tâm, rồi chạy
- *      `fn` trong ngữ cảnh ALS mang slug của trung tâm đó (kèm
- *      tenant/user nếu tác vụ truyền), để mọi kết nối checkout
- *      trong `fn` — qua handle được truyền hoặc qua `routedKysely`
- *      — đều thuộc về đúng kho của trung tâm.
+ *   1. `getKyselyForSpace(slug)` — lấy handle của một trung tâm theo định danh tường minh (đường vận hành, đường kiểm
+ *      chứng, và bước CHUẨN BỊ mà tầng gắn ngữ cảnh — `SpaceContextGuard` cho request, bộ chạy job theo trung tâm cho
+ *      job nền, issue #582 — gọi trước khi xử lý request/job của trung tâm đó).
+ *   2. `routedKysely` — handle định tuyến theo ngữ cảnh: mỗi lần dùng sẽ uỷ thác sang handle của trung tâm mà ngữ cảnh
+ *      ALS hiện tại mang (`spaceSlug`) nếu trung tâm đó đã được chuẩn bị và đang ở kho riêng. Hai trường hợp còn lại
+ *      PHẢI phân biệt: ngữ cảnh mang một slug CHƯA từng được chuẩn bị thì uỷ thác về handle kho chung — đúng hợp đồng
+ *      "phiên chỉ định tuyến được khi bước chuẩn bị đã chạy trước"; nhưng slug ĐÃ được chuẩn bị ở kho riêng mà trạng
+ *      thái chuẩn bị bị khung thu hồi giữa phiên (pool bị đóng vì nhàn rỗi) thì lần dùng ném `SpaceRoutingError`
+ *      (fail-closed) thay vì rơi về kho chung — bên gọi đã làm đúng nghĩa vụ chuẩn bị, khung không được im lặng đổi
+ *      đích dữ kiện của nó sang kho khác. Nhờ cơ chế này các điểm tiêu thụ không phải sửa từng điểm gọi, và ngữ cảnh
+ *      nào không do tầng gắn ngữ cảnh của issue #582 nạp `spaceSlug` thì toàn hệ chạy đúng đường kho chung.
+ *   3. `withSpaceKysely(slug, fn)` — đường mở kết nối theo trung tâm cho tác vụ nền: chuẩn bị handle của trung tâm, rồi
+ *      chạy `fn` trong ngữ cảnh ALS mang slug của trung tâm đó (kèm tenant/user nếu tác vụ truyền), để mọi kết nối
+ *      checkout trong `fn` — qua handle được truyền hoặc qua `routedKysely` — đều thuộc về đúng kho của trung tâm.
  *
  * GUC tenant trong kho riêng: pool của kho riêng cũng là `TenantAwarePool` như pool kho chung — cơ chế gắn GUC
  * `app.tenant_id`/`app.platform` theo ngữ cảnh ALS giữ nguyên, chính sách RLS trong kho của trung tâm tiếp tục
@@ -192,25 +180,16 @@ export class SpaceDatabaseService implements OnModuleDestroy {
   }
 
   /**
-   * Tên database của kho mà handle định tuyến sẽ phục vụ cho
-   * ngữ cảnh ALS hiện tại — bản tra ĐỒNG BỘ lấy cùng quyết định
-   * đích với `currentKysely`, dành cho các tầng cần gắn danh
-   * tính kho cho dữ kiện chỉ có nghĩa trong đúng một kho (điển
-   * hình: khoá cache của cấu hình `siteadmins` ở
-   * PermissionEvaluator, issue #587 TĐ6 — giá trị là id người
-   * dùng của một kho, đọc nhầm danh tính kho là áp danh sách
-   * admin của kho này cho ngữ cảnh của kho khác):
-   * - Ngữ cảnh không mang slug, hoặc slug chưa từng được chuẩn
-   *   bị ở kho riêng (kể cả slug chưa chuẩn bị lần nào): trả
-   *   `undefined` — handle định tuyến đang phục vụ bằng kho
-   *   chung theo hợp đồng chuẩn bị-trước, bên gọi dùng danh
-   *   tính kho chung của chính nó.
-   * - Slug đã phân giải kho riêng: trả tên database trong sổ
-   *   đăng ký mà lần chuẩn bị gần nhất đã chốt cho slug đó —
-   *   kể cả khi mục đã-chuẩn-bị đã bị thu hồi vì pool đóng:
-   *   lượt đọc qua handle lúc đó fail-closed ở
-   *   `currentKysely`, nhưng danh tính kho của ngữ cảnh vẫn
-   *   là kho riêng đó, tuyệt đối không rơi về kho chung.
+   * Tên database của kho mà handle định tuyến sẽ phục vụ cho ngữ cảnh ALS hiện tại — bản tra ĐỒNG BỘ lấy cùng quyết
+   * định đích với `currentKysely`, dành cho các tầng cần gắn danh tính kho cho dữ kiện chỉ có nghĩa trong đúng một kho
+   * (điển hình: khoá cache của cấu hình `siteadmins` ở PermissionEvaluator, issue #587 TĐ6 — giá trị là id người dùng
+   * của một kho, đọc nhầm danh tính kho là áp danh sách admin của kho này cho ngữ cảnh của kho khác):
+   * - Ngữ cảnh không mang slug, hoặc slug chưa từng được chuẩn bị ở kho riêng (kể cả slug chưa chuẩn bị lần nào): trả
+   *   `undefined` — handle định tuyến đang phục vụ bằng kho chung theo hợp đồng chuẩn bị-trước, bên gọi dùng danh tính
+   *   kho chung của chính nó.
+   * - Slug đã phân giải kho riêng: trả tên database trong sổ đăng ký mà lần chuẩn bị gần nhất đã chốt cho slug đó — kể
+   *   cả khi mục đã-chuẩn-bị đã bị thu hồi vì pool đóng: lượt đọc qua handle lúc đó fail-closed ở `currentKysely`,
+   *   nhưng danh tính kho của ngữ cảnh vẫn là kho riêng đó, tuyệt đối không rơi về kho chung.
    *
    * @returns Tên database kho riêng của ngữ cảnh, hoặc
    *   `undefined` khi ngữ cảnh đang được phục vụ bằng kho chung.
@@ -226,19 +205,14 @@ export class SpaceDatabaseService implements OnModuleDestroy {
    * của mọi đường định tuyến:
    * - Trung tâm ở kho chung: trả chính handle Kysely kho chung đã
    *   gắn (qua `bindSharedKysely`).
-   * - Trung tâm ở kho riêng: lấy (hoặc tạo lười) pool của kho đó từ
-   *   trình quản lý pool — pool nối bằng đúng role của kho, trần
-   *   kết nối theo cấu hình `SPACE_DB_POOL_MAX`. Pool được lấy
-   *   THEO DANH TÍNH kết nối vừa phân giải: nếu sổ đã đổi
-   *   role/bí mật kể từ khi pool được tạo, trình quản lý pool thay
-   *   pool cũ bằng pool mới đúng danh tính hiện hành (xem
-   *   `SpacePoolManager.getHandleForIdentity`) — handle trả về
-   *   luôn kết nối bằng danh tính sổ chốt ở lần chuẩn bị này.
-   * Kết quả được ghi vào bảng đã-chuẩn-bị để `routedKysely` tra
-   * đồng bộ khi ngữ cảnh mang slug này; chế độ kho của lần chuẩn
-   * bị này cũng được ghi vào `dedicatedSlugs` (chỉ khi là kho
-   * riêng) để đường đồng bộ phân biệt được ca đã-chuẩn-bị-bị-thu
-   * hồi với ca chưa từng chuẩn bị.
+   * - Trung tâm ở kho riêng: lấy (hoặc tạo lười) pool của kho đó từ trình quản lý pool — pool nối bằng đúng role của
+   *   kho, trần kết nối theo cấu hình `SPACE_DB_POOL_MAX`. Pool được lấy THEO DANH TÍNH kết nối vừa phân giải: nếu sổ
+   *   đã đổi role/bí mật kể từ khi pool được tạo, trình quản lý pool thay pool cũ bằng pool mới đúng danh tính hiện
+   *   hành (xem `SpacePoolManager.getHandleForIdentity`) — handle trả về luôn kết nối bằng danh tính sổ chốt ở lần
+   *   chuẩn bị này.
+   * Kết quả được ghi vào bảng đã-chuẩn-bị để `routedKysely` tra đồng bộ khi ngữ cảnh mang slug này; chế độ kho của lần
+   * chuẩn bị này cũng được ghi vào `dedicatedSlugs` (chỉ khi là kho riêng) để đường đồng bộ phân biệt được ca
+   * đã-chuẩn-bị-bị-thu hồi với ca chưa từng chuẩn bị.
    *
    * @throws SpaceRoutingError khi slug chưa đăng ký, control plane
    *   chưa cấu hình, hoặc bí mật/role của kho riêng lệch sổ đăng ký.
@@ -256,10 +230,8 @@ export class SpaceDatabaseService implements OnModuleDestroy {
    * - Đích kho chung: handle là handle Kysely kho chung đã gắn;
    *   chưa gắn là lỗi lập trình ở đường khởi động, ném lỗi
    *   chưa-gắn như hợp đồng vốn có.
-   * - Đích kho riêng: lấy (hoặc tạo lười) pool của kho đó từ
-   *   trình quản lý pool — pool nối bằng đúng role của kho, trần
-   *   kết nối theo cấu hình `SPACE_DB_POOL_MAX`, lấy THEO DANH
-   *   TÍNH kết nối vừa phân giải như trên.
+   * - Đích kho riêng: lấy (hoặc tạo lười) pool của kho đó từ trình quản lý pool — pool nối bằng đúng role của kho, trần
+   *   kết nối theo cấu hình `SPACE_DB_POOL_MAX`, lấy THEO DANH TÍNH kết nối vừa phân giải như trên.
    *
    * @throws SpaceRoutingError khi đích kho riêng thiếu chuỗi kết
    *   nối (lỗi nội bộ của khung), hoặc khi handle kho chung chưa
@@ -348,22 +320,15 @@ export class SpaceDatabaseService implements OnModuleDestroy {
 
   /**
    * Handle hiệu lực cho ngữ cảnh hiện tại:
-   * - Ngữ cảnh không mang slug, hoặc slug CHƯA từng được chuẩn bị
-   *   ở kho riêng (kể cả slug chưa chuẩn bị lần nào): handle kho
-   *   chung — hợp đồng "phiên chỉ định tuyến được khi bước chuẩn
-   *   bị đã chạy trước cho slug đó".
+   * - Ngữ cảnh không mang slug, hoặc slug CHƯA từng được chuẩn bị ở kho riêng (kể cả slug chưa chuẩn bị lần nào):
+   *   handle kho chung — hợp đồng "phiên chỉ định tuyến được khi bước chuẩn bị đã chạy trước cho slug đó".
    * - Slug đã chuẩn bị và mục đã-chuẩn-bị còn: handle của kho
    *   riêng.
-   * - Slug ĐÃ được chuẩn bị ở kho riêng nhưng mục đã-chuẩn-bị đã
-   *   bị thu hồi (pool bị đóng vì nhàn rỗi hoặc bị thay vì đổi
-   *   danh tính): ném `SpaceRoutingError`
-   *   (`space_routing.prepared_revoked`) — fail-closed. Đường này
-   *   là đường ĐỒNG BỘ của một lần truy vấn, không thể chuẩn bị
-   *   lại tại đây; rơi về kho chung ở ca này là đổi đích dữ kiện
-   *   im lặng (kể cả với lệnh ghi) trong khi bên gọi đã làm đúng
-   *   nghĩa vụ chuẩn bị — tuyệt đối không được phép. Bên gọi xử
-   *   lý bằng cách chuẩn bị lại qua `getKyselyForSpace`/
-   *   `withSpaceKysely` rồi thử lại.
+   * - Slug ĐÃ được chuẩn bị ở kho riêng nhưng mục đã-chuẩn-bị đã bị thu hồi (pool bị đóng vì nhàn rỗi hoặc bị thay vì
+   *   đổi danh tính): ném `SpaceRoutingError` (`space_routing.prepared_revoked`) — fail-closed. Đường này là đường ĐỒNG
+   *   BỘ của một lần truy vấn, không thể chuẩn bị lại tại đây; rơi về kho chung ở ca này là đổi đích dữ kiện im lặng
+   *   (kể cả với lệnh ghi) trong khi bên gọi đã làm đúng nghĩa vụ chuẩn bị — tuyệt đối không được phép. Bên gọi xử lý
+   *   bằng cách chuẩn bị lại qua `getKyselyForSpace`/ `withSpaceKysely` rồi thử lại.
    */
   private currentKysely(): CentreDb {
     const slug = tenantAls.getStore()?.spaceSlug;

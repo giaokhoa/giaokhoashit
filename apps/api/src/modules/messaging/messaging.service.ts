@@ -88,31 +88,23 @@ export { countUserVisibleCharacters, isWithinRecallWindow } from './messaging-me
  *  - Một user bị suspended (hoặc đã xoá) KHÔNG NHẬN gì: không phân phối message,
  *    không notification, trên bất kỳ kênh nào. Một user đã chặn người gửi cũng
  *    không nhận message của họ.
- *  - Phân phối kênh ngoài đi qua hàng đợi BullMQ 'notification-dispatch'
- *    do worker tiêu thụ. Từ NB-5 (issue #174) kênh email gửi thật qua
- *    Resend ở phía worker (gửi ngay, hoặc qua tổng hợp theo ngày với
- *    tần suất 'daily'); push vẫn là cổng chỉ ghi log (chưa có ứng
- *    dụng native).
+ *  - Phân phối kênh ngoài đi qua hàng đợi BullMQ 'notification-dispatch' do worker tiêu thụ. Từ NB-5 (issue #174) kênh
+ *    email gửi thật qua Resend ở phía worker (gửi ngay, hoặc qua tổng hợp theo ngày với tần suất 'daily'); push vẫn là
+ *    cổng chỉ ghi log (chưa có ứng dụng native).
  */
 
 @Injectable()
 /**
- * Nhắn tin và thông báo.
- * Đối chiếu Moodle: message/classes (api, output) và message providers.
- * Quy tắc: người bị chặn không gửi được tin; notification được tạo theo provider và phân phối theo
- * tuỳ chọn kênh của người nhận (logged-in/logged-off), mọi lần phân phối đều ghi dispatch log;
- * chuỗi hiển thị của notification do tầng tạo nội dung lấy từ catalog i18n.
- * Cổng liên lạc (đã chốt lại 24/10/2026 trên issue #33): nhắn riêng 1-1 CHỈ
- * giữa liên hệ ĐÃ ĐƯỢC DUYỆT (luồng yêu cầu–chấp nhận) — cổng "cùng khoá"
- * đã bỏ và setting site `core/messagingallusers` không còn hiệu lực với
- * tin nhắn (mục cấu hình vẫn nằm trong registry nhưng không cổng nào đọc
- * nó nữa). Khám phá bạn bè đi qua roster thành viên khoá, không còn tìm
- * người theo tên. Notification hệ thống không qua cổng liên lạc này.
- * Conversation gắn course group (component core_group) đồng bộ thành viên
- * theo group mỗi lần liệt kê/mở/gửi (đồng bộ lười phía messaging).
- * Conversation CẤP KHOÁ (chat toàn lớp, component core_course/itemType
- * course) cùng cơ chế: cấp phát lười khi thành viên/staff mở, thành viên
- * = ghi danh hiệu lực ∪ staff khoá, đồng bộ lười mỗi lần liệt kê/mở/gửi.
+ * Nhắn tin và thông báo. Đối chiếu Moodle: message/classes (api, output) và message providers. Quy tắc: người bị chặn
+ * không gửi được tin; notification được tạo theo provider và phân phối theo tuỳ chọn kênh của người nhận
+ * (logged-in/logged-off), mọi lần phân phối đều ghi dispatch log; chuỗi hiển thị của notification do tầng tạo nội dung
+ * lấy từ catalog i18n. Cổng liên lạc (đã chốt lại 24/10/2026 trên issue #33): nhắn riêng 1-1 CHỈ giữa liên hệ ĐÃ ĐƯỢC
+ * DUYỆT (luồng yêu cầu–chấp nhận) — cổng "cùng khoá" đã bỏ và setting site `core/messagingallusers` không còn hiệu lực
+ * với tin nhắn (mục cấu hình vẫn nằm trong registry nhưng không cổng nào đọc nó nữa). Khám phá bạn bè đi qua roster
+ * thành viên khoá, không còn tìm người theo tên. Notification hệ thống không qua cổng liên lạc này. Conversation gắn
+ * course group (component core_group) đồng bộ thành viên theo group mỗi lần liệt kê/mở/gửi (đồng bộ lười phía
+ * messaging). Conversation CẤP KHOÁ (chat toàn lớp, component core_course/itemType course) cùng cơ chế: cấp phát lười
+ * khi thành viên/staff mở, thành viên = ghi danh hiệu lực ∪ staff khoá, đồng bộ lười mỗi lần liệt kê/mở/gửi.
  *
  * Tách cụm (issue #295): toàn bộ logic nằm ở năm service cụm — MessagingNotificationsService (tuỳ chọn + phát thông
  * báo), MessagingContactsService (liên hệ/chặn), MessagingGroupTreeService (cây nhóm/roster),
@@ -264,13 +256,10 @@ export class MessagingService {
      */
     courseId?: string;
     /**
-     * Tenant của notification (TENANT-1, #196): nơi gọi biết đối tượng
-     * nguồn (khoá/conversation/liên kết giám hộ) thì truyền tường minh;
-     * không truyền thì lấy ngữ cảnh ALS của luồng, cuối cùng là tenant
-     * mặc định của người nhận theo membership active. Mọi dedupe_key
-     * dispatch mang tiền tố tenant, nối bằng dấu '-' — dedupe_key của
-     * kênh ngoài đồng thời là jobId BullMQ, mà BullMQ cấm ký tự ':'
-     * trong custom jobId (bài học TENANT-1: tiền tố '{tenant}:' làm
+     * Tenant của notification (TENANT-1, #196): nơi gọi biết đối tượng nguồn (khoá/conversation/liên kết giám hộ) thì
+     * truyền tường minh; không truyền thì lấy ngữ cảnh ALS của luồng, cuối cùng là tenant mặc định của người nhận theo
+     * membership active. Mọi dedupe_key dispatch mang tiền tố tenant, nối bằng dấu '-' — dedupe_key của kênh ngoài đồng
+     * thời là jobId BullMQ, mà BullMQ cấm ký tự ':' trong custom jobId (bài học TENANT-1: tiền tố '{tenant}:' làm
      * queue.add ném lỗi giữa notify, digest kẹt trạng thái queued).
      */
     tenantId?: string | null;

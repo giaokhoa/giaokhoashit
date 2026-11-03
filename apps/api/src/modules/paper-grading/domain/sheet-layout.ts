@@ -9,18 +9,13 @@
  *  - Đầu phiếu (y 48..300): tiêu đề + tên bài bên trái; QR 240×240 ở
  *    góc phải (phiếu cá nhân hoá mang userId; phiếu dùng chung chỉ
  *    mang mã lô + mã đề).
- *  - Vùng mã (y 300..664): bên trái là lưới MÃ ĐỀ 4 cột × 10 hàng kèm
- *    hàng ô ghi chữ số phía trên (cặp ghi+tô như mẫu Bộ — học sinh ghi
- *    mã đề trên đề thi được phát rồi tô vào lưới dưới); bên phải là
- *    lưới MÃ HỌC SINH cấu hình được: 4 cột (tại lớp: 3 số thứ tự + 1
- *    số kiểm tra) hoặc 8 cột (thi thử theo phòng: 7 số thứ tự + 1 số
- *    kiểm tra, đúng độ dài SBD của Bộ). Cả hai loại phiếu giữ nguyên
- *    các vùng này để OMR dùng một template duy nhất.
- *  - Lưới đáp án (y từ 672): mỗi câu 1 hàng cao 36px, tối đa 30 hàng/cột;
- *    ≤30 câu 1 cột, 31–60 câu 2 cột, tối đa 60 câu. Bong bóng r=13,
- *    bước ngang 42px, tối đa 5 lựa chọn (A–E) cho câu trắc nghiệm; câu
- *    đúng/sai chùm TF-A in 8 bong bóng trên cùng một hàng slot: 4 ý,
- *    mỗi ý một cặp ô Đ/S theo thứ tự mệnh đề của câu.
+ *  - Vùng mã (y 300..664): bên trái là lưới MÃ ĐỀ 4 cột × 10 hàng kèm hàng ô ghi chữ số phía trên (cặp ghi+tô như mẫu
+ *    Bộ — học sinh ghi mã đề trên đề thi được phát rồi tô vào lưới dưới); bên phải là lưới MÃ HỌC SINH cấu hình được: 4
+ *    cột (tại lớp: 3 số thứ tự + 1 số kiểm tra) hoặc 8 cột (thi thử theo phòng: 7 số thứ tự + 1 số kiểm tra, đúng độ
+ *    dài SBD của Bộ). Cả hai loại phiếu giữ nguyên các vùng này để OMR dùng một template duy nhất.
+ *  - Lưới đáp án (y từ 672): mỗi câu 1 hàng cao 36px, tối đa 30 hàng/cột; ≤30 câu 1 cột, 31–60 câu 2 cột, tối đa 60
+ *    câu. Bong bóng r=13, bước ngang 42px, tối đa 5 lựa chọn (A–E) cho câu trắc nghiệm; câu đúng/sai chùm TF-A in 8
+ *    bong bóng trên cùng một hàng slot: 4 ý, mỗi ý một cặp ô Đ/S theo thứ tự mệnh đề của câu.
  */
 export const TEMPLATE_WIDTH = 1240;
 export const TEMPLATE_HEIGHT = 1754;
@@ -221,12 +216,10 @@ function columnOriginX(column: number, columns: 1 | 2): number {
 }
 
 /**
- * Tính hình học lưới cho một đề có các câu với số lựa chọn tương ứng.
- * optionCounts[i] = số bong bóng của câu i (2..{@link MAX_BUBBLES_PER_ROW};
- * trắc nghiệm 2..5, câu đúng/sai chùm TF-A đúng 8). Ném lỗi khi quá 60
- * câu hoặc số lựa chọn ngoài miền — sinh phiếu phải chặn ở tầng service
- * bằng mã lỗi nghiệp vụ trước khi gọi hàm này. `codeDigits` là cấu
- * hình lưới mã học sinh của lô: 4 (tại lớp) hoặc 8 (thi thử SBD).
+ * Tính hình học lưới cho một đề có các câu với số lựa chọn tương ứng. optionCounts[i] = số bong bóng của câu i
+ * (2..{@link MAX_BUBBLES_PER_ROW}; trắc nghiệm 2..5, câu đúng/sai chùm TF-A đúng 8). Ném lỗi khi quá 60 câu hoặc số lựa
+ * chọn ngoài miền — sinh phiếu phải chặn ở tầng service bằng mã lỗi nghiệp vụ trước khi gọi hàm này. `codeDigits` là
+ * cấu hình lưới mã học sinh của lô: 4 (tại lớp) hoặc 8 (thi thử SBD).
  */
 export function computeSheetGeometry(optionCounts: readonly number[], codeDigits: number = CODE_DIGITS): SheetGeometry {
   if (codeDigits !== CODE_DIGITS && codeDigits !== SBD_DIGITS) {

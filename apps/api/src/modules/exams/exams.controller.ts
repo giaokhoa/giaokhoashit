@@ -48,8 +48,9 @@ export class ExamsController {
   }
 
   @Get('banks/:bankId/contributions')
-  /** GET /exams/banks/:bankId/contributions — hàng chờ đóng góp đề vào bank đích (người duyệt thấy tất cả; người khác chỉ
-   * thấy đề xuất của mình).
+  /**
+   * GET /exams/banks/:bankId/contributions — hàng chờ đóng góp đề vào bank đích (người duyệt thấy tất cả; người khác
+   * chỉ thấy đề xuất của mình).
    */
   async listContributions(@Param('bankId', { schema: uuidIdSchema }) bankId: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.exams.listContributions(actor.id, bankId);
@@ -62,7 +63,8 @@ export class ExamsController {
   }
 
   @Post('banks/:bankId/contributions/:contributionId/approve')
-  /** POST /exams/banks/:bankId/contributions/:contributionId/approve — duyệt đề xuất, cấp duy nhất sau hợp nhất (issue
+  /**
+   * POST /exams/banks/:bankId/contributions/:contributionId/approve — duyệt đề xuất, cấp duy nhất sau hợp nhất (issue
    * #345, giai đoạn 2): đóng góp `pending` đi cấp 1 (copy đề vào bank đích, deep copy + derived_from; đóng góp kèm bộ
    * hồ sơ + công tắc cấp 2 bật thì cấp 1 chỉ đưa sang `pending_board`), đóng góp `pending_board` do người có
    * `exam:moderate` tại context hệ thống gọi thì chốt cấp 2. Cấp phân biệt bằng trạng thái và quyền, không bằng tên
@@ -83,7 +85,8 @@ export class ExamsController {
 
   @Post('banks/:bankId/contributions/:contributionId/board-approve')
   @UseInterceptors(DeprecatedRouteAliasInterceptor)
-  /** POST /exams/banks/:bankId/contributions/:contributionId/board-approve — alias cũ của POST
+  /**
+   * POST /exams/banks/:bankId/contributions/:contributionId/board-approve — alias cũ của POST
    * /exams/banks/:bankId/contributions/:contributionId/approve (issue #345, giai đoạn 2): response mang header
    * Deprecation/Sunset và mỗi lượt gọi sinh log `deprecated_route_alias`. Handler giữ nguyên lời gọi service cấp 2
    * (không uỷ quyền qua handler canonical hợp nhất) để hành vi của đường cũ — kể cả mã lỗi cổng cấp 2 cho người gọi
@@ -95,7 +98,8 @@ export class ExamsController {
 
   @Post('banks/:bankId/contributions/:contributionId/board-reject')
   @UseInterceptors(DeprecatedRouteAliasInterceptor)
-  /** POST /exams/banks/:bankId/contributions/:contributionId/board-reject — alias cũ của POST
+  /**
+   * POST /exams/banks/:bankId/contributions/:contributionId/board-reject — alias cũ của POST
    * /exams/banks/:bankId/contributions/:contributionId/reject (issue #345, giai đoạn 2): response mang header
    * Deprecation/Sunset và mỗi lượt gọi sinh log `deprecated_route_alias`. Handler giữ nguyên lời gọi service cấp 2 như
    * alias duyệt, để hành vi của đường cũ không đổi.
@@ -123,7 +127,8 @@ export class ExamsController {
   }
 
   @Post(':id/status')
-  /** POST /exams/:id/status — đổi trạng thái vòng đời draft/ready/hidden (ready bắt buộc có slot; hidden không vỡ pin đã
+  /**
+   * POST /exams/:id/status — đổi trạng thái vòng đời draft/ready/hidden (ready bắt buộc có slot; hidden không vỡ pin đã
    * ghim; đề đã rút chính thức không đổi ở đây — phải khôi phục trước).
    */
   async setStatus(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: setExamStatusSchema }) dto: SetExamStatusDto, @CurrentUser() actor: AuthenticatedUser) {
@@ -131,7 +136,8 @@ export class ExamsController {
   }
 
   @Post(':id/withdraw')
-  /** POST /exams/:id/withdraw — rút đề khỏi ngân hàng kèm lý do bắt buộc và truy vết người rút/thời điểm (ngang hàng rút
+  /**
+   * POST /exams/:id/withdraw — rút đề khỏi ngân hàng kèm lý do bắt buộc và truy vết người rút/thời điểm (ngang hàng rút
    * câu hỏi QB-3); pin đã ghim vẫn phục vụ bình thường.
    */
   async withdraw(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: withdrawExamSchema }) dto: WithdrawExamDto, @CurrentUser() actor: AuthenticatedUser) {
@@ -174,7 +180,8 @@ export class ExamsController {
   }
 
   @Get(':id/specification')
-  /** GET /exams/:id/specification?pinId= — bản đặc tả neo theo ĐỀ (EB-3, E-6): sinh từ ma trận của exam version hiện tại
+  /**
+   * GET /exams/:id/specification?pinId= — bản đặc tả neo theo ĐỀ (EB-3, E-6): sinh từ ma trận của exam version hiện tại
    * + vị trí câu từ slots của chính đề; pinId (tuỳ chọn) chỉ ghi nhận lần tổ chức cụ thể.
    */
   async specification(@Param('id', { schema: uuidIdSchema }) id: string, @Query('pinId') pinId: string | undefined, @CurrentUser() actor: AuthenticatedUser) {
@@ -234,8 +241,9 @@ export class ExamsController {
   }
 
   @Get('dossiers/:dossierId/specification')
-  /** GET /exams/dossiers/:dossierId/specification — bản đặc tả ĐÃ CHỤP tại lúc nộp (tổ trưởng mở ngay trong hàng chờ; lần
-   * mở của người duyệt ghi audit).
+  /**
+   * GET /exams/dossiers/:dossierId/specification — bản đặc tả ĐÃ CHỤP tại lúc nộp (tổ trưởng mở ngay trong hàng chờ;
+   * lần mở của người duyệt ghi audit).
    */
   async getDossierSpecification(@Param('dossierId', { schema: uuidIdSchema }) dossierId: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.dossiers.getDossierSpecification(actor.id, dossierId);
@@ -270,7 +278,8 @@ export class ExamsController {
   }
 
   @Post('dossiers/:dossierId/approve')
-  /** POST /exams/dossiers/:dossierId/approve — duyệt bộ hồ sơ, đường ghi hồ sơ ĐÃ ĐÓNG (service ném 410
+  /**
+   * POST /exams/dossiers/:dossierId/approve — duyệt bộ hồ sơ, đường ghi hồ sơ ĐÃ ĐÓNG (service ném 410
    * `exam.dossier_path_closed`): duyệt đề vào bank chung nay đi qua đường đóng góp duy nhất, không qua đường hồ sơ nữa.
    * Handler giữ nguyên để bề mặt chỉ-đọc lịch sử của hồ sơ không vỡ đường dẫn cũ.
    */
@@ -279,7 +288,8 @@ export class ExamsController {
   }
 
   @Post('dossiers/:dossierId/reject')
-  /** POST /exams/dossiers/:dossierId/reject — từ chối bộ hồ sơ, đường ghi hồ sơ ĐÃ ĐÓNG (service ném 410 như đường duyệt
+  /**
+   * POST /exams/dossiers/:dossierId/reject — từ chối bộ hồ sơ, đường ghi hồ sơ ĐÃ ĐÓNG (service ném 410 như đường duyệt
    * ở trên).
    */
   async rejectDossier(@Param('dossierId', { schema: uuidIdSchema }) dossierId: string, @Body({ schema: rejectExamDossierSchema }) dto: RejectExamDossierDto, @CurrentUser() actor: AuthenticatedUser) {
@@ -298,9 +308,10 @@ export class ExamsController {
 
   @Post('dossiers/:dossierId/board-reject')
   @UseInterceptors(DeprecatedRouteAliasInterceptor)
-  /** POST /exams/dossiers/:dossierId/board-reject — alias cũ của POST /exams/dossiers/:dossierId/reject (issue #345, giai
-   * đoạn 2): response mang header Deprecation/Sunset và mỗi lượt gọi sinh log `deprecated_route_alias`. Đường ghi hồ sơ
-   * ĐÃ ĐÓNG nên alias này vẫn trả 410 như đường từ chối chính.
+  /**
+   * POST /exams/dossiers/:dossierId/board-reject — alias cũ của POST /exams/dossiers/:dossierId/reject (issue #345,
+   * giai đoạn 2): response mang header Deprecation/Sunset và mỗi lượt gọi sinh log `deprecated_route_alias`. Đường ghi
+   * hồ sơ ĐÃ ĐÓNG nên alias này vẫn trả 410 như đường từ chối chính.
    */
   async boardRejectDossier(@Param('dossierId', { schema: uuidIdSchema }) dossierId: string, @Body({ schema: rejectExamDossierSchema }) dto: RejectExamDossierDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.dossiers.boardRejectDossier(actor.id, dossierId, dto);

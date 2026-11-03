@@ -21,15 +21,11 @@ import { SystemBankService } from './system-bank.service';
  *
  * Từ hạng mục nhân rộng G10 (issue #650), cả hai repository sống ở `@lms/db` (lớp thuần, không phụ thuộc Nest) nên
  * module lắp chúng bằng factory provider theo khuôn pilot kho control plane:
- * - Repository kho ngân hàng nhận handle Kysely từ adapter
- *   `SystemBankConnection` (kết nối riêng chuyên dụng), kèm hàm dựng
- *   lỗi chưa-cấu-hình là `ServiceUnavailableException` mang mã
- *   `system_bank.not_configured` — đúng hình dạng lỗi 503 mà đường
- *   bộ máy cũ trước đây ném từ trong repository.
- * - Repository phía trung tâm nhận handle Kysely ĐỊNH TUYẾN THEO
- *   KHÔNG GIAN (`SpaceDatabaseService.routedKysely` qua
- *   SpaceRoutingModule): hai handle giữ tách biệt tuyệt đối, không
- *   gộp và không fallback qua nhau.
+ * - Repository kho ngân hàng nhận handle Kysely từ adapter `SystemBankConnection` (kết nối riêng chuyên dụng), kèm hàm
+ *   dựng lỗi chưa-cấu-hình là `ServiceUnavailableException` mang mã `system_bank.not_configured` — đúng hình dạng lỗi
+ *   503 mà đường bộ máy cũ trước đây ném từ trong repository.
+ * - Repository phía trung tâm nhận handle Kysely ĐỊNH TUYẾN THEO KHÔNG GIAN (`SpaceDatabaseService.routedKysely` qua
+ *   SpaceRoutingModule): hai handle giữ tách biệt tuyệt đối, không gộp và không fallback qua nhau.
  */
 @Module({
   imports: [AccessModule, QuestionsModule, TenantsModule, SpaceRoutingModule],

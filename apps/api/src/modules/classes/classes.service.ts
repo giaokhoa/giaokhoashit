@@ -409,22 +409,17 @@ export class ClassesService implements OnModuleInit {
   }
 
   /**
-   * Dashboard theo lớp (CLASS-2): gói tổng quan MỘT lớp cho đúng vai
-   * của người gọi — dữ kiện các endpoint hiện có không cho biết quan hệ
-   * của người gọi với lớp, và danh sách khoá của lớp trả mọi khoá trong
-   * khi học sinh chỉ được thấy khoá mình đang học, nên gói này suy cả
-   * hai ở phía server.
+   * Dashboard theo lớp (CLASS-2): gói tổng quan MỘT lớp cho đúng vai của người gọi — dữ kiện các endpoint hiện có không
+   * cho biết quan hệ của người gọi với lớp, và danh sách khoá của lớp trả mọi khoá trong khi học sinh chỉ được thấy
+   * khoá mình đang học, nên gói này suy cả hai ở phía server.
    *
    * Flow:
    *  1. Cổng xem lớp như mọi đường đọc của lớp (canViewClass): người
    *     ngoài lớp nhận 404 đồng nhất, không lộ sự tồn tại của lớp.
-   *  2. Suy quan hệ của người gọi từ dữ kiện thật: chủ lớp → `owner`;
-   *     giữ ít nhất một trong 3 vai lớp gán tay tại context lớp (cùng
-   *     cách liệt kê của listStaff) hoặc có cờ quản roster/phân vai →
-   *     `staff`; thuộc roster → `member`; còn lại là người xem được lớp
-   *     nhờ quyền quản trị cấp trên (site admin / tenant:manage) →
-   *     `staff` ở mức xem, các thao tác quản trị vẫn gác riêng bằng
-   *     `canManageRoster`/`canShare` đi kèm trong gói.
+   *  2. Suy quan hệ của người gọi từ dữ kiện thật: chủ lớp → `owner`; giữ ít nhất một trong 3 vai lớp gán tay tại
+   *     context lớp (cùng cách liệt kê của listStaff) hoặc có cờ quản roster/phân vai → `staff`; thuộc roster →
+   *     `member`; còn lại là người xem được lớp nhờ quyền quản trị cấp trên (site admin / tenant:manage) → `staff` ở
+   *     mức xem, các thao tác quản trị vẫn gác riêng bằng `canManageRoster`/`canShare` đi kèm trong gói.
    *  3. Danh sách khoá lọc theo vai: owner/staff nhận mọi khoá của
    *     lớp; member chỉ nhận các khoá mình đang ghi danh ACTIVE —
    *     đình chỉ ở một khoá thì khoá đó biến mất khỏi gói.
@@ -1177,13 +1172,10 @@ export class ClassesService implements OnModuleInit {
   }
 
   /**
-   * Gói CÔNG KHAI của lớp cho người chưa ghi danh (bề mặt mua gói lớp):
-   * bất kỳ người dùng đã đăng nhập nào trong tenant hiệu lực cũng xem
-   * được — đây là trang bán gói của lớp, khác các đường đọc nội bộ vốn
-   * chỉ mở cho người có quan hệ với lớp. Gói chỉ mang thông tin người
-   * mua cần (tên lớp, chủ lớp, học phí) + hai cờ suy cho đúng người gọi
-   * (`isMember`, `canPurchase`); tuyệt đối không mang cohort, mã tham
-   * gia hay tài khoản nhận tiền.
+   * Gói CÔNG KHAI của lớp cho người chưa ghi danh (bề mặt mua gói lớp): bất kỳ người dùng đã đăng nhập nào trong tenant
+   * hiệu lực cũng xem được — đây là trang bán gói của lớp, khác các đường đọc nội bộ vốn chỉ mở cho người có quan hệ
+   * với lớp. Gói chỉ mang thông tin người mua cần (tên lớp, chủ lớp, học phí) + hai cờ suy cho đúng người gọi
+   * (`isMember`, `canPurchase`); tuyệt đối không mang cohort, mã tham gia hay tài khoản nhận tiền.
    *
    * @param actorId - Người gọi đã xác thực.
    * @param id - Id của lớp.
@@ -1215,11 +1207,9 @@ export class ClassesService implements OnModuleInit {
   }
 
   /**
-   * Cổng phía lớp cho việc TẠO payment `class_fee` — PaymentsService
-   * gọi trước khi chọn tài khoản và tạo payment. Mọi luật thuộc về lớp
-   * nằm ở đây; luật tiền (chọn tài khoản, cổng tenant của account, sinh
-   * mã/QR) nằm ở PaymentsService, cùng khuôn `createFeePayment` của
-   * `enrol_fee`:
+   * Cổng phía lớp cho việc TẠO payment `class_fee` — PaymentsService gọi trước khi chọn tài khoản và tạo payment. Mọi
+   * luật thuộc về lớp nằm ở đây; luật tiền (chọn tài khoản, cổng tenant của account, sinh mã/QR) nằm ở PaymentsService,
+   * cùng khuôn `createFeePayment` của `enrol_fee`:
    *  1. Lớp phải thuộc tenant hiệu lực (trang mua gói nằm trong tenant)
    *     — lớp của tenant khác nhận 404 như không tồn tại.
    *  2. Lớp đã lưu trữ → 400 `class.archived` (roster đóng băng, không
@@ -1254,17 +1244,12 @@ export class ClassesService implements OnModuleInit {
   }
 
   /**
-   * Đích học phí của lớp phục vụ ĐỐI CHIẾU tại điểm kích hoạt quyền
-   * lợi của pipeline thanh toán (issue #419): chỉ đọc tenant sở hữu
-   * và học phí đang cấu hình của lớp từ bản ghi phía server, KHÔNG
-   * áp các cổng phía người mua của `resolveClassFeePurchase` — tại
-   * thời điểm kích hoạt, lớp đã lưu trữ hay người mua đã thuộc
-   * roster đều là trạng thái có thể hợp lệ của một payment đã tạo
-   * trước đó, và phép đối chiếu chỉ cần trả lời "payment có khớp
-   * giá + tenant của lớp đích hay không". Chạy trong ngữ cảnh
-   * platform tường minh vì các điểm kích hoạt (matching SePay bất
-   * đồng bộ, webhook gateway) không mang phiên tenant của lớp đích
-   * — cùng khuôn đọc của `activatePaidClassEnrol` ngay dưới đây.
+   * Đích học phí của lớp phục vụ ĐỐI CHIẾU tại điểm kích hoạt quyền lợi của pipeline thanh toán (issue #419): chỉ đọc
+   * tenant sở hữu và học phí đang cấu hình của lớp từ bản ghi phía server, KHÔNG áp các cổng phía người mua của
+   * `resolveClassFeePurchase` — tại thời điểm kích hoạt, lớp đã lưu trữ hay người mua đã thuộc roster đều là trạng thái
+   * có thể hợp lệ của một payment đã tạo trước đó, và phép đối chiếu chỉ cần trả lời "payment có khớp giá + tenant của
+   * lớp đích hay không". Chạy trong ngữ cảnh platform tường minh vì các điểm kích hoạt (matching SePay bất đồng bộ,
+   * webhook gateway) không mang phiên tenant của lớp đích — cùng khuôn đọc của `activatePaidClassEnrol` ngay dưới đây.
    *
    * @param classId - Id của lớp (chính là `item_id` của payment `class_fee`).
    * @returns Tenant sở hữu và học phí đang cấu hình của lớp; null khi lớp không tồn tại.
@@ -1278,12 +1263,10 @@ export class ClassesService implements OnModuleInit {
   }
 
   /**
-   * Kích hoạt ghi danh cấp lớp sau khi payment `class_fee` thành công —
-   * hàm song song với `EnrolService.activatePaidEnrol`, chỉ
-   * PaymentsService gọi sau khi payment đã `succeeded` qua đường đã xác
-   * thực (webhook manual đã verify / matching SePay khớp đủ 3 điều
-   * kiện). Quyết định cho vào đã nằm ở payment thành công nên đường này
-   * đi qua cổng HỆ THỐNG của cohort, không gác capability của một actor.
+   * Kích hoạt ghi danh cấp lớp sau khi payment `class_fee` thành công — hàm song song với
+   * `EnrolService.activatePaidEnrol`, chỉ PaymentsService gọi sau khi payment đã `succeeded` qua đường đã xác thực
+   * (webhook manual đã verify / matching SePay khớp đủ 3 điều kiện). Quyết định cho vào đã nằm ở payment thành công nên
+   * đường này đi qua cổng HỆ THỐNG của cohort, không gác capability của một actor.
    *
    * Flow:
    *  1. Chạy trong ngữ cảnh platform tường minh: webhook/IPN không có
@@ -1333,18 +1316,14 @@ export class ClassesService implements OnModuleInit {
    * `activatePaidClassEnrol`, chỉ PaymentsService gọi từ đường refund
    * (đã gác `payment:manageaccounts` ở đó, kèm lệnh chi đã xác nhận).
    *
-   * Cơ chế: gỡ người học khỏi backing cohort qua đường hệ thống —
-   * cohort sync áp chế độ rời của từng instance cohort của lớp xuống
-   * mọi khoá; chế độ mặc định của lớp là `suspend` nên ghi danh thành
-   * SUSPENDED, GIỮ NGUYÊN điểm và dữ liệu học tập (luật rời lớp mặc
-   * định của mô hình lớp). Học sinh rơi vào danh sách "đã đình chỉ"
-   * của lớp và được kích hoạt lại nguyên trạng nếu vào lại roster.
+   * Cơ chế: gỡ người học khỏi backing cohort qua đường hệ thống — cohort sync áp chế độ rời của từng instance cohort
+   * của lớp xuống mọi khoá; chế độ mặc định của lớp là `suspend` nên ghi danh thành SUSPENDED, GIỮ NGUYÊN điểm và dữ
+   * liệu học tập (luật rời lớp mặc định của mô hình lớp). Học sinh rơi vào danh sách "đã đình chỉ" của lớp và được kích
+   * hoạt lại nguyên trạng nếu vào lại roster.
    *
-   * Khác đường gỡ roster thủ công ở hai điểm có chủ đích: (1) không
-   * gác capability của actor — quyết định nằm ở lệnh hoàn tiền đã xác
-   * thực; (2) lớp ĐÃ LƯU TRỮ vẫn gỡ được — hoàn tiền là giao dịch bù
-   * trừ tài chính, không phải thao tác sửa roster, nên luật đóng băng
-   * roster không chặn nó. Không thuộc roster thì bỏ qua (idempotent).
+   * Khác đường gỡ roster thủ công ở hai điểm có chủ đích: (1) không gác capability của actor — quyết định nằm ở lệnh
+   * hoàn tiền đã xác thực; (2) lớp ĐÃ LƯU TRỮ vẫn gỡ được — hoàn tiền là giao dịch bù trừ tài chính, không phải thao
+   * tác sửa roster, nên luật đóng băng roster không chặn nó. Không thuộc roster thì bỏ qua (idempotent).
    *
    * @param classId - Id của lớp (chính là `item_id` của payment).
    * @param userId - Người bị đình chỉ (chính là `user_id` của payment).

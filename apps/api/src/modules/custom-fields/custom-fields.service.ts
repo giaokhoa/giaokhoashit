@@ -5,12 +5,14 @@ export type CustomFieldType = 'text' | 'textarea' | 'select' | 'checkbox' | 'dat
 export interface FieldConfig { required?: boolean; options?: string[]; defaultvalue?: string; maxlength?: number }
 export const FIELD_TYPES: CustomFieldType[] = ['text', 'textarea', 'select', 'checkbox', 'date'];
 
-/** Facade của CustomFields (Moodle core_customfield). Các định nghĩa là metadata — các bảng nghiệp vụ không bao giờ bị
+/**
+ * Facade của CustomFields (Moodle core_customfield). Các định nghĩa là metadata — các bảng nghiệp vụ không bao giờ bị
  * thay đổi. Giá trị được kiểm chứng đối chiếu với khai báo của trường mỗi khi thực thể sở hữu (hồ sơ người dùng) được
  * lưu.
  */
 @Injectable()
-/** Trường tuỳ biến cho user/khoá học: định nghĩa theo category, kiểu dữ liệu (text, textarea, select, checkbox,
+/**
+ * Trường tuỳ biến cho user/khoá học: định nghĩa theo category, kiểu dữ liệu (text, textarea, select, checkbox,
  * datetime, password) và kiểm tra giá trị theo configData của từng field trước khi lưu. Đối chiếu Moodle: customfield_*
  * (customfield/classes/handler.php).
  */
@@ -72,7 +74,10 @@ export class CustomFieldsService {
     }
   }
 
-  /** Lượt chỉ kiểm chứng (không ghi) — bên gọi chạy bước này TRƯỚC khi lưu thực thể sở hữu để một hồ sơ lỗi không bao giờ để lại một bản ghi tạo dở. */
+  /**
+   * Lượt chỉ kiểm chứng (không ghi) — bên gọi chạy bước này TRƯỚC khi lưu thực thể sở hữu để một hồ sơ lỗi không bao
+   * giờ để lại một bản ghi tạo dở.
+   */
   async validateValuesForInstance(component: string, area: string, values: Record<string, string>): Promise<void> {
     const fields = await this.listFields(component, area);
     const errors: string[] = [];
@@ -102,7 +107,8 @@ export class CustomFieldsService {
     return fields.map((field) => ({ field, value: data.find((d) => d.fieldId === field.id)?.value ?? null }));
   }
 
-  /** Đọc giá trị field của NHIỀU instance trong một lượt nạp (DL-07, issue #489): bản theo lô của `getValuesForInstance`
+  /**
+   * Đọc giá trị field của NHIỀU instance trong một lượt nạp (DL-07, issue #489): bản theo lô của `getValuesForInstance`
    * — danh sách field của (component, area) nạp một lần, dữ liệu của mọi instance nạp một truy vấn, rồi lắp cho từng
    * instance đúng thứ tự field và luật "không có dòng dữ liệu thì null" của đường lẻ.
    */

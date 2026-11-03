@@ -13,19 +13,13 @@ import { closeSepaySweepDriver, driveCohortSync, driveSepaySweep } from '../../s
 /**
  * Chốt chặn component cấp quyền ở pipeline thanh toán (issue #419) — bộ ca bám LUẬT NGHIỆP VỤ:
  *
- *  1. Giá và bên hưởng của một giao dịch cấp quyền lợi chỉ lấy từ
- *     đối tượng phía server (instance có phí / cấu hình học phí trên
- *     lớp / cấu hình giá gói). Đường tạo payment chung
- *     `POST /payments` — nơi client tự đặt `amount`, `component`,
- *     `itemId` — KHÔNG được sinh payment mang component cấp quyền
- *     (`enrol_fee`, `class_fee`, `tenant_plan`, `teacher_plan`);
- *     bốn component này chỉ sinh từ ba đường tạo chuyên trách đã
- *     chốt giá phía server.
- *  2. Payment lưu sẵn có số tiền hoặc tenant lệch giá/tenant phía
- *     server của đối tượng đích thì KHÔNG điểm kích hoạt nào (khớp
- *     IPN SePay, webhook gateway, xử lý tay `needs_review`) được
- *     cấp quyền lợi: matching và webhook chuyển payment sang
- *     `needs_review`, quyết định khớp tay bị từ chối.
+ *  1. Giá và bên hưởng của một giao dịch cấp quyền lợi chỉ lấy từ đối tượng phía server (instance có phí / cấu hình học
+ *     phí trên lớp / cấu hình giá gói). Đường tạo payment chung `POST /payments` — nơi client tự đặt `amount`,
+ *     `component`, `itemId` — KHÔNG được sinh payment mang component cấp quyền (`enrol_fee`, `class_fee`,
+ *     `tenant_plan`, `teacher_plan`); bốn component này chỉ sinh từ ba đường tạo chuyên trách đã chốt giá phía server.
+ *  2. Payment lưu sẵn có số tiền hoặc tenant lệch giá/tenant phía server của đối tượng đích thì KHÔNG điểm kích hoạt
+ *     nào (khớp IPN SePay, webhook gateway, xử lý tay `needs_review`) được cấp quyền lợi: matching và webhook chuyển
+ *     payment sang `needs_review`, quyết định khớp tay bị từ chối.
  *  3. Ba đường chính thức giữ nguyên hành vi: mua qua
  *     `/payments/fee/:id`, `/payments/class-fee/:id`,
  *     `/payments/plans` rồi tiền về đúng → kích hoạt quyền lợi như

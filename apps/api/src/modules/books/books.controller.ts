@@ -24,7 +24,10 @@ export class BooksController {
     return this.booksService.listDatasetStatus(actor.id);
   }
   @Post('dataset-import')
-  /** POST /books/dataset-import — nạp/nạp lại một dataset sách vào cây sách + ánh xạ (idempotent theo sổ đăng ký; ánh xạ không phân giải được → lỗi cứng `book.mapping_unresolved`, không ghi dở). */
+  /**
+   * POST /books/dataset-import — nạp/nạp lại một dataset sách vào cây sách + ánh xạ (idempotent theo sổ đăng ký; ánh xạ
+   * không phân giải được → lỗi cứng `book.mapping_unresolved`, không ghi dở).
+   */
   async importDataset(@Body({ schema: importBookDatasetSchema }) dto: ImportBookDatasetDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.booksService.importDataset(actor.id, dto.datasetKey);
   }
@@ -33,7 +36,9 @@ export class BooksController {
     return this.booksService.listBooks(actor.id, subjectId, forCourseId, kind);
   }
   @Get(':id/tree')
-  /** GET /books/:id/tree?forCourseId= — cây mục lục của sách: chủ đề → bài, mỗi bài kèm ánh xạ + YCCĐ suy qua ánh xạ. */
+  /**
+   * GET /books/:id/tree?forCourseId= — cây mục lục của sách: chủ đề → bài, mỗi bài kèm ánh xạ + YCCĐ suy qua ánh xạ.
+   */
   async getBookTree(@Param('id', { schema: uuidIdSchema }) id: string, @Query('forCourseId') forCourseId: string | undefined, @CurrentUser() actor: AuthenticatedUser) {
     return this.booksService.getBookTree(actor.id, id, forCourseId);
   }

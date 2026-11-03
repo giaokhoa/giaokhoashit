@@ -46,7 +46,10 @@ export async function addExamSlot(
   return { sumGrades: viewSlots.reduce((a, x) => a + x.maxMark, 0), slots: viewSlots };
 }
 
-/** Đưa đề về ready rồi ghim vào khoá. `pinBody` là cấu hình tổ chức (sectionId bắt buộc + các trường pin tuỳ chọn). Trả pin view đầy đủ. */
+/**
+ * Đưa đề về ready rồi ghim vào khoá. `pinBody` là cấu hình tổ chức (sectionId bắt buộc + các trường pin tuỳ chọn). Trả
+ * pin view đầy đủ.
+ */
 export async function pinExam(
   app: INestApplication, token: string, courseId: string, draft: ExamDraft,
   pinBody: Record<string, unknown>,

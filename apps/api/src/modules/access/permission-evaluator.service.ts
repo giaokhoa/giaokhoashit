@@ -72,9 +72,8 @@ export class PermissionEvaluator {
   }
 
   /**
-   * Khoá cache của cấu hình `siteadmins` cho NGỮ CẢNH HIỆN TẠI:
-   * `access:siteadmins:<tên cơ sở dữ liệu của kho đang phục vụ ngữ cảnh>` — điểm ghi duy nhất là `setSiteAdmins` của
-   * chính evaluator nên ghi xuyên tại đó giữ hiệu lực tức thì.
+   * Khoá cache của cấu hình `siteadmins` cho NGỮ CẢNH HIỆN TẠI: `access:siteadmins:<tên cơ sở dữ liệu của kho đang phục
+   * vụ ngữ cảnh>` — điểm ghi duy nhất là `setSiteAdmins` của chính evaluator nên ghi xuyên tại đó giữ hiệu lực tức thì.
    *
    * Khoá phải mang danh tính của kho mà handle định tuyến sẽ đọc/ghi cho ngữ cảnh hiện tại, vì repository đọc cấu hình
    * qua chính handle đó: ngữ cảnh đã phân giải tới một trung tâm kho riêng thì giá trị đọc ra là danh sách admin CỦA
@@ -313,42 +312,30 @@ export class PermissionEvaluator {
    * của ảnh chụp quyền (`UsersService.getMyAccess`), KHÔNG phải đường gác
    * route: các route nghiệp vụ vẫn đi qua `hasCapability` như cũ.
    *
-   * Vì sao cần: ảnh chụp quyền phải phân giải toàn bộ capability đã đăng
-   * ký tại mọi context liên quan của người dùng. Gọi `hasCapability`
-   * tuần tự cho từng cặp (context × capability) tốn vài truy vấn
-   * Postgres cho mỗi cặp (đọc context, đọc path, cổng tenant — trước cả
-   * khi tra cache kết quả), nên một request ảnh chụp quyền phát sinh
-   * hàng nghìn truy vấn. Phép này nạp dữ kiện MỘT lần theo lô rồi tính
-   * trong bộ nhớ:
+   * Vì sao cần: ảnh chụp quyền phải phân giải toàn bộ capability đã đăng ký tại mọi context liên quan của người dùng.
+   * Gọi `hasCapability` tuần tự cho từng cặp (context × capability) tốn vài truy vấn Postgres cho mỗi cặp (đọc context,
+   * đọc path, cổng tenant — trước cả khi tra cache kết quả), nên một request ảnh chụp quyền phát sinh hàng nghìn truy
+   * vấn. Phép này nạp dữ kiện MỘT lần theo lô rồi tính trong bộ nhớ:
    *   1. Path (lá → gốc) của từng đích dựng từ cột `path` vật chất hoá
    *      và bảng context được truyền vào; id nào còn thiếu thì nạp bổ
    *      sung đúng một truy vấn cho mọi đích.
-   *   2. Cổng tenant của từng đích tính từ HAI truy vấn dùng chung
-   *      (thông tin cổng của mọi tenant xuất hiện trên các path + trạng
-   *      thái membership của user ở các tenant đó). Kết quả cổng của
-   *      một đích chỉ phụ thuộc tenant trên path của nó và membership
-   *      của user nên dùng chung không đổi kết quả so với `tenantGate`.
+   *   2. Cổng tenant của từng đích tính từ HAI truy vấn dùng chung (thông tin cổng của mọi tenant xuất hiện trên các
+   *      path + trạng thái membership của user ở các tenant đó). Kết quả cổng của một đích chỉ phụ thuộc tenant trên
+   *      path của nó và membership của user nên dùng chung không đổi kết quả so với `tenantGate`.
    *   3. Lối tắt site admin tra một lần, chỉ áp cho các đích ngoài cây
    *      tenant (cổng không thu hẹp) — đúng điều kiện của
    *      `hasCapability`.
-   *   4. Các đích còn lại được đánh giá bằng đúng các hàm thuần
-   *      `evaluateSingleRole`/`aggregateRoleResults` trên dữ kiện nạp
-   *      theo lô: gán vai của user trên hợp nhất các path (một truy
-   *      vấn, lọc lại theo path và `assignmentScope` của từng đích),
-   *      vai mặc định `user`/`guest`, và toàn bộ override của các vai
-   *      đó trên các path (một truy vấn, không lọc theo capability).
+   *   4. Các đích còn lại được đánh giá bằng đúng các hàm thuần `evaluateSingleRole`/`aggregateRoleResults` trên dữ
+   *      kiện nạp theo lô: gán vai của user trên hợp nhất các path (một truy vấn, lọc lại theo path và
+   *      `assignmentScope` của từng đích), vai mặc định `user`/`guest`, và toàn bộ override của các vai đó trên các
+   *      path (một truy vấn, không lọc theo capability).
    *
-   * Bất biến tương đương: với cùng dữ kiện, kết quả tại từng đích bằng
-   * đúng kết quả `hasCapability(userId, capability, đích, opts)` cho
-   * mọi capability — thứ tự tổ tiên lá → gốc, PROHIBIT thắng tuyệt đối,
-   * PREVENT/ALLOW, vai mặc định, thu hẹp gán vai theo cổng tenant và
-   * lối tắt site admin đều giữ nguyên. Khác biệt duy nhất: đường này
-   * KHÔNG qua cache kết quả phân giải trên Redis của `hasCapability`.
-   * Cache đó chỉ là bản ghi nhớ của cùng phép đánh giá, khoá bằng dấu
-   * version của path và bị vô hiệu hoá mỗi khi dữ kiện quyền thay đổi
-   * (`markContextDirty`), nên tính tươi từ dữ kiện vừa nạp cho cùng một
-   * đáp án; đổi lại ảnh chụp quyền không phải trả hàng trăm vòng đi
-   * Redis cho mỗi request.
+   * Bất biến tương đương: với cùng dữ kiện, kết quả tại từng đích bằng đúng kết quả `hasCapability(userId, capability,
+   * đích, opts)` cho mọi capability — thứ tự tổ tiên lá → gốc, PROHIBIT thắng tuyệt đối, PREVENT/ALLOW, vai mặc định,
+   * thu hẹp gán vai theo cổng tenant và lối tắt site admin đều giữ nguyên. Khác biệt duy nhất: đường này KHÔNG qua
+   * cache kết quả phân giải trên Redis của `hasCapability`. Cache đó chỉ là bản ghi nhớ của cùng phép đánh giá, khoá
+   * bằng dấu version của path và bị vô hiệu hoá mỗi khi dữ kiện quyền thay đổi (`markContextDirty`), nên tính tươi từ
+   * dữ kiện vừa nạp cho cùng một đáp án; đổi lại ảnh chụp quyền không phải trả hàng trăm vòng đi Redis cho mỗi request.
    *
    * @param targets - Các context đích cần phân giải.
    * @param contextRowsById - Bảng tra các context đã nạp sẵn (phải gồm

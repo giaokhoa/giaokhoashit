@@ -1,4 +1,5 @@
-/** Sao lưu logic định kỳ của đội kho (issue #586) — script CLI chạy bằng `pnpm --filter @lms/api fleet:backup`, hai chế
+/**
+ * Sao lưu logic định kỳ của đội kho (issue #586) — script CLI chạy bằng `pnpm --filter @lms/api fleet:backup`, hai chế
  * độ:
  *
  * CHẾ ĐỘ CHẠY (mặc định): chụp một bản sao lưu logic cho từng kho còn mang dữ kiện (trạng thái đang hoạt động hoặc tạm
@@ -61,7 +62,8 @@ function isBackupTarget(status: string): boolean {
   return status === 'active' || status === 'suspended';
 }
 
-/** Dọn bản sao lưu quá hạn trong thư mục của MỘT kho: tệp (và tệp băm đi kèm) có thời điểm sửa cũ hơn hạn lưu trữ sẽ bị
+/**
+ * Dọn bản sao lưu quá hạn trong thư mục của MỘT kho: tệp (và tệp băm đi kèm) có thời điểm sửa cũ hơn hạn lưu trữ sẽ bị
  * xoá, trừ bản mới nhất của thư mục — kho luôn còn ít nhất một điểm khôi phục dù lịch chụp có gián đoạn dài hơn hạn lưu
  * trữ.
  */

@@ -41,7 +41,8 @@ function childKey(parentId: string | null, kind: string, title: string): string 
 }
 
 @Injectable()
-/** Cơ chế nạp dữ liệu chương trình chuẩn cấp hệ thống (K0a + GDPT-SEED): chuyển các bản ghi đã kiểm chứng nguyên văn
+/**
+ * Cơ chế nạp dữ liệu chương trình chuẩn cấp hệ thống (K0a + GDPT-SEED): chuyển các bản ghi đã kiểm chứng nguyên văn
  * (dataset vendor trong repo) vào cây chương trình ở context hệ thống.
  *
  * VAI TRÒ HIỆN HÀNH (chốt 20:09 ngày 26/10/2026, sổ mục E): service này là CÔNG CỤ SẢN XUẤT DUMP Ở TRUNG TÂM —
@@ -101,7 +102,8 @@ export class ProgramImportService {
     return out;
   }
 
-  /** Nạp (hoặc nạp lại) một dataset theo khoá — đường API cho quản trị. Cần curriculum:manage tại context hệ thống. Trả
+  /**
+   * Nạp (hoặc nạp lại) một dataset theo khoá — đường API cho quản trị. Cần curriculum:manage tại context hệ thống. Trả
    * đếm tạo mới / cập nhật / bỏ qua / orphaned để trang quản trị hiển thị và để đối chiếu với tổng số bản ghi của
    * dataset.
    */
@@ -383,7 +385,8 @@ export class ProgramImportService {
     }
   }
 
-  /** Diff YCCĐ thuộc diện dataset quản của một node: thuật toán GHÉP CẶP 6 BƯỚC theo vị trí + nội dung (hồ sơ neo lại
+  /**
+   * Diff YCCĐ thuộc diện dataset quản của một node: thuật toán GHÉP CẶP 6 BƯỚC theo vị trí + nội dung (hồ sơ neo lại
    * định danh, mục Q3.3; sổ mục E 19:57 ngày 26/10/2026, mô hình ID theo chốt 20:09 cùng ngày). Đầu vào: `entries` là
    * các dòng mới của bản ghi từ dataset (text canonical, vị trí 1-based — KHÔNG mang id: id của dòng nằm ở phía DB, do
    * DB cấp khi dòng được tạo); phía DB tách hai tập — dòng HIỆN HÀNH và dòng ĐÃ RÚT — đều thuộc diện quản (program +
@@ -392,15 +395,15 @@ export class ProgramImportService {
    * - P2 khớp theo nguyên văn (bắt ca xô lệch thuần do chèn/bớt dòng ở chỗ khác): chỉ sửa cột `position`, giữ id — phép
    * ghép theo nội dung là duy nhất nên ca này xác định hoàn toàn, không cờ.
    * - P3 khớp theo vị trí còn lại = SỬA CHỮ: cập nhật `content` tại chỗ, giữ id và mọi liên kết; gắn cờ
-   * `shiftSuspected` khi phép ghép có thể đã bắt nhầm dòng (văn mới trùng văn cũ của dòng khác, hoặc văn cũ xuất hiện ở
-   * vị trí khác trong dataset mới).
+   *   `shiftSuspected` khi phép ghép có thể đã bắt nhầm dòng (văn mới trùng văn cũ của dòng khác, hoặc văn cũ xuất hiện
+   *   ở vị trí khác trong dataset mới).
    * - P4 hồi sinh (nguyên văn của dòng đã rút quay lại — sống lại đúng dòng/id của nó) hoặc thêm mới (chèn dòng mới, DB
    * cấp id uuidv7 mới — không tính id từ bất kỳ thuộc tính nào).
    * - P5 rút dòng còn thừa: đặt `retired_at`, KHÔNG xoá dòng hay liên kết; gắn `identicalTextAmbiguous` khi dòng nằm
    * trong nhóm trùng hệt nhau (không phân định được bằng văn bản).
    * - P6 là chính việc gắn cờ ở P3 (không thao tác dữ liệu riêng). Số liên kết (câu hỏi + ánh xạ sách) được đếm tại
-   * thời điểm nạp cho các ca text-changed và removed. YCCĐ 'derived' và dòng program ngoài diện quản không nằm trong
-   * phép diff này.
+   *   thời điểm nạp cho các ca text-changed và removed. YCCĐ 'derived' và dòng program ngoài diện quản không nằm trong
+   *   phép diff này.
    */
   private async diffOutcomes(input: {
     recordId: string; nodeId: string;

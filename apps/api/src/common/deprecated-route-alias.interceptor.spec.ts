@@ -31,7 +31,10 @@ describe('Khối DeprecatedRouteAliasInterceptor', () => {
     return { context, next, headers };
   }
 
-  /** Chạy interceptor trên một URL alias (kèm query string) và khẳng định header Deprecation/Sunset cùng đúng một bản ghi log khớp cả năm trường. */
+  /**
+   * Chạy interceptor trên một URL alias (kèm query string) và khẳng định header Deprecation/Sunset cùng đúng một bản
+   * ghi log khớp cả năm trường.
+   */
   async function assertAlias(url: string, method: string, alias: string, canonical: string) {
     const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
     const interceptor = new DeprecatedRouteAliasInterceptor();
@@ -63,7 +66,11 @@ describe('Khối DeprecatedRouteAliasInterceptor', () => {
   }
 
   describe('Bề mặt đổi tên action và đường dẫn phẳng', () => {
-    /** Các cặp alias → canonical của việc áp danh sách hành động đóng: [url cụ thể, method, alias mẫu, canonical mẫu] — tám cặp giai đoạn 1 ngoài module exams cộng bốn cặp giai đoạn 2 trong module exams (`board-*` → `approve`/`reject`) cộng một cặp làm phẳng của issue #346 (gradebook của phụ huynh). */
+    /**
+     * Các cặp alias → canonical của việc áp danh sách hành động đóng: [url cụ thể, method, alias mẫu, canonical mẫu] —
+     * tám cặp giai đoạn 1 ngoài module exams cộng bốn cặp giai đoạn 2 trong module exams (`board-*` →
+     * `approve`/`reject`) cộng một cặp làm phẳng của issue #346 (gradebook của phụ huynh).
+     */
     const aliasCases: [string, string, string, string][] = [
       ['/api/v1/badges/01900000-0000-7000-8000-000000000001/duplicate', 'POST', 'badges/:id/duplicate', 'badges/:id/copy'],
       ['/api/v1/competencies/frameworks/01900000-0000-7000-8000-000000000001/duplicate', 'POST', 'competencies/frameworks/:id/duplicate', 'competencies/frameworks/:id/copy'],
@@ -122,7 +129,10 @@ describe('Khối DeprecatedRouteAliasInterceptor', () => {
   });
 
   describe('Bề mặt grades', () => {
-    /** Toàn bộ 10 mục của bảng alias module điểm: [url cụ thể, method, alias mẫu, canonical mẫu] — gồm cả họ thuộc khoá học (`courses/:courseId/grades/...`) và họ "phantom" (`courses/grades/...`), theo đúng thứ tự khớp của bảng. */
+    /**
+     * Toàn bộ 10 mục của bảng alias module điểm: [url cụ thể, method, alias mẫu, canonical mẫu] — gồm cả họ thuộc khoá
+     * học (`courses/:courseId/grades/...`) và họ "phantom" (`courses/grades/...`), theo đúng thứ tự khớp của bảng.
+     */
     const aliasCases: [string, string, string, string][] = [
       ['/api/v1/courses/01900000-0000-7000-8000-000000000001/grades/export/vnedu', 'POST', 'courses/:courseId/grades/export/vnedu', 'courses/:courseId/grade-exports'],
       ['/api/v1/courses/01900000-0000-7000-8000-000000000001/grades/items', 'GET', 'courses/:courseId/grades/items', 'courses/:courseId/grade-items'],
@@ -150,7 +160,12 @@ describe('Khối DeprecatedRouteAliasInterceptor', () => {
   });
 
   describe('Bề mặt exam-papers', () => {
-    /** Toàn bộ 28 hậu tố của bảng sinh bề mặt `exam-papers`: [url cụ thể, method, alias mẫu, canonical mẫu] — gồm 4 ca canonical ghi đè `board-*` → `approve`/`reject` và các ca phân loại theo thứ tự khớp (segment chữ trước tham số: `dossiers/mine` theo mẫu chữ của chính nó; `/exam-papers/:id/dossiers` theo mẫu `:id/dossiers` chứ không phải `dossiers/:dossierId`). */
+    /**
+     * Toàn bộ 28 hậu tố của bảng sinh bề mặt `exam-papers`: [url cụ thể, method, alias mẫu, canonical mẫu] — gồm 4 ca
+     * canonical ghi đè `board-*` → `approve`/`reject` và các ca phân loại theo thứ tự khớp (segment chữ trước tham số:
+     * `dossiers/mine` theo mẫu chữ của chính nó; `/exam-papers/:id/dossiers` theo mẫu `:id/dossiers` chứ không phải
+     * `dossiers/:dossierId`).
+     */
     const aliasCases: [string, string, string, string][] = [
       ['/api/v1/exam-papers/banks/01900000-0000-7000-8000-000000000001/contributions/01900000-0000-7000-8000-000000000002/board-approve', 'POST', 'exam-papers/banks/:bankId/contributions/:contributionId/board-approve', 'exams/banks/:bankId/contributions/:contributionId/approve'],
       ['/api/v1/exam-papers/banks/01900000-0000-7000-8000-000000000001/contributions/01900000-0000-7000-8000-000000000002/board-reject', 'POST', 'exam-papers/banks/:bankId/contributions/:contributionId/board-reject', 'exams/banks/:bankId/contributions/:contributionId/reject'],
@@ -196,7 +211,10 @@ describe('Khối DeprecatedRouteAliasInterceptor', () => {
   });
 
   describe('Bề mặt messaging và notifications', () => {
-    /** Toàn bộ 5 mục của bảng alias messaging/notifications: [url cụ thể, method, alias mẫu, canonical mẫu] — gồm ca phân loại theo thứ tự khớp (`bulk-remove` theo mẫu chữ của chính nó chứ không phải mẫu `:id` trần). */
+    /**
+     * Toàn bộ 5 mục của bảng alias messaging/notifications: [url cụ thể, method, alias mẫu, canonical mẫu] — gồm ca
+     * phân loại theo thứ tự khớp (`bulk-remove` theo mẫu chữ của chính nó chứ không phải mẫu `:id` trần).
+     */
     const aliasCases: [string, string, string, string][] = [
       ['/api/v1/messages/messages/bulk-remove', 'POST', 'messages/messages/bulk-remove', 'messages/bulk-remove'],
       ['/api/v1/messages/messages/01900000-0000-7000-8000-000000000001/recall', 'POST', 'messages/messages/:id/recall', 'messages/:id/recall'],

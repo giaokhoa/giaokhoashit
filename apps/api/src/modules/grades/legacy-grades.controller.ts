@@ -7,7 +7,8 @@ import { DeprecatedRouteAliasInterceptor } from '../../common/deprecated-route-a
 import { GradesService } from './grades.service';
 import { createGradeItemSchema, exportGradesVneduSchema, gradePublicationActionSchema, setGradePostingPolicySchema, setGradeSchema, updateGradeItemSchema, updateGradeSchema, type CreateGradeItemDto, type ExportGradesVneduDto, type GradePublicationActionDto, type SetGradeDto, type SetGradePostingPolicyDto, type UpdateGradeDto, type UpdateGradeItemDto } from './dto/grades.dto';
 
-/** Các controller alias giữ các path cũ của module điểm chạy song song với path canonical sau khi module điểm áp chuẩn
+/**
+ * Các controller alias giữ các path cũ của module điểm chạy song song với path canonical sau khi module điểm áp chuẩn
  * đường dẫn (issue #342).
  *
  * @remarks Chính sách alias: mọi handler trong file này là handler mỏng uỷ thác đúng các method của `GradesService` như
@@ -31,7 +32,8 @@ import { createGradeItemSchema, exportGradesVneduSchema, gradePublicationActionS
 @ApiTags('grades')
 @Controller({ path: 'courses/:courseId/grades', version: '1' })
 @UseInterceptors(DeprecatedRouteAliasInterceptor)
-/** Alias cho các path cũ thuộc khoá học của module điểm: tạo/liệt kê grade item, lưới báo cáo và xuất vnEdu theo path
+/**
+ * Alias cho các path cũ thuộc khoá học của module điểm: tạo/liệt kê grade item, lưới báo cáo và xuất vnEdu theo path
  * cũ. Handler canonical tương ứng nằm ở `grades.controller.ts`. Lớp khai tiền tố con đầy đủ của chính nó thay vì tiền
  * tố trơ `courses`: tiền tố trơ `courses` chỉ còn module courses sở hữu. Mọi path alias giữ nguyên từng ký tự so với
  * trước khi đổi hình thức khai báo.
@@ -57,10 +59,11 @@ export class LegacyGradesCourseController {
 
   @Post('export/vnedu')
   @HttpCode(200)
-  /** POST /courses/:courseId/grades/export/vnedu — alias cũ của POST /courses/:courseId/grade-exports với provider vnedu:
-   * xuất điểm ra Excel theo cấu trúc vnEdu (issue #53). Thân yêu cầu ở alias này giữ khuôn vnEdu cũ, không có trường
-   * `provider` (nhà cung cấp đã nằm trong chính path cũ). Nguồn (issue #224): chỉ các bài ĐÃ CÔNG BỐ mới được xuất; bài
-   * chưa công bố bị từ chối.
+  /**
+   * POST /courses/:courseId/grades/export/vnedu — alias cũ của POST /courses/:courseId/grade-exports với provider
+   * vnedu: xuất điểm ra Excel theo cấu trúc vnEdu (issue #53). Thân yêu cầu ở alias này giữ khuôn vnEdu cũ, không có
+   * trường `provider` (nhà cung cấp đã nằm trong chính path cũ). Nguồn (issue #224): chỉ các bài ĐÃ CÔNG BỐ mới được
+   * xuất; bài chưa công bố bị từ chối.
    */
   @ApiOperation({ operationId: 'legacyGradesExportVnedu' })
   async legacyExportVnedu(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @Body({ schema: exportGradesVneduSchema }) dto: ExportGradesVneduDto, @CurrentUser() actor: AuthenticatedUser, @Res() res: Response) {

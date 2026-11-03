@@ -7,19 +7,15 @@ import {
 /**
  * Lát M5 — GHIM / LƯU TRỮ / TẮT TIẾNG theo hội thoại (issue #240).
  * Các ca kiểm chứng đúng luồng nghiệp vụ đã chốt:
- *  - ghim: hội thoại đã ghim lên đầu danh sách của CHÍNH người ghim
- *    và giữ nguyên qua các lần tải lại; thứ tự trong nhóm ghim vẫn
- *    theo hoạt động gần nhất; trạng thái là của từng thành viên —
- *    phía còn lại không đổi;
+ *  - ghim: hội thoại đã ghim lên đầu danh sách của CHÍNH người ghim và giữ nguyên qua các lần tải lại; thứ tự trong
+ *    nhóm ghim vẫn theo hoạt động gần nhất; trạng thái là của từng thành viên — phía còn lại không đổi;
  *  - lưu trữ: biến mất khỏi danh sách chính của người lưu, chỉ còn ở
  *    mục đã lưu; có tin mới từ phía kia thì TỰ HIỆN LẠI ở danh sách
  *    chính (quyết định đã chốt ở sổ);
- *  - tắt tiếng: tin vẫn tới và vẫn đếm chưa đọc trong danh sách,
- *    nhưng huy hiệu điều hướng không tính hội thoại này. Cổng thông
- *    báo `message_new` theo cờ tắt tiếng (consumer không sinh thông
- *    báo cho thành viên đã tắt tiếng; bỏ tắt tiếng thì thông báo
- *    trở lại) được kiểm chứng ở tầng integration của worker, nơi
- *    consumer thông báo sự kiện đang chạy (issue con #520 của #491);
+ *  - tắt tiếng: tin vẫn tới và vẫn đếm chưa đọc trong danh sách, nhưng huy hiệu điều hướng không tính hội thoại này.
+ *    Cổng thông báo `message_new` theo cờ tắt tiếng (consumer không sinh thông báo cho thành viên đã tắt tiếng; bỏ tắt
+ *    tiếng thì thông báo trở lại) được kiểm chứng ở tầng integration của worker, nơi consumer thông báo sự kiện đang
+ *    chạy (issue con #520 của #491);
  *  - cổng: người ngoài đặt trạng thái → 404 như hội thoại không tồn
  *    tại; PATCH từng phần chỉ đổi đúng cờ được gửi.
  */

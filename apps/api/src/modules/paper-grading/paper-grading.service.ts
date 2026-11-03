@@ -46,7 +46,10 @@ const GRADE_PAPER_CAP = 'quiz:gradepaper';
 export interface ScanUploadOutcome {
   fileName: string;
   stored: boolean;
-  /** Lý do cổng chất lượng từ chối (chỉ khi stored = false): missing_fiducials | blurry | glare | too_dark | unreadable_image. */
+  /**
+   * Lý do cổng chất lượng từ chối (chỉ khi stored = false): missing_fiducials | blurry | glare | too_dark |
+   * unreadable_image.
+   */
   reasons?: string[];
   scan?: PaperScan;
 }

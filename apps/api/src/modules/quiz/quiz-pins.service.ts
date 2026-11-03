@@ -403,15 +403,12 @@ export class QuizPinsService {
   /**
    * Áp cập nhật pin lên exam version mới nhất của đề (quiz:manage;
    * issue #254) — thao tác TƯỜNG MINH sau bước xem diff:
-   * 1. Luật khoá dùng chung với updatePin: pin đã có lượt làm thật thì
-   *    bị chặn `exam.pin_locked` (cập nhật chỉ áp cho người chưa làm;
-   *    lượt đã có giữ nguyên version và điểm — sửa hệ quả điểm của
-   *    chúng chỉ qua đường chấm lại theo đáp án). 2. Đích phải thuộc đúng đề của pin, là version MỚI NHẤT của đề và
-   *    đề phải đang `ready` (`exam.version_not_ready` /
-   *    `exam.version_not_latest`). 3. Đổi examVersionId của pin, đồng bộ gradeMax của grade item như
-   *    updatePin, ghi vết vào exam_pin_version_updates (ai/khi nào/từ
-   *    version nào lên version nào) và phát sự kiện
-   *    `exam_pin_version_updated`.
+   * 1. Luật khoá dùng chung với updatePin: pin đã có lượt làm thật thì bị chặn `exam.pin_locked` (cập nhật chỉ áp cho
+   *    người chưa làm; lượt đã có giữ nguyên version và điểm — sửa hệ quả điểm của chúng chỉ qua đường chấm lại theo
+   *    đáp án). 2. Đích phải thuộc đúng đề của pin, là version MỚI NHẤT của đề và đề phải đang `ready`
+   *    (`exam.version_not_ready` / `exam.version_not_latest`). 3. Đổi examVersionId của pin, đồng bộ gradeMax của grade
+   *    item như updatePin, ghi vết vào exam_pin_version_updates (ai/khi nào/từ version nào lên version nào) và phát sự
+   *    kiện `exam_pin_version_updated`.
    */
   async applyPinVersionUpdate(actorId: string, pinId: string, toExamVersionId: string): Promise<QuizView> {
     const pin = await this.shared.getPin(pinId);
@@ -457,11 +454,9 @@ export class QuizPinsService {
    * của một câu đã được dùng chấm các lượt đã nộp bị sai: giáo viên tạo version mới của câu với đáp án đúng rồi chấm
    * lại theo version đó.
    *
-   * Ứng viên: lượt làm THẬT đã nộp (finished/needsgrading) có question
-   * attempt của câu này đã được chấm tự động và đang ghim version khác
-   * version đích. Lượt đang làm dở không bị đụng (chưa có điểm để sửa;
-   * chúng vẫn chấm theo version đã ghim khi bắt đầu, đúng kỷ luật
-   * ghim). Essay nằm ngoài đường này (chấm tay có đường riêng).
+   * Ứng viên: lượt làm THẬT đã nộp (finished/needsgrading) có question attempt của câu này đã được chấm tự động và đang
+   * ghim version khác version đích. Lượt đang làm dở không bị đụng (chưa có điểm để sửa; chúng vẫn chấm theo version đã
+   * ghim khi bắt đầu, đúng kỷ luật ghim). Essay nằm ngoài đường này (chấm tay có đường riêng).
    *
    * `dryRun` chỉ tính và trả điểm đổi của từng học sinh; áp thật chạy đúng cùng phép tính ở engine nên kết quả khớp
    * tuyệt đối. Khi áp: chấm lại qua engine (attempt chuyển ghim sang version đích + step hiệu chỉnh) → đồng bộ tổng

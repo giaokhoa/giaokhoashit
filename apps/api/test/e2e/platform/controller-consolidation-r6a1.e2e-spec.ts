@@ -8,19 +8,13 @@ import { adminToken, createTestApp, http } from '../../support/identity-access-h
  * một controller alias duy nhất.
  *
  * Khẳng định chính còn lại ở spec này (hành vi qua HTTP):
- * - Các khẳng định tĩnh của lát (mỗi tiền tố có đúng một controller
- *   sở hữu theo phép quét khai báo `@Controller`; bảng route quét
- *   tĩnh và bảng route qua tài liệu OpenAPI đều bằng đúng 100 cặp
- *   trước khi hợp nhất) nay được ghim ở spec hợp đồng bảng route tại
- *   tầng integration:
- *   `test/integration/platform/route-table-contract.int-spec.ts`.
- * - Hành vi alias: path `/exam-papers` vẫn tới được đúng handler
- *   (kết quả như canonical), response qua alias mang header
- *   Deprecation/Sunset và mỗi lượt gọi alias sinh đúng một bản ghi
- *   log có cấu trúc `deprecated_route_alias`; path canonical không
- *   mang header đó và không sinh log alias. Log alias là căn cứ của
- *   điều kiện gỡ alias (0 lượt gọi trong 14 ngày), nên spec kiểm cả
- *   nội dung bản ghi log, không chỉ kiểm header.
+ * - Các khẳng định tĩnh của lát (mỗi tiền tố có đúng một controller sở hữu theo phép quét khai báo `@Controller`; bảng
+ *   route quét tĩnh và bảng route qua tài liệu OpenAPI đều bằng đúng 100 cặp trước khi hợp nhất) nay được ghim ở spec
+ *   hợp đồng bảng route tại tầng integration: `test/integration/platform/route-table-contract.int-spec.ts`.
+ * - Hành vi alias: path `/exam-papers` vẫn tới được đúng handler (kết quả như canonical), response qua alias mang
+ *   header Deprecation/Sunset và mỗi lượt gọi alias sinh đúng một bản ghi log có cấu trúc `deprecated_route_alias`;
+ *   path canonical không mang header đó và không sinh log alias. Log alias là căn cứ của điều kiện gỡ alias (0 lượt gọi
+ *   trong 14 ngày), nên spec kiểm cả nội dung bản ghi log, không chỉ kiểm header.
  */
 
 

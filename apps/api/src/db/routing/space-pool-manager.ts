@@ -9,18 +9,14 @@
  * - **Tạo lười:** pool của một kho chỉ được tạo ở lần lấy handle đầu
  *   tiên cho kho đó (tức lần traffic đầu tiên), không tạo lúc khởi
  *   động cho mọi kho đã đăng ký.
- * - **Trần theo kho:** trần kết nối của từng pool do nơi tạo pool
- *   chốt qua cấu hình của `pg` Pool (`max`) khi dựng handle; trình
- *   quản lý phơi tổng số kết nối đang mở của mọi pool
- *   (`totalConnections`) để tầng vận hành kiểm chứng ngân sách.
- * - **Đóng khi nhàn rỗi:** một vòng quét định kỳ đóng hẳn pool của
- *   kho không còn traffic quá ngưỡng nhàn rỗi cấu hình được (mốc
- *   "traffic" cập nhật mỗi lần lấy handle và mỗi lần pool cho mượn
- *   một kết nối — sự kiện `acquire` của `pg`). Pool còn kết nối
- *   đang được mượn (chưa trả) thì KHÔNG đóng ở vòng quét này, chờ
- *   vòng sau. Pool đã đóng bị gỡ khỏi sổ của trình quản lý: lần lấy
- *   handle kế tiếp tạo pool mới — đóng pool vì vậy không phải trạng
- *   thái cuối, chỉ là trả ngân sách về cụm.
+ * - **Trần theo kho:** trần kết nối của từng pool do nơi tạo pool chốt qua cấu hình của `pg` Pool (`max`) khi dựng
+ *   handle; trình quản lý phơi tổng số kết nối đang mở của mọi pool (`totalConnections`) để tầng vận hành kiểm chứng
+ *   ngân sách.
+ * - **Đóng khi nhàn rỗi:** một vòng quét định kỳ đóng hẳn pool của kho không còn traffic quá ngưỡng nhàn rỗi cấu hình
+ *   được (mốc "traffic" cập nhật mỗi lần lấy handle và mỗi lần pool cho mượn một kết nối — sự kiện `acquire` của `pg`).
+ *   Pool còn kết nối đang được mượn (chưa trả) thì KHÔNG đóng ở vòng quét này, chờ vòng sau. Pool đã đóng bị gỡ khỏi sổ
+ *   của trình quản lý: lần lấy handle kế tiếp tạo pool mới — đóng pool vì vậy không phải trạng thái cuối, chỉ là trả
+ *   ngân sách về cụm.
  *
  * Ngoài ba kỷ luật ngân sách, trình quản lý còn giữ một bất biến đúng/sai của định tuyến: pool của một kho bị BUỘC theo
  * danh tính kết nối đã phân giải mà nó được tạo bằng (xem `getHandleForIdentity`). Sổ đăng ký là nguồn sự thật duy nhất
@@ -61,7 +57,10 @@ export interface SpacePoolManagerDeps {
   idleTimeoutMs: number;
   /** Đồng hồ — tách ra để kiểm chứng vòng quét bằng thời gian giả. */
   now?: () => number;
-  /** Báo cho chủ sở hữu mỗi khi một pool bị gỡ khỏi sổ (đóng vì nhàn rỗi, hoặc bị thay vì danh tính kết nối đã đổi) để đồng bộ các bảng tra cứu theo kho. */
+  /**
+   * Báo cho chủ sở hữu mỗi khi một pool bị gỡ khỏi sổ (đóng vì nhàn rỗi, hoặc bị thay vì danh tính kết nối đã đổi) để
+   * đồng bộ các bảng tra cứu theo kho.
+   */
   onPoolClosed?: (databaseName: string) => void;
 }
 
@@ -108,7 +107,10 @@ export class SpacePoolManager<TDatabase> {
     return this.acquire(databaseName, identity, create);
   }
 
-  /** Đường lấy handle chung: dùng lại pool đang sống khi danh tính khớp (hoặc không đặt điều kiện danh tính), thay pool khi danh tính đã đổi. */
+  /**
+   * Đường lấy handle chung: dùng lại pool đang sống khi danh tính khớp (hoặc không đặt điều kiện danh tính), thay pool
+   * khi danh tính đã đổi.
+   */
   private acquire(
     databaseName: string,
     identity: string | undefined,

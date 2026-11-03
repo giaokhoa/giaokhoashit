@@ -220,7 +220,8 @@ export class GradesService implements OnModuleInit {
     return this.repo.findItemForCm(courseId, cmId);
   }
 
-  /** Đường ghi điểm CỦA HOẠT ĐỘNG (vd quiz ghi điểm bài sau khi chốt lượt làm): không qua capability của người dùng vì
+  /**
+   * Đường ghi điểm CỦA HOẠT ĐỘNG (vd quiz ghi điểm bài sau khi chốt lượt làm): không qua capability của người dùng vì
    * chủ thể ghi là chính hoạt động — lượt làm tự chốt phía server (hết giờ, đủ điểm) kể cả khi không có thao tác của
    * giáo viên. Vẫn tôn trọng các khoá: item bị khoá thì từ chối, grade đã bị giáo viên ghi đè (overridden) hoặc khoá
    * thì GIỮ NGUYÊN (hoạt động không đè quyết định của giáo viên — trả về grade hiện có). Ghi history với source là tên
@@ -304,7 +305,8 @@ export class GradesService implements OnModuleInit {
     return COMPLETION_DONE;
   }
 
-  /** Course-completion 'grade' criterion: trước đây neo vào ĐIỂM TỔNG KHOÁ. Mô hình điểm theo bài (#224) không còn điểm
+  /**
+   * Course-completion 'grade' criterion: trước đây neo vào ĐIỂM TỔNG KHOÁ. Mô hình điểm theo bài (#224) không còn điểm
    * của khoá học nên tiêu chí này không còn nền để đạt — luôn trả false; hoàn thành theo điểm chỉ còn ở cấp hoạt động
    * qua evaluateCmGrade.
    */
@@ -405,7 +407,8 @@ export class GradesService implements OnModuleInit {
     return this.itemPublicationState(await this.getItem(itemId));
   }
 
-  /** Audit sửa điểm sau công bố (research PH mục 5.2.7): khi giáo viên sửa một điểm ĐÃ TỒN TẠI trên item đang ở trạng
+  /**
+   * Audit sửa điểm sau công bố (research PH mục 5.2.7): khi giáo viên sửa một điểm ĐÃ TỒN TẠI trên item đang ở trạng
    * thái công bố hiệu lực, phát thêm sự kiện grade_changed_after_publish vào event_log qua outbox — điểm đã tới tay học
    * sinh/phụ huynh mà đổi thì phải có vết riêng.
    */
@@ -419,7 +422,8 @@ export class GradesService implements OnModuleInit {
     }).catch(() => undefined);
   }
 
-  /** Điểm theo bài của MỘT học sinh trong một khoá — thay cho sổ điểm tổng hợp cũ và cho ĐX-2 (HS xem ĐTB khoá). Viewer
+  /**
+   * Điểm theo bài của MỘT học sinh trong một khoá — thay cho sổ điểm tổng hợp cũ và cho ĐX-2 (HS xem ĐTB khoá). Viewer
    * xem của người khác cần grade:viewall; học sinh xem chính mình (hoặc phụ huynh qua listPublishedActivityGrades) bị
    * cổng công bố PH-0: item ẩn bị loại, điểm của item manual chưa công bố bị che (grade = null). Lưới này CHỈ ĐỌC:
    * không lưu điểm tổng, không trọng số, không chốt.

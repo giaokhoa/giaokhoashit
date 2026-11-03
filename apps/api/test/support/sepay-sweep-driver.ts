@@ -117,7 +117,10 @@ export async function driveSepaySweep(): Promise<void> {
   await getScheduler().sweepTick();
 }
 
-/** Các loại sự kiện cohort mà nhịp đồng bộ phải vật chất hoá — đúng tập của consumer polling phía API đã gỡ (issue #528). */
+/**
+ * Các loại sự kiện cohort mà nhịp đồng bộ phải vật chất hoá — đúng tập của consumer polling phía API đã gỡ (issue
+ * #528).
+ */
 const COHORT_SYNC_TYPES = ['cohort_member_added', 'cohort_member_removed'] as const;
 
 /**

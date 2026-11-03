@@ -16,7 +16,10 @@ import { closeSepaySweepDriver, driveSepaySweep } from '../../support/sepay-swee
  * idempotency, matching 3 điều kiện), QR động, che config 6.4.5, cách ly tenant 6.4.6, cổng cộng dồn hoàn + đảo quyền
  * lợi 6.4.7. Riêng vector vàng 6.4.4 nằm ở spec unit `src/modules/payments/vietqr.spec.ts`.
  */
-/** Secret webhook gateway 'manual' (cổng verify fail-closed của H1, PR #191): vitest config cấp qua env, spec đọc cùng giá trị để gắn header. */
+/**
+ * Secret webhook gateway 'manual' (cổng verify fail-closed của H1, PR #191): vitest config cấp qua env, spec đọc cùng
+ * giá trị để gắn header.
+ */
 const WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET ?? '';
 const SEPAY_KEY = 'sk-test-sepay-9f27c1d4aa';
 const SEPAY_XID = 'xid-test-org-001';

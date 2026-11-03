@@ -11,7 +11,10 @@ import { isSafeExternalResourceUrl, sanitizePageContent } from './page-content-s
 export const PAGE_COMPONENT = 'mod_page';
 export const RESOURCE_COMPONENT = 'mod_resource';
 
-/** Ngưỡng hoàn thành mặc định cho video (chế độ progress): xem ≥ 90% thời lượng thì hoàn thành — theo nghiên cứu học liệu số VN (K2-B1); điểm cấu hình duy nhất, đổi tại đây khi có site-config cho ngưỡng này. */
+/**
+ * Ngưỡng hoàn thành mặc định cho video (chế độ progress): xem ≥ 90% thời lượng thì hoàn thành — theo nghiên cứu học
+ * liệu số VN (K2-B1); điểm cấu hình duy nhất, đổi tại đây khi có site-config cho ngưỡng này.
+ */
 export const VIDEO_COMPLETION_THRESHOLD_PERCENT = 90;
 
 type CompletionMode = 'view' | 'manual' | 'progress' | 'none';
@@ -184,11 +187,9 @@ export class ContentService {
   }
 
   /**
-   * Chặn URL tài nguyên ngoài mang scheme nguy hiểm: phía web đưa URL
-   * này thẳng vào `href` của trang học nên chỉ http/https được phép
-   * lưu; scheme kiểu `javascript:`/`data:` bị từ chối bằng mã
-   * `content.url_scheme_not_allowed` (tầng hợp đồng cũng có refine
-   * tương ứng — hai tầng gác độc lập).
+   * Chặn URL tài nguyên ngoài mang scheme nguy hiểm: phía web đưa URL này thẳng vào `href` của trang học nên chỉ
+   * http/https được phép lưu; scheme kiểu `javascript:`/`data:` bị từ chối bằng mã `content.url_scheme_not_allowed`
+   * (tầng hợp đồng cũng có refine tương ứng — hai tầng gác độc lập).
    *
    * @throws BadRequestException khi URL không dùng scheme http/https.
    */

@@ -84,7 +84,10 @@ export function bookDatasetByKey(key: string): BookDatasetDef | undefined {
   return BOOK_DATASETS.find((d) => d.key === key);
 }
 
-/** Đọc + parse một file dataset SGK đã vendor (đường dẫn theo vị trí module, chạy được cả ở src lẫn dist); chuẩn hoá khoá snake_case của file sang hình dạng bản ghi dùng trong code. */
+/**
+ * Đọc + parse một file dataset SGK đã vendor (đường dẫn theo vị trí module, chạy được cả ở src lẫn dist); chuẩn hoá
+ * khoá snake_case của file sang hình dạng bản ghi dùng trong code.
+ */
 export function loadBookDataset(def: BookDatasetDef): BookDatasetFile {
   const raw = JSON.parse(readFileSync(join(__dirname, 'book-data', def.fileName), 'utf8')) as {
     book: string; series: string; publisher: string; records: RawBookRecord[];

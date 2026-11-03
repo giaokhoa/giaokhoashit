@@ -67,31 +67,23 @@ export interface SpaceProgramPackageInstallReport {
  * nhưng được viết và kiểm chứng ngay ở Phần A, trước mọi đợt chuyển dữ kiện thật).
  *
  * Flow tổng thể (trước khi đổi định tuyến của trung tâm sang kho riêng): 1. Trung tâm đích PHẢI ở chế độ kho riêng —
- * trung tâm còn ở kho
- *    chung thì không có "kho đích" để cài, bước này từ chối
- *    fail-closed thay vì cài chồng lên kho chung. 2. Đọc sổ ghi nhận cài đặt của tenant từ KHO NGUỒN (kho chung,
- *    ngữ cảnh platform không mang slug) — đây là sổ mà Phần B
- *    chuyển sang kho đích. 3. Trong kho đích (ngữ cảnh platform + slug của trung tâm, đúng
- *    khuôn kết nối seed của pipeline cấp phát — ghi seed cần
- *    `app.platform = 'on'` mới qua được RLS FORCE của kho mới):
- *    - Chưa có bản cài gói trung tâm mà dữ kiện chương trình cũng
- *      chưa có → restore artifact dump hiện hành của repo bằng
- *      đúng cơ chế cài gói đã có (`restoreProgramDumpSql`, neo
- *      lại context hệ thống của kho đích), rồi ghi dòng bản cài
- *      (phiên bản + checksum của artifact vừa cài).
+ * trung tâm còn ở kho chung thì không có "kho đích" để cài, bước này từ chối fail-closed thay vì cài chồng lên kho
+ * chung. 2. Đọc sổ ghi nhận cài đặt của tenant từ KHO NGUỒN (kho chung, ngữ cảnh platform không mang slug) — đây là sổ
+ * mà Phần B chuyển sang kho đích. 3. Trong kho đích (ngữ cảnh platform + slug của trung tâm, đúng khuôn kết nối seed
+ * của pipeline cấp phát — ghi seed cần `app.platform = 'on'` mới qua được RLS FORCE của kho mới):
+ *    - Chưa có bản cài gói trung tâm mà dữ kiện chương trình cũng chưa có → restore artifact dump hiện hành của repo
+ *      bằng đúng cơ chế cài gói đã có (`restoreProgramDumpSql`, neo lại context hệ thống của kho đích), rồi ghi dòng
+ *      bản cài (phiên bản + checksum của artifact vừa cài).
  *    - Chưa có bản cài mà dữ kiện đã có (cửa sổ hỏng giữa lúc
  *      restore và lúc ghi bản cài) → chỉ ghi dòng bản cài, không
  *      restore chồng (đúng khuôn pipeline cấp phát).
  *    - Đã có bản cài lệch phiên bản/checksum so với artifact hiện
  *      hành → từ chối rõ thay vì ghi đè lặng lẽ: nâng cấp gói là
  *      việc của đợt migration gói, không phải của bước di trú.
- *    - Bản cài đã khớp → bỏ qua (chạy lại an toàn). 4. Chuyển sổ ghi nhận cài đặt: mỗi khoá trong sổ nguồn mà kho
- *    đích chưa có thì sao nguyên văn (phiên bản, checksum, thời
- *    điểm ghi nhận) sang kho đích. Riêng khoá gói trung tâm thì
- *    dòng của kho đích là căn cứ (vừa được cài/xác nhận ở bước 3)
- *    nên không bị dòng nguồn ghi đè — sổ nguồn của khoá này chỉ
- *    còn giá trị đối chiếu, thể hiện trong `sourceInstalls` của
- *    báo cáo.
+ *    - Bản cài đã khớp → bỏ qua (chạy lại an toàn). 4. Chuyển sổ ghi nhận cài đặt: mỗi khoá trong sổ nguồn mà kho đích
+ *      chưa có thì sao nguyên văn (phiên bản, checksum, thời điểm ghi nhận) sang kho đích. Riêng khoá gói trung tâm thì
+ *      dòng của kho đích là căn cứ (vừa được cài/xác nhận ở bước 3) nên không bị dòng nguồn ghi đè — sổ nguồn của khoá
+ *      này chỉ còn giá trị đối chiếu, thể hiện trong `sourceInstalls` của báo cáo.
  *
  * Giới hạn đã biết, ghi rõ để Phần B không suy diễn sai: bảng sổ không có cột người cài, nên "ai cài" không nằm trong
  * dữ kiện chuyển — lượt di trú gọi bước này phải ghi danh tính người vận hành vào báo cáo đợt của chính nó. Gắn chuẩn

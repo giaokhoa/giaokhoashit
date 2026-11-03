@@ -93,7 +93,10 @@ export class ContextsService {
    */
   async getContextsByIds(ids: string[]): Promise<ContextRow[]> { return this.repo.getContextsByIds(ids); }
   async listContexts(): Promise<ContextRow[]> { return this.repo.listContexts(); }
-  /** Xoá một context (dùng khi instance sở hữu nó — category/course/cm — bị xoá). Các assignment/override bị xoá theo kiểu cascade. */
+  /**
+   * Xoá một context (dùng khi instance sở hữu nó — category/course/cm — bị xoá). Các assignment/override bị xoá theo
+   * kiểu cascade.
+   */
   async deleteContext(id: string): Promise<void> { await this.repo.deleteContext(id); }
   /**
    * Xoá context theo (level, instance) — dùng khi entity chủ (khoá học/module) bị xoá.
@@ -111,7 +114,10 @@ export class ContextsService {
     return ids.slice().reverse().map((id) => byId.get(id)!).filter(Boolean);
   }
 
-  /** Di chuyển một context (và toàn bộ cây con của nó) xuống dưới một context cha mới, viết lại path/depth. Dùng khi một category được di chuyển. */
+  /**
+   * Di chuyển một context (và toàn bộ cây con của nó) xuống dưới một context cha mới, viết lại path/depth. Dùng khi một
+   * category được di chuyển.
+   */
   async reparentContext(id: string, newParentId: string): Promise<void> {
     const ctx = await this.getContext(id);
     const parent = await this.getContext(newParentId);
@@ -126,12 +132,18 @@ export class ContextsService {
     }
   }
 
-  /** Đánh dấu dirty: mọi thay đổi quyền trong một context đều vô hiệu hoá kết quả đã cache của nó và của mọi context con cháu. */
+  /**
+   * Đánh dấu dirty: mọi thay đổi quyền trong một context đều vô hiệu hoá kết quả đã cache của nó và của mọi context con
+   * cháu.
+   */
   async markContextDirty(contextId: string, tx?: CentreTx): Promise<void> {
     const ctx = await this.repo.getContextById(contextId, tx);
     if (ctx) await this.repo.bumpContextVersions(ctx.path, tx);
   }
-  /** Dấu cache cho path của một context: thay đổi mỗi khi bất kỳ context nào trên path (hoặc gốc hệ thống) bị đánh dấu dirty. */
+  /**
+   * Dấu cache cho path của một context: thay đổi mỗi khi bất kỳ context nào trên path (hoặc gốc hệ thống) bị đánh dấu
+   * dirty.
+   */
   pathVersionStamp(pathContexts: ContextRow[]): string {
     return pathContexts.map((c) => `${c.id}:${c.version}`).join('|');
   }

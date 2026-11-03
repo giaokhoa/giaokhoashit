@@ -259,10 +259,9 @@ export class QuizAttemptsService {
    * mọi đường đọc điểm phải qua cùng một cổng công bố. Điểm tổng vì thế chỉ hiện khi ĐỒNG THỜI thoả cả hai điều kiện
    * độc lập:
    *
-   * 1. mặt nạ `reviewMarks` đang mở tại cửa sổ xem lại hiện tại của
-   *    lượt (`marksVisible` do nơi gọi tính, dùng cùng phép tính với
-   *    điểm từng câu); và 2. hạng mục điểm của bài đã ở trạng thái đã công bố qua cổng công
-   *    bố chung của module điểm (`gradeTotalsPublished`).
+   * 1. mặt nạ `reviewMarks` đang mở tại cửa sổ xem lại hiện tại của lượt (`marksVisible` do nơi gọi tính, dùng cùng
+   *    phép tính với điểm từng câu); và 2. hạng mục điểm của bài đã ở trạng thái đã công bố qua cổng công bố chung của
+   *    module điểm (`gradeTotalsPublished`).
    *
    * Thiếu một trong hai điều kiện, cả `grade` lẫn `sumGrades` đều về `null` — che một mình `grade` là không đủ, vì
    * `sumGrades` cùng thang tối đa của lượt cho phép suy ngược ra điểm. Lượt chưa có điểm nào (cả hai trường đang

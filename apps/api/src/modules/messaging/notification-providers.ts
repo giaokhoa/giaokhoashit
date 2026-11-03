@@ -26,10 +26,9 @@ export type EmailFrequency = 'immediate' | 'daily' | 'off';
  * Chính sách nội dung kênh ngoài của một provider (quyết định C-5, issue #219 — cấm fallback nguyên văn tại
  * `notify()`):
  *
- * - `'minimized'`: nội dung gốc KHÔNG tự rời app. Job kênh ngoài chỉ
- *   mang bản tối thiểu hoá `externalSubject`/`externalBody` do nơi
- *   gọi truyền; thiếu bản tối thiểu hoá thì mang bản tóm tắt mặc
- *   định i18n (riêng môi trường test là lỗi — xem `notify()`).
+ * - `'minimized'`: nội dung gốc KHÔNG tự rời app. Job kênh ngoài chỉ mang bản tối thiểu hoá
+ *   `externalSubject`/`externalBody` do nơi gọi truyền; thiếu bản tối thiểu hoá thì mang bản tóm tắt mặc định i18n
+ *   (riêng môi trường test là lỗi — xem `notify()`).
  * - `'original-ok'`: loại nội dung này đã được khai báo tường minh
  *   là an toàn theo thiết kế để mang nguyên văn ra kênh ngoài —
  *   BẮT BUỘC kèm `externalPolicyReason` trong định nghĩa provider.
@@ -281,11 +280,9 @@ export function externalPolicyOf(provider: MessageProviderDefinition): ExternalC
  *
  * - audience chứa `'all'` → thuộc bề mặt của mọi user (đã qua cổng
  *   bề mặt đầy đủ của NB-7).
- * - còn lại: thuộc bề mặt khi audience GIAO với tập context của user
- *   (giáo viên thuần không có context học sinh → không thấy loại chỉ
- *   học sinh nhận; người vừa dạy vừa học có cả hai context → thấy cả
- *   hai phía; site admin được tính là có mọi context — xem
- *   `MessagingService.resolvePreferenceAudiences`).
+ * - còn lại: thuộc bề mặt khi audience GIAO với tập context của user (giáo viên thuần không có context học sinh → không
+ *   thấy loại chỉ học sinh nhận; người vừa dạy vừa học có cả hai context → thấy cả hai phía; site admin được tính là có
+ *   mọi context — xem `MessagingService.resolvePreferenceAudiences`).
  */
 export function providerVisibleToAudiences(
   provider: MessageProviderDefinition,
@@ -332,10 +329,9 @@ export function preferenceNameV2(provider: string, kind: 'popup' | 'email'): str
 }
 
 /**
- * Khoá ghi đè theo khoá học (NB-4, issue #174 — hình dạng khoá do hồ
- * sơ rà soát chốt): `notif.course.<courseId>` mang 'all' | 'mute', lưu
- * cấu trúc ngay trong user_preferences như mọi tuỳ chọn khác (không
- * bảng riêng, không đổi baseline). Chưa đặt = 'all'.
+ * Khoá ghi đè theo khoá học (NB-4, issue #174 — hình dạng khoá do hồ sơ rà soát chốt): `notif.course.<courseId>` mang
+ * 'all' | 'mute', lưu cấu trúc ngay trong user_preferences như mọi tuỳ chọn khác (không bảng riêng, không đổi
+ * baseline). Chưa đặt = 'all'.
  */
 export function coursePreferenceName(courseId: string): string {
   return `notif.course.${courseId}`;
@@ -352,14 +348,10 @@ export interface NotificationCourseOverrideView {
 
 /**
  * Các loại KHÔNG bao giờ bị ghi đè theo khoá chặn:
- *  - Chính sách P3 (đã chốt trên issue #174): tắt tiếng một khoá vẫn
- *    chừa ĐIỂM MỚI (`grade_updated`) và SẮP HẾT HẠN GHI DANH
- *    (`enrol_expiry_warning`) của chính khoá đó — mute là để bớt ồn,
- *    không phải để mất dấu học tập của chính mình.
- *  - Hai loại bắt buộc P2 (`mandatoryInApp` trong registry): luật
- *    toàn cục thắng ghi đè theo khoá — ghi đè không được phá chúng ở
- *    kênh trong-app (và ở đây là mọi kênh, vì chặn theo khoá áp trước
- *    khi xét kênh).
+ *  - Chính sách P3 (đã chốt trên issue #174): tắt tiếng một khoá vẫn chừa ĐIỂM MỚI (`grade_updated`) và SẮP HẾT HẠN GHI
+ *    DANH (`enrol_expiry_warning`) của chính khoá đó — mute là để bớt ồn, không phải để mất dấu học tập của chính mình.
+ *  - Hai loại bắt buộc P2 (`mandatoryInApp` trong registry): luật toàn cục thắng ghi đè theo khoá — ghi đè không được
+ *    phá chúng ở kênh trong-app (và ở đây là mọi kênh, vì chặn theo khoá áp trước khi xét kênh).
  */
 const COURSE_MUTE_EXEMPT_PROVIDERS = new Set(['grade_updated', 'enrol_expiry_warning']);
 

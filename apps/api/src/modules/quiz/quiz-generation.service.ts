@@ -510,18 +510,13 @@ export class QuizGenerationService {
   }
 
   /**
-   * Ghi một phiếu giấy đã được giáo viên xác nhận thành attempt của
-   * học sinh (cổng quiz:gradepaper, kiểm tại resolvePaperLayout của lô
-   * — hàm này tin layout do module paper-grading truyền vào sau khi đã
-   * kiểm quyền). Attempt là attempt THẬT của học sinh: usage dựng từ
-   * đúng các version đã ghim trên phiếu, đáp án nộp qua engine như
-   * attempt online, chốt bằng đúng đường finalizeAttempt (điểm chảy
-   * vào sổ điểm như thường). appliedSettings mang dấu nguồn giấy
-   * {source: 'paper-scan', scanId, batchId, variantCode} để báo cáo
-   * phân biệt được lượt thi giấy. responses[i] là chuỗi đáp án theo
-   * ngữ nghĩa engine cho slot i (multichoice: answerId đã chọn;
-   * truefalse TF-A: JSON bản đồ statementId → boolean quy từ 4 cặp ô
-   * Đ/S của slot; null: để trống).
+   * Ghi một phiếu giấy đã được giáo viên xác nhận thành attempt của học sinh (cổng quiz:gradepaper, kiểm tại
+   * resolvePaperLayout của lô — hàm này tin layout do module paper-grading truyền vào sau khi đã kiểm quyền). Attempt
+   * là attempt THẬT của học sinh: usage dựng từ đúng các version đã ghim trên phiếu, đáp án nộp qua engine như attempt
+   * online, chốt bằng đúng đường finalizeAttempt (điểm chảy vào sổ điểm như thường). appliedSettings mang dấu nguồn
+   * giấy {source: 'paper-scan', scanId, batchId, variantCode} để báo cáo phân biệt được lượt thi giấy. responses[i] là
+   * chuỗi đáp án theo ngữ nghĩa engine cho slot i (multichoice: answerId đã chọn; truefalse TF-A: JSON bản đồ
+   * statementId → boolean quy từ 4 cặp ô Đ/S của slot; null: để trống).
    */
   async recordPaperAttempt(actorId: string, pinId: string, input: {
     studentId: string;

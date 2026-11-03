@@ -58,7 +58,10 @@ function docOutcomeText(doc: OutcomeDoc): string {
   return lines.join('\n').trim();
 }
 
-/** Các dòng YCCĐ kỳ vọng của một bản ghi — cùng quy tắc với cơ chế nạp (outcomes[] → từng dòng, phần tử dạng doc trích text bằng docOutcomeText; rỗng + outcome_text → một dòng; cả hai rỗng → không dòng). */
+/**
+ * Các dòng YCCĐ kỳ vọng của một bản ghi — cùng quy tắc với cơ chế nạp (outcomes[] → từng dòng, phần tử dạng doc trích
+ * text bằng docOutcomeText; rỗng + outcome_text → một dòng; cả hai rỗng → không dòng).
+ */
 function expectedOutcomeTexts(r: ProgramRecord): string[] {
   if (r.outcomes.length > 0) {
     return r.outcomes.map((o) => (typeof o === 'string' ? o : docOutcomeText(o)));

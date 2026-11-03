@@ -16,11 +16,9 @@ import { PermissionEvaluator } from './permission-evaluator.service';
  *   - chi phí: phép theo lô chỉ chạm tầng dữ liệu một số lần có chặn
  *     trên nhỏ, trong khi đường từng cặp tốn hàng trăm lần cho cùng
  *     một ảnh chụp.
- * Thế giới dữ kiện phủ các nhánh ngữ nghĩa nhạy cảm: PROHIBIT ở tổ
- * tiên thắng ALLOW ở lá, PREVENT ở tổ tiên gần hơn thắng ALLOW ở gốc,
- * vai mặc định `user`/`guest`, cổng tenant (thu hẹp gán vai, chặn khi
- * không phải thành viên, chặn khi tenant bị đình chỉ) và lối tắt site
- * admin (áp dụng ngoài cây tenant, KHÔNG áp dụng trong cây tenant).
+ * Thế giới dữ kiện phủ các nhánh ngữ nghĩa nhạy cảm: PROHIBIT ở tổ tiên thắng ALLOW ở lá, PREVENT ở tổ tiên gần hơn
+ * thắng ALLOW ở gốc, vai mặc định `user`/`guest`, cổng tenant (thu hẹp gán vai, chặn khi không phải thành viên, chặn
+ * khi tenant bị đình chỉ) và lối tắt site admin (áp dụng ngoài cây tenant, KHÔNG áp dụng trong cây tenant).
  */
 
 type Ctx = ContextRow;

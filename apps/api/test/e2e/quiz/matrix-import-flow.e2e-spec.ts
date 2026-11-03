@@ -19,11 +19,9 @@ import { courseContextId } from '../../support/engagement-helpers';
  *    Mã ĐVK bịa, lệch tổng điểm, checkbox Vận dụng cao không khớp
  *    lưới, thiếu điểm mỗi câu, ma trận rỗng);
  *  - preview không tạo ma trận nào trong hệ;
- *  - giáo viên theo mô hình gán vai của dữ liệu mẫu (editingteacher
- *    tại context khoá, không vai nào tại context hệ thống) tải mẫu
- *    và xem trước được — hồi quy điểm chặn D-3 của issue #233, khi
- *    hai đầu này còn đòi quyền tại context của môn; học sinh bị
- *    chặn 403 tại cổng bank của luồng ở cả hai đầu.
+ *  - giáo viên theo mô hình gán vai của dữ liệu mẫu (editingteacher tại context khoá, không vai nào tại context hệ
+ *    thống) tải mẫu và xem trước được — hồi quy điểm chặn D-3 của issue #233, khi hai đầu này còn đòi quyền tại context
+ *    của môn; học sinh bị chặn 403 tại cổng bank của luồng ở cả hai đầu.
  */
 describe('Nhập ma trận I-1 (mẫu + xem trước, không ghi DB)', () => {
   let app: INestApplication;
@@ -130,7 +128,10 @@ describe('Nhập ma trận I-1 (mẫu + xem trước, không ghi DB)', () => {
     return wb;
   }
 
-  /** Điền một workbook mẫu thành file HỢP LỆ khớp tổng 10 điểm (dạng 30/20/20/30). Cột: MC F–H, Đ–S I–K, Trả lời ngắn L–N, Tự luận O–Q; mức theo thứ tự Biết/Hiểu/Vận dụng. */
+  /**
+   * Điền một workbook mẫu thành file HỢP LỆ khớp tổng 10 điểm (dạng 30/20/20/30). Cột: MC F–H, Đ–S I–K, Trả lời ngắn
+   * L–N, Tự luận O–Q; mức theo thứ tự Biết/Hiểu/Vận dụng.
+   */
   function fillValid(wb: ExcelJS.Workbook): ExcelJS.Workbook {
     const ws = wb.getWorksheet('Ma trận')!;
     ws.getCell('B2').value = 'Ma trận nhập thử';
@@ -352,7 +353,10 @@ describe('Nhập ma trận I-1 với actor giáo viên mô hình seed (hồi quy
     return wb;
   }
 
-  /** Điền file hợp lệ tối thiểu: một ô duy nhất khớp tổng khai (1 câu Tự luận Vận dụng × 1,5đ, tổng 1,5) — đủ để preview hợp lệ. */
+  /**
+   * Điền file hợp lệ tối thiểu: một ô duy nhất khớp tổng khai (1 câu Tự luận Vận dụng × 1,5đ, tổng 1,5) — đủ để preview
+   * hợp lệ.
+   */
   function fillMinimalValid(wb: ExcelJS.Workbook): ExcelJS.Workbook {
     const ws = wb.getWorksheet('Ma trận')!;
     ws.getCell('B2').value = 'Ma trận của giáo viên seed';

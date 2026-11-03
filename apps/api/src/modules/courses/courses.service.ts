@@ -42,7 +42,8 @@ export interface EnrolChecker {
   isEnrolled(courseId: string, userId: string, opts?: { onlyActive?: boolean }): Promise<boolean>;
 }
 
-/** Neo lớp học cho đường tạo khoá (module classes cắm vào khi khởi tạo — issue #184, CLASS-0; cùng mẫu đăng ký như
+/**
+ * Neo lớp học cho đường tạo khoá (module classes cắm vào khi khởi tạo — issue #184, CLASS-0; cùng mẫu đăng ký như
  * EnrolChecker để Courses không phụ thuộc Classes). Khi chưa có hook nào đăng ký (module classes chưa nạp), đường tạo
  * khoá kèm `classId` bị từ chối tường minh.
  */
@@ -51,7 +52,8 @@ export interface CourseClassHook {
    * nghiệp vụ khi không đạt); trả context của lớp để làm cha context khoá + cổng capability.
    */
   resolveClass(classId: string, tenantId: string): Promise<{ classId: string; contextId: string }>;
-  /** Chạy sau khi khoá và context của nó đã tạo: vật chất hoá phía lớp — group "cả lớp" + enrol instance cohort trỏ vào
+  /**
+   * Chạy sau khi khoá và context của nó đã tạo: vật chất hoá phía lớp — group "cả lớp" + enrol instance cohort trỏ vào
    * backing cohort của lớp (backfill roster hiện có). Lỗi ở bước này KHÔNG được nuốt: khoá thuộc lớp mà thiếu instance
    * cohort là trạng thái hỏng phải lộ ra ngay.
    */
@@ -66,7 +68,8 @@ export interface CurriculumFrameUnit {
   outcomes: { outcomeId: string; content: string }[];
 }
 
-/** Nguồn đơn vị khung chương trình — CurriculumModule đăng ký lúc khởi tạo (dependency inversion như EnrolChecker/grade
+/**
+ * Nguồn đơn vị khung chương trình — CurriculumModule đăng ký lúc khởi tạo (dependency inversion như EnrolChecker/grade
  * provider: Courses không import ngược Curriculum). Cổng quyền của đường này là `course:update` tại khoá đích do
  * applyCurriculumFrame kiểm TRƯỚC khi gọi provider — provider không đòi thêm `curriculum:view` tại context hệ thống
  * (giáo viên thật chỉ có vai tại context khoá, issue #66).
@@ -82,7 +85,8 @@ export interface BookFrameUnit {
   items: { lessonNodeId: string; title: string; outcomes: { outcomeId: string; content: string }[] }[];
 }
 
-/** Nguồn đơn vị khung SGK — CurriculumModule đăng ký lúc khởi tạo (K0b, cùng mẫu dependency inversion với
+/**
+ * Nguồn đơn vị khung SGK — CurriculumModule đăng ký lúc khởi tạo (K0b, cùng mẫu dependency inversion với
  * CurriculumFrameProvider). Cổng quyền là `course:update` tại khoá đích do applyBookFrame kiểm TRƯỚC khi gọi provider —
  * provider không đòi thêm quyền.
  */
@@ -122,12 +126,14 @@ export interface CourseContentView {
   })[];
 }
 
-/** Facade của CoursesModule (core_course của Moodle). Category và khoá học tạo cây/context: mỗi category nhận một
+/**
+ * Facade của CoursesModule (core_course của Moodle). Category và khoá học tạo cây/context: mỗi category nhận một
  * context coursecat (40), mỗi khoá học một context khoá học (50) dưới category của nó, mỗi cm một context module (70)
  * dưới khoá học của nó — tạo chỉ qua facade AccessModule.
  */
 @Injectable()
-/** Nghiệp vụ khoá học: category, course, section và course module, kèm kiểm tra truy cập. Quy tắc truy cập (đối chiếu
+/**
+ * Nghiệp vụ khoá học: category, course, section và course module, kèm kiểm tra truy cập. Quy tắc truy cập (đối chiếu
  * Moodle lib/accesslib + course/lib.php): khoá học ẩn chỉ xem được khi có capability xem khoá ẩn; học viên phải có
  * enrolment đang hiệu lực mới xem được nội dung; section/cm còn phải qua cây điều kiện availability mới được coi là khả
  * dụng.
@@ -185,7 +191,8 @@ export class CoursesService {
   private classHook?: CourseClassHook;
   registerClassHook(hook: CourseClassHook): void { this.classHook = hook; }
 
-  /** User có ghi danh ĐANG HIỆU LỰC trong khoá hay không (đã ghi danh, trạng thái active, trong cửa sổ thời gian) — qua
+  /**
+   * User có ghi danh ĐANG HIỆU LỰC trong khoá hay không (đã ghi danh, trạng thái active, trong cửa sổ thời gian) — qua
    * đúng cổng EnrolChecker mà EnrolModule đăng ký, để các module khác (vd groups khi xếp thành viên) kiểm tra mà không
    * import ngược Enrol. Chưa có checker nào đăng ký (không xảy ra ở app đầy đủ) thì coi như chưa ghi danh: cổng
    * fail-closed.
@@ -301,7 +308,8 @@ export class CoursesService {
     await this.outbox.enqueueStandalone({ aggregate: 'course_category', type: 'category_moved', payload: { categoryId: cat.id, fromParent: cat.parent, toParent: newParent, actorId: actorId ?? null } });
   }
 
-  /** Xoá một category — số phận của khoá học/category con bên trong PHẢI được tường minh (luật Moodle, report §2#4):
+  /**
+   * Xoá một category — số phận của khoá học/category con bên trong PHẢI được tường minh (luật Moodle, report §2#4):
    * 'moveup' đổi cha children và khoá học lên cha của category bị xoá; 'recursive' xoá chúng. Từ chối (400) khi
    * category không rỗng và không có mode nào được cho.
    */
@@ -578,7 +586,8 @@ export class CoursesService {
     await this.outbox.enqueueStandalone({ aggregate: 'course', type: 'course_deleted', payload: { courseId: courseRow.id, actorId: actorId ?? null } });
   }
 
-  /** Cổng nội dung khoá học (report §2#5): ghi danh và capability là điều kiện ĐỘC LẬP. Truy cập = site admin, HOẶC một
+  /**
+   * Cổng nội dung khoá học (report §2#5): ghi danh và capability là điều kiện ĐỘC LẬP. Truy cập = site admin, HOẶC một
    * ghi danh ACTIVE, HOẶC một gán role thật (không phải student) cấp course:view. Một ghi danh bị đình chỉ vì vậy chặn
    * cả user giữ role student — chỉ role thôi không bao giờ mở khoá học.
    */
@@ -1038,7 +1047,8 @@ export class CoursesService {
     }
   }
 
-  /** Nhân bản khoá học (đường 3 của wizard K1 + nhân bản từ mẫu): sao chép theo bảng Re-run của issue #68 — cấu trúc
+  /**
+   * Nhân bản khoá học (đường 3 của wizard K1 + nhân bản từ mẫu): sao chép theo bảng Re-run của issue #68 — cấu trúc
    * (section/cm kèm instance quiz), cài đặt khoá, chính sách điểm, tiêu chí hoàn thành, neo khung chương trình, trường
    * tuỳ biến; KHÔNG chép người học, ghi danh, lượt làm bài, điểm và tiến độ. Bản sao luôn ở trạng thái nháp
    * (visible=false); khi có `startDate` mới, mọi mốc hạn trong khoá (ngày kết thúc, ngày mở, hạn hoàn thành, giờ
@@ -1141,7 +1151,8 @@ export class CoursesService {
     return this.getCourse(created.id);
   }
 
-  /** "Dùng lại từ khoá khác" (K1): chép các section nguyên vẹn và/hoặc module lẻ từ khoá nguồn vào khoá đích, nối cuối
+  /**
+   * "Dùng lại từ khoá khác" (K1): chép các section nguyên vẹn và/hoặc module lẻ từ khoá nguồn vào khoá đích, nối cuối
    * outline. Module lẻ được gom theo section nguồn của chúng — mỗi nhóm thành một section mới mang tên section nguồn
    * (trừ khi section đó đã được chép nguyên vẹn trong cùng lệnh). Ngày tháng giữ nguyên như nguồn (không lùi hạn — đây
    * là dùng lại nội dung, không phải mở đợt học mới).
@@ -1319,7 +1330,8 @@ export class CoursesService {
     return this.repo.listCmsInSection(sectionId);
   }
 
-  /** Nạp khung SGK vào khoá (K0b — bản sao có neo kép): mỗi chủ đề được chọn thành một section mới mang tựa của chủ đề;
+  /**
+   * Nạp khung SGK vào khoá (K0b — bản sao có neo kép): mỗi chủ đề được chọn thành một section mới mang tựa của chủ đề;
    * các bài trong chủ đề thành mục của section, mỗi mục chụp toàn bộ YCCĐ suy qua ánh xạ (bài → node chương trình →
    * YCCĐ của node) tại thời điểm nạp. `insertAtSection` như ở khung chương trình. Sửa cây sách hoặc ánh xạ sau đó không
    * đổi các section đã nạp vì chúng đọc từ bản chụp. Quyền: course:update tại context khoá đích là cổng duy nhất (như

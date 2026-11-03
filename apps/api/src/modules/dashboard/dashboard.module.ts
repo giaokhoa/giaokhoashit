@@ -14,7 +14,8 @@ import { DashboardService } from './dashboard.service';
  */
 const CONTEXT_LEVELS_PORT = 'CONTEXT_LEVELS_PORT';
 
-/** DashboardModule (DASH1, issue #121): khối tổng hợp đầu dashboard (việc sắp đến hạn, điểm mới đã công bố, hàng đợi
+/**
+ * DashboardModule (DASH1, issue #121): khối tổng hợp đầu dashboard (việc sắp đến hạn, điểm mới đã công bố, hàng đợi
  * chấm) + tuỳ chọn thẻ khoá cá nhân. Phụ thuộc Access (PermissionEvaluator + ContextsService để xác định đội giảng dạy)
  * và Grades facade (trạng thái công bố PH-0).
  *

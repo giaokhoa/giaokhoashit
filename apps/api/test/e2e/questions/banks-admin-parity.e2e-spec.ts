@@ -6,11 +6,9 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Cân bằng trải nghiệm ngân hàng cho ADMIN (việc nối tiếp feat #70,
- * đính chính 25/10/2026): CHỈ MỘT quy tắc — admin có khu riêng ĐÚNG
- * NHƯ giáo viên trên bề mặt ngân hàng, không ẩn theo vai, không đặc
- * cách. Spec này khoá parity admin ↔ giáo viên (vai teacher tại hệ
- * thống — nhóm archetype staff) ở tầng API, đúng các đường web dùng:
+ * Cân bằng trải nghiệm ngân hàng cho ADMIN (việc nối tiếp feat #70, đính chính 25/10/2026): CHỈ MỘT quy tắc — admin có
+ * khu riêng ĐÚNG NHƯ giáo viên trên bề mặt ngân hàng, không ẩn theo vai, không đặc cách. Spec này khoá parity admin ↔
+ * giáo viên (vai teacher tại hệ thống — nhóm archetype staff) ở tầng API, đúng các đường web dùng:
  *  - GET /question-banks (kind=question): bank cá nhân tự tạo lười,
  *    đủ capabilities, có category mặc định, tạo được câu trong bank
  *    của chính mình.

@@ -63,7 +63,8 @@ export class GradeItemsController {
 
 @ApiTags('grades')
 @Controller({ path: 'grades', version: '1' })
-/** API gắn với một bản ghi điểm ở path canonical theo chuẩn đường dẫn module điểm (issue #342): bản ghi điểm được định
+/**
+ * API gắn với một bản ghi điểm ở path canonical theo chuẩn đường dẫn module điểm (issue #342): bản ghi điểm được định
  * danh thẳng ở gốc (`grades/:gradeId`) thay vì lồng dưới `courses/grades/grades` như path cũ. Path cũ vẫn tới được qua
  * controller alias trong `legacy-grades.controller.ts`.
  */

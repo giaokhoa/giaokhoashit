@@ -10,7 +10,11 @@ export interface AvailabilityContext {
   userId: string;
   courseId?: string;
   now?: Date;
-  /** PHẦN TRĂM điểm (0-100, ngữ nghĩa availability_grade của Moodle) theo khoá id của grade-item / id của cm — do provider đã đăng ký của GradesModule cung cấp qua CoursesService. Vắng mặt ⇒ các điều kiện theo điểm coi như chưa đạt. */
+  /**
+   * PHẦN TRĂM điểm (0-100, ngữ nghĩa availability_grade của Moodle) theo khoá id của grade-item / id của cm — do
+   * provider đã đăng ký của GradesModule cung cấp qua CoursesService. Vắng mặt ⇒ các điều kiện theo điểm coi như chưa
+   * đạt.
+   */
   grades?: Record<string, number>;
 }
 
@@ -103,7 +107,10 @@ export class AvailabilityService {
     return { available, description: this.i18n.t('availability.gradeMustBe', { args: { id, range } }) };
   }
 
-  /** Lá profile: {type:'profile', field, operator ('eq'|'contains'|'notempty'|'isempty'), value}. Kiểm tra hồ sơ user + các trường tuỳ biến. */
+  /**
+   * Lá profile: {type:'profile', field, operator ('eq'|'contains'|'notempty'|'isempty'), value}. Kiểm tra hồ sơ user +
+   * các trường tuỳ biến.
+   */
   private async evalProfile(leaf: AvailabilityLeaf, ctx: AvailabilityContext): Promise<LeafResult> {
     const field = String(leaf.field ?? leaf.sf ?? '');
     const operator = String(leaf.operator ?? leaf.op ?? 'eq');

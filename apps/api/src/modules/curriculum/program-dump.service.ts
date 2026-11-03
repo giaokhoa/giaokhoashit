@@ -6,7 +6,8 @@ import {
   buildProgramDumpSql, loadProgramDumpSql, restoreProgramDumpSql, PROGRAM_DUMP_VERSION,
 } from './program-dump';
 
-/** Dịch vụ phân phối dữ liệu chương trình bằng DUMP ĐÔNG CỨNG. Hai đầu việc tách bạch:
+/**
+ * Dịch vụ phân phối dữ liệu chương trình bằng DUMP ĐÔNG CỨNG. Hai đầu việc tách bạch:
  * - PHÂN PHỐI (mọi môi trường): {@link restoreIfEmpty} — seed gọi để restore artifact trong repo khi DB chưa có dữ liệu
  * chương trình.
  * - SẢN XUẤT (chỉ trung tâm): {@link exportDumpToFile} — CLI export-program-dump gọi trên DB chuẩn đã patch bằng
@@ -36,16 +37,18 @@ export class ProgramDumpService {
     return { restored: true, version: PROGRAM_DUMP_VERSION };
   }
 
-  /** Toàn văn dump của DB hiện tại (đường sản xuất ở trung tâm xuất toàn bộ; kiểm chứng trong suite dùng chung DB truyền
+  /**
+   * Toàn văn dump của DB hiện tại (đường sản xuất ở trung tâm xuất toàn bộ; kiểm chứng trong suite dùng chung DB truyền
    * `datasetKey` để giới hạn phạm vi theo một dataset).
    */
   async buildDumpSql(opts?: { datasetKey?: string }): Promise<string> {
     return buildProgramDumpSql(this.repo.dbHandle, opts);
   }
 
-  /** Restore một bản dump cho trước vào DB hiện tại (một transaction, kèm neo các môn vừa restore về context hệ thống của
-   * môi trường này như {@link restoreIfEmpty}). Đường nội bộ của {@link restoreIfEmpty}; phơi ra cho kiểm chứng vòng
-   * xuất → restore trên cùng một artifact vừa sản xuất.
+  /**
+   * Restore một bản dump cho trước vào DB hiện tại (một transaction, kèm neo các môn vừa restore về context hệ thống
+   * của môi trường này như {@link restoreIfEmpty}). Đường nội bộ của {@link restoreIfEmpty}; phơi ra cho kiểm chứng
+   * vòng xuất → restore trên cùng một artifact vừa sản xuất.
    */
   async restoreDumpSql(dumpSql: string): Promise<void> {
     const system = await this.contexts.ensureSystemContext();

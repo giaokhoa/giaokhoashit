@@ -27,13 +27,10 @@ import { MESSAGE_PROVIDERS, providerByName } from './notification-providers';
  * vòng quét bên dưới).
  *
  * NGOÀI parity (kèm lý do, đã ghi tường minh trong issue #293):
- * - `audience`: chỉ gác ở tầng tuỳ chọn phía API (lọc danh sách loại
- *   trong trang cài đặt theo vai + context thật, chặn PUT ngoài phía
- *   người nhận bằng lỗi 403 mã `messaging.preference_audience`);
- *   luật PHÁT của worker không đọc trường này — nơi phát phía worker
- *   đã biết đích danh người nhận. Bản chiếu vì vậy không mang
- *   `audience` (ca hình dạng bên dưới gác điều này: mỗi mục của bản
- *   chiếu phải có đúng 3 trường thuộc parity).
+ * - `audience`: chỉ gác ở tầng tuỳ chọn phía API (lọc danh sách loại trong trang cài đặt theo vai + context thật, chặn
+ *   PUT ngoài phía người nhận bằng lỗi 403 mã `messaging.preference_audience`); luật PHÁT của worker không đọc trường
+ *   này — nơi phát phía worker đã biết đích danh người nhận. Bản chiếu vì vậy không mang `audience` (ca hình dạng bên
+ *   dưới gác điều này: mỗi mục của bản chiếu phải có đúng 3 trường thuộc parity).
  * - `channels`: worker chỉ phát kênh trong-app; kênh ngoài là cổng
  *   xếp job phía API. `group`/`label`/`description`: thuần trình bày
  *   phía API/web.

@@ -23,13 +23,10 @@ import { createCategory, grantActiveTeacherPlan } from '../../support/course-enr
  *  (3) thêm 2 học sinh vào roster → cả hai ACTIVE ở cả 2 khoá;
  *  (4) rời lớp → SUSPENDED ở mọi khoá; vào lại → ACTIVE lại;
  *  (5) thêm khoá mới vào lớp đang chạy → backfill ngay toàn bộ roster;
- *  (6) bền vững: chèn cohort_members + sự kiện outbox TRỰC TIẾP vào DB
- *      (bỏ qua đường in-process) → consumer vật chất hoá ghi danh —
- *      ca này đã chuyển sang tầng integration của worker cùng
- *      consumer đồng bộ cohort (issue con #528 của #519), xem
- *      `apps/worker/test/integration/enrol/cohort-sync-events-delivery.int-spec.ts`;
- *      tiến trình API không còn consumer polling cho hai loại sự kiện
- *      cohort nên ca không còn chạy được ở tầng e2e của API;
+ *  (6) bền vững: chèn cohort_members + sự kiện outbox TRỰC TIẾP vào DB (bỏ qua đường in-process) → consumer vật chất
+ *      hoá ghi danh — ca này đã chuyển sang tầng integration của worker cùng consumer đồng bộ cohort (issue con #528
+ *      của #519), xem `apps/worker/test/integration/enrol/cohort-sync-events-delivery.int-spec.ts`; tiến trình API
+ *      không còn consumer polling cho hai loại sự kiện cohort nên ca không còn chạy được ở tầng e2e của API;
  *  (7) đình chỉ thủ công theo khoá mang vết modifierId = người thao
  *      tác (căn cứ để job đối soát tôn trọng ca "miễn môn");
  *  (8) đổi on_leave = unenrol → rời lớp thì ghi danh WITHDRAWN;

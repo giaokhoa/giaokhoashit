@@ -44,13 +44,10 @@ export class PaymentsController {
     return this.payments.createClassFeePayment(actor.id, classId);
   }
   /**
-   * POST /payments/plans — mua/nâng GÓI (lát 2, issue #189): thân gồm
-   * loại gói (`tenant_plan` | `teacher_plan`) và `couponCode` tuỳ
-   * chọn; số tiền do hệ thống lấy từ CẤU HÌNH giá tại thời điểm giao
-   * dịch (component `payments` ở Cài đặt hệ thống) trừ mức giảm của
-   * coupon nếu có, client không gửi amount. Payment sinh ra chạy
-   * đúng pipeline VietQR/IPN như mọi component khác; quyền lợi gói chỉ
-   * kích hoạt khi payment succeeded qua đường đã xác thực.
+   * POST /payments/plans — mua/nâng GÓI (lát 2, issue #189): thân gồm loại gói (`tenant_plan` | `teacher_plan`) và
+   * `couponCode` tuỳ chọn; số tiền do hệ thống lấy từ CẤU HÌNH giá tại thời điểm giao dịch (component `payments` ở Cài
+   * đặt hệ thống) trừ mức giảm của coupon nếu có, client không gửi amount. Payment sinh ra chạy đúng pipeline
+   * VietQR/IPN như mọi component khác; quyền lợi gói chỉ kích hoạt khi payment succeeded qua đường đã xác thực.
    */
   @Post('plans')
   async purchasePlan(@Body({ schema: purchasePlanSchema }) dto: PurchasePlanDto, @CurrentUser() actor: AuthenticatedUser) {

@@ -21,20 +21,14 @@ import { TenantsRepository } from '@lms/db/repositories/tenants';
  * Nhận diện riêng của trung tâm + kích hoạt lời mời quản trị đầu tiên (issue #583, chương trình tenant #579).
  *
  * Luồng gắn trung tâm của mọi phương thức ở đây (thay cho guard, vì các route này mang `@SkipSpaceContext`): 1. Phân
- * giải slug qua khung định tuyến (sổ đăng ký control plane
- *    là nguồn sự thật duy nhất). Slug chưa đăng ký → 404; tầng chưa
- *    cấu hình → 503 — fail-closed, không bao giờ phục vụ bằng kho
- *    chung khi người gọi đã chỉ đích danh một trung tâm. NGOẠI LỆ:
- *    đọc nhận diện (GET) bỏ qua bước này khi trung tâm đã chuẩn bị
- *    trong tiến trình — xem `getIdentity`. 2. Chuẩn bị kho đích (`getKyselyForSpace`) TRƯỚC mọi truy vấn —
- *    kho chung cho trung tâm ở kho chung, kho riêng cho trung tâm ở
- *    kho riêng. 3. Chạy truy vấn trong ngữ cảnh ALS `{ platform: true, spaceSlug }`:
- *    handle được định tuyến theo slug đã chuẩn bị chọn đúng kho, cờ
- *    platform cho phép đọc xuyên tenant trong chính kho đó (đọc
- *    nhận diện công khai, đọc lời mời, kiểm tra danh sách quản trị
- *    của kho). Đây là đường vận hành/đọc công khai, không phải
- *    đường nghiệp vụ của một phiên thuộc tenant — vì vậy không gắn
- *    `tenantId` của phiên vào đây.
+ * giải slug qua khung định tuyến (sổ đăng ký control plane là nguồn sự thật duy nhất). Slug chưa đăng ký → 404; tầng
+ * chưa cấu hình → 503 — fail-closed, không bao giờ phục vụ bằng kho chung khi người gọi đã chỉ đích danh một trung tâm.
+ * NGOẠI LỆ: đọc nhận diện (GET) bỏ qua bước này khi trung tâm đã chuẩn bị trong tiến trình — xem `getIdentity`. 2.
+ * Chuẩn bị kho đích (`getKyselyForSpace`) TRƯỚC mọi truy vấn — kho chung cho trung tâm ở kho chung, kho riêng cho trung
+ * tâm ở kho riêng. 3. Chạy truy vấn trong ngữ cảnh ALS `{ platform: true, spaceSlug }`: handle được định tuyến theo
+ * slug đã chuẩn bị chọn đúng kho, cờ platform cho phép đọc xuyên tenant trong chính kho đó (đọc nhận diện công khai,
+ * đọc lời mời, kiểm tra danh sách quản trị của kho). Đây là đường vận hành/đọc công khai, không phải đường nghiệp vụ
+ * của một phiên thuộc tenant — vì vậy không gắn `tenantId` của phiên vào đây.
  *
  * Đọc nhận diện (GET) KHÔNG chặn theo trạng thái sổ đăng ký: tên và logo là thông tin công khai của trang đăng nhập,
  * không phải traffic nghiệp vụ — trung tâm bị đình chỉ vẫn cần hiện tên của nó. Mọi đường ghi (PATCH, kích hoạt) đều

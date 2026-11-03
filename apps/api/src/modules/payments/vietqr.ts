@@ -5,15 +5,12 @@ import { encodeVietQr } from 'vn-qr-pay';
  * - Mã thanh toán: `LMS` + 9 ký tự base32 Crockford mã hoá từ số thứ tự của
  *   sequence `payment_code_seq` — sinh một lần, duy nhất (unique ở DB),
  *   không tái sử dụng; đặt ở trường 62/08 (purpose) của QR.
- * - QR ĐỘNG theo chuẩn EMVCo/NAPAS qua `vn-qr-pay`: trường 54 khoá số tiền,
- *   trường 62/08 mang mã thanh toán. Mã dịch vụ trường 38/02 giữ chuẩn
- *   NAPAS `QRIBFTTA` (chuyển khoản tới số tài khoản).
- *   GHI NHẬN KIỂM CHỨNG (25/10/2026): test vector vàng §2.2 là mẫu của
- *   payOS — trường 38/02 của mẫu là mã dịch vụ RIÊNG của payOS
- *   (`99998888`) và CRC cuối mẫu không tái tạo được bằng vn-qr-pay kể cả
- *   khi ép cùng tham số; vì vậy tiêu chí 6.4.4 được khoá bằng vector vàng
- *   của chính hệ thống (sinh qua vn-qr-pay, giải mã ngược đúng 54/62-08,
- *   CRC hợp lệ) trong vietqr.spec.ts cạnh mã nguồn, không giả mạo khớp mẫu.
+ * - QR ĐỘNG theo chuẩn EMVCo/NAPAS qua `vn-qr-pay`: trường 54 khoá số tiền, trường 62/08 mang mã thanh toán. Mã dịch vụ
+ *   trường 38/02 giữ chuẩn NAPAS `QRIBFTTA` (chuyển khoản tới số tài khoản). GHI NHẬN KIỂM CHỨNG (25/10/2026): test
+ *   vector vàng §2.2 là mẫu của payOS — trường 38/02 của mẫu là mã dịch vụ RIÊNG của payOS (`99998888`) và CRC cuối mẫu
+ *   không tái tạo được bằng vn-qr-pay kể cả khi ép cùng tham số; vì vậy tiêu chí 6.4.4 được khoá bằng vector vàng của
+ *   chính hệ thống (sinh qua vn-qr-pay, giải mã ngược đúng 54/62-08, CRC hợp lệ) trong vietqr.spec.ts cạnh mã nguồn,
+ *   không giả mạo khớp mẫu.
  */
 
 export const PAYMENT_CODE_PREFIX = 'LMS';

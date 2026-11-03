@@ -9,10 +9,8 @@ import { describe, expect, it } from 'vitest';
  *
  * Ba khẳng định chính, tất cả đều dựng từ chính khai báo decorator
  * trong `messaging.controller.ts` (không chạy server, không cần DB):
- * - Bảng route (method + path) dựng từ khai báo bằng đúng bảng đã
- *   chụp sau lát đổi (58 route viết literal dưới đây) — thêm/bớt/đổi
- *   bất kỳ route nào của module đều làm spec này đỏ, kể cả khi các
- *   flow nghiệp vụ vẫn chạy.
+ * - Bảng route (method + path) dựng từ khai báo bằng đúng bảng đã chụp sau lát đổi (58 route viết literal dưới đây) —
+ *   thêm/bớt/đổi bất kỳ route nào của module đều làm spec này đỏ, kể cả khi các flow nghiệp vụ vẫn chạy.
  * - Tập canonical (bảng trừ tập alias) chứa đúng 5 path đích đã chốt
  *   và không còn route nào chứa segment lặp `messages/messages` hay
  *   hậu tố `-all`; tập alias bằng đúng 6 path cũ.

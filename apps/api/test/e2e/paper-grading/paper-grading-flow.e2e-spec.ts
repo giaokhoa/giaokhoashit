@@ -578,9 +578,8 @@ describe('Luồng chấm bài giấy CAM-0', () => {
     const delClass = await http(app).delete(`/api/v1/exam-scans/${outClass.scan!.id}`).set('Authorization', `Bearer ${ctx.teacher}`);
     expect(delClass.status).toBe(200);
 
-    // Mã SBD 8 số: vị trí 6 (trọng số 5 cũ), delta +2 --- Sự thật số học của hệ cũ, kiểm ngay trong test: mã cũ của
-    // học sinh thân 0000001 là 00000015; đột biến +2 ở vị trí 6 cho 00000035 — chính là mã cũ của học sinh thân
-    // 0000003.
+    // Mã SBD 8 số: vị trí 6 (trọng số 5 cũ), delta +2 --- Sự thật số học của hệ cũ, kiểm ngay trong test: mã cũ của học
+    // sinh thân 0000001 là 00000015; đột biến +2 ở vị trí 6 cho 00000035 — chính là mã cũ của học sinh thân 0000003.
     const W_OLD = [3, 5, 7, 9, 1, 3, 5];
     const oldCodeOf = (body: string) => `${body}${body.split('').reduce((s, c, i) => s + Number(c) * W_OLD[i]!, 0) % 10}`;
     const oldFirst = oldCodeOf('0000001');

@@ -3,54 +3,32 @@
  * tâm từ con số không thành một kho riêng hoạt động được trên cụm chung.
  *
  * Thứ tự 7 bước (mỗi bước kiểm tra trạng thái đã làm trước khi làm — chạy lại sau sự cố tiếp tục từ bước dở dang, không
- * tạo trùng): 1. Đăng ký: dòng `space_registry` (trạng thái `provisioning`) +
- *    lịch sử `create`. Từ chối slug đã có (trừ khi chạy lại đúng
- *    trung tâm đó) và từ chối tên database đã có ở BẤT KỲ dòng nào
- *    (kể cả hàng shared — kho dedicated mang tên trùng kho chung
- *    sẽ khiến trung tâm trỏ thẳng vào kho chung). Chạy lại chỉ
- *    được khi dòng đang ở trạng thái `provisioning`; trung tâm đã
- *    đình chỉ/đóng bị từ chối, chỉ mở lại qua thao tác vòng đời
- *    tường minh (đổi trạng thái), không mở lại lặng lẽ bằng lệnh
- *    cấp phát. 2. Database + role: role kết nối riêng + database riêng thuộc sở
- *    hữu role đó trên cụm chung, thu hồi CONNECT của PUBLIC, chỉ
- *    cấp cho role của trung tâm. Role đã có sẵn mà mang quyền vượt
- *    ranh giới tenant (SUPERUSER, BYPASSRLS, CREATEDB, CREATEROLE,
- *    REPLICATION, hoặc là thành viên của một role đặc quyền) thì bị
- *    từ chối ngay, không nhận nuôi làm role kết nối — nhận nuôi
- *    role đặc quyền sẽ cho trung tâm quyền truy cập chéo database
- *    hoặc bỏ qua RLS. Mật khẩu role: ưu tiên biến môi
- *    trường `SPACE_PROVISION_DB_PASSWORD` (vận hành cấp tường minh,
- *    cũng là cách xoay mật khẩu khi đã mất); chưa cấp mà role chưa
- *    có thì sinh mật khẩu chữ-số và in đúng một lần; role đã có mà
- *    không cấp mật khẩu thì GIỮ NGUYÊN mật khẩu cũ (không xoay lén
- *    dưới chân môi trường triển khai đã lưu mật khẩu trước đó). 3. Migration: toàn bộ migration nghiệp vụ hiện hành vào
- *    database
- *    mới bằng đúng bộ máy migration của `@lms/db`
- *    (`applyStoreMigrations`, như fleet runner), rồi ghi phiên bản
- *    schema vào registry của trung tâm.
- *    Database mới nên không cần sao lưu trước như fleet runner. 4. Dữ kiện nền: context hệ thống + dòng tenant (kind
- *    `center`,
- *    trạng thái `active`) + context tenant + bản cài cục bộ gói
- *    chương trình (YCCĐ) — dump chương trình được restore nguyên
- *    văn bằng `restoreProgramDumpSql` (một transaction, neo lại
- *    context hệ thống của kho đích). Ghi nhận bản cài (phiên bản +
- *    checksum) để lần chạy lại biết kho này đã ở bản nào: bản cài
- *    khớp thì bỏ qua; chưa có bản cài mà dữ kiện đã có (chết giữa
- *    lúc restore và lúc ghi bản cài) thì chỉ ghi bản cài. Cùng bước
- *    này cài thêm BỘ VAI MẶC ĐỊNH hiện hành vào kho đích (bước ghi
- *    nhận `role-baseline`): cơ chế chuyển tiếp để trung tâm mới có
- *    vai mà gán ngay khi mở — xem `installCentreRoleBaseline`. 5. Nhận diện: dòng `centre_identity` (tên hiển thị = tên
- *    trung
- *    tâm, logo/chưa có, màu/chưa đặt) — dữ kiện này sống trong kho
- *    của trung tâm, không nằm ở sổ đăng ký control plane. 6. Quản trị đầu tiên: tài khoản KHÔNG mật khẩu (không tồn tại
- *    mật
- *    khẩu mặc định dùng chung) + membership active vào tenant +
- *    id vào `config.siteadmins` của kho trung tâm + lời mời kích
- *    hoạt (token chỉ lưu dạng băm, hạn 7 ngày). Lời mời đang chờ
- *    sẵn thì tái dùng (không cấp chồng); token gốc chỉ in ra khi
- *    tạo mới — mất link thì dùng lệnh cấp lại lời mời. 7. Kích hoạt định tuyến: trạng thái sổ → `active` + lịch sử
- *    `status_change`. Từ đây khung định tuyến phục vụ trung tâm
- *    (đệm phân giải hết hạn theo TTL, không cần khởi động lại).
+ * tạo trùng): 1. Đăng ký: dòng `space_registry` (trạng thái `provisioning`) + lịch sử `create`. Từ chối slug đã có (trừ
+ * khi chạy lại đúng trung tâm đó) và từ chối tên database đã có ở BẤT KỲ dòng nào (kể cả hàng shared — kho dedicated
+ * mang tên trùng kho chung sẽ khiến trung tâm trỏ thẳng vào kho chung). Chạy lại chỉ được khi dòng đang ở trạng thái
+ * `provisioning`; trung tâm đã đình chỉ/đóng bị từ chối, chỉ mở lại qua thao tác vòng đời tường minh (đổi trạng thái),
+ * không mở lại lặng lẽ bằng lệnh cấp phát. 2. Database + role: role kết nối riêng + database riêng thuộc sở hữu role đó
+ * trên cụm chung, thu hồi CONNECT của PUBLIC, chỉ cấp cho role của trung tâm. Role đã có sẵn mà mang quyền vượt ranh
+ * giới tenant (SUPERUSER, BYPASSRLS, CREATEDB, CREATEROLE, REPLICATION, hoặc là thành viên của một role đặc quyền) thì
+ * bị từ chối ngay, không nhận nuôi làm role kết nối — nhận nuôi role đặc quyền sẽ cho trung tâm quyền truy cập chéo
+ * database hoặc bỏ qua RLS. Mật khẩu role: ưu tiên biến môi trường `SPACE_PROVISION_DB_PASSWORD` (vận hành cấp tường
+ * minh, cũng là cách xoay mật khẩu khi đã mất); chưa cấp mà role chưa có thì sinh mật khẩu chữ-số và in đúng một lần;
+ * role đã có mà không cấp mật khẩu thì GIỮ NGUYÊN mật khẩu cũ (không xoay lén dưới chân môi trường triển khai đã lưu
+ * mật khẩu trước đó). 3. Migration: toàn bộ migration nghiệp vụ hiện hành vào database mới bằng đúng bộ máy migration
+ * của `@lms/db` (`applyStoreMigrations`, như fleet runner), rồi ghi phiên bản schema vào registry của trung tâm.
+ * Database mới nên không cần sao lưu trước như fleet runner. 4. Dữ kiện nền: context hệ thống + dòng tenant (kind
+ * `center`, trạng thái `active`) + context tenant + bản cài cục bộ gói chương trình (YCCĐ) — dump chương trình được
+ * restore nguyên văn bằng `restoreProgramDumpSql` (một transaction, neo lại context hệ thống của kho đích). Ghi nhận
+ * bản cài (phiên bản + checksum) để lần chạy lại biết kho này đã ở bản nào: bản cài khớp thì bỏ qua; chưa có bản cài mà
+ * dữ kiện đã có (chết giữa lúc restore và lúc ghi bản cài) thì chỉ ghi bản cài. Cùng bước này cài thêm BỘ VAI MẶC ĐỊNH
+ * hiện hành vào kho đích (bước ghi nhận `role-baseline`): cơ chế chuyển tiếp để trung tâm mới có vai mà gán ngay khi mở
+ * — xem `installCentreRoleBaseline`. 5. Nhận diện: dòng `centre_identity` (tên hiển thị = tên trung tâm, logo/chưa có,
+ * màu/chưa đặt) — dữ kiện này sống trong kho của trung tâm, không nằm ở sổ đăng ký control plane. 6. Quản trị đầu tiên:
+ * tài khoản KHÔNG mật khẩu (không tồn tại mật khẩu mặc định dùng chung) + membership active vào tenant + id vào
+ * `config.siteadmins` của kho trung tâm + lời mời kích hoạt (token chỉ lưu dạng băm, hạn 7 ngày). Lời mời đang chờ sẵn
+ * thì tái dùng (không cấp chồng); token gốc chỉ in ra khi tạo mới — mất link thì dùng lệnh cấp lại lời mời. 7. Kích
+ * hoạt định tuyến: trạng thái sổ → `active` + lịch sử `status_change`. Từ đây khung định tuyến phục vụ trung tâm (đệm
+ * phân giải hết hạn theo TTL, không cần khởi động lại).
  *
  * Sau bước 7, vận hành còn MỘT việc ngoài pipeline (in rõ ở đầu ra): thêm biến môi trường `SPACE_<SLUG>_DATABASE_URL`
  * (URL kết nối của trung tâm) vào môi trường triển khai — sổ đăng ký chỉ giữ tham chiếu, tầng ứng dụng chỉ phân giải
@@ -226,24 +204,15 @@ const ROLE_BASELINE_MARKER_VERSION = 1;
  * xoá có chủ đích sau khi cài (trạng thái bắt buộc phải giữ nguyên). Dấu mốc hoàn tất trong bảng `config` của chính kho
  * đích là bằng chứng duy nhất tách hai trạng thái này:
  *
- * - Kho được coi là đã cài khi có dấu mốc hoàn tất (đúng phiên
- *   bản) VÀ còn đủ dòng vai mặc định. Điều kiện đủ dòng vai đi
- *   kèm để một kho bị xoá sạch đường cơ sở vai (trạng thái của
- *   trung tâm cấp phát trước khi cơ chế này tồn tại — dòng
- *   config vẫn còn khi chỉ hai bảng vai bị xoá) vẫn được lấp
- *   lại thay vì tin dấu mốc cũ. Kho đã cài là no-op tuyệt đối:
- *   không ghi gì, không đọc tới nội dung ma trận — giá trị
- *   quản trị đã sửa và dòng quản trị đã xoá đều giữ nguyên.
- * - Mọi trạng thái còn lại (kho mới, thiếu vai, hoặc đủ vai
- *   nhưng chưa có dấu mốc — tức lượt cài trước chưa chạy trọn,
- *   kể cả kho đã được cài bởi bản chưa có dấu mốc) đều đi đường
- *   gieo: `seedDefaults` lấp đủ bộ vai kèm ma trận, rồi dấu
- *   mốc mới được ghi SAU KHI đường gieo đã chạy trọn. Lượt cài
- *   chết giữa đường gieo và lúc ghi dấu mốc thì dấu mốc chưa
- *   có nên lần chạy lại gieo lại từ đầu; tại thời điểm đó
- *   trung tâm chưa kích hoạt và chưa có tài khoản quản trị nào
- *   trong kho (bước cài vai chạy trước bước tạo quản trị đầu
- *   tiên) nên việc đồng bộ lại ma trận không mất thay đổi cục
+ * - Kho được coi là đã cài khi có dấu mốc hoàn tất (đúng phiên bản) VÀ còn đủ dòng vai mặc định. Điều kiện đủ dòng vai
+ *   đi kèm để một kho bị xoá sạch đường cơ sở vai (trạng thái của trung tâm cấp phát trước khi cơ chế này tồn tại —
+ *   dòng config vẫn còn khi chỉ hai bảng vai bị xoá) vẫn được lấp lại thay vì tin dấu mốc cũ. Kho đã cài là no-op tuyệt
+ *   đối: không ghi gì, không đọc tới nội dung ma trận — giá trị quản trị đã sửa và dòng quản trị đã xoá đều giữ nguyên.
+ * - Mọi trạng thái còn lại (kho mới, thiếu vai, hoặc đủ vai nhưng chưa có dấu mốc — tức lượt cài trước chưa chạy trọn,
+ *   kể cả kho đã được cài bởi bản chưa có dấu mốc) đều đi đường gieo: `seedDefaults` lấp đủ bộ vai kèm ma trận, rồi dấu
+ *   mốc mới được ghi SAU KHI đường gieo đã chạy trọn. Lượt cài chết giữa đường gieo và lúc ghi dấu mốc thì dấu mốc chưa
+ *   có nên lần chạy lại gieo lại từ đầu; tại thời điểm đó trung tâm chưa kích hoạt và chưa có tài khoản quản trị nào
+ *   trong kho (bước cài vai chạy trước bước tạo quản trị đầu tiên) nên việc đồng bộ lại ma trận không mất thay đổi cục
  *   bộ nào.
  *
  * @returns `created` khi lượt này đã chạy đường gieo và ghi dấu
@@ -435,9 +404,9 @@ export async function runSpaceProvision(options: SpaceProvisionOptions): Promise
     }
     const centreUrl = buildCentreDatabaseUrl({ host: clusterHost, port: clusterPort, role: connectionRole, password: centrePassword, databaseName });
 
-    // Bước 3: migration nghiệp vụ vào kho mới
-    // Bộ máy migration của `@lms/db` (`applyStoreMigrations`) tự lo bước tiền-migration shim `uuidv7()` cho cụm dưới
-    // PG18 trước khi áp — cùng trình tự với CLI migrate và fleet runner, không bản sao tại đây.
+    // Bước 3: migration nghiệp vụ vào kho mới Bộ máy migration của `@lms/db` (`applyStoreMigrations`) tự lo bước
+    //         tiền-migration shim `uuidv7()` cho cụm dưới PG18 trước khi áp — cùng trình tự với CLI migrate và fleet
+    //         runner, không bản sao tại đây.
     const migrationPool = new Pool({ connectionString: centreUrl });
     try {
       const folders = listMigrationFolders(migrationsDir);
@@ -483,11 +452,10 @@ export async function runSpaceProvision(options: SpaceProvisionOptions): Promise
       await migrationPool.end().catch(() => undefined);
     }
 
-    // Bước 4–6: dữ kiện nền, nhận diện, quản trị đầu tiên
-    // Một pool riêng trần 1 kết nối với GUC platform ở mức phiên:
-    // mọi ghi seed (kể cả restore dump chạy transaction riêng của nó trên pool riêng của nó) đều thấy platform='on' nên
-    // qua được RLS FORCE của kho mới. Trần 1 kết nối + các câu lệnh đều chạy tuần tự nên mọi câu đều mượn đúng kết nối
-    // duy nhất mang GUC phiên đó (cùng khuôn pool trần 1 của bước restore ở dưới).
+    // Bước 4–6: dữ kiện nền, nhận diện, quản trị đầu tiên Một pool riêng trần 1 kết nối với GUC platform ở mức phiên:
+    //       mọi ghi seed (kể cả restore dump chạy transaction riêng của nó trên pool riêng của nó) đều thấy
+    //       platform='on' nên qua được RLS FORCE của kho mới. Trần 1 kết nối + các câu lệnh đều chạy tuần tự nên mọi
+    //       câu đều mượn đúng kết nối duy nhất mang GUC phiên đó (cùng khuôn pool trần 1 của bước restore ở dưới).
     const seedPool = new Pool({ connectionString: centreUrl, max: 1 });
     const db = createCentreKysely(seedPool);
     try {

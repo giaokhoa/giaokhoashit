@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { OutboxService } from '../../infra/events/outbox.service';
 import type { AuthMailPort } from './email-otp.plugin';
 
-/** Type của dòng outbox mang yêu cầu gửi mail auth. Consumer là processor trên hàng đợi ở phía worker (relay outbox duy
+/**
+ * Type của dòng outbox mang yêu cầu gửi mail auth. Consumer là processor trên hàng đợi ở phía worker (relay outbox duy
  * nhất phát dòng thành job theo bảng định tuyến của nó); hợp đồng payload của type này nằm ở `@lms/contracts` (module
  * `auth-mail`).
  */

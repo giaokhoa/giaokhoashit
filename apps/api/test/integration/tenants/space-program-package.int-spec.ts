@@ -17,11 +17,9 @@ import { PROGRAM_DUMP_VERSION } from '../../../src/modules/curriculum/program-du
  * nghiệp vụ test dùng chung của tầng này); kho đích bắt đầu chưa có dữ kiện chương trình.
  *
  * Các ca khoá đúng yêu cầu A5:
- * (1) lượt đầu cài gói trung tâm bằng đúng cơ chế cài gói đã có
- *     (restore artifact dump khi kho đích chưa có dữ kiện chương
- *     trình), ghi dòng bản cài vào kho đích và chuyển sổ nguồn sang
- *     kho đích — trừ khoá gói trung tâm (dòng đích là căn cứ, không
- *     bị dòng nguồn ghi đè);
+ * (1) lượt đầu cài gói trung tâm bằng đúng cơ chế cài gói đã có (restore artifact dump khi kho đích chưa có dữ kiện
+ *     chương trình), ghi dòng bản cài vào kho đích và chuyển sổ nguồn sang kho đích — trừ khoá gói trung tâm (dòng đích
+ *     là căn cứ, không bị dòng nguồn ghi đè);
  * (2) chạy lại an toàn: lượt thứ hai không restore, không ghi lại
  *     dòng bản cài, không chuyển lại khoá đã có, bản cài sau lượt
  *     vẫn khớp phiên bản artifact hiện hành;

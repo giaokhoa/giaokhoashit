@@ -104,10 +104,10 @@ function hashToken(token: string): string { return createHash('sha256').update(t
  */
 @Injectable()
 /**
- * Xác thực và vòng đời token: đăng nhập, refresh xoay vòng, đăng xuất, đổi mật khẩu, login-as.
- * Đối chiếu Moodle: lib/moodlelib.php (authenticate_user_login, login_attempt_failed) và cơ chế session.
- * Chính sách: khoá tạm thời sau nhiều lần thất bại liên tiếp (auth.locked_out); suspended/deleted không đăng nhập được;
- * refresh token xoay theo family — tái sử dụng token cũ sẽ thu hồi cả family.
+ * Xác thực và vòng đời token: đăng nhập, refresh xoay vòng, đăng xuất, đổi mật khẩu, login-as. Đối chiếu Moodle:
+ * lib/moodlelib.php (authenticate_user_login, login_attempt_failed) và cơ chế session. Chính sách: khoá tạm thời sau
+ * nhiều lần thất bại liên tiếp (auth.locked_out); suspended/deleted không đăng nhập được; refresh token xoay theo
+ * family — tái sử dụng token cũ sẽ thu hồi cả family.
  */
 export class AuthService {
   constructor(

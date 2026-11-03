@@ -17,10 +17,8 @@ import {
  *     danh sách ma trận trực tiếp (403), dù có vai giáo viên ở hệ thống.
  *  3. Bất biến version: sửa ô trên mẫu ready → version của MẪU tăng;
  *     bản copy đã lấy trước đó không đổi (nội dung + version).
- *  4. Đóng góp → duyệt vào bank tổ có truy vết (proposer trên hàng
- *     chờ, derived_from trên bản vào bank, bản vào bank tổ là mẫu);
- *     từ chối có lý do hiện lại cho người gửi; người không có quyền
- *     duyệt thì duyệt → 403.
+ *  4. Đóng góp → duyệt vào bank tổ có truy vết (proposer trên hàng chờ, derived_from trên bản vào bank, bản vào bank tổ
+ *     là mẫu); từ chối có lý do hiện lại cho người gửi; người không có quyền duyệt thì duyệt → 403.
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });

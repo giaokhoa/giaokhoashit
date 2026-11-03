@@ -24,18 +24,14 @@ import { addExamSlot, createExamDraft } from '../../support/exam-pin-helpers';
  * chính role chủ kho như đường triển khai thật), đọc qua biến `SYSTEM_BANK_DATABASE_URL` đặt trước khi ứng dụng khởi
  * động. Shim `uuidv7()` chỉ áp khi server dưới PG18.
  *
- * Các ca khoá các tiêu chí nghiệm thu ở phía HTTP: (1) phát hành câu
- * + phiên bản mới, phiên bản cũ đọc lại không đổi; (2) giáo viên khám
- * phá theo dạng câu và nhập bản chụp — đủ nội dung + truy vết,
- * checksum khớp gói nguồn; (3) checksum lệch thì nhập bị từ chối;
- * (4) rút câu: khám phá + nhập mới không còn thấy, sự kiện rút được
- * ghi và trung tâm ghi nhận; (5) sửa câu đã nhập ở trung tâm thành
- * bản phái sinh, phiên bản nguyên trạng còn nguyên; (6) bank-off:
- * ứng dụng không cấu hình kho ngân hàng vẫn đọc câu đã nhập và tạo
- * đề từ câu đó (đường thi chỉ đọc kho trung tâm). Chạy bài thi và
- * chấm điểm đầy đủ thuộc các suite quiz hiện hữu (chúng chỉ vận hành
- * trên slot trong kho trung tâm); ca này khoá phần delta của PR:
- * đường trung tâm không gọi kho ngân hàng.
+ * Các ca khoá các tiêu chí nghiệm thu ở phía HTTP: (1) phát hành câu + phiên bản mới, phiên bản cũ đọc lại không đổi;
+ * (2) giáo viên khám phá theo dạng câu và nhập bản chụp — đủ nội dung + truy vết, checksum khớp gói nguồn; (3) checksum
+ * lệch thì nhập bị từ chối;
+ * (4) rút câu: khám phá + nhập mới không còn thấy, sự kiện rút được ghi và trung tâm ghi nhận; (5) sửa câu đã nhập ở
+ *     trung tâm thành bản phái sinh, phiên bản nguyên trạng còn nguyên; (6) bank-off: ứng dụng không cấu hình kho ngân
+ *     hàng vẫn đọc câu đã nhập và tạo đề từ câu đó (đường thi chỉ đọc kho trung tâm). Chạy bài thi và chấm điểm đầy đủ
+ *     thuộc các suite quiz hiện hữu (chúng chỉ vận hành trên slot trong kho trung tâm); ca này khoá phần delta của PR:
+ *     đường trung tâm không gọi kho ngân hàng.
  *
  * Vòng sửa theo phán quyết trên PR #612 bổ sung: (7) đường đọc nội dung gói đi qua cổng người xem `question:useall` —
  * học sinh bị từ chối ở cả 3 route đọc, giáo viên đọc được; (8) trung tâm liệt kê được sự kiện rút chưa ghi nhận qua

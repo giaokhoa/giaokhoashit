@@ -196,23 +196,17 @@ export class MessagingContactsService {
    * là một tra cứu `isContact` theo khoá chính (đội kiểm tra đo 0,018 ms — không nghẽn). Notification hệ thống
    * (`notify`) KHÔNG đi qua cổng này.
    *
-   * NGOẠI LỆ duy nhất (chốt bổ sung 25/10/2026 trên issue
-   * #33): cặp GIÁO VIÊN ↔ HỌC SINH thuộc cùng một đơn vị học tập
-   * nhắn riêng trực tiếp không cần kết bạn — cả mở hội thoại mới
-   * lẫn gửi vào hội thoại cũ, cả hai chiều (học sinh trả lời được).
-   * Ngoại lệ có HAI căn cứ quan hệ thật, tính lại tại MỖI lần kiểm:
+   * NGOẠI LỆ duy nhất (chốt bổ sung 25/10/2026 trên issue #33): cặp GIÁO VIÊN ↔ HỌC SINH thuộc cùng một đơn vị học tập
+   * nhắn riêng trực tiếp không cần kết bạn — cả mở hội thoại mới lẫn gửi vào hội thoại cũ, cả hai chiều (học sinh trả
+   * lời được). Ngoại lệ có HAI căn cứ quan hệ thật, tính lại tại MỖI lần kiểm:
    * (a) cấp KHOÁ — gán vai dạy tại context khoá + ghi danh hiệu lực
    * (xem {@link MessagingRepository.findTeacherStudentSharedCourseId});
-   * (b) cấp LỚP — gán vai dạy tại context lớp + thành viên roster
-   * hiệu lực, bổ sung ở lát MSG-T2 theo sổ quyết định mục D ("HS
-   * thuộc khoá/LỚP của mình") (xem
-   * {@link MessagingRepository.findTeacherStudentSharedClassId}).
-   * Hết quan hệ (rời lớp/hết ghi danh/hết vai dạy) thì cổng đóng
-   * lại ngay, lịch sử cũ vẫn đọc được như luật gỡ liên hệ.
-   * Quan hệ CHẶN vẫn thắng ngoại lệ này ở cả hai chiều: đã chặn thì
-   * cặp GV–HS cũng không qua được (đường gửi vốn đã chặn bằng mã
-   * `messaging.contact_blocked` trước khi tới đây; kiểm thêm tại đây
-   * để đường MỞ hội thoại mới khép cùng một luật).
+   * (b) cấp LỚP — gán vai dạy tại context lớp + thành viên roster hiệu lực, bổ sung ở lát MSG-T2 theo sổ quyết định mục
+   *     D ("HS thuộc khoá/LỚP của mình") (xem {@link MessagingRepository.findTeacherStudentSharedClassId}). Hết quan hệ
+   *     (rời lớp/hết ghi danh/hết vai dạy) thì cổng đóng lại ngay, lịch sử cũ vẫn đọc được như luật gỡ liên hệ. Quan hệ
+   *     CHẶN vẫn thắng ngoại lệ này ở cả hai chiều: đã chặn thì cặp GV–HS cũng không qua được (đường gửi vốn đã chặn
+   *     bằng mã `messaging.contact_blocked` trước khi tới đây; kiểm thêm tại đây để đường MỞ hội thoại mới khép cùng
+   *     một luật).
    *
    * @returns Không trả dữ liệu; trở về bình thường nghĩa là cổng mở.
    * @throws {ForbiddenException} `messaging.not_a_contact` khi hai

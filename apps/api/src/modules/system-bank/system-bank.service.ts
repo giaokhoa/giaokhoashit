@@ -3,30 +3,21 @@
  * riêng phía platform.
  *
  * Luồng nghiệp vụ chính:
- * - Phát hành (quản trị platform): tạo câu kèm phiên bản đầu tiên,
- *   hoặc tạo phiên bản mới cho câu đã có — mỗi phiên bản mang gói tự
- *   đủ + checksum SHA-256 do server tự tính trên dạng chuẩn hoá của
- *   gói; nội dung phiên bản cũ không bao giờ bị ghi đè. Liên kết YCCĐ
- *   trong gói là ẢNH CHỤP tại thời điểm phát hành (bảng liên kết của
- *   kho nghiệp vụ gắn theo câu, không theo version): sửa liên kết mà
- *   không phát hành version mới thì gói cũ không đổi — muốn làm mới
- *   gói thì phát hành version mới.
- * - Kiểm chứng gói theo dạng câu ở mức thô (không lặp lại toàn bộ
- *   chuẩn hoá sâu của module câu hỏi — kiểm chứng Tiptap sâu xảy ra
- *   ở lúc nhập vào kho trung tâm qua `QuestionsService`):
- *   multichoice đúng 4 lựa chọn + đúng 1 đáp án đúng; truefalse TF-A
- *   không mang dòng đáp án; shortanswer ít nhất 1 đáp án và mọi dòng
- *   đều là đáp án được chấp nhận; essay không mang dòng đáp án.
- * - Rút câu (quản trị platform): đổi metadata trạng thái của câu
- *   thành `withdrawn` (tách khỏi nội dung phiên bản — các phiên bản cũ
- *   vẫn đọc lại nguyên vẹn), ghi sự kiện `question_withdrawn` vào
- *   nhật ký append-only, và trả về danh sách slug các trung tâm đã
- *   nhập câu để tầng trên phát thông báo (kênh sự kiện platform).
- * - Đọc: câu + từng phiên bản + phiên bản mới nhất, kèm checksum để
- *   phía nhập kiểm chứng trước khi ghi bản chụp. Vì gói chứa đáp án
- *   và khoá đáp án, đường đọc nội dung gói đi qua cổng người xem
- *   `question:useall` tại context hệ thống (xem
- *   `assertPackageViewer`) — khác đường khám phá chỉ trả metadata.
+ * - Phát hành (quản trị platform): tạo câu kèm phiên bản đầu tiên, hoặc tạo phiên bản mới cho câu đã có — mỗi phiên bản
+ *   mang gói tự đủ + checksum SHA-256 do server tự tính trên dạng chuẩn hoá của gói; nội dung phiên bản cũ không bao
+ *   giờ bị ghi đè. Liên kết YCCĐ trong gói là ẢNH CHỤP tại thời điểm phát hành (bảng liên kết của kho nghiệp vụ gắn
+ *   theo câu, không theo version): sửa liên kết mà không phát hành version mới thì gói cũ không đổi — muốn làm mới gói
+ *   thì phát hành version mới.
+ * - Kiểm chứng gói theo dạng câu ở mức thô (không lặp lại toàn bộ chuẩn hoá sâu của module câu hỏi — kiểm chứng Tiptap
+ *   sâu xảy ra ở lúc nhập vào kho trung tâm qua `QuestionsService`): multichoice đúng 4 lựa chọn + đúng 1 đáp án đúng;
+ *   truefalse TF-A không mang dòng đáp án; shortanswer ít nhất 1 đáp án và mọi dòng đều là đáp án được chấp nhận; essay
+ *   không mang dòng đáp án.
+ * - Rút câu (quản trị platform): đổi metadata trạng thái của câu thành `withdrawn` (tách khỏi nội dung phiên bản — các
+ *   phiên bản cũ vẫn đọc lại nguyên vẹn), ghi sự kiện `question_withdrawn` vào nhật ký append-only, và trả về danh sách
+ *   slug các trung tâm đã nhập câu để tầng trên phát thông báo (kênh sự kiện platform).
+ * - Đọc: câu + từng phiên bản + phiên bản mới nhất, kèm checksum để phía nhập kiểm chứng trước khi ghi bản chụp. Vì gói
+ *   chứa đáp án và khoá đáp án, đường đọc nội dung gói đi qua cổng người xem `question:useall` tại context hệ thống
+ *   (xem `assertPackageViewer`) — khác đường khám phá chỉ trả metadata.
  *
  * Mọi thao tác đều cần kho ngân hàng đã cấu hình (`SYSTEM_BANK_DATABASE_URL`); chưa cấu hình thì repository ném
  * `system_bank.not_configured` (503). Mọi thao tác ghi gác bằng capability quản trị platform hiện hữu (`tenant:manage`
@@ -312,25 +303,19 @@ export class SystemBankService {
   /**
    * Nhập bản chụp một phiên bản câu hỏi hệ thống vào kho trung tâm (đường duy nhất đưa câu hệ thống vào đề/bank của
    * trung tâm — đường thi không bao giờ đọc trực tiếp từ kho ngân hàng): 1. Câu phải đang phát hành; phiên bản vắng thì
-   * lấy mới nhất. 2. Tính lại checksum của gói và đối chiếu với checksum đã lưu:
-   *    lệch thì từ chối, không ghi gì vào kho trung tâm. 3. Mọi YCCĐ trong gói phải đã có trong bản cài YCCĐ cục bộ của
-   *    trung tâm — thiếu thì fail-closed kèm danh sách id thiếu (trung
-   *    tâm cập nhật gói YCCĐ trước rồi nhập lại), không nhập nửa vời. 4. Đích nhập theo đúng đường copy câu hiện hữu:
-   *    mặc định bank cá
-   *    nhân của người nhập; đích tường minh phải thuộc về bank đó;
-   *    cổng `question:add` tại category đích. 5. Ghi dòng importer SAU khi đích và cổng quyền đã qua, TRƯỚC
-   *    khi ghi câu vào kho trung tâm (upsert idempotent): nhập bị từ
-   *    chối ở đích/quyền thì KHÔNG để lại dòng importer — trung tâm
-   *    chưa từng nhập không bị thông báo rút câu oan. Lỗi tạo câu
-   *    sau điểm này để lại dòng importer thừa lành tính (thông báo
-   *    rút câu tới trung tâm chưa nhập thành công), đối chiếu được
-   *    bằng dòng truy vết nhập phía trung tâm vốn chỉ ghi khi tạo
-   *    câu xong. 6. Tạo câu trung tâm qua `QuestionsService` (đi qua chuẩn hoá nội
-   *    dung + cổng quyền như câu soạn tay) — ngữ liệu trong gói (nếu
-   *    có) được tạo mới trong category đích trước — gắn các liên kết
-   *    YCCĐ của gói, rồi ghi dòng truy vết nhập (kind `pristine`,
-   *    phiên bản nguyên trạng = version 1 của câu mới). Hai kho (ngân hàng + trung tâm) không có transaction chung: thứ
-   *    tự trên bảo đảm lỗi ở bước nào cũng để lại trạng thái lành tính và ghi rõ trong thân PR.
+   * lấy mới nhất. 2. Tính lại checksum của gói và đối chiếu với checksum đã lưu: lệch thì từ chối, không ghi gì vào kho
+   * trung tâm. 3. Mọi YCCĐ trong gói phải đã có trong bản cài YCCĐ cục bộ của trung tâm — thiếu thì fail-closed kèm
+   * danh sách id thiếu (trung tâm cập nhật gói YCCĐ trước rồi nhập lại), không nhập nửa vời. 4. Đích nhập theo đúng
+   * đường copy câu hiện hữu: mặc định bank cá nhân của người nhập; đích tường minh phải thuộc về bank đó; cổng
+   * `question:add` tại category đích. 5. Ghi dòng importer SAU khi đích và cổng quyền đã qua, TRƯỚC khi ghi câu vào kho
+   * trung tâm (upsert idempotent): nhập bị từ chối ở đích/quyền thì KHÔNG để lại dòng importer — trung tâm chưa từng
+   * nhập không bị thông báo rút câu oan. Lỗi tạo câu sau điểm này để lại dòng importer thừa lành tính (thông báo rút
+   * câu tới trung tâm chưa nhập thành công), đối chiếu được bằng dòng truy vết nhập phía trung tâm vốn chỉ ghi khi tạo
+   * câu xong. 6. Tạo câu trung tâm qua `QuestionsService` (đi qua chuẩn hoá nội dung + cổng quyền như câu soạn tay) —
+   * ngữ liệu trong gói (nếu có) được tạo mới trong category đích trước — gắn các liên kết YCCĐ của gói, rồi ghi dòng
+   * truy vết nhập (kind `pristine`, phiên bản nguyên trạng = version 1 của câu mới). Hai kho (ngân hàng + trung tâm)
+   * không có transaction chung: thứ tự trên bảo đảm lỗi ở bước nào cũng để lại trạng thái lành tính và ghi rõ trong
+   * thân PR.
    */
   async importSystemQuestion(actorId: string, dto: ImportSystemBankQuestionDto) {
     const centreSlug = await this.resolveCentreSlug();
@@ -445,15 +430,14 @@ export class SystemBankService {
 
   /**
    * Liệt kê các sự kiện kho ngân hàng mà trung tâm hiện tại CHƯA ghi nhận — đường giao thông báo phía trung tâm (hiện
-   * tại là sự kiện rút câu): 1. Suy slug trung tâm của request (fail-closed khi không có ngữ
-   *    cảnh trung tâm, như đường nhập). 2. Chỉ sự kiện về các câu CHÍNH trung tâm này đã nhập mới thuộc
-   *    diện giao: tập câu lấy từ sổ importer phía ngân hàng, sự
-   *    kiện lấy từ nhật ký append-only theo tập câu đó. 3. Loại các sự kiện đã có vết ghi nhận của chính trung tâm này
-   *    (bảng receipts trong kho trung tâm) — trung tâm khác ghi
-   *    nhận không làm sự kiện biến khỏi danh sách của trung tâm này. Trung tâm biết định danh sự kiện TỪ CHÍNH danh
-   *    sách này rồi gọi đường ghi nhận; không cần (và không có) kênh nào khác để biết id sự kiện. Trước mọi bước trên,
-   *    người gọi phải qua cổng `assertEventViewer` (`question:useall` tại context hệ thống): danh sách là thông báo vận
-   *    hành của trung tâm, không mở cho mọi thành viên của trung tâm.
+   * tại là sự kiện rút câu): 1. Suy slug trung tâm của request (fail-closed khi không có ngữ cảnh trung tâm, như đường
+   * nhập). 2. Chỉ sự kiện về các câu CHÍNH trung tâm này đã nhập mới thuộc diện giao: tập câu lấy từ sổ importer phía
+   * ngân hàng, sự kiện lấy từ nhật ký append-only theo tập câu đó. 3. Loại các sự kiện đã có vết ghi nhận của chính
+   * trung tâm này (bảng receipts trong kho trung tâm) — trung tâm khác ghi nhận không làm sự kiện biến khỏi danh sách
+   * của trung tâm này. Trung tâm biết định danh sự kiện TỪ CHÍNH danh sách này rồi gọi đường ghi nhận; không cần (và
+   * không có) kênh nào khác để biết id sự kiện. Trước mọi bước trên, người gọi phải qua cổng `assertEventViewer`
+   * (`question:useall` tại context hệ thống): danh sách là thông báo vận hành của trung tâm, không mở cho mọi thành
+   * viên của trung tâm.
    */
   async listPendingEvents(actorId: string) {
     await this.assertEventViewer(actorId);
@@ -485,10 +469,8 @@ export class SystemBankService {
    * canonical của toàn bộ items.
    * - Phạm vi `all`: toàn bộ cây; phạm vi slug môn: chỉ môn đó (môn
    *   không có ở cây platform thì 404).
-   * - Chỉ chụp YCCĐ chuẩn platform (tenantId NULL) và đang hiện hành
-   *   (retiredAt NULL): YCCĐ đã rút khỏi chương trình không được hồi
-   *   sinh qua gói; YCCĐ derived thuộc trung tâm không phải nội dung
-   *   platform nên không nằm trong gói.
+   * - Chỉ chụp YCCĐ chuẩn platform (tenantId NULL) và đang hiện hành (retiredAt NULL): YCCĐ đã rút khỏi chương trình
+   *   không được hồi sinh qua gói; YCCĐ derived thuộc trung tâm không phải nội dung platform nên không nằm trong gói.
    * - Môn học không nằm trong gói (môn mang context phân quyền, thuộc
    *   dữ kiện nền của trung tâm): gói chỉ mang subjectSlug để bản cài
    *   giải quyết môn ở trung tâm.
@@ -652,19 +634,17 @@ export class SystemBankService {
    * tính từ chuỗi cha trong code vì bảng node gốc không có cột depth) → YCCĐ theo id giữ nguyên, cập nhật nội dung tại
    * chỗ. Vì gắn chuẩn trỏ theo id nên cập nhật gói KHÔNG sửa ngược các gắn chuẩn đã có; ánh xạ mã cũ→mã mới trong gói
    * chỉ là thông tin tham chiếu.
-   * - Gác quyền: `curriculum:manage` tại context của từng môn mà gói
-   *   chạm tới trong kho trung tâm (đúng cổng ghi chương trình hiện
-   *   hữu) — môn chưa có ở trung tâm thì fail-closed (trung tâm cần
-   *   dữ kiện nền môn trước, thuộc bước cấp phát).
+   * - Gác quyền: `curriculum:manage` tại context của từng môn mà gói chạm tới trong kho trung tâm (đúng cổng ghi chương
+   *   trình hiện hữu) — môn chưa có ở trung tâm thì fail-closed (trung tâm cần dữ kiện nền môn trước, thuộc bước cấp
+   *   phát).
    * - Xung đột chương trình: trung tâm đã có chương trình (môn, khối)
    *   với id khác id gói thì fail-closed kèm cặp (slug môn, khối) —
    *   không tự gộp hai cây khác id.
    * - Gói hỏng (node cha vắng khỏi gói hoặc cha khác chương trình)
    *   thì fail-closed trước khi ghi.
-   * - Ở thế giới kho chung, cây chương trình và vết cài là dùng chung
-   *   giữa các trung tâm chung DB — cài theo trung tâm thật sự chỉ
-   *   có sau khi #587 tách kho vật lý; int-spec chạy trên DB trung
-   *   tâm riêng nên kiểm được ngữ nghĩa theo trung tâm.
+   * - Ở thế giới kho chung, cây chương trình và vết cài là dùng chung giữa các trung tâm chung DB — cài theo trung tâm
+   *   thật sự chỉ có sau khi #587 tách kho vật lý; int-spec chạy trên DB trung tâm riêng nên kiểm được ngữ nghĩa theo
+   *   trung tâm.
    */
   async installOutcomePackage(actorId: string, version: string) {
     const pkg = await this.repo.getPackageByVersion(version);

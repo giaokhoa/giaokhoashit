@@ -12,18 +12,13 @@ import {
  * chương trình thật: 13.856 câu INSERT, không tham số, không BEGIN/COMMIT, không SET LOCAL) bên trong MỘT transaction
  * của Kysely, với các câu builder (select trước, select + update neo sau) chạy cùng transaction đó.
  *
- * Cơ sở hành vi: script không có tham số nên driver `pg` dùng
- * giao thức đơn giản (simple protocol) cho câu truy vấn — giao
- * thức này chấp nhận nhiều câu lệnh trong một lần gửi và cả khối
- * chạy trong transaction bao ngoài; một câu lỗi giữa script làm
- * transaction abort và rollback TOÀN BỘ, kể cả các câu INSERT đã
- * chạy trước nó. Hai ca dưới đây khoá cả hai phía trên database
- * thật dựng từ rỗng bằng cầu nối migration của `@lms/db`:
- * - Ca đầy đủ: restore trọn artifact thật, đếm dòng từng bảng
- *   khớp số đếm của artifact và mọi môn học được neo về context
- *   đích (bước update bằng builder chạy SAU sql.raw trong cùng
- *   transaction — bằng chứng các câu sau raw vẫn thuộc cùng
- *   transaction và commit cùng nhau).
+ * Cơ sở hành vi: script không có tham số nên driver `pg` dùng giao thức đơn giản (simple protocol) cho câu truy vấn —
+ * giao thức này chấp nhận nhiều câu lệnh trong một lần gửi và cả khối chạy trong transaction bao ngoài; một câu lỗi
+ * giữa script làm transaction abort và rollback TOÀN BỘ, kể cả các câu INSERT đã chạy trước nó. Hai ca dưới đây khoá cả
+ * hai phía trên database thật dựng từ rỗng bằng cầu nối migration của `@lms/db`:
+ * - Ca đầy đủ: restore trọn artifact thật, đếm dòng từng bảng khớp số đếm của artifact và mọi môn học được neo về
+ *   context đích (bước update bằng builder chạy SAU sql.raw trong cùng transaction — bằng chứng các câu sau raw vẫn
+ *   thuộc cùng transaction và commit cùng nhau).
  * - Ca rollback: chèn một câu INSERT sai cú pháp vào giữa script
  *   — restore phải ném lỗi và cả năm bảng đích vẫn 0 dòng.
  */

@@ -9,13 +9,10 @@ import { getGradebook } from '../../support/assessment-helpers';
 /**
  * Hoạt động Quiz (issue #30, chặng 1) — oracle là ngữ nghĩa mod_quiz của
  * Moodle:
- *  - câu hỏi độc lập trong ngân hàng (default_mark là gợi ý); điểm thật
- *    nằm ở slot của đề (exam_slots.max_mark của exam version đã ghim)
- *    và được truyền xuống question_attempts.max_mark khi lượt làm bắt đầu;
- *  - điểm câu = fraction × maxMark; điểm lượt = tổng các câu đã chấm;
- *    điểm bài = điểm lượt quy về thang điểm của exam version
- *    (totalScore), chọn theo grade_method khi có nhiều lượt, ghi vào
- *    grade item 'mod' của cm;
+ *  - câu hỏi độc lập trong ngân hàng (default_mark là gợi ý); điểm thật nằm ở slot của đề (exam_slots.max_mark của exam
+ *    version đã ghim) và được truyền xuống question_attempts.max_mark khi lượt làm bắt đầu;
+ *  - điểm câu = fraction × maxMark; điểm lượt = tổng các câu đã chấm; điểm bài = điểm lượt quy về thang điểm của exam
+ *    version (totalScore), chọn theo grade_method khi có nhiều lượt, ghi vào grade item 'mod' của cm;
  *  - hành trình soạn/ghim theo mô hình gộp Đề (#226): soạn slots trên
  *    ĐỀ trong bank → đề ready → GHIM vào khoá (exam_pins mang vai trò
  *    của quiz cũ: cấu hình tổ chức + cm + grade item).
@@ -167,7 +164,10 @@ describe('Hoạt động quiz (mod_quiz)', () => {
     return { sumGrades: viewSlots.reduce((a, x) => a + x.maxMark, 0), slots: viewSlots };
   }
 
-  /** Ghim đề đã soạn xong vào khoá: đề → ready, tạo exam pin với cấu hình tổ chức đã lưu. Trả pin view (vai trò quiz view cũ). */
+  /**
+   * Ghim đề đã soạn xong vào khoá: đề → ready, tạo exam pin với cấu hình tổ chức đã lưu. Trả pin view (vai trò quiz
+   * view cũ).
+   */
   async function pinQuiz(token: string, courseId: string, examId: string) {
     const body = pinBodies.get(examId)!;
     const statusRes = await http(app).post(`/api/v1/exams/${examId}/status`).set('Authorization', `Bearer ${token}`).send({ status: 'ready' });
@@ -360,7 +360,8 @@ describe('Hoạt động quiz (mod_quiz)', () => {
     expect(stats).toHaveLength(3);
     // Câu 1 sai nhiều nhất (2/2) phải đứng đầu.
     expect(stats[0]).toMatchObject({
-      slot: 1, questionId: ctx.qMc, questionName: 'Capital of France?', // Không còn tên câu hỏi: nhãn thống kê là trích đoạn nội dung maxMark: 5,
+      // Không còn tên câu hỏi: nhãn thống kê là trích đoạn nội dung maxMark: 5,
+      slot: 1, questionId: ctx.qMc, questionName: 'Capital of France?',
       attemptsCount: 2, gradedCount: 2, pendingCount: 0, wrongCount: 2, fullyWrongCount: 2,
     });
     expect(stats[0]!.wrongStudents.map((w) => w.userId).sort()).toEqual([ctx.student.id, studentB.id].sort());

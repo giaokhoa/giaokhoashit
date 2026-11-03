@@ -87,7 +87,10 @@ describe('Quy tắc truy cập quiz + ghi đè (giai đoạn 2)', () => {
     };
   }
 
-  /** Tạo pin kèm một slot qua hành trình gộp Đề (#226): soạn đề → ready → ghim. `examKind` của thân cũ ánh xạ sang `preset` của pin. */
+  /**
+   * Tạo pin kèm một slot qua hành trình gộp Đề (#226): soạn đề → ready → ghim. `examKind` của thân cũ ánh xạ sang
+   * `preset` của pin.
+   */
   async function createPinWithSlot(ctx: Ctx, body: Record<string, unknown>): Promise<Record<string, any>> {
     const { examKind, name, ...rest } = body;
     const draft = await createExamDraft(app, ctx.teacher, (name as string) ?? 'Stage2 quiz');

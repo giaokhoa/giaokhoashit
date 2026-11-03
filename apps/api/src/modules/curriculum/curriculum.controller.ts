@@ -41,7 +41,8 @@ export class CurriculumController {
     return this.curriculum.createSubject(actor.id, dto);
   }
   @Get('subjects')
-  /** GET /curriculum/subjects?contextId=&forCourseId= — môn học trong một context (forCourseId: nhánh chọn khung cho
+  /**
+   * GET /curriculum/subjects?contextId=&forCourseId= — môn học trong một context (forCourseId: nhánh chọn khung cho
    * khoá). `contextId` là tùy chọn: vắng thì service mặc định về context hệ thống qua `contextOrSystem` (lược đồ tùy
    * chọn vẫn bắt giá trị đã kèm phải là UUID, nên id sai định dạng vẫn 400 như cũ). Cổng đọc không đổi: vẫn
    * `assertCanRead` trong service, không nới quyền.
@@ -123,7 +124,10 @@ export class CurriculumController {
     return this.curriculum.getOutcome(actor.id, id);
   }
   @Get('outcomes/:id/question-counts')
-  /** GET /curriculum/outcomes/:id/question-counts — số câu ready đã gắn theo (mức × dạng), nền đếm ứng viên ma trận (A.6). */
+  /**
+   * GET /curriculum/outcomes/:id/question-counts — số câu ready đã gắn theo (mức × dạng), nền đếm ứng viên ma trận
+   * (A.6).
+   */
   async getOutcomeQuestionCounts(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.curriculum.getOutcomeQuestionCounts(actor.id, id);
   }

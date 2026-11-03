@@ -18,10 +18,9 @@ import {
  * Định danh + phân phối dữ liệu chương trình chuẩn (issue #161) — MÔ HÌNH DUMP ĐÔNG CỨNG — CHỐT CUỐI (Quyết định 20:09
  * ngày 26/10/2026, sổ quyết định mục E; thay mô hình UUIDv5 cho YCCĐ trước đó):
  *
- * 1. SẢN XUẤT Ở TRUNG TÂM: importer nạp GDCD vào DB chuẩn; id của
- *    YCCĐ là **uuidv7 mờ do DB cấp** — không tính từ nội dung, vị
- *    trí hay bất kỳ thuộc tính nào (id của môn/chương trình/node vẫn
- *    là UUIDv5 theo khoá tự nhiên như phương án D).
+ * 1. SẢN XUẤT Ở TRUNG TÂM: importer nạp GDCD vào DB chuẩn; id của YCCĐ là **uuidv7 mờ do DB cấp** — không tính từ nội
+ *    dung, vị trí hay bất kỳ thuộc tính nào (id của môn/chương trình/node vẫn là UUIDv5 theo khoá tự nhiên như phương
+ *    án D).
  * 2. PHÂN PHỐI: xuất dump → xoá trắng → RESTORE dump cho tập id khớp
  *    100%; restore lần nữa trên DB đã có dữ liệu là bỏ qua (không
  *    nhân đôi). Nạp lại bằng importer trên DB đã restore là no-op.
@@ -30,10 +29,9 @@ import {
  *    nguyên vẹn; báo cáo có đúng 1 mục text-changed.
  * 4. PATCH — chèn một dòng vào giữa: dòng mới có id MỚI, các dòng cũ
  *    giữ id và chỉ dời position; báo cáo gồm added + moved.
- * 5. PATCH — rút một dòng: dòng còn trong DB với retired_at có giá
- *    trị; pool theo ĐVK và bản đặc tả không còn thấy nó (đặc tả vẫn
- *    trả position/code cho dòng hiện hành); dòng nối câu hỏi còn
- *    nguyên; tra đích danh theo id vẫn thấy dòng.
+ * 5. PATCH — rút một dòng: dòng còn trong DB với retired_at có giá trị; pool theo ĐVK và bản đặc tả không còn thấy nó
+ *    (đặc tả vẫn trả position/code cho dòng hiện hành); dòng nối câu hỏi còn nguyên; tra đích danh theo id vẫn thấy
+ *    dòng.
  * 6. Hai dòng trùng hệt nhau: hai id khác nhau; rút một dòng thì
  *    dòng còn lại giữ id + còn hiện hành, mục removed gắn
  *    identicalTextAmbiguous.
@@ -42,11 +40,9 @@ import {
  * 8. FK restrict chặn xoá thật (giữ từ phương án D): bề mặt quản trị
  *    trả 409 `curriculum.delete_referenced`; gỡ tham chiếu xong xoá
  *    được.
- * 9. Restore artifact CỦA MÔI TRƯỜNG KHÁC (issue #233): dump luôn
- *    mang context_id của máy sinh dump; bước restore neo lại các
- *    môn mới nạp về context hệ thống của chính môi trường đích —
- *    nếu không, môn thành mồ côi (context lạ không tồn tại ở đích)
- *    và mọi bề mặt theo môn gãy dù dữ liệu nguyên vẹn.
+ * 9. Restore artifact CỦA MÔI TRƯỜNG KHÁC (issue #233): dump luôn mang context_id của máy sinh dump; bước restore neo
+ *    lại các môn mới nạp về context hệ thống của chính môi trường đích — nếu không, môn thành mồ côi (context lạ không
+ *    tồn tại ở đích) và mọi bề mặt theo môn gãy dù dữ liệu nguyên vẹn.
  */
 
 const DATASET_KEY = 'gdcd';

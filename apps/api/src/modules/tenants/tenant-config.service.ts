@@ -13,15 +13,12 @@ import { TenantsRepository } from '@lms/db/repositories/tenants';
 import { TenantContextService } from './tenant-context.service';
 
 /**
- * TenantConfigService — phân giải cấu hình theo tenant (TENANT-0, #168;
- * hồ sơ mục 3.5): giá trị hiệu lực của một khoá cho một tenant =
- * ghi đè của tenant (bảng `tenant_config`) → giá trị platform (bảng
- * `config`/`plugin_config` qua cùng quy tắc lưu trữ của SiteConfig) →
- * mặc định trong registry. Chỉ các setting có scope `tenant`/`both` mới
- * được tenant ghi đè; setting scope `platform` tenant admin không chạm
- * được. Mọi thay đổi của tenant đều ghi vết vào `admin_setting_audit`
- * với tenant_id đi kèm — đây là seam mà công tắc cấp duyệt của EB-3 sẽ
- * đọc qua {@link getEffectiveValue} khi chuyển về tenant_config.
+ * TenantConfigService — phân giải cấu hình theo tenant (TENANT-0, #168; hồ sơ mục 3.5): giá trị hiệu lực của một khoá
+ * cho một tenant = ghi đè của tenant (bảng `tenant_config`) → giá trị platform (bảng `config`/`plugin_config` qua cùng
+ * quy tắc lưu trữ của SiteConfig) → mặc định trong registry. Chỉ các setting có scope `tenant`/`both` mới được tenant
+ * ghi đè; setting scope `platform` tenant admin không chạm được. Mọi thay đổi của tenant đều ghi vết vào
+ * `admin_setting_audit` với tenant_id đi kèm — đây là seam mà công tắc cấp duyệt của EB-3 sẽ đọc qua {@link
+ * getEffectiveValue} khi chuyển về tenant_config.
  */
 @Injectable()
 export class TenantConfigService {
@@ -95,7 +92,10 @@ export class TenantConfigService {
     };
   }
 
-  /** Danh sách setting của tenant hiệu lực (scope tenant|both) kèm giá trị hiệu lực — cổng xem: tenant:viewall/manage tại context tenant. */
+  /**
+   * Danh sách setting của tenant hiệu lực (scope tenant|both) kèm giá trị hiệu lực — cổng xem: tenant:viewall/manage
+   * tại context tenant.
+   */
   async listForTenant(actorId: string, tenantId: string): Promise<SiteSetting[]> {
     const tenantCtx = await this.contexts.ensureTenantContext(tenantId);
     const canView =

@@ -18,12 +18,10 @@ import {
 } from './sheet-layout';
 
 /**
- * Tiền tố payload QR trên phiếu: `LMSQ1|<batchId>|<lotCode>|<userId|''>`.
- * lotCode là mã định danh của lô in: mã đề 4 số (examCode) với lô có
- * mã đề số, ngược lại là variantCode. Phiếu DÙNG CHUNG không bao giờ
- * mang userId — QR của phiếu chung chỉ định danh buổi/variant (lớp dự
- * phòng định tuyến khi lưới tô mã đề không đọc được), định danh học
- * sinh luôn đi qua lưới ô tô mã + roster.
+ * Tiền tố payload QR trên phiếu: `LMSQ1|<batchId>|<lotCode>|<userId|''>`. lotCode là mã định danh của lô in: mã đề 4 số
+ * (examCode) với lô có mã đề số, ngược lại là variantCode. Phiếu DÙNG CHUNG không bao giờ mang userId — QR của phiếu
+ * chung chỉ định danh buổi/variant (lớp dự phòng định tuyến khi lưới tô mã đề không đọc được), định danh học sinh luôn
+ * đi qua lưới ô tô mã + roster.
  */
 export const SHEET_QR_PREFIX = 'LMSQ1';
 

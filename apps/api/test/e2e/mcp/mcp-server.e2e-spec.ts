@@ -24,12 +24,10 @@ import { createExamDraft } from '../../support/exam-pin-helpers';
  *  - một endpoint POST /mcp phục vụ cả hai kỷ nguyên (modern
  *    2026-07-28 + legacy 2025-11-25): tools/list + tools/call chạy ở
  *    cả hai; PRM chạy; không token → 401.
- *  - create_question đủ 4 qtype vào bank personal của chính chủ token,
- *    trạng thái draft, source_kind='ai' + source_ref='client:<id>'
- *    (kiểm bằng SQL); draft KHÔNG rút được vào usage/slot ngẫu
- *    nhiên/slot quiz/startAttempt; phát hành ready thì dùng được và
- *    chấm đúng (gồm truefalse chùm TF-A 4 mệnh đề qua dạng answers
- *    chuẩn của MCP: thân câu + 4 mệnh đề kèm giá trị Đúng/Sai).
+ *  - create_question đủ 4 qtype vào bank personal của chính chủ token, trạng thái draft, source_kind='ai' +
+ *    source_ref='client:<id>' (kiểm bằng SQL); draft KHÔNG rút được vào usage/slot ngẫu nhiên/slot quiz/startAttempt;
+ *    phát hành ready thì dùng được và chấm đúng (gồm truefalse chùm TF-A 4 mệnh đề qua dạng answers chuẩn của MCP: thân
+ *    câu + 4 mệnh đề kèm giá trị Đúng/Sai).
  *  - validate: lỗi nghiệp vụ kèm fieldPath; trường lạ bị schema chặn;
  *    nội dung HTML lưu thành text thuần; ký tự điều khiển bị từ chối.
  *  - phân quyền: học viên / giáo viên khác bị từ chối (bank của người
@@ -40,13 +38,10 @@ import { createExamDraft } from '../../support/exam-pin-helpers';
  *  - mọi tools/call ghi outbox aggregate 'mcp' (worker relay mirror
  *    sang event_log — cùng cơ chế mọi aggregate khác).
  *  - rate limit tạo câu: vượt hạn → 429 + mã -32029 (app riêng, hạn 2).
- *  - submit_contribution (lát MCP-2, mở lại #110): câu của chính chủ
- *    (draft → ready) nộp vào bank trường thành contribution pending ở
- *    cả hai kỷ nguyên; approve qua REST → deep copy vào bank trường
- *    (derived_from trỏ câu gốc); chặn câu chưa ready / câu của người
- *    khác / đích bank personal / câu không tồn tại; idempotency replay
- *    + conflict; trần thiếu scope lms.banks.contribute → HTTP 403
- *    insufficient_scope (app riêng).
+ *  - submit_contribution (lát MCP-2, mở lại #110): câu của chính chủ (draft → ready) nộp vào bank trường thành
+ *    contribution pending ở cả hai kỷ nguyên; approve qua REST → deep copy vào bank trường (derived_from trỏ câu gốc);
+ *    chặn câu chưa ready / câu của người khác / đích bank personal / câu không tồn tại; idempotency replay + conflict;
+ *    trần thiếu scope lms.banks.contribute → HTTP 403 insufficient_scope (app riêng).
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });

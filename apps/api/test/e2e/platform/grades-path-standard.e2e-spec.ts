@@ -8,16 +8,12 @@ import { createGradeItem, setGrade } from '../../support/assessment-helpers';
  * Lưới an toàn cho việc áp chuẩn đường dẫn module điểm (issue #342).
  *
  * Khẳng định chính còn lại ở spec này (hành vi qua HTTP):
- * - Bảng route tĩnh của bề mặt điểm (25 cặp method + path: 13 route
- *   canonical mới cộng 12 route alias cũ) nay được ghim ở spec hợp
- *   đồng bảng route tại tầng integration:
- *   `test/integration/platform/route-table-contract.int-spec.ts`.
- * - Hành vi alias: path cũ vẫn tới được đúng handler (trả kết quả như
- *   canonical), response qua alias mang header Deprecation/Sunset và
- *   mỗi lượt gọi alias sinh log có cấu trúc `deprecated_route_alias`;
- *   path canonical không mang header đó. Log alias là căn cứ của điều
- *   kiện gỡ alias (0 lượt gọi trong 14 ngày), nên spec kiểm cả nội
- *   dung bản ghi log, không chỉ kiểm header.
+ * - Bảng route tĩnh của bề mặt điểm (25 cặp method + path: 13 route canonical mới cộng 12 route alias cũ) nay được ghim
+ *   ở spec hợp đồng bảng route tại tầng integration: `test/integration/platform/route-table-contract.int-spec.ts`.
+ * - Hành vi alias: path cũ vẫn tới được đúng handler (trả kết quả như canonical), response qua alias mang header
+ *   Deprecation/Sunset và mỗi lượt gọi alias sinh log có cấu trúc `deprecated_route_alias`; path canonical không mang
+ *   header đó. Log alias là căn cứ của điều kiện gỡ alias (0 lượt gọi trong 14 ngày), nên spec kiểm cả nội dung bản ghi
+ *   log, không chỉ kiểm header.
  */
 describe('Chuẩn đường dẫn điểm (issue #342)', () => {
   let app: INestApplication;

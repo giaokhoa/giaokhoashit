@@ -40,10 +40,8 @@ import {
  * token), ca đó thất bại ngay thay vì âm thầm dùng bản sao kho chung như spec #582.
  *
  * Các ca khoá các tiêu chí nghiệm thu của issue:
- * (1) cùng email đăng ký ở hai trung tâm kho riêng thành hai tài
- *     khoản độc lập (id khác nhau, không có dòng nào ở kho chung),
- *     đình chỉ một bên không ảnh hưởng bên kia, đổi mật khẩu một
- *     bên không ảnh hưởng bên kia;
+ * (1) cùng email đăng ký ở hai trung tâm kho riêng thành hai tài khoản độc lập (id khác nhau, không có dòng nào ở kho
+ *     chung), đình chỉ một bên không ảnh hưởng bên kia, đổi mật khẩu một bên không ảnh hưởng bên kia;
  * (2) phiên (token lẫn cookie) của trung tâm A bị từ chối ở trung
  *     tâm B và ở site chính;
  * (3) chuyển tenant không áp dụng ở trung tâm kho riêng;

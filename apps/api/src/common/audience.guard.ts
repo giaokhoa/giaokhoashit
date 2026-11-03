@@ -14,11 +14,9 @@ import { IS_PUBLIC_KEY } from './public.decorator';
  * - Token nghiệp vụ thường (không mang audience platform) CHỈ được
  *   gọi route nghiệp vụ; gọi route vận hành platform → 403
  *   `auth.audience_denied`.
- * Route `@Public()` không qua cổng này (chưa có danh tính để xét);
- * request chưa có danh tính thì `JwtAuthGuard` đã xử lý trước.
- * Phiên cookie Better Auth không mang audience nên được coi là
- * token nghiệp vụ — muốn vận hành platform thì đăng nhập lấy
- * token platform, không dùng phiên cookie.
+ * Route `@Public()` không qua cổng này (chưa có danh tính để xét); request chưa có danh tính thì `JwtAuthGuard` đã xử
+ * lý trước. Phiên cookie Better Auth không mang audience nên được coi là token nghiệp vụ — muốn vận hành platform thì
+ * đăng nhập lấy token platform, không dùng phiên cookie.
  */
 @Injectable()
 export class AudienceGuard {

@@ -1,11 +1,12 @@
-/** Helper THUẦN cho việc cấp phát ROLE RUNTIME và ROLE MIGRATION của kho nghiệp vụ (issue #586): tách phần suy luận
+/**
+ * Helper THUẦN cho việc cấp phát ROLE RUNTIME và ROLE MIGRATION của kho nghiệp vụ (issue #586): tách phần suy luận
  * (đọc đích từ URL, dựng câu SQL) khỏi phần thực thi (script `runtime-roles-setup.ts`) để kiểm chứng bằng unit test
  * không cần database thật — cùng khuôn với `control-plane-provision.ts` của issue #580.
  *
  * Mô hình role của một kho (áp cho kho nghiệp vụ hiện tại và là khuôn cho mọi kho riêng của trung tâm về sau):
  * - Role MIGRATION: role duy nhất được sở hữu database và mọi đối tượng trong đó; chỉ các bước áp migration (bộ máy
- * migration, runner migration của đội kho) dùng role này. Mọi thay đổi schema vì vậy đi qua đúng một danh tính có ghi
- * nhận, không lẫn với đường đọc ghi thường ngày.
+ *   migration, runner migration của đội kho) dùng role này. Mọi thay đổi schema vì vậy đi qua đúng một danh tính có ghi
+ *   nhận, không lẫn với đường đọc ghi thường ngày.
  * - Role RUNTIME: role của tầng ứng dụng (api + worker) — KHÔNG phải superuser, không sở hữu bất kỳ đối tượng nào, chỉ
  * giữ quyền dữ liệu tối thiểu (đọc/ghi dòng và dùng sequence trên schema nghiệp vụ). Cô lập kết nối giữa các database
  * (control plane, kho trung tâm) chỉ đứng vững khi role kết nối không phải superuser: superuser bỏ qua mọi kiểm tra
@@ -42,7 +43,8 @@ export function parseRoleEndpoint(url: string, envName: string): RoleEndpoint {
   return { database, role, rolePassword: decodeURIComponent(parsed.password) };
 }
 
-/** Các câu lệnh đảm bảo một role tồn tại với tư thế quyền ĐÚNG khuôn tối thiểu: đăng nhập được, KHÔNG superuser, không
+/**
+ * Các câu lệnh đảm bảo một role tồn tại với tư thế quyền ĐÚNG khuôn tối thiểu: đăng nhập được, KHÔNG superuser, không
  * tạo database, không tạo role, không replication, không bỏ qua RLS. Chưa có thì tạo, đã có thì đồng bộ lại cả mật khẩu
  * lẫn tư thế quyền (một role từng được tạo tay với quyền cao hơn sẽ bị hạ về đúng khuôn ở mỗi lượt cấp phát). Chạy lặp
  * an toàn.
@@ -57,10 +59,10 @@ export function buildEnsureRoleStatements(endpoint: RoleEndpoint, roleExists: bo
   return [`ALTER ROLE ${role} WITH ${posture} PASSWORD ${rolePasswordLiteral}`];
 }
 
-/** Câu lệnh chuyển quyền sở hữu DATABASE sang role migration. Sở hữu database là điều kiện để role migration sở hữu
- * tiếp các đối tượng sinh ra trong đó (schema `public` thuộc về chủ database theo cơ chế `pg_database_owner` của
- * PostgreSQL 15+) và là mốc để bước chuyển quyền sở hữu từng đối tượng (xem `buildOwnershipTransferQuery`) có đích rõ
- * ràng.
+/**
+ * Câu lệnh chuyển quyền sở hữu DATABASE sang role migration. Sở hữu database là điều kiện để role migration sở hữu tiếp
+ * các đối tượng sinh ra trong đó (schema `public` thuộc về chủ database theo cơ chế `pg_database_owner` của PostgreSQL
+ * 15+) và là mốc để bước chuyển quyền sở hữu từng đối tượng (xem `buildOwnershipTransferQuery`) có đích rõ ràng.
  */
 export function buildTransferDatabaseOwnerStatement(endpoint: RoleEndpoint): string {
   return `ALTER DATABASE ${quoteIdentifier(endpoint.database)} OWNER TO ${quoteIdentifier(endpoint.role)}`;
@@ -110,7 +112,8 @@ export function buildOwnershipTransferQuery(fromRole: string, toRole: string): s
   ].join(' ');
 }
 
-/** Các câu lệnh khoá quyền kết nối của database nghiệp vụ ở mức cụm (chạy trên kết nối quản trị): thu hồi quyền kết nối
+/**
+ * Các câu lệnh khoá quyền kết nối của database nghiệp vụ ở mức cụm (chạy trên kết nối quản trị): thu hồi quyền kết nối
  * mặc định của PUBLIC, chỉ cấp tường minh cho role migration và role runtime — mọi role khác (gồm role của control
  * plane và các kho khác) bị từ chối ngay ở bước mở kết nối. Cùng nửa cô lập với
  * `buildRestrictBusinessConnectStatements` của control plane (script đó cấp cho role suy từ `DATABASE_URL` của bước
@@ -126,7 +129,8 @@ export function buildRoleConnectStatements(database: string, migratorRole: strin
   ];
 }
 
-/** Các câu lệnh cấp quyền dữ liệu tối thiểu cho role runtime, chạy BÊN TRONG database nghiệp vụ sau khi quyền sở hữu đã
+/**
+ * Các câu lệnh cấp quyền dữ liệu tối thiểu cho role runtime, chạy BÊN TRONG database nghiệp vụ sau khi quyền sở hữu đã
  * thuộc role migration:
  * - Quyền dùng schema `public` (không gồm quyền tạo đối tượng — runtime không được tạo bảng/cột, đó là việc của
  * migration).
@@ -134,8 +138,8 @@ export function buildRoleConnectStatements(database: string, migratorRole: strin
  * - Quyền mặc định gắn với CHÍNH role migration: mọi bảng/sequence do migration tạo về sau tự động mang theo đúng bộ
  * quyền này cho runtime, nên bước áp migration không cần bước cấp quyền riêng.
  * - Quyền dùng các kiểu enum hiện có trong schema (câu lệnh GRANT không có dạng "mọi kiểu trong schema" nên dùng khối
- * DO lặp qua danh mục kiểu): truy vấn có ép kiểu tường minh lên cột enum cần quyền này, thiếu là lỗi quyền khó hiểu ở
- * đường dữ kiện.
+ *   DO lặp qua danh mục kiểu): truy vấn có ép kiểu tường minh lên cột enum cần quyền này, thiếu là lỗi quyền khó hiểu ở
+ *   đường dữ kiện.
  * - Quyền mặc định trên KIỂU cho chính role migration (hạng mục cứng hoá tuỳ chọn theo phân xử trên PR của issue này):
  * kiểu enum do migration tạo về sau tự mang quyền USAGE cho runtime, thay vì phụ thuộc vào mặc định của PostgreSQL là
  * cấp USAGE trên kiểu mới cho PUBLIC — mặc định đó bị thu hồi thì runtime vẫn dùng được kiểu của migration mới.

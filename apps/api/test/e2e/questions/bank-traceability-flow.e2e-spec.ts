@@ -20,10 +20,9 @@ import { createCategory, createCourse, getFirstSectionId } from '../../support/c
  *    copy trước khi nguồn lên version 2 giữ derived_from_version=1,
  *    copy sau ghi 2 — truy vết không bị viết lại theo trạng thái
  *    nguồn về sau.
- *  - Truy nguồn chiều ngược: ma trận → các đề đã sinh
- *    (generated-exams), câu → các version đề đang chứa câu
- *    (containing-exams, cùng cổng đọc 404 với attribution), sách →
- *    các câu ghi nguồn từ sách (qua cặp source_kind/source_ref).
+ *  - Truy nguồn chiều ngược: ma trận → các đề đã sinh (generated-exams), câu → các version đề đang chứa câu
+ *    (containing-exams, cùng cổng đọc 404 với attribution), sách → các câu ghi nguồn từ sách (qua cặp
+ *    source_kind/source_ref).
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });

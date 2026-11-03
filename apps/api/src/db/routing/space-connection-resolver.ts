@@ -6,34 +6,23 @@ import { onSpaceRegistryChanged } from './space-routing-events';
  * Luồng phân giải cho một slug không gian:
  * 1. Tra bộ nhớ đệm trong tiến trình: mục đệm còn hạn (TTL ngắn cấu
  *    hình được) thì trả ngay, không chạm database control plane.
- * 2. Hết hạn hoặc chưa có: đọc dòng đăng ký của không gian từ sổ
- *    đăng ký ở control plane — nguồn sự thật DUY NHẤT cho việc một
- *    trung tâm đang dùng database nào (quyết định đã ghi trong issue
- *    #581). Không có dòng đăng ký → lỗi `space_not_found`: định
- *    tuyến fail-closed, tuyệt đối không đoán đích.
+ * 2. Hết hạn hoặc chưa có: đọc dòng đăng ký của không gian từ sổ đăng ký ở control plane — nguồn sự thật DUY NHẤT cho
+ *    việc một trung tâm đang dùng database nào (quyết định đã ghi trong issue #581). Không có dòng đăng ký → lỗi
+ *    `space_not_found`: định tuyến fail-closed, tuyệt đối không đoán đích.
  * 3. Từ dòng đăng ký, quyết định đích theo `storageMode`:
  *    - `shared`: trung tâm chưa di trú — đích là kho chung hiện tại,
  *      bộ phân giải chỉ xác nhận chế độ, kết nối thật do tầng gọi
  *      giữ như đường hiện hành.
- *    - `dedicated`: trung tâm đã có kho riêng — đích là database
- *      mang tên `databaseName` trong sổ, kết nối bằng ĐÚNG role của
- *      kho đó. Chuỗi kết nối gốc lấy từ tham chiếu bí mật
- *      (`secretRef`, dạng `env:<TÊN_BIẾN>`) — sổ chỉ giữ tham chiếu,
- *      giá trị bí mật không bao giờ nằm trong database; tên database
- *      trong chuỗi gốc bị thay bằng `databaseName` của sổ vì sổ là
- *      nguồn sự thật cho đích, và role trong chuỗi gốc bắt buộc
- *      khớp `connectionRoleRef` của sổ — lệch là lỗi cấu hình
- *      (`role_mismatch`), không mở kết nối bằng một role khác sổ
- *      đã đăng ký.
- * 4. Kết quả được đệm lại kèm hạn TTL. Đệm bị vô hiệu hoá theo hai
- *    đường: sự kiện đổi sổ (trạng thái/phiên bản/cấu hình định
- *    tuyến của chính slug đó — xem `space-routing-events.ts`) và
- *    hết TTL. Mỗi lần vô hiệu hoá còn tăng số thế hệ của slug:
- *    lần đọc sổ đang bay khi thế hệ đổi thì kết quả nó mang về
- *    (có thể là ảnh chụp trước thay đổi) KHÔNG được đệm — bộ
- *    phân giải đọc lại dưới thế hệ mới rồi mới đệm, để sự kiện
- *    đã giao đúng trong tiến trình không bao giờ bị một lần đọc
- *    bắt đầu trước thay đổi ghi đè.
+ *    - `dedicated`: trung tâm đã có kho riêng — đích là database mang tên `databaseName` trong sổ, kết nối bằng ĐÚNG
+ *      role của kho đó. Chuỗi kết nối gốc lấy từ tham chiếu bí mật (`secretRef`, dạng `env:<TÊN_BIẾN>`) — sổ chỉ giữ
+ *      tham chiếu, giá trị bí mật không bao giờ nằm trong database; tên database trong chuỗi gốc bị thay bằng
+ *      `databaseName` của sổ vì sổ là nguồn sự thật cho đích, và role trong chuỗi gốc bắt buộc khớp `connectionRoleRef`
+ *      của sổ — lệch là lỗi cấu hình (`role_mismatch`), không mở kết nối bằng một role khác sổ đã đăng ký.
+ * 4. Kết quả được đệm lại kèm hạn TTL. Đệm bị vô hiệu hoá theo hai đường: sự kiện đổi sổ (trạng thái/phiên bản/cấu hình
+ *    định tuyến của chính slug đó — xem `space-routing-events.ts`) và hết TTL. Mỗi lần vô hiệu hoá còn tăng số thế hệ
+ *    của slug: lần đọc sổ đang bay khi thế hệ đổi thì kết quả nó mang về (có thể là ảnh chụp trước thay đổi) KHÔNG được
+ *    đệm — bộ phân giải đọc lại dưới thế hệ mới rồi mới đệm, để sự kiện đã giao đúng trong tiến trình không bao giờ bị
+ *    một lần đọc bắt đầu trước thay đổi ghi đè.
  *
  * Trạng thái vòng đời (`suspended`/`closed`) KHÔNG chặn phân giải: đích vẫn phải phân giải được để đường vận hành (xuất
  * dữ kiện, khôi phục, kiểm đếm) còn vào được kho của trung tâm đã ngưng; việc từ chối traffic NGHIỆP VỤ theo trạng thái
@@ -67,7 +56,10 @@ export type SpaceRegistryReader = (slug: string) => Promise<SpaceRegistryEntry |
 
 export interface ResolvedSpaceConnection {
   slug: string;
-  /** Định danh của dòng đăng ký đã phân giải (khoá chính của sổ) — tầng ứng dụng đối chiếu với claim `centre_id` của token. */
+  /**
+   * Định danh của dòng đăng ký đã phân giải (khoá chính của sổ) — tầng ứng dụng đối chiếu với claim `centre_id` của
+   * token.
+   */
   spaceId: string;
   /** Trạng thái vòng đời tại thời điểm phân giải — tầng ứng dụng dùng để chặn traffic nghiệp vụ khi cần. */
   status: string;

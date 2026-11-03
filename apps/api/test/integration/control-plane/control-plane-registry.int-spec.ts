@@ -449,25 +449,17 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
     // tiếp nhau ở đúng một điểm và lượt sau luôn hợp nhất trên trạng thái tươi. `recordMigrationRun` (sau bản sửa của
     // issue #586) tuân theo đúng thứ tự đó như `updateSchemaRegistry`.
     //
-    // Kỹ thuật cổng hai pha, có chứng minh ở từng pha (nhận diện
-    // phiên bị cổng chặn qua `pg_blocking_pids`, không dùng
-    // khoảng chờ cố định): cổng giữ khoá FOR KEY SHARE trên dòng
-    // đăng ký — mức khoá nhẹ nhất vẫn xung đột với FOR UPDATE,
-    // nên bất kỳ lượt ghi nào tới câu khoá dòng đăng ký của mình
-    // đều phải dừng sau cổng.
+    // Kỹ thuật cổng hai pha, có chứng minh ở từng pha (nhận diện phiên bị cổng chặn qua `pg_blocking_pids`, không dùng
+    // khoảng chờ cố định): cổng giữ khoá FOR KEY SHARE trên dòng đăng ký — mức khoá nhẹ nhất vẫn xung đột với FOR
+    // UPDATE, nên bất kỳ lượt ghi nào tới câu khoá dòng đăng ký của mình đều phải dừng sau cổng.
     // - Pha 1: cho lượt ghi sao lưu xuất phát trước và chờ tới
     //   khi nó thật sự bị cổng chặn ở câu khoá dòng đăng ký.
-    // - Pha 2: cho `recordMigrationRun` xuất phát. Có khoá dòng
-    //   đăng ký, nó cũng bị cổng chặn ngay ở câu khoá của mình —
-    //   pha 2 thấy một phiên thứ hai bị cổng chặn. Thiếu khoá đó,
-    //   nó không có câu khoá nào để dừng: nó chèn lượt chạy, ghi
-    //   registry và commit XONG TOÀN BỘ trong lúc lượt sao lưu
-    //   vẫn còn bị cổng chặn — pha 2 không bao giờ thấy phiên
-    //   thứ hai và ca đỏ ngay tại khẳng định của pha.
-    // Mở cổng thì lượt sao lưu (đứng trước trong hàng đợi khoá)
-    // chạy trước, lượt migration nối tiếp sau và đọc trạng thái
-    // tươi: phiên bản mới và trạng thái sao lưu mới cùng tồn tại
-    // trong các khẳng định cuối ca.
+    // - Pha 2: cho `recordMigrationRun` xuất phát. Có khoá dòng đăng ký, nó cũng bị cổng chặn ngay ở câu khoá của mình
+    //   — pha 2 thấy một phiên thứ hai bị cổng chặn. Thiếu khoá đó, nó không có câu khoá nào để dừng: nó chèn lượt
+    //   chạy, ghi registry và commit XONG TOÀN BỘ trong lúc lượt sao lưu vẫn còn bị cổng chặn — pha 2 không bao giờ
+    //   thấy phiên thứ hai và ca đỏ ngay tại khẳng định của pha.
+    // Mở cổng thì lượt sao lưu (đứng trước trong hàng đợi khoá) chạy trước, lượt migration nối tiếp sau và đọc trạng
+    // thái tươi: phiên bản mới và trạng thái sao lưu mới cùng tồn tại trong các khẳng định cuối ca.
     //
     // Vì sao cổng không đặt trên dòng registry như ca cũ: ca cũ cho hai lượt xuất phát cùng lúc sau một khoảng chờ cố
     // định và đo thực tế cho thấy nó KHÔNG có sức phân biệt — câu chèn lượt chạy vào bảng con của `space_registry` tự

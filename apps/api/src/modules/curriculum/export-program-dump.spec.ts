@@ -3,7 +3,8 @@ import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolveProgramDumpOutPath } from './export-program-dump';
 
-/** Hồi quy cho CLI xuất dump chương trình (issue #613): sau khi file CLI dời vào `modules/curriculum`, đường đích mặc
+/**
+ * Hồi quy cho CLI xuất dump chương trình (issue #613): sau khi file CLI dời vào `modules/curriculum`, đường đích mặc
  * định từng giữ công thức của vị trí cũ ở root src nên nhân đôi đoạn `modules/curriculum` và trỏ vào thư mục không tồn
  * tại — chạy không kèm đối số đầu ra sẽ ENOENT ở bước ghi file. Ca này ghim đích mặc định đúng: thư mục
  * `program-data-dump` ngay cạnh file CLI, nơi artifact thật của repo đang nằm (và là nơi bước build chép artifact vào

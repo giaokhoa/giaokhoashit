@@ -24,9 +24,10 @@ import { loadProgramDataset, PROGRAM_DATASETS } from './program-datasets';
  * dataset hay mất một bản ghi đều là lỗi nghiệp vụ mà admin và giáo viên nhìn thấy trực tiếp.
  */
 
-/** Số bản ghi đã kiểm chứng theo khoá dataset (tổng 2.171). Đợt tách file theo môn (issue #695) chia khoá `gdcd` 116
- * bản ghi thành `daoduc` 40 + `gdcd` 40 + `gdktpl` 36 và khoá `hdtn` 105 thành `hdtn` 39 + `hdtn-hn` 66; tổng toàn bộ
- * không đổi.
+/**
+ * Số bản ghi đã kiểm chứng theo khoá dataset (tổng 2.171). Đợt tách file theo môn (issue #695) chia khoá `gdcd` 116 bản
+ * ghi thành `daoduc` 40 + `gdcd` 40 + `gdktpl` 36 và khoá `hdtn` 105 thành `hdtn` 39 + `hdtn-hn` 66; tổng toàn bộ không
+ * đổi.
  */
 const EXPECTED_RECORDS: Readonly<Record<string, number>> = {
   toan: 314,

@@ -7,7 +7,8 @@ import { GroupsService } from './groups.service';
 
 @ApiTags('groups')
 @Controller({ path: 'courses/:courseId/groups', version: '1' })
-/** API nhóm trong khoá học: group và thành viên.
+/**
+ * API nhóm trong khoá học: group và thành viên.
  *
  * Lớp này khai tiền tố con đầy đủ của chính nó thay vì tiền tố trơ `courses`: tiền tố trơ `courses` chỉ còn module
  * courses sở hữu, mỗi tiền tố đầy đủ khác chỉ có đúng một lớp khai báo. Bảng route giữ nguyên từng ký tự so với trước

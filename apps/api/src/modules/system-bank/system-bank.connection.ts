@@ -11,13 +11,10 @@
  * - Pool THƯỜNG của `pg`, không qua `TenantAwarePool`: dữ liệu kho
  *   ngân hàng là dữ liệu của platform, không thuộc tenant nào, không
  *   có RLS theo tenant để áp; gác quyền nằm ở tầng service.
- * - Kết nối có thể VẮNG: hệ chưa cấu hình `SYSTEM_BANK_DATABASE_URL`
- *   thì `kysely` bằng null và ứng dụng vẫn khởi động như cũ (chuỗi
- *   migrate trong compose.yaml cũng bỏ qua bước cấp phát + migration
- *   kho ngân hàng khi biến chưa đặt). Mọi điểm dùng phải hỏi
- *   `isConfigured` trước — service của module ném lỗi
- *   `system_bank.not_configured` khi bị gọi trong trạng thái chưa cấu
- *   hình.
+ * - Kết nối có thể VẮNG: hệ chưa cấu hình `SYSTEM_BANK_DATABASE_URL` thì `kysely` bằng null và ứng dụng vẫn khởi động
+ *   như cũ (chuỗi migrate trong compose.yaml cũng bỏ qua bước cấp phát + migration kho ngân hàng khi biến chưa đặt).
+ *   Mọi điểm dùng phải hỏi `isConfigured` trước — service của module ném lỗi `system_bank.not_configured` khi bị gọi
+ *   trong trạng thái chưa cấu hình.
  */
 import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

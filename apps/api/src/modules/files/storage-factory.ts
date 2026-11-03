@@ -2,7 +2,8 @@ import type { ConfigService } from '@nestjs/config';
 import { LocalObjectStorage, type ObjectStorage } from './storage';
 import { S3ObjectStorage } from './storage-s3';
 
-/** Lựa chọn driver cho tầng vật lý của file, chỉ theo env: FILE_STORAGE_DRIVER=local (mặc định — hành vi hiện tại không
+/**
+ * Lựa chọn driver cho tầng vật lý của file, chỉ theo env: FILE_STORAGE_DRIVER=local (mặc định — hành vi hiện tại không
  * đổi khi biến chưa được đặt) hoặc =s3 (lưu trữ đối tượng bền vững). Một giá trị lạ sẽ fail fast lúc khởi động thay vì
  * âm thầm fallback.
  */

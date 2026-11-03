@@ -85,13 +85,10 @@ async function main(): Promise<void> {
     const studentIds = [await ensureUser(STUDENTS[0]!), await ensureUser(STUDENTS[1]!)];
     const guardianId = await ensureUser(GUARDIAN);
 
-    // Chặng 2.6 (issue #7): tài khoản mẫu phải đăng nhập được qua
-    // Better Auth NGAY sau seed. User tạo mới trong chính lượt seed
-    // này đã được UsersService tự đồng bộ credential; khối này phủ
-    // các tài khoản ĐÃ tồn tại từ lần seed trước (ensureUser bỏ qua
-    // đường tạo) — sync idempotent, chạy lại vô hại. Chỉ chạy khi
-    // tiến trình seed bật Better Auth (env của chính tiến trình seed);
-    // tắt thì bỏ qua, seed giữ nguyên hành vi cũ.
+    // Chặng 2.6 (issue #7): tài khoản mẫu phải đăng nhập được qua Better Auth NGAY sau seed. User tạo mới trong chính
+    // lượt seed này đã được UsersService tự đồng bộ credential; khối này phủ các tài khoản ĐÃ tồn tại từ lần seed trước
+    // (ensureUser bỏ qua đường tạo) — sync idempotent, chạy lại vô hại. Chỉ chạy khi tiến trình seed bật Better Auth
+    // (env của chính tiến trình seed); tắt thì bỏ qua, seed giữ nguyên hành vi cũ.
     const baService = app.get(BetterAuthService, { strict: false });
     if (baService.enabled) {
       const bridge = app.get(CredentialBridgeService, { strict: false });

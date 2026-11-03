@@ -230,11 +230,11 @@ function composeAfterHooks(
  * Gọi một after-hook NGAY BÊN TRONG một after-hook khác (chuỗi hoá thủ công) và hợp nhất kết quả vào context hiện tại,
  * bắt chước đúng việc dispatch của Better Auth làm khi hook đứng một mình:
  *
- * - Tầng middleware của better-call tạo `responseHeaders` RIÊNG cho mỗi lần gọi và trả kết quả dạng
- *   `{ headers, response }` khi context mang `returnHeaders` (đúng context dispatch truyền cho hooks): cookie/header
- *   hook ghi (cookie chờ bước hai của cổng MFA, xoá cookie phiên…) nằm trong `headers` đó — không hợp nhất vào context
- *   ngoài thì chúng biến mất lặng lẽ; còn trả nguyên lớp bọc ra ngoài thì dispatch hiểu lầm nó là đáp ứng của endpoint
- *   và làm hỏng cả luồng hook đi qua.
+ * - Tầng middleware của better-call tạo `responseHeaders` RIÊNG cho mỗi lần gọi và trả kết quả dạng `{ headers,
+ *   response }` khi context mang `returnHeaders` (đúng context dispatch truyền cho hooks): cookie/header hook ghi
+ *   (cookie chờ bước hai của cổng MFA, xoá cookie phiên…) nằm trong `headers` đó — không hợp nhất vào context ngoài thì
+ *   chúng biến mất lặng lẽ; còn trả nguyên lớp bọc ra ngoài thì dispatch hiểu lầm nó là đáp ứng của endpoint và làm
+ *   hỏng cả luồng hook đi qua.
  * - Phần `response` là đáp ứng thay thế thật của hook (hoặc `undefined` khi hook đi qua) — đó là giá trị hàm này trả
  *   về.
  * - Lỗi APIError (redirect của cổng MFA ở đường callback) mang header của hook theo cơ chế riêng của better-call và

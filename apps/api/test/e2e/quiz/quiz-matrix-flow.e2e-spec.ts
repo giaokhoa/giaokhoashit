@@ -8,14 +8,10 @@ import { addExamSlot, createExamDraft, pinExam } from '../../support/exam-pin-he
 /**
  * Quiz Chặng 3 (issue #30) — ma trận đề + sinh slots + chấm Đ–S chùm +
  * bản đặc tả, đối chiếu hồ sơ thiết kế mục C:
- *  - ma trận neo Chương trình GDPT 2018 (môn → chương trình → ĐVK);
- *    ô = ĐVK × mức × dạng (issue #249 — ma trận KHÔNG gắn YCCĐ, YCCĐ
- *    chỉ hiện ở cột suy ra của bản đặc tả), preset chụp lúc tạo, lệch
- *    tỉ lệ chỉ cảnh báo;
- *  - generate khoá cứng 422 khi thiếu câu ở bất kỳ ô nào; generate
- *    rút MỘT bộ câu cố định ghim cứng vào slots của exam version
- *    (bỏ hẳn drawMode/per_student theo chốt #226) — hai học sinh làm
- *    cùng một pin nhận cùng một bộ câu;
+ *  - ma trận neo Chương trình GDPT 2018 (môn → chương trình → ĐVK); ô = ĐVK × mức × dạng (issue #249 — ma trận KHÔNG
+ *    gắn YCCĐ, YCCĐ chỉ hiện ở cột suy ra của bản đặc tả), preset chụp lúc tạo, lệch tỉ lệ chỉ cảnh báo;
+ *  - generate khoá cứng 422 khi thiếu câu ở bất kỳ ô nào; generate rút MỘT bộ câu cố định ghim cứng vào slots của exam
+ *    version (bỏ hẳn drawMode/per_student theo chốt #226) — hai học sinh làm cùng một pin nhận cùng một bộ câu;
  *  - chùm Đ–S (1 stimulus + 4 câu truefalse) chấm theo thang lũy tiến
  *    QĐ 764 mặc định [0,10,25,50,100]% — KHÔNG cộng tuyến tính;
  *  - bản đặc tả theo Mẫu 2 CV 7991 + xuất xlsx/docx.
@@ -515,12 +511,10 @@ describe('Sinh ma trận quiz + chấm TF-A + đặc tả (giai đoạn 3)', () 
     const gen = await http(app).post(`/api/v1/exam-matrices/${matrix.id}/generate`).set('Authorization', `Bearer ${admin}`)
       .send({ courseId: ctx.courseId, sectionId: ctx.sectionId, name: 'Đề TF-A review' });
     const quiz = gen.body as QuizBody;
-    // Pin sinh từ ma trận mang reviewRightAnswer mặc định DB = 272
-    // (laterWhileOpen 256 + afterClose 16, KHÔNG có bit immediatelyAfter
-    // 4096) nên GET ngay sau nộp — trong cửa sổ 2 phút sau khi nộp —
-    // sẽ bị cổng reviewRightAnswer đóng và solution = null là ĐÚNG
-    // chính sách. Ca này kiểm solution nên mở cổng ngay sau nộp:
-    // 4368 = 272 + immediatelyAfter 4096.
+    // Pin sinh từ ma trận mang reviewRightAnswer mặc định DB = 272 (laterWhileOpen 256 + afterClose 16, KHÔNG có bit
+    // immediatelyAfter 4096) nên GET ngay sau nộp — trong cửa sổ 2 phút sau khi nộp — sẽ bị cổng reviewRightAnswer đóng
+    // và solution = null là ĐÚNG chính sách. Ca này kiểm solution nên mở cổng ngay sau nộp: 4368 = 272 +
+    // immediatelyAfter 4096.
     const openReview = await http(app).patch(`/api/v1/exam-pins/${quiz.id}`).set('Authorization', `Bearer ${admin}`)
       .send({ reviewRightAnswer: 4368 });
     expect(openReview.status).toBeLessThan(300);

@@ -50,49 +50,32 @@ const SESSION_COOKIE_PATTERN = new RegExp(`(?:^|;\\s*)(?:__Secure-)?${BETTER_AUT
  * Hai đường danh tính, đúng thứ tự của chuỗi guard HTTP (GĐ5 của
  * issue #7 — realtime trên cookie):
  *
- * 1. **Cookie phiên Better Auth TRƯỚC** — cùng semantics với
- *    `BetterAuthSessionGuard` phía HTTP: cờ Better Auth bật + cookie
- *    phiên có mặt + phiên hợp lệ + tài khoản còn active (không
- *    suspended/deleted) thì danh tính chốt ở đây. Cookie có nhưng
- *    phiên không dùng được (hỏng chữ ký, hết hạn, tài khoản bị khoá)
- *    thì KHÔNG kết luận từ chối — rơi xuống đường token, đúng như
- *    guard HTTP không đặt danh tính và để JwtAuthGuard quyết định.
- * 2. **Access token JWT hiện tại** làm đường dự phòng (giữ nguyên
- *    hành vi cho tới cutover GĐ2): token mang `{ sub, username, sid }`,
- *    không có `scope` (token có scope là của luồng khác, bị
- *    JwtAuthStrategy của REST từ chối), và user phải còn active. Lớp
- *    này áp đúng các kiểm đó qua cùng secret và UsersService.
+ * 1. **Cookie phiên Better Auth TRƯỚC** — cùng semantics với `BetterAuthSessionGuard` phía HTTP: cờ Better Auth bật +
+ *    cookie phiên có mặt + phiên hợp lệ + tài khoản còn active (không suspended/deleted) thì danh tính chốt ở đây.
+ *    Cookie có nhưng phiên không dùng được (hỏng chữ ký, hết hạn, tài khoản bị khoá) thì KHÔNG kết luận từ chối — rơi
+ *    xuống đường token, đúng như guard HTTP không đặt danh tính và để JwtAuthGuard quyết định.
+ * 2. **Access token JWT hiện tại** làm đường dự phòng (giữ nguyên hành vi cho tới cutover GĐ2): token mang `{ sub,
+ *    username, sid }`, không có `scope` (token có scope là của luồng khác, bị JwtAuthStrategy của REST từ chối), và
+ *    user phải còn active. Lớp này áp đúng các kiểm đó qua cùng secret và UsersService.
  *
- * Phân giải không gian theo địa chỉ (tiền điều kiện Phần B của
- * issue #587, hạng mục 1): handshake mang header `Host` như request
- * HTTP, nên lớp này phân giải không gian từ Host MỘT lần cho cả hai
- * đường, đúng khuôn `BetterAuthSessionGuard`/`JwtAuthStrategy` phía
- * HTTP: địa chỉ thuộc trung tâm ở kho riêng thì mọi lượt đọc danh
- * tính của handshake đó — phiên, tài khoản và tenant mặc định của
- * đường cookie; lượt tra tài khoản của đường token — đều chạy
- * trong CHÍNH kho của trung tâm qua `withSpaceKysely`. Sau khi
- * một trung tâm lật định tuyến, phiên/tài khoản của thành viên chỉ
- * còn tồn tại ở kho riêng: đọc ở kho chung sẽ không thấy gì và
- * realtime chết lặng trong khi REST vẫn chạy trên kho riêng. Lỗi
- * phân giải/chuẩn bị kho đích ném ra nguyên trạng để gateway ngắt
- * kết nối kèm log — fail-closed, tuyệt đối không rơi lặng về đường
- * kho chung; đây là điểm khác guard HTTP, vì guard còn lớp JWT phía
- * sau quyết định lại còn kênh socket thì không có lớp thứ hai.
+ * Phân giải không gian theo địa chỉ (tiền điều kiện Phần B của issue #587, hạng mục 1): handshake mang header `Host`
+ * như request HTTP, nên lớp này phân giải không gian từ Host MỘT lần cho cả hai đường, đúng khuôn
+ * `BetterAuthSessionGuard`/`JwtAuthStrategy` phía HTTP: địa chỉ thuộc trung tâm ở kho riêng thì mọi lượt đọc danh tính
+ * của handshake đó — phiên, tài khoản và tenant mặc định của đường cookie; lượt tra tài khoản của đường token — đều
+ * chạy trong CHÍNH kho của trung tâm qua `withSpaceKysely`. Sau khi một trung tâm lật định tuyến, phiên/tài khoản của
+ * thành viên chỉ còn tồn tại ở kho riêng: đọc ở kho chung sẽ không thấy gì và realtime chết lặng trong khi REST vẫn
+ * chạy trên kho riêng. Lỗi phân giải/chuẩn bị kho đích ném ra nguyên trạng để gateway ngắt kết nối kèm log —
+ * fail-closed, tuyệt đối không rơi lặng về đường kho chung; đây là điểm khác guard HTTP, vì guard còn lớp JWT phía sau
+ * quyết định lại còn kênh socket thì không có lớp thứ hai.
  *
- * Một tổ hợp mà hàm phân giải dùng chung cố ý trả `null` cần chốt
- * riêng ở lớp này: tầng định tuyến CHƯA CẤU HÌNH
- * (`space_routing.not_configured`) được `resolveDedicatedSpace` xếp
- * vào đường kho chung cùng slug chưa đăng ký và trung tâm kho
- * chung, theo hợp đồng "chưa cấu hình thì app chạy như trước" của
- * tầng chiến lược xác thực. Phía HTTP, `SpaceContextGuard` là lớp
- * thứ hai phân biệt tổ hợp đó bằng `resolveTarget` trực tiếp:
- * phiên mang claim `centre_id` mà định tuyến chưa cấu hình thì
- * fail-closed, phiên không mang claim thì cho qua. Kênh socket
- * không có lớp thứ hai đó, nên `authenticateHandshake` tự phân
- * biệt lại bằng `resolveTarget` trên slug ứng viên và mang cờ
- * "chưa cấu hình" vào đường token: token mang claim `centre_id`
- * bị từ chối TRƯỚC mọi lượt đọc tài khoản ở kho chung; token
- * không claim và đường cookie giữ nguyên hành vi cho qua như cũ.
+ * Một tổ hợp mà hàm phân giải dùng chung cố ý trả `null` cần chốt riêng ở lớp này: tầng định tuyến CHƯA CẤU HÌNH
+ * (`space_routing.not_configured`) được `resolveDedicatedSpace` xếp vào đường kho chung cùng slug chưa đăng ký và trung
+ * tâm kho chung, theo hợp đồng "chưa cấu hình thì app chạy như trước" của tầng chiến lược xác thực. Phía HTTP,
+ * `SpaceContextGuard` là lớp thứ hai phân biệt tổ hợp đó bằng `resolveTarget` trực tiếp: phiên mang claim `centre_id`
+ * mà định tuyến chưa cấu hình thì fail-closed, phiên không mang claim thì cho qua. Kênh socket không có lớp thứ hai đó,
+ * nên `authenticateHandshake` tự phân biệt lại bằng `resolveTarget` trên slug ứng viên và mang cờ "chưa cấu hình" vào
+ * đường token: token mang claim `centre_id` bị từ chối TRƯỚC mọi lượt đọc tài khoản ở kho chung; token không claim và
+ * đường cookie giữ nguyên hành vi cho qua như cũ.
  *
  * Gateway, consumer và tầng phân phối không biết gì về cơ chế bên
  * dưới — chúng chỉ nhận `MessagingSocketIdentity | null`.
@@ -224,18 +207,13 @@ export class MessagingSocketAuth {
    *
    * Khi địa chỉ thuộc trung tâm ở kho riêng (`space` khác null), đường token áp đúng nguyên tắc cổng 1a/1b của Phần A
    * như `JwtAuthStrategy` + `SpaceContextGuard` phía HTTP:
-   * - Token mang claim `centre_id` lệch định danh của trung tâm
-   *   tại địa chỉ → từ chối TRƯỚC khi chạm vào kho đích (không tra
-   *   kho nào để khẳng định thêm); claim khớp thì tài khoản tra
-   *   trong CHÍNH kho của trung tâm đó.
-   * - Token KHÔNG mang claim `centre_id` là phiên cấp trước khi
-   *   trung tâm tách kho → từ chối fail-closed, chủ phiên phải
-   *   đăng nhập lại tại địa chỉ của trung tâm để nhận phiên mang
-   *   claim. Ngoại lệ duy nhất giữ nguyên khuôn chiến lược JWT:
-   *   phiên vận hành platform (mang `tid` của tenant platform,
-   *   không mang claim) tra ở kho chung như cũ — quản trị viên
-   *   platform không có tài khoản trong kho riêng, và danh tính
-   *   của đường này thuộc kho chung nên `spaceSlug` trả về null.
+   * - Token mang claim `centre_id` lệch định danh của trung tâm tại địa chỉ → từ chối TRƯỚC khi chạm vào kho đích
+   *   (không tra kho nào để khẳng định thêm); claim khớp thì tài khoản tra trong CHÍNH kho của trung tâm đó.
+   * - Token KHÔNG mang claim `centre_id` là phiên cấp trước khi trung tâm tách kho → từ chối fail-closed, chủ phiên
+   *   phải đăng nhập lại tại địa chỉ của trung tâm để nhận phiên mang claim. Ngoại lệ duy nhất giữ nguyên khuôn chiến
+   *   lược JWT: phiên vận hành platform (mang `tid` của tenant platform, không mang claim) tra ở kho chung như cũ —
+   *   quản trị viên platform không có tài khoản trong kho riêng, và danh tính của đường này thuộc kho chung nên
+   *   `spaceSlug` trả về null.
    *
    * Khi `routingNotConfigured` bật (địa chỉ mang slug ứng viên nhưng tầng định tuyến chưa cấu hình — xem
    * `isRoutingNotConfiguredForHost`), token mang claim `centre_id` là bằng chứng phiên thuộc trung tâm kho riêng:

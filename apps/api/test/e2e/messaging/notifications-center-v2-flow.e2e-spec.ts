@@ -7,10 +7,9 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
  * Lát N2 (issue #51): trung tâm thông báo v2.
  *
  * Tiêu chí kiểm chứng theo issue + comment Bước 0:
- *  - GET /notifications là danh sách GỘP theo (loại × nguồn × ngày)
- *    kèm count/unreadCount, phân trang con trỏ không trùng/khuyết —
- *    không còn request tải toàn bộ lịch sử (đáp ứng dạng phong bì
- *    { items, nextCursor } thay cho mảng phẳng cũ).
+ *  - GET /notifications là danh sách GỘP theo (loại × nguồn × ngày) kèm count/unreadCount, phân trang con trỏ không
+ *    trùng/khuyết — không còn request tải toàn bộ lịch sử (đáp ứng dạng phong bì { items, nextCursor } thay cho mảng
+ *    phẳng cũ).
  *  - Một đợt nhiều thông báo cùng loại × nguồn × ngày (mẫu "chấm
  *    điểm cả lớp": 30 thông báo điểm của một khoá trong một ngày)
  *    chỉ thành MỘT dòng gộp, mở ra xem đủ từng mục qua

@@ -10,19 +10,16 @@ import { addGroupMember, createGroupViaApi, suspendUser } from '../../support/en
  *  - public/message/tests/api_test.php: test_count_blocked_users,
  *    test_mark_all_read_for_user_touser(_with_fromuser), create_conversation
  *    với các loại individual/group.
- *  - Các bất biến của báo cáo §2#12: message ≠ notification; tin nhắn đã gửi
- *    KHÔNG được SỬA; người dùng bị đình chỉ hoặc đang chặn thì không nhận
- *    được gì; tuỳ chọn gác việc phát theo (provider × channel × loggedin/
- *    loggedoff). Việc XOÁ tuân theo chính sách Lớp B sau này của issue #33
- *    (xoá mềm có để lại vết), chính sách này thay thế tính bất biến tuyệt
- *    đối của §2#12 — xem kiểm thử sửa/xoá bên dưới.
- *  - public/calendar/tests/lib_test.php: test_add_subscription (số lượng
- *    khi nhập ICS), test_get_legacy_events_with_overrides (khả năng hiển thị
- *    theo phạm vi nhóm), test_update_subscription; luật hiển thị của báo cáo §2#13.
- *  - public/calendar/tests/behat/export.feature: người dùng xuất lịch của
- *    mình thành file ICS và qua URL xuất bí mật (calendar key); file/URL
- *    chỉ chứa các sự kiện mà người dùng đó được phép thấy, và việc đặt lại
- *    khoá sẽ vô hiệu hoá URL cũ.
+ *  - Các bất biến của báo cáo §2#12: message ≠ notification; tin nhắn đã gửi KHÔNG được SỬA; người dùng bị đình chỉ
+ *    hoặc đang chặn thì không nhận được gì; tuỳ chọn gác việc phát theo (provider × channel × loggedin/ loggedoff).
+ *    Việc XOÁ tuân theo chính sách Lớp B sau này của issue #33 (xoá mềm có để lại vết), chính sách này thay thế tính
+ *    bất biến tuyệt đối của §2#12 — xem kiểm thử sửa/xoá bên dưới.
+ *  - public/calendar/tests/lib_test.php: test_add_subscription (số lượng khi nhập ICS),
+ *    test_get_legacy_events_with_overrides (khả năng hiển thị theo phạm vi nhóm), test_update_subscription; luật hiển
+ *    thị của báo cáo §2#13.
+ *  - public/calendar/tests/behat/export.feature: người dùng xuất lịch của mình thành file ICS và qua URL xuất bí mật
+ *    (calendar key); file/URL chỉ chứa các sự kiện mà người dùng đó được phép thấy, và việc đặt lại khoá sẽ vô hiệu hoá
+ *    URL cũ.
  */
 describe('Nhắn tin và lịch', () => {
   let app: INestApplication;
@@ -602,9 +599,8 @@ describe('Nhắn tin và lịch', () => {
     expect(blockedCreate.status).toBe(403);
     expect(blockedCreate.body.code).toBe('messaging.not_a_contact');
 
-    // 2. Chung khoá học: cả hai đều đang ghi danh tích cực trong cùng một khoá — cổng
-    //    VẪN đóng (đường bạn cùng khoá cũ đã bị loại bỏ bởi mô hình
-    //    được quyết lại; bạn cùng khoá kết bạn với nhau qua danh sách lớp).
+    // 2. Chung khoá học: cả hai đều đang ghi danh tích cực trong cùng một khoá — cổng VẪN đóng (đường bạn cùng khoá cũ
+    //    đã bị loại bỏ bởi mô hình được quyết lại; bạn cùng khoá kết bạn với nhau qua danh sách lớp).
     const category = await createCategory(app, admin);
     const course = await createCourse(app, admin, category.id);
     const instance = await createEnrolInstance(app, admin, course.id);
@@ -615,10 +611,9 @@ describe('Nhắn tin và lịch', () => {
     expect(courseBlocked.status).toBe(403);
     expect(courseBlocked.body.code).toBe('messaging.not_a_contact');
 
-    // 3. Liên hệ (request–accept): một yêu cầu ĐANG CHỜ từ người gửi là
-    //    chưa đủ — cổng chỉ mở khi quan hệ đã được chấp nhận.
-    //    Ở đây người nhận đáp lại bằng một yêu cầu của chính mình, yêu cầu này
-    //    chấp nhận yêu cầu đang chờ (đồng thuận hai phía).
+    // 3. Liên hệ (request–accept): một yêu cầu ĐANG CHỜ từ người gửi là chưa đủ — cổng chỉ mở khi quan hệ đã được chấp
+    //    nhận. Ở đây người nhận đáp lại bằng một yêu cầu của chính mình, yêu cầu này chấp nhận yêu cầu đang chờ (đồng
+    //    thuận hai phía).
     const pair = await twoUsers();
     const senderRequests = await http(app).post(`/api/v1/messages/contacts/${pair.b.id}`).set('Authorization', `Bearer ${pair.aToken}`).send({});
     expect(senderRequests.status).toBe(201);
@@ -636,10 +631,9 @@ describe('Nhắn tin và lịch', () => {
       .send({ text: 'Hello contact' });
     expect(contactSent.status).toBe(201);
 
-    // 4. messagingallusers = true (admin qua API site-config): thiết
-    //    lập này nay KHÔNG còn tác dụng với nhắn tin — người lạ vẫn bị
-    //    từ chối, đúng như khi nó tắt. (Mục trong registry vẫn ở lại;
-    //    không cổng nhắn tin nào đọc nó nữa.)
+    // 4. messagingallusers = true (admin qua API site-config): thiết lập này nay KHÔNG còn tác dụng với nhắn tin —
+    //    người lạ vẫn bị từ chối, đúng như khi nó tắt. (Mục trong registry vẫn ở lại; không cổng nhắn tin nào đọc nó
+    //    nữa.)
     const on = await http(app).put('/api/v1/site-config/core/messagingallusers').set('Authorization', `Bearer ${admin}`).send({ value: true });
     expect(on.status).toBe(200);
     expect(on.body.value).toBe(true);

@@ -6,15 +6,11 @@ import { createMfaGateHook, type MfaGateDeps } from './mfa-gate';
  * `user_totp` (qua phụ thuộc `isMfaEnabled`), và kỷ luật FAIL-CLOSED
  * khi không xác minh được trạng thái MFA:
  *
- * - Tra cứu trạng thái LỖI tuyệt đối không được hiểu là "chưa bật
- *   MFA": cổng phải ghi log lỗi, huỷ phiên vừa tạo ở cả hai tầng
- *   (cookie phiên khỏi response + xoá dòng session +
- *   setNewSession(null)) rồi ném lỗi dừng đăng nhập — không đường
- *   nào để lỗi tra cứu để lại một phiên sống.
- * - Tra cứu THÀNH CÔNG: chưa bật MFA thì đi qua không đụng phiên;
- *   đã bật thì cổng kích hoạt — huỷ phiên, phát dấu chờ bước hai;
- *   đường callback ném redirect kèm `twoFactorRedirect=true`,
- *   đường sign-in trả JSON `twoFactorRedirect`.
+ * - Tra cứu trạng thái LỖI tuyệt đối không được hiểu là "chưa bật MFA": cổng phải ghi log lỗi, huỷ phiên vừa tạo ở cả
+ *   hai tầng (cookie phiên khỏi response + xoá dòng session + setNewSession(null)) rồi ném lỗi dừng đăng nhập — không
+ *   đường nào để lỗi tra cứu để lại một phiên sống.
+ * - Tra cứu THÀNH CÔNG: chưa bật MFA thì đi qua không đụng phiên; đã bật thì cổng kích hoạt — huỷ phiên, phát dấu chờ
+ *   bước hai; đường callback ném redirect kèm `twoFactorRedirect=true`, đường sign-in trả JSON `twoFactorRedirect`.
  * - Đường ngoài phạm vi (không phải callback/sign-in) và instance
  *   không có phụ thuộc MFA: hook đi qua, không tra cứu.
  *

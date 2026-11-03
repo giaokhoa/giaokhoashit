@@ -225,7 +225,8 @@ export class CalendarService {
     const exceptedIds = new Set(rows.filter((r) => r.isException).map((r) => r.exceptionOf));
     const visible: CalendarEventRow[] = [];
     for (const row of rows) {
-      if (row.isException === false && row.exceptionOf === null && exceptedIds.has(row.id)) continue; // đã bị exception của nó thay thế
+      // đã bị exception của nó thay thế
+      if (row.isException === false && row.exceptionOf === null && exceptedIds.has(row.id)) continue;
       if (filter.eventType && row.eventType !== filter.eventType) continue;
       if (await this.isVisibleTo(row, viewerId)) visible.push(row);
     }

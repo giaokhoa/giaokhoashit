@@ -25,9 +25,9 @@ import { SystemBankService } from '../../../src/modules/system-bank/system-bank.
  * danh sách trung tâm đã nhập đọc được từ dòng importer; (3) gói YCCĐ: phát hành từ cây chương trình rồi cài lại — nội
  * dung cập nhật tại chỗ theo id, vết cài ghi phiên bản trước; (4) cài gói khi môn chưa có ở trung tâm thì fail-closed;
  * (5) cài gói khi trung tâm đã có chương trình (môn, khối) khác id thì fail-closed; (6) đường giao thông báo rút câu
- * phía trung tâm: mỗi trung tâm liệt kê được sự kiện chưa ghi nhận của đúng câu mình đã nhập mà không cần biết trước id
- * sự kiện, ghi nhận xong thì hết ở trung tâm mình và còn nguyên ở trung tâm khác. Đường nhập bản chụp (cần
- * QuestionsService thật) và đường bank-off thuộc tầng e2e.
+ *     phía trung tâm: mỗi trung tâm liệt kê được sự kiện chưa ghi nhận của đúng câu mình đã nhập mà không cần biết
+ *     trước id sự kiện, ghi nhận xong thì hết ở trung tâm mình và còn nguyên ở trung tâm khác. Đường nhập bản chụp (cần
+ *     QuestionsService thật) và đường bank-off thuộc tầng e2e.
  */
 const BANK_DATABASE = 'lms_test_bank_585';
 const BANK_ROLE = 'lms_bank_test_585';

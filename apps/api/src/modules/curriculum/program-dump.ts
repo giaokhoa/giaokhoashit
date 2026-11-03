@@ -5,16 +5,17 @@ import type {
   CurriculumNodeRow, CurriculumRow, LearningOutcomeRow, ProgramRecordRow, SubjectRow,
 } from '@lms/db/repositories/curriculum';
 
-/** DUMP ĐÔNG CỨNG dữ liệu chương trình GDPT 2018 — mô hình phân phối thay cho cơ chế hội tụ UUIDv5 trước đó.
+/**
+ * DUMP ĐÔNG CỨNG dữ liệu chương trình GDPT 2018 — mô hình phân phối thay cho cơ chế hội tụ UUIDv5 trước đó.
  *
  * Flow tổng thể:
  * 1. SẢN XUẤT (chỉ ở trung tâm, một lần cho mỗi đợt đính chính của Bộ): nạp/patch dataset vào MỘT DB chuẩn bằng
- * ProgramImportService (ghép dòng theo bản ghi + vị trí + nguyên văn trên chính DB đó, sinh báo cáo thay đổi cho người
- * duyệt) → chạy CLI `export-program-dump` để xuất toàn bộ các bảng chương trình của DB chuẩn thành artifact SQL này →
- * commit artifact kèm tăng {@link PROGRAM_DUMP_VERSION}.
+ *    ProgramImportService (ghép dòng theo bản ghi + vị trí + nguyên văn trên chính DB đó, sinh báo cáo thay đổi cho
+ *    người duyệt) → chạy CLI `export-program-dump` để xuất toàn bộ các bảng chương trình của DB chuẩn thành artifact
+ *    SQL này → commit artifact kèm tăng {@link PROGRAM_DUMP_VERSION}.
  * 2. PHÂN PHỐI (mọi môi trường — local/CI/production): seed RESTORE nguyên văn artifact qua
- * ProgramDumpService.restoreIfEmpty, KHÔNG chạy importer. Mọi id trong artifact là HẰNG SỐ LITERAL (kể cả uuidv7 của
- * YCCĐ do DB chuẩn cấp) nên tập id khớp 100% giữa các môi trường bất kể lịch sử nạp của từng nơi.
+ *    ProgramDumpService.restoreIfEmpty, KHÔNG chạy importer. Mọi id trong artifact là HẰNG SỐ LITERAL (kể cả uuidv7 của
+ *    YCCĐ do DB chuẩn cấp) nên tập id khớp 100% giữa các môi trường bất kể lịch sử nạp của từng nơi.
  *
  * Ngoại lệ neo duy nhất của bước restore: cột `subjects.context_id` trong artifact mang context hệ thống của môi trường
  * SINH dump — một context không tồn tại ở môi trường đích. Restore vì thế neo lại cột này về context hệ thống của chính
@@ -27,16 +28,18 @@ import type {
  * Restore chỉ chạy khi DB chưa có dữ liệu chương trình (sổ đăng ký trống), đúng luật seed hiện hành.
  */
 
-/** Version của artifact dump hiện hành trong repo. Tăng theo định dạng `<ngày>.<số đợt trong ngày>` mỗi lần sản xuất
- * lại dump từ DB chuẩn đã patch; version được ghi vào đầu file SQL và vào log seed để mọi môi trường đối chiếu được
- * mình đang chạy bản dump nào.
+/**
+ * Version của artifact dump hiện hành trong repo. Tăng theo định dạng `<ngày>.<số đợt trong ngày>` mỗi lần sản xuất lại
+ * dump từ DB chuẩn đã patch; version được ghi vào đầu file SQL và vào log seed để mọi môi trường đối chiếu được mình
+ * đang chạy bản dump nào.
  */
 export const PROGRAM_DUMP_VERSION = '2026-10-29.3';
 
 /** Tên file artifact trong repo (cạnh module này), được copy sang dist khi build. */
 export const PROGRAM_DUMP_FILE_NAME = 'program-dump.sql';
 
-/** Render một giá trị dòng thành literal SQL an toàn cho artifact: chuỗi thoát bằng gấp đôi dấu nháy đơn
+/**
+ * Render một giá trị dòng thành literal SQL an toàn cho artifact: chuỗi thoát bằng gấp đôi dấu nháy đơn
  * (standard_conforming_strings), JSONB ép kiểu tường minh, thời gian về ISO 8601. Mọi giá trị đi qua hàm này — artifact
  * không chứa tham số, restore là chạy nguyên văn.
  */
@@ -91,15 +94,16 @@ function orderOutcomesTopologically<T extends { id: string; derivedFromId: strin
   return [...rows].sort((a, b) => depthOf(a) - depthOf(b) || a.position - b.position);
 }
 
-/** Xuất các bảng chương trình của DB hiện tại thành artifact SQL đông cứng. Thứ tự bảng tôn trọng FK: subjects →
+/**
+ * Xuất các bảng chương trình của DB hiện tại thành artifact SQL đông cứng. Thứ tự bảng tôn trọng FK: subjects →
  * curricula → curriculum_nodes (cha trước con) → learning_outcomes (gốc trước derived) → curriculum_program_records.
  *
  * Phạm vi xuất:
  * - Mặc định (đường sản xuất ở trung tâm): TOÀN BỘ các bảng — DB nguồn PHẢI là DB chuẩn chỉ chứa dữ liệu chương trình
  * do importer sản xuất.
  * - `datasetKey` (đường kiểm chứng trong suite dùng chung DB): chỉ xuất cây của đúng dataset đó — môn/chương trình suy
- * từ sổ đăng ký của dataset, node theo các chương trình đó, YCCĐ theo các node đó — để vòng xuất → restore không đụng
- * dữ liệu của các suite khác đang ở chung DB.
+ *   từ sổ đăng ký của dataset, node theo các chương trình đó, YCCĐ theo các node đó — để vòng xuất → restore không đụng
+ *   dữ liệu của các suite khác đang ở chung DB.
  *
  * @param db - Kết nối DB cần xuất dump.
  * @param opts - `datasetKey` để giới hạn phạm vi theo một dataset.
@@ -199,7 +203,8 @@ export function loadProgramDumpSql(): string {
   return readFileSync(join(__dirname, 'program-data-dump', PROGRAM_DUMP_FILE_NAME), 'utf8');
 }
 
-/** Restore một bản dump vào DB trong MỘT transaction (chết giữa chừng thì rollback toàn bộ, chạy lại an toàn). Hàm này
+/**
+ * Restore một bản dump vào DB trong MỘT transaction (chết giữa chừng thì rollback toàn bộ, chạy lại an toàn). Hàm này
  * không tự xét DB trống — điều kiện "chỉ restore khi chưa có dữ liệu chương trình" do ProgramDumpService.restoreIfEmpty
  * quyết trước khi gọi.
  *

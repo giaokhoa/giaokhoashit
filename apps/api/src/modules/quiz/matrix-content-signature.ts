@@ -43,11 +43,9 @@ export interface MatrixContentSignatureInput {
 /**
  * Tính chữ ký nội dung chuẩn hoá của một ma trận.
  *
- * Flow: làm tròn tổng điểm và điểm từng ô về 4 chữ số thập phân (như
- * đường phân tích file của lát nhập) → sắp xếp tập đơn vị kiến thức
- * phạm vi và mảng ô đã kết chuỗi "ĐVK|mức|dạng|số câu|điểm ô" → kết
- * chuỗi JSON theo thứ tự trường cố định. Hàm thuần, không đọc DB:
- * người gọi tự nạp ô.
+ * Flow: làm tròn tổng điểm và điểm từng ô về 4 chữ số thập phân (như đường phân tích file của lát nhập) → sắp xếp tập
+ * đơn vị kiến thức phạm vi và mảng ô đã kết chuỗi "ĐVK|mức|dạng|số câu|điểm ô" → kết chuỗi JSON theo thứ tự trường cố
+ * định. Hàm thuần, không đọc DB: người gọi tự nạp ô.
  *
  * @returns Chuỗi JSON là chữ ký; hai ma trận trùng toàn bộ về nội
  *   dung cho cùng một chuỗi.

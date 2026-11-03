@@ -101,13 +101,18 @@ export class PlayerController {
   }
 
   @Post('modules/:cmId/progress')
-  /** POST /courses/:courseId/modules/:cmId/progress — học sinh báo tiến độ xem (lưu bền; client gửi bù khi rớt mạng). */
+  /**
+   * POST /courses/:courseId/modules/:cmId/progress — học sinh báo tiến độ xem (lưu bền; client gửi bù khi rớt mạng).
+   */
   async recordProgress(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @Param('cmId', { schema: uuidIdSchema }) cmId: string, @Body({ schema: recordProgressSchema }) dto: RecordProgressDto, @CurrentUser() viewer: AuthenticatedUser) {
     return this.content.recordProgress(viewer.id, courseId, cmId, dto);
   }
 
   @Get('progress/report')
-  /** GET /courses/:courseId/progress/report — báo cáo tiến độ cho giáo viên (ma trận lớp × mục + tổng theo mục/HS); ?groupId= lọc theo lớp/nhóm. */
+  /**
+   * GET /courses/:courseId/progress/report — báo cáo tiến độ cho giáo viên (ma trận lớp × mục + tổng theo mục/HS);
+   * ?groupId= lọc theo lớp/nhóm.
+   */
   async progressReport(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @Query('groupId') groupId: string | undefined, @CurrentUser() viewer: AuthenticatedUser) {
     return this.content.getProgressReport(viewer.id, courseId, groupId);
   }
@@ -142,7 +147,10 @@ export class PlayerController {
   }
 
   @Post('lesson-template')
-  /** POST /courses/:courseId/lesson-template — tạo bộ section mẫu "bài học" theo khung CV 5512 (khung gợi ý, không ép cứng). */
+  /**
+   * POST /courses/:courseId/lesson-template — tạo bộ section mẫu "bài học" theo khung CV 5512 (khung gợi ý, không ép
+   * cứng).
+   */
   async lessonTemplate(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @Body({ schema: createLessonTemplateSchema }) dto: CreateLessonTemplateDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.content.createLessonTemplate(actor.id, courseId, dto);
   }

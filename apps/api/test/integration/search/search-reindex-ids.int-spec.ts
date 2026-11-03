@@ -12,15 +12,12 @@ import { SearchService } from '../../../src/modules/search/search.service';
 /**
  * Đối chiếu tập id của khâu dựng lại chỉ mục tìm kiếm toàn cục:
  *
- * - Mỗi area dựng sẵn chỉ liệt kê đúng tập id đủ điều kiện vào chỉ
- *   mục, với điều kiện lọc nằm ngay ở truy vấn: `users` loại user
- *   suspended và user đã xoá; `contentbank` chỉ lấy nội dung
- *   `public`; `courses` liệt kê mọi khoá (khâu fetch mới quyết định
- *   từng khoá có vào chỉ mục hay không).
- * - Sau một lần dựng lại toàn bộ, tài liệu trong chỉ mục chứa đúng
- *   các id đủ điều kiện của các fixture trong spec này (user đang
- *   hoạt động, khoá học, nội dung public) và không chứa các id bị
- *   loại (user suspended, user đã xoá, nội dung draft).
+ * - Mỗi area dựng sẵn chỉ liệt kê đúng tập id đủ điều kiện vào chỉ mục, với điều kiện lọc nằm ngay ở truy vấn: `users`
+ *   loại user suspended và user đã xoá; `contentbank` chỉ lấy nội dung `public`; `courses` liệt kê mọi khoá (khâu fetch
+ *   mới quyết định từng khoá có vào chỉ mục hay không).
+ * - Sau một lần dựng lại toàn bộ, tài liệu trong chỉ mục chứa đúng các id đủ điều kiện của các fixture trong spec này
+ *   (user đang hoạt động, khoá học, nội dung public) và không chứa các id bị loại (user suspended, user đã xoá, nội
+ *   dung draft).
  * - `countDocs` đếm ở SQL: kết quả phải bằng đúng số dòng thật của
  *   bảng `search_documents` tại cùng thời điểm, và bằng độ dài của
  *   `listDocs`.

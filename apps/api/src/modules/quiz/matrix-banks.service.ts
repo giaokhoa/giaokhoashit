@@ -47,15 +47,11 @@ export const MATRIX_BANK_CAPS = {
  * - Bank là question_banks với bank_kind='matrix' (bảng đa loại của
  *   PR #83); exam_matrices.bank_id neo vào bank, quyền MỘT nguồn duy
  *   nhất là context của bank (resolver trong QuizService).
- * - Copy mẫu → ma trận làm việc: deep copy toàn bộ ô với danh tính
- *   mới, derived_from_matrix_id trỏ về mẫu, version về 1, hạ cánh
- *   `ready` (quy tắc hoàn thiện: sao chép vào bank là đường vào bank
- *   ở dạng đã hoàn thiện) — sửa bản copy fork version mới, không
- *   đụng mẫu (bất biến truy vết).
- * - Đóng góp + duyệt: giáo viên đề xuất ma trận ready của mình vào
- *   bank chung; người có matrix:moderate tại bank đích duyệt (= copy
- *   sâu vào bank đích, bản vào bank tổ/trường là MẪU) hoặc từ chối kèm
- *   lý do hiện lại cho người gửi.
+ * - Copy mẫu → ma trận làm việc: deep copy toàn bộ ô với danh tính mới, derived_from_matrix_id trỏ về mẫu, version về
+ *   1, hạ cánh `ready` (quy tắc hoàn thiện: sao chép vào bank là đường vào bank ở dạng đã hoàn thiện) — sửa bản copy
+ *   fork version mới, không đụng mẫu (bất biến truy vết).
+ * - Đóng góp + duyệt: giáo viên đề xuất ma trận ready của mình vào bank chung; người có matrix:moderate tại bank đích
+ *   duyệt (= copy sâu vào bank đích, bản vào bank tổ/trường là MẪU) hoặc từ chối kèm lý do hiện lại cho người gửi.
  */
 export class MatrixBanksService {
   constructor(

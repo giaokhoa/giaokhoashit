@@ -108,7 +108,10 @@ function provisionEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
 
 const MIGRATIONS_DIR = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre');
 
-/** Hình chụp đường cơ sở vai của một kho: tập vai, tập định nghĩa năng lực, và ma trận tại context hệ thống dạng dòng chuẩn hoá. */
+/**
+ * Hình chụp đường cơ sở vai của một kho: tập vai, tập định nghĩa năng lực, và ma trận tại context hệ thống dạng dòng
+ * chuẩn hoá.
+ */
 type RoleBaselineSnapshot = {
   roles: string[];
   capabilities: string[];

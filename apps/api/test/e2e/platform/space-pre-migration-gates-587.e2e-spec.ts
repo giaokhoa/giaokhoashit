@@ -87,32 +87,21 @@ function signedBetterAuthCookie(token: string): string {
  * (c) cổng 1a — thành viên đã bị thu hồi ở kho đích (membership
  *     đã kết thúc sau khi token được cấp) bị từ chối 401
  *     `tenant.membership_inactive`;
- * (d) cổng 1c/A2 — phiên cookie Better Auth của tài khoản ở kho
- *     riêng đọc được hồ sơ qua địa chỉ của chính trung tâm đó
- *     (phiên và tài khoản đều đọc qua kho đích, không đọc kho
- *     chung). Phiên được gieo thẳng vào bảng `session` ở kho đích
- *     — ca này khoá đường ĐỌC theo địa chỉ của guard.
- * (e) đường GHI đăng nhập Better Auth (B1, vòng sửa sau phán quyết
- *     CHƯA ĐẠT của PR #627) — tài khoản chỉ ở kho riêng đăng nhập
- *     bằng luồng web Better Auth (`POST /api/v1/auth/sign-in/
- *     username`) tại địa chỉ của chính trung tâm đó phải thành
- *     công, phiên phải được GHI vào bảng `session` ở kho đích (không
- *     phải kho chung), và cookie phiên đó đọc được hồ sơ mang dấu
- *     kho đích. Ca này khoá đúng khâu ghi mà ca (d) bỏ qua (gieo
- *     phiên thẳng) và ca đối chứng dương bỏ qua (giáo viên có ở cả
- *     hai kho).
- * (f) đối chứng âm của (e) — tài khoản chỉ ở kho chung (có
- *     credential Better Auth hẳn hoi, đăng nhập được ở địa chỉ
- *     platform) phải bị TỪ CHỐI khi đăng nhập tại địa chỉ của
- *     trung tâm kho riêng: kiểm chứng credential tại địa chỉ đó
- *     chỉ được chạm kho đích. Đây là chiều xuyên thủng đã gặp ở
- *     production trong thí điểm nhantin (tiền điều kiện TĐ5):
- *     khi Host không tới được API nguyên vẹn, ca này ở production
- *     trả 200 cho tài khoản kho chung.
- * (g) địa chỉ platform giữ nguyên hành vi hiện tại sau khi đường
- *     địa chỉ trung tâm được nối đúng: tài khoản kho chung đăng
- *     nhập được tại địa chỉ platform và phiên ghi ở kho chung;
- *     tài khoản chỉ ở kho riêng bị từ chối tại địa chỉ platform.
+ * (d) cổng 1c/A2 — phiên cookie Better Auth của tài khoản ở kho riêng đọc được hồ sơ qua địa chỉ của chính trung tâm đó
+ *     (phiên và tài khoản đều đọc qua kho đích, không đọc kho chung). Phiên được gieo thẳng vào bảng `session` ở kho
+ *     đích — ca này khoá đường ĐỌC theo địa chỉ của guard.
+ * (e) đường GHI đăng nhập Better Auth (B1, vòng sửa sau phán quyết CHƯA ĐẠT của PR #627) — tài khoản chỉ ở kho riêng
+ *     đăng nhập bằng luồng web Better Auth (`POST /api/v1/auth/sign-in/ username`) tại địa chỉ của chính trung tâm đó
+ *     phải thành công, phiên phải được GHI vào bảng `session` ở kho đích (không phải kho chung), và cookie phiên đó đọc
+ *     được hồ sơ mang dấu kho đích. Ca này khoá đúng khâu ghi mà ca (d) bỏ qua (gieo phiên thẳng) và ca đối chứng dương
+ *     bỏ qua (giáo viên có ở cả hai kho).
+ * (f) đối chứng âm của (e) — tài khoản chỉ ở kho chung (có credential Better Auth hẳn hoi, đăng nhập được ở địa chỉ
+ *     platform) phải bị TỪ CHỐI khi đăng nhập tại địa chỉ của trung tâm kho riêng: kiểm chứng credential tại địa chỉ đó
+ *     chỉ được chạm kho đích. Đây là chiều xuyên thủng đã gặp ở production trong thí điểm nhantin (tiền điều kiện TĐ5):
+ *     khi Host không tới được API nguyên vẹn, ca này ở production trả 200 cho tài khoản kho chung.
+ * (g) địa chỉ platform giữ nguyên hành vi hiện tại sau khi đường địa chỉ trung tâm được nối đúng: tài khoản kho chung
+ *     đăng nhập được tại địa chỉ platform và phiên ghi ở kho chung; tài khoản chỉ ở kho riêng bị từ chối tại địa chỉ
+ *     platform.
  */
 const CP_DATABASE = 'lms_test_cp_587';
 const CP_ROLE = 'lms_cp_test_587';
@@ -125,7 +114,9 @@ const CENTRE_A_PASSWORD = 'centre-a-test-587';
 const RUN_SUFFIX = Math.random().toString(36).slice(2, 8);
 const CENTRE_A_SLUG = `trung-tam-a-587-${RUN_SUFFIX}`;
 const HOST_A = `${CENTRE_A_SLUG}.test.local`;
-/** Dấu phân biệt ghi thẳng vào dòng user ở kho A: hồ sơ đọc qua địa chỉ A phải mang dấu này, đọc ở kho chung thì không. */
+/**
+ * Dấu phân biệt ghi thẳng vào dòng user ở kho A: hồ sơ đọc qua địa chỉ A phải mang dấu này, đọc ở kho chung thì không.
+ */
 const CENTRE_A_FIRST_NAME = 'DauAnKhoA587';
 
 const UUIDV7_SHIM = `CREATE OR REPLACE FUNCTION uuidv7() RETURNS uuid AS $$ DECLARE ts_ms bigint := (extract(epoch from clock_timestamp()) * 1000)::bigint; b bytea; BEGIN b := decode(lpad(to_hex(ts_ms), 12, '0'), 'hex') || gen_random_bytes(10); b := set_byte(b, 6, (get_byte(b, 6) & 15) | 112); b := set_byte(b, 8, (get_byte(b, 8) & 63) | 128); RETURN encode(b, 'hex')::uuid; END; $$ LANGUAGE plpgsql VOLATILE`;
@@ -215,7 +206,10 @@ async function copyRow(
   });
 }
 
-/** Sao dòng user + dòng membership của một tài khoản vào kho đích, rồi đóng dấu phân biệt lên dòng user ở kho đích khi có. */
+/**
+ * Sao dòng user + dòng membership của một tài khoản vào kho đích, rồi đóng dấu phân biệt lên dòng user ở kho đích khi
+ * có.
+ */
 async function copyMemberToCentre(userId: string, tenantId: string, marker: string | null): Promise<void> {
   const centreUrl = clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD);
   await copyRow(process.env.DATABASE_URL!, centreUrl, 'users', 'id', userId);

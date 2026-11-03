@@ -11,10 +11,9 @@ import { MESSAGE_PROVIDERS } from './notification-providers';
  *     truyền — bản trong app giữ nguyên nội dung đầy đủ.
  *  2. Nội dung gốc — CHỈ khi provider khai báo tường minh
  *     'original-ok' kèm lý do trong registry provider.
- *  3. Bản tóm tắt mặc định i18n — khi provider thuộc diện
- *     'minimized' mà phía gọi thiếu bản tối thiểu hoá; riêng ở môi
- *     trường test, trường hợp này NÉM LỖI (ca cấm fail-được: gỡ cơ
- *     chế cấm ở notify() là các ca thuộc diện này phải đỏ).
+ *  3. Bản tóm tắt mặc định i18n — khi provider thuộc diện 'minimized' mà phía gọi thiếu bản tối thiểu hoá; riêng ở môi
+ *     trường test, trường hợp này NÉM LỖI (ca cấm fail-được: gỡ cơ chế cấm ở notify() là các ca thuộc diện này phải
+ *     đỏ).
  *
  * Đường sendSystemNotification áp cứng diện 'minimized' cho mọi provider vì nội dung là văn bản tự do của quản trị
  * viên.

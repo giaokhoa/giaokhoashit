@@ -14,9 +14,10 @@ import {
 } from '@lms/db/repositories/exams';
 import { ExamsService, EXAM_CAPABILITIES, examPaperContentHash } from './exams.service';
 
-/** Luồng duyệt BỘ HỒ SƠ đề (EB-3, issue #165) — đơn vị duyệt của đề/ma trận là TOÀN BỘ tài liệu (khác câu hỏi duyệt
- * từng câu, hồ sơ ngân hàng đề mục A.3/F.2): một bộ hồ sơ ghim bộ ba {phiên bản ma trận + phiên bản đề + bản đặc tả
- * chụp tại lúc nộp} vào một bank đề dùng chung và đi qua các cấp duyệt:
+/**
+ * Luồng duyệt BỘ HỒ SƠ đề (EB-3, issue #165) — đơn vị duyệt của đề/ma trận là TOÀN BỘ tài liệu (khác câu hỏi duyệt từng
+ * câu, hồ sơ ngân hàng đề mục A.3/F.2): một bộ hồ sơ ghim bộ ba {phiên bản ma trận + phiên bản đề + bản đặc tả chụp tại
+ * lúc nộp} vào một bank đề dùng chung và đi qua các cấp duyệt:
  *
  * - Cấp 1: người có `exam:moderate` tại context bank đích (tổ trưởng ở bank tổ, người được uỷ quyền ở bank trường) —
  * cùng khuôn duyệt QB-4/MB-1: duyệt đạt là chốt bản vào bank đích và chịu trách nhiệm về bản chung.
@@ -46,7 +47,8 @@ export class ExamDossiersService {
     private readonly outbox: OutboxService,
   ) {}
 
-  /** Công tắc cấp duyệt 2 cho một bộ hồ sơ — UỶ THÁC sang điểm seam dùng chung {@link
+  /**
+   * Công tắc cấp duyệt 2 cho một bộ hồ sơ — UỶ THÁC sang điểm seam dùng chung {@link
    * ExamsService.boardApprovalRequiredForBank} (nơi DUY NHẤT đọc khoá `exam/requireboardapproval`): tenant của bank
    * đích của hồ sơ quyết định. Hàm này chỉ còn là vỏ tương thích cho bề mặt đọc (view cần cờ hiệu lực hiện tại); không
    * nơi nào trong service này tự đọc khoá cấu hình nữa.
@@ -65,7 +67,9 @@ export class ExamDossiersService {
     return row;
   }
 
-  /** Lỗi đóng đường dùng chung cho mọi thao tác ghi của bề mặt hồ sơ: 410 kèm chỉ đường sang đường đóng góp duy nhất. */
+  /**
+   * Lỗi đóng đường dùng chung cho mọi thao tác ghi của bề mặt hồ sơ: 410 kèm chỉ đường sang đường đóng góp duy nhất.
+   */
   private static pathClosed(): GoneException {
     return new GoneException({
       message: 'The dossier path is closed: contribute the paper through the single contribution path (with an attached dossier when the paper is an official exam)',
@@ -128,7 +132,8 @@ export class ExamDossiersService {
     };
   }
 
-  /** Lập bộ hồ sơ nháp — ĐÃ ĐÓNG: đường hồ sơ bị hấp thụ vào ĐƯỜNG ĐÓNG GÓP DUY NHẤT của đề (đóng góp kèm bộ hồ sơ đính
+  /**
+   * Lập bộ hồ sơ nháp — ĐÃ ĐÓNG: đường hồ sơ bị hấp thụ vào ĐƯỜNG ĐÓNG GÓP DUY NHẤT của đề (đóng góp kèm bộ hồ sơ đính
    * kèm qua `withDossier`). Mọi thao tác GHI của bề mặt này trả 410 `exam.dossier_path_closed`; bề mặt ĐỌC (chi tiết,
    * danh sách, đặc tả) giữ nguyên để xem lại lịch sử.
    */
@@ -153,7 +158,10 @@ export class ExamDossiersService {
     return this.dossierView(dossier);
   }
 
-  /** Hàng chờ bộ hồ sơ của một bank đích: người duyệt thấy tất cả; người khác chỉ thấy bộ của mình (như hàng chờ đóng góp QB-4). */
+  /**
+   * Hàng chờ bộ hồ sơ của một bank đích: người duyệt thấy tất cả; người khác chỉ thấy bộ của mình (như hàng chờ đóng
+   * góp QB-4).
+   */
   async listBankDossiers(actorId: string, bankId: string): Promise<ExamDossierView[]> {
     const bank = await this.papers.getExamBank(actorId, bankId);
     const canModerate = await this.evaluator.hasCapability(actorId, EXAM_CAPABILITIES.moderate, bank.contextId);
@@ -171,8 +179,9 @@ export class ExamDossiersService {
     return views;
   }
 
-  /** Bản đặc tả ĐÃ CHỤP trong bộ hồ sơ — bề mặt duyệt trong hàng chờ: tổ trưởng mở đặc tả ngay tại hàng chờ, đọc đúng nội
-   * dung đã nộp (không phải nội dung sống của ma trận/đề tại thời điểm mở). Lần mở của người duyệt được ghi audit
+  /**
+   * Bản đặc tả ĐÃ CHỤP trong bộ hồ sơ — bề mặt duyệt trong hàng chờ: tổ trưởng mở đặc tả ngay tại hàng chờ, đọc đúng
+   * nội dung đã nộp (không phải nội dung sống của ma trận/đề tại thời điểm mở). Lần mở của người duyệt được ghi audit
    * `exam_dossier_spec_viewed`.
    */
   async getDossierSpecification(actorId: string, dossierId: string): Promise<Record<string, unknown>> {
@@ -221,15 +230,16 @@ export class ExamDossiersService {
     throw ExamDossiersService.pathClosed();
   }
 
-  /** Chuyển đổi toàn bộ hồ sơ còn treo sang ĐƯỜNG ĐÓNG GÓP DUY NHẤT — thao tác vận hành đã chạy MỘT LẦN ở ngữ cảnh
+  /**
+   * Chuyển đổi toàn bộ hồ sơ còn treo sang ĐƯỜNG ĐÓNG GÓP DUY NHẤT — thao tác vận hành đã chạy MỘT LẦN ở ngữ cảnh
    * platform khi cắt đường hồ sơ, quy tắc theo quyết định hấp thụ đường hồ sơ:
    *
    * - Hồ sơ `pending`/`pending_board`: sinh MỘT đóng góp mode 'new' mang NGUYÊN trạng thái đang chờ + bộ hồ sơ đã ghim
-   * (version đề, version ma trận, bản đặc tả) + người lập/ghi chú/thời điểm lập của hồ sơ; toàn bộ mốc duyệt đã có của
-   * hồ sơ được sao sang sổ mốc duyệt của đóng góp để lịch sử duyệt liền mạch; hash chống trùng tính lại trên version đề
-   * đã ghim và near_duplicate_of quét trong bank đích như một đề xuất mới. Đóng góp trỏ về hồ sơ gốc qua
-   * `source_dossier_id` — neo này cũng là khoá idempotent: hồ sơ đã có đóng góp mang nó thì bỏ qua, chạy lại không nhân
-   * đôi đóng góp lẫn mốc duyệt.
+   *   (version đề, version ma trận, bản đặc tả) + người lập/ghi chú/thời điểm lập của hồ sơ; toàn bộ mốc duyệt đã có
+   *   của hồ sơ được sao sang sổ mốc duyệt của đóng góp để lịch sử duyệt liền mạch; hash chống trùng tính lại trên
+   *   version đề đã ghim và near_duplicate_of quét trong bank đích như một đề xuất mới. Đóng góp trỏ về hồ sơ gốc qua
+   *   `source_dossier_id` — neo này cũng là khoá idempotent: hồ sơ đã có đóng góp mang nó thì bỏ qua, chạy lại không
+   *   nhân đôi đóng góp lẫn mốc duyệt.
    * - Hồ sơ `draft`: ĐÓNG BĂNG tại chỗ (giữ nguyên trạng thái làm dấu vết việc đang soạn dở) + một sự kiện thông báo
    * cho người lập để họ lập lại dưới dạng đóng góp nếu còn nhu cầu. Phần thông báo mang ngữ nghĩa "chạy một lần": mỗi
    * lần chạy lại, hồ sơ draft còn tồn tại lại được tính vào báo cáo — vận hành chỉ chạy đợt chuyển đổi đúng một lần.

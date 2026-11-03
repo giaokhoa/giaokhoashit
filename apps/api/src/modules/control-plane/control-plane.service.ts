@@ -447,14 +447,11 @@ export class ControlPlaneRegistryService {
   }
 
   /**
-   * Gieo dữ kiện cho các không gian ĐÃ TỒN TẠI ở kho chung (đường
-   * bootstrap/seed gọi): đảm bảo mỗi không gian có đúng một dòng
-   * đăng ký ở chế độ `shared` + một dòng registry phiên bản schema
-   * mang phiên bản của kho chung. Idempotent tuyệt đối — slug đã có
-   * thì giữ nguyên dòng hiện tại (không ghi đè, không trùng), nên
-   * chạy lại bao nhiêu lần cũng an toàn. Đây là ghi của HỆ THỐNG khi
-   * khởi động, không phải thao tác quản trị, nên không qua cổng
-   * capability và không ghi lịch sử quản trị.
+   * Gieo dữ kiện cho các không gian ĐÃ TỒN TẠI ở kho chung (đường bootstrap/seed gọi): đảm bảo mỗi không gian có đúng
+   * một dòng đăng ký ở chế độ `shared` + một dòng registry phiên bản schema mang phiên bản của kho chung. Idempotent
+   * tuyệt đối — slug đã có thì giữ nguyên dòng hiện tại (không ghi đè, không trùng), nên chạy lại bao nhiêu lần cũng an
+   * toàn. Đây là ghi của HỆ THỐNG khi khởi động, không phải thao tác quản trị, nên không qua cổng capability và không
+   * ghi lịch sử quản trị.
    *
    * @returns số dòng đăng ký mới được tạo ở lượt này.
    */

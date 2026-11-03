@@ -14,13 +14,10 @@ import type { PermissionEvaluator } from '../access/permission-evaluator.service
  * syncLinkedConversationMembers}. Các vị từ liên kết (isGroupLinked/isCourseLinked/isClassLinked) quyết định một
  * conversation có thuộc diện đồng bộ này hay không (conversation tự do/1-1 không bao giờ bị đụng vào).
  *
- * Vì sao tách thành service riêng thay vì nằm trong service hội thoại:
- * cây nhóm/roster (MessagingGroupTreeService) cần đồng bộ trước khi
- * dựng cây, và cụm tin nhắn (MessagingMessagesService) cần đồng bộ
- * trước khi đọc/gửi — đặt đồng bộ ở tầng thấp dùng chung giữ đồ thị
- * phụ thuộc giữa các service cụm không có vòng (cây nhóm → đồng bộ;
- * hội thoại → đồng bộ; tin nhắn → hội thoại + đồng bộ). Các method ở
- * đây để public trong nội bộ module cho các service cụm gọi — không
+ * Vì sao tách thành service riêng thay vì nằm trong service hội thoại: cây nhóm/roster (MessagingGroupTreeService) cần
+ * đồng bộ trước khi dựng cây, và cụm tin nhắn (MessagingMessagesService) cần đồng bộ trước khi đọc/gửi — đặt đồng bộ ở
+ * tầng thấp dùng chung giữ đồ thị phụ thuộc giữa các service cụm không có vòng (cây nhóm → đồng bộ; hội thoại → đồng
+ * bộ; tin nhắn → hội thoại + đồng bộ). Các method ở đây để public trong nội bộ module cho các service cụm gọi — không
  * phải bề mặt API của MessagingModule.
  *
  * Cách lắp ráp (issue #295): service này là một CỤM của MessagingModule, tách từ MessagingService cũ theo cụm ca sử

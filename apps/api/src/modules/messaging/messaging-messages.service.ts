@@ -297,25 +297,17 @@ export class MessagingMessagesService {
 
   // Ba lớp thao tác, tách bạch theo vai — thay mô hình xoá mềm toàn cục cũ (một lần DELETE là tin biến mất với mọi
   // người):
-  //   (a) XOÁ-PHÍA-MÌNH (DELETE /messages/:id): chỉ TÁC GIẢ, mọi lúc
-  //       không điều kiện cửa sổ — đặt cờ cá nhân
-  //       `message_user_deletions`, tin chỉ ẩn khỏi tầm nhìn của
-  //       chính người xoá; phía kia và đường truy vết không đổi.
-  //   (b) THU HỒI (POST /messages/:id/recall): chỉ TÁC GIẢ, chỉ
-  //       trong cửa sổ site-config `core/messagingrecallwindowminutes`
-  //       (mặc định 15 phút từ lúc gửi) — nội dung bị vô hiệu với
-  //       mọi thành viên thường, ghi dấu moderator_action 'recall'.
-  //       Ngoài cửa sổ người thường không còn thao tác này.
-  //   (c) XOÁ CỨNG / GỠ HÀNG LOẠT (POST /messages/:id/hard-delete,
-  //       POST /messages/bulk-remove): chỉ người có capability
-  //       `moderation:manage` trong phạm vi conversation, không
-  //       giới hạn thời gian, lý do BẮT BUỘC và luôn ghi
+  //   (a) XOÁ-PHÍA-MÌNH (DELETE /messages/:id): chỉ TÁC GIẢ, mọi lúc không điều kiện cửa sổ — đặt cờ cá nhân
+  //       `message_user_deletions`, tin chỉ ẩn khỏi tầm nhìn của chính người xoá; phía kia và đường truy vết không đổi.
+  //   (b) THU HỒI (POST /messages/:id/recall): chỉ TÁC GIẢ, chỉ trong cửa sổ site-config
+  //       `core/messagingrecallwindowminutes` (mặc định 15 phút từ lúc gửi) — nội dung bị vô hiệu với mọi thành viên
+  //       thường, ghi dấu moderator_action 'recall'. Ngoài cửa sổ người thường không còn thao tác này.
+  //   (c) XOÁ CỨNG / GỠ HÀNG LOẠT (POST /messages/:id/hard-delete, POST /messages/bulk-remove): chỉ người có capability
+  //       `moderation:manage` trong phạm vi conversation, không giới hạn thời gian, lý do BẮT BUỘC và luôn ghi
   //       moderator_action trước khi dòng tin bị xoá vật lý.
-  // Cổng chặn hội thoại 1–1 (assertDirectConversationVisible) vẫn đặt
-  // TRƯỚC (a) và (b) như mọi đường theo id của người dùng thường;
-  // đường (c) là đường kiểm duyệt có thẩm quyền riêng — như đường
-  // xem báo cáo — nên KHÔNG qua cổng chặn: kiểm duyệt phải xử lý
-  // được cả nội dung trong hội thoại đang bị chặn.
+  // Cổng chặn hội thoại 1–1 (assertDirectConversationVisible) vẫn đặt TRƯỚC (a) và (b) như mọi đường theo id của người
+  // dùng thường; đường (c) là đường kiểm duyệt có thẩm quyền riêng — như đường xem báo cáo — nên KHÔNG qua cổng chặn:
+  // kiểm duyệt phải xử lý được cả nội dung trong hội thoại đang bị chặn.
 
   /**
    * Cổng trần độ dài tin (lát M2, issue #212; chính sách P2 ở #33): trần đọc từ site-config

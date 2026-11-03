@@ -32,7 +32,8 @@ export class CourseGradeItemsController {
 
 @ApiTags('grades')
 @Controller({ path: 'courses/:courseId/gradebook', version: '1' })
-/** API lưới điểm theo bài của khoá học ở path canonical theo chuẩn đường dẫn module điểm (issue #342): điểm THEO TỪNG
+/**
+ * API lưới điểm theo bài của khoá học ở path canonical theo chuẩn đường dẫn module điểm (issue #342): điểm THEO TỪNG
  * BÀI của một học sinh trong khoá và lưới CHỈ-ĐỌC học sinh × các bài cho giáo viên. Lớp khai tiền tố con đầy đủ của
  * chính nó thay vì tiền tố trơ `courses`, bảng route giữ nguyên từng ký tự so với trước khi đổi hình thức khai báo.
  * Không điểm tổng, không trọng số (issue #224).
@@ -41,7 +42,8 @@ export class CourseGradebookController {
   constructor(private readonly grades: GradesService) {}
 
   @Get()
-  /** GET /courses/:courseId/gradebook — điểm THEO TỪNG BÀI của một học sinh trong khoá (mặc định là chính mình): danh
+  /**
+   * GET /courses/:courseId/gradebook — điểm THEO TỪNG BÀI của một học sinh trong khoá (mặc định là chính mình): danh
    * sách bài + điểm + trạng thái công bố. Thay cho sổ điểm tổng hợp cũ và cho ĐX-2 xem ĐTB khoá (issue #224): không còn
    * điểm tổng/trung bình của khoá.
    */
@@ -60,7 +62,8 @@ export class CourseGradebookController {
 
 @ApiTags('grades')
 @Controller({ path: 'courses/:courseId/grade-exports', version: '1' })
-/** API xuất điểm của khoá học ở path canonical theo chuẩn đường dẫn module điểm (issue #342). Lớp khai tiền tố con đầy
+/**
+ * API xuất điểm của khoá học ở path canonical theo chuẩn đường dẫn module điểm (issue #342). Lớp khai tiền tố con đầy
  * đủ của chính nó thay vì tiền tố trơ `courses`, bảng route giữ nguyên từng ký tự so với trước khi đổi hình thức khai
  * báo.
  */

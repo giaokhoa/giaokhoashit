@@ -19,26 +19,17 @@ import type { Observable } from 'rxjs';
  *
  * Bốn bề mặt và cách khai bảng của chúng:
  *
- * 1. Hành động đổi tên + làm phẳng path (bảng tĩnh
- *    `actionRenameAliasTable`, 13 mục): các segment hành động đã
- *    chuẩn hoá theo danh sách hành động đóng (issue #345) và cặp
- *    gradebook của phụ huynh sau đợt làm phẳng path (issue #346).
- *    Gắn theo từng handler alias bằng
- *    `@UseInterceptors(DeprecatedRouteAliasInterceptor)` tại các
- *    controller badges, calendar, competencies, content, courses,
- *    exams, guardians, users.
- * 2. Module điểm (bảng tĩnh `gradePathsAliasTable`, 10 mục): các
- *    path cũ họ `courses/:courseId/grades/...` và
- *    `courses/grades/...` (issue #342). Gắn ở cấp lớp trên hai
- *    controller alias trong `legacy-grades.controller.ts`.
- * 3. Cụm đề, bề mặt `exam-papers` (bảng `examPapersAliasTable` SINH
- *    từ 28 hậu tố + 4 ánh xạ canonical ghi đè): toàn bộ bề mặt alias
- *    `exam-papers` nằm ở một controller alias (issue #343). Gắn ở
- *    cấp lớp trên `ExamPapersAliasController`.
- * 4. Messaging/notifications (bảng tĩnh `messagingAliasTable`, 5
- *    mục): các path cũ họ `messages/messages/...` và
- *    `notifications/read-all` (issue #344). Gắn theo từng handler
- *    alias trong `messaging.controller.ts`.
+ * 1. Hành động đổi tên + làm phẳng path (bảng tĩnh `actionRenameAliasTable`, 13 mục): các segment hành động đã chuẩn
+ *    hoá theo danh sách hành động đóng (issue #345) và cặp gradebook của phụ huynh sau đợt làm phẳng path (issue #346).
+ *    Gắn theo từng handler alias bằng `@UseInterceptors(DeprecatedRouteAliasInterceptor)` tại các controller badges,
+ *    calendar, competencies, content, courses, exams, guardians, users.
+ * 2. Module điểm (bảng tĩnh `gradePathsAliasTable`, 10 mục): các path cũ họ `courses/:courseId/grades/...` và
+ *    `courses/grades/...` (issue #342). Gắn ở cấp lớp trên hai controller alias trong `legacy-grades.controller.ts`.
+ * 3. Cụm đề, bề mặt `exam-papers` (bảng `examPapersAliasTable` SINH từ 28 hậu tố + 4 ánh xạ canonical ghi đè): toàn bộ
+ *    bề mặt alias `exam-papers` nằm ở một controller alias (issue #343). Gắn ở cấp lớp trên
+ *    `ExamPapersAliasController`.
+ * 4. Messaging/notifications (bảng tĩnh `messagingAliasTable`, 5 mục): các path cũ họ `messages/messages/...` và
+ *    `notifications/read-all` (issue #344). Gắn theo từng handler alias trong `messaging.controller.ts`.
  *
  * Cơ chế: interceptor không phân biệt cách gắn (theo handler hay cấp lớp) — nó chỉ khớp phần path của `req.url` (đã bỏ
  * query string) theo bảng hợp nhất, lấy mục khớp ĐẦU TIÊN. Các khối bảng theo bề mặt không giao nhau về tiền tố path

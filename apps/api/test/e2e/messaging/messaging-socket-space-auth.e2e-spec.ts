@@ -22,7 +22,9 @@ process.env.BETTER_AUTH_TRUSTED_ORIGINS = 'http://localhost:5173';
 type Helpers = typeof import('../../support/identity-access-helpers');
 let helpers: Helpers;
 
-/** Dựng app test đúng khuôn bootstrap thật (main.ts): mount handler Better Auth kèm khung định tuyến kho trước khi init. */
+/**
+ * Dựng app test đúng khuôn bootstrap thật (main.ts): mount handler Better Auth kèm khung định tuyến kho trước khi init.
+ */
 async function createMountedTestApp(): Promise<INestApplication> {
   const { Test } = await import('@nestjs/testing');
   const { AppModule } = await import('../../../src/app.module');
@@ -70,10 +72,8 @@ function signedBetterAuthCookie(token: string): string {
  * - thành viên chỉ ở kho riêng nối socket bằng cookie tại địa chỉ
  *   của trung tâm và nhận ảnh chụp presence (gỡ phân giải không
  *   gian ở lớp auth là phiên không thấy ở kho chung → bị ngắt);
- * - hai thành viên trao đổi qua socket: `sync` trả tin chỉ có ở
- *   kho riêng, join/typing được chấp nhận và tín hiệu typing tới
- *   được phía bên kia (gỡ phạm vi kho ở gateway là membership vô
- *   hình → sync rỗng, join/typing bị từ chối);
+ * - hai thành viên trao đổi qua socket: `sync` trả tin chỉ có ở kho riêng, join/typing được chấp nhận và tín hiệu
+ *   typing tới được phía bên kia (gỡ phạm vi kho ở gateway là membership vô hình → sync rỗng, join/typing bị từ chối);
  * - phiên chỉ tồn tại ở kho chung mang tới địa chỉ kho riêng bị
  *   ngắt, không được phục vụ lặng lẽ từ kho chung;
  * - token mang claim `centre_id` nối được tại địa chỉ trung tâm,

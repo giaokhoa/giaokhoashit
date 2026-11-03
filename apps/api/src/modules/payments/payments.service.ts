@@ -82,12 +82,10 @@ export interface SepayIpnInput {
 export const ENTITLEMENT_COMPONENTS = ['enrol_fee', 'class_fee', 'tenant_plan', 'teacher_plan'] as const;
 
 /**
- * Facade của PaymentsModule (Moodle core_payment, §2#27).
- * Bất biến: amount là số nguyên đơn vị nhỏ nhất + currency (không float);
- * payment thành công là bất biến — hoàn tiền là giao dịch bù trừ riêng;
- * webhook idempotent theo external transaction id (replay không xử lý 2 lần);
- * nghiệp vụ hưởng lợi (enrol có phí) chỉ kích hoạt qua PaymentSucceeded
- * của một webhook ĐÃ QUA gateway.verify (H1, #134).
+ * Facade của PaymentsModule (Moodle core_payment, §2#27). Bất biến: amount là số nguyên đơn vị nhỏ nhất + currency
+ * (không float); payment thành công là bất biến — hoàn tiền là giao dịch bù trừ riêng; webhook idempotent theo external
+ * transaction id (replay không xử lý 2 lần); nghiệp vụ hưởng lợi (enrol có phí) chỉ kích hoạt qua PaymentSucceeded của
+ * một webhook ĐÃ QUA gateway.verify (H1, #134).
  *
  * Lát 1 VietQR (#189, hồ sơ payment-vietqr §4.3/§6): payment_accounts và payments gắn tenant sở hữu; payment trên
  * account SePay đã liên kết được sinh mã thanh toán + QR động; tiền về qua IPN SePay chỉ kích hoạt khi khớp đủ 3 điều
@@ -324,16 +322,11 @@ export class PaymentsService {
    * kiểm bắt buộc tại cả ba điểm kích hoạt quyền lợi (matching SePay, webhook, `resolvePaymentReview`), chạy TRƯỚC mọi
    * khâu kích hoạt:
    *
-   *  1. `payment.amount` phải bằng đúng giá phía server của đối
-   *     tượng đích: `instance.cost` với `enrol_fee`; học phí đang
-   *     cấu hình trên lớp với `class_fee`; giá cấu hình trừ mức
-   *     giảm coupon trong ảnh chụp do server ghi với gói.
-   *  2. `payment.tenantId` phải bằng tenant của đối tượng đích:
-   *     tenant sở hữu khoá với `enrol_fee`, tenant sở hữu lớp với
-   *     `class_fee`, tenant platform (chủ của tài khoản nhận tiền
-   *     gói) với gói — bên hưởng quyền lợi gói nằm trong ảnh chụp
-   *     và được khâu kích hoạt gói tự kiểm, không phải tenant của
-   *     payment.
+   *  1. `payment.amount` phải bằng đúng giá phía server của đối tượng đích: `instance.cost` với `enrol_fee`; học phí
+   *     đang cấu hình trên lớp với `class_fee`; giá cấu hình trừ mức giảm coupon trong ảnh chụp do server ghi với gói.
+   *  2. `payment.tenantId` phải bằng tenant của đối tượng đích: tenant sở hữu khoá với `enrol_fee`, tenant sở hữu lớp
+   *     với `class_fee`, tenant platform (chủ của tài khoản nhận tiền gói) với gói — bên hưởng quyền lợi gói nằm trong
+   *     ảnh chụp và được khâu kích hoạt gói tự kiểm, không phải tenant của payment.
    *
    * Nguyên tắc: giá và bên hưởng chỉ lấy từ đối tượng phía server, không lấy từ chính payment — payment là dữ kiện có
    * thể đã bị can thiệp (tạo qua đường chung trước khi có chốt chặn, hoặc bị sửa trực tiếp), nên "payment khớp với
@@ -802,39 +795,25 @@ export class PaymentsService {
   // Luồng nghiệp vụ: hoàn tiền là TIỀN RA KHỎI TÀI KHOẢN CỦA CHỦ TIỀN nên không còn là một thao tác ghi sổ tức thời như
   // trước. Một khoản hoàn đi qua vòng đời `requested → approved → settled` (hoặc bị `rejected` kèm lý do bắt buộc):
   //
-  // 1. TẠO YÊU CẦU (createRefund): người có quyền quản lý tài khoản của
-  //    chủ tiền (neo theo tenant chủ tiền) tạo yêu cầu kèm lý do bắt
-  //    buộc và mã lệnh chi dự kiến nếu đã biết. Cổng cộng dồn chạy
-  //    TRONG MỘT TRANSACTION CÓ KHOÁ DÒNG `payments`: tổng các dòng
-  //    hoàn chưa bị từ chối (requested + approved + settled) cộng lần
-  //    này không được vượt số tiền khoản thu — hai yêu cầu song song
-  //    thì đúng một yêu cầu qua cổng, yêu cầu còn lại nhận
-  //    `payment.refund_exceeds_total`. Cấp duyệt quyết ngay tại đây:
-  //    MỘT CẤP (dòng hoàn sang `approved` ngay, người tạo là người
-  //    duyệt) khi hoàn một phần dưới ngưỡng; HAI CẤP (dòng hoàn ở
-  //    `requested` chờ duyệt) khi số tiền lần hoàn từ ngưỡng trở lên
-  //    HOẶC lần hoàn làm cộng dồn đạt 100% khoản thu. Ngưỡng đọc từ
-  //    khoá cấu hình `refunddualapprovalthreshold` (component
-  //    `payments`), phân giải theo tenant chủ tiền (platform đặt giá
-  //    trị chung, tenant ghi đè được); 0 = luôn hai cấp. Ngưỡng hiệu
-  //    lực được ghi vào chính dòng hoàn để vết kiểm toán đứng vững dù
-  //    cấu hình đổi sau này. 2. DUYỆT (approveRefund): chỉ áp cho dòng đang `requested`; người
-  //    duyệt phải KHÁC người tạo — chặn ở tầng service này bằng mã lỗi
-  //    riêng để không đường gọi nào (kể cả gọi thẳng service) lách
-  //    được; TỪ CHỐI (rejectRefund) áp cho dòng `requested`/`approved`
-  //    và bắt buộc lý do — dòng `rejected` giải phóng ngân sách hoàn. 3. XÁC NHẬN CHI (settleRefund tay, hoặc tự động
-  //    khi sự kiện
-  //    `debit` của SePay khớp — xem settleRefundFromDebitEvent): chỉ
-  //    áp cho dòng `approved`, kèm mã lệnh chi thực tế. Đây là mốc DUY
-  //    NHẤT đảo quyền lợi: nếu lần xác nhận này làm cộng dồn đã chi
-  //    (các dòng `settled`) đạt đúng 100% khoản thu thì đình chỉ quyền
-  //    lợi TRƯỚC (ghi danh / thành viên lớp / quyền lợi gói — mọi khâu
-  //    đều idempotent) rồi mới ghi dòng hoàn `settled` + lật khoản thu
-  //    sang `refunded` trong một transaction. Đình chỉ ném lỗi ⇒ chưa
-  //    ghi gì cả, khoản thu còn `succeeded`, dòng hoàn còn `approved`,
-  //    gọi lại được — không để trạng thái "tiền đã ghi hoàn nhưng
-  //    quyền lợi vẫn chạy". Hoàn một phần (cộng dồn chưa 100%) không
-  //    đảo quyền lợi.
+  // 1. TẠO YÊU CẦU (createRefund): người có quyền quản lý tài khoản của chủ tiền (neo theo tenant chủ tiền) tạo yêu cầu
+  //    kèm lý do bắt buộc và mã lệnh chi dự kiến nếu đã biết. Cổng cộng dồn chạy TRONG MỘT TRANSACTION CÓ KHOÁ DÒNG
+  //    `payments`: tổng các dòng hoàn chưa bị từ chối (requested + approved + settled) cộng lần này không được vượt số
+  //    tiền khoản thu — hai yêu cầu song song thì đúng một yêu cầu qua cổng, yêu cầu còn lại nhận
+  //    `payment.refund_exceeds_total`. Cấp duyệt quyết ngay tại đây: MỘT CẤP (dòng hoàn sang `approved` ngay, người tạo
+  //    là người duyệt) khi hoàn một phần dưới ngưỡng; HAI CẤP (dòng hoàn ở `requested` chờ duyệt) khi số tiền lần hoàn
+  //    từ ngưỡng trở lên HOẶC lần hoàn làm cộng dồn đạt 100% khoản thu. Ngưỡng đọc từ khoá cấu hình
+  //    `refunddualapprovalthreshold` (component `payments`), phân giải theo tenant chủ tiền (platform đặt giá trị
+  //    chung, tenant ghi đè được); 0 = luôn hai cấp. Ngưỡng hiệu lực được ghi vào chính dòng hoàn để vết kiểm toán đứng
+  //    vững dù cấu hình đổi sau này. 2. DUYỆT (approveRefund): chỉ áp cho dòng đang `requested`; người duyệt phải KHÁC
+  //    người tạo — chặn ở tầng service này bằng mã lỗi riêng để không đường gọi nào (kể cả gọi thẳng service) lách
+  //    được; TỪ CHỐI (rejectRefund) áp cho dòng `requested`/`approved` và bắt buộc lý do — dòng `rejected` giải phóng
+  //    ngân sách hoàn. 3. XÁC NHẬN CHI (settleRefund tay, hoặc tự động khi sự kiện `debit` của SePay khớp — xem
+  //    settleRefundFromDebitEvent): chỉ áp cho dòng `approved`, kèm mã lệnh chi thực tế. Đây là mốc DUY NHẤT đảo quyền
+  //    lợi: nếu lần xác nhận này làm cộng dồn đã chi (các dòng `settled`) đạt đúng 100% khoản thu thì đình chỉ quyền
+  //    lợi TRƯỚC (ghi danh / thành viên lớp / quyền lợi gói — mọi khâu đều idempotent) rồi mới ghi dòng hoàn `settled`
+  //    + lật khoản thu sang `refunded` trong một transaction. Đình chỉ ném lỗi ⇒ chưa ghi gì cả, khoản thu còn
+  //    `succeeded`, dòng hoàn còn `approved`, gọi lại được — không để trạng thái "tiền đã ghi hoàn nhưng quyền lợi vẫn
+  //    chạy". Hoàn một phần (cộng dồn chưa 100%) không đảo quyền lợi.
   //
   // Quyền ở mọi bước neo theo CHỦ TIỀN của khoản thu (tenant của khoản thu): tiền gói neo tại context hệ thống; học phí
   // neo tại context tenant của trung tâm sở hữu.
@@ -1024,48 +1003,30 @@ export class PaymentsService {
    * Toàn bộ quyết định chạy trong MỘT transaction mở đầu bằng khoá dòng khoản thu (`FOR UPDATE`). Khoá này tuần tự hoá
    * mọi lượt xác nhận chi trên cùng khoản thu — kể cả hai đường tay/`debit` chạy song song — nên từng bước dưới đây
    * luôn thấy trạng thái đã chốt của lượt trước:
-   *  1. Đọc lại dòng hoàn DƯỚI khoá: đã `settled` (lượt đua thắng đã
-   *     ghi) thì trả nguyên dòng đó, không ghi thêm; không còn
-   *     `approved` thì ném `payment.refund_not_approved` TRƯỚC mọi
-   *     đình chỉ — không bao giờ đình chỉ oan cho một khoản hoàn
-   *     không được ghi.
-   *  2. Tính lại tổng đã `settled` DƯỚI khoá: lần xác nhận này có
-   *     làm cộng dồn đạt 100% hay không được quyết định TẠI ĐÂY,
-   *     không dựa vào bất kỳ lượt đọc ngoài khoá nào. (Quyết định
-   *     đình chỉ bằng tổng đọc ngoài khoá là khe đồng thời: hai
-   *     dòng hoàn bù nhau — ví dụ 60.000 + 40.000 trên khoản
-   *     100.000 — cùng xác nhận chi một lúc đều đọc tổng settled
-   *     bằng 0, không lượt nào đình chỉ, nhưng transaction vào sau
-   *     vẫn lật khoản thu `refunded` và ghi `reversal.applied =
-   *     true` trong khi quyền lợi chưa hề bị đình chỉ — tiền đã
-   *     ghi hoàn mà quyền lợi vẫn chạy.)
-   *  3. Đạt 100% theo tổng đã khoá thì đình chỉ quyền lợi
-   *     (idempotent) TRƯỚC khi ghi: đình chỉ ném lỗi ⇒ transaction
-   *     huỷ, chưa ghi gì, gọi lại được. Chưa đạt thì ghi mà không
-   *     đình chỉ. Đình chỉ ghi BẰNG CHÍNH transaction này (issue
-   *     #490, DL-10) — mọi bước ghi sổ sau đó mà lỗi, transaction
-   *     rollback thì đình chỉ cũng bị huỷ theo, không còn trạng thái
-   *     "đã đình chỉ nhưng chưa ghi hoàn".
+   *  1. Đọc lại dòng hoàn DƯỚI khoá: đã `settled` (lượt đua thắng đã ghi) thì trả nguyên dòng đó, không ghi thêm; không
+   *     còn `approved` thì ném `payment.refund_not_approved` TRƯỚC mọi đình chỉ — không bao giờ đình chỉ oan cho một
+   *     khoản hoàn không được ghi.
+   *  2. Tính lại tổng đã `settled` DƯỚI khoá: lần xác nhận này có làm cộng dồn đạt 100% hay không được quyết định TẠI
+   *     ĐÂY, không dựa vào bất kỳ lượt đọc ngoài khoá nào. (Quyết định đình chỉ bằng tổng đọc ngoài khoá là khe đồng
+   *     thời: hai dòng hoàn bù nhau — ví dụ 60.000 + 40.000 trên khoản 100.000 — cùng xác nhận chi một lúc đều đọc tổng
+   *     settled bằng 0, không lượt nào đình chỉ, nhưng transaction vào sau vẫn lật khoản thu `refunded` và ghi
+   *     `reversal.applied = true` trong khi quyền lợi chưa hề bị đình chỉ — tiền đã ghi hoàn mà quyền lợi vẫn chạy.)
+   *  3. Đạt 100% theo tổng đã khoá thì đình chỉ quyền lợi (idempotent) TRƯỚC khi ghi: đình chỉ ném lỗi ⇒ transaction
+   *     huỷ, chưa ghi gì, gọi lại được. Chưa đạt thì ghi mà không đình chỉ. Đình chỉ ghi BẰNG CHÍNH transaction này
+   *     (issue #490, DL-10) — mọi bước ghi sổ sau đó mà lỗi, transaction rollback thì đình chỉ cũng bị huỷ theo, không
+   *     còn trạng thái "đã đình chỉ nhưng chưa ghi hoàn".
    *  4. Ghi dòng hoàn `settled` (+ lật khoản thu `refunded` khi đạt
    *     100%) trong cùng transaction rồi commit.
-   *  5. SAU khi commit: nếu bước 3 có gỡ một thành viên khỏi backing
-   *     cohort (đường `class_fee`), phát sự kiện trong-tiến-trình
-   *     `cohort_member_removed` để cohort sync đình chỉ các ghi danh
-   *     tương ứng. Sự kiện này bắt buộc chờ sau commit vì handler
-   *     đồng bộ kiểm tra tư cách thành viên ĐÃ commit — phát giữa
-   *     transaction sẽ thấy thành viên vẫn còn và bỏ qua, trong khi
-   *     thứ tự sự kiện quan sát được từ bên ngoài không đổi: việc gỡ
-   *     chỉ hiện hình (commit) ngay trước khi sự kiện phát. Bước
-   *     phát này mà ném lỗi thì kết quả settle KHÔNG đổi: settle đã
-   *     commit xong nên lỗi chỉ được bắt và ghi log cảnh báo có ngữ
-   *     cảnh tại điểm phát — tuyệt đối không ném ngược ra người gọi
-   *     (đường tay sẽ báo lỗi cho một xác nhận chi đã ghi sổ, đường
-   *     tự động sẽ đánh dấu oan sự kiện `debit` là `needs_review`).
-   *     Đường đồng bộ bền không phụ thuộc bước phát nhanh này: hàng
-   *     outbox `cohort_member_removed` đã ghi trong chính
-   *     transaction ở bước 3 (xem `removeCohortMemberInternal`) và
-   *     consumer outbox sẵn có sẽ quét hàng đó để áp đình chỉ bù. Hoàn một phần: không đình chỉ, khoản thu giữ
-   *     `succeeded`.
+   *  5. SAU khi commit: nếu bước 3 có gỡ một thành viên khỏi backing cohort (đường `class_fee`), phát sự kiện
+   *     trong-tiến-trình `cohort_member_removed` để cohort sync đình chỉ các ghi danh tương ứng. Sự kiện này bắt buộc
+   *     chờ sau commit vì handler đồng bộ kiểm tra tư cách thành viên ĐÃ commit — phát giữa transaction sẽ thấy thành
+   *     viên vẫn còn và bỏ qua, trong khi thứ tự sự kiện quan sát được từ bên ngoài không đổi: việc gỡ chỉ hiện hình
+   *     (commit) ngay trước khi sự kiện phát. Bước phát này mà ném lỗi thì kết quả settle KHÔNG đổi: settle đã commit
+   *     xong nên lỗi chỉ được bắt và ghi log cảnh báo có ngữ cảnh tại điểm phát — tuyệt đối không ném ngược ra người
+   *     gọi (đường tay sẽ báo lỗi cho một xác nhận chi đã ghi sổ, đường tự động sẽ đánh dấu oan sự kiện `debit` là
+   *     `needs_review`). Đường đồng bộ bền không phụ thuộc bước phát nhanh này: hàng outbox `cohort_member_removed` đã
+   *     ghi trong chính transaction ở bước 3 (xem `removeCohortMemberInternal`) và consumer outbox sẵn có sẽ quét hàng
+   *     đó để áp đình chỉ bù. Hoàn một phần: không đình chỉ, khoản thu giữ `succeeded`.
    */
   private async applyRefundSettlement(input: {
     payment: PaymentRow; refund: RefundRow; externalTransactionId: string;

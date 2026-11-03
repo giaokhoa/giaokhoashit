@@ -58,148 +58,79 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
       .map((d) => join(migrationsDir, d.name, 'migration.sql'));
     expect(migrations).toHaveLength(1);
     const sqlText = readFileSync(migrations[0]!, 'utf8');
-    // 160 bảng nghiệp vụ có PK uuidv7: 109 trước đây + session, account, verification,
-    // two_factor (đợt Better Auth giai đoạn 1, issue #7) + subjects,
-    // curricula, curriculum_nodes, learning_outcomes (đợt GDPT 2018, issue #20)
-    // + course_completion_crit_compl (đợt đủ 8 loại tiêu chí completion, issue #23)
-    // + message_conversation_reports (đợt Lớp B của issue #33; bảng
-    // message_contact_requests cùng đợt là bảng nối thuần tuý, PK phức hợp)
-    // + question_subjects, question_learning_outcomes (Chặng 2 của issue #20 —
-    // hai bảng nối câu hỏi ↔ chương trình có id đại diện theo thiết kế A.1)
-    // + curriculum_program_records, course_section_anchors,
-    // course_section_anchor_outcomes (đợt K0a nạp khung chương trình, issue #66)
-    // + books, book_nodes,
-    // book_mappings, book_records,
-    // course_section_book_anchors, course_section_book_items,
-    // course_section_book_item_outcomes (đợt K0b tầng SGK, issue #67)
-    // + 12 bảng đợt C2 Bài tập nộp tệp/ảnh (issue #88): assignments,
-    // assign_submissions, assign_submission_files, assign_grades,
-    // assign_annotations, assign_rubrics, assign_rubric_criteria,
-    // assign_rubric_levels, assign_rubric_evaluations,
-    // assign_grade_revisions, assign_feedback_messages, teacher_comment_bank
-    // + pages, resources, course_last_access, course_module_progress,
-    // learning_records (đợt K2 player + tiến độ học, issue #85)
-    // + blog_post_placements, blog_post_references (đợt BL1 mô hình
-    // space/status blog, issue #87).
-    // (Đếm lại trên baseline hợp nhất sau rebase lên main be8002b:
-    // 158 bảng tổng, 150 bảng có PK mặc định uuidv7().)
-    // + vn_gradebooks, vn_term_results (đợt GB-VN-1 sổ điểm TT 22,
-    // issue #95) → 160 bảng tổng, 152 bảng có PK mặc định uuidv7()
-    // + question_banks, question_bank_contributions, quiz_slot_version_events
-    // (feat ngân hàng câu hỏi chung, PR #83) → 163 bảng tổng, 155 bảng có PK
-    // mặc định uuidv7().
-    // + exam_matrices, exam_matrix_cells, quiz_overrides, quiz_feedbacks,
-    // quiz_attempt_events (Quiz Chặng 2+3, issue #30, PR #84) → 168 bảng
-    // tổng, 160 bảng có PK mặc định uuidv7().
-    // + vn_activity_mappings, vn_candidate_actions (đợt GB-VN-2 luồng
-    // hoạt động → cột, issue #104) → 170 bảng tổng, 162 bảng có PK
-    // mặc định uuidv7().
-    // + grade_publications, guardian_links (đợt PH-0 nền công bố +
-    // giám hộ, issue #116) → 172 bảng tổng, 164 bảng có PK mặc định
-    // uuidv7().
-    // + exam_matrix_contributions (Ngân hàng ma trận MB-1, issue #111)
-    // → 173 bảng tổng, 165 bảng có PK mặc định uuidv7().
-    // + mcp_idempotency_keys (lát MCP-0 nền MCP server, issue #110)
-    // → 174 bảng tổng, 166 bảng có PK mặc định uuidv7().
-    // + user_dashboard_state, user_course_card_prefs (đợt DASH1
-    // dashboard việc cần làm, issue #121 — hai bảng PK phức hợp theo
-    // (user, course), không cột id) → 176 bảng tổng, 166 bảng có PK
-    // mặc định uuidv7().
-    // + exam_papers, exam_paper_versions, exam_paper_slots,
-    // exam_paper_contributions (EB-1 Ngân hàng đề, issue #113) → 180
-    // bảng tổng, 170 bảng có PK mặc định uuidv7().
-    // + message_moderator_actions (vòng đời tin nhắn theo vai, issue
-    // #124; message_user_deletions là bảng nối thuần túy, PK phức hợp,
-    // không tính) → 182 bảng tổng, 171 bảng có PK mặc định uuidv7()
-    // trên nền 7ff4691 (180 của EB-1 + 2 bảng vòng đời, 1 PK uuidv7).
-    // + guardian_view_state (đợt PH-1 bề mặt phụ huynh, issue #130 —
-    // PK phức hợp (guardian, student), không cột id) → 183 bảng tổng,
-    // 171 bảng có PK mặc định uuidv7().
-    // + exam_deployments (EB-2 mã đề ở tầng triển khai, issue #153)
-    // → 184 bảng tổng, 172 bảng có PK mặc định uuidv7().
-    // + guardian_digests (đợt PH-2 digest phụ huynh, issue #159 — hàng
-    // chạy digest + vết chống lặp, PK id uuidv7) → 185 bảng tổng, 173
-    // bảng có PK mặc định uuidv7().
-    // + exam_dossiers, exam_dossier_reviews (EB-3 duyệt bộ hồ sơ đề,
-    // issue #165 — bộ hồ sơ ghim version + một dòng cho mỗi mốc duyệt)
-    // → 187 bảng tổng, 175 bảng có PK mặc định uuidv7().
-    // + 8 bảng OAuth của lát MCP-1 (issue #163: jwks + oauth_client,
-    // oauth_resource, oauth_client_resource, oauth_access_token,
-    // oauth_refresh_token, oauth_consent, oauth_client_assertion) →
-    // trên cây hợp nhất: 195 bảng tổng, 181 bảng có PK mặc định
-    // uuidv7(). HAI bảng không có PK uuidv7 là ngoại lệ định danh có
-    // chủ đích: oauth_client.id là TEXT — khoá NỘI BỘ do
-    // DB sinh bằng gen_random_uuid() (định danh công khai client_id,
-    // gồm cả URL của client CIMD, nằm ở cột client_id riêng) và
-    // oauth_client_assertion.id là TEXT do provider tự cấp bằng hàm
-    // băm xác định; allowlist tường minh của hai cột này nằm ở test
-    // (1b) ngay dưới.
-    // + quiz_paper_batches, quiz_paper_scans (CAM-0 chấm bài giấy bằng
-    // camera, issue #112 — lô phiếu in/chụp + từng phiếu đã quét, cả hai
-    // PK id uuidv7) → trên cây hợp nhất với main 27f67cc (MCP-1 #164 đã
-    // merge): 197 bảng tổng, 183 bảng có PK mặc định uuidv7().
-    // + tenants, tenant_memberships, tenant_config (đợt TENANT-0 nền
-    // multi-tenant, issue #168 — cả ba đều PK id uuidv7) → trên cây
-    // hợp nhất với main 3aee4454: 200 bảng tổng, 186 bảng có PK mặc
-    // định uuidv7().
-    // + payment_provider_events (lát VietQR 1, issue #189 — sổ sự kiện
-    // thô SePay, PK id uuidv7) → 187 bảng có PK mặc định uuidv7().
-    // − 4 bảng blog (gỡ hẳn tính năng Blog, issue #173: blog_posts của
-    // BL0 + blog_post_placements, blog_post_references,
-    // blog_association của BL1 — cả bốn đều PK id uuidv7) → 183;
-    // + classes (đợt CLASS-0 lớp học hạng nhất, issue #184 — PK id
-    // uuidv7; course.class_id là FK thường, không phải PK) → trên cây
-    // hợp nhất: 198 bảng tổng, 184 bảng có PK mặc định uuidv7().
-    // − 8 bảng điểm của mô hình cũ (gỡ gradebook tổng hợp theo khoá +
-    // Sổ điểm VN, issue #224: grade_categories, grade_outcomes,
-    // grade_letters, scales, vn_gradebooks, vn_term_results,
-    // vn_activity_mappings, vn_candidate_actions — cả tám đều PK id
-    // uuidv7) → 190 bảng tổng, 176 bảng có PK mặc định uuidv7().
-    // − 8 bảng của mô hình quiz cũ + triển khai (feat gộp Đề #226:
-    // quizzes, quiz_slots, quiz_slot_version_events, quiz_overrides,
-    // quiz_attempts, quiz_feedbacks, quiz_attempt_events,
-    // exam_deployments) + 5 bảng mới của mô hình ghim (exam_pins,
-    // exam_attempts, exam_attempt_events, exam_pin_overrides,
-    // exam_pin_feedbacks); các bảng đổi tên exams/exam_versions/
-    // exam_slots/exam_contributions/exam_batches/exam_scans giữ
-    // nguyên số → trên cây hợp nhất cuối: 187 bảng tổng, 173 bảng có
-    // PK mặc định uuidv7().
-    // + class_join_requests (đợt CLASS-1, issue #184 — hàng chờ duyệt
-    // tự báo danh của lớp, PK id uuidv7) → 188 bảng tổng, 174 bảng có
-    // PK mặc định uuidv7().
-    // + question_answer_keys (lát P2 của đợt port mô hình câu hỏi,
-    // issue #248 — bản ghi phía đáp án 1-1 với question_versions, PK id
-    // uuidv7) → 189 bảng tổng, 175 bảng có PK mặc định uuidv7().
-    // + plan_entitlements (lát nền gói của lát 2, issue #189 — quyền
-    // lợi gói tenant_plan/teacher_plan đã kích hoạt theo payment, PK id
-    // uuidv7) → 190 bảng tổng, 176 bảng có PK mặc định uuidv7().
-    // + exam_pin_version_updates, exam_attempt_regrades,
-    // exam_attempt_regrade_items (issue #254 — vết cập nhật exam
-    // version của pin + log chấm lại theo đáp án và điểm đổi từng
-    // lượt, cả ba PK id uuidv7) → 193 bảng tổng, 179 bảng có PK mặc
-    // định uuidv7().
-    // + exam_matrix_versions (issue #228, lát S1 — version bất biến
-    // của ma trận, PK id uuidv7) → 194 bảng tổng, 180 bảng có PK mặc
-    // định uuidv7().
-    // + payment_coupons (phần còn lại của lát 2, issue #189 — coupon
-    // giảm giá mua gói do quản trị platform tạo, PK id uuidv7) → 195
-    // bảng tổng, 181 bảng có PK mặc định uuidv7().
-    // + exam_contribution_reviews (issue #228, lát S4 — sổ mốc duyệt
-    // của đường đóng góp đề duy nhất sau khi hấp thụ đường hồ sơ,
-    // PK id uuidv7) → 196 bảng tổng, 182 bảng có PK mặc định
-    // uuidv7(). (Lát S4/S5 còn cộng cột vào exam_contributions,
-    // exams, exam_matrices, exam_matrix_contributions — không đổi
-    // số bảng/PK.)
-    // + centre_identity, centre_invites, program_package_installs
-    // (issue #583 — nhận diện riêng của trung tâm, lời mời quản trị
-    // đầu tiên, bản cài gói chương trình; cả ba PK id uuidv7) và
-    // + 2 bảng vệ tinh ngân hàng hệ thống của issue #585
-    // (system_bank_event_receipts — vết nhận sự kiện rút câu của
-    // trung tâm, và outcome_package_installs — bản cài gói YCCĐ của
-    // trung tâm; cả hai PK id uuidv7; bảng thứ ba cùng đợt là
-    // system_question_imports có PK là FK question_id, không cột id,
-    // không tính vào số này) → 202 bảng tổng, 187 bảng có PK mặc
-    // định uuidv7().
+    // 160 bảng nghiệp vụ có PK uuidv7: 109 trước đây + session, account, verification, two_factor (đợt Better Auth giai
+    // đoạn 1, issue #7) + subjects, curricula, curriculum_nodes, learning_outcomes (đợt GDPT 2018, issue #20) +
+    // course_completion_crit_compl (đợt đủ 8 loại tiêu chí completion, issue #23) + message_conversation_reports (đợt
+    // Lớp B của issue #33; bảng message_contact_requests cùng đợt là bảng nối thuần tuý, PK phức hợp) +
+    // question_subjects, question_learning_outcomes (Chặng 2 của issue #20 — hai bảng nối câu hỏi ↔ chương trình có id
+    // đại diện theo thiết kế A.1) + curriculum_program_records, course_section_anchors, course_section_anchor_outcomes
+    // (đợt K0a nạp khung chương trình, issue #66) + books, book_nodes, book_mappings, book_records,
+    // course_section_book_anchors, course_section_book_items, course_section_book_item_outcomes (đợt K0b tầng SGK,
+    // issue #67) + 12 bảng đợt C2 Bài tập nộp tệp/ảnh (issue #88): assignments, assign_submissions,
+    // assign_submission_files, assign_grades, assign_annotations, assign_rubrics, assign_rubric_criteria,
+    // assign_rubric_levels, assign_rubric_evaluations, assign_grade_revisions, assign_feedback_messages,
+    // teacher_comment_bank + pages, resources, course_last_access, course_module_progress, learning_records (đợt K2
+    // player + tiến độ học, issue #85) + blog_post_placements, blog_post_references (đợt BL1 mô hình space/status blog,
+    // issue #87). (Đếm lại trên baseline hợp nhất sau rebase lên main be8002b: 158 bảng tổng, 150 bảng có PK mặc định
+    // uuidv7().) + vn_gradebooks, vn_term_results (đợt GB-VN-1 sổ điểm TT 22, issue #95) → 160 bảng tổng, 152 bảng có
+    // PK mặc định uuidv7() + question_banks, question_bank_contributions, quiz_slot_version_events (feat ngân hàng câu
+    // hỏi chung, PR #83) → 163 bảng tổng, 155 bảng có PK mặc định uuidv7(). + exam_matrices, exam_matrix_cells,
+    // quiz_overrides, quiz_feedbacks, quiz_attempt_events (Quiz Chặng 2+3, issue #30, PR #84) → 168 bảng tổng, 160 bảng
+    // có PK mặc định uuidv7(). + vn_activity_mappings, vn_candidate_actions (đợt GB-VN-2 luồng hoạt động → cột, issue
+    // #104) → 170 bảng tổng, 162 bảng có PK mặc định uuidv7(). + grade_publications, guardian_links (đợt PH-0 nền công
+    // bố + giám hộ, issue #116) → 172 bảng tổng, 164 bảng có PK mặc định uuidv7(). + exam_matrix_contributions (Ngân
+    // hàng ma trận MB-1, issue #111) → 173 bảng tổng, 165 bảng có PK mặc định uuidv7(). + mcp_idempotency_keys (lát
+    // MCP-0 nền MCP server, issue #110) → 174 bảng tổng, 166 bảng có PK mặc định uuidv7(). + user_dashboard_state,
+    // user_course_card_prefs (đợt DASH1 dashboard việc cần làm, issue #121 — hai bảng PK phức hợp theo (user, course),
+    // không cột id) → 176 bảng tổng, 166 bảng có PK mặc định uuidv7(). + exam_papers, exam_paper_versions,
+    // exam_paper_slots, exam_paper_contributions (EB-1 Ngân hàng đề, issue #113) → 180 bảng tổng, 170 bảng có PK mặc
+    // định uuidv7(). + message_moderator_actions (vòng đời tin nhắn theo vai, issue #124; message_user_deletions là
+    // bảng nối thuần túy, PK phức hợp, không tính) → 182 bảng tổng, 171 bảng có PK mặc định uuidv7() trên nền 7ff4691
+    // (180 của EB-1 + 2 bảng vòng đời, 1 PK uuidv7). + guardian_view_state (đợt PH-1 bề mặt phụ huynh, issue #130 — PK
+    // phức hợp (guardian, student), không cột id) → 183 bảng tổng, 171 bảng có PK mặc định uuidv7(). + exam_deployments
+    // (EB-2 mã đề ở tầng triển khai, issue #153) → 184 bảng tổng, 172 bảng có PK mặc định uuidv7(). + guardian_digests
+    // (đợt PH-2 digest phụ huynh, issue #159 — hàng chạy digest + vết chống lặp, PK id uuidv7) → 185 bảng tổng, 173
+    // bảng có PK mặc định uuidv7(). + exam_dossiers, exam_dossier_reviews (EB-3 duyệt bộ hồ sơ đề, issue #165 — bộ hồ
+    // sơ ghim version + một dòng cho mỗi mốc duyệt) → 187 bảng tổng, 175 bảng có PK mặc định uuidv7(). + 8 bảng OAuth
+    // của lát MCP-1 (issue #163: jwks + oauth_client, oauth_resource, oauth_client_resource, oauth_access_token,
+    // oauth_refresh_token, oauth_consent, oauth_client_assertion) → trên cây hợp nhất: 195 bảng tổng, 181 bảng có PK
+    // mặc định uuidv7(). HAI bảng không có PK uuidv7 là ngoại lệ định danh có chủ đích: oauth_client.id là TEXT — khoá
+    // NỘI BỘ do DB sinh bằng gen_random_uuid() (định danh công khai client_id, gồm cả URL của client CIMD, nằm ở cột
+    // client_id riêng) và oauth_client_assertion.id là TEXT do provider tự cấp bằng hàm băm xác định; allowlist tường
+    // minh của hai cột này nằm ở test (1b) ngay dưới. + quiz_paper_batches, quiz_paper_scans (CAM-0 chấm bài giấy bằng
+    // camera, issue #112 — lô phiếu in/chụp + từng phiếu đã quét, cả hai PK id uuidv7) → trên cây hợp nhất với main
+    // 27f67cc (MCP-1 #164 đã merge): 197 bảng tổng, 183 bảng có PK mặc định uuidv7(). + tenants, tenant_memberships,
+    // tenant_config (đợt TENANT-0 nền multi-tenant, issue #168 — cả ba đều PK id uuidv7) → trên cây hợp nhất với main
+    // 3aee4454: 200 bảng tổng, 186 bảng có PK mặc định uuidv7(). + payment_provider_events (lát VietQR 1, issue #189 —
+    // sổ sự kiện thô SePay, PK id uuidv7) → 187 bảng có PK mặc định uuidv7(). − 4 bảng blog (gỡ hẳn tính năng Blog,
+    // issue #173: blog_posts của BL0 + blog_post_placements, blog_post_references, blog_association của BL1 — cả bốn
+    // đều PK id uuidv7) → 183; + classes (đợt CLASS-0 lớp học hạng nhất, issue #184 — PK id uuidv7; course.class_id là
+    // FK thường, không phải PK) → trên cây hợp nhất: 198 bảng tổng, 184 bảng có PK mặc định uuidv7(). − 8 bảng điểm của
+    // mô hình cũ (gỡ gradebook tổng hợp theo khoá + Sổ điểm VN, issue #224: grade_categories, grade_outcomes,
+    // grade_letters, scales, vn_gradebooks, vn_term_results, vn_activity_mappings, vn_candidate_actions — cả tám đều PK
+    // id uuidv7) → 190 bảng tổng, 176 bảng có PK mặc định uuidv7(). − 8 bảng của mô hình quiz cũ + triển khai (feat gộp
+    // Đề #226: quizzes, quiz_slots, quiz_slot_version_events, quiz_overrides, quiz_attempts, quiz_feedbacks,
+    // quiz_attempt_events, exam_deployments) + 5 bảng mới của mô hình ghim (exam_pins, exam_attempts,
+    // exam_attempt_events, exam_pin_overrides, exam_pin_feedbacks); các bảng đổi tên exams/exam_versions/
+    // exam_slots/exam_contributions/exam_batches/exam_scans giữ nguyên số → trên cây hợp nhất cuối: 187 bảng tổng, 173
+    // bảng có PK mặc định uuidv7(). + class_join_requests (đợt CLASS-1, issue #184 — hàng chờ duyệt tự báo danh của
+    // lớp, PK id uuidv7) → 188 bảng tổng, 174 bảng có PK mặc định uuidv7(). + question_answer_keys (lát P2 của đợt port
+    // mô hình câu hỏi, issue #248 — bản ghi phía đáp án 1-1 với question_versions, PK id uuidv7) → 189 bảng tổng, 175
+    // bảng có PK mặc định uuidv7(). + plan_entitlements (lát nền gói của lát 2, issue #189 — quyền lợi gói
+    // tenant_plan/teacher_plan đã kích hoạt theo payment, PK id uuidv7) → 190 bảng tổng, 176 bảng có PK mặc định
+    // uuidv7(). + exam_pin_version_updates, exam_attempt_regrades, exam_attempt_regrade_items (issue #254 — vết cập
+    // nhật exam version của pin + log chấm lại theo đáp án và điểm đổi từng lượt, cả ba PK id uuidv7) → 193 bảng tổng,
+    // 179 bảng có PK mặc định uuidv7(). + exam_matrix_versions (issue #228, lát S1 — version bất biến của ma trận, PK
+    // id uuidv7) → 194 bảng tổng, 180 bảng có PK mặc định uuidv7(). + payment_coupons (phần còn lại của lát 2, issue
+    // #189 — coupon giảm giá mua gói do quản trị platform tạo, PK id uuidv7) → 195 bảng tổng, 181 bảng có PK mặc định
+    // uuidv7(). + exam_contribution_reviews (issue #228, lát S4 — sổ mốc duyệt của đường đóng góp đề duy nhất sau khi
+    // hấp thụ đường hồ sơ, PK id uuidv7) → 196 bảng tổng, 182 bảng có PK mặc định uuidv7(). (Lát S4/S5 còn cộng cột vào
+    // exam_contributions, exams, exam_matrices, exam_matrix_contributions — không đổi số bảng/PK.) + centre_identity,
+    // centre_invites, program_package_installs (issue #583 — nhận diện riêng của trung tâm, lời mời quản trị đầu tiên,
+    // bản cài gói chương trình; cả ba PK id uuidv7) và + 2 bảng vệ tinh ngân hàng hệ thống của issue #585
+    // (system_bank_event_receipts — vết nhận sự kiện rút câu của trung tâm, và outcome_package_installs — bản cài gói
+    // YCCĐ của trung tâm; cả hai PK id uuidv7; bảng thứ ba cùng đợt là system_question_imports có PK là FK question_id,
+    // không cột id, không tính vào số này) → 202 bảng tổng, 187 bảng có PK mặc định uuidv7().
     expect(sqlText.match(/DEFAULT uuidv7\(\)/g)?.length).toBe(187);
     // Chỉ hai cột seq phụ được dùng identity; không PK nghiệp vụ nào dùng sequence/identity.
     expect(sqlText.match(/GENERATED ALWAYS AS IDENTITY/g)?.length).toBe(2);
@@ -220,35 +151,22 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
         WHERE n.nspname = 'public' AND c.relkind = 'r'
           AND c.relname NOT IN ('kysely_migration', 'kysely_migration_lock')`,
     );
-    // Hai bảng nhật ký của bộ máy Kysely bị loại khỏi phép đếm này:
-    // chúng nằm ngay trong schema `public` (nhật ký của bộ máy cũ
-    // trước đây nằm ở schema riêng nên không bao giờ lọt vào), là bảng
-    // của bộ máy migration chứ không phải bảng thực thể — riêng
-    // `kysely_migration_lock` còn có cột `id` không mặc định, để lọt
-    // vào sẽ làm lệch cả số đếm lẫn vòng kiểm mặc định dưới đây.
-    // 189 bảng có cột `id`: 187 bảng PK uuidv7 như khuôn chung (gồm 2
-    // bảng giấy của CAM-0, issue #112, 3 bảng tenant của TENANT-0,
-    // issue #168, bảng payment_provider_events của VietQR lát 1,
-    // issue #189, và bảng classes của CLASS-0 cùng class_join_requests
-    // của CLASS-1, issue #184, và bảng question_answer_keys của lát P2
-    // đợt port mô hình câu hỏi, issue #248, và bảng plan_entitlements
-    // của lát nền gói cùng bảng payment_coupons của phần còn lại lát
-    // 2, issue #189, và 3 bảng vết cập nhật version/chấm lại của
-    // issue #254: exam_pin_version_updates, exam_attempt_regrades,
-    // exam_attempt_regrade_items, và bảng exam_matrix_versions của
-    // lát S1 issue #228, và bảng exam_contribution_reviews của lát S4
-    // issue #228, và 3 bảng của issue #583 (centre_identity,
-    // centre_invites, program_package_installs); đã trừ 4
-    // bảng blog bị gỡ ở issue #173, 8 bảng điểm của mô hình cũ bị gỡ ở
-    // issue #224 và trừ ròng 3 bảng của feat gộp Đề #226: −8 bảng
-    // quiz/triển khai cũ +5 bảng họ pin mới) + ĐÚNG
-    // 2 ngoại lệ text (lát MCP-1, issue #163) liệt kê
-    // tường minh dưới đây — bảng nào khác lọt vào allowlist này là
-    // hồi quy định danh, không phải ngoại lệ mới.
-    // + 2 bảng vệ tinh ngân hàng hệ thống của issue #585 có cột id
-    // (system_bank_event_receipts, outcome_package_installs; bảng
-    // system_question_imports cùng đợt không có cột id nên không
-    // tính) → 189 dòng (187 uuidv7 + 2 ngoại lệ text).
+    // Hai bảng nhật ký của bộ máy Kysely bị loại khỏi phép đếm này: chúng nằm ngay trong schema `public` (nhật ký của
+    // bộ máy cũ trước đây nằm ở schema riêng nên không bao giờ lọt vào), là bảng của bộ máy migration chứ không phải
+    // bảng thực thể — riêng `kysely_migration_lock` còn có cột `id` không mặc định, để lọt vào sẽ làm lệch cả số đếm
+    // lẫn vòng kiểm mặc định dưới đây. 189 bảng có cột `id`: 187 bảng PK uuidv7 như khuôn chung (gồm 2 bảng giấy của
+    // CAM-0, issue #112, 3 bảng tenant của TENANT-0, issue #168, bảng payment_provider_events của VietQR lát 1, issue
+    // #189, và bảng classes của CLASS-0 cùng class_join_requests của CLASS-1, issue #184, và bảng question_answer_keys
+    // của lát P2 đợt port mô hình câu hỏi, issue #248, và bảng plan_entitlements của lát nền gói cùng bảng
+    // payment_coupons của phần còn lại lát 2, issue #189, và 3 bảng vết cập nhật version/chấm lại của issue #254:
+    // exam_pin_version_updates, exam_attempt_regrades, exam_attempt_regrade_items, và bảng exam_matrix_versions của lát
+    // S1 issue #228, và bảng exam_contribution_reviews của lát S4 issue #228, và 3 bảng của issue #583
+    // (centre_identity, centre_invites, program_package_installs); đã trừ 4 bảng blog bị gỡ ở issue #173, 8 bảng điểm
+    // của mô hình cũ bị gỡ ở issue #224 và trừ ròng 3 bảng của feat gộp Đề #226: −8 bảng quiz/triển khai cũ +5 bảng họ
+    // pin mới) + ĐÚNG 2 ngoại lệ text (lát MCP-1, issue #163) liệt kê tường minh dưới đây — bảng nào khác lọt vào
+    // allowlist này là hồi quy định danh, không phải ngoại lệ mới. + 2 bảng vệ tinh ngân hàng hệ thống của issue #585
+    // có cột id (system_bank_event_receipts, outcome_package_installs; bảng system_question_imports cùng đợt không có
+    // cột id nên không tính) → 189 dòng (187 uuidv7 + 2 ngoại lệ text).
     const TEXT_ID_ALLOWLIST = ['oauth_client', 'oauth_client_assertion'];
     expect(defaults.rows.length).toBe(189);
     for (const row of defaults.rows) {

@@ -37,9 +37,10 @@ export class CourseExamPinsController {
 
 @ApiTags('exam-pins')
 @Controller({ path: 'exam-pins', version: '1' })
-/** API một lần ghim (pin): cấu hình tổ chức, công bố kết quả, lượt làm, kết quả lớp, ghi đè cài đặt thi và dải nhận
- * xét. Nội dung đề (câu hỏi/slots) KHÔNG sửa ở đây — sửa trên thực thể Đề ở `/exams` rồi đổi version đã ghim (bị khoá
- * khi đã có lượt làm thật).
+/**
+ * API một lần ghim (pin): cấu hình tổ chức, công bố kết quả, lượt làm, kết quả lớp, ghi đè cài đặt thi và dải nhận xét.
+ * Nội dung đề (câu hỏi/slots) KHÔNG sửa ở đây — sửa trên thực thể Đề ở `/exams` rồi đổi version đã ghim (bị khoá khi đã
+ * có lượt làm thật).
  */
 export class ExamPinsController {
   constructor(private readonly quiz: QuizService) {}
@@ -69,7 +70,8 @@ export class ExamPinsController {
     return this.quiz.getPinVersionUpdatePreview(actor.id, pinId);
   }
   @Post(':pinId/version-update')
-  /** POST /exam-pins/:pinId/version-update — áp cập nhật pin lên exam version mới nhất (quiz:manage): bị chặn
+  /**
+   * POST /exam-pins/:pinId/version-update — áp cập nhật pin lên exam version mới nhất (quiz:manage): bị chặn
    * `exam.pin_locked` khi pin đã có lượt làm thật; mỗi lần áp ghi vết ai/khi nào/từ version nào lên version nào (issue
    * #254).
    */
@@ -111,7 +113,8 @@ export class ExamPinsController {
     return this.quiz.listAttemptSummaries(actor.id, pinId);
   }
   @Post(':pinId/attempts')
-  /** POST /exam-pins/:pinId/attempts — bắt đầu lượt làm mới (hoặc tiếp tục lượt đang dở); `preview: true` dành cho giáo
+  /**
+   * POST /exam-pins/:pinId/attempts — bắt đầu lượt làm mới (hoặc tiếp tục lượt đang dở); `preview: true` dành cho giáo
    * viên xem trước đề. Mật khẩu vào thi (khi pin/override yêu cầu) đi trong body; cổng subnet xét theo IP khách thật
    * sau proxy.
    */

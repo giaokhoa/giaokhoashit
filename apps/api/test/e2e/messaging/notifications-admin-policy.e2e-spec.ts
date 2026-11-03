@@ -9,16 +9,13 @@ import { MANDATORY_NOTIFICATION_PROVIDERS, MESSAGE_PROVIDERS, notificationPolicy
  * NB-7 (issue #174): chính sách thông báo cấp admin + bề mặt tuỳ chọn tối thiểu cho học sinh.
  *
  * Tiêu chí kiểm chứng:
- *  - Registry chính sách: GET /site-config có đúng một khoá
- *    `notifications/provider_<loại>_enabled` cho mỗi loại trong
- *    registry MESSAGE_PROVIDERS — tập khoá kỳ vọng suy ra từ chính
- *    registry (đủ mọi khoá, không thừa khoá lạ), không đếm cứng tổng
- *    số vì NB-7 chỉ chốt cơ chế khoá theo từng loại, không chốt
- *    tổng số loại; các khoá boolean, mặc định bật.
- *  - Admin tắt một loại → notify() không phát cho BẤT KỲ ai (kể cả
- *    người có tuỳ chọn cá nhân đang bật), kết quả skipped =
- *    'admin-disabled' + dispatch log `skipped-admin-disabled`; admin
- *    bật lại → phát bình thường. Loại khác không bị ảnh hưởng.
+ *  - Registry chính sách: GET /site-config có đúng một khoá `notifications/provider_<loại>_enabled` cho mỗi loại trong
+ *    registry MESSAGE_PROVIDERS — tập khoá kỳ vọng suy ra từ chính registry (đủ mọi khoá, không thừa khoá lạ), không
+ *    đếm cứng tổng số vì NB-7 chỉ chốt cơ chế khoá theo từng loại, không chốt tổng số loại; các khoá boolean, mặc định
+ *    bật.
+ *  - Admin tắt một loại → notify() không phát cho BẤT KỲ ai (kể cả người có tuỳ chọn cá nhân đang bật), kết quả skipped
+ *    = 'admin-disabled' + dispatch log `skipped-admin-disabled`; admin bật lại → phát bình thường. Loại khác không bị
+ *    ảnh hưởng.
  *  - Hai loại bắt buộc P2 (enrol_expiry_warning, admin_announcement):
  *    admin đặt tắt → API từ chối 400; thông báo vẫn phát.
  *  - Học sinh thuần (chỉ ghi danh, không vai nhân sự): PUT tuỳ chọn

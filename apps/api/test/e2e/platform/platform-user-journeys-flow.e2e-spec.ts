@@ -6,26 +6,22 @@ import {
 import { createCategory, createCourse, createCm, createEnrolInstance, createSection, enrolUser } from '../../support/course-enrolment-helpers';
 
 /**
- * Hành trình người dùng (user journeys) dịch từ oracle Behat của Moodle 5.3
- * (MOODLE_503_STABLE, đã kiểm chứng live 22/10/2026) — chỉ dịch BƯỚC NGHIỆP VỤ
- * và KẾT QUẢ KỲ VỌNG thành e2e qua HTTP; các bước gắn giao diện PHP (ô tìm
- * kiếm trên header, breadcrumb, fieldset, menu hành động, dialogue) là chi
- * tiết cài đặt UI và được bỏ qua:
+ * Hành trình người dùng (user journeys) dịch từ oracle Behat của Moodle 5.3 (MOODLE_503_STABLE, đã kiểm chứng live
+ * 22/10/2026) — chỉ dịch BƯỚC NGHIỆP VỤ và KẾT QUẢ KỲ VỌNG thành e2e qua HTTP; các bước gắn giao diện PHP (ô tìm kiếm
+ * trên header, breadcrumb, fieldset, menu hành động, dialogue) là chi tiết cài đặt UI và được bỏ qua:
  * - Behat `search/tests/behat/search_query.feature`, scenario
  *   "Search from search page with two results": truy vấn khớp thì thấy các
  *   kết quả khớp kèm mô tả; truy vấn không khớp thì "No results".
  * - Behat `search/tests/behat/search_by_user.feature`, scenario
  *   "As student, cannot see users on other courses": người học không thấy
  *   nội dung/người dùng của khoá mình không tham gia.
- * - Behat `backup/util/ui/tests/behat/restore_moodle2_courses.feature`,
- *   scenarios "Restore a course in another existing course" (khoá đích giữ
- *   nguyên danh tính, nhận thêm nội dung nguồn) và "Restore a course in a
- *   new course" (khoá mới chứa đủ section/nội dung của nguồn, không thừa).
- * - Behat `admin/tool/dataprivacy/tests/behat/manage_data_requests.feature`,
- *   scenarios "Bulk accepting requests" / "Bulk denying requests": người
- *   dùng gửi yêu cầu export, privacy officer thấy cả hai ở trạng thái chờ
- *   duyệt, duyệt thì thành Approved, từ chối thì thành Rejected (thao tác
- *   hàng loạt trên UI được dịch thành quyết định cho từng yêu cầu qua API).
+ * - Behat `backup/util/ui/tests/behat/restore_moodle2_courses.feature`, scenarios "Restore a course in another existing
+ *   course" (khoá đích giữ nguyên danh tính, nhận thêm nội dung nguồn) và "Restore a course in a new course" (khoá mới
+ *   chứa đủ section/nội dung của nguồn, không thừa).
+ * - Behat `admin/tool/dataprivacy/tests/behat/manage_data_requests.feature`, scenarios "Bulk accepting requests" /
+ *   "Bulk denying requests": người dùng gửi yêu cầu export, privacy officer thấy cả hai ở trạng thái chờ duyệt, duyệt
+ *   thì thành Approved, từ chối thì thành Rejected (thao tác hàng loạt trên UI được dịch thành quyết định cho từng yêu
+ *   cầu qua API).
  */
 describe('Hành trình người dùng platform (dẫn từ Behat): tìm kiếm, khôi phục, yêu cầu riêng tư', () => {
   let app: INestApplication;

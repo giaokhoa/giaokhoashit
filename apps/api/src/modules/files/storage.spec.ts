@@ -70,7 +70,8 @@ function makeS3Storage(): { storage: S3ObjectStorage; fake: FakeS3Client } {
   return { storage, fake };
 }
 
-/** Bộ test HỢP ĐỒNG của port ObjectStorage — chạy nguyên vẹn cho mọi adapter: vòng put/get/delete/exists, và ngữ nghĩa
+/**
+ * Bộ test HỢP ĐỒNG của port ObjectStorage — chạy nguyên vẹn cho mọi adapter: vòng put/get/delete/exists, và ngữ nghĩa
  * dedup (put trùng hash KHÔNG ghi đè nội dung đã lưu). Bố cục key nội bộ và số lần gọi adapter là chi tiết triển khai —
  * không khẳng định ở đây (rà soát #219).
  */

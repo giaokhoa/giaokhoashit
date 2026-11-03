@@ -5,25 +5,19 @@
  *
  * 1. Đọc đích cấp phát từ `CONTROL_PLANE_DATABASE_URL` (tên database,
  *    role kết nối riêng, mật khẩu) — xem `control-plane-provision.ts`.
- * 2. Kết nối tới database `postgres` của cụm bằng quyền quản trị:
- *    lấy từ `DATABASE_ADMIN_URL` khi mô hình role đã tách (issue
- *    #586), dự phòng `DATABASE_URL` (chỉ đổi tên database đích
- *    trong URL, giữ nguyên thông tin quản trị của cụm).
+ * 2. Kết nối tới database `postgres` của cụm bằng quyền quản trị: lấy từ `DATABASE_ADMIN_URL` khi mô hình role đã tách
+ *    (issue #586), dự phòng `DATABASE_URL` (chỉ đổi tên database đích trong URL, giữ nguyên thông tin quản trị của
+ *    cụm).
  * 3. Đảm bảo role tồn tại (mật khẩu đồng bộ theo URL), database tồn
  *    tại thuộc sở hữu của role đó, và quyền kết nối vào database
  *    control plane chỉ thuộc về role đó (thu hồi PUBLIC).
- * 4. Khoá cả chiều ngược ở mức kết nối: thu hồi quyền CONNECT của
- *    PUBLIC trên chính database nghiệp vụ (đích suy từ
- *    `DATABASE_URL`) và chỉ cấp lại cho role nghiệp vụ — role
- *    control plane vì vậy bị từ chối ngay khi mở kết nối vào kho
- *    nghiệp vụ, thay vì mở được kết nối rồi mới chết ở quyền bảng.
+ * 4. Khoá cả chiều ngược ở mức kết nối: thu hồi quyền CONNECT của PUBLIC trên chính database nghiệp vụ (đích suy từ
+ *    `DATABASE_URL`) và chỉ cấp lại cho role nghiệp vụ — role control plane vì vậy bị từ chối ngay khi mở kết nối vào
+ *    kho nghiệp vụ, thay vì mở được kết nối rồi mới chết ở quyền bảng.
  *
- * Mọi bước đều idempotent: chạy lại ở mỗi lần stack khởi động là an
- * toàn và không đổi dữ kiện. Script KHÔNG tạo bảng — bảng do bộ
- * migration riêng của control plane tạo (chạy qua runner của
- * `@lms/db`).
- * Chưa cấu hình `CONTROL_PLANE_DATABASE_URL` thì bỏ qua lặng lẽ
- * (thoát 0) để các môi trường chưa dùng control plane không gãy.
+ * Mọi bước đều idempotent: chạy lại ở mỗi lần stack khởi động là an toàn và không đổi dữ kiện. Script KHÔNG tạo bảng —
+ * bảng do bộ migration riêng của control plane tạo (chạy qua runner của `@lms/db`). Chưa cấu hình
+ * `CONTROL_PLANE_DATABASE_URL` thì bỏ qua lặng lẽ (thoát 0) để các môi trường chưa dùng control plane không gãy.
  *
  * Mật khẩu chỉ đi từ biến môi trường vào câu lệnh SQL qua kết nối
  * quản trị nội bộ; script không in URL hay mật khẩu ra log.
@@ -47,13 +41,10 @@ async function main(): Promise<void> {
   }
   const businessUrl = process.env.DATABASE_URL;
   if (!businessUrl) throw new Error('DATABASE_URL is required to derive the business database target');
-  // Kết nối quản trị của cụm: ưu tiên `DATABASE_ADMIN_URL` khi mô
-  // hình role đã tách (issue #586 — lúc đó `DATABASE_URL` của bước
-  // migrate là role migration, không còn quyền quản trị cụm để tạo
-  // role/database); chưa tách thì `DATABASE_URL` vẫn là kết nối
-  // quản trị như trước. Đích nghiệp vụ (tên database + role được
-  // cấp CONNECT ở bước khoá chiều ngược) vẫn luôn suy từ
-  // `DATABASE_URL`.
+  // Kết nối quản trị của cụm: ưu tiên `DATABASE_ADMIN_URL` khi mô hình role đã tách (issue #586 — lúc đó `DATABASE_URL`
+  // của bước migrate là role migration, không còn quyền quản trị cụm để tạo role/database); chưa tách thì
+  // `DATABASE_URL` vẫn là kết nối quản trị như trước. Đích nghiệp vụ (tên database + role được cấp CONNECT ở bước khoá
+  // chiều ngược) vẫn luôn suy từ `DATABASE_URL`.
   const adminSourceUrl = process.env.DATABASE_ADMIN_URL ?? businessUrl;
 
   const target = parseControlPlaneTarget(controlPlaneUrl);

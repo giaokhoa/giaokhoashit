@@ -46,7 +46,8 @@ export const EXAM_CAPABILITIES = {
  */
 export const PERIODIC_EXAM_KINDS = ['midterm', 'final', 'mock'] as const;
 
-/** Hash cấu trúc của một version đề (chống trùng đóng góp/copy): tên + danh sách question@pinnedVersion:điểm theo vị
+/**
+ * Hash cấu trúc của một version đề (chống trùng đóng góp/copy): tên + danh sách question@pinnedVersion:điểm theo vị
  * trí. Hàm DÙNG CHUNG của module exams: ExamsService tính khi đề xuất đóng góp, ExamDossiersService tính lại cho đóng
  * góp sinh ra từ chuyển đổi hồ sơ treo — hai đường phải ra cùng một hash cho cùng một version thì vết chống trùng trong
  * bank đích mới nhất quán.
@@ -164,11 +165,12 @@ export interface ExamContributionView extends ExamContributionRow {
   reviews: ExamContributionReviewView[];
 }
 
-/** Lớp Ngân hàng đề (feat issue #113, EB-1) — thực thể ĐỀ trên khuôn bank đa loại của feat Ngân hàng câu hỏi chung:
+/**
+ * Lớp Ngân hàng đề (feat issue #113, EB-1) — thực thể ĐỀ trên khuôn bank đa loại của feat Ngân hàng câu hỏi chung:
  *
  * - Danh tính đề sống trong bank `bank_kind='exam'`; quyền neo MỘT nguồn duy nhất là bank: capability `exam:*` đánh giá
- * tại context của bank (vai qbankmember/qbanklead dùng chung được cấp thêm exam:* tại context của từng bank đề — xem
- * ensureExamGrants).
+ *   tại context của bank (vai qbankmember/qbanklead dùng chung được cấp thêm exam:* tại context của từng bank đề — xem
+ *   ensureExamGrants).
  * - Nội dung là SNAPSHOT bất biến theo version: sửa metadata hay slots đều tạo paper version mới; slot ghim cứng
  * version ready mới nhất của câu tại thời điểm lưu (kỷ luật QB-3), câu chưa ready / đã rút (hidden) không vào được đề.
  * - Copy = deep copy: danh tính đề mới + slots sao nguyên (question + pinned version KHÔNG đổi — copy đề không copy
@@ -193,7 +195,8 @@ export class ExamsService {
     private readonly siteConfig: SiteConfigService,
   ) {}
 
-  /** Cấp bộ exam:* cho hai vai bank dùng chung tại context của bank đề này (idempotent — gọi mỗi khi chạm vào một bank
+  /**
+   * Cấp bộ exam:* cho hai vai bank dùng chung tại context của bank đề này (idempotent — gọi mỗi khi chạm vào một bank
    * đề). Vai bank do QuestionBanksService dựng lười khi bank đầu tiên được tạo; bank đề luôn đi qua buildBank nên hai
    * vai chắc chắn tồn tại ở đây.
    */
@@ -283,7 +286,8 @@ export class ExamsService {
     return version;
   }
 
-  /** Cổng XEM NỘI DUNG đề (chi tiết kèm slots, bản in, bản đặc tả): cổng xem cơ bản cộng lớp A.3.4 — nội dung đề định
+  /**
+   * Cổng XEM NỘI DUNG đề (chi tiết kèm slots, bản in, bản đặc tả): cổng xem cơ bản cộng lớp A.3.4 — nội dung đề định
    * kỳ/thi thử `ready` tại bank trường chỉ mở cho site admin, tác giả, người duyệt của bank (exam:moderate) hoặc giáo
    * viên ĐANG DẠY khối của đề (gán vai archetype giáo viên tại context một khoá có grade khớp). Giáo viên cùng trường
    * nhưng khác khối bị chặn 403 `exam.periodic_view_forbidden`.
@@ -721,7 +725,8 @@ export class ExamsService {
     return { id: paper.id, deleted: true };
   }
 
-  /** Deep copy một đề sang bank đích (mặc định ngân hàng đề cá nhân của người copy): danh tính mới, slots sao nguyên —
+  /**
+   * Deep copy một đề sang bank đích (mặc định ngân hàng đề cá nhân của người copy): danh tính mới, slots sao nguyên —
    * question + pinned version GIỮ NGUYÊN (copy đề không copy câu), derived_from trỏ về đề nguồn, tác giả gốc giữ nguyên
    * qua các đời copy, copy_count của đề nguồn tăng. Bản copy hạ cánh `ready` ngay tại bank đích, version 1 — theo quy
    * tắc hoàn thiện: sao chép vào bank là đường vào bank ở dạng đã hoàn thiện (cùng nhóm với duyệt đóng góp/hồ sơ đạt),
@@ -765,7 +770,8 @@ export class ExamsService {
     return this.copyPaperVersionIntoBank(actorId, source, sourceVersion, target, { name: nameOverride, status: 'ready' });
   }
 
-  /** Nhân bản MỘT PHIÊN BẢN CỤ THỂ của đề vào bank đích: danh tính mới, phiên bản đó trở thành version 1 của bản copy,
+  /**
+   * Nhân bản MỘT PHIÊN BẢN CỤ THỂ của đề vào bank đích: danh tính mới, phiên bản đó trở thành version 1 của bản copy,
    * slots sao nguyên (question + pinned version giữ nguyên), derived_from trỏ về đề nguồn, tác giả gốc giữ nguyên,
    * copy_count của đề nguồn tăng. Mọi đường qua hàm này đều hạ cánh `ready` tại bank đích theo quy tắc hoàn thiện (sao
    * chép/duyệt đóng góp vào bank ở dạng đã hoàn thiện): copy tay/duyệt đóng góp thường nhân bản version hiện tại của đề
@@ -805,15 +811,16 @@ export class ExamsService {
     return created!;
   }
 
-  /** Đề xuất đóng góp một đề READY vào bank đích (tổ/trường/khoá) — ĐƯỜNG ĐÓNG GÓP DUY NHẤT của đề, nâng lên khuôn QB-4
+  /**
+   * Đề xuất đóng góp một đề READY vào bank đích (tổ/trường/khoá) — ĐƯỜNG ĐÓNG GÓP DUY NHẤT của đề, nâng lên khuôn QB-4
    * đầy đủ của câu hỏi (issue #228, lát S4):
    *
    * - Cổng: exam:share tại bank NGUỒN; bank đích không được là bank cá nhân; đề nguồn phải `ready`.
    * - mode 'new': duyệt đạt thì deep copy đề vào bank đích. Chống trùng: hash cấu trúc bằng một đề đã có trong bank
    * đích thì ghi near_duplicate_of (trùng suy từ chính đề nguồn bị chặn 409 lúc duyệt như QB-4).
    * - mode 'update': đề xuất bản mới cho một đề ĐÃ CÓ trong bank đích — đề nguồn bắt buộc là bản sao có derived_from
-   * trỏ về chính đề đích (đối xứng luật `question.contribution_not_derived` của QB-4); duyệt đạt thì tạo VERSION MỚI
-   * trên danh tính đề đích từ nội dung version hiện tại của đề nguồn.
+   *   trỏ về chính đề đích (đối xứng luật `question.contribution_not_derived` của QB-4); duyệt đạt thì tạo VERSION MỚI
+   *   trên danh tính đề đích từ nội dung version hiện tại của đề nguồn.
    * - withDossier: đóng góp mang theo BỘ HỒ SƠ đã ghim tại lúc đề xuất (version đề + version ma trận + bản đặc tả chụp)
    * — phần việc hấp thụ từ đường hồ sơ cũ: đề phải sinh từ ma trận thì mới có bộ ba để duyệt. Đóng góp có bộ hồ sơ +
    * tenant của bank đích bật cấu hình cấp duyệt 2 (điểm seam `boardApprovalRequiredForBank`) thì duyệt cấp 1 chỉ đưa
@@ -1042,15 +1049,16 @@ export class ExamsService {
     return (await this.repo.getContribution(contribution.id))!;
   }
 
-  /** Duyệt một đóng góp qua đường canonical duy nhất `approve` (issue #345, giai đoạn 2: hợp nhất `board-approve` vào
+  /**
+   * Duyệt một đóng góp qua đường canonical duy nhất `approve` (issue #345, giai đoạn 2: hợp nhất `board-approve` vào
    * `approve`).
    *
    * Cấp duyệt phân biệt bằng trạng thái của đóng góp và quyền của người gọi, không bằng tên động từ:
    * - Đóng góp đang `pending_board` và người gọi có `exam:moderate` tại context hệ thống → duyệt cấp 2 (ban giám hiệu),
    * mốc chốt.
    * - Mọi trường hợp còn lại → đi qua duyệt cấp 1 với nguyên vẹn cổng và mã lỗi của duyệt cấp 1 (kể cả đóng góp đang
-   * `pending_board` mà người gọi không có quyền cấp 2: cấp 1 báo xung đột vì đóng góp không còn `pending`, đúng như
-   * đường `approve` cũ trước khi hợp nhất).
+   *   `pending_board` mà người gọi không có quyền cấp 2: cấp 1 báo xung đột vì đóng góp không còn `pending`, đúng như
+   *   đường `approve` cũ trước khi hợp nhất).
    */
   async approveContribution(actorId: string, bankId: string, contributionId: string, input: ApproveExamContribution): Promise<ExamContributionRow> {
     const bank = await this.getExamBank(actorId, bankId);
@@ -1074,7 +1082,8 @@ export class ExamsService {
     return this.rejectContributionLevel1(actorId, bankId, contributionId, input);
   }
 
-  /** Người gọi có quyền duyệt cấp 2 hay không: có `exam:moderate` tại context hệ thống (ban giám hiệu cấp hệ thống) thì
+  /**
+   * Người gọi có quyền duyệt cấp 2 hay không: có `exam:moderate` tại context hệ thống (ban giám hiệu cấp hệ thống) thì
    * có; ngược lại thì không — kiểm tra không ném lỗi để đường hợp nhất tự rơi về cấp 1 (cấp 1 tự ném lỗi đúng cổng của
    * nó nếu người gọi không đủ quyền ở đó).
    */
@@ -1135,7 +1144,8 @@ export class ExamsService {
     return (await this.repo.getContribution(contribution.id))!;
   }
 
-  /** Cổng cấp duyệt 2 của đường đóng góp: người duyệt phải có exam:moderate tại context HỆ THỐNG (ban giám hiệu cấp hệ
+  /**
+   * Cổng cấp duyệt 2 của đường đóng góp: người duyệt phải có exam:moderate tại context HỆ THỐNG (ban giám hiệu cấp hệ
    * thống — không neo vào bank đích, vì cấp này đứng trên mọi bank của tenant), đúng khuôn cổng cấp 2 của đường hồ sơ
    * cũ.
    */
@@ -1185,7 +1195,8 @@ export class ExamsService {
     return (await this.repo.getContribution(contribution.id))!;
   }
 
-  /** Ghim một đề READY vào một khoá — thao tác DUY NHẤT thay deploy + tạo quiz trước đây: cổng exam:deploy tại bank của
+  /**
+   * Ghim một đề READY vào một khoá — thao tác DUY NHẤT thay deploy + tạo quiz trước đây: cổng exam:deploy tại bank của
    * đề + đề phải ready (draft chưa chốt, hidden đã rút — đều không ghim mới được; pin đã ghim từ trước không bị ảnh
    * hưởng khi đề chuyển hidden). Dạng `newExam`: tạo đề trong bank đề CÁ NHÂN của giáo viên rồi ghim ngay version vừa
    * tạo (đề còn draft, GV soạn tiếp sau) — đúng một thao tác cho GV từ course builder. Bản ghi pin + course module +

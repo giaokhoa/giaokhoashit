@@ -6,10 +6,9 @@ import { McpRateLimiter } from './mcp-rate-limit';
  * - Quyết định cho phép/chặn và `retryAfterSeconds` quanh biên cửa sổ
  *   một giờ phải giữ nguyên tuyệt đối trước và sau khi sửa rò bộ nhớ
  *   (cùng cửa sổ, cùng ngưỡng, cùng cách tính phần chờ còn lại).
- * - Entry của khoá đã hết hạn cửa sổ phải bị xoá khỏi Map lưu cửa sổ
- *   ngay trong phép kiểm tra, để kích thước Map bị chặn bởi số khoá
- *   đang còn trong cửa sổ hiệu lực — trước khi sửa, Map giữ vĩnh viễn
- *   mọi khoá từng gọi tới và phình không giới hạn theo số client.
+ * - Entry của khoá đã hết hạn cửa sổ phải bị xoá khỏi Map lưu cửa sổ ngay trong phép kiểm tra, để kích thước Map bị
+ *   chặn bởi số khoá đang còn trong cửa sổ hiệu lực — trước khi sửa, Map giữ vĩnh viễn mọi khoá từng gọi tới và phình
+ *   không giới hạn theo số client.
  *
  * Mọi ca đều lái thời gian qua tham số `now` của `check` nên không phụ thuộc đồng hồ thật. Kích thước Map được đọc qua
  * ép kiểu có chủ đích: quyết định cho/chặn cố ý giữ giống hệt hành vi cũ, nên độ phình của Map là bề mặt quan sát duy

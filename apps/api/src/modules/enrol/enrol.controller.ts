@@ -7,7 +7,8 @@ import { EnrolService } from './enrol.service';
 
 @ApiTags('enrol')
 @Controller({ path: 'courses/:courseId/enrol', version: '1' })
-/** API ghi danh: enrol instance, ghi danh thủ công/tự ghi danh, đình chỉ và rút.
+/**
+ * API ghi danh: enrol instance, ghi danh thủ công/tự ghi danh, đình chỉ và rút.
  *
  * Lớp này khai tiền tố con đầy đủ của chính nó thay vì tiền tố trơ `courses`: tiền tố trơ `courses` chỉ còn module
  * courses sở hữu, mỗi tiền tố đầy đủ khác chỉ có đúng một lớp khai báo. Bảng route giữ nguyên từng ký tự so với trước
@@ -69,7 +70,8 @@ export class EnrolController {
 
 @ApiTags('enrol')
 @Controller({ path: 'courses/:courseId/enrolments', version: '1' })
-/** API đọc trạng thái ghi danh của khoá học.
+/**
+ * API đọc trạng thái ghi danh của khoá học.
  *
  * Lớp này tách khỏi `EnrolController` vì các route của nó không chung tiền tố con với họ route
  * `courses/:courseId/enrol/instances`: chúng đọc trạng thái ghi danh của khoá học chứ không tác động lên một instance

@@ -6,19 +6,15 @@
  * provider giữ instance `Kysely` được dựng bằng factory của dự án. Module này bám đúng khuôn `forRoot` quen thuộc của
  * hệ:
  *
- *   - `KyselyModule.forRoot({ centre: pool, controlPlane: pool, systemBank: pool })`
- *     nhận các `Pool` do tầng ứng dụng tạo sẵn (pool quyết định ngữ
- *     cảnh kết nối: `TenantAwarePool` cho kho trung tâm để RLS/GUC
- *     hoạt động, pool thường cho hai kho còn lại) và đăng ký một
- *     provider cho mỗi kho được truyền, dùng đúng factory của
- *     `@lms/db` (`createCentreKysely`, `createControlPlaneKysely`,
- *     `createSystemBankKysely`).
+ *   - `KyselyModule.forRoot({ centre: pool, controlPlane: pool, systemBank: pool })` nhận các `Pool` do tầng ứng dụng
+ *     tạo sẵn (pool quyết định ngữ cảnh kết nối: `TenantAwarePool` cho kho trung tâm để RLS/GUC hoạt động, pool thường
+ *     cho hai kho còn lại) và đăng ký một provider cho mỗi kho được truyền, dùng đúng factory của `@lms/db`
+ *     (`createCentreKysely`, `createControlPlaneKysely`, `createSystemBankKysely`).
  *   - Các service lấy handle bằng `@InjectKysely(...)` (xem
  *     `inject-kysely.ts` cùng thư mục).
- *   - Khi ứng dụng đóng, một provider dọn dẹp gọi `destroy()` trên
- *     mọi instance đã đăng ký — theo hành vi của `PostgresDialect`,
- *     `destroy()` đóng luôn pool đã truyền vào, nên pool truyền cho
- *     `forRoot` thuộc quyền sở hữu của module từ thời điểm đăng ký.
+ *   - Khi ứng dụng đóng, một provider dọn dẹp gọi `destroy()` trên mọi instance đã đăng ký — theo hành vi của
+ *     `PostgresDialect`, `destroy()` đóng luôn pool đã truyền vào, nên pool truyền cho `forRoot` thuộc quyền sở hữu của
+ *     module từ thời điểm đăng ký.
  *
  * Trạng thái hiện hành: module và decorator có spec tích hợp kiểm chứng (`kysely-foundation.int-spec.ts`) và sẵn sàng
  * cho phía tiêu thụ cần inject handle theo kho; đường khởi động của ứng dụng chính nối handle kho trung tâm qua khung

@@ -6,12 +6,10 @@ import { aggregateRoleResults, CAP_ALLOW, CAP_INHERIT, CAP_PREVENT, CAP_PROHIBIT
  * `docs/access-oracle.md` (mục 3 và 4) và các ca nhóm A của
  * `docs/access-verification-fixtures.md`.
  *
- * Phạm vi trung thực của file này: chỉ kiểm chứng thuật toán thuần
- * (`evaluateSingleRole` + `aggregateRoleResults`) — tức một nhánh
- * vai duyệt lá → gốc và phép tổng hợp nhiều nhánh. Các ca nghiệp vụ
- * ở tầng service/người dùng (cổng tenant, quan hệ phụ huynh, danh
- * tính Keycloak, trạng thái bài lúc ghi) là dữ kiện đặc tả trong
- * tài liệu dữ kiện, KHÔNG được coi là đã chạy đạt nhờ file này.
+ * Phạm vi trung thực của file này: chỉ kiểm chứng thuật toán thuần (`evaluateSingleRole` + `aggregateRoleResults`) —
+ * tức một nhánh vai duyệt lá → gốc và phép tổng hợp nhiều nhánh. Các ca nghiệp vụ ở tầng service/người dùng (cổng
+ * tenant, quan hệ phụ huynh, danh tính Keycloak, trạng thái bài lúc ghi) là dữ kiện đặc tả trong tài liệu dữ kiện,
+ * KHÔNG được coi là đã chạy đạt nhờ file này.
  *
  * Quy ước dữ kiện: `points` của một nhánh liệt kê theo thứ tự
  * lá → gốc, đúng hợp đồng đầu vào của `evaluateSingleRole`.

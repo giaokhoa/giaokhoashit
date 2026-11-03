@@ -109,9 +109,8 @@ function round1(v: number): number {
  *    sổ SAU KHI ĐÓNG (0x10) — và mốc đóng hiệu lực cho review là
  *    max(timeClose) của cả đợt (xem reviewWindowBit);
  *  - thi thử: late_entry_minutes = 15 (Điều 21 TT 24/2024);
- *  - giám sát sự kiện (chỉ ghi nhận): định kỳ/thi thử bật, thường
- *    xuyên tắt. Mật khẩu/subnet KHÔNG nằm trong preset: preset chỉ nêu kỳ vọng (định kỳ/thi thử phát mật khẩu đầu buổi)
- *    — giá trị do giáo viên đặt.
+ *  - giám sát sự kiện (chỉ ghi nhận): định kỳ/thi thử bật, thường xuyên tắt. Mật khẩu/subnet KHÔNG nằm trong preset:
+ *    preset chỉ nêu kỳ vọng (định kỳ/thi thử phát mật khẩu đầu buổi) — giá trị do giáo viên đặt.
  */
 export type ExamKind = 'regular' | 'periodic' | 'mock';
 

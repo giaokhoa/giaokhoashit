@@ -41,14 +41,10 @@ export class MessagingConversationsService {
    * Cổng tạo NHÓM TỰ DO dùng chung cho mọi bề mặt: chỉ ba nhóm người được tạo nhóm thủ công trong hệ thống —
    *
    * 1. Quản trị viên hệ thống ({@link PermissionEvaluator.isSiteAdmin});
-   * 2. Chủ trung tâm: người giữ capability `tenant:manage` tại context
-   *    của TENANT HIỆN HÀNH (đọc từ `tenantAls` của request) — nhánh
-   *    "quản lý của chính tenant đó" trong predicate mà TenantsService
-   *    dùng (`assertTenantManager`);
-   * 3. Quản trị viên nền tảng: người giữ `tenant:manage` tại context
-   *    HỆ THỐNG — nhánh dự phòng `assertPlatformManager` của cùng
-   *    predicate trên. Nhánh 2 và 3 gộp lại mới tương đương trọn
-   *    `assertTenantManager`.
+   * 2. Chủ trung tâm: người giữ capability `tenant:manage` tại context của TENANT HIỆN HÀNH (đọc từ `tenantAls` của
+   *    request) — nhánh "quản lý của chính tenant đó" trong predicate mà TenantsService dùng (`assertTenantManager`);
+   * 3. Quản trị viên nền tảng: người giữ `tenant:manage` tại context HỆ THỐNG — nhánh dự phòng `assertPlatformManager`
+   *    của cùng predicate trên. Nhánh 2 và 3 gộp lại mới tương đương trọn `assertTenantManager`.
    *
    * Hai nhánh 2 và 3 phải kiểm riêng tại hai context khác nhau vì cổng tenant của evaluator KHÔNG thừa hưởng gán vai từ
    * context hệ thống xuống tenant: tại context đích nằm trong cây của một tenant school/center, chỉ gán vai neo TRONG
@@ -76,11 +72,9 @@ export class MessagingConversationsService {
   }
 
   /**
-   * Tạo conversation (nhóm hoặc 1-1; 1-1 đã tồn tại thì dùng lại). Tạo MỚI
-   * conversation 1-1 phải qua cổng liên lạc (xem {@link assertCanContact});
-   * việc trả lại conversation đã tồn tại là truy hồi idempotent, còn việc
-   * gửi tiếp trong đó vẫn bị cổng kiểm ở {@link sendMessage} — đúng luật
-   * Moodle (can_send_message_to_conversation kiểm mỗi lần gửi, kể cả
+   * Tạo conversation (nhóm hoặc 1-1; 1-1 đã tồn tại thì dùng lại). Tạo MỚI conversation 1-1 phải qua cổng liên lạc (xem
+   * {@link assertCanContact}); việc trả lại conversation đã tồn tại là truy hồi idempotent, còn việc gửi tiếp trong đó
+   * vẫn bị cổng kiểm ở {@link sendMessage} — đúng luật Moodle (can_send_message_to_conversation kiểm mỗi lần gửi, kể cả
    * conversation có từ trước khi bật cổng).
    */
   async createConversation(actorId: string, input: { type?: number; memberIds: string[]; name?: string }): Promise<ConversationRow & { members: string[] }> {
@@ -316,11 +310,9 @@ export class MessagingConversationsService {
   //  - "phụ trách khoá của conversation này" (staff tại context khoá
   //    hoặc tổ tiên của nó, hoặc quản trị viên) → quyền KIỂM DUYỆT:
   //    xoá tin của người khác, xem lại báo cáo, xem tin đã xoá mềm.
-  //  - "quản lý conversation" = phụ trách khoá, cộng thêm NGƯỜI TẠO
-  //    đối với conversation KHÔNG gắn cấu trúc lớp/khoá → quyền bật/tắt
-  //    chat và gửi tin khi chat đang tắt. Conversation gắn group của
-  //    khoá thì người tạo bản ghi (có thể là một học sinh bấm mở nhóm
-  //    lớp) KHÔNG thành người quản lý — quản lý chỉ theo staff khoá.
+  //  - "quản lý conversation" = phụ trách khoá, cộng thêm NGƯỜI TẠO đối với conversation KHÔNG gắn cấu trúc lớp/khoá →
+  //    quyền bật/tắt chat và gửi tin khi chat đang tắt. Conversation gắn group của khoá thì người tạo bản ghi (có thể
+  //    là một học sinh bấm mở nhóm lớp) KHÔNG thành người quản lý — quản lý chỉ theo staff khoá.
 
   /**
    * Khoá học mà một conversation "thuộc về" — căn cứ phân phạm vi thẩm quyền của Lớp B. Thứ tự: conversation gắn course
@@ -424,21 +416,15 @@ export class MessagingConversationsService {
    * chat).
    *
    * Flow: 1. Nạp conversation; không có thì 404 như mọi đường theo id. 2. Cổng LOẠI conversation: chỉ nhóm tự do (type
-   * 2, không gắn
-   *    cấu trúc lớp/khoá/nhóm con) mới gỡ tay được ở đây. Thành viên
-   *    nhóm cấu trúc suy ra từ roster/ghi danh — gỡ tại chat sẽ bị
-   *    đồng bộ lười lắp lại ngay, nên server từ chối thẳng bằng
-   *    400 `messaging.member_remove_structural` để client dẫn người
-   *    dùng về màn roster thay vì báo thành công giả. 3. Cổng THẨM QUYỀN: chỉ người có thẩm quyền quản lý conversation
-   *    (canManageConversation — người tạo nhóm tự do hoặc người có
-   *    thẩm quyền kiểm duyệt) mới gỡ được; người ngoài nhận 403
-   *    `messaging.conversation_manage_forbidden` như đường bật/tắt
-   *    chat. 4. Hai biên bất biến: không tự gỡ chính mình (rời nhóm là luồng
-   *    khác, không thuộc lát này) và không gỡ NGƯỜI TẠO nhóm (nhóm
-   *    không thể mất chủ sở hữu qua đường này). 5. Xoá dòng thành viên (kèm luôn trạng thái cá nhân ghim/lưu/
-   *    tắt tiếng + mốc đã đọc của người đó trên conversation, vì
-   *    chúng sống trên cùng dòng) rồi trả conversation kèm danh
-   *    sách thành viên mới — cùng hình dạng đường bật/tắt chat.
+   * 2, không gắn cấu trúc lớp/khoá/nhóm con) mới gỡ tay được ở đây. Thành viên nhóm cấu trúc suy ra từ roster/ghi danh
+   * — gỡ tại chat sẽ bị đồng bộ lười lắp lại ngay, nên server từ chối thẳng bằng 400
+   * `messaging.member_remove_structural` để client dẫn người dùng về màn roster thay vì báo thành công giả. 3. Cổng
+   * THẨM QUYỀN: chỉ người có thẩm quyền quản lý conversation (canManageConversation — người tạo nhóm tự do hoặc người
+   * có thẩm quyền kiểm duyệt) mới gỡ được; người ngoài nhận 403 `messaging.conversation_manage_forbidden` như đường
+   * bật/tắt chat. 4. Hai biên bất biến: không tự gỡ chính mình (rời nhóm là luồng khác, không thuộc lát này) và không
+   * gỡ NGƯỜI TẠO nhóm (nhóm không thể mất chủ sở hữu qua đường này). 5. Xoá dòng thành viên (kèm luôn trạng thái cá
+   * nhân ghim/lưu/ tắt tiếng + mốc đã đọc của người đó trên conversation, vì chúng sống trên cùng dòng) rồi trả
+   * conversation kèm danh sách thành viên mới — cùng hình dạng đường bật/tắt chat.
    *
    * @throws 404 `messaging.conversation_not_found` khi conversation
    *   không tồn tại; 404 `messaging.member_not_found` khi người bị

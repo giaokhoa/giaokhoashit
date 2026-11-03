@@ -16,15 +16,16 @@ export interface AuthMailPort {
   }): Promise<void>;
 }
 
-/** Dựng plugin `emailOTP` của Better Auth với đường gửi mã qua cổng mail của hệ (outbox → relay ở worker → Resend, xem
+/**
+ * Dựng plugin `emailOTP` của Better Auth với đường gửi mã qua cổng mail của hệ (outbox → relay ở worker → Resend, xem
  * AuthMailService).
  *
  * Các ghim theo chính sách đã chốt của hệ:
  * - `otpLength: 6` + `expiresIn: 300` (5 phút — khớp câu chữ trong mẫu mail dùng chung ở `@lms/contracts`, module
  * `auth-mail`) + `allowedAttempts: 5`.
  * - `disableSignUp: true` — BẮT BUỘC: mặc định của plugin là cho email lạ nhận OTP rồi TỰ TẠO tài khoản khi đăng nhập
- * bằng mã, tức mở đăng ký công khai qua đường OTP trong khi toàn hệ đã ghim `disableSignUp`. Đặt true thì OTP đăng nhập
- * chỉ phục vụ tài khoản đã tồn tại.
+ *   bằng mã, tức mở đăng ký công khai qua đường OTP trong khi toàn hệ đã ghim `disableSignUp`. Đặt true thì OTP đăng
+ *   nhập chỉ phục vụ tài khoản đã tồn tại.
  * - `storeOTP: 'hashed'` — mã lưu trong bảng verification ở dạng băm thay vì nguyên văn (mặc định của plugin là
  * 'plain').
  */

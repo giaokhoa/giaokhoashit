@@ -13,9 +13,8 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
  * - Moodle `auth/oauth2/tests/auth_test.php::test_oauth2_complete_login`
  *   và `auth/oauth2/classes/api.php` (bản ghi linked_login,
  *   create_new_confirmed_account, khớp theo subject của issuer rồi tới email).
- * - Ngữ nghĩa factor_totp của Moodle `tool_mfa` — một nhân tố TOTP đã xác nhận
- *   phải được thoả mãn trước khi BẤT KỲ lần đăng nhập nào hoàn tất, kể cả
- *   luồng session-cookie (khoảng trống mà đợt này khép lại).
+ * - Ngữ nghĩa factor_totp của Moodle `tool_mfa` — một nhân tố TOTP đã xác nhận phải được thoả mãn trước khi BẤT KỲ lần
+ *   đăng nhập nào hoàn tất, kể cả luồng session-cookie (khoảng trống mà đợt này khép lại).
  * - Moodle `report/usersessions` (locallib.php + tests/lib_test.php):
  *   người dùng thấy các phiên của chính mình và có thể chấm dứt các phiên khác.
  *

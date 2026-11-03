@@ -10,13 +10,10 @@ const MINUTE_KEY_PREFIX = 'lms:messaging:send-minute:';
 const MINUTE_WINDOW_SECONDS = 60;
 
 /**
- * Script Lua kiểm-tra-rồi-tăng NGUYÊN TỬ cho cả hai cửa sổ: lần gửi bị
- * từ chối KHÔNG bị tính vào bộ đếm (nếu tính, người dùng càng thử lại
- * càng tự kéo dài thời gian bị chặn và khẳng định "hồi sau cửa sổ" của
- * spec không còn đúng theo đồng hồ cửa sổ). Trả [1, ''] khi được gửi,
- * [0, 'burst'|'minute'] khi chạm trần của cửa sổ tương ứng. Trần <= 0
- * nghĩa là cửa sổ đó TẮT (theo quy ước 0 = tắt của các setting nhắn
- * tin, xem messagingrecallwindowminutes).
+ * Script Lua kiểm-tra-rồi-tăng NGUYÊN TỬ cho cả hai cửa sổ: lần gửi bị từ chối KHÔNG bị tính vào bộ đếm (nếu tính,
+ * người dùng càng thử lại càng tự kéo dài thời gian bị chặn và khẳng định "hồi sau cửa sổ" của spec không còn đúng theo
+ * đồng hồ cửa sổ). Trả [1, ''] khi được gửi, [0, 'burst'|'minute'] khi chạm trần của cửa sổ tương ứng. Trần <= 0 nghĩa
+ * là cửa sổ đó TẮT (theo quy ước 0 = tắt của các setting nhắn tin, xem messagingrecallwindowminutes).
  */
 const CONSUME_SCRIPT = `
 local burstCount = tonumber(redis.call('GET', KEYS[1]) or '0')
@@ -42,9 +39,9 @@ return {1, ''}
  * không cần khởi động lại:
  *   - bùng phát: `core/messagingsendburstlimit` tin trong
  *     `core/messagingsendburstwindowseconds` giây (mặc định 20/10s);
- *   - duy trì: `core/messagingsendperminutelimit` tin/phút (mặc định
- *     60, tức ~1 tin/giây). Chạm một trong hai trần → 429 `messaging.rate_limited`. Khoá đếm theo userId (định danh
- *     toàn cục duy nhất) nên không lẫn giữa các tenant và tự hết hạn theo TTL — không có dữ liệu bền nào phải dọn.
+ *   - duy trì: `core/messagingsendperminutelimit` tin/phút (mặc định 60, tức ~1 tin/giây). Chạm một trong hai trần →
+ *     429 `messaging.rate_limited`. Khoá đếm theo userId (định danh toàn cục duy nhất) nên không lẫn giữa các tenant và
+ *     tự hết hạn theo TTL — không có dữ liệu bền nào phải dọn.
  *
  * Redis là hạ tầng phụ trợ của đường gửi (cùng họ presence/typing): Redis lỗi thì FAIL-OPEN kèm log cảnh báo — thà mất
  * lớp chống lạm dụng trong chốc lát còn hơn chặn đứng toàn bộ nhắn tin, đúng triết lý "đường phụ không được làm hỏng

@@ -4,18 +4,16 @@
  * plane, nên:
  * - bộ chọn trung tâm (`listMyTenants`) không thấy trung tâm đó
  *   dù membership thật đang nằm đầy đủ trong kho đích;
- * - mã tham gia của các lớp trong kho đích không phân giải được
- *   vì đường tra cứu vẫn chỉ nhìn kho chung. Lệnh này đọc membership và mã lớp TẠI KHO ĐÍCH của không gian rồi ghi các
- *   mục thư mục tương ứng vào control plane — thư mục chỉ mang dữ kiện định tuyến tối thiểu theo đúng thiết kế đã chốt,
- *   không sao chép dữ kiện nghiệp vụ nào lên kho chung hay control plane.
+ * - mã tham gia của các lớp trong kho đích không phân giải được vì đường tra cứu vẫn chỉ nhìn kho chung. Lệnh này đọc
+ *   membership và mã lớp TẠI KHO ĐÍCH của không gian rồi ghi các mục thư mục tương ứng vào control plane — thư mục chỉ
+ *   mang dữ kiện định tuyến tối thiểu theo đúng thiết kế đã chốt, không sao chép dữ kiện nghiệp vụ nào lên kho chung
+ *   hay control plane.
  *
  * Bất biến khi chạy:
- * - Khoá theo định danh gốc: mô hình vật chất hoá tài khoản
- *   sang kho riêng giữ nguyên định danh của người dùng, và tài
- *   khoản sinh ra ngay trong kho riêng (ví dụ quản trị đầu tiên
- *   do cấp phát tạo) chỉ có một định danh duy nhất là định danh
- *   tại kho đích — nên cả `globalUserId` lẫn `spaceUserId` của
- *   mỗi mục đều là định danh của membership tại kho đích.
+ * - Khoá theo định danh gốc: mô hình vật chất hoá tài khoản sang kho riêng giữ nguyên định danh của người dùng, và tài
+ *   khoản sinh ra ngay trong kho riêng (ví dụ quản trị đầu tiên do cấp phát tạo) chỉ có một định danh duy nhất là định
+ *   danh tại kho đích — nên cả `globalUserId` lẫn `spaceUserId` của mỗi mục đều là định danh của membership tại kho
+ *   đích.
  * - Chạy lại an toàn: mọi ghi đều là upsert theo khoá tự nhiên
  *   của bảng thư mục — chạy lại không sinh mục trùng.
  * - Va chạm mã tham gia (mã đã thuộc về một không gian khác)

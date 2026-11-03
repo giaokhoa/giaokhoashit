@@ -22,10 +22,8 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser, getFirstS
  *    góp ma trận đã rút bị chặn ở cổng ready như thường lệ.
  *  - khôi phục: về ready + truy vết xoá sạch; khôi phục khi chưa
  *    rút → 409 not_withdrawn.
- *  - mặc định tạo mới theo quy tắc hoàn thiện giữ nguyên hiện
- *    trạng: đề tạo từ rỗng vào draft, ma trận tạo từ rỗng vào
- *    draft (kênh máy AI/MCP vào draft và câu hỏi vào ready đã có
- *    spec riêng ở các lát trước).
+ *  - mặc định tạo mới theo quy tắc hoàn thiện giữ nguyên hiện trạng: đề tạo từ rỗng vào draft, ma trận tạo từ rỗng vào
+ *    draft (kênh máy AI/MCP vào draft và câu hỏi vào ready đã có spec riêng ở các lát trước).
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });

@@ -22,10 +22,8 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Ca đầu-cuối của HẠNG MỤC 3 — tiền điều kiện Phần B (issue #587):
- * các lượt đọc phía quản trị tenant, bộ chọn trung tâm và mã tham
- * gia lớp phải tới được dữ kiện của một trung tâm đã chuyển sang
- * kho riêng, theo thiết kế A1+B1+C1:
+ * Ca đầu-cuối của HẠNG MỤC 3 — tiền điều kiện Phần B (issue #587): các lượt đọc phía quản trị tenant, bộ chọn trung tâm
+ * và mã tham gia lớp phải tới được dữ kiện của một trung tâm đã chuyển sang kho riêng, theo thiết kế A1+B1+C1:
  * - A1: lượt đọc quản trị (thông tin tenant, danh sách thành
  *   viên, danh sách người dùng) phân giải tenant → slug qua sổ
  *   đăng ký rồi chạy tại kho đích của tenant đó;
@@ -36,14 +34,11 @@ import {
  *   trước, toàn bộ bước ghi của luồng tham gia chạy trong kho
  *   của lớp.
  *
- * Bối cảnh dựng như các spec kho riêng trước (#584/#587 Phần A):
- * một trung tâm kiểm chứng ở kho riêng dựng riêng cho đợt này
- * (database + role riêng trên cụm test, baseline áp bằng role
- * chủ kho), sổ đăng ký ở database control plane riêng mà ứng
- * dụng đọc qua `CONTROL_PLANE_DATABASE_URL`. Trạng thái "đã di
- * trú" được dựng bằng cách tạo dữ kiện qua API ở kho chung rồi
- * sao dòng sang kho riêng và xoá khỏi kho chung — đúng ba ca
- * thí điểm từng trượt trước khi có hạng mục này:
+ * Bối cảnh dựng như các spec kho riêng trước (#584/#587 Phần A): một trung tâm kiểm chứng ở kho riêng dựng riêng cho
+ * đợt này (database + role riêng trên cụm test, baseline áp bằng role chủ kho), sổ đăng ký ở database control plane
+ * riêng mà ứng dụng đọc qua `CONTROL_PLANE_DATABASE_URL`. Trạng thái "đã di trú" được dựng bằng cách tạo dữ kiện qua
+ * API ở kho chung rồi sao dòng sang kho riêng và xoá khỏi kho chung — đúng ba ca thí điểm từng trượt trước khi có hạng
+ * mục này:
  * (1) quản trị trung tâm mở danh sách thành viên/người dùng của
  *     trung tâm mình và nhận RỖNG GIẢ dù membership chỉ còn ở
  *     kho đích;
@@ -51,12 +46,9 @@ import {
  *     đã di trú khỏi danh sách;
  * (3) học viên của trung tâm tham gia lớp bằng mã bị từ chối
  *     `class.join_code_invalid` vì mã chỉ tồn tại ở kho đích.
- * Kèm các khoá phụ: điểm ghi duy trì thư mục (tạo người dùng
- * trong kho riêng, thêm thành viên, đổi trạng thái) cập nhật
- * thư mục trong cùng thao tác; công cụ lấp thư mục chạy lại
- * không sinh trùng và báo cáo va chạm mã thay vì ghi đè; thư
- * mục trỏ tới kho đích không chuẩn bị được thì lỗi tường minh
- * chứ không trả rỗng giả.
+ * Kèm các khoá phụ: điểm ghi duy trì thư mục (tạo người dùng trong kho riêng, thêm thành viên, đổi trạng thái) cập nhật
+ * thư mục trong cùng thao tác; công cụ lấp thư mục chạy lại không sinh trùng và báo cáo va chạm mã thay vì ghi đè; thư
+ * mục trỏ tới kho đích không chuẩn bị được thì lỗi tường minh chứ không trả rỗng giả.
  */
 const CP_DATABASE = 'lms_test_cp_td3';
 const CP_ROLE = 'lms_cp_test_td3';
@@ -127,7 +119,10 @@ async function applyBusinessBaseline(connectionString: string): Promise<void> {
   await applySqlFile(connectionString, baseline, true);
 }
 
-/** Sao một dòng (đọc từ kho chung) vào cùng bảng ở kho đích với nguyên bộ cột — mô phỏng phần dữ kiện đã di trú của trung tâm. */
+/**
+ * Sao một dòng (đọc từ kho chung) vào cùng bảng ở kho đích với nguyên bộ cột — mô phỏng phần dữ kiện đã di trú của
+ * trung tâm.
+ */
 async function copyRow(
   sourceUrl: string,
   targetUrl: string,

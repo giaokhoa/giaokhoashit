@@ -286,37 +286,24 @@ export class QuizMatricesService {
    * Ghi NGUYÊN TỬ một ma trận từ kết quả parse HỢP LỆ của đường nhập file (lát I-2, issue #233) — đầu ghi duy nhất của
    * luồng nhập:
    *
-   * 1. Đối chiếu cặp môn/chương trình như {@link createMatrix} bằng
-   *    đường đọc tham chiếu nội bộ (môn/chương trình chỉ là dữ liệu
-   *    tham chiếu của thao tác ghi). Cổng quyền của luồng là cổng
-   *    bank cá nhân {@link requirePersonalMatrixBankManage}: đã chạy
-   *    ở bước parse của chính request ghi
-   *    (MatrixImportService.previewImport) và chạy lại tại đây ngay
-   *    trước khi ghi — KHÔNG có cổng nào tại context của môn. 2. Bank đích = bank ma trận CÁ NHÂN của người nhập (tạo
-   *    lười như
-   *    đường copy mẫu); quyền ghi tại bank chốt bằng bộ quyền
-   *    bank-local như nhánh gắn bank của createMatrix; `tenant_id`
-   *    của ma trận suy từ bank (schema đã chốt: tenant suy từ bank
-   *    chủ). Ma trận vào bank ở trạng thái `draft`, không phải mẫu —
-   *    cùng vị thế với ma trận tạo tay, muốn lên bank chung phải đi
-   *    đường copy/đóng góp hiện có. 3. CHỐNG GHI TRÙNG hai tầng (lát schema của issue #233 đóng cửa
-   *    sổ đua của tầng một): tầng một đối chiếu chữ ký nội dung với
-   *    các ma trận chính người nhập đã có trong bank đích — trùng
-   *    toàn bộ thì trả ngay ma trận đã có, KHÔNG tạo bản thứ hai
-   *    (gửi lại cùng một file do double submit/retry không nhân đôi
-   *    dữ liệu). Tầng hai là ràng buộc duy nhất (bank_id,
-   *    content_signature) ở DB: chữ ký được ghi xuống cột
-   *    `content_signature` ngay trong transaction tạo ma trận, nên
-   *    hai request trùng chạy ĐỒNG THỜI tuyệt đối cũng chỉ một
-   *    transaction thắng; transaction thua chạm ràng buộc, rollback
-   *    toàn bộ, rồi đọc lại ma trận thắng cuộc theo (bank, chữ ký)
-   *    và trả về — người dùng không nhận lỗi, đúng hành vi "trùng
-   *    toàn bộ thì trả bản đã có". 4. Ghi ma trận + toàn bộ ô trong MỘT transaction: bất kỳ lỗi nào
-   *    giữa chừng (khoá ngoại, ràng buộc duy nhất của ô, check của
-   *    DB) đều rollback toàn bộ — không để lại ma trận mồ côi hay ô
-   *    ghi dở. Sự kiện outbox `exam_matrix_created` phát SAU khi
-   *    transaction đã commit, như createMatrix; riêng request thua
-   *    cuộc ở bước 3 không phát sự kiện vì không tạo dữ liệu nào.
+   * 1. Đối chiếu cặp môn/chương trình như {@link createMatrix} bằng đường đọc tham chiếu nội bộ (môn/chương trình chỉ
+   *    là dữ liệu tham chiếu của thao tác ghi). Cổng quyền của luồng là cổng bank cá nhân {@link
+   *    requirePersonalMatrixBankManage}: đã chạy ở bước parse của chính request ghi (MatrixImportService.previewImport)
+   *    và chạy lại tại đây ngay trước khi ghi — KHÔNG có cổng nào tại context của môn. 2. Bank đích = bank ma trận CÁ
+   *    NHÂN của người nhập (tạo lười như đường copy mẫu); quyền ghi tại bank chốt bằng bộ quyền bank-local như nhánh
+   *    gắn bank của createMatrix; `tenant_id` của ma trận suy từ bank (schema đã chốt: tenant suy từ bank chủ). Ma trận
+   *    vào bank ở trạng thái `draft`, không phải mẫu — cùng vị thế với ma trận tạo tay, muốn lên bank chung phải đi
+   *    đường copy/đóng góp hiện có. 3. CHỐNG GHI TRÙNG hai tầng (lát schema của issue #233 đóng cửa sổ đua của tầng
+   *    một): tầng một đối chiếu chữ ký nội dung với các ma trận chính người nhập đã có trong bank đích — trùng toàn bộ
+   *    thì trả ngay ma trận đã có, KHÔNG tạo bản thứ hai (gửi lại cùng một file do double submit/retry không nhân đôi
+   *    dữ liệu). Tầng hai là ràng buộc duy nhất (bank_id, content_signature) ở DB: chữ ký được ghi xuống cột
+   *    `content_signature` ngay trong transaction tạo ma trận, nên hai request trùng chạy ĐỒNG THỜI tuyệt đối cũng chỉ
+   *    một transaction thắng; transaction thua chạm ràng buộc, rollback toàn bộ, rồi đọc lại ma trận thắng cuộc theo
+   *    (bank, chữ ký) và trả về — người dùng không nhận lỗi, đúng hành vi "trùng toàn bộ thì trả bản đã có". 4. Ghi ma
+   *    trận + toàn bộ ô trong MỘT transaction: bất kỳ lỗi nào giữa chừng (khoá ngoại, ràng buộc duy nhất của ô, check
+   *    của DB) đều rollback toàn bộ — không để lại ma trận mồ côi hay ô ghi dở. Sự kiện outbox `exam_matrix_created`
+   *    phát SAU khi transaction đã commit, như createMatrix; riêng request thua cuộc ở bước 3 không phát sự kiện vì
+   *    không tạo dữ liệu nào.
    *
    * @returns View ma trận (mới tạo, hoặc bản đã có khi trùng nội dung).
    * @throws BadRequestException khi chương trình không thuộc môn.
@@ -335,13 +322,10 @@ export class QuizMatricesService {
       throw new BadRequestException({ message: 'Curriculum does not belong to the subject', code: 'quiz.matrix_curriculum_mismatch' });
     }
     const bank = await this.requirePersonalMatrixBankManage(actorId);
-    // Bước chống ghi trùng: chỉ đối chiếu ma trận của CHÍNH người
-    // nhập trong bank đích có cùng định danh thô (tên/môn/chương
-    // trình) rồi mới so chữ ký đầy đủ kèm ô — tránh nạp ô của mọi ma
-    // trận trong bank. Bản ghi đã có chữ ký ghi ở cột
-    // `content_signature` thì so thẳng theo cột (không cần nạp ô);
-    // bản ghi lịch sử chưa lấp chữ ký (cột null) mới tính lại từ ô đã
-    // lưu — cùng một thuật toán nên hai cách cho cùng một kết quả.
+    // Bước chống ghi trùng: chỉ đối chiếu ma trận của CHÍNH người nhập trong bank đích có cùng định danh thô
+    // (tên/môn/chương trình) rồi mới so chữ ký đầy đủ kèm ô — tránh nạp ô của mọi ma trận trong bank. Bản ghi đã có chữ
+    // ký ghi ở cột `content_signature` thì so thẳng theo cột (không cần nạp ô); bản ghi lịch sử chưa lấp chữ ký (cột
+    // null) mới tính lại từ ô đã lưu — cùng một thuật toán nên hai cách cho cùng một kết quả.
     const signature = this.importedMatrixSignature(input);
     const candidates = (await this.repo.listMatricesByBank(bank.id))
       .filter((r) => r.createdBy === actorId && r.name === input.name
@@ -485,16 +469,13 @@ export class QuizMatricesService {
    * và KHÔNG còn cổng `matrix:use` tại context của môn ở đầu hàm; hai cổng neo-tại-môn đó từng trả 403 cho mọi giáo
    * viên làm việc với môn hệ thống dù họ có đầy đủ quyền tại bank chứa ma trận (issue #376). Sau khi lấy toàn bộ ma
    * trận của môn, phân quyền là phép lọc theo từng ma trận:
-   * - Ma trận có bank: chỉ xuất hiện khi người tìm có quyền đọc
-   *   bank-local tại bank đó (`bankLocalMatrixCaps.view` sau khi đồng
-   *   bộ thành viên). Bank personal của người khác bị loại khỏi danh
-   *   sách như trước (issue #123) — danh sách theo môn không được rò
-   *   ma trận riêng; bank dùng chung mà người tìm không phải thành
-   *   viên và không có quyền dùng cũng không xuất hiện.
-   * - Ma trận chưa thuộc bank nào (hoặc bank đã bị xoá): quy tắc
-   *   legacy — `PermissionEvaluator` với `matrix:use` tại context của
-   *   chính ma trận (`matrix.contextId`). Hệ quả: người không có quyền ở bất kỳ bank liên quan nào nhận danh sách rỗng
-   *   thay vì 403 vì context của môn.
+   * - Ma trận có bank: chỉ xuất hiện khi người tìm có quyền đọc bank-local tại bank đó (`bankLocalMatrixCaps.view` sau
+   *   khi đồng bộ thành viên). Bank personal của người khác bị loại khỏi danh sách như trước (issue #123) — danh sách
+   *   theo môn không được rò ma trận riêng; bank dùng chung mà người tìm không phải thành viên và không có quyền dùng
+   *   cũng không xuất hiện.
+   * - Ma trận chưa thuộc bank nào (hoặc bank đã bị xoá): quy tắc legacy — `PermissionEvaluator` với `matrix:use` tại
+   *   context của chính ma trận (`matrix.contextId`). Hệ quả: người không có quyền ở bất kỳ bank liên quan nào nhận
+   *   danh sách rỗng thay vì 403 vì context của môn.
    */
   async listMatrices(actorId: string, subjectId: string): Promise<ExamMatrixView[]> {
     const subject = await this.curriculum.getSubjectReference(subjectId);
@@ -732,15 +713,12 @@ export class QuizMatricesService {
    * Sinh VERSION MỚI bất biến cho một ma trận đã rời draft khi nội dung thay đổi (luật version hoá — thay cho cơ chế
    * chỉ tăng số version trước đây):
    *
-   * 1. Chụp cấu hình nội dung MỚI vào hàng version (số = hiện hành
-   *    + 1) — với sửa tầng ô, cấu hình mới chính là cấu hình hiện
-   *    tại; với sửa tầng ma trận, là cấu hình sau patch. 2. Sao TOÀN BỘ ô của version hiện hành sang version mới (danh
-   *    tính ô mới, cùng khoá tự nhiên) — thao tác sửa ô sau đó chỉ
-   *    đụng bản sao; version cũ giữ nguyên từng ô để bản đặc tả đã
-   *    nộp và đề đã sinh đọc lại đúng nội dung tại thời điểm của
-   *    chúng. 3. Tăng exam_matrices.version lên số mới (các cột cấu hình trên
-   *    exam_matrices vẫn là bản hiện hành do updateMatrix áp patch
-   *    ngay sau fork trong cùng transaction).
+   * 1. Chụp cấu hình nội dung MỚI vào hàng version (số = hiện hành + 1) — với sửa tầng ô, cấu hình mới chính là cấu
+   *    hình hiện tại; với sửa tầng ma trận, là cấu hình sau patch. 2. Sao TOÀN BỘ ô của version hiện hành sang version
+   *    mới (danh tính ô mới, cùng khoá tự nhiên) — thao tác sửa ô sau đó chỉ đụng bản sao; version cũ giữ nguyên từng ô
+   *    để bản đặc tả đã nộp và đề đã sinh đọc lại đúng nội dung tại thời điểm của chúng. 3. Tăng exam_matrices.version
+   *    lên số mới (các cột cấu hình trên exam_matrices vẫn là bản hiện hành do updateMatrix áp patch ngay sau fork
+   *    trong cùng transaction).
    *
    * Chỉ gọi trong transaction do hàm bao mở. Ma trận còn draft KHÔNG đi qua đây: draft sửa tại chỗ trên version đang mở
    * (version chỉ bắt đầu bất biến từ khi ma trận rời draft — cùng mốc mà luật cũ bắt đầu tăng số version).

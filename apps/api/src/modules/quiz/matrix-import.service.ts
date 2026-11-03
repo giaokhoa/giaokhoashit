@@ -2,35 +2,24 @@
  * Nhập ma trận đề từ file .xlsx (chuỗi lát I-1 → I-2 → I-3 trên issue #233, theo hồ sơ
  * `matrix-import-research-2026-10-26.md` đã đối chiếu sổ quyết định mục B).
  *
- * Flow tổng thể của lát I-1 (file này): 1. Giáo viên chọn (môn, chương trình, phạm vi ĐVK, checkbox Vận dụng
- *    cao) → {@link MatrixImportService.buildTemplate} sinh workbook
- *    mẫu 3 sheet (`Hướng dẫn` / `Ma trận` / `Đặc tả`) đã điền sẵn danh
- *    sách hàng theo ĐƠN VỊ KIẾN THỨC của chương trình: cột khoá
- *    "Mã ĐVK" = id của `curriculum_nodes` (hệ không có mã vị trí cho
- *    node như YCCĐ nên id là khoá neo duy nhất — sổ chốt 05:33 ngày
- *    26/10: file nhập ma trận khoá theo ĐVK, KHÔNG dùng UUID của
- *    YCCĐ), kèm tên chủ đề/ĐVK và nguyên văn các YCCĐ thuộc ĐVK để
- *    giáo viên đối chiếu khi điền số. Giáo viên chỉ điền: tên ma trận,
- *    tổng điểm, điểm mỗi câu theo dạng và số câu/chùm vào lưới. 2. Giáo viên tải file đã điền lên → {@link
- *    MatrixImportService.previewImport} parse lại workbook, kiểm lỗi
- *    hai tầng (lỗi cứng định vị theo sheet/dòng/cột + cảnh báo tỉ lệ
- *    theo tinh thần chữ "khoảng" của chú thích 5 CV 7991), tính lại
- *    tổng hai chiều từ các ô (KHÔNG tin công thức trong file), đối
- *    chiếu từng Mã ĐVK với `curriculum_nodes` thật của chương trình
- *    trong file và đính khả dụng ngân hàng theo từng ô dự thảo. 3. Lát I-1 KHÔNG ghi DB: preview chỉ là kết quả kiểm.
- *    Lát I-2
- *    ({@link MatrixImportService.commitImport}) nhận lại chính file,
- *    chạy lại toàn bộ bước 2 tại thời điểm ghi rồi mới ghi nguyên tử
- *    (tạo `exam_matrices` + cells trong một transaction qua
- *    `QuizService.createMatrixFromImport`); luồng web 5 bước là lát
- *    I-3.
+ * Flow tổng thể của lát I-1 (file này): 1. Giáo viên chọn (môn, chương trình, phạm vi ĐVK, checkbox Vận dụng cao) →
+ * {@link MatrixImportService.buildTemplate} sinh workbook mẫu 3 sheet (`Hướng dẫn` / `Ma trận` / `Đặc tả`) đã điền sẵn
+ * danh sách hàng theo ĐƠN VỊ KIẾN THỨC của chương trình: cột khoá "Mã ĐVK" = id của `curriculum_nodes` (hệ không có mã
+ * vị trí cho node như YCCĐ nên id là khoá neo duy nhất — sổ chốt 05:33 ngày 26/10: file nhập ma trận khoá theo ĐVK,
+ * KHÔNG dùng UUID của YCCĐ), kèm tên chủ đề/ĐVK và nguyên văn các YCCĐ thuộc ĐVK để giáo viên đối chiếu khi điền số.
+ * Giáo viên chỉ điền: tên ma trận, tổng điểm, điểm mỗi câu theo dạng và số câu/chùm vào lưới. 2. Giáo viên tải file đã
+ * điền lên → {@link MatrixImportService.previewImport} parse lại workbook, kiểm lỗi hai tầng (lỗi cứng định vị theo
+ * sheet/dòng/cột + cảnh báo tỉ lệ theo tinh thần chữ "khoảng" của chú thích 5 CV 7991), tính lại tổng hai chiều từ các
+ * ô (KHÔNG tin công thức trong file), đối chiếu từng Mã ĐVK với `curriculum_nodes` thật của chương trình trong file và
+ * đính khả dụng ngân hàng theo từng ô dự thảo. 3. Lát I-1 KHÔNG ghi DB: preview chỉ là kết quả kiểm. Lát I-2 ({@link
+ * MatrixImportService.commitImport}) nhận lại chính file, chạy lại toàn bộ bước 2 tại thời điểm ghi rồi mới ghi nguyên
+ * tử (tạo `exam_matrices` + cells trong một transaction qua `QuizService.createMatrixFromImport`); luồng web 5 bước là
+ * lát I-3.
  *
- * Bất biến giữ ở mọi đường: ô ma trận neo ĐVK × mức × dạng (ma trận
- * KHÔNG gắn YCCĐ — đính chính #249 đã thi hành ở PR #259); với dạng
- * Đúng–Sai, số trong ô là số CHÙM (1 chùm = 4 ý, chú thích 2 CV 7991);
- * điểm của ô = số lượng × điểm-mỗi-câu của dạng khai ở khối thông tin
- * chung; bộ mức là 3 mức CV 7991, cột Vận dụng cao chỉ tồn tại khi
- * file khai "Có" ở trường checkbox và lưới cột phải khớp khai đó.
+ * Bất biến giữ ở mọi đường: ô ma trận neo ĐVK × mức × dạng (ma trận KHÔNG gắn YCCĐ — đính chính #249 đã thi hành ở PR
+ * #259); với dạng Đúng–Sai, số trong ô là số CHÙM (1 chùm = 4 ý, chú thích 2 CV 7991); điểm của ô = số lượng ×
+ * điểm-mỗi-câu của dạng khai ở khối thông tin chung; bộ mức là 3 mức CV 7991, cột Vận dụng cao chỉ tồn tại khi file
+ * khai "Có" ở trường checkbox và lưới cột phải khớp khai đó.
  */
 import { BadRequestException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import ExcelJS from 'exceljs';
@@ -411,31 +400,20 @@ export class MatrixImportService {
 
   /**
    * Parse một file .xlsx đã điền và trả kết quả XEM TRƯỚC — không ghi DB. Luồng: 1. Đọc workbook bằng exceljs; lỗi
-   * đọc/thiếu sheet `Ma trận`/thiếu
-   *    hàng tiêu đề lưới → lỗi cứng cấp file, dừng sớm. 2. Trích khối thông tin chung theo nhãn cố định; kiểm các
-   *    trường
-   *    bắt buộc và tính khớp giữa trường checkbox Vận dụng cao với
-   *    lưới cột thực tế (khai "Có" mà không có cột VDC — hoặc ngược
-   *    lại — là lỗi cứng yêu cầu sinh lại mẫu, không tự suy diễn). 3. Gác cổng bank cá nhân của luồng nhập (ném 403
-   *    thẳng ra ngoài
-   *    như mọi cổng quyền — người không đủ tư cách không đi tiếp
-   *    được và không nhận được tín hiệu nào về dữ liệu môn), rồi đối
-   *    chiếu môn/chương trình trong file với dữ liệu thật bằng đường
-   *    đọc tham chiếu nội bộ: phải tồn tại và đi đúng cặp; "không
-   *    tồn tại thật" dịch thành lỗi định vị trong payload như cũ,
-   *    mọi lỗi khác truyền thẳng — không còn nuốt lỗi thành "môn
-   *    không tồn tại" như khi đọc qua đường công khai bị gác quyền. 4. Đối chiếu từng Mã ĐVK với `curriculum_nodes` của
-   *    đúng chương
-   *    trình đó (không tồn tại/không phải đơn vị kiến thức/trùng hàng
-   *    → lỗi cứng tại dòng); kiểm từng ô số là số nguyên ≥ 0; dạng nào
-   *    có câu mà thiếu điểm-mỗi-câu → lỗi cứng; tính lại tổng điểm
-   *    hai chiều từ các ô và so với tổng đã khai (lệch quá dung sai là
-   *    lỗi cứng kèm bảng tổng tính lại trong thông điệp). 5. Cảnh báo tỉ lệ qua `matrixWarnings` với mốc CV 7991 (điều
-   *    chỉnh chú thích 3: môn không dùng Trả lời ngắn thì mốc Đúng–Sai
-   *    là 40%; khi bật VDC thì chỉ cảnh báo trên tổng Vận dụng +
-   *    Vận dụng cao so mốc 30% — văn bản không cho mốc riêng cho VDC)
-   *    + cảnh báo hàng ĐVK không có ô nào. 6. Đính khả dụng ngân hàng cho từng ô dự thảo (cần/có/thiếu —
-   *    cảnh báo thuần thông tin).
+   * đọc/thiếu sheet `Ma trận`/thiếu hàng tiêu đề lưới → lỗi cứng cấp file, dừng sớm. 2. Trích khối thông tin chung theo
+   * nhãn cố định; kiểm các trường bắt buộc và tính khớp giữa trường checkbox Vận dụng cao với lưới cột thực tế (khai
+   * "Có" mà không có cột VDC — hoặc ngược lại — là lỗi cứng yêu cầu sinh lại mẫu, không tự suy diễn). 3. Gác cổng bank
+   * cá nhân của luồng nhập (ném 403 thẳng ra ngoài như mọi cổng quyền — người không đủ tư cách không đi tiếp được và
+   * không nhận được tín hiệu nào về dữ liệu môn), rồi đối chiếu môn/chương trình trong file với dữ liệu thật bằng đường
+   * đọc tham chiếu nội bộ: phải tồn tại và đi đúng cặp; "không tồn tại thật" dịch thành lỗi định vị trong payload như
+   * cũ, mọi lỗi khác truyền thẳng — không còn nuốt lỗi thành "môn không tồn tại" như khi đọc qua đường công khai bị gác
+   * quyền. 4. Đối chiếu từng Mã ĐVK với `curriculum_nodes` của đúng chương trình đó (không tồn tại/không phải đơn vị
+   * kiến thức/trùng hàng → lỗi cứng tại dòng); kiểm từng ô số là số nguyên ≥ 0; dạng nào có câu mà thiếu điểm-mỗi-câu →
+   * lỗi cứng; tính lại tổng điểm hai chiều từ các ô và so với tổng đã khai (lệch quá dung sai là lỗi cứng kèm bảng tổng
+   * tính lại trong thông điệp). 5. Cảnh báo tỉ lệ qua `matrixWarnings` với mốc CV 7991 (điều chỉnh chú thích 3: môn
+   * không dùng Trả lời ngắn thì mốc Đúng–Sai là 40%; khi bật VDC thì chỉ cảnh báo trên tổng Vận dụng + Vận dụng cao so
+   * mốc 30% — văn bản không cho mốc riêng cho VDC) + cảnh báo hàng ĐVK không có ô nào. 6. Đính khả dụng ngân hàng cho
+   * từng ô dự thảo (cần/có/thiếu — cảnh báo thuần thông tin).
    *
    * @returns Cấu trúc `MatrixImportPreview` (contracts): `valid` chỉ
    *   true khi không còn lỗi cứng nào.
@@ -643,27 +621,18 @@ export class MatrixImportService {
   /**
    * GHI ma trận từ file đã điền (lát I-2) — đầu chốt của luồng nhập:
    *
-   * 1. Parse lại CHÍNH file tải lên bằng đúng đường của bước xem
-   *    trước ({@link previewImport}): toàn bộ luật hợp lệ chạy lại ở
-   *    phía server tại thời điểm ghi — lỗi cứng hai tầng, tính lại
-   *    điểm ô/tổng, khả dụng ngân hàng, và cổng bank cá nhân của
-   *    luồng (ném 403 khi người gọi không phụ trách được bank ma
-   *    trận cá nhân của mình). KHÔNG tin dữ liệu phía client gửi kèm
-   *    (kể cả khi client nói "đã xem trước"): file là nguồn sự thật
-   *    duy nhất. 2. Kết quả parse không còn hợp lệ (file bị sửa tay sau xem trước
-   *    mà vi phạm luật) → TỪ CHỐI ghi toàn bộ: ném
-   *    `UnprocessableEntityException` 422 mang mã
-   *    `quiz.matrix_import_invalid` + danh sách lỗi cứng định vị
-   *    trong extension member `matrixImportIssues` của ProblemDetails
-   *    (đúng hình dạng lỗi của bước xem trước để web hiển thị lại
-   *    bảng lỗi). Chưa một bản ghi nào được tạo ở bước này. 3. Hợp lệ → uỷ quyền ghi cho
-   *    `QuizService.createMatrixFromImport`:
-   *    ma trận mới + toàn bộ ô trong MỘT transaction vào bank ma trận
-   *    cá nhân của người nhập (draft; chống ghi trùng theo chữ ký nội
-   *    dung — xem TSDoc của hàm đó). `position` của mỗi ô = số thứ tự
-   *    hàng của ĐVK trong file (hồ sơ import: position của ô là STT
-   *    của hàng); phạm vi của ma trận = đúng tập ĐVK có hàng trong
-   *    file theo thứ tự file.
+   * 1. Parse lại CHÍNH file tải lên bằng đúng đường của bước xem trước ({@link previewImport}): toàn bộ luật hợp lệ
+   *    chạy lại ở phía server tại thời điểm ghi — lỗi cứng hai tầng, tính lại điểm ô/tổng, khả dụng ngân hàng, và cổng
+   *    bank cá nhân của luồng (ném 403 khi người gọi không phụ trách được bank ma trận cá nhân của mình). KHÔNG tin dữ
+   *    liệu phía client gửi kèm (kể cả khi client nói "đã xem trước"): file là nguồn sự thật duy nhất. 2. Kết quả parse
+   *    không còn hợp lệ (file bị sửa tay sau xem trước mà vi phạm luật) → TỪ CHỐI ghi toàn bộ: ném
+   *    `UnprocessableEntityException` 422 mang mã `quiz.matrix_import_invalid` + danh sách lỗi cứng định vị trong
+   *    extension member `matrixImportIssues` của ProblemDetails (đúng hình dạng lỗi của bước xem trước để web hiển thị
+   *    lại bảng lỗi). Chưa một bản ghi nào được tạo ở bước này. 3. Hợp lệ → uỷ quyền ghi cho
+   *    `QuizService.createMatrixFromImport`: ma trận mới + toàn bộ ô trong MỘT transaction vào bank ma trận cá nhân của
+   *    người nhập (draft; chống ghi trùng theo chữ ký nội dung — xem TSDoc của hàm đó). `position` của mỗi ô = số thứ
+   *    tự hàng của ĐVK trong file (hồ sơ import: position của ô là STT của hàng); phạm vi của ma trận = đúng tập ĐVK có
+   *    hàng trong file theo thứ tự file.
    *
    * @returns View ma trận đã ghi (hoặc bản đã có khi trùng nội dung).
    * @throws UnprocessableEntityException 422 khi file không hợp lệ

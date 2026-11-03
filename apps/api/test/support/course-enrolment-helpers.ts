@@ -18,12 +18,10 @@ export async function createClass(app: INestApplication, token: string, override
 }
 
 /**
- * Lớp fixture dùng chung cho createCourse: từ cửa sổ đóng gói CLASS-0
- * (PR #200), khoá dạy thật BẮT BUỘC thuộc một lớp (`course.class_required`
- * + CHECK ở DB) nên helper tạo khoá phải cấp một lớp cho token nếu
- * overrides chưa mang classId. Cache theo (app, token): một lớp cho mỗi
- * danh tính/tenant hiệu lực — token khác nhau (hoặc sau switch-tenant)
- * là lớp khác nhau.
+ * Lớp fixture dùng chung cho createCourse: từ cửa sổ đóng gói CLASS-0 (PR #200), khoá dạy thật BẮT BUỘC thuộc một lớp
+ * (`course.class_required` + CHECK ở DB) nên helper tạo khoá phải cấp một lớp cho token nếu overrides chưa mang
+ * classId. Cache theo (app, token): một lớp cho mỗi danh tính/tenant hiệu lực — token khác nhau (hoặc sau
+ * switch-tenant) là lớp khác nhau.
  */
 const fixtureClassByToken = new WeakMap<INestApplication, Map<string, Promise<string>>>();
 

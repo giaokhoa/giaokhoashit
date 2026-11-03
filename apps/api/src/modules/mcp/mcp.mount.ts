@@ -15,12 +15,10 @@ import { tenantAls } from '../tenants/tenant-als';
  * (better-auth.mount.ts): đăng ký TRƯỚC route + body parser của Nest để request tới /mcp đến tay handler ở dạng thô.
  * MCP có không gian URL riêng, KHÔNG nằm dưới /api/v1:
  *
- *   POST /mcp — endpoint Streamable HTTP duy nhất, một endpoint hai kỷ
- *     nguyên (modern 2026-07-28 stateless + legacy 2025-11-25) qua
- *     createMcpHandler của SDK v2 (`legacy: 'stateless'`).
- *   GET /.well-known/oauth-protected-resource[/mcp] — Protected Resource
- *     Metadata (RFC 9728) trỏ tới issuer cấu hình (MCP_AUTH_ISSUER;
- *     mặc định = chính origin này — AS đầy đủ là lát MCP-1).
+ * POST /mcp — endpoint Streamable HTTP duy nhất, một endpoint hai kỷ nguyên (modern 2026-07-28 stateless + legacy
+ * 2025-11-25) qua createMcpHandler của SDK v2 (`legacy: 'stateless'`). GET /.well-known/oauth-protected-resource[/mcp]
+ * — Protected Resource Metadata (RFC 9728) trỏ tới issuer cấu hình (MCP_AUTH_ISSUER; mặc định = chính origin này — AS
+ * đầy đủ là lát MCP-1).
  *
  * Lớp vận chuyển (validate lớp 0, hồ sơ research Phần 3.1) do mount chịu trước khi request chạm handler: body ≤ 256 KB,
  * JSON parse được, header Mcp-Method/Mcp-Name (client modern gửi) phải khớp method/tên tool trong body (lệch → lỗi
@@ -220,10 +218,9 @@ export function mountMcp(app: NestExpressApplication, deps: McpMountDeps): void 
       }
       // Token phải hợp lệ trước khi bất kỳ tool nào chạy (research 3.1 lớp 0). Hai đường auth, chọn theo deps (lát
       // MCP-1):
-      // - AS bật (deps.oauthVerifier): RS thật — verifier của plugin
-      //   kiểm chữ ký JWKS + iss/aud + hạn; scope + client_id lấy từ
-      //   CHÍNH token; tài khoản phải còn hoạt động qua resolveActor
-      //   (cùng nghĩa kiểm tra trong cầu bridge).
+      // - AS bật (deps.oauthVerifier): RS thật — verifier của plugin kiểm chữ ký JWKS + iss/aud + hạn; scope +
+      //   client_id lấy từ CHÍNH token; tài khoản phải còn hoạt động qua resolveActor (cùng nghĩa kiểm tra trong cầu
+      //   bridge).
       // - AS tắt: đường lùi cầu auth MCP-0 (token JWT hệ thống HS256,
       //   trần scope = BRIDGE_SCOPES) — giữ nguyên hành vi MCP-0.
       let identity: { userId: string; username: string; tenantId: string | null };

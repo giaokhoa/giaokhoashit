@@ -44,7 +44,11 @@ export class ClassesController {
   }
 
   @Get()
-  /** GET /classes — các lớp của tenant hiệu lực mà người gọi có liên hệ (chủ lớp / vai tại lớp / thành viên roster); quản trị tenant thấy toàn bộ. Mỗi dòng kèm bốn cờ khả năng do server suy cho đúng người gọi (tạo lớp / sửa / xoá / quản roster) để web vẽ hành động theo vai; gác quyền thật vẫn ở từng endpoint ghi. */
+  /**
+   * GET /classes — các lớp của tenant hiệu lực mà người gọi có liên hệ (chủ lớp / vai tại lớp / thành viên roster);
+   * quản trị tenant thấy toàn bộ. Mỗi dòng kèm bốn cờ khả năng do server suy cho đúng người gọi (tạo lớp / sửa / xoá /
+   * quản roster) để web vẽ hành động theo vai; gác quyền thật vẫn ở từng endpoint ghi.
+   */
   async list(@CurrentUser() actor: AuthenticatedUser) {
     return this.classes.listClasses(actor.id);
   }
@@ -65,7 +69,10 @@ export class ClassesController {
   }
 
   @Post('join')
-  /** POST /classes/join — xin vào lớp bằng mã tham gia: vào thẳng khi lớp trống/lớp bật tự duyệt, còn lại vào hàng chờ duyệt. */
+  /**
+   * POST /classes/join — xin vào lớp bằng mã tham gia: vào thẳng khi lớp trống/lớp bật tự duyệt, còn lại vào hàng chờ
+   * duyệt.
+   */
   async join(@Body({ schema: joinClassByCodeSchema }) dto: JoinClassByCodeDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.classes.joinByCode(actor.id, dto.joinCode);
   }
@@ -77,13 +84,20 @@ export class ClassesController {
   }
 
   @Get(':id/overview')
-  /** GET /classes/:id/overview — gói tổng quan cho dashboard theo lớp (CLASS-2): quan hệ của người gọi với lớp + số học sinh + khoá đã lọc theo vai (học sinh chỉ nhận khoá mình đang ghi danh ACTIVE). */
+  /**
+   * GET /classes/:id/overview — gói tổng quan cho dashboard theo lớp (CLASS-2): quan hệ của người gọi với lớp + số học
+   * sinh + khoá đã lọc theo vai (học sinh chỉ nhận khoá mình đang ghi danh ACTIVE).
+   */
   async overview(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.classes.getClassOverview(actor.id, id);
   }
 
   @Get(':id/public')
-  /** GET /classes/:id/public — gói công khai của lớp (CLASS-3): thông tin lớp + gói học phí cho người CHƯA ghi danh xem và bắt đầu thanh toán; cờ `isMember`/`canPurchase` do server suy cho đúng người gọi (đã ghi danh ACTIVE thì không bị mời mua lại). */
+  /**
+   * GET /classes/:id/public — gói công khai của lớp (CLASS-3): thông tin lớp + gói học phí cho người CHƯA ghi danh xem
+   * và bắt đầu thanh toán; cờ `isMember`/`canPurchase` do server suy cho đúng người gọi (đã ghi danh ACTIVE thì không
+   * bị mời mua lại).
+   */
   async publicView(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.classes.getClassPublic(actor.id, id);
   }
@@ -107,7 +121,11 @@ export class ClassesController {
   }
 
   @Get(':id/roster')
-  /** GET /classes/:id/roster — danh sách học sinh của lớp (≡ cohort_members của backing cohort) kèm thông tin hiển thị; trường liên hệ (email, username) chỉ đầy đủ với người có quyền quản roster, các vai xem lớp còn lại nhận hai trường này đã làm rỗng. */
+  /**
+   * GET /classes/:id/roster — danh sách học sinh của lớp (≡ cohort_members của backing cohort) kèm thông tin hiển thị;
+   * trường liên hệ (email, username) chỉ đầy đủ với người có quyền quản roster, các vai xem lớp còn lại nhận hai trường
+   * này đã làm rỗng.
+   */
   async roster(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.classes.listRoster(actor.id, id);
   }
@@ -120,20 +138,29 @@ export class ClassesController {
   }
 
   @Post(':id/roster/identity')
-  /** POST /classes/:id/roster/identity — thêm học sinh bằng họ tên + email/SĐT: khớp tài khoản có sẵn hoặc tạo tài khoản mới kèm mật khẩu tạm. */
+  /**
+   * POST /classes/:id/roster/identity — thêm học sinh bằng họ tên + email/SĐT: khớp tài khoản có sẵn hoặc tạo tài khoản
+   * mới kèm mật khẩu tạm.
+   */
   async addToRosterByIdentity(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: rosterStudentIdentitySchema }) dto: RosterStudentIdentityDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.classes.addRosterStudentByIdentity(actor.id, id, dto);
   }
 
   @Post(':id/roster/import')
-  /** POST /classes/:id/roster/import — nạp roster từ danh sách dòng đã chuẩn hoá (web đọc file Excel rồi gửi lên); trả báo cáo từng dòng. */
+  /**
+   * POST /classes/:id/roster/import — nạp roster từ danh sách dòng đã chuẩn hoá (web đọc file Excel rồi gửi lên); trả
+   * báo cáo từng dòng.
+   */
   async importRoster(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: importClassRosterSchema }) dto: ImportClassRosterDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.classes.importRoster(actor.id, id, dto.rows);
   }
 
   @Post(':id/roster/import-file')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: ROSTER_UPLOAD_MAX_BYTES } }))
-  /** POST /classes/:id/roster/import-file — nạp roster trực tiếp từ file Excel (multipart, trường `file`); server đọc sheet đầu tiên và trả cùng báo cáo từng dòng như đường JSON. */
+  /**
+   * POST /classes/:id/roster/import-file — nạp roster trực tiếp từ file Excel (multipart, trường `file`); server đọc
+   * sheet đầu tiên và trả cùng báo cáo từng dòng như đường JSON.
+   */
   async importRosterFile(@Param('id', { schema: uuidIdSchema }) id: string, @UploadedFile() file: { buffer: Buffer } | undefined, @CurrentUser() actor: AuthenticatedUser) {
     if (!file) {
       throw new BadRequestException({ message: 'An .xlsx file is required in the multipart field "file"', code: 'class.import_file_required' });
@@ -143,14 +170,19 @@ export class ClassesController {
   }
 
   @Delete(':id/roster/:userId')
-  /** DELETE /classes/:id/roster/:userId — gỡ học sinh khỏi lớp; ghi danh ở các khoá bị đình chỉ/rút theo chế độ rời lớp. */
+  /**
+   * DELETE /classes/:id/roster/:userId — gỡ học sinh khỏi lớp; ghi danh ở các khoá bị đình chỉ/rút theo chế độ rời lớp.
+   */
   async removeFromRoster(@Param('id', { schema: uuidIdSchema }) id: string, @Param('userId', { schema: uuidIdSchema }) userId: string, @CurrentUser() actor: AuthenticatedUser) {
     await this.classes.removeFromRoster(actor.id, id, userId);
     return { removed: true };
   }
 
   @Get(':id/roster/suspended')
-  /** GET /classes/:id/roster/suspended — học sinh đã đình chỉ khỏi lớp (đã gỡ khỏi roster ở chế độ suspend, ghi danh đang SUSPENDED, giữ dữ liệu). */
+  /**
+   * GET /classes/:id/roster/suspended — học sinh đã đình chỉ khỏi lớp (đã gỡ khỏi roster ở chế độ suspend, ghi danh
+   * đang SUSPENDED, giữ dữ liệu).
+   */
   async suspendedMembers(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.classes.listSuspendedMembers(actor.id, id);
   }
@@ -161,13 +193,19 @@ export class ClassesController {
   }
 
   @Get(':id/staff')
-  /** GET /classes/:id/staff — chủ lớp + đồng GV giữ vai tại context lớp, kèm cờ khả năng của người gọi (phân quyền/quản roster). */
+  /**
+   * GET /classes/:id/staff — chủ lớp + đồng GV giữ vai tại context lớp, kèm cờ khả năng của người gọi (phân quyền/quản
+   * roster).
+   */
   async staff(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.classes.listStaff(actor.id, id);
   }
 
   @Post(':id/staff')
-  /** POST /classes/:id/staff — đặt lại bộ 3 vai lớp (giao bài / chấm bài / quản roster) cho một đồng GV; chỉ người có `class:share`. */
+  /**
+   * POST /classes/:id/staff — đặt lại bộ 3 vai lớp (giao bài / chấm bài / quản roster) cho một đồng GV; chỉ người có
+   * `class:share`.
+   */
   async setStaff(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: setClassStaffRolesSchema }) dto: SetClassStaffRolesDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.classes.setStaffRoles(actor.id, id, dto);
   }
@@ -178,13 +216,19 @@ export class ClassesController {
   }
 
   @Post(':id/join-requests/:requestId/approve')
-  /** POST /classes/:id/join-requests/:requestId/approve — duyệt yêu cầu tự báo danh: học sinh vào roster qua đúng đường ghi danh cấp lớp. */
+  /**
+   * POST /classes/:id/join-requests/:requestId/approve — duyệt yêu cầu tự báo danh: học sinh vào roster qua đúng đường
+   * ghi danh cấp lớp.
+   */
   async approveJoinRequest(@Param('id', { schema: uuidIdSchema }) id: string, @Param('requestId', { schema: uuidIdSchema }) requestId: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.classes.decideJoinRequest(actor.id, id, requestId, true);
   }
 
   @Post(':id/join-requests/:requestId/reject')
-  /** POST /classes/:id/join-requests/:requestId/reject — từ chối yêu cầu tự báo danh (chỉ đóng yêu cầu, không đụng roster). */
+  /**
+   * POST /classes/:id/join-requests/:requestId/reject — từ chối yêu cầu tự báo danh (chỉ đóng yêu cầu, không đụng
+   * roster).
+   */
   async rejectJoinRequest(@Param('id', { schema: uuidIdSchema }) id: string, @Param('requestId', { schema: uuidIdSchema }) requestId: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.classes.decideJoinRequest(actor.id, id, requestId, false);
   }

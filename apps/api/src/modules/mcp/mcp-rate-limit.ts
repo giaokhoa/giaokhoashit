@@ -1,9 +1,7 @@
 /**
- * Rate limit tối thiểu của MCP-0 (hồ sơ research Phần 3.3): đếm theo
- * (giáo viên, nhóm tool) trong cửa sổ một giờ, giữ trong tiến trình
- * (stateless theo request nên không cần kho dùng chung ở lát này;
- * MCP-1 khi mở cho giáo viên thật sẽ xét lại theo AS/token family).
- * Đọc: 300 req/giờ; create_question: 120 câu/giờ — cấu hình qua env
+ * Rate limit tối thiểu của MCP-0 (hồ sơ research Phần 3.3): đếm theo (giáo viên, nhóm tool) trong cửa sổ một giờ, giữ
+ * trong tiến trình (stateless theo request nên không cần kho dùng chung ở lát này; MCP-1 khi mở cho giáo viên thật sẽ
+ * xét lại theo AS/token family). Đọc: 300 req/giờ; create_question: 120 câu/giờ — cấu hình qua env
  * MCP_RATE_READ_PER_HOUR / MCP_RATE_CREATE_PER_HOUR.
  */
 export type McpRateBucket = 'read' | 'create' | 'publish';

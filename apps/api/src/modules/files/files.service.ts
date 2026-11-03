@@ -16,7 +16,8 @@ export interface UploadInput {
 /** Trần dung lượng cho MỘT ảnh nhúng trong nội dung câu hỏi (8 MB — ngang bản gốc giaokhoa). */
 export const QUESTION_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
-/** Định danh bền của một file trong nội dung rich text: đường content có gác quyền của chính module files. Nội dung câu
+/**
+ * Định danh bền của một file trong nội dung rich text: đường content có gác quyền của chính module files. Nội dung câu
  * hỏi lưu dạng này (không lưu URL ký — URL ký hết hạn sau 300 giây); khi phục vụ người đọc, tầng phục vụ gọi
  * `resolveQuestionImageUrls` để thay bằng URL ký còn hạn.
  */
@@ -39,10 +40,11 @@ export function sniffImageMimeType(data: Buffer): string | null {
   return null;
 }
 
-/** Facade của FilesModule (Moodle core_files). Các bản ghi logic trong `files` trỏ tới các byte vật lý được định địa
- * chỉ theo nội dung; nội dung giống hệt chỉ được lưu MỘT lần bất kể có bao nhiêu bản ghi tham chiếu tới nó. File không
- * bao giờ public theo đường dẫn: một lần tải xuống yêu cầu kiểm tra capability của context file trước, rồi hoặc dùng
- * một URL đã ký ngắn hạn hoặc một luồng stream có guard.
+/**
+ * Facade của FilesModule (Moodle core_files). Các bản ghi logic trong `files` trỏ tới các byte vật lý được định địa chỉ
+ * theo nội dung; nội dung giống hệt chỉ được lưu MỘT lần bất kể có bao nhiêu bản ghi tham chiếu tới nó. File không bao
+ * giờ public theo đường dẫn: một lần tải xuống yêu cầu kiểm tra capability của context file trước, rồi hoặc dùng một
+ * URL đã ký ngắn hạn hoặc một luồng stream có guard.
  */
 @Injectable()
 /** Dịch vụ file kiểu Moodle: upload, dedup theo contentHash, tải xuống theo quyền context, URL ký tạm thời và dọn nội
@@ -70,7 +72,8 @@ export class FilesService {
     });
   }
 
-  /** Tải MỘT ảnh nhúng cho nội dung câu hỏi (component 'question'): kiểm dung lượng và loại ảnh bằng magic bytes TRƯỚC
+  /**
+   * Tải MỘT ảnh nhúng cho nội dung câu hỏi (component 'question'): kiểm dung lượng và loại ảnh bằng magic bytes TRƯỚC
    * khi chạm kho lưu trữ — file không phải ảnh raster bị từ chối dù đuôi tên/mimetype khai là ảnh. Quyền tại context
    * đích do controller gác bằng cổng files:upload như mọi đường tải lên khác.
    */
@@ -137,7 +140,8 @@ export class FilesService {
   physicalKey(contentHash: string): string { return this.storage.keyFor(contentHash); }
   async physicalExists(contentHash: string): Promise<boolean> { return this.storage.exists(contentHash); }
 
-  /** Xoá bản ghi file; xoá nội dung vật lý khi refcount về 0.
+  /**
+   * Xoá bản ghi file; xoá nội dung vật lý khi refcount về 0.
    *
    * Luồng: lấy bản ghi → (khi có `actor`) áp chốt khoá bài nộp → xoá bản ghi → đếm lại số bản ghi còn tham chiếu cùng
    * contentHash: còn tham chiếu thì byte vật lý giữ nguyên; refcount về 0 thì enqueue job dọn file mồ côi cho worker
@@ -150,9 +154,9 @@ export class FilesService {
    * vì đây là đường mọi yêu cầu xoá của người dùng đều đi qua: chỉ gác ở route của module Bài tập thì một yêu cầu trực
    * tiếp tới endpoint tệp dùng chung sẽ vượt qua toàn bộ chốt sở hữu/trạng thái của bài nộp.
    * - **Hệ thống nội bộ** (không truyền `actor`): các luồng dọn dẹp đã có cổng riêng ở tầng gọi (xoá bài tập kèm dọn
-   * tệp, gỡ tệp bài nộp qua route của module Bài tập sau khi đã qua chốt của chính module đó, listener sự kiện vòng đời
-   * course module, xoá dữ liệu riêng tư, dọn tệp quét của module chấm giấy) — giữ nguyên hành vi xoá vô điều kiện như
-   * trước.
+   *   tệp, gỡ tệp bài nộp qua route của module Bài tập sau khi đã qua chốt của chính module đó, listener sự kiện vòng
+   *   đời course module, xoá dữ liệu riêng tư, dọn tệp quét của module chấm giấy) — giữ nguyên hành vi xoá vô điều kiện
+   *   như trước.
    *
    * @param id id bản ghi tệp cần xoá.
    * @param actor người dùng khởi tạo yêu cầu xoá; vắng mặt = xoá nội bộ của hệ thống.
@@ -171,13 +175,14 @@ export class FilesService {
     return { deleted: true, contentHash: row.contentHash, refcount };
   }
 
-  /** Chốt khoá bài nộp cho đường xoá tệp do người dùng khởi tạo: tệp đang gắn với một bài nộp thì chỉ được xoá khi vượt
+  /**
+   * Chốt khoá bài nộp cho đường xoá tệp do người dùng khởi tạo: tệp đang gắn với một bài nộp thì chỉ được xoá khi vượt
    * qua đúng ba chốt mà module Bài tập áp ở đường gỡ tệp của chính nó (`AssignmentsService.removeSubmissionFile`), theo
    * đúng thứ tự và mã lỗi của đường đó:
    *
    * 1. **Sở hữu:** bài nộp chứa tệp phải là của chính người gọi. Đường Bài tập tra bài nộp theo người gọi nên tệp của
-   * người khác không bao giờ tới được bước gỡ; tại đây điều đó tương ứng lỗi `assign.submission_file_not_found` (404) —
-   * tệp không thuộc bài nộp nào của người gọi.
+   *    người khác không bao giờ tới được bước gỡ; tại đây điều đó tương ứng lỗi `assign.submission_file_not_found`
+   *    (404) — tệp không thuộc bài nộp nào của người gọi.
    * 2. **Đã trả bài:** gói chấm thuộc lần nộp hiện hành của bài nộp (attempt number khớp) đã ở trạng thái `released`
    * thì ném `assign.already_graded` (409) — bài đã trả là chứng cứ chấm, khoá hẳn.
    * 3. **Đã chốt nộp:** bài nộp không ở trạng thái `draft` thì ném `assign.submission_finalized` (409) — muốn đổi tệp

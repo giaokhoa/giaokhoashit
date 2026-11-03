@@ -6,23 +6,18 @@
  * mọi trọng số đều nguyên tố cùng nhau với 10. File này khoá tính chất đó bằng liệt kê đầy đủ, không lấy mẫu tượng
  * trưng:
  *  - mã lớp: TOÀN BỘ 999 mã × mọi vị trí × mọi chữ số thay thế;
- *  - mã SBD: 10.000 mã đầu × mọi vị trí × mọi chữ số thay thế, cộng
- *    các mã có một chữ số khác 0 ở từng vị trí thân cao (phủ đủ bộ ba
- *    (vị trí, chữ số gốc, chữ số thay) cho cả 7 vị trí thân — tính
- *    chất tuyến tính của tổng có trọng số làm phép liệt kê này đầy
- *    đủ cho mọi mã);
+ *  - mã SBD: 10.000 mã đầu × mọi vị trí × mọi chữ số thay thế, cộng các mã có một chữ số khác 0 ở từng vị trí thân cao
+ *    (phủ đủ bộ ba (vị trí, chữ số gốc, chữ số thay) cho cả 7 vị trí thân — tính chất tuyến tính của tổng có trọng số
+ *    làm phép liệt kê này đầy đủ cho mọi mã);
  *  - va chạm roster: đột biến ở đúng vị trí/delta từng lọt không
  *    được trở thành mã hợp lệ của bất kỳ học sinh nào trong roster;
  *  - hoán vị hai chữ số kề ở MỌI vị trí, KỂ CẢ cặp biên (chữ số thân
  *    cuối ↔ số kiểm tra): ca duy nhất lọt là cặp hơn kém đúng 5
  *    (giới hạn toán học đã tuyên bố trong sheet-layout.ts);
- *  - va chạm roster ở cặp biên: hoán vị hai ký tự cuối với cặp chữ
- *    số KHÔNG hơn kém 5 bị checksum chặn, không khớp mã của bất kỳ
- *    học sinh nào khác. Khoá theo phán quyết 6394453120: vòng trước
- *    trọng số thân cuối SBD là 9 ≡ −1 (mod 10) — bằng trọng số hiệu
- *    dụng của vị trí số kiểm tra — nên cặp biên lọt với mọi cặp chữ
- *    số; spec cũ tự loại cặp biên khỏi vòng hoán vị nên không bắt
- *    được. Nay trọng số cuối là 7, hiệu cặp biên −8 như mọi cặp kề.
+ *  - va chạm roster ở cặp biên: hoán vị hai ký tự cuối với cặp chữ số KHÔNG hơn kém 5 bị checksum chặn, không khớp mã
+ *    của bất kỳ học sinh nào khác. Khoá theo phán quyết 6394453120: vòng trước trọng số thân cuối SBD là 9 ≡ −1 (mod
+ *    10) — bằng trọng số hiệu dụng của vị trí số kiểm tra — nên cặp biên lọt với mọi cặp chữ số; spec cũ tự loại cặp
+ *    biên khỏi vòng hoán vị nên không bắt được. Nay trọng số cuối là 7, hiệu cặp biên −8 như mọi cặp kề.
  */
 import { describe, expect, it } from 'vitest';
 import {

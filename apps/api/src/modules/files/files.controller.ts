@@ -63,7 +63,8 @@ export class FilesController {
   }
 
   @Delete(':id')
-  /** DELETE /files/:id — xoá file. Capability tại context của tệp kiểm tại đây; khoá bài nộp (sở hữu + trạng thái) do
+  /**
+   * DELETE /files/:id — xoá file. Capability tại context của tệp kiểm tại đây; khoá bài nộp (sở hữu + trạng thái) do
    * FilesService áp khi xoá vì actor được truyền xuống — tệp thuộc bài nộp đã chốt nộp/đã trả bài không bị xoá qua
    * đường dùng chung này.
    */

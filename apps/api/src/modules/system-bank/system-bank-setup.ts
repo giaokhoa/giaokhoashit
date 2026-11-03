@@ -2,15 +2,12 @@
  * Script cấp phát database KHO NGÂN HÀNG HỆ THỐNG (issue #585) — chạy ở bước migrate của stack triển khai (xem
  * `compose.yaml`, service `migrate`), TRƯỚC khi chạy bộ migration của kho ngân hàng:
  *
- * 1. Đọc đích cấp phát từ `SYSTEM_BANK_DATABASE_URL` (tên database,
- *    role kết nối riêng, mật khẩu) — xem `system-bank-provision.ts`. 2. Kết nối tới database `postgres` của cụm bằng
- *    quyền quản trị:
- *    lấy từ `DATABASE_ADMIN_URL` khi mô hình role đã tách (issue
- *    #586), dự phòng `DATABASE_URL` (chỉ đổi tên database đích
+ * 1. Đọc đích cấp phát từ `SYSTEM_BANK_DATABASE_URL` (tên database, role kết nối riêng, mật khẩu) — xem
+ *    `system-bank-provision.ts`. 2. Kết nối tới database `postgres` của cụm bằng quyền quản trị: lấy từ
+ *    `DATABASE_ADMIN_URL` khi mô hình role đã tách (issue #586), dự phòng `DATABASE_URL` (chỉ đổi tên database đích
  *    trong URL, giữ nguyên thông tin quản trị của cụm). 3. Đảm bảo role tồn tại (mật khẩu đồng bộ theo URL), database
- *    tồn
- *    tại thuộc sở hữu của role đó, và quyền kết nối vào database
- *    kho ngân hàng chỉ thuộc về role đó (thu hồi PUBLIC).
+ *    tồn tại thuộc sở hữu của role đó, và quyền kết nối vào database kho ngân hàng chỉ thuộc về role đó (thu hồi
+ *    PUBLIC).
  *
  * Mọi bước đều idempotent: chạy lại ở mỗi lần stack khởi động là an toàn và không đổi dữ kiện. Script KHÔNG tạo bảng —
  * bảng do bộ migration riêng của kho ngân hàng tạo (chạy qua runner của `@lms/db`). Chưa cấu hình

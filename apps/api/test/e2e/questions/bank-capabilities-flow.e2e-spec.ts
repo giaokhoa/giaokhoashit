@@ -13,14 +13,11 @@ import { RolesService } from '../../../src/modules/access/roles.service';
  * trị tương ứng); bỏ việc neo quyền xem/sửa ma trận vào area quiz:*; chuẩn hoá tên capability của đề về cùng khuôn".
  *
  * Luật được khoá ở đây:
- *  - Registry chỉ còn matrix:use/add/edit/copy/share/moderate cho ma
- *    trận và exam:use/add/edit/copy/share/moderate/deploy cho đề;
- *    quiz:viewmatrix, quiz:managematrix và exam:view không còn tồn
+ *  - Registry chỉ còn matrix:use/add/edit/copy/share/moderate cho ma trận và
+ *    exam:use/add/edit/copy/share/moderate/deploy cho đề; quiz:viewmatrix, quiz:managematrix và exam:view không còn tồn
  *    tại ở bất kỳ tầng nào (định nghĩa lẫn override đã seed).
- *  - Cổng TẠO dùng capability add ở cả ba đường tạo: tạo ma trận tại
- *    context môn (matrix:add), tạo đề trong bank (exam:add) — thành
- *    viên bank (chỉ có use + copy) tạo đề trong bank tổ bị 403, phụ
- *    trách bank (đủ bộ) tạo được.
+ *  - Cổng TẠO dùng capability add ở cả ba đường tạo: tạo ma trận tại context môn (matrix:add), tạo đề trong bank
+ *    (exam:add) — thành viên bank (chỉ có use + copy) tạo đề trong bank tổ bị 403, phụ trách bank (đủ bộ) tạo được.
  *  - Bề mặt capabilities của bank ma trận phản ánh đúng bộ mới:
  *    phụ trách có add + edit, thành viên chỉ có use (+ copy).
  */

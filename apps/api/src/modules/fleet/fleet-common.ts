@@ -1,4 +1,5 @@
-/** Helper dùng chung của các công cụ vận hành ĐỘI KHO (issue #586): runner migration theo đợt
+/**
+ * Helper dùng chung của các công cụ vận hành ĐỘI KHO (issue #586): runner migration theo đợt
  * (`fleet-migration-runner.ts`), tác vụ sao lưu (`fleet-backup.ts`) và tác vụ kiểm thử khôi phục
  * (`fleet-restore-test.ts`). File này giữ phần THUẦN (sắp đợt, chọn ứng viên, đặt tên tệp sao lưu, mã hoá, băm) tách
  * khỏi phần chạm hệ thống (chạy `pg_dump`/`pg_restore`, đọc phiên bản thật trong database) để kiểm chứng bằng unit test
@@ -6,13 +7,13 @@
  *
  * Ba bất biến nghiệp vụ vận hành mà file này khoá:
  * - Thứ tự duyệt đội kho là XÁC ĐỊNH: kho nền tảng (platform) chạy đợt riêng trước, đúng MỘT trung tâm làm canary ở đợt
- * kế, rồi các trung tâm còn lại theo từng đợt có kích thước cấu hình được — cùng một sổ đăng ký thì mọi lượt chạy duyệt
- * đúng một thứ tự.
+ *   kế, rồi các trung tâm còn lại theo từng đợt có kích thước cấu hình được — cùng một sổ đăng ký thì mọi lượt chạy
+ *   duyệt đúng một thứ tự.
  * - URL kết nối tới một kho suy ra từ sổ đăng ký: cơ sở là URL mà `secretRef` trỏ tới (biến môi trường mang URL của
- * tầng ứng dụng), nhưng khi `MIGRATION_DATABASE_URL` được cấu hình thì THÔNG TIN ĐĂNG NHẬP bị thay bằng của role
- * migration và tên database bị thay bằng `databaseName` của kho — công cụ vận hành luôn chạm kho bằng role migration
- * (chủ sở hữu đối tượng), không bao giờ bằng role runtime chỉ có quyền dữ liệu, kể cả khi URL gốc trong sổ là URL
- * runtime.
+ *   tầng ứng dụng), nhưng khi `MIGRATION_DATABASE_URL` được cấu hình thì THÔNG TIN ĐĂNG NHẬP bị thay bằng của role
+ *   migration và tên database bị thay bằng `databaseName` của kho — công cụ vận hành luôn chạm kho bằng role migration
+ *   (chủ sở hữu đối tượng), không bao giờ bằng role runtime chỉ có quyền dữ liệu, kể cả khi URL gốc trong sổ là URL
+ *   runtime.
  * - Tệp sao lưu LUÔN được mã hoá AES-256-GCM và luôn đi kèm tệp băm SHA-256 của chính tệp đã lưu: mã hoá là bắt buộc
  * (fail-closed) — thiếu khoá mã hoá thì mọi đường chụp sao lưu từ chối chạy trước khi dump, không tồn tại chế độ lưu
  * bản thô, và mọi đường lỗi sau khi dump xong đều xoá tệp thô khỏi đĩa. Kiểm thử khôi phục đối chiếu băm TRƯỚC khi giải
@@ -48,7 +49,8 @@ export type FleetSpace = {
 /** Loại bản sao lưu: theo lịch định kỳ hoặc bản chốt trước một lượt migration. */
 export type BackupKind = 'scheduled' | 'pre-migration';
 
-/** Sắp các kho ĐANG HOẠT ĐỘNG thành các đợt migration theo thứ tự an toàn: đợt 0 là (các) kho nền tảng — không gian thí
+/**
+ * Sắp các kho ĐANG HOẠT ĐỘNG thành các đợt migration theo thứ tự an toàn: đợt 0 là (các) kho nền tảng — không gian thí
  * điểm của nền tảng tự vận hành; đợt 1 là đúng một trung tâm canary (slug nhỏ nhất); các trung tâm còn lại chia theo
  * `waveSize`. Kho không ở trạng thái `active` (đang cấp phát, tạm ngưng, đã đóng) không vào bất kỳ đợt nào: migration
  * không chạm kho chưa sẵn sàng hay đã ngừng vòng đời.
@@ -70,7 +72,8 @@ export function orderSpacesIntoWaves(spaces: FleetSpace[], waveSize: number): Fl
   return waves;
 }
 
-/** Chọn kho cho lượt kiểm thử khôi phục tiếp theo theo vòng xoay công bằng: kho đang hoạt động có `lastRestoreAt` CŨ
+/**
+ * Chọn kho cho lượt kiểm thử khôi phục tiếp theo theo vòng xoay công bằng: kho đang hoạt động có `lastRestoreAt` CŨ
  * NHẤT được chọn trước (chưa từng kiểm thử = cũ nhất), hoà thì slug nhỏ hơn thắng để kết quả lặp lại được. Không còn
  * kho đang hoạt động nào thì trả về null.
  */
@@ -86,7 +89,8 @@ export function pickRestoreCandidate(spaces: FleetSpace[]): FleetSpace | null {
   return candidates[0] ?? null;
 }
 
-/** Một kho bị coi là QUÁ HẠN sao lưu khi chưa từng có bản sao lưu thành công nào, hoặc bản gần nhất đã cũ hơn
+/**
+ * Một kho bị coi là QUÁ HẠN sao lưu khi chưa từng có bản sao lưu thành công nào, hoặc bản gần nhất đã cũ hơn
  * `maxAgeHours` — cổng cảnh báo của tác vụ sao lưu (`fleet-backup --check`): quá một chu kỳ sao lưu mà không có bản mới
  * là sự cố vận hành phải xử lý.
  */
@@ -203,9 +207,10 @@ export function resolveDumpConnectionUrl(space: FleetSpace, env: NodeJS.ProcessE
   return resolveSpaceConnectionUrl(space, env);
 }
 
-/** Tách URL kết nối thành tham số dòng lệnh cho các công cụ của PostgreSQL (`pg_dump`, `pg_restore`, `psql`) và mật
- * khẩu đi kèm. Mật khẩu TUYỆT ĐỐI không nằm trong tham số (lộ qua danh sách tiến trình của máy) — caller truyền nó qua
- * biến môi trường `PGPASSWORD` của tiến trình con (xem `runPgTool`).
+/**
+ * Tách URL kết nối thành tham số dòng lệnh cho các công cụ của PostgreSQL (`pg_dump`, `pg_restore`, `psql`) và mật khẩu
+ * đi kèm. Mật khẩu TUYỆT ĐỐI không nằm trong tham số (lộ qua danh sách tiến trình của máy) — caller truyền nó qua biến
+ * môi trường `PGPASSWORD` của tiến trình con (xem `runPgTool`).
  */
 export function buildPgToolArgs(url: string): { args: string[]; password: string } {
   const parsed = new URL(url);
@@ -224,7 +229,8 @@ export function buildPgToolArgs(url: string): { args: string[]; password: string
   };
 }
 
-/** Chạy một công cụ PostgreSQL (`pg_dump`, `pg_restore`…) với đích lấy từ URL kết nối và mật khẩu qua `PGPASSWORD`. Thư
+/**
+ * Chạy một công cụ PostgreSQL (`pg_dump`, `pg_restore`…) với đích lấy từ URL kết nối và mật khẩu qua `PGPASSWORD`. Thư
  * mục chứa công cụ lấy từ `FLEET_PG_BIN_DIR` khi được cấu hình (máy kiểm chứng dùng bộ công cụ riêng), mặc định theo
  * PATH của tiến trình.
  * @returns Nội dung stdout của công cụ (rỗng với các lệnh ghi ra tệp).
@@ -288,7 +294,8 @@ export function listMigrationFolders(migrationsDir: string): string[] {
     .sort();
 }
 
-/** Đọc phiên bản schema THẬT của một database từ nhật ký migration của chính nó — uỷ thác cho hàm đọc của `@lms/db`
+/**
+ * Đọc phiên bản schema THẬT của một database từ nhật ký migration của chính nó — uỷ thác cho hàm đọc của `@lms/db`
  * (issue #639): đọc `kysely_migration` (phiên bản mới nhất là tên lớn nhất — tên migration mở đầu bằng dấu thời gian
  * nên thứ tự tên là thứ tự áp). Database chưa từng được áp migration bằng bộ máy của package (chưa có bảng nhật ký)
  * được coi là chưa có phiên bản (null) — đây là NGUỒN SỰ THẬT về phiên bản của kho; sổ đăng ký chỉ là ảnh phản chiếu
@@ -298,7 +305,8 @@ export async function readDatabaseSchemaVersion(client: Client): Promise<string 
   return getLatestAppliedMigration(client);
 }
 
-/** Đọc TOÀN TẬP tên migration đã áp trong một database từ nhật ký `kysely_migration` của chính nó — uỷ thác cho hàm đọc
+/**
+ * Đọc TOÀN TẬP tên migration đã áp trong một database từ nhật ký `kysely_migration` của chính nó — uỷ thác cho hàm đọc
  * của `@lms/db` (cùng nguồn như `readDatabaseSchemaVersion`). Đây là căn cứ để runner quyết định một kho còn thiếu
  * migration nào: chỉ nhìn migration MỚI NHẤT (như `readDatabaseSchemaVersion`) sẽ bỏ sót kho đã có migration mới nhất
  * nhưng THIẾU một migration cũ ở giữa — kho như vậy trông như đã đạt đích mà thật ra chưa từng áp đủ bộ. Database chưa
@@ -317,7 +325,8 @@ export function parsePositiveInt(raw: string | undefined, fallback: number): num
 /** Một bản sao lưu đã lưu xong trên đĩa: đường dẫn tệp chính, có mã hoá hay không, và băm của chính tệp đó. */
 export type StoredBackup = { path: string; encrypted: boolean; sha256: string };
 
-/** Chụp một bản sao lưu logic (`pg_dump` định dạng custom) của database tại `url` vào thư mục của kho: ghi tệp `.dump`
+/**
+ * Chụp một bản sao lưu logic (`pg_dump` định dạng custom) của database tại `url` vào thư mục của kho: ghi tệp `.dump`
  * tạm, mã hoá thành `.dump.enc`, xoá bản thô, rồi ghi tệp băm `.sha256` của CHÍNH tệp cuối cùng đã lưu. Tệp sao lưu nằm
  * NGOÀI máy cụm khi thư mục sao lưu trỏ ra vùng lưu trữ gắn ngoài (cấu hình ở tầng triển khai); helper này chỉ chịu
  * trách nhiệm khuôn tệp và tính toàn vẹn của nó.

@@ -125,7 +125,8 @@ export class EnrolService implements OnModuleInit {
     return this.evaluator.hasCapability(viewerId, 'enrol:manage', await this.courses.courseContextId(courseId));
   }
 
-  /** Che khoá ghi danh của instance đối với người không có quyền quản lý enrol: khoá không bao giờ rời server cho học
+  /**
+   * Che khoá ghi danh của instance đối với người không có quyền quản lý enrol: khoá không bao giờ rời server cho học
    * viên/người ngoài (response mang `enrolmentKey: null`, đúng hình dạng bản ghi). Dùng cho mọi đường đọc instance phơi
    * qua API; đường nội bộ vẫn dùng bản ghi gốc.
    */
@@ -133,7 +134,8 @@ export class EnrolService implements OnModuleInit {
     return instance.enrolmentKey ? { ...instance, enrolmentKey: null } : instance;
   }
 
-  /** Tạo enrol instance cho khoá học (manual/self/cohort/fee). `enrolmentKey` là khoá ghi danh của instance self; tin
+  /**
+   * Tạo enrol instance cho khoá học (manual/self/cohort/fee). `enrolmentKey` là khoá ghi danh của instance self; tin
    * nhắn chào mừng mặc định bật cho self và tắt cho manual (đúng mặc định Moodle) trừ khi `sendWelcomeMessage` được chỉ
    * định rõ.
    */
@@ -355,7 +357,8 @@ export class EnrolService implements OnModuleInit {
     });
   }
 
-  /** Tự ghi danh qua instance self đang bật; instance fee bị từ chối (enrol.payment_required) vì phải qua thanh toán đã
+  /**
+   * Tự ghi danh qua instance self đang bật; instance fee bị từ chối (enrol.payment_required) vì phải qua thanh toán đã
    * xác nhận.
    *
    * Khoá ghi danh (oracle Behat enrol/self/self_enrolment.feature — "Self-enrolment enabled requiring an enrolment key"
@@ -393,7 +396,8 @@ export class EnrolService implements OnModuleInit {
     return ue;
   }
 
-  /** Tự huỷ ghi danh của CHÍNH người gọi khỏi một instance self (oracle Behat enrol/self/self_enrolment.feature — "Self
+  /**
+   * Tự huỷ ghi danh của CHÍNH người gọi khỏi một instance self (oracle Behat enrol/self/self_enrolment.feature — "Self
    * unenrol as a self-enrolled student"). Endpoint không nhận userId nên về cấu trúc không thể huỷ ghi danh của người
    * khác; ghi danh do phương thức khác tạo (manual/cohort/fee) bị từ chối 400 `enrol.self_unenrol_not_allowed`. Việc
    * huỷ đi qua cùng đường `unenrolInternal` như huỷ quản trị: gỡ role do instance cấp, phát `user_unenrolled`, và tôn
@@ -475,7 +479,8 @@ export class EnrolService implements OnModuleInit {
     return this.unenrolInternal(instance, userId, actorId);
   }
 
-  /** Rút ghi danh nội bộ không kiểm capability.
+  /**
+   * Rút ghi danh nội bộ không kiểm capability.
    *
    * Toàn bộ đường rút sống ở bề mặt vật chất hoá dùng chung (`CohortMaterializationSurface.unenrolInternal` của
    * `@lms/enrol`) — gồm quyết định giữ/xoá theo dữ liệu liên quan, transaction phát `user_unenrolled` cùng sự kiện tái
@@ -486,7 +491,8 @@ export class EnrolService implements OnModuleInit {
     return delegateToSharedCore(() => this.materialization.unenrolInternal(instance, userId, modifierId));
   }
 
-  /** Kiểm tra enrol THE (is_enrolled của Moodle): chỉ ghi danh, không bao giờ là capability. onlyActive còn yêu cầu
+  /**
+   * Kiểm tra enrol THE (is_enrolled của Moodle): chỉ ghi danh, không bao giờ là capability. onlyActive còn yêu cầu
    * status=ACTIVE và thời điểm hiện tại trong [timeStart, timeEnd]. Một bản ghi ở BẤT KỲ instance đang bật nào của khoá
    * học đều tính.
    */
@@ -573,7 +579,8 @@ export class EnrolService implements OnModuleInit {
   }
 
   @OnEvent('cohort_member_removed')
-  /** Sự kiện rời cohort → rút/đình chỉ ghi danh cohort tương ứng. Vật chất hoá sống ở bề mặt dùng chung
+  /**
+   * Sự kiện rời cohort → rút/đình chỉ ghi danh cohort tương ứng. Vật chất hoá sống ở bề mặt dùng chung
    * (`materializeCohortMemberRemoved`): guard theo trạng thái hiện tại của `cohort_members`, chế độ rời theo từng
    * instance (rút qua đường gỡ lõi hoặc đình chỉ do đồng bộ hệ thống) nằm trong bề mặt đó; handler này chỉ uỷ thác và
    * dịch lỗi.

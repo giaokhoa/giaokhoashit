@@ -33,10 +33,8 @@ import {
  * (`tenant:manage` tại context hệ thống); controller chỉ là lớp vận
  * chuyển mỏng theo khuôn các controller hiện hữu.
  *
- * Tách bề mặt (issue #584): toàn bộ controller mang
- * `@PlatformRoute()` — chỉ token mang audience `platform` (cấp từ
- * bề mặt đăng nhập quản trị platform riêng) mới được gọi; token
- * nghiệp vụ thường bị `AudienceGuard` từ chối trước cả cổng
+ * Tách bề mặt (issue #584): toàn bộ controller mang `@PlatformRoute()` — chỉ token mang audience `platform` (cấp từ bề
+ * mặt đăng nhập quản trị platform riêng) mới được gọi; token nghiệp vụ thường bị `AudienceGuard` từ chối trước cả cổng
  * capability của service.
  */
 @PlatformRoute()

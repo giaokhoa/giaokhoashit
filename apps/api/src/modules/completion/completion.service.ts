@@ -99,23 +99,17 @@ export class CompletionService implements OnModuleInit {
   ) {}
 
   /**
-   * Ghi một dòng sự kiện outbox TRONG transaction Kysely đang mở của
-   * repository — bản sao đúng ngữ nghĩa của `OutboxService.enqueue`
-   * cho hai luồng của module này (làm mới completion theo điểm và
-   * đánh dấu thủ công), nơi thay đổi nghiệp vụ đã chuyển sang Kysely:
+   * Ghi một dòng sự kiện outbox TRONG transaction Kysely đang mở của repository — bản sao đúng ngữ nghĩa của
+   * `OutboxService.enqueue` cho hai luồng của module này (làm mới completion theo điểm và đánh dấu thủ công), nơi thay
+   * đổi nghiệp vụ đã chuyển sang Kysely:
    *
-   * - Bất biến outbox giữ nguyên: dòng sự kiện nằm trong CÙNG
-   *   transaction với thay đổi nghiệp vụ — transaction thành thì cả
-   *   hai cùng ghi, transaction huỷ thì không dòng sự kiện nào tồn
-   *   tại. Vì vậy hai ghi không được tách thành hai transaction nối
-   *   tiếp nhau, và transaction chứa chúng là transaction Kysely
-   *   duy nhất (cấm giao dịch lai hai ORM trong một thao tác).
-   * - Ngữ nghĩa tenant sao đúng bản gốc: tenant hiệu lực lấy từ
-   *   `input.tenantId` nếu nơi gọi chỉ định, không thì từ ngữ cảnh
-   *   ALS của luồng phát sinh, không có nữa thì null; tenant cũng
-   *   được gương vào payload khi payload chưa có khoá `tenantId`,
-   *   để các consumer chạy ở ngữ cảnh platform biết sự kiện thuộc
-   *   tenant nào.
+   * - Bất biến outbox giữ nguyên: dòng sự kiện nằm trong CÙNG transaction với thay đổi nghiệp vụ — transaction thành
+   *   thì cả hai cùng ghi, transaction huỷ thì không dòng sự kiện nào tồn tại. Vì vậy hai ghi không được tách thành hai
+   *   transaction nối tiếp nhau, và transaction chứa chúng là transaction Kysely duy nhất (cấm giao dịch lai hai ORM
+   *   trong một thao tác).
+   * - Ngữ nghĩa tenant sao đúng bản gốc: tenant hiệu lực lấy từ `input.tenantId` nếu nơi gọi chỉ định, không thì từ ngữ
+   *   cảnh ALS của luồng phát sinh, không có nữa thì null; tenant cũng được gương vào payload khi payload chưa có khoá
+   *   `tenantId`, để các consumer chạy ở ngữ cảnh platform biết sự kiện thuộc tenant nào.
    * - Payload ghi qua serialize tường minh + ép kiểu `::jsonb` như
    *   mọi đường ghi jsonb của tầng Kysely (driver `pg` hiểu mảng cấp
    *   cao nhất là mảng PostgreSQL).
@@ -154,12 +148,10 @@ export class CompletionService implements OnModuleInit {
       const available = !!row && row.completionState >= state && row.completionState !== COMPLETION_INCOMPLETE;
       return { available, description: this.i18n.t('availability.activityMustComplete', { args: { cmId } }) };
     });
-    // Tái tổng hợp sau gỡ ghi danh KHÔNG còn đăng ký tại đây: bề mặt
-    // vật chất hoá dùng chung phát sự kiện outbox
-    // `course_completion_reaggregation_requested` trong cùng
-    // transaction với thao tác gỡ ghi danh, và
-    // CompletionReaggregationOutboxConsumer của module này tiêu thụ
-    // sự kiện đó qua mốc seq riêng để gọi reaggregateCourseCompletion.
+    // Tái tổng hợp sau gỡ ghi danh KHÔNG còn đăng ký tại đây: bề mặt vật chất hoá dùng chung phát sự kiện outbox
+    // `course_completion_reaggregation_requested` trong cùng transaction với thao tác gỡ ghi danh, và
+    // CompletionReaggregationOutboxConsumer của module này tiêu thụ sự kiện đó qua mốc seq riêng để gọi
+    // reaggregateCourseCompletion.
   }
 
   /**

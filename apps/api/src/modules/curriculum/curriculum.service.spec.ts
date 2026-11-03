@@ -68,10 +68,11 @@ describe('CurriculumService.listSubjects — contextId tùy chọn', () => {
   });
 });
 
-/** Lưu trữ YCCĐ dạng tài liệu Tiptap (jsonb) — hình dạng trả ra của tầng service: `content` luôn là text canonical
- * trích từ tài liệu (hợp đồng cũ cho mọi bề mặt), `contentDoc` là tài liệu gốc cho bảng chương trình render phân cấp
- * cha–con. Đường ghi tay qua API nhận text thuần phải gói thành tài liệu trước khi ghi — DB không bao giờ nhận text
- * trần ở cột jsonb.
+/**
+ * Lưu trữ YCCĐ dạng tài liệu Tiptap (jsonb) — hình dạng trả ra của tầng service: `content` luôn là text canonical trích
+ * từ tài liệu (hợp đồng cũ cho mọi bề mặt), `contentDoc` là tài liệu gốc cho bảng chương trình render phân cấp cha–con.
+ * Đường ghi tay qua API nhận text thuần phải gói thành tài liệu trước khi ghi — DB không bao giờ nhận text trần ở cột
+ * jsonb.
  */
 describe('toCurriculumOutcomeView — text canonical + tài liệu gốc', () => {
   const docRow = {

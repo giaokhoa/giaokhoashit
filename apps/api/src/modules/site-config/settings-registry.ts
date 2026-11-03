@@ -64,20 +64,14 @@ export const SITE_SETTINGS: readonly SiteSettingDefinition[] = [
   // tenant admin ghi đè được qua TenantConfigService; điểm đọc hiện tại của EB-3 vẫn ở tầng platform
   // (SiteConfigService) và sẽ dời sang TenantConfigService.getEffectiveValue ở lát tenant hoá bề mặt đề.
   { component: 'exam', name: 'requireboardapproval', type: 'boolean', defaultValue: false, scope: 'both' },
-  // Chấm bài giấy bằng camera (CAM-0, issue #112): ngưỡng quyết định hai
-  // tầng của OMR — mật độ mực chuẩn hoá 0..1 của một ô; ô trên
-  // omrfilldensity = đã tô, dưới omrblankdensity = trống, ở giữa là MƠ
-  // HỒ (hàng chờ giáo viên, không tự quyết); omrminmargin là chênh mật
-  // độ tối thiểu giữa ô đậm nhất và ô nhì để ô thắng được coi là chắc
-  // chắn. paperscanretentionmonths là số tháng giữ ảnh gốc phiếu quét
-  // (mặc định theo đề xuất research: hết năm học + 1 học kỳ ≈ 18 tháng;
-  // mốc xoá được vật hoá vào từng phiếu lúc tải lên).
-  // TENANT-0 (#168, đóng gói lại lên main 3aee4454): 4 setting CAM-0
-  // thêm ở main chưa có scope trong khi SiteSettingDefinition bắt
-  // buộc scope — gán 'platform' để giữ nguyên hành vi cũ (một giá trị
-  // toàn cục do platform đặt, tenant đọc qua fallback platform; bề
-  // mặt tenant từ chối ghi đè). Không chọn 'both' để khỏi mở thêm
-  // quyền ghi đè theo tenant ngoài phạm vi đóng gói.
+  // Chấm bài giấy bằng camera (CAM-0, issue #112): ngưỡng quyết định hai tầng của OMR — mật độ mực chuẩn hoá 0..1 của
+  // một ô; ô trên omrfilldensity = đã tô, dưới omrblankdensity = trống, ở giữa là MƠ HỒ (hàng chờ giáo viên, không tự
+  // quyết); omrminmargin là chênh mật độ tối thiểu giữa ô đậm nhất và ô nhì để ô thắng được coi là chắc chắn.
+  // paperscanretentionmonths là số tháng giữ ảnh gốc phiếu quét (mặc định theo đề xuất research: hết năm học + 1 học kỳ
+  // ≈ 18 tháng; mốc xoá được vật hoá vào từng phiếu lúc tải lên). TENANT-0 (#168, đóng gói lại lên main 3aee4454): 4
+  // setting CAM-0 thêm ở main chưa có scope trong khi SiteSettingDefinition bắt buộc scope — gán 'platform' để giữ
+  // nguyên hành vi cũ (một giá trị toàn cục do platform đặt, tenant đọc qua fallback platform; bề mặt tenant từ chối
+  // ghi đè). Không chọn 'both' để khỏi mở thêm quyền ghi đè theo tenant ngoài phạm vi đóng gói.
   { component: 'mod_quiz', name: 'omrfilldensity', type: 'number', defaultValue: 0.42, scope: 'platform' },
   { component: 'mod_quiz', name: 'omrblankdensity', type: 'number', defaultValue: 0.16, scope: 'platform' },
   { component: 'mod_quiz', name: 'omrminmargin', type: 'number', defaultValue: 0.1, scope: 'platform' },
@@ -93,23 +87,16 @@ export const SITE_SETTINGS: readonly SiteSettingDefinition[] = [
   { component: 'payments', name: 'tenantplanperioddays', type: 'number', defaultValue: 365, scope: 'platform' },
   { component: 'payments', name: 'teacherplanprice', type: 'number', defaultValue: 990000, scope: 'platform' },
   { component: 'payments', name: 'teacherplanperioddays', type: 'number', defaultValue: 365, scope: 'platform' },
-  // HẠN MỨC SLOT của gói (phần còn lại của lát 2, issue #189 — đặc tả
-  // slot đã được duyệt toàn bộ ngày 27/10/2026, ghi tại comment
-  // 6434192125 của issue): giống hệt giá gói, hạn mức slot là CẤU HÌNH
-  // HỆ THỐNG do quản trị chỉnh trong Cài đặt hệ thống, không ghim cứng
-  // trong code — `defaultValue` dưới đây chỉ là giá trị KHỞI TẠO đã
-  // duyệt. `tenantplanslots`: số tài khoản giảng dạy tối đa của một
-  // trung tâm khi gói trung tâm đang hoạt động (mặc định 30);
-  // `teacherplancourseslots`: số khoá học làm chủ tối đa của một giáo
-  // viên khi gói giáo viên đang hoạt động (mặc định 10);
-  // `tenantplanfreeslots` / `teacherplanfreecourseslots`: MỨC NỀN áp
-  // dụng khi không có gói đang hoạt động và đã qua ân hạn (mặc định
-  // 3 / 1) — thực thể vượt mức nền vẫn giữ nguyên, chỉ chặn tạo thêm;
-  // `plangracedays`: số ngày ÂN HẠN sau khi gói hết hạn mà hạn mức của
-  // gói vẫn được áp (mặc định 7), hết ân hạn mới rơi về mức nền. Việc
-  // thực thi (đếm slot, điểm chặn, hạn mức hiệu lực gồm cả ân hạn)
-  // nằm ở PlanLimitsService của module access; các con số khởi tạo ở
-  // đây phải khớp hằng số dự phòng trong service đó.
+  // HẠN MỨC SLOT của gói (phần còn lại của lát 2, issue #189 — đặc tả slot đã được duyệt toàn bộ ngày 27/10/2026, ghi
+  // tại comment 6434192125 của issue): giống hệt giá gói, hạn mức slot là CẤU HÌNH HỆ THỐNG do quản trị chỉnh trong Cài
+  // đặt hệ thống, không ghim cứng trong code — `defaultValue` dưới đây chỉ là giá trị KHỞI TẠO đã duyệt.
+  // `tenantplanslots`: số tài khoản giảng dạy tối đa của một trung tâm khi gói trung tâm đang hoạt động (mặc định 30);
+  // `teacherplancourseslots`: số khoá học làm chủ tối đa của một giáo viên khi gói giáo viên đang hoạt động (mặc định
+  // 10); `tenantplanfreeslots` / `teacherplanfreecourseslots`: MỨC NỀN áp dụng khi không có gói đang hoạt động và đã
+  // qua ân hạn (mặc định 3 / 1) — thực thể vượt mức nền vẫn giữ nguyên, chỉ chặn tạo thêm; `plangracedays`: số ngày ÂN
+  // HẠN sau khi gói hết hạn mà hạn mức của gói vẫn được áp (mặc định 7), hết ân hạn mới rơi về mức nền. Việc thực thi
+  // (đếm slot, điểm chặn, hạn mức hiệu lực gồm cả ân hạn) nằm ở PlanLimitsService của module access; các con số khởi
+  // tạo ở đây phải khớp hằng số dự phòng trong service đó.
   { component: 'payments', name: 'tenantplanslots', type: 'number', defaultValue: 30, scope: 'platform' },
   { component: 'payments', name: 'teacherplancourseslots', type: 'number', defaultValue: 10, scope: 'platform' },
   { component: 'payments', name: 'tenantplanfreeslots', type: 'number', defaultValue: 3, scope: 'platform' },

@@ -18,7 +18,8 @@ export interface ProgramRecordSource {
   pdf_pages: number[];
 }
 
-/** Một node trong doc Tiptap của một YCCĐ (hình dạng thu gọn đúng các node hệ dùng cho YCCĐ: doc/paragraph/text +
+/**
+ * Một node trong doc Tiptap của một YCCĐ (hình dạng thu gọn đúng các node hệ dùng cho YCCĐ: doc/paragraph/text +
  * bulletList/listItem cho ý con; marks trên node text được giữ nguyên khi lưu nhưng bị bỏ qua khi trích text
  * canonical).
  */
@@ -34,7 +35,8 @@ export interface ProgramOutcomeDoc {
   content?: ProgramOutcomeDocNode[];
 }
 
-/** Một bản ghi chương trình trong dataset đã kiểm chứng. Hình dạng không đồng nhất giữa các đợt trích xuất (ghi nhận ở
+/**
+ * Một bản ghi chương trình trong dataset đã kiểm chứng. Hình dạng không đồng nhất giữa các đợt trích xuất (ghi nhận ở
  * issue #161): các dataset trích sau đợt Toán/Ngữ văn để `stream` trống/null (cấu trúc nằm ở `section`/`topic`), bản
  * ghi dạng `requirement` để `content` rỗng, và 12 bản ghi chủ điểm của Tiếng Anh mang `grade = null` (phần "Nội dung
  * khái quát" theo CẤP, không theo lớp). Các hàm thuần bên dưới là nơi duy nhất thích ứng hình dạng đó; bản ghi trong
@@ -71,7 +73,8 @@ export interface ProgramDatasetDef {
   fileName: string;
 }
 
-/** Toàn bộ dataset đã kiểm chứng (22 môn có dữ liệu, 24 file, 2.171 bản ghi — GDPT-SEED, issue #161; GDQP&AN chưa có
+/**
+ * Toàn bộ dataset đã kiểm chứng (22 môn có dữ liệu, 24 file, 2.171 bản ghi — GDPT-SEED, issue #161; GDQP&AN chưa có
  * dataset). Tổng tại thời điểm vendor là 2.126; 11 bản ghi bị công cụ trích xuất cắt đôi một ô qua ranh trang đã được
  * gộp về bản ghi đầu trong đợt tách YCCĐ của PR #245 (có log từng cặp gộp) nên tổng sau đợt đó là 2.115; đợt khôi phục
  * YCCĐ đợt 1 (issue #480) dựng thêm 49 bản ghi cho các khối mất hẳn, và các đợt đính chính sau đó đưa tổng hiện tại lên
@@ -86,9 +89,9 @@ export interface ProgramDatasetDef {
  * dùng CHUNG một môn đích (slug giống nhau = resolve về đúng một môn ở tầng nạp):
  * - Tiếng Anh: văn bản "Làm quen lớp 1–2" + văn bản lớp 3–12;
  * - Lịch sử và Địa lí: văn bản Tiểu học + văn bản THCS (Lịch sử/Địa lí THPT là hai môn riêng, hai dataset riêng bên
- * dưới). Ngữ văn bao gồm phần Tiếng Việt cấp tiểu học (cùng một văn bản chương trình theo nguyên văn trang 3 của văn
- * bản Ngữ văn). Ngoài phạm vi theo chốt của dự án: Tiếng dân tộc thiểu số, Ngoại ngữ 2 (không có dataset) và GDQP&AN
- * (chưa có PDF chính chủ — issue #74).
+ *   dưới). Ngữ văn bao gồm phần Tiếng Việt cấp tiểu học (cùng một văn bản chương trình theo nguyên văn trang 3 của văn
+ *   bản Ngữ văn). Ngoài phạm vi theo chốt của dự án: Tiếng dân tộc thiểu số, Ngoại ngữ 2 (không có dataset) và GDQP&AN
+ *   (chưa có PDF chính chủ — issue #74).
  */
 export const PROGRAM_DATASETS: readonly ProgramDatasetDef[] = [
   { key: 'toan', subjectName: 'Toán', slug: 'toan', fileName: 'program-toan.json' },
@@ -121,7 +124,8 @@ export function programDatasetByKey(key: string): ProgramDatasetDef | undefined 
   return PROGRAM_DATASETS.find((d) => d.key === key);
 }
 
-/** Đọc + parse một file dataset đã vendor (đường dẫn theo vị trí module, chạy được cả ở src lẫn dist). Mọi bản ghi ở
+/**
+ * Đọc + parse một file dataset đã vendor (đường dẫn theo vị trí module, chạy được cả ở src lẫn dist). Mọi bản ghi ở
  * dạng doc đều qua kiểm chứng toàn vẹn với `outcome_text` ngay tại đây — dataset lệch là lỗi nạp ở mọi đường đọc, không
  * chờ tới lúc ghi DB.
  */
@@ -132,7 +136,8 @@ export function loadProgramDataset(def: ProgramDatasetDef): ProgramDatasetFile {
   return file;
 }
 
-/** Hash nội dung của một bản ghi (sha256 trên JSON chuẩn hoá theo đúng thứ tự trường của dataset). Đây là căn cứ
+/**
+ * Hash nội dung của một bản ghi (sha256 trên JSON chuẩn hoá theo đúng thứ tự trường của dataset). Đây là căn cứ
  * idempotent của sổ đăng ký: hash khớp → bản ghi trong hệ thống đã đúng nguyên văn, bỏ qua; lệch → dataset đã được đính
  * chính tại nguồn, cập nhật node + YCCĐ.
  */
@@ -268,7 +273,8 @@ export function programRecordAncestors(record: ProgramRecord): { kind: 'strand' 
   return titles.map((title, i) => ({ kind: i === 0 ? ('strand' as const) : ('topic' as const), title }));
 }
 
-/** Tựa của node `lesson` cho một bản ghi: nguyên văn trường `content`. Bản ghi dạng `requirement` (GDCD, TNXH, Lịch sử
+/**
+ * Tựa của node `lesson` cho một bản ghi: nguyên văn trường `content`. Bản ghi dạng `requirement` (GDCD, TNXH, Lịch sử
  * và Địa lí, Khoa học) để `content` rỗng — toàn văn của chúng là YCCĐ, đơn vị nội dung trình bày theo chủ đề — nên tựa
  * suy xuống `topic`, rồi `section`; cả ba rỗng thì dùng mã bản ghi (không xảy ra trong dataset hiện có, chỉ là chốt an
  * toàn để không bao giờ tạo node không tựa).
@@ -280,10 +286,11 @@ export function programRecordTitle(record: ProgramRecord): string {
   return record.id;
 }
 
-/** Khối hiệu lực của một bản ghi trong cây: chính `grade` của nó. Riêng 12 bản ghi chủ điểm (kind `theme`) của Tiếng
- * Anh 3–12 mang `grade = null` vì văn bản gốc trình bày phần "Nội dung khái quát" theo CẤP chứ không theo lớp, trong
- * khi cây chương trình khóa theo cặp (môn, khối 1–12) — quyết định ở issue #161: neo các bản ghi đó vào khối ĐẦU TIÊN
- * của cấp của chúng trong cùng dataset (Tiểu học → lớp 3, THCS → lớp 6, THPT → lớp 10 với dataset này). Các bản ghi đó
+/**
+ * Khối hiệu lực của một bản ghi trong cây: chính `grade` của nó. Riêng 12 bản ghi chủ điểm (kind `theme`) của Tiếng Anh
+ * 3–12 mang `grade = null` vì văn bản gốc trình bày phần "Nội dung khái quát" theo CẤP chứ không theo lớp, trong khi
+ * cây chương trình khóa theo cặp (môn, khối 1–12) — quyết định ở issue #161: neo các bản ghi đó vào khối ĐẦU TIÊN của
+ * cấp của chúng trong cùng dataset (Tiểu học → lớp 3, THCS → lớp 6, THPT → lớp 10 với dataset này). Các bản ghi đó
  * không mang YCCĐ nên vị trí neo không ảnh hưởng chọn YCCĐ/ma trận; khi mô hình cây hỗ trợ chương trình theo cấp thì
  * dời về đúng cấp.
  */
@@ -321,9 +328,10 @@ export function programCurriculumId(slug: string, grade: number): string {
   return programId('curriculum', `${slug}|${grade}`);
 }
 
-/** Id xác định của một node tổ tiên (mạch/chủ đề): khoá tự nhiên là đường tổ tiên đầy đủ từ gốc tới chính node đó —
- * mảng các cặp [kind, title] — trong chương trình (slug, khối) của nó. Đây là cùng dữ liệu mà chỉ mục cây trong bộ nhớ
- * của tầng nạp dùng làm khoá, nay nâng thành khoá định danh bền.
+/**
+ * Id xác định của một node tổ tiên (mạch/chủ đề): khoá tự nhiên là đường tổ tiên đầy đủ từ gốc tới chính node đó — mảng
+ * các cặp [kind, title] — trong chương trình (slug, khối) của nó. Đây là cùng dữ liệu mà chỉ mục cây trong bộ nhớ của
+ * tầng nạp dùng làm khoá, nay nâng thành khoá định danh bền.
  */
 export function programAncestorNodeId(
   slug: string,
@@ -333,18 +341,21 @@ export function programAncestorNodeId(
   return programId('node', `${slug}|${grade}|${JSON.stringify(path)}`);
 }
 
-/** Id xác định của node nội dung (lesson) của một bản ghi: khoá tự nhiên là (dataset, mã bản ghi) — trùng khoá sổ đăng ký. */
+/**
+ * Id xác định của node nội dung (lesson) của một bản ghi: khoá tự nhiên là (dataset, mã bản ghi) — trùng khoá sổ đăng
+ * ký.
+ */
 export function programLessonNodeId(datasetKey: string, recordId: string): string {
   return programId('record', `${datasetKey}|${recordId}`);
 }
 
-/** ĐỊNH DANH CỦA YCCĐ — CHỐT CUỐI (Quyết định 20:09 ngày 26/10/2026, sổ quyết định mục E, THAY mọi công thức v5 cho
- * YCCĐ trước đó): YCCĐ program KHÔNG có hàm tính id nào cả. Id của một dòng là **uuidv7 mờ do DB cấp MỘT LẦN khi tạo
- * dòng** (DEFAULT của cột — đúng mô hình giaokhoa), không suy từ bất kỳ thuộc tính nào (không hash nội dung, không vị
- * trí, không khoá tự nhiên): sửa chữ = sửa `content` tại chỗ trên cùng dòng, id và mọi liên kết giữ nguyên; thêm dòng =
- * chèn dòng mới (id mới) rồi set lại `position`. Tính nhất quán ID giữa các môi trường KHÔNG đến từ công thức mà đến từ
- * DUMP ĐÔNG CỨNG (xem program-dump.ts): mọi môi trường restore cùng một artifact nên mang đúng các id literal của DB
- * chuẩn.
+/**
+ * ĐỊNH DANH CỦA YCCĐ — CHỐT CUỐI (Quyết định 20:09 ngày 26/10/2026, sổ quyết định mục E, THAY mọi công thức v5 cho YCCĐ
+ * trước đó): YCCĐ program KHÔNG có hàm tính id nào cả. Id của một dòng là **uuidv7 mờ do DB cấp MỘT LẦN khi tạo dòng**
+ * (DEFAULT của cột — đúng mô hình giaokhoa), không suy từ bất kỳ thuộc tính nào (không hash nội dung, không vị trí,
+ * không khoá tự nhiên): sửa chữ = sửa `content` tại chỗ trên cùng dòng, id và mọi liên kết giữ nguyên; thêm dòng = chèn
+ * dòng mới (id mới) rồi set lại `position`. Tính nhất quán ID giữa các môi trường KHÔNG đến từ công thức mà đến từ DUMP
+ * ĐÔNG CỨNG (xem program-dump.ts): mọi môi trường restore cùng một artifact nên mang đúng các id literal của DB chuẩn.
  *
  * Các dòng YCCĐ của một bản ghi theo đúng thứ tự nguyên văn — đầu vào duy nhất của cả đường tạo mới lẫn đường diff của
  * importer (công cụ sản xuất dump ở trung tâm). `position` là vị trí 1-based trong danh sách; phép ghép cặp của

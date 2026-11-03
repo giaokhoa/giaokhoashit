@@ -24,10 +24,9 @@ import type { TotpService } from '../../../src/modules/auth/totp.service';
  *    cấp provider), redirect lỗi, không user/không session;
  *  - Facebook KHÔNG nằm trong trustedProviders và email của nó không
  *    được Better Auth coi là đã xác thực → KHÔNG liên kết ngầm;
- *  - tài khoản đã bật MFA (factor TOTP đã xác nhận trong `user_totp`
- *    — nguồn trạng thái MFA duy nhất) → callback OAuth bị cổng chặn:
- *    KHÔNG tồn tại session dùng được trong lúc chờ bước hai, redirect
- *    mang `twoFactorRedirect=true` + cookie chờ bước hai.
+ *  - tài khoản đã bật MFA (factor TOTP đã xác nhận trong `user_totp` — nguồn trạng thái MFA duy nhất) → callback OAuth
+ *    bị cổng chặn: KHÔNG tồn tại session dùng được trong lúc chờ bước hai, redirect mang `twoFactorRedirect=true` +
+ *    cookie chờ bước hai.
  *
  * Biến môi trường phải tồn tại TRƯỚC khi AppModule được nạp (ConfigModule validate ngay lúc import) nên các import của
  * AppModule đều là import động bên trong beforeAll — như spec nền BA.

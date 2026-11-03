@@ -7,19 +7,15 @@ import { Client } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 /**
- * Lát MCP-1 (issue #163) — máy chủ OAuth cho MCP bằng plugin Better
- * Auth + bộ tool batch/stimulus/publish/tra YCCĐ. Spec chạy với CẢ HAI
- * cờ BETTER_AUTH_ENABLED + MCP_AS_ENABLED bật và kiểm các cổng bắt
- * buộc của issue trên HTTP thật:
+ * Lát MCP-1 (issue #163) — máy chủ OAuth cho MCP bằng plugin Better Auth + bộ tool batch/stimulus/publish/tra YCCĐ.
+ * Spec chạy với CẢ HAI cờ BETTER_AUTH_ENABLED + MCP_AS_ENABLED bật và kiểm các cổng bắt buộc của issue trên HTTP thật:
  *  - discovery: AS metadata + JWKS + PRM trỏ issuer của BA.
  *  - luồng DCR (kỷ nguyên legacy): register → sign-in phiên BA →
  *    authorize → consent → token PKCE; JWT đúng iss/aud/client_id/
  *    scope, TTL 3600s. Client MCP gọi tool ở CẢ hai kỷ nguyên.
- *  - bộ tool MCP-1: batch từng-item + idempotency từng câu, nhóm ngữ
- *    liệu NGUYÊN TỬ (một câu lỗi → không gì được tạo), publish
- *    draft→ready + publish_not_draft, search_questions,
- *    check_duplicates, search_curriculum_outcomes, submit_contribution
- *    hồi quy trên đường AS.
+ *  - bộ tool MCP-1: batch từng-item + idempotency từng câu, nhóm ngữ liệu NGUYÊN TỬ (một câu lỗi → không gì được tạo),
+ *    publish draft→ready + publish_not_draft, search_questions, check_duplicates, search_curriculum_outcomes,
+ *    submit_contribution hồi quy trên đường AS.
  *  - ca scope hẹp dựng được: token chỉ lms.questions.read → tạo câu
  *    và publish đều 403 insufficient_scope (-32003) ở tầng mount.
  *  - token cầu auth cũ (JWT hệ thống HS256) bị RS từ chối 401; token

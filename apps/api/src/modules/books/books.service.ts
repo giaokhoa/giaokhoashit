@@ -13,7 +13,10 @@ import {
 
 const COURSE_UPDATE = 'course:update';
 
-/** Một đích ánh xạ của một bài SGK trong cây sách: node chương trình hoặc YCCĐ cụ thể, kèm mã bản ghi chương trình để truy vết. */
+/**
+ * Một đích ánh xạ của một bài SGK trong cây sách: node chương trình hoặc YCCĐ cụ thể, kèm mã bản ghi chương trình để
+ * truy vết.
+ */
 export interface BookMappingView {
   curriculumNodeId: string | null;
   learningOutcomeId: string | null;
@@ -236,7 +239,10 @@ export class BookService implements OnModuleInit {
     };
   }
 
-  /** Tìm-tạo node chương (chủ đề) của một bản ghi trong cây sách; chương là node gốc, position = số thứ tự chương trong sách. */
+  /**
+   * Tìm-tạo node chương (chủ đề) của một bản ghi trong cây sách; chương là node gốc, position = số thứ tự chương trong
+   * sách.
+   */
   private async ensureChapter(index: TreeIndex, bookId: string, record: BookRecord): Promise<BookNodeRow> {
     const key = `${record.volume}|${record.chapter}`;
     const existing = index.chapterByKey.get(key);
@@ -412,7 +418,10 @@ export class BookService implements OnModuleInit {
     return { book, subject };
   }
 
-  /** Cổng đọc dùng chung: curriculum:view tại context của môn, hoặc course:update tại khoá đích khi kèm forCourseId (như CurriculumService). */
+  /**
+   * Cổng đọc dùng chung: curriculum:view tại context của môn, hoặc course:update tại khoá đích khi kèm forCourseId (như
+   * CurriculumService).
+   */
   private async assertCanRead(actorId: string, subjectContextId: string, forCourseId?: string): Promise<void> {
     if (await this.evaluator.hasCapability(actorId, CURRICULUM_VIEW, subjectContextId)) return;
     if (forCourseId) {

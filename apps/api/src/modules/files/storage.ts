@@ -28,7 +28,8 @@ export interface ObjectStorage {
 export function sha256Hex(data: Buffer): string { return createHash('sha256').update(data).digest('hex'); }
 export function contentKey(contentHash: string): string { return `${contentHash.slice(0, 2)}/${contentHash.slice(2, 4)}/${contentHash}`; }
 
-/** Năng lực tuỳ chọn của adapter: cấp một URL tải xuống trực tiếp dạng presigned trỏ thẳng tới chính kho lưu trữ bên
+/**
+ * Năng lực tuỳ chọn của adapter: cấp một URL tải xuống trực tiếp dạng presigned trỏ thẳng tới chính kho lưu trữ bên
  * ngoài, thay vì proxy byte qua API phía sau một chữ ký HMAC. Adapter cục bộ không có năng lực này — việc cấp phát
  * fallback về HMAC cho nó.
  */

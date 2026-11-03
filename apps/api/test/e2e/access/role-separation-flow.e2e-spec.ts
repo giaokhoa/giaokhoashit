@@ -31,30 +31,21 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
  *     EnrolService.enrolUserInternal: bị từ chối
  *     `access.role_context_conflict`, không tạo ghi danh, không gán
  *     vai học viên.
- *  2. Funnel 2 — thêm roster lớp bằng EMAIL của chính chủ lớp qua
- *     GroupsService.addCohortMember: bị từ chối cùng mã; chủ lớp
- *     không vào cohort, không có ghi danh ở khoá của lớp; học sinh
- *     thường vẫn nạp được (đối chứng dương).
+ *  2. Funnel 2 — thêm roster lớp bằng EMAIL của chính chủ lớp qua GroupsService.addCohortMember: bị từ chối cùng mã;
+ *     chủ lớp không vào cohort, không có ghi danh ở khoá của lớp; học sinh thường vẫn nạp được (đối chứng dương).
  *  3. Đối chứng giữ đường tham gia: giáo viên ghi danh vào khoá
  *     KHÔNG liên quan vẫn thành công và ở khoá đó chỉ là học viên
  *     (không có grade:viewall).
- *  4. Chiều ngược — gán vai giảng dạy tại context khoá và context
- *     lớp cho học viên đang học đang hoạt động trong khoá bị bao
- *     phủ: bị từ chối cùng mã; gán cho người không có ghi danh như
- *     vậy vẫn thành công (đối chứng dương).
- *  5. Funnel 3 — restore backup chứa ghi danh của người đang dạy
- *     khoá đích: restore hoàn tất, ghi danh vi phạm bị bỏ qua và
- *     được đếm vào chi tiết bước restore
- *     (skippedRoleConflictEnrolments = 1), ghi danh hợp lệ trong
- *     cùng backup vẫn được khôi phục.
- *  6. Đường kích hoạt lại ghi danh đã đình chỉ: gán vai giảng dạy
- *     trong lúc ghi danh đang đình chỉ là hợp lệ (ghi danh chưa hoạt
- *     động), nhưng kích hoạt lại sau đó bị từ chối cùng mã và ghi
- *     danh giữ nguyên trạng thái đình chỉ.
- *  7. Kiểm toán chỉ đọc: dữ kiện lẫn vai dựng thẳng vào DB (mô
- *     phỏng dữ kiện có sẵn trước khi có chốt) được phân loại vào
- *     NHÓM CÙNG KHOÁ; tài khoản dạy khoá này học khoá khác vào
- *     NHÓM KHÁC KHOÁ; lượt kiểm toán không ghi bất kỳ dữ kiện nào.
+ *  4. Chiều ngược — gán vai giảng dạy tại context khoá và context lớp cho học viên đang học đang hoạt động trong khoá
+ *     bị bao phủ: bị từ chối cùng mã; gán cho người không có ghi danh như vậy vẫn thành công (đối chứng dương).
+ *  5. Funnel 3 — restore backup chứa ghi danh của người đang dạy khoá đích: restore hoàn tất, ghi danh vi phạm bị bỏ
+ *     qua và được đếm vào chi tiết bước restore (skippedRoleConflictEnrolments = 1), ghi danh hợp lệ trong cùng backup
+ *     vẫn được khôi phục.
+ *  6. Đường kích hoạt lại ghi danh đã đình chỉ: gán vai giảng dạy trong lúc ghi danh đang đình chỉ là hợp lệ (ghi danh
+ *     chưa hoạt động), nhưng kích hoạt lại sau đó bị từ chối cùng mã và ghi danh giữ nguyên trạng thái đình chỉ.
+ *  7. Kiểm toán chỉ đọc: dữ kiện lẫn vai dựng thẳng vào DB (mô phỏng dữ kiện có sẵn trước khi có chốt) được phân loại
+ *     vào NHÓM CÙNG KHOÁ; tài khoản dạy khoá này học khoá khác vào NHÓM KHÁC KHOÁ; lượt kiểm toán không ghi bất kỳ dữ
+ *     kiện nào.
  */
 describe('Tách vai trò theo ngữ cảnh (#425)', () => {
   let app: INestApplication;

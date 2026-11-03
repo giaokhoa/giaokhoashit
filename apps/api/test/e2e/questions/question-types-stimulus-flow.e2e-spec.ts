@@ -18,11 +18,9 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
  *    useCase) — ký tự đại diện `*` đã bỏ hẳn (điểm quyết D-2).
  *  - essay: không tự chấm → needsgrading; guidance nằm ở bản ghi phía
  *    đáp án (`answerKey`) cùng lời giải mẫu, KHÔNG còn trên version.
- *  - Stimulus quanh ngữ liệu: mô hình theo repo tham chiếu giaokhoa
- *    (stimulus độc lập, bất biến khi đã được tham chiếu); nhiều câu
- *    (kể cả câu TF-A) cùng tham chiếu một stimulus và chấm độc lập,
- *    tính bất biến do chuỗi pin attempt → version → stimulus bảo đảm
- *    (không cần snapshot riêng).
+ *  - Stimulus quanh ngữ liệu: mô hình theo repo tham chiếu giaokhoa (stimulus độc lập, bất biến khi đã được tham
+ *    chiếu); nhiều câu (kể cả câu TF-A) cùng tham chiếu một stimulus và chấm độc lập, tính bất biến do chuỗi pin
+ *    attempt → version → stimulus bảo đảm (không cần snapshot riêng).
  *  - Điểm tuyệt đối gắn lúc ra đề: maxMark của slot, fallback
  *    defaultMark của câu.
  */

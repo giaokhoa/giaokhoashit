@@ -17,10 +17,8 @@ import {
  * Ma trận ca của spec này:
  *  - Chủ sở hữu: 200/201 mọi đường (bank, câu, category, attribution,
  *    ma trận, bank ma trận).
- *  - GV staff khác: bank personal của đồng nghiệp KHÔNG xuất hiện
- *    trong listBanks (question/exam/matrix); mọi đường đọc thẳng theo
- *    id → 404; copy nguồn thuộc bank personal của đồng nghiệp → 403;
- *    khám phá không rò câu.
+ *  - GV staff khác: bank personal của đồng nghiệp KHÔNG xuất hiện trong listBanks (question/exam/matrix); mọi đường đọc
+ *    thẳng theo id → 404; copy nguồn thuộc bank personal của đồng nghiệp → 403; khám phá không rò câu.
  *  - Học sinh: 404 các đường đọc bank personal.
  *  - Bank trường/tổ: hành vi KHÔNG đổi (GV trường đọc được bank trường;
  *    thành viên tổ đọc được bank tổ).
@@ -28,16 +26,13 @@ import {
  *    personal duy nhất trong danh sách của mỗi GV là của chính họ.
  * Site admin giữ toàn quyền như bất biến hiện hành (khớp MB-1 E-8).
  *
- * VÒNG 2 (phán quyết đánh giá 6392040333 — điểm chặn sườn GHI): spec
- * vòng 1 dùng archetype `teacher` (không có question:add/editall) nên
- * mù lỗ hổng ghi — đồng nghiệp archetype `editingteacher` kế thừa
- * add/editall/managecategory từ context hệ thống xuống bank personal
- * của người khác, sửa/xoá/chen được nội dung. Vòng 2 khoá bằng cổng
- * ghi chủ sở hữu ở QuestionsService (+ phía nguồn của đóng góp):
- *  - editingteacher khác: PATCH câu, POST câu/stimulus vào category
- *    của đồng nghiệp, PATCH/DELETE stimulus, gắn/gỡ subject + YCCĐ,
- *    tạo category trong bank của đồng nghiệp, đề xuất đóng góp bằng
- *    câu của đồng nghiệp → 404 (mã not-found của chính tài nguyên).
+ * VÒNG 2 (phán quyết đánh giá 6392040333 — điểm chặn sườn GHI): spec vòng 1 dùng archetype `teacher` (không có
+ * question:add/editall) nên mù lỗ hổng ghi — đồng nghiệp archetype `editingteacher` kế thừa add/editall/managecategory
+ * từ context hệ thống xuống bank personal của người khác, sửa/xoá/chen được nội dung. Vòng 2 khoá bằng cổng ghi chủ sở
+ * hữu ở QuestionsService (+ phía nguồn của đóng góp):
+ *  - editingteacher khác: PATCH câu, POST câu/stimulus vào category của đồng nghiệp, PATCH/DELETE stimulus, gắn/gỡ
+ *    subject + YCCĐ, tạo category trong bank của đồng nghiệp, đề xuất đóng góp bằng câu của đồng nghiệp → 404 (mã
+ *    not-found của chính tài nguyên).
  *  - Chủ sở hữu editingteacher + site admin: ghi bình thường.
  *  - Bank trường: editingteacher không phải chủ câu vẫn ghi theo
  *    capability như cũ (cổng chỉ áp bank personal).

@@ -108,11 +108,9 @@ export class RoleSeparationService {
   }
 
   /**
-   * Khẳng định việc gán một vai GIẢNG DẠY (không do ghi danh cấp)
-   * tại một context khoá/lớp cho một người dùng là hợp lệ: ném lỗi
-   * 400 mã `access.role_context_conflict` khi người dùng đang có
-   * ghi danh học viên đang hoạt động trong khoá bị context đó bao
-   * phủ (kiểm (b)).
+   * Khẳng định việc gán một vai GIẢNG DẠY (không do ghi danh cấp) tại một context khoá/lớp cho một người dùng là hợp
+   * lệ: ném lỗi 400 mã `access.role_context_conflict` khi người dùng đang có ghi danh học viên đang hoạt động trong
+   * khoá bị context đó bao phủ (kiểm (b)).
    *
    * @param userId - người dùng sắp nhận gán vai giảng dạy.
    * @param contextId - context đích của gán vai.
