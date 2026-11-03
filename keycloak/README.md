@@ -74,7 +74,6 @@ client MCP đăng ký trước của tenant.
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | IdP Google cho broker của mọi realm tenant. |
 | `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | IdP Facebook cho broker của mọi realm tenant. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_STARTTLS`, `SMTP_SSL` | Cấu hình SMTP của realm; chỉ áp khi có cả `SMTP_HOST` và `SMTP_FROM`. |
-| `KC_MASTER_OPERATOR_USERNAME` | Tên tài khoản vận hành thuộc realm `master` cần gắn yêu cầu khai báo TOTP (xem mục realm `master`). |
 
 Quy tắc bí mật: bí mật của client chỉ được đặt **khi tạo
 client** và chỉ từ biến môi trường trên; hoà giải các lần sau
@@ -110,8 +109,10 @@ kiện vận hành (người dùng, phiên, bí mật):
 7. Gán client scope cho từng client được hoà giải về đúng tập
    của mẫu (cả tập default lẫn optional).
 8. Client role (ví dụ `platform-admin`) được tạo nếu thiếu.
-9. Ánh xạ vai lên client scope `roles` được bổ sung nếu thiếu
-   (xem mục Mapper và vai trong token).
+9. Ánh xạ vai lên client scope `roles` được hoà giải hai chiều
+   về đúng tập của mẫu: thiếu thì ánh xạ thêm, ánh xạ ngoài mẫu
+   (realm role hoặc client role lạ đã có sẵn trên scope) thì bị
+   gỡ (xem mục Mapper và vai trong token).
 10. IdP: tạo hoặc PUT theo mẫu khi có thông tin đăng nhập;
     bỏ qua khi thiếu.
 11. **Flow xác thực chỉ được kiểm chứng, không tự viết lại**:
@@ -159,7 +160,10 @@ kiện vận hành (người dùng, phiên, bí mật):
   ánh xạ vào một client scope mà client mang. Bộ cấp phát ánh
   xạ đúng ba vai chính vào client scope `roles` (scope mặc
   định của `lms-web`) — đây là toàn bộ tập vai realm được phép
-  vào token, không hơn.
+  vào token, không hơn. Tập ánh xạ này được giữ khép kín khi
+  chạy lại: ánh xạ realm role hoặc client role ngoài mẫu đã
+  có sẵn trên scope `roles` bị gỡ, nên token không thể mang
+  vai ngoài tập cho phép chỉ vì realm từng bị sửa tay.
 - **Đăng ký và mặc định**: tự đăng ký tắt; Remember Me tắt;
   realm không bật Organizations và không bật Authorization
   Services/User-Managed Access.
@@ -283,16 +287,40 @@ tenant nào:
   chính sách như tenant.
 - Không IdP broker trong realm này.
 
-Realm `master` chỉ dành cho vận hành Keycloak. Bộ cấp phát áp
-lớp phủ vô hướng (chính sách brute force như mẫu, sự kiện
-kiểm toán bật, chi tiết sự kiện quản trị tắt) và — khi
-`KC_MASTER_OPERATOR_USERNAME` được đặt — gắn required action
-`CONFIGURE_TOTP` cho tài khoản vận hành đó để MFA cũng bắt
-buộc ở realm `master`. Lưu ý đã kiểm chứng: không được gắn
-required action này cho chính tài khoản đang gọi Admin API
-trước khi tài khoản đó hoàn tất khai báo, vì Keycloak từ
-chối cấp token cho tài khoản chưa hoàn tất required action;
-bộ cấp phát tự bỏ qua trường hợp trùng này và in cảnh báo.
+Realm `master` chỉ dành cho vận hành Keycloak, và MFA bắt
+buộc ở đây như ở mọi realm khác. Vì realm này không ra đời từ
+mẫu import, bộ cấp phát áp mọi thứ bằng Admin REST API:
+
+- Lớp phủ vô hướng: chính sách brute force như mẫu, sự kiện
+  kiểm toán bật, chi tiết sự kiện quản trị tắt.
+- Flow trình duyệt riêng `lms-master-browser` — cùng cấu trúc
+  với `platform-browser` của realm `giaokhoa` (cookie, rồi
+  subflow form gồm mật khẩu REQUIRED và OTP REQUIRED vô điều
+  kiện) — được tạo từng bước bằng các endpoint chính thức nếu
+  chưa có, đối chiếu chữ ký nếu đã có, và được đặt làm
+  `browserFlow` của realm. Hệ quả: mọi đăng nhập tương tác
+  vào `master` đều phải qua yếu tố thứ hai; tài khoản chưa có
+  credential OTP bị authenticator kích hoạt required action
+  khai báo TOTP và không hoàn tất được đăng nhập cho tới khi
+  khai báo xong. Nếu flow đã có mà lệch cấu trúc, bộ cấp phát
+  báo lỗi thay vì tự viết lại flow đang chạy (cùng kỷ luật
+  với các realm có mẫu); quay lui khi cần là đặt lại
+  `browserFlow` của realm về `browser` trong Admin Console.
+- Required action `CONFIGURE_TOTP` được gắn cho **mọi** tài
+  khoản thuộc realm `master` chưa có credential OTP — trừ
+  đúng tài khoản đang gọi Admin API (`KC_ADMIN_USERNAME`).
+  Đây là sự tách bạch theo thiết kế: tài khoản gọi API là
+  tài khoản tự động hoá, chỉ lấy token qua endpoint token
+  (password grant qua `admin-cli`) — đường này không đi qua
+  browser flow nên không bị flow MFA chặn; nhưng Keycloak từ
+  chối cấp token cho tài khoản còn required action chưa hoàn
+  tất (đã kiểm chứng), nên gắn yêu cầu cho chính nó sẽ tự
+  khoá đường cấp phát. Mọi tài khoản người dùng Admin
+  Console còn lại là tài khoản tương tác và đều bị bắt buộc
+  MFA, không cần khai báo thêm biến môi trường nào. Nếu một
+  người dùng chính tài khoản tự động hoá để đăng nhập Admin
+  Console, họ vẫn bị flow bắt khai báo và nhập OTP như mọi
+  tài khoản tương tác khác.
 
 ## Kiểm chứng
 
@@ -326,6 +354,20 @@ kiểm, mã thoát khác 0 nếu có kiểm nào không đạt:
   cũng là quy trình khôi phục (rollback) của mẫu: quay về mẫu
   trong repo bằng một lần chạy cấp phát, không mở lại cơ chế
   xác thực cũ.
+- hoà giải ánh xạ vai hai chiều: dựng sẵn một realm role và
+  một client role ngoài mẫu, ánh xạ cả hai vào client scope
+  `roles` và gán vai lạ cho thành viên — token của thành viên
+  mang vai lạ khi drift còn hiệu lực; chạy lại bộ cấp phát
+  thì cả hai ánh xạ thừa bị gỡ và token cấp sau đó chỉ còn
+  vai theo mẫu.
+- MFA ở realm `master`: tạo tài khoản vận hành tương tác mới
+  (vai `admin` của realm `master`), chạy lại bộ cấp phát và
+  lái đăng nhập qua Admin Console — tài khoản bị gắn
+  `CONFIGURE_TOTP`, không hoàn tất được đăng nhập nếu không
+  khai báo MFA, khai báo xong thì vào được và lần đăng nhập
+  sau bị hỏi mã OTP; đồng thời khẳng định tài khoản tự động
+  hoá gọi Admin API không bị gắn required action và vẫn lấy
+  được token qua password grant sau lớp phủ.
 
 Cách chạy bằng Docker (môi trường có Docker):
 
@@ -359,12 +401,18 @@ hoặc thói quen của bản cũ hơn), mẫu và bộ cấp phát đã theo
 - Trường `postLogoutRedirectUris` trên client bị từ chối khi
   tạo client; dạng dùng được là thuộc tính
   `post.logout.redirect.uris`.
-- PUT hàng loạt executions của một flow xác thực
+- PUT executions của một flow xác thực
   (`PUT /admin/realms/{realm}/authentication/flows/{alias}/executions`)
-  trả lỗi 400 `Cannot parse the JSON` kể cả với payload nguyên
-  trạng đọc từ GET — vì vậy flow chỉ được tạo qua realm import
-  lúc tạo realm và được kiểm chứng chữ ký ở các lần chạy sau
-  (xem mục Mô hình hoà giải).
+  gửi cả danh sách executions trong một lần trả lỗi 400
+  `Cannot parse the JSON` — vì vậy flow của các realm có mẫu
+  chỉ được tạo qua realm import lúc tạo realm và được kiểm
+  chứng chữ ký ở các lần chạy sau (xem mục Mô hình hoà giải).
+  Riêng flow của realm `master` (không có đường import) được
+  tạo từng bước: POST tạo flow, POST thêm từng execution và
+  subflow, rồi đặt requirement bằng PUT **từng bản ghi**
+  execution nguyên trạng đọc từ GET executions chỉ thay trường
+  `requirement` — dạng PUT đơn lẻ này trả 204 và là cách lớp
+  phủ master dùng (đã kiểm chứng trên binary thật).
 - Realm PUT bỏ qua trường `authenticationFlows` một cách im
   lặng nhưng vẫn áp các trường vô hướng — bộ cấp phát dựa vào
   đúng hành vi này cho bước hoà giải vô hướng.
