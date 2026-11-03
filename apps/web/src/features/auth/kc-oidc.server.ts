@@ -6,16 +6,17 @@
  * trình duyệt không được thấy token thô:
  *
  *   1. Discovery: đọc tài liệu `/.well-known/openid-configuration` của
- *      issuer (cấu hình qua biến môi trường `KEYCLOAK_ISSUER`) để lấy
- *      các endpoint authorize/token/end-session — không ghim đường dẫn
- *      endpoint trong code.
+ *      issuer (cấu hình qua biến môi trường `KEYCLOAK_ISSUER`), đối
+ *      chiếu trường `issuer` trong tài liệu phải khớp chính xác issuer
+ *      đã cấu hình rồi mới lấy các endpoint authorize/token/end-session
+ *      từ đó — không ghim đường dẫn endpoint trong code.
  *   2. PKCE: sinh verifier/challenge S256 và state/nonce cho mỗi lượt
  *      bắt đầu đăng nhập; bộ ba này đi vòng qua trình duyệt trong một
- *      cookie HttpOnly ngắn hạn (`lms_kc_oidc`) để callback kiểm lại.
+ *      cookie HttpOnly ngắn hạn (`__Host-lms_kc_oidc`) để callback kiểm lại.
  *   3. Phiên phía web: sau khi đổi code lấy token ở kênh server-to-server,
  *      access token và ID token nằm trong kho phiên ở bộ nhớ tiến trình
  *      SSR, trình duyệt chỉ giữ một mã phiên ngẫu nhiên trong cookie
- *      HttpOnly (`lms_kc_session`). Token không ghi log và không đưa ra
+ *      HttpOnly (`__Host-lms_kc_session`). Token không ghi log và không đưa ra
  *      trang ở bất kỳ dạng nào.
  *   4. Danh tính: gọi `GET /api/me` của `apps/server` (biến môi trường
  *      `LMS_SERVER_INTERNAL_URL`) kèm access token; server kiểm chứng
@@ -28,11 +29,11 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { TenantIdentity } from './kc-tenant';
 
-/** Tên cookie giữ mã phiên đăng nhập phía web. */
-export const KC_SESSION_COOKIE = 'lms_kc_session';
+/** Tên cookie giữ mã phiên đăng nhập phía web (tiền tố `__Host-`, xem `buildCookie`). */
+export const KC_SESSION_COOKIE = '__Host-lms_kc_session';
 
-/** Tên cookie ngắn hạn giữ bộ ba PKCE/state/nonce giữa login và callback. */
-const KC_OIDC_COOKIE = 'lms_kc_oidc';
+/** Tên cookie ngắn hạn giữ bộ ba PKCE/state/nonce giữa login và callback (tiền tố `__Host-`). */
+const KC_OIDC_COOKIE = '__Host-lms_kc_oidc';
 
 /** Tuổi của cookie chờ callback: đủ cho một lượt đăng nhập bị chậm ở trang Keycloak. */
 const OIDC_COOKIE_MAX_AGE_SECONDS = 600;
@@ -70,6 +71,7 @@ function serverInternalBase(): string {
 
 /** Các endpoint OIDC cần cho luồng, trích từ tài liệu discovery của issuer. */
 interface OidcDiscovery {
+  issuer: string;
   authorizationEndpoint: string;
   tokenEndpoint: string;
   endSessionEndpoint: string | null;
@@ -81,6 +83,12 @@ let discoveryCache: Promise<OidcDiscovery> | null = null;
  * Lấy (và nhớ cho cả tiến trình) các endpoint OIDC của issuer. Lỗi mạng
  * hay đáp ứng thiếu trường thì bỏ cache để lượt gọi sau thử lại.
  *
+ * Trường `issuer` trong tài liệu phải khớp chính xác issuer đã cấu
+ * hình (OpenID Connect Discovery §4): metadata mang issuer khác nghĩa
+ * là tài liệu không thuộc OP đã cấu hình, và dùng các endpoint trong
+ * đó sẽ gửi authorization code tới một đích không được uỷ quyền — đáp
+ * ứng như vậy bị từ chối và không được nhớ vào cache.
+ *
  * @returns Các endpoint authorize/token/end-session của issuer.
  */
 export function getOidcDiscovery(): Promise<OidcDiscovery> {
@@ -88,10 +96,14 @@ export function getOidcDiscovery(): Promise<OidcDiscovery> {
     const res = await fetch(`${keycloakIssuer()}/.well-known/openid-configuration`);
     if (!res.ok) throw new Error(`OIDC discovery failed: ${res.status}`);
     const doc = (await res.json()) as Record<string, unknown>;
+    if (typeof doc.issuer !== 'string' || doc.issuer !== keycloakIssuer()) {
+      throw new Error('OIDC discovery document issuer does not match the configured issuer');
+    }
     if (typeof doc.authorization_endpoint !== 'string' || typeof doc.token_endpoint !== 'string') {
       throw new Error('OIDC discovery document is missing endpoints');
     }
     return {
+      issuer: doc.issuer,
       authorizationEndpoint: doc.authorization_endpoint,
       tokenEndpoint: doc.token_endpoint,
       endSessionEndpoint: typeof doc.end_session_endpoint === 'string' ? doc.end_session_endpoint : null,
@@ -161,52 +173,66 @@ export function createPendingLogin(): PendingLogin & PkcePair {
 }
 
 /**
- * Dựng header Set-Cookie thô cho các cookie của luồng này: luôn HttpOnly
- * và SameSite=Lax (lượt quay về từ Keycloak là điều hướng GET cấp cao
- * nên Lax vẫn cho cookie đi kèm), Path=/; thuộc tính Secure chỉ bật khi
- * origin công khai là https.
+ * Dựng header Set-Cookie thô cho các cookie của luồng này: tên mang tiền
+ * tố `__Host-`, luôn `Secure`, `Path=/`, HttpOnly và SameSite=Lax (lượt
+ * quay về từ Keycloak là điều hướng GET cấp cao nên Lax vẫn cho cookie
+ * đi kèm), không thuộc tính `Domain`.
  *
- * @param request - Request đang phục vụ (quyết định thuộc tính Secure).
+ * Tiền tố `__Host-` (RFC 6265bis §4.1.3.2) là cơ chế trình duyệt dành
+ * cho đúng kênh cookie này: trình duyệt chỉ nhận cookie `__Host-` khi
+ * nó có `Secure`, `Path=/` và không có `Domain`, nên một subdomain anh
+ * em không thể cấy cookie cùng tên theo domain cha (cookie-tossing) để
+ * thay bộ ba chống giả mạo hay mã phiên của lượt đăng nhập — việc kênh
+ * cookie tự nó không bị thay thế là điều kiện để `state` được coi là
+ * ràng buộc an toàn với trình duyệt theo RFC 9700 §4.7.1. Hệ quả: luồng
+ * này chỉ chạy trên https, đúng mọi môi trường triển khai của app.
+ *
  * @param name - Tên cookie.
  * @param value - Giá trị cookie (đã an toàn cho header).
  * @param maxAgeSeconds - Tuổi tối đa tính bằng giây; 0 nghĩa là xoá cookie.
  * @returns Giá trị header Set-Cookie hoàn chỉnh.
  */
-function buildCookie(request: Request, name: string, value: string, maxAgeSeconds: number): string {
-  const secure = publicOrigin(request).startsWith('https://') ? '; Secure' : '';
-  return `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}${secure}`;
+function buildCookie(name: string, value: string, maxAgeSeconds: number): string {
+  return `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}; Secure`;
 }
 
 /**
- * Đọc một cookie từ header Cookie của request.
+ * Đọc một cookie từ header Cookie của request. Tên cookie xuất hiện
+ * hơn một lần thì coi như không có: hai cookie cùng tên nghĩa là một
+ * cookie do nguồn khác đặt (ví dụ theo domain cha từ subdomain anh em)
+ * đang sống song song với cookie `__Host-` của app, và RFC 6265 §4.2.2
+ * đã cảnh báo server không được trông vào thứ tự xuất hiện của chúng —
+ * không giá trị nào trong hai giá trị là đáng tin.
  *
  * @param request - Request đang phục vụ.
  * @param name - Tên cookie cần đọc.
- * @returns Giá trị cookie, hoặc `null` khi không có.
+ * @returns Giá trị cookie, hoặc `null` khi không có hoặc tên bị trùng.
  */
 function readCookie(request: Request, name: string): string | null {
   const header = request.headers.get('cookie');
   if (!header) return null;
+  let found: string | null = null;
   for (const part of header.split(';')) {
     const eq = part.indexOf('=');
     if (eq < 0) continue;
-    if (part.slice(0, eq).trim() === name) return part.slice(eq + 1).trim();
+    if (part.slice(0, eq).trim() !== name) continue;
+    if (found !== null) return null;
+    found = part.slice(eq + 1).trim();
   }
-  return null;
+  return found;
 }
 
 /**
- * Gói bộ ba chờ callback vào cookie `lms_kc_oidc`: JSON mã hoá base64url
+ * Gói bộ ba chờ callback vào cookie `__Host-lms_kc_oidc`: JSON mã hoá base64url
  * — đây là dữ kiện chống giả mạo của chính lượt đăng nhập, không phải
  * token, và cookie HttpOnly nên trang không đọc được.
  *
- * @param request - Request đang phục vụ.
  * @param pending - Bộ ba PKCE/state/nonce vừa sinh.
  * @returns Header Set-Cookie cho cookie chờ.
  */
-export function pendingLoginCookie(request: Request, pending: PendingLogin): string {
+export function pendingLoginCookie(pending: PendingLogin): string {
   const value = Buffer.from(JSON.stringify(pending), 'utf8').toString('base64url');
-  return buildCookie(request, KC_OIDC_COOKIE, value, OIDC_COOKIE_MAX_AGE_SECONDS);
+  return buildCookie(KC_OIDC_COOKIE, value, OIDC_COOKIE_MAX_AGE_SECONDS);
 }
 
 /**
@@ -231,11 +257,10 @@ export function readPendingLogin(request: Request): PendingLogin | null {
  * Header xoá cookie chờ callback (dùng ở mọi lối ra của callback để bộ
  * ba không sống qua một lượt đăng nhập).
  *
- * @param request - Request đang phục vụ.
  * @returns Header Set-Cookie với Max-Age=0.
  */
-export function clearPendingLoginCookie(request: Request): string {
-  return buildCookie(request, KC_OIDC_COOKIE, '', 0);
+export function clearPendingLoginCookie(): string {
+  return buildCookie(KC_OIDC_COOKIE, '', 0);
 }
 
 /** Một phiên đăng nhập phía web: token nằm ở server, kèm mốc hết hạn của access token. */
@@ -251,21 +276,21 @@ const sessions = new Map<string, KcSession>();
 /**
  * Lập phiên mới cho một bộ token vừa đổi được và dựng cookie phiên.
  *
- * @param request - Request đang phục vụ.
  * @param tokens - Access token, ID token và tuổi access token (giây).
  * @returns Header Set-Cookie mang mã phiên mới.
  */
-export function createSessionCookie(
-  request: Request,
-  tokens: { accessToken: string; idToken: string; expiresInSeconds: number },
-): string {
+export function createSessionCookie(tokens: {
+  accessToken: string;
+  idToken: string;
+  expiresInSeconds: number;
+}): string {
   const sessionId = randomBase64Url(32);
   sessions.set(sessionId, {
     accessToken: tokens.accessToken,
     idToken: tokens.idToken,
     expiresAt: Date.now() + tokens.expiresInSeconds * 1000,
   });
-  return buildCookie(request, KC_SESSION_COOKIE, sessionId, tokens.expiresInSeconds);
+  return buildCookie(KC_SESSION_COOKIE, sessionId, tokens.expiresInSeconds);
 }
 
 /**
@@ -297,7 +322,7 @@ export function readSession(request: Request): KcSession | null {
 export function destroySessionCookie(request: Request): string {
   const sessionId = readCookie(request, KC_SESSION_COOKIE);
   if (sessionId) sessions.delete(sessionId);
-  return buildCookie(request, KC_SESSION_COOKIE, '', 0);
+  return buildCookie(KC_SESSION_COOKIE, '', 0);
 }
 
 /** Đáp ứng của token endpoint sau khi đổi authorization code. */
@@ -346,22 +371,37 @@ export async function exchangeCode(input: {
 }
 
 /**
- * Kiểm nonce trong ID token: giải phần payload (không kiểm chữ ký — token
- * này vừa nhận trực tiếp từ token endpoint của issuer đã cấu hình qua
- * kênh server-to-server, và access token đi kèm sẽ bị `apps/server` kiểm
- * chứng chữ ký ở mỗi lượt lấy danh tính) và đối chiếu `nonce` với giá trị
- * đã sinh ở bước authorize để buộc token thuộc đúng lượt đăng nhập này.
+ * Kiểm các claim bắt buộc của ID token theo OIDC Core §3.1.3.7 trước
+ * khi lập phiên: `iss` khớp chính xác issuer đã cấu hình (quy tắc 2),
+ * `aud` chứa client của luồng này (quy tắc 3), `exp` còn hạn (quy tắc
+ * 9) và `nonce` khớp giá trị đã sinh ở bước authorize (quy tắc 11).
+ *
+ * Chữ ký không được kiểm ở đây: token này vừa nhận trực tiếp từ token
+ * endpoint của issuer đã cấu hình qua kênh server-to-server có TLS,
+ * và quy tắc 6 của cùng mục cho phép việc kiểm thực máy chủ qua TLS
+ * thay cho kiểm chữ ký trong authorization code flow. Access token đi
+ * kèm vẫn bị `apps/server` kiểm chứng chữ ký ở mỗi lượt lấy danh tính
+ * — đó là token khác, không thay được các kiểm tra claim ở đây.
  *
  * @param idToken - ID token vừa nhận từ token endpoint.
- * @param expectedNonce - Nonce đã lưu trong cookie chờ.
- * @returns `true` khi nonce khớp.
+ * @param expected - Issuer đã cấu hình, client id của luồng và nonce đã lưu trong cookie chờ.
+ * @returns `true` khi mọi claim bắt buộc đều đạt.
  */
-export function idTokenNonceMatches(idToken: string, expectedNonce: string): boolean {
+export function validateIdToken(
+  idToken: string,
+  expected: { issuer: string; clientId: string; nonce: string },
+): boolean {
   const parts = idToken.split('.');
   if (parts.length !== 3) return false;
   try {
     const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')) as Record<string, unknown>;
-    return payload.nonce === expectedNonce;
+    if (payload.iss !== expected.issuer) return false;
+    const audience = payload.aud;
+    const audienceMatches =
+      audience === expected.clientId || (Array.isArray(audience) && audience.includes(expected.clientId));
+    if (!audienceMatches) return false;
+    if (typeof payload.exp !== 'number' || payload.exp * 1000 <= Date.now()) return false;
+    return payload.nonce === expected.nonce;
   } catch {
     return false;
   }

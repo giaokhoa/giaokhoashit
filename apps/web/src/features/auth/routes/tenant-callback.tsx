@@ -5,9 +5,11 @@ import {
   clearPendingLoginCookie,
   createSessionCookie,
   exchangeCode,
-  idTokenNonceMatches,
+  getOidcDiscovery,
+  keycloakClientId,
   publicOrigin,
   readPendingLogin,
+  validateIdToken,
 } from '../kc-oidc.server';
 
 /**
@@ -17,10 +19,11 @@ import {
  * Flow của loader: đọc `code`/`state` từ query và bộ ba chờ trong
  * cookie → state không khớp thì huỷ lượt (xoá cookie chờ, về trang
  * tenant ở trạng thái chưa đăng nhập) → đổi code lấy token ở kênh
- * server-to-server kèm PKCE verifier → kiểm nonce trong ID token → lập
- * phiên phía web (token nằm ở kho phiên phía server, trình duyệt chỉ
- * nhận mã phiên trong cookie HttpOnly) → về trang tenant. Mọi lối ra
- * đều xoá cookie chờ để bộ ba không dùng lại được cho lượt khác.
+ * server-to-server kèm PKCE verifier → kiểm các claim bắt buộc của ID
+ * token (issuer, audience, hạn dùng, nonce) → lập phiên phía web
+ * (token nằm ở kho phiên phía server, trình duyệt chỉ nhận mã phiên
+ * trong cookie HttpOnly) → về trang tenant. Mọi lối ra đều xoá cookie
+ * chờ để bộ ba không dùng lại được cho lượt khác.
  *
  * Loader luôn kết thúc bằng chuyển hướng nên component mặc định không
  * bao giờ hiện ở luồng thật; nó tồn tại vì quy định route module của
@@ -35,7 +38,7 @@ import {
  */
 export async function loader({ request }: { request: Request }) {
   const url = new URL(request.url);
-  const clearPending = clearPendingLoginCookie(request);
+  const clearPending = clearPendingLoginCookie();
   const fail = () => redirect('/tenant', { headers: { 'Set-Cookie': clearPending } });
 
   const code = url.searchParams.get('code');
@@ -44,7 +47,9 @@ export async function loader({ request }: { request: Request }) {
   if (!code || !pending || state !== pending.state) return fail();
 
   let tokens;
+  let issuer: string;
   try {
+    issuer = (await getOidcDiscovery()).issuer;
     tokens = await exchangeCode({
       code,
       verifier: pending.verifier,
@@ -53,11 +58,11 @@ export async function loader({ request }: { request: Request }) {
   } catch {
     return fail();
   }
-  if (!idTokenNonceMatches(tokens.idToken, pending.nonce)) return fail();
+  if (!validateIdToken(tokens.idToken, { issuer, clientId: keycloakClientId(), nonce: pending.nonce })) return fail();
 
   const headers = new Headers();
   headers.append('Set-Cookie', clearPending);
-  headers.append('Set-Cookie', createSessionCookie(request, tokens));
+  headers.append('Set-Cookie', createSessionCookie(tokens));
   return redirect('/tenant', { headers });
 }
 

@@ -54,7 +54,7 @@ export async function loader({ request }: { request: Request }) {
   authorize.searchParams.set('state', pending.state);
   authorize.searchParams.set('nonce', pending.nonce);
   return redirect(authorize.toString(), {
-    headers: { 'Set-Cookie': pendingLoginCookie(request, pending) },
+    headers: { 'Set-Cookie': pendingLoginCookie(pending) },
   });
 }
 
