@@ -8,8 +8,8 @@ import {
 } from '@lms/contracts';
 
 /**
- * Validation của bề mặt trung tâm dùng Zod qua Standard Schema —
- * schema nền ở `@lms/contracts` là nguồn sự thật duy nhất.
+ * Validation của bề mặt trung tâm dùng Zod qua Standard Schema — schema nền ở `@lms/contracts` là nguồn sự thật duy
+ * nhất.
  */
 export { activateCentreInviteSchema, centreIdentitySchema, updateCentreIdentitySchema };
 export type CentreIdentityDto = CentreIdentity;

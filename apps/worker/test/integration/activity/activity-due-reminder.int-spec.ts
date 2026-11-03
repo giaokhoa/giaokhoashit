@@ -12,28 +12,21 @@ import {
 /**
  * Lát N5 (issue #50): nhắc hạn nộp tự động trước 24 giờ.
  *
- * Phía phát (worker): lượt quét activity-due-reminders tìm pin có
- * time_close thuộc (hiện tại, hiện tại + 24h] và phát ĐÚNG MỘT sự
- * kiện outbox `activity_due_reminder` cho từng (học sinh, pin) chưa
- * nộp — học sinh đã có attempt hoàn tất (needsgrading/finished) thì
- * không nhắc, attempt inprogress (chưa nộp) vẫn nhắc; chạy lại không
- * phát trùng (dedupe theo (userId, pinId, timeClose) trên outbox);
- * giáo viên dời hạn thì mốc hạn mới được nhắc lại.
+ * Phía phát (worker): lượt quét activity-due-reminders tìm pin có time_close thuộc (hiện tại, hiện tại + 24h] và phát
+ * ĐÚNG MỘT sự kiện outbox `activity_due_reminder` cho từng (học sinh, pin) chưa nộp — học sinh đã có attempt hoàn tất
+ * (needsgrading/finished) thì không nhắc, attempt inprogress (chưa nộp) vẫn nhắc; chạy lại không phát trùng (dedupe
+ * theo (userId, pinId, timeClose) trên outbox); giáo viên dời hạn thì mốc hạn mới được nhắc lại.
  *
- * NB-1 (issue #174): cùng lượt quét phủ thêm BÀI TẬP theo
- * assignments.due_date — sự kiện mang activityType 'assign' +
- * assignmentId; "chưa nộp" = chưa có bản nộp ở trạng thái submitted
- * (bản nháp vẫn nhắc); dedupe theo (userId, assignmentId, dueDate).
+ * NB-1 (issue #174): cùng lượt quét phủ thêm BÀI TẬP theo assignments.due_date — sự kiện mang activityType 'assign' +
+ * assignmentId; "chưa nộp" = chưa có bản nộp ở trạng thái submitted (bản nháp vẫn nhắc); dedupe theo (userId,
+ * assignmentId, dueDate).
  *
  * Nửa API (sự kiện → thông báo activity_due_soon) được kiểm chứng ở
- * apps/api/test/notifications-providers-flow.e2e-spec.ts bằng đúng
- * hình dạng sự kiện phát ở đây.
+ * apps/api/test/notifications-providers-flow.e2e-spec.ts bằng đúng hình dạng sự kiện phát ở đây.
  *
- * Từ lát 2 của issue #294, spec này boot WorkerModule qua harness
- * role thường (`test/ordinary-worker-module.ts`): module chạy bằng
- * role NOSUPERUSER/NOBYPASSRLS như production, fixture và đọc kiểm
- * chứng đi qua kết nối quản trị của harness — khẳng định nghiệp vụ
- * của spec không đổi.
+ * Từ lát 2 của issue #294, spec này boot WorkerModule qua harness role thường (`test/ordinary-worker-module.ts`):
+ * module chạy bằng role NOSUPERUSER/NOBYPASSRLS như production, fixture và đọc kiểm chứng đi qua kết nối quản trị của
+ * harness — khẳng định nghiệp vụ của spec không đổi.
  */
 describe('Nhắc sắp đến hạn hoạt động của worker (N5, issue #50)', () => {
   let context: INestApplicationContext;
@@ -135,19 +128,13 @@ describe('Nhắc sắp đến hạn hoạt động của worker (N5, issue #50)'
     harness = await bootWorkerModuleAsOrdinaryRole();
     context = harness.context;
     db = harness.adminDb;
-    // Tắt tài xế nền của chính queue này trong suốt lượt chạy của
-    // spec: module boot nguyên vẹn (như production) có scheduler
-    // đăng ký job lặp 5 phút cho CÙNG processor mà các ca dưới đây
-    // gọi trực tiếp — hai tài xế cùng quét thì lượt nền có thể chạy
-    // giữa lúc dựng fixture và lúc khẳng định, phát sự kiện cho
-    // trạng thái trung gian và làm số đếm lệch ngẫu nhiên (gốc cấu
-    // trúc của ca chập chờn ở spec này). Suite worker chạy nhiều
-    // file song song trên cùng một Redis và các context song song
-    // liên tục đăng ký lại scheduler của queue, nên gỡ scheduler
-    // không đủ: phải TẠM DỪNG queue (mọi worker đều tôn trọng cờ
-    // dừng ở tầng Redis) rồi chờ job đang chạy dở tại thời điểm dừng
-    // kết thúc — sau mốc này không lượt quét nền nào của queue chạy
-    // nữa. Mở lại queue ở afterAll. Harness giữ nguyên (vẫn boot cả
+    // Tắt tài xế nền của chính queue này trong suốt lượt chạy của spec: module boot nguyên vẹn (như production) có
+    // scheduler đăng ký job lặp 5 phút cho CÙNG processor mà các ca dưới đây gọi trực tiếp — hai tài xế cùng quét thì
+    // lượt nền có thể chạy giữa lúc dựng fixture và lúc khẳng định, phát sự kiện cho trạng thái trung gian và làm số
+    // đếm lệch ngẫu nhiên (gốc cấu trúc của ca chập chờn ở spec này). Suite worker chạy nhiều file song song trên cùng
+    // một Redis và các context song song liên tục đăng ký lại scheduler của queue, nên gỡ scheduler không đủ: phải TẠM
+    // DỪNG queue (mọi worker đều tôn trọng cờ dừng ở tầng Redis) rồi chờ job đang chạy dở tại thời điểm dừng kết thúc —
+    // sau mốc này không lượt quét nền nào của queue chạy nữa. Mở lại queue ở afterAll. Harness giữ nguyên (vẫn boot cả
     // scheduler như production), khẳng định nghiệp vụ không đổi.
     queue = context.get<Queue>(getQueueToken('activity-due-reminders'));
     await queue.pause();
@@ -175,11 +162,9 @@ describe('Nhắc sắp đến hạn hoạt động của worker (N5, issue #50)'
     const inProgress = uid(3);
     const suspendedEnrol = uid(4);
     const expiredEnrol = uid(5);
-    // Attempt tạo TRƯỚC ghi danh: scheduler nền của WorkerModule có
-    // thể quét chen giữa các bước dựng dữ liệu — thứ tự này bảo đảm
-    // học sinh "đã nộp" luôn nhất quán (đã có attempt hoàn tất) ở mọi
-    // thời điểm quét, và mọi khẳng định đều dựa trên SỰ KIỆN outbox
-    // bền thay vì kết quả trả về của một lượt gọi cụ thể.
+    // Attempt tạo TRƯỚC ghi danh: scheduler nền của WorkerModule có thể quét chen giữa các bước dựng dữ liệu — thứ tự
+    // này bảo đảm học sinh "đã nộp" luôn nhất quán (đã có attempt hoàn tất) ở mọi thời điểm quét, và mọi khẳng định đều
+    // dựa trên SỰ KIỆN outbox bền thay vì kết quả trả về của một lượt gọi cụ thể.
     await addAttempt(quizId, finished, 'finished');
     await addAttempt(quizId, inProgress, 'inprogress');
     await enrolStudent(inst, noAttempt);

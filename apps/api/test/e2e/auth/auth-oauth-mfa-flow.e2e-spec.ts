@@ -7,30 +7,20 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
 import type { SessionCacheService } from '../../../src/infra/cache/session-cache.service';
 
 /**
- * Cổng MFA trên luồng OAuth hệ cũ (đăng nhập Google/Facebook qua
- * `/auth/oauth/*` + đổi mã bàn giao `/auth/oauth/handoff`) — cùng
- * nguồn trạng thái MFA duy nhất `user_totp` với mọi đường đăng nhập
- * khác:
+ * Cổng MFA trên luồng OAuth hệ cũ (đăng nhập Google/Facebook qua `/auth/oauth/*` + đổi mã bàn giao
+ * `/auth/oauth/handoff`) — cùng nguồn trạng thái MFA duy nhất `user_totp` với mọi đường đăng nhập khác:
  *
- * - (d) Tài khoản có factor TOTP đã xác nhận: callback khớp tài
- *   khoản xong vẫn KHÔNG tạo phiên, KHÔNG sinh mã bàn giao — trình
- *   duyệt bị đưa về trang đăng nhập mang challenge MFA
- *   (`/login?mfaChallenge=`). Mã sai bị từ chối
- *   (`auth.mfa_invalid_code`); mã đúng qua
- *   `POST /auth/oauth/mfa/verify` mới sinh phiên (cookie
- *   `lms_session`) và mã bàn giao; mã bàn giao đổi được cặp token
- *   dùng thật và chỉ dùng được một lần.
- * - (d2) Lớp gác thứ hai tại điểm đổi bàn giao: một mã bàn giao ở
- *   định dạng cũ (giá trị là userId thuần, không có dấu đã-qua-MFA)
- *   của tài khoản đang bật MFA bị từ chối
- *   (`auth.oauth_mfa_required`) — điểm đổi là cổng cuối, không
- *   đường vòng nào qua được.
- * - (e) Hồi quy: tài khoản chưa bật MFA đi trọn luồng như cũ
- *   (callback → bàn giao → token).
+ * - (d) Tài khoản có factor TOTP đã xác nhận: callback khớp tài khoản xong vẫn KHÔNG tạo phiên, KHÔNG sinh mã bàn giao
+ *   — trình duyệt bị đưa về trang đăng nhập mang challenge MFA (`/login?mfaChallenge=`). Mã sai bị từ chối
+ *   (`auth.mfa_invalid_code`); mã đúng qua `POST /auth/oauth/mfa/verify` mới sinh phiên (cookie `lms_session`) và mã
+ *   bàn giao; mã bàn giao đổi được cặp token dùng thật và chỉ dùng được một lần.
+ * - (d2) Lớp gác thứ hai tại điểm đổi bàn giao: một mã bàn giao ở định dạng cũ (giá trị là userId thuần, không có dấu
+ *   đã-qua-MFA) của tài khoản đang bật MFA bị từ chối (`auth.oauth_mfa_required`) — điểm đổi là cổng cuối, không đường
+ *   vòng nào qua được.
+ * - (e) Hồi quy: tài khoản chưa bật MFA đi trọn luồng như cũ (callback → bàn giao → token).
  *
- * Provider được giả lập tại biên HTTP như spec OAuth hệ cũ; mọi
- * bước bên trong (authorize, callback, khớp tài khoản, challenge,
- * bàn giao, phiên) đều chạy thật.
+ * Provider được giả lập tại biên HTTP như spec OAuth hệ cũ; mọi bước bên trong (authorize, callback, khớp tài khoản,
+ * challenge, bàn giao, phiên) đều chạy thật.
  */
 
 /** Hồ sơ userinfo giả lập theo authorization code. */
@@ -79,7 +69,6 @@ function startMockProvider(): Promise<{ server: Server; baseUrl: string }> {
   });
 }
 
-/** Mã TOTP hiện tại cho secret (cùng thư viện otplib với server). */
 async function currentTotpCode(secret: string): Promise<string> {
   return generate({ secret });
 }
@@ -95,7 +84,6 @@ async function wrongTotpCode(secret: string): Promise<string> {
   throw new Error('no wrong-code candidate available');
 }
 
-/** Bật MFA cho user qua API hệ cũ, trả secret để sinh mã trong test. */
 async function enableMfaViaApi(app: INestApplication, accessToken: string): Promise<string> {
   const setup = await http(app).post('/api/v1/auth/mfa/totp/setup').set('Authorization', `Bearer ${accessToken}`);
   expect(setup.status).toBe(201);
@@ -136,7 +124,6 @@ describe('OAuth hệ cũ: cổng MFA tại callback và điểm đổi bàn giao
     provider.close();
   });
 
-  /** Chạy trọn luồng authorize → callback cho một code đã đăng ký hồ sơ; trả đáp ứng callback thô. */
   async function runCallback(code: string) {
     const authorizeRes = await http(app).get('/api/v1/auth/oauth/google/authorize');
     expect(authorizeRes.status).toBe(200);
@@ -196,9 +183,8 @@ describe('OAuth hệ cũ: cổng MFA tại callback và điểm đổi bàn giao
     const user = await createUserViaApi(app, admin);
     const session = await login(app, user.username, STRONG_PASSWORD);
     await enableMfaViaApi(app, session.accessToken);
-    // Chế tạo thẳng một mã bàn giao ở định dạng TRƯỚC khi có cổng
-    // (giá trị lưu là userId thuần) — như một mã lọt ra từ đường cấp
-    // nào chưa qua cổng: điểm đổi phải tự gác.
+    // Chế tạo thẳng một mã bàn giao ở định dạng TRƯỚC khi có cổng (giá trị lưu là userId thuần) — như một mã lọt ra từ
+    // đường cấp nào chưa qua cổng: điểm đổi phải tự gác.
     const legacyCode = `legacy-${uniqueName('handoff')}`;
     await store.set(`oauthhandoff:${legacyCode}`, user.id, 120_000);
     const res = await http(app).post('/api/v1/auth/oauth/handoff').send({ code: legacyCode });

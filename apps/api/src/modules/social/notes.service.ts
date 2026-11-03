@@ -5,17 +5,15 @@ import { CoursesService } from '../courses/courses.service';
 import { SocialRepository, type NoteRow } from '@lms/db/repositories/social';
 
 /**
- * NotesModule (Moodle core_notes): ghi chú VỀ một người dùng, ở ba trạng thái
- * (report §2#16): 'draft' = ghi chú cá nhân (chỉ người tạo mới thấy),
- * 'public' = ghi chú khoá học (courseId được đặt; chỉ đọc được với
- * notes:view tại context của KHOÁ HỌC — trong thực tế là các giáo viên
- * của khoá học, KHÔNG phải học viên khác và KHÔNG phải chủ thể), 'site' = ghi chú site
- * (notes:view tại context hệ thống).
+ * NotesModule (Moodle core_notes): ghi chú VỀ một người dùng, ở ba trạng thái (report §2#16): 'draft' = ghi chú cá nhân
+ * (chỉ người tạo mới thấy), 'public' = ghi chú khoá học (courseId được đặt; chỉ đọc được với notes:view tại context của
+ * KHOÁ HỌC — trong thực tế là các giáo viên của khoá học, KHÔNG phải học viên khác và KHÔNG phải chủ thể), 'site' = ghi
+ * chú site (notes:view tại context hệ thống).
  */
 @Injectable()
 /**
- * Ghi chú khoá học về học viên (course notes): site/course/personal/draft theo mức hiển thị.
- * Đối chiếu Moodle: notes/classes (note). Note nháp chỉ tác giả thấy.
+ * Ghi chú khoá học về học viên (course notes): site/course/personal/draft theo mức hiển thị. Đối chiếu Moodle:
+ * notes/classes (note). Note nháp chỉ tác giả thấy.
  */
 export class NotesService {
   constructor(
@@ -38,9 +36,8 @@ export class NotesService {
     if (publishState === 'public' && !input.courseId) {
       throw new BadRequestException({ message: 'A course (public) note requires courseId', code: 'notes.course_required' });
     }
-    // ghi chú 'public' (khoá học) được quản lý tại context của khoá học; một ghi chú 'draft'
-    // (cá nhân) gắn với một khoá học cũng được uỷ quyền tại đó; mọi trường hợp
-    // còn lại fallback về context hệ thống.
+    // ghi chú 'public' (khoá học) được quản lý tại context của khoá học; một ghi chú 'draft' (cá nhân) gắn với một khoá
+    // học cũng được uỷ quyền tại đó; mọi trường hợp còn lại fallback về context hệ thống.
     const ctxId = (publishState === 'public' || (publishState === 'draft' && input.courseId))
       ? await this.courses.courseContextId(input.courseId!)
       : (await this.contexts.ensureSystemContext()).id;
@@ -62,7 +59,6 @@ export class NotesService {
       const ctx = await this.courses.courseContextId(note.courseId!);
       return this.evaluator.hasCapability(viewerId, 'notes:view', ctx);
     }
-    // ghi chú site
     const systemCtx = await this.contexts.ensureSystemContext();
     return this.evaluator.hasCapabilityFromRealAssignment(viewerId, 'notes:view', systemCtx.id);
   }

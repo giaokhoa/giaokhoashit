@@ -11,24 +11,19 @@ import { TenantsModule } from '../tenants/tenants.module';
 import { CourseEnrolmentsController, EnrolController } from './enrol.controller';
 import { EnrolService } from './enrol.service';
 
-/**
- * Facade của EnrolModule: EnrolService. Phụ thuộc Courses, Groups, Access
- * (report §3.12). Completion đăng ký đầu dò dữ liệu liên quan của nó vào
- * EnrolService; Enrol đăng ký bộ kiểm tra isEnrolled của nó vào CoursesService —
- * cả hai đều qua đăng ký, không qua import vòng. MessagingModule được import
- * trực tiếp cho tin nhắn chào mừng: Messaging chỉ phụ thuộc Access/Users/
- * Events, nên không có chu trình module (cùng mẫu với Badges/Reports).
+/** Facade của EnrolModule: EnrolService. Phụ thuộc Courses, Groups, Access (report §3.12). Completion đăng ký đầu dò dữ
+ * liệu liên quan của nó vào EnrolService; Enrol đăng ký bộ kiểm tra isEnrolled của nó vào CoursesService — cả hai đều
+ * qua đăng ký, không qua import vòng. MessagingModule được import trực tiếp cho tin nhắn chào mừng: Messaging chỉ phụ
+ * thuộc Access/Users/ Events, nên không có chu trình module (cùng mẫu với Badges/Reports).
  */
 @Module({
   imports: [AccessModule, CoursesModule, GroupsModule, EventsModule, MessagingModule, TenantsModule, SpaceRoutingModule],
   controllers: [EnrolController, CourseEnrolmentsController],
   providers: [
     {
-      // EnrolRepository nay là repository Kysely của `@lms/db`
-      // (issue #645): provider dựng bằng factory với handle kho
-      // trung tâm ĐÃ ĐỊNH TUYẾN THEO KHÔNG GIAN (`routedKysely`
-      // của SpaceDatabaseService), cùng khuôn với các repository
-      // đã chuyển trước đó.
+      // EnrolRepository nay là repository Kysely của `@lms/db` (issue #645): provider dựng bằng factory với handle kho
+      // trung tâm ĐÃ ĐỊNH TUYẾN THEO KHÔNG GIAN (`routedKysely` của SpaceDatabaseService), cùng khuôn với các
+      // repository đã chuyển trước đó.
       provide: EnrolRepository,
       useFactory: (spaceDb: SpaceDatabaseService) => new EnrolRepository(spaceDb.routedKysely),
       inject: [SpaceDatabaseService],
@@ -37,5 +32,4 @@ import { EnrolService } from './enrol.service';
   ],
   exports: [EnrolService],
 })
-/** Module ghi danh. */
 export class EnrolModule {}

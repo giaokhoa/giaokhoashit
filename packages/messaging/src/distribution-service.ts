@@ -10,7 +10,6 @@ import { blankRecalledContent, toWireMessage, type MessageRow } from './message-
 import { conversationRoom, userRoom } from './realtime-rooms.js';
 import type { MessagingDistributionStore } from './distribution-store.js';
 
-/** Các loại sự kiện messaging được phân phối qua realtime. */
 export const MESSAGING_DISTRIBUTED_EVENT_TYPES = [
   'message_sent',
   'message_conversation_read',
@@ -21,11 +20,9 @@ export const MESSAGING_DISTRIBUTED_EVENT_TYPES = [
 ] as const;
 
 /**
- * Một socket ở xa nhìn từ phía phát (qua backplane Redis): chỉ hai
- * khả năng tầng phân phối cần — đọc `data.userId` đã gắn lúc bắt tay
- * và đẩy socket rời room. Phía API cài đặt bằng Socket.IO server tại
- * chỗ; phía worker cài đặt bằng Redis emitter (xem
- * `apps/worker/src/messaging-realtime-emitter.ts`).
+ * Một socket ở xa nhìn từ phía phát (qua backplane Redis): chỉ hai khả năng tầng phân phối cần — đọc `data.userId` đã
+ * gắn lúc bắt tay và đẩy socket rời room. Phía API cài đặt bằng Socket.IO server tại chỗ; phía worker cài đặt bằng
+ * Redis emitter (xem `apps/worker/src/messaging-realtime-emitter.ts`).
  */
 export interface RealtimeRemoteSocket {
   data: { userId?: unknown };
@@ -33,38 +30,30 @@ export interface RealtimeRemoteSocket {
 }
 
 /**
- * Cổng phát realtime của tầng phân phối: phát một sự kiện vào một
- * room, và liệt kê các socket đang ở trong một room. Mọi phát xạ đều
- * thuộc namespace của gateway nhắn tin (`/messaging`) — phía cài đặt
- * cổng chịu trách nhiệm gắn đúng namespace đó.
+ * Cổng phát realtime của tầng phân phối: phát một sự kiện vào một room, và liệt kê các socket đang ở trong một room.
+ * Mọi phát xạ đều thuộc namespace của gateway nhắn tin (`/messaging`) — phía cài đặt cổng chịu trách nhiệm gắn đúng
+ * namespace đó.
  */
 export interface RealtimeEmitter {
   emitToRoom(room: string, event: string, payload: unknown): Promise<void> | void;
   fetchSocketsInRoom(room: string): Promise<RealtimeRemoteSocket[]>;
 }
 
-/** Logger tối thiểu của tầng phân phối (mỗi app gắn logger của mình). */
 export interface MessagingDistributionLogger {
   warn(message: string): void;
   error(message: string): void;
 }
 
 /**
- * Tầng phân phối realtime của messaging (issue #33, chặng A1/A2;
- * chuyển sang worker ở issue #521).
+ * Tầng phân phối realtime của messaging (issue #33, chặng A1/A2; chuyển sang worker ở issue #521).
  *
- * Đây là NHÀ DUY NHẤT của luật phân phối: sự kiện nghiệp vụ đã nằm
- * trong outbox được consumer phía worker tiêu thụ qua hàng đợi và
- * gọi các hàm distribute* ở đây để phát qua Socket.IO (backplane
- * Redis nối tới tiến trình API đang giữ kết nối của client).
- * Gateway phía API chỉ lo xác thực + room theo kết nối; presence và
- * typing vẫn sống phía API (trạng thái tạm trong Redis, KHÔNG xuống
- * Postgres — DB vẫn là nguồn sự thật duy nhất cho tin nhắn và mốc
- * đã đọc).
+ * Đây là NHÀ DUY NHẤT của luật phân phối: sự kiện nghiệp vụ đã nằm trong outbox được consumer phía worker tiêu thụ qua
+ * hàng đợi và gọi các hàm distribute* ở đây để phát qua Socket.IO (backplane Redis nối tới tiến trình API đang giữ kết
+ * nối của client). Gateway phía API chỉ lo xác thực + room theo kết nối; presence và typing vẫn sống phía API (trạng
+ * thái tạm trong Redis, KHÔNG xuống Postgres — DB vẫn là nguồn sự thật duy nhất cho tin nhắn và mốc đã đọc).
  *
- * Mọi đường phát vào room của một conversation đều qua CỔNG CHẶN
- * cặp 1–1 (fail-closed) và RÀ SOÁT MEMBERSHIP tại thời điểm phân
- * phối trong các hàm dưới đây — cấm phát realtime vòng qua tầng này.
+ * Mọi đường phát vào room của một conversation đều qua CỔNG CHẶN cặp 1–1 (fail-closed) và RÀ SOÁT MEMBERSHIP tại thời
+ * điểm phân phối trong các hàm dưới đây — cấm phát realtime vòng qua tầng này.
  */
 export interface MessagingDistributionService {
   /** Phân phối một sự kiện outbox đã commit theo loại của nó. Payload hỏng/thiếu thì bỏ qua. */
@@ -82,7 +71,6 @@ export interface MessagingDistributionService {
   distributeReadReceipt(payload: RealtimeMessageReadPayload): Promise<void>;
 }
 
-/** Dựng tầng phân phối trên bề mặt đọc + cổng phát của app gọi. */
 export function createMessagingDistributionService(deps: {
   store: MessagingDistributionStore;
   emitter: RealtimeEmitter;
@@ -90,19 +78,19 @@ export function createMessagingDistributionService(deps: {
 }): MessagingDistributionService {
   const { store, emitter, logger } = deps;
 
-  /** Tenant của một conversation (TENANT-1, #196) — namespace cho room/khoá realtime; lỗi đọc thì rơi về null (đoạn 'platform'). */
+  /**
+   * Tenant của một conversation (TENANT-1, #196) — namespace cho room/khoá realtime; lỗi đọc thì rơi về null (đoạn
+   * 'platform').
+   */
   async function tenantIdOfConversation(conversationId: string): Promise<string | null> {
     return store.getConversationTenantId(conversationId).catch(() => null);
   }
 
   /**
-   * Tra danh sách user mà `userId` đã chặn, theo kỷ luật FAIL-CLOSED
-   * của cổng chặn cặp 1–1: tra cứu thành công trả danh sách (có thể
-   * rỗng); tra cứu LỖI trả `null` và ghi log lỗi — phía gọi phải coi
-   * `null` là "không xác minh được quan hệ chặn" và NÉN toàn bộ lượt
-   * phân phối. Nuốt lỗi thành danh sách rỗng (khuôn cũ) làm cổng chặn
-   * fail-open: lỗi cơ sở dữ liệu đúng lúc phân phối là tin/biên sự
-   * kiện vẫn lộ sang phía đang bị chặn.
+   * Tra danh sách user mà `userId` đã chặn, theo kỷ luật FAIL-CLOSED của cổng chặn cặp 1–1: tra cứu thành công trả danh
+   * sách (có thể rỗng); tra cứu LỖI trả `null` và ghi log lỗi — phía gọi phải coi `null` là "không xác minh được quan
+   * hệ chặn" và NÉN toàn bộ lượt phân phối. Nuốt lỗi thành danh sách rỗng (khuôn cũ) làm cổng chặn fail-open: lỗi cơ sở
+   * dữ liệu đúng lúc phân phối là tin/biên sự kiện vẫn lộ sang phía đang bị chặn.
    */
   async function blockedCounterpartIdsFailClosed(userId: string): Promise<string[] | null> {
     try {
@@ -116,11 +104,9 @@ export function createMessagingDistributionService(deps: {
   }
 
   /**
-   * Đẩy khỏi room của conversation mọi socket mà user KHÔNG còn
-   * trong `memberIds`. Membership của room được Socket.IO giữ theo
-   * kết nối (vào room lúc bắt tay/join) nên tự nó không phản ánh việc
-   * bị gỡ khỏi conversation; đây là điểm chốt lại membership tại thời
-   * điểm phân phối cho mọi sự kiện phát vào room.
+   * Đẩy khỏi room của conversation mọi socket mà user KHÔNG còn trong `memberIds`. Membership của room được Socket.IO
+   * giữ theo kết nối (vào room lúc bắt tay/join) nên tự nó không phản ánh việc bị gỡ khỏi conversation; đây là điểm
+   * chốt lại membership tại thời điểm phân phối cho mọi sự kiện phát vào room.
    */
   async function evictNonMemberSockets(tenantId: string | null, conversationId: string, memberIds: string[]): Promise<void> {
     try {
@@ -139,13 +125,10 @@ export function createMessagingDistributionService(deps: {
   }
 
   /**
-   * Cặp 1–1 đang có quan hệ chặn thì MỌI sự kiện vòng đời (thu hồi,
-   * xoá cứng) đều bị nén im lặng như ở {@link distributeMessageDeleted}:
-   * không phát gì. Trả true khi sự kiện đã bị nén (caller dừng phân
-   * phối). CHỈ chặn phát, KHÔNG đẩy socket khỏi room (tiếp quản
-   * PR #94): socket bị đẩy ra không tự nối lại khi bỏ chặn nên
-   * presence sau bỏ chặn mất vĩnh viễn; mọi đường phát vào room đều
-   * đã có cổng ở thời điểm phát nên chặn phát là đủ.
+   * Cặp 1–1 đang có quan hệ chặn thì MỌI sự kiện vòng đời (thu hồi, xoá cứng) đều bị nén im lặng như ở {@link
+   * distributeMessageDeleted}: không phát gì. Trả true khi sự kiện đã bị nén (caller dừng phân phối). CHỈ chặn phát,
+   * KHÔNG đẩy socket khỏi room (tiếp quản PR #94): socket bị đẩy ra không tự nối lại khi bỏ chặn nên presence sau bỏ
+   * chặn mất vĩnh viễn; mọi đường phát vào room đều đã có cổng ở thời điểm phát nên chặn phát là đủ.
    */
   async function suppressIfBlockedDirectPair(conversationId: string, memberIds: string[]): Promise<boolean> {
     const conversation = await store.getConversation(conversationId).catch(() => undefined);
@@ -168,26 +151,19 @@ export function createMessagingDistributionService(deps: {
   }
 
   /**
-   * Phân phối một tin mới: `message.new` vào room của conversation
-   * (client đang mở cuộc trò chuyện nhận ngay) + `conversation.updated`
-   * vào room riêng của TỪNG thành viên kèm số chưa đọc của chính họ
-   * (client cập nhật danh sách/huy hiệu không cần tải lại).
+   * Phân phối một tin mới: `message.new` vào room của conversation (client đang mở cuộc trò chuyện nhận ngay) +
+   * `conversation.updated` vào room riêng của TỪNG thành viên kèm số chưa đọc của chính họ (client cập nhật danh
+   * sách/huy hiệu không cần tải lại).
    */
   async function distributeNewMessage(messageRow: MessageRow, memberIds: string[]): Promise<void> {
-    // Cùng cổng chặn với distributeMessageDeleted (việc nối tiếp #33,
-    // vòng 3 PR #94): tin gửi sát trước lúc chặn, outbox tiêu thụ
-    // muộn sau khi chặn, không được lộ sang phía bị chặn — kể cả
-    // conversation.updated vào userRoom (kèm nội dung tin cuối), dù
-    // message.new vào room hội thoại đã bị chặn ở tầng gateway.
-    // Hội thoại nhóm không bị chạm.
-    // CHỈ chặn phát, KHÔNG đẩy socket khỏi room (tiếp quản PR #94):
-    // membership của room là trạng thái bền theo kết nối — socket bị
-    // đẩy ra không tự nối lại khi bỏ chặn (handshake chỉ nối lúc
-    // connect; join/sync từ chối room đang chặn), nên presence sau
-    // bỏ chặn (phát tới room) mất vĩnh viễn cho tới khi nối lại.
-    // Mọi đường phát vào room đều đã có cổng ở thời điểm phát nên
-    // chặn phát là đủ; eviction chỉ dành cho gỡ thành viên thật
-    // (đồng bộ group trong messaging.service.ts).
+    // Cùng cổng chặn với distributeMessageDeleted (việc nối tiếp #33, vòng 3 PR #94): tin gửi sát trước lúc chặn,
+    // outbox tiêu thụ muộn sau khi chặn, không được lộ sang phía bị chặn — kể cả conversation.updated vào userRoom (kèm
+    // nội dung tin cuối), dù message.new vào room hội thoại đã bị chặn ở tầng gateway. Hội thoại nhóm không bị chạm.
+    // CHỈ chặn phát, KHÔNG đẩy socket khỏi room (tiếp quản PR #94): membership của room là trạng thái bền theo kết nối
+    // — socket bị đẩy ra không tự nối lại khi bỏ chặn (handshake chỉ nối lúc connect; join/sync từ chối room đang
+    // chặn), nên presence sau bỏ chặn (phát tới room) mất vĩnh viễn cho tới khi nối lại. Mọi đường phát vào room đều đã
+    // có cổng ở thời điểm phát nên chặn phát là đủ; eviction chỉ dành cho gỡ thành viên thật (đồng bộ group trong
+    // messaging.service.ts).
     const conversation = await store.getConversation(messageRow.conversationId).catch(() => undefined);
     if (conversation?.type === 1 && memberIds.length === 2) {
       const first = memberIds[0];
@@ -201,19 +177,15 @@ export function createMessagingDistributionService(deps: {
       }
     }
     const tenantId = conversation?.tenantId ?? null;
-    // Khối trích dẫn (lát M3) dựng MỘT lần cho cả room theo luật
-    // người xem thường — payload message.new/conversation.updated
-    // mang đủ dữ kiện để client hiện ngay, không gọi thêm. Việc cá
-    // nhân hoá theo cờ xoá-phía-mình của từng người nhận chốt ở
-    // đường đọc REST/sync (xem attachQuotes của bề mặt đọc).
+    // Khối trích dẫn (lát M3) dựng MỘT lần cho cả room theo luật người xem thường — payload
+    // message.new/conversation.updated mang đủ dữ kiện để client hiện ngay, không gọi thêm. Việc cá nhân hoá theo cờ
+    // xoá-phía-mình của từng người nhận chốt ở đường đọc REST/sync (xem attachQuotes của bề mặt đọc).
     const [withQuote] = await store.attachQuotes([messageRow], { privileged: false });
     const wire = toWireMessage(messageRow, withQuote?.replyTo ?? null);
     const newPayload: RealtimeNewMessagePayload = { conversationId: messageRow.conversationId, message: wire };
-    // Rà soát room NGAY TRƯỚC khi phát: socket của thành viên đã bị gỡ
-    // khỏi conversation (membership chốt bởi consumer tại thời điểm
-    // phân phối) bị đẩy ra khỏi room, không nhận message.new này và
-    // mọi sự kiện room về sau (F1 — trước đây chỉ kiểm tra membership
-    // lúc bắt tay/join nên socket cũ nằm lại trong room vô hạn).
+    // Rà soát room NGAY TRƯỚC khi phát: socket của thành viên đã bị gỡ khỏi conversation (membership chốt bởi consumer
+    // tại thời điểm phân phối) bị đẩy ra khỏi room, không nhận message.new này và mọi sự kiện room về sau (F1 — trước
+    // đây chỉ kiểm tra membership lúc bắt tay/join nên socket cũ nằm lại trong room vô hạn).
     await evictNonMemberSockets(tenantId, messageRow.conversationId, memberIds);
     await emitter.emitToRoom(conversationRoom(tenantId, messageRow.conversationId), MESSAGING_SOCKET_EVENTS.newMessage, newPayload);
     await Promise.all(memberIds.map(async (memberId) => {
@@ -226,25 +198,18 @@ export function createMessagingDistributionService(deps: {
   }
 
   /**
-   * Phân phối một lần xoá mềm (Lớp B): `message.deleted` vào room của
-   * conversation — payload chỉ mang id/seq/người xoá, KHÔNG kèm nội
-   * dung (phía học sinh phải gỡ tin khỏi khung và không được nhận lại
-   * nội dung qua kênh này) — kèm `conversation.updated` cho từng thành
-   * viên với tin cuối CÒN HIỂN THỊ được (tin đã xoá không bao giờ là
-   * tin cuối ở phía client) và số chưa đọc đã trừ tin đã xoá.
+   * Phân phối một lần xoá mềm (Lớp B): `message.deleted` vào room của conversation — payload chỉ mang id/seq/người xoá,
+   * KHÔNG kèm nội dung (phía học sinh phải gỡ tin khỏi khung và không được nhận lại nội dung qua kênh này) — kèm
+   * `conversation.updated` cho từng thành viên với tin cuối CÒN HIỂN THỊ được (tin đã xoá không bao giờ là tin cuối ở
+   * phía client) và số chưa đọc đã trừ tin đã xoá.
    */
   async function distributeMessageDeleted(messageRow: MessageRow, memberIds: string[]): Promise<void> {
-    // Lớp phòng thủ thứ hai (việc nối tiếp #33, siết sau PR #94
-    // vòng 1): đường xoá chính đã 404 trong lúc chặn nên outbox
-    // `message_deleted` không sinh mới, nhưng một sự kiện tới muộn
-    // (xoá trước khi chặn, outbox tiêu thụ sau khi chặn — hoặc xoá
-    // bởi người kiểm duyệt ngoài cặp chặn) vẫn không được lộ tới
-    // cặp đang chặn: không phát gì cả.
-    // CHỈ chặn phát, KHÔNG đẩy socket khỏi room (tiếp quản PR #94):
-    // lý do như cổng distributeNewMessage — socket bị đẩy ra không
-    // tự nối lại khi bỏ chặn nên presence sau bỏ chặn sẽ mất; mọi
-    // đường phát vào room đều đã có cổng ở thời điểm phát nên
-    // chặn phát là đủ. Hội thoại nhóm không bị chạm.
+    // Lớp phòng thủ thứ hai (việc nối tiếp #33, siết sau PR #94 vòng 1): đường xoá chính đã 404 trong lúc chặn nên
+    // outbox `message_deleted` không sinh mới, nhưng một sự kiện tới muộn (xoá trước khi chặn, outbox tiêu thụ sau khi
+    // chặn — hoặc xoá bởi người kiểm duyệt ngoài cặp chặn) vẫn không được lộ tới cặp đang chặn: không phát gì cả. CHỈ
+    // chặn phát, KHÔNG đẩy socket khỏi room (tiếp quản PR #94): lý do như cổng distributeNewMessage — socket bị đẩy ra
+    // không tự nối lại khi bỏ chặn nên presence sau bỏ chặn sẽ mất; mọi đường phát vào room đều đã có cổng ở thời điểm
+    // phát nên chặn phát là đủ. Hội thoại nhóm không bị chạm.
     const conversation = await store.getConversation(messageRow.conversationId).catch(() => undefined);
     if (conversation?.type === 1 && memberIds.length === 2) {
       const first = memberIds[0];
@@ -281,13 +246,10 @@ export function createMessagingDistributionService(deps: {
   }
 
   /**
-   * Phân phối một lần THU HỒI (vòng đời theo vai, lớp (b)): phía nhận
-   * phải gỡ nội dung NGAY — phát `message.deleted` (payload không nội
-   * dung) vào room như một lần xoá, kèm `conversation.updated` với
-   * xem trước đã vô hiệu nội dung nếu tin bị thu hồi chính là tin
-   * cuối, và BẮT BUỘC `conversation.invalidate` tới từng thành viên
-   * để cache danh sách bị vô hiệu (số chưa đọc cũng đã đổi: tin thu
-   * hồi không còn đếm chưa đọc).
+   * Phân phối một lần THU HỒI (vòng đời theo vai, lớp (b)): phía nhận phải gỡ nội dung NGAY — phát `message.deleted`
+   * (payload không nội dung) vào room như một lần xoá, kèm `conversation.updated` với xem trước đã vô hiệu nội dung nếu
+   * tin bị thu hồi chính là tin cuối, và BẮT BUỘC `conversation.invalidate` tới từng thành viên để cache danh sách bị
+   * vô hiệu (số chưa đọc cũng đã đổi: tin thu hồi không còn đếm chưa đọc).
    */
   async function distributeMessageRecalled(messageRow: MessageRow, memberIds: string[]): Promise<void> {
     if (await suppressIfBlockedDirectPair(messageRow.conversationId, memberIds)) return;
@@ -317,13 +279,10 @@ export function createMessagingDistributionService(deps: {
   }
 
   /**
-   * Phân phối một lần XOÁ CỨNG (lớp (c)): dòng tin ĐÃ biến mất khỏi
-   * DB nên mọi định danh đến từ BẢN CHỤP trong payload sự kiện (do
-   * consumer truyền vào) — không đọc lại dòng tin được nữa. Sự kiện
-   * phía client giống hệt thu hồi/xoá mềm (`message.deleted` +
-   * `conversation.updated` nếu còn tin cuối hiển thị + BẮT BUỘC
-   * `conversation.invalidate`): với phía nhận, một tin bị gỡ là một
-   * tin biến mất, lý do kiểm duyệt không đi qua kênh này.
+   * Phân phối một lần XOÁ CỨNG (lớp (c)): dòng tin ĐÃ biến mất khỏi DB nên mọi định danh đến từ BẢN CHỤP trong payload
+   * sự kiện (do consumer truyền vào) — không đọc lại dòng tin được nữa. Sự kiện phía client giống hệt thu hồi/xoá mềm
+   * (`message.deleted` + `conversation.updated` nếu còn tin cuối hiển thị + BẮT BUỘC `conversation.invalidate`): với
+   * phía nhận, một tin bị gỡ là một tin biến mất, lý do kiểm duyệt không đi qua kênh này.
    */
   async function distributeMessageRemoved(
     snapshot: { conversationId: string; messageId: string; seq: number; removedBy: string },
@@ -354,11 +313,9 @@ export function createMessagingDistributionService(deps: {
   }
 
   /**
-   * Phân phối một lần XOÁ-PHÍA-MÌNH (lớp (a)): CHỈ người xoá được
-   * biết — phát `message.deleted` + `conversation.invalidate` vào
-   * room RIÊNG của chính họ để các thiết bị khác của họ đồng bộ;
-   * TUYỆT ĐỐI không phát vào room conversation (phía kia không được
-   * nhận bất kỳ tín hiệu nào: với họ cuộc trò chuyện không đổi).
+   * Phân phối một lần XOÁ-PHÍA-MÌNH (lớp (a)): CHỈ người xoá được biết — phát `message.deleted` +
+   * `conversation.invalidate` vào room RIÊNG của chính họ để các thiết bị khác của họ đồng bộ; TUYỆT ĐỐI không phát vào
+   * room conversation (phía kia không được nhận bất kỳ tín hiệu nào: với họ cuộc trò chuyện không đổi).
    */
   async function distributeMessageDeletedForMe(snapshot: { conversationId: string; messageId: string; seq: number; actorId: string }): Promise<void> {
     const tenantId = await tenantIdOfConversation(snapshot.conversationId);
@@ -375,14 +332,11 @@ export function createMessagingDistributionService(deps: {
 
   /** Phân phối biên đã-đọc của một thành viên vào room của conversation. */
   async function distributeReadReceipt(payload: RealtimeMessageReadPayload): Promise<void> {
-    // Cùng cổng chặn với distributeNewMessage/distributeMessageDeleted
-    // (việc nối tiếp #33, siết sau PR #94 vòng đánh giá lại): biên
-    // đã-đọc ghi outbox TRƯỚC khi chặn, consumer tiêu thụ SAU khi chặn,
-    // không được lộ trạng thái đã-đọc 1–1 sang phía bị chặn — kể cả khi
-    // socket phía đó vẫn nằm trong room (không còn eviction ở hai cổng
-    // kia). Hội thoại nhóm không bị chạm.
-    // CHỈ chặn phát, KHÔNG đẩy socket khỏi room: lý do như hai cổng
-    // kia — socket bị đẩy ra không tự nối lại khi bỏ chặn.
+    // Cùng cổng chặn với distributeNewMessage/distributeMessageDeleted (việc nối tiếp #33, siết sau PR #94 vòng đánh
+    // giá lại): biên đã-đọc ghi outbox TRƯỚC khi chặn, consumer tiêu thụ SAU khi chặn, không được lộ trạng thái đã-đọc
+    // 1–1 sang phía bị chặn — kể cả khi socket phía đó vẫn nằm trong room (không còn eviction ở hai cổng kia). Hội
+    // thoại nhóm không bị chạm. CHỈ chặn phát, KHÔNG đẩy socket khỏi room: lý do như hai cổng kia — socket bị đẩy ra
+    // không tự nối lại khi bỏ chặn.
     const conversation = await store.getConversation(payload.conversationId).catch(() => undefined);
     const memberIds = await store.listMembers(payload.conversationId).catch(() => null);
     if (conversation?.type === 1 && memberIds?.length === 2) {
@@ -413,11 +367,9 @@ export function createMessagingDistributionService(deps: {
       // Tin đã biến mất (conversation bị xoá cascade sau khi sự kiện
       // ghi) thì không còn gì để phân phối.
       if (!message) return;
-      // Membership chốt TẠI THỜI ĐIỂM PHÂN PHỐI, đọc thẳng từ DB —
-      // không dùng ảnh chụp lúc gửi trong payload: thành viên bị gỡ
-      // khỏi conversation trong khoảng giữa hai thời điểm không còn
-      // nhận conversation.updated, và danh sách này là căn cứ rà soát
-      // room khi phát message.new (F1).
+      // Membership chốt TẠI THỜI ĐIỂM PHÂN PHỐI, đọc thẳng từ DB — không dùng ảnh chụp lúc gửi trong payload: thành
+      // viên bị gỡ khỏi conversation trong khoảng giữa hai thời điểm không còn nhận conversation.updated, và danh sách
+      // này là căn cứ rà soát room khi phát message.new (F1).
       const memberIds = await store.listMembers(message.conversationId);
       // Tin đã bị THU HỒI trước khi sự kiện gửi được phân phối (gửi
       // rồi thu hồi ngay trong cùng nhịp quét): phân phối như một lần

@@ -8,22 +8,18 @@ import { createCategory, createCourse } from '../../support/course-enrolment-hel
 import { courseContextId } from '../../support/engagement-helpers';
 
 /**
- * Lát I-1 nhập ma trận từ file (issue #233): sinh workbook mẫu + parse
- * + xem trước, KHÔNG ghi DB. Luồng nghiệp vụ được kiểm:
- *  - giáo viên tải mẫu theo (môn, chương trình) → mẫu đã có sẵn hàng
- *    theo ĐƠN VỊ KIẾN THỨC với cột khoá "Mã ĐVK" (ma trận không gắn
- *    YCCĐ — YCCĐ chỉ để đối chiếu ở cột E);
- *  - điền đúng khuôn → preview khớp từng ô (số câu × điểm mỗi câu),
- *    tổng hai chiều tự tính lại, khả dụng ngân hàng theo ô;
- *  - file sai khuôn → lỗi cứng định vị đúng sheet/dòng/cột (ô chữ,
- *    Mã ĐVK bịa, lệch tổng điểm, checkbox Vận dụng cao không khớp
- *    lưới, thiếu điểm mỗi câu, ma trận rỗng);
+ * Lát I-1 nhập ma trận từ file (issue #233): sinh workbook mẫu + parse + xem trước, KHÔNG ghi DB. Luồng nghiệp vụ được
+ * kiểm:
+ *  - giáo viên tải mẫu theo (môn, chương trình) → mẫu đã có sẵn hàng theo ĐƠN VỊ KIẾN THỨC với cột khoá "Mã ĐVK" (ma
+ *    trận không gắn YCCĐ — YCCĐ chỉ để đối chiếu ở cột E);
+ *  - điền đúng khuôn → preview khớp từng ô (số câu × điểm mỗi câu), tổng hai chiều tự tính lại, khả dụng ngân hàng theo
+ *    ô;
+ *  - file sai khuôn → lỗi cứng định vị đúng sheet/dòng/cột (ô chữ, Mã ĐVK bịa, lệch tổng điểm, checkbox Vận dụng cao
+ *    không khớp lưới, thiếu điểm mỗi câu, ma trận rỗng);
  *  - preview không tạo ma trận nào trong hệ;
- *  - giáo viên theo mô hình gán vai của dữ liệu mẫu (editingteacher
- *    tại context khoá, không vai nào tại context hệ thống) tải mẫu
- *    và xem trước được — hồi quy điểm chặn D-3 của issue #233, khi
- *    hai đầu này còn đòi quyền tại context của môn; học sinh bị
- *    chặn 403 tại cổng bank của luồng ở cả hai đầu.
+ *  - giáo viên theo mô hình gán vai của dữ liệu mẫu (editingteacher tại context khoá, không vai nào tại context hệ
+ *    thống) tải mẫu và xem trước được — hồi quy điểm chặn D-3 của issue #233, khi hai đầu này còn đòi quyền tại context
+ *    của môn; học sinh bị chặn 403 tại cổng bank của luồng ở cả hai đầu.
  */
 describe('Nhập ma trận I-1 (mẫu + xem trước, không ghi DB)', () => {
   let app: INestApplication;
@@ -87,17 +83,16 @@ describe('Nhập ma trận I-1 (mẫu + xem trước, không ghi DB)', () => {
     await mkOutcome(lesson1Id, 'Giải thích được mối liên hệ giữa đồ thị và dấu của hệ số a.');
     await mkOutcome(lesson2Id, 'Nhận biết được hàm số bậc nhất.');
 
-    // 3 câu trắc nghiệm ready gắn YCCĐ của ĐVK 1 ở mức Biết — pool cho
-    // ô (ĐVK 1 × Biết × Nhiều lựa chọn) khi preview tính khả dụng.
+    // 3 câu trắc nghiệm ready gắn YCCĐ của ĐVK 1 ở mức Biết — pool cho ô (ĐVK 1 × Biết × Nhiều lựa chọn) khi preview
+    // tính khả dụng.
     const bankRes = await http(app).post('/api/v1/questions/categories').set('Authorization', `Bearer ${admin}`)
       .send({ name: 'Matrix import bank', contextId: systemCtx.id });
     const bankCatId = bankRes.body.id as string;
     for (const name of ['MI1', 'MI2', 'MI3']) {
       const r = await http(app).post('/api/v1/questions').set('Authorization', `Bearer ${admin}`).send({
         categoryId: bankCatId, qtype: 'multichoice', questionText: `${name}: chọn đáp án đúng.`, defaultMark: 1,
-        // Mô hình mới (quyết 12:04/12:12 ngày 26/10/2026): không còn
-        // name/fraction/single — MC đúng 4 lựa chọn, đúng một đáp án
-        // đúng đánh dấu bằng correct.
+        // Mô hình mới (quyết 12:04/12:12 ngày 26/10/2026): không còn name/fraction/single — MC đúng 4 lựa chọn, đúng
+        // một đáp án đúng đánh dấu bằng correct.
         answers: [
           { text: 'Đúng', correct: true },
           { text: 'Sai 1', correct: false },
@@ -115,7 +110,6 @@ describe('Nhập ma trận I-1 (mẫu + xem trước, không ghi DB)', () => {
   });
   afterAll(async () => { await app.close(); });
 
-  /** Tải workbook mẫu từ endpoint (đáp là file nhị phân). */
   async function downloadTemplate(query: Record<string, string>): Promise<ExcelJS.Workbook> {
     const qs = new URLSearchParams(query).toString();
     const res = await http(app).get(`/api/v1/exam-matrices/template?${qs}`)
@@ -132,7 +126,10 @@ describe('Nhập ma trận I-1 (mẫu + xem trước, không ghi DB)', () => {
     return wb;
   }
 
-  /** Điền một workbook mẫu thành file HỢP LỆ khớp tổng 10 điểm (dạng 30/20/20/30). Cột: MC F–H, Đ–S I–K, Trả lời ngắn L–N, Tự luận O–Q; mức theo thứ tự Biết/Hiểu/Vận dụng. */
+  /**
+   * Điền một workbook mẫu thành file HỢP LỆ khớp tổng 10 điểm (dạng 30/20/20/30). Cột: MC F–H, Đ–S I–K, Trả lời ngắn
+   * L–N, Tự luận O–Q; mức theo thứ tự Biết/Hiểu/Vận dụng.
+   */
   function fillValid(wb: ExcelJS.Workbook): ExcelJS.Workbook {
     const ws = wb.getWorksheet('Ma trận')!;
     ws.getCell('B2').value = 'Ma trận nhập thử';
@@ -278,14 +275,10 @@ describe('Nhập ma trận I-1 (mẫu + xem trước, không ghi DB)', () => {
 });
 
 /**
- * I-1 với DIỄN VIÊN GIÁO VIÊN MÔ HÌNH SEED (hồi quy điểm chặn D-3,
- * issue #233): giáo viên chỉ có vai `editingteacher` tại context
- * khoá mình dạy — không vai nào tại context hệ thống, đúng mô hình
- * teacher1 — phải tải được mẫu và xem trước được file hợp lệ theo
- * môn neo tại context hệ thống; học sinh (vai `student` tại context
- * khoá) bị chặn 403 tại cổng bank của luồng ở cả hai đầu. Dữ kiện
- * môn/chương trình dựng riêng cho describe này bằng admin như
- * describe chính.
+ * I-1 với DIỄN VIÊN GIÁO VIÊN MÔ HÌNH SEED (hồi quy điểm chặn D-3, issue #233): giáo viên chỉ có vai `editingteacher`
+ * tại context khoá mình dạy — không vai nào tại context hệ thống, đúng mô hình teacher1 — phải tải được mẫu và xem
+ * trước được file hợp lệ theo môn neo tại context hệ thống; học sinh (vai `student` tại context khoá) bị chặn 403 tại
+ * cổng bank của luồng ở cả hai đầu. Dữ kiện môn/chương trình dựng riêng cho describe này bằng admin như describe chính.
  */
 describe('Nhập ma trận I-1 với actor giáo viên mô hình seed (hồi quy D-3, issue #233)', () => {
   let app: INestApplication;
@@ -326,8 +319,7 @@ describe('Nhập ma trận I-1 với actor giáo viên mô hình seed (hồi quy
       .send({ nodeId: lesson1Id, content: 'Nhận biết được hàm số bậc hai.' });
     expect(outcomeRes.status, JSON.stringify(outcomeRes.body)).toBe(201);
 
-    // Khoá + gán vai đúng mô hình seed: giáo viên dạy một khoá (vai
-    // tại context khoá), học sinh học cùng khoá đó.
+    // Khoá + gán vai đúng mô hình seed: giáo viên dạy một khoá (vai tại context khoá), học sinh học cùng khoá đó.
     const category = await createCategory(app, admin);
     const course = await createCourse(app, admin, category.id);
     const courseCtx = await courseContextId(app, admin, course.id);
@@ -359,7 +351,10 @@ describe('Nhập ma trận I-1 với actor giáo viên mô hình seed (hồi quy
     return wb;
   }
 
-  /** Điền file hợp lệ tối thiểu: một ô duy nhất khớp tổng khai (1 câu Tự luận Vận dụng × 1,5đ, tổng 1,5) — đủ để preview hợp lệ. */
+  /**
+   * Điền file hợp lệ tối thiểu: một ô duy nhất khớp tổng khai (1 câu Tự luận Vận dụng × 1,5đ, tổng 1,5) — đủ để preview
+   * hợp lệ.
+   */
   function fillMinimalValid(wb: ExcelJS.Workbook): ExcelJS.Workbook {
     const ws = wb.getWorksheet('Ma trận')!;
     ws.getCell('B2').value = 'Ma trận của giáo viên seed';

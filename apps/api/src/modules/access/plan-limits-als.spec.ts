@@ -7,34 +7,23 @@ import { EnrolService } from '../enrol/enrol.service';
 import { AuthService } from '../auth/auth.service';
 
 /**
- * Ca khoá hành vi của lỗ hổng AsyncLocalStorage ở A4 (issue #587)
- * và của các closure giữ `spaceSlug` đã sửa cùng đợt:
+ * Ca khoá hành vi của lỗ hổng AsyncLocalStorage ở A4 (issue #587) và của các closure giữ `spaceSlug` đã sửa cùng đợt:
  *
- * - Builder truy vấn Kysely cũng là thenable lười — việc thực thi
- *   chỉ bắt đầu khi builder được await (điểm `.then`) hoặc khi gọi
- *   `.execute()`. Lõi `PlanLimitsCore` phải gọi `.execute()` BÊN
- *   TRONG callback async của cổng platform thì lượt đọc mới chạy
- *   trong ngữ cảnh platform; builder trả thẳng ra khỏi cổng rồi mới
- *   thực thi ngoài `tenantAls.run` thì lượt đọc rơi về ngữ cảnh của
- *   bên gọi và tầm nhìn RLS sai (che membership ở tenant khác, làm
- *   lọt chốt chặn slot).
- * - Ba wrapper của A4 (`PlanLimitsService`, `RoleSeparationService`,
- *   `EnrolService`) và đường cấp token (`AuthService.
- *   centreClaimForTenant`) đều phải GIỮ `spaceSlug` của ngữ cảnh
- *   hiện tại khi bước vào ngữ cảnh platform — nếu không, lượt đọc
- *   xuyên tenant của chúng rơi về kho chung và không thấy dữ kiện
- *   chỉ sống ở kho riêng. Vì vậy các ca dưới đây KHÔNG dùng cổng
- *   tự viết trong spec: chúng dựng đúng service thật, đặt ALS mang
- *   `spaceSlug`, rồi khẳng định ngữ cảnh mà lõi/cổng thật nhìn thấy
- *   tại thời điểm truy vấn là ngữ cảnh platform KÈM slug đó. Hoàn
- *   nguyên bất kỳ closure thật nào trong bốn chỗ (bỏ slug, hoặc bỏ
- *   cả cổng platform) cũng làm ít nhất một ca dưới đây đỏ — đúng
- *   tính chất hồi quy mà vòng review trước đã chỉ ra là thiếu.
+ * - Builder truy vấn Kysely cũng là thenable lười — việc thực thi chỉ bắt đầu khi builder được await (điểm `.then`)
+ *   hoặc khi gọi `.execute()`. Lõi `PlanLimitsCore` phải gọi `.execute()` BÊN TRONG callback async của cổng platform
+ *   thì lượt đọc mới chạy trong ngữ cảnh platform; builder trả thẳng ra khỏi cổng rồi mới thực thi ngoài
+ *   `tenantAls.run` thì lượt đọc rơi về ngữ cảnh của bên gọi và tầm nhìn RLS sai (che membership ở tenant khác, làm lọt
+ *   chốt chặn slot).
+ * - Ba wrapper của A4 (`PlanLimitsService`, `RoleSeparationService`, `EnrolService`) và đường cấp token (`AuthService.
+ *   centreClaimForTenant`) đều phải GIỮ `spaceSlug` của ngữ cảnh hiện tại khi bước vào ngữ cảnh platform — nếu không,
+ *   lượt đọc xuyên tenant của chúng rơi về kho chung và không thấy dữ kiện chỉ sống ở kho riêng. Vì vậy các ca dưới đây
+ *   KHÔNG dùng cổng tự viết trong spec: chúng dựng đúng service thật, đặt ALS mang `spaceSlug`, rồi khẳng định ngữ cảnh
+ *   mà lõi/cổng thật nhìn thấy tại thời điểm truy vấn là ngữ cảnh platform KÈM slug đó. Hoàn nguyên bất kỳ closure thật
+ *   nào trong bốn chỗ (bỏ slug, hoặc bỏ cả cổng platform) cũng làm ít nhất một ca dưới đây đỏ — đúng tính chất hồi quy
+ *   mà vòng review trước đã chỉ ra là thiếu.
  *
- * Fake database ở đây chỉ ghi lại ngữ cảnh ALS tại đúng thời điểm
- * truy vấn được thực thi, không mô phỏng dữ liệu thật: các lượt đọc
- * đầu tiên trả về rỗng nên lõi dừng ngay sau đó, đủ để khoá ngữ
- * cảnh của chính lượt đọc đó.
+ * Fake database ở đây chỉ ghi lại ngữ cảnh ALS tại đúng thời điểm truy vấn được thực thi, không mô phỏng dữ liệu thật:
+ * các lượt đọc đầu tiên trả về rỗng nên lõi dừng ngay sau đó, đủ để khoá ngữ cảnh của chính lượt đọc đó.
  */
 function makeLazyQuery(seen: Array<TenantAlsStore | undefined>) {
   return {

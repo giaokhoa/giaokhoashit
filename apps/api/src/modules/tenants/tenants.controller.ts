@@ -20,11 +20,9 @@ import {
 @ApiTags('tenants')
 @Controller({ path: 'tenants', version: '1' })
 /**
- * API tenant (TENANT-0, #168): bề mặt platform (tạo/vòng đời tenant —
- * chỉ platform admin khi khách đăng ký gói tổ chức; KHÔNG có đăng ký tự
- * phục vụ) + bề mặt tenant admin (thành viên, người dùng của tenant).
- * Mọi cổng quyền kiểm trong TenantsService theo capability tại context
- * hệ thống (platform) hoặc context tenant (tenant admin).
+ * API tenant (TENANT-0, #168): bề mặt platform (tạo/vòng đời tenant — chỉ platform admin khi khách đăng ký gói tổ chức;
+ * KHÔNG có đăng ký tự phục vụ) + bề mặt tenant admin (thành viên, người dùng của tenant). Mọi cổng quyền kiểm trong
+ * TenantsService theo capability tại context hệ thống (platform) hoặc context tenant (tenant admin).
  */
 export class TenantsController {
   constructor(
@@ -102,7 +100,10 @@ export class TenantsController {
   }
 
   @Post(':tenantId/users')
-  /** POST /tenants/:tenantId/users — tenant admin tạo người dùng + membership ngay; tenant ở kho riêng thì tài khoản chỉ tạo trong kho của trung tâm đó (issue #584). */
+  /**
+   * POST /tenants/:tenantId/users — tenant admin tạo người dùng + membership ngay; tenant ở kho riêng thì tài khoản chỉ
+   * tạo trong kho của trung tâm đó (issue #584).
+   */
   async createUser(
     @Param('tenantId', { schema: uuidIdSchema }) tenantId: string,
     @Body({ schema: createUserSchema }) dto: CreateTenantUserDto,

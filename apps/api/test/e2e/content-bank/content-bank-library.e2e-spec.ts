@@ -10,33 +10,23 @@ import { createCategory, createCourse, getFirstSectionId } from '../../support/c
  * Issue #69 (CB-1) — Kho học liệu tổ/trường trên khung Content Bank.
  *
  * Vòng đời được kiểm chứng tận API:
- * - học liệu scope tổ (cohort) bắt đầu ở draft, đồng nghiệp trong tổ
- *   KHÔNG thấy khi draft lẫn khi chờ duyệt; chỉ tác giả + người duyệt
- *   (tổ trưởng: contentbank:reviewcontent + cohort:manage tại context
- *   của tổ) thấy;
- * - gửi duyệt bắt metadata chương trình đủ (môn–khối–node + file) +
- *   metadata sư phạm (mô tả–từ khoá–đối tượng–vị trí trong bài, CB1-B3);
- *   scope trường bắt thêm trường bản quyền/nguồn gốc (CB1-B1): chưa đủ
- *   bản quyền thì chưa mở được scope trường;
- * - loại học liệu là 5 nhóm Điều 7 TT 09/2021 (CB1-B2) + cấp học độc
- *   lập; duyệt theo checklist tiêu chí Bộ, từ chối bắt buộc có lý do
- *   (CB1-B3); học liệu dẫn xuất giữ derived_from về học liệu gốc;
- * - duyệt xong học liệu mới hiện với thành viên tổ và cắm được vào khoá
- *   của đồng nghiệp bằng BẢN SAO file (module mod_resource + file riêng
- *   trong context của module; sửa bản gốc sau đó không đổi bản đã cắm);
- * - sửa học liệu đã duyệt → quay về draft, biến mất khỏi danh sách của
- *   đồng nghiệp;
+ * - học liệu scope tổ (cohort) bắt đầu ở draft, đồng nghiệp trong tổ KHÔNG thấy khi draft lẫn khi chờ duyệt; chỉ tác
+ *   giả + người duyệt (tổ trưởng: contentbank:reviewcontent + cohort:manage tại context của tổ) thấy;
+ * - gửi duyệt bắt metadata chương trình đủ (môn–khối–node + file) + metadata sư phạm (mô tả–từ khoá–đối tượng–vị trí
+ *   trong bài, CB1-B3); scope trường bắt thêm trường bản quyền/nguồn gốc (CB1-B1): chưa đủ bản quyền thì chưa mở được
+ *   scope trường;
+ * - loại học liệu là 5 nhóm Điều 7 TT 09/2021 (CB1-B2) + cấp học độc lập; duyệt theo checklist tiêu chí Bộ, từ chối bắt
+ *   buộc có lý do (CB1-B3); học liệu dẫn xuất giữ derived_from về học liệu gốc;
+ * - duyệt xong học liệu mới hiện với thành viên tổ và cắm được vào khoá của đồng nghiệp bằng BẢN SAO file (module
+ *   mod_resource + file riêng trong context của module; sửa bản gốc sau đó không đổi bản đã cắm);
+ * - sửa học liệu đã duyệt → quay về draft, biến mất khỏi danh sách của đồng nghiệp;
  * - scope trường tương tự (duyệt bởi người có reviewcontent ở hệ thống);
- * - học liệu kiểu bộ câu hỏi chỉ THAM CHIẾU category của ngân hàng câu
- *   hỏi — cắm vào khoá bị từ chối;
- * - người không có vai trò (học sinh) không tạo được học liệu, không
- *   xem được học liệu chưa duyệt.
+ * - học liệu kiểu bộ câu hỏi chỉ THAM CHIẾU category của ngân hàng câu hỏi — cắm vào khoá bị từ chối;
+ * - người không có vai trò (học sinh) không tạo được học liệu, không xem được học liệu chưa duyệt.
  *
- * Bổ sung theo phân xử điểm mở probe v86 (issue #69 mở lại): giáo viên
- * CHỈ có vai tại context khoá tạo được học liệu trong kho cá nhân của
- * mình theo đường mặc định của UI (không contextId); học liệu trường
- * approved+public mở cho mọi người dùng đã đăng nhập (kể cả học sinh
- * chỉ có vai ở khoá) — trạng thái draft/pending vẫn gác chặt.
+ * Bổ sung theo phân xử điểm mở probe v86 (issue #69 mở lại): giáo viên CHỈ có vai tại context khoá tạo được học liệu
+ * trong kho cá nhân của mình theo đường mặc định của UI (không contextId); học liệu trường approved+public mở cho mọi
+ * người dùng đã đăng nhập (kể cả học sinh chỉ có vai ở khoá) — trạng thái draft/pending vẫn gác chặt.
  */
 describe('Thư viện ngân hàng nội dung (CB-1, issue #69)', () => {
   let app: INestApplication;
@@ -55,8 +45,8 @@ describe('Thư viện ngân hàng nội dung (CB-1, issue #69)', () => {
   let colleagueId: string;
   let courseId: string;
   let sectionId: string;
-  // Chữ ký probe live v86 (điểm mở quyền CB-1): giáo viên/học sinh CHỈ
-  // có vai tại context khoá, không có gán vai nào ở hệ thống.
+  // Chữ ký probe live v86 (điểm mở quyền CB-1): giáo viên/học sinh CHỈ có vai tại context khoá, không có gán vai nào ở
+  // hệ thống.
   let courseTeacherToken: string;
   let courseStudentToken: string;
 
@@ -109,8 +99,8 @@ describe('Thư viện ngân hàng nội dung (CB-1, issue #69)', () => {
     const colleague = await makeTeacher(true);
     colleagueToken = colleague.token;
     colleagueId = colleague.id;
-    // Tổ trưởng: thành viên tổ + vai manager tại CONTEXT CỦA TỔ (đó là
-    // dấu hiệu phân biệt người duyệt với giáo viên thường của tổ).
+    // Tổ trưởng: thành viên tổ + vai manager tại CONTEXT CỦA TỔ (đó là dấu hiệu phân biệt người duyệt với giáo viên
+    // thường của tổ).
     const lead = await createUserViaApi(app, admin);
     await assignRole(app, admin, lead.id, await roleIdByShortname(app, admin, 'manager'), cohortCtx);
     const addLead = await http(app).post(`/api/v1/cohorts/${cohortId}/members`).set(bearer(admin)).send({ userId: lead.id });
@@ -133,8 +123,8 @@ describe('Thư viện ngân hàng nội dung (CB-1, issue #69)', () => {
     expect(courseCtx).toBeDefined();
     await assignRole(app, admin, colleagueId, await roleIdByShortname(app, admin, 'editingteacher'), courseCtx!.id);
 
-    // Giáo viên + học sinh chỉ có vai tại context khoá này (đúng mô
-    // hình gán vai của seed/đời thật khiến probe v86 lộ hai lỗi quyền).
+    // Giáo viên + học sinh chỉ có vai tại context khoá này (đúng mô hình gán vai của seed/đời thật khiến probe v86 lộ
+    // hai lỗi quyền).
     const courseTeacher = await createUserViaApi(app, admin);
     await assignRole(app, admin, courseTeacher.id, await roleIdByShortname(app, admin, 'editingteacher'), courseCtx!.id);
     courseTeacherToken = (await login(app, courseTeacher.username, STRONG_PASSWORD)).accessToken;
@@ -287,8 +277,7 @@ describe('Thư viện ngân hàng nội dung (CB-1, issue #69)', () => {
     const created = await http(app).post('/api/v1/contentbank').set(bearer(authorToken)).send({
       name: uniqueName('Tai lieu thieu ban quyen'), resourceType: 'multimedia_lecture', scope: 'school',
       subjectId, grade: 10, curriculumNodeId: nodeId, ...pedagogicalMeta,
-      // Có tác giả gốc nhưng thiếu nguồn gốc + giấy phép; nguồn trích dẫn
-      // mà không ghi nguồn cụ thể cũng bị chặn.
+      // Có tác giả gốc nhưng thiếu nguồn gốc + giấy phép; nguồn trích dẫn mà không ghi nguồn cụ thể cũng bị chặn.
       originalAuthor: 'Sưu tầm', sourceKind: 'cited',
     });
     expect(created.status).toBe(201);
@@ -370,8 +359,7 @@ describe('Thư viện ngân hàng nội dung (CB-1, issue #69)', () => {
     expect(linkA.status).toBe(200);
     expect(linkA.body.derivedFromId).toBe(bId);
 
-    // Vòng 2 nút B → A (trong khi A → B) → bị chặn ở cả update lẫn create-kèm-chuỗi:
-    // update B trỏ về A tạo vòng A→B→A.
+    // Vòng 2 nút B → A (trong khi A → B) → bị chặn ở cả update lẫn create-kèm-chuỗi: update B trỏ về A tạo vòng A→B→A.
     const cycle = await http(app).patch(`/api/v1/contentbank/${bId}`).set(bearer(authorToken))
       .send({ sourceKind: 'derived', derivedFromId: aId });
     expect(cycle.status).toBe(400);
@@ -379,9 +367,8 @@ describe('Thư viện ngân hàng nội dung (CB-1, issue #69)', () => {
     const afterCycle = await http(app).get(`/api/v1/contentbank/${bId}`).set(bearer(authorToken));
     expect(afterCycle.body.derivedFromId).toBeNull();
 
-    // Cổng submit B1 không bị phá: học liệu trường khai derived trỏ về
-    // chính mình bị chặn ngay ở update nên derivedFromId vẫn trống →
-    // gửi duyệt vẫn 400 metadata_incomplete (thiếu derivedFromId thật).
+    // Cổng submit B1 không bị phá: học liệu trường khai derived trỏ về chính mình bị chặn ngay ở update nên
+    // derivedFromId vẫn trống → gửi duyệt vẫn 400 metadata_incomplete (thiếu derivedFromId thật).
     const school = await http(app).post('/api/v1/contentbank').set(bearer(authorToken)).send({
       name: uniqueName('Tai lieu truong tu dan xuat'), resourceType: 'multimedia_lecture', scope: 'school',
       subjectId, grade: 10, level: 'upper_secondary', curriculumNodeId: nodeId, ...pedagogicalMeta,
@@ -419,8 +406,8 @@ describe('Thư viện ngân hàng nội dung (CB-1, issue #69)', () => {
     });
     expect(created.status).toBe(201);
     expect(created.body.reviewStatus).toBe('approved');
-    // Người dùng thường (vai học sinh ở hệ thống, không có quyền sửa nội
-    // dung) không xem được học liệu cá nhân của người khác.
+    // Người dùng thường (vai học sinh ở hệ thống, không có quyền sửa nội dung) không xem được học liệu cá nhân của
+    // người khác.
     const view = await http(app).get(`/api/v1/contentbank/${created.body.id}`).set(bearer(studentToken));
     expect(view.status).toBe(403);
 
@@ -431,8 +418,8 @@ describe('Thư viện ngân hàng nội dung (CB-1, issue #69)', () => {
   });
 
   it('ngân hàng cá nhân: giáo viên chỉ có vai ở ngữ cảnh khoá học tạo được mà không cần contextId; học viên chỉ-ở-khoá vẫn không thể (probe v86)', async () => {
-    // Đường mặc định của UI: không contextId, scope personal. Giáo viên
-    // chỉ có editingteacher tại context khoá vẫn dùng được kho của mình.
+    // Đường mặc định của UI: không contextId, scope personal. Giáo viên chỉ có editingteacher tại context khoá vẫn dùng
+    // được kho của mình.
     const created = await http(app).post('/api/v1/contentbank').set(bearer(courseTeacherToken)).send({
       name: uniqueName('Hoc lieu ca nhan GV khoa'), resourceType: 'reference', scope: 'personal',
     });
@@ -477,8 +464,8 @@ describe('Thư viện ngân hàng nội dung (CB-1, issue #69)', () => {
     expect(review.status).toBe(201);
     expect(review.body.visibility).toBe('public');
 
-    // Approved + public: học sinh lẫn giáo viên (chỉ có vai ở khoá) đều
-    // đọc được theo id và thấy trong danh sách scope trường.
+    // Approved + public: học sinh lẫn giáo viên (chỉ có vai ở khoá) đều đọc được theo id và thấy trong danh sách scope
+    // trường.
     const studentView = await http(app).get(`/api/v1/contentbank/${id}`).set(bearer(courseStudentToken));
     expect(studentView.status).toBe(200);
     expect(await listIds(courseStudentToken, 'scope=school')).toContain(id);

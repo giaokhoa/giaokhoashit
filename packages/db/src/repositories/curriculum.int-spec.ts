@@ -5,21 +5,15 @@ import { buildTestDatabase, dropTestDatabase, withDatabase } from '../test-suppo
 import { CurriculumRepository, type LearningOutcomeRow } from './curriculum';
 
 /**
- * Spec tích hợp của CurriculumRepository phía Kysely (issue #646,
- * nhóm G6). Database kho trung tâm được dựng từ rỗng bằng cầu nối
- * migration của package trên cụm PostgreSQL thật của môi trường
- * test; mọi ca chạy qua repository production — không mô phỏng
- * handle.
+ * Spec tích hợp của CurriculumRepository phía Kysely (issue #646, nhóm G6). Database kho trung tâm được dựng từ rỗng
+ * bằng cầu nối migration của package trên cụm PostgreSQL thật của môi trường test; mọi ca chạy qua repository
+ * production — không mô phỏng handle.
  *
- * Spec này là nơi CHỐT THỬ NGHIỆM T-14 (chiếu toàn bảng trong
- * select) cho điểm đo duy nhất của repo: `searchOutcomes` của bản
- * bộ máy cũ chiếu `select({ outcome: learningOutcomes, … })` —
- * Kysely không có chiếu-gộp-cả-bảng nên bản mới liệt kê tường minh
- * MỌI cột của bảng YCCĐ dưới tiền tố `outcome…` rồi lồng lại thành
- * object `outcome` trong mã; ca T-14 dưới đây khoá hình dạng kết
- * quả bằng deep-equal với chính dòng đọc thẳng từ repository.
- * (Ca T-13 — hợp điều kiện động — được khoá qua
- * `countGuardedReferences` và lọc `listOutcomes`.)
+ * Spec này là nơi CHỐT THỬ NGHIỆM T-14 (chiếu toàn bảng trong select) cho điểm đo duy nhất của repo: `searchOutcomes`
+ * của bản bộ máy cũ chiếu `select({ outcome: learningOutcomes, … })` — Kysely không có chiếu-gộp-cả-bảng nên bản mới
+ * liệt kê tường minh MỌI cột của bảng YCCĐ dưới tiền tố `outcome…` rồi lồng lại thành object `outcome` trong mã; ca
+ * T-14 dưới đây khoá hình dạng kết quả bằng deep-equal với chính dòng đọc thẳng từ repository. (Ca T-13 — hợp điều kiện
+ * động — được khoá qua `countGuardedReferences` và lọc `listOutcomes`.)
  */
 const adminUrl =
   process.env.LMS_DB_TEST_ADMIN_URL ??
@@ -45,7 +39,6 @@ afterAll(async () => {
   if (adminUrl) await dropTestDatabase(adminUrl, TEST_DB).catch(() => undefined);
 });
 
-/** Dựng một cây tối thiểu môn → chương trình → node → YCCĐ và trả các dòng đã tạo. */
 async function seedTree(slug: string) {
   const subject = await repo.insertSubject({ contextId: CONTEXT_ID, name: `Môn ${slug}`, slug });
   const curriculum = await repo.insertCurriculum({ subjectId: subject.id, grade: 3 });
@@ -90,8 +83,8 @@ describe('CurriculumRepository (Kysely)', () => {
     const results = await repo.searchOutcomes({ query: 't14-search', limit: 10 });
     expect(results).toHaveLength(1);
     const [hit] = results;
-    // Deep-equal với chính dòng repository đọc thẳng: mọi cột của
-    // bảng YCCĐ phải có mặt dưới khoá `outcome`, không thừa không thiếu.
+    // Deep-equal với chính dòng repository đọc thẳng: mọi cột của bảng YCCĐ phải có mặt dưới khoá `outcome`, không thừa
+    // không thiếu.
     expect(hit!.outcome).toEqual(outcome);
     expect(Object.keys(hit!.outcome).sort()).toEqual(Object.keys(outcome as LearningOutcomeRow).sort());
     expect(hit!.nodeTitle).toBe(node.title);

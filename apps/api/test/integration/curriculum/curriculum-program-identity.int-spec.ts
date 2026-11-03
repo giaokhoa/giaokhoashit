@@ -15,39 +15,30 @@ import {
 } from '../../../src/modules/curriculum/program-datasets';
 
 /**
- * Định danh + phân phối dữ liệu chương trình chuẩn (issue #161) —
- * MÔ HÌNH DUMP ĐÔNG CỨNG — CHỐT CUỐI (Quyết định 20:09 ngày 26/10/2026,
- * sổ quyết định mục E; thay mô hình UUIDv5 cho YCCĐ trước đó):
+ * Định danh + phân phối dữ liệu chương trình chuẩn (issue #161) — MÔ HÌNH DUMP ĐÔNG CỨNG — CHỐT CUỐI (Quyết định 20:09
+ * ngày 26/10/2026, sổ quyết định mục E; thay mô hình UUIDv5 cho YCCĐ trước đó):
  *
- * 1. SẢN XUẤT Ở TRUNG TÂM: importer nạp GDCD vào DB chuẩn; id của
- *    YCCĐ là **uuidv7 mờ do DB cấp** — không tính từ nội dung, vị
- *    trí hay bất kỳ thuộc tính nào (id của môn/chương trình/node vẫn
- *    là UUIDv5 theo khoá tự nhiên như phương án D).
- * 2. PHÂN PHỐI: xuất dump → xoá trắng → RESTORE dump cho tập id khớp
- *    100%; restore lần nữa trên DB đã có dữ liệu là bỏ qua (không
- *    nhân đôi). Nạp lại bằng importer trên DB đã restore là no-op.
- * 3. PATCH Ở TRUNG TÂM — sửa chữ một YCCĐ: CÙNG id, nội dung cập
- *    nhật tại chỗ, mọi tham chiếu (ánh xạ sách, gắn câu hỏi, derived)
- *    nguyên vẹn; báo cáo có đúng 1 mục text-changed.
- * 4. PATCH — chèn một dòng vào giữa: dòng mới có id MỚI, các dòng cũ
- *    giữ id và chỉ dời position; báo cáo gồm added + moved.
- * 5. PATCH — rút một dòng: dòng còn trong DB với retired_at có giá
- *    trị; pool theo ĐVK và bản đặc tả không còn thấy nó (đặc tả vẫn
- *    trả position/code cho dòng hiện hành); dòng nối câu hỏi còn
- *    nguyên; tra đích danh theo id vẫn thấy dòng.
- * 6. Hai dòng trùng hệt nhau: hai id khác nhau; rút một dòng thì
- *    dòng còn lại giữ id + còn hiện hành, mục removed gắn
+ * 1. SẢN XUẤT Ở TRUNG TÂM: importer nạp GDCD vào DB chuẩn; id của YCCĐ là **uuidv7 mờ do DB cấp** — không tính từ nội
+ *    dung, vị trí hay bất kỳ thuộc tính nào (id của môn/chương trình/node vẫn là UUIDv5 theo khoá tự nhiên như phương
+ *    án D).
+ * 2. PHÂN PHỐI: xuất dump → xoá trắng → RESTORE dump cho tập id khớp 100%; restore lần nữa trên DB đã có dữ liệu là bỏ
+ *    qua (không nhân đôi). Nạp lại bằng importer trên DB đã restore là no-op.
+ * 3. PATCH Ở TRUNG TÂM — sửa chữ một YCCĐ: CÙNG id, nội dung cập nhật tại chỗ, mọi tham chiếu (ánh xạ sách, gắn câu
+ *    hỏi, derived) nguyên vẹn; báo cáo có đúng 1 mục text-changed.
+ * 4. PATCH — chèn một dòng vào giữa: dòng mới có id MỚI, các dòng cũ giữ id và chỉ dời position; báo cáo gồm added +
+ *    moved.
+ * 5. PATCH — rút một dòng: dòng còn trong DB với retired_at có giá trị; pool theo ĐVK và bản đặc tả không còn thấy nó
+ *    (đặc tả vẫn trả position/code cho dòng hiện hành); dòng nối câu hỏi còn nguyên; tra đích danh theo id vẫn thấy
+ *    dòng.
+ * 6. Hai dòng trùng hệt nhau: hai id khác nhau; rút một dòng thì dòng còn lại giữ id + còn hiện hành, mục removed gắn
  *    identicalTextAmbiguous.
- * 7. Rút cả bản ghi → mọi dòng của nó bị rút; bản ghi quay lại →
- *    hồi sinh đúng các dòng cũ (cùng id, retired_at về null).
- * 8. FK restrict chặn xoá thật (giữ từ phương án D): bề mặt quản trị
- *    trả 409 `curriculum.delete_referenced`; gỡ tham chiếu xong xoá
- *    được.
- * 9. Restore artifact CỦA MÔI TRƯỜNG KHÁC (issue #233): dump luôn
- *    mang context_id của máy sinh dump; bước restore neo lại các
- *    môn mới nạp về context hệ thống của chính môi trường đích —
- *    nếu không, môn thành mồ côi (context lạ không tồn tại ở đích)
- *    và mọi bề mặt theo môn gãy dù dữ liệu nguyên vẹn.
+ * 7. Rút cả bản ghi → mọi dòng của nó bị rút; bản ghi quay lại → hồi sinh đúng các dòng cũ (cùng id, retired_at về
+ *    null).
+ * 8. FK restrict chặn xoá thật (giữ từ phương án D): bề mặt quản trị trả 409 `curriculum.delete_referenced`; gỡ tham
+ *    chiếu xong xoá được.
+ * 9. Restore artifact CỦA MÔI TRƯỜNG KHÁC (issue #233): dump luôn mang context_id của máy sinh dump; bước restore neo
+ *    lại các môn mới nạp về context hệ thống của chính môi trường đích — nếu không, môn thành mồ côi (context lạ không
+ *    tồn tại ở đích) và mọi bề mặt theo môn gãy dù dữ liệu nguyên vẹn.
  */
 
 const DATASET_KEY = 'gdcd';
@@ -120,10 +111,9 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
   }
 
   /**
-   * Đọc các dòng YCCĐ thô của một node: cột content nay là tài liệu
-   * JSONB (issue #334), nên kiểu trả về là tài liệu; mọi khẳng định
-   * so text phải trích text canonical qua programOutcomeDocText
-   * trước khi so, giữ nguyên độ chặt của khẳng định cũ.
+   * Đọc các dòng YCCĐ thô của một node: cột content nay là tài liệu JSONB (issue #334), nên kiểu trả về là tài liệu;
+   * mọi khẳng định so text phải trích text canonical qua programOutcomeDocText trước khi so, giữ nguyên độ chặt của
+   * khẳng định cũ.
    */
   async function outcomesOf(nodeId: string): Promise<{ id: string; content: ProgramOutcomeDoc; position: number; retired_at: Date | null }[]> {
     return sql(`select id, content, position, retired_at from learning_outcomes where node_id = $1 order by position`, [nodeId]);
@@ -163,8 +153,8 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
   afterAll(async () => {
     try {
       await pg.query(`delete from books where title like 'Sach kiem chung GDPT-SEED%'`);
-      // Câu hỏi không còn cột name sau đợt port (quyết 12:04/12:12):
-      // dọn theo category kiểm chứng của spec, trước khi xoá category.
+      // Câu hỏi không còn cột name sau đợt port (quyết 12:04/12:12): dọn theo category kiểm chứng của spec, trước khi
+      // xoá category.
       await pg.query(`delete from question where category in (select id from question_categories where name like 'cat-gdpt-seed%')`);
       await pg.query(`delete from exam_matrices where name like 'Ma trận kiểm chứng %'`);
       await pg.query(`delete from question_categories where name like 'cat-gdpt-seed%'`);
@@ -212,10 +202,9 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
     expect(ancestors[0]!.id).toBe(programAncestorNodeId(SLUG, grade, [['strand', recA.section!]]));
     expect(ancestors[1]!.id).toBe(programAncestorNodeId(SLUG, grade, [['strand', recA.section!], ['topic', recA.topic!]]));
 
-    // YCCĐ: nội dung + position khớp dataset theo thứ tự; id là
-    // uuidv7 MỜ do DB cấp (không công thức nào suy được từ nội dung
-    // hay vị trí — hai dòng cùng nội dung ở hai vị trí vẫn khác id,
-    // và id không đổi khi nội dung đổi — khẳng định ở các ca patch).
+    // YCCĐ: nội dung + position khớp dataset theo thứ tự; id là uuidv7 MỜ do DB cấp (không công thức nào suy được từ
+    // nội dung hay vị trí — hai dòng cùng nội dung ở hai vị trí vẫn khác id, và id không đổi khi nội dung đổi — khẳng
+    // định ở các ca patch).
     const expected = programRecordOutcomeEntries(recA);
     const outcomes = await outcomesOf(lessonA);
     expect(outcomes.map((o) => programOutcomeDocText(o.content))).toEqual(expected.map((e) => e.text));
@@ -229,9 +218,8 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
     expect(before.nodes.length).toBeGreaterThan(80);
     expect(before.outcomes.length).toBeGreaterThan(150);
 
-    // Suite chạy trên DB dùng chung với các spec khác: dump phải
-    // giới hạn ở cây của GDCD (đường sản xuất ở trung tâm dùng DB
-    // chuyên dụng nên xuất toàn bộ — cùng một hàm, khác phạm vi).
+    // Suite chạy trên DB dùng chung với các spec khác: dump phải giới hạn ở cây của GDCD (đường sản xuất ở trung tâm
+    // dùng DB chuyên dụng nên xuất toàn bộ — cùng một hàm, khác phạm vi).
     const dumpSql = await dumpSvc.buildDumpSql({ datasetKey: DATASET_KEY });
     expect(dumpSql).toContain('DUMP ĐÔNG CỨNG');
 
@@ -240,8 +228,8 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
     const afterFirst = await snapshotIds();
     expect(afterFirst).toEqual(before);
 
-    // DB đã có dữ liệu chương trình: restoreIfEmpty bỏ qua (đây là
-    // đường seed của các môi trường — không nhân đôi, không ghi đè).
+    // DB đã có dữ liệu chương trình: restoreIfEmpty bỏ qua (đây là đường seed của các môi trường — không nhân đôi,
+    // không ghi đè).
     const second = await dumpSvc.restoreIfEmpty();
     expect(second.restored).toBe(false);
     expect(await snapshotIds()).toEqual(before);
@@ -267,18 +255,13 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
   }, 180_000);
 
   it('restore dump của môi trường khác: môn neo lại về context hệ thống của môi trường đích (issue #233)', async () => {
-    // Ca này đứng ngay sau ca xuất → restore ở trên, khi cây vừa
-    // restore còn "sạch" (chưa có ánh xạ sách/liên kết câu hỏi nào
-    // tham chiếu node — các ca patch phía sau mới dựng chúng, và
-    // FK restrict sẽ chặn wipeSubject từ lúc đó).
+    // Ca này đứng ngay sau ca xuất → restore ở trên, khi cây vừa restore còn "sạch" (chưa có ánh xạ sách/liên kết câu
+    // hỏi nào tham chiếu node — các ca patch phía sau mới dựng chúng, và FK restrict sẽ chặn wipeSubject từ lúc đó).
     // Chụp tập id hiện hành để đối chiếu tính nguyên vẹn sau restore.
     const before = await snapshotIds();
-    // Dump sinh từ trạng thái hiện tại, rồi GIẢ LẬP artifact của
-    // một môi trường khác: thay context hệ thống trong dump bằng
-    // một id context không tồn tại ở đây — đúng hiện tượng đã xảy
-    // ra trên production (artifact mang context_id của máy sinh
-    // dump; cột không có FK nên trước đây restore nhận im lặng và
-    // môn thành mồ côi, mọi lần đọc theo môn ném
+    // Dump sinh từ trạng thái hiện tại, rồi GIẢ LẬP artifact của một môi trường khác: thay context hệ thống trong dump
+    // bằng một id context không tồn tại ở đây — đúng hiện tượng đã xảy ra trên production (artifact mang context_id của
+    // máy sinh dump; cột không có FK nên trước đây restore nhận im lặng và môn thành mồ côi, mọi lần đọc theo môn ném
     // access.context_not_found).
     const dump = await dumpSvc.buildDumpSql({ datasetKey: DATASET_KEY });
     const foreignCtx = randomUUID();
@@ -288,22 +271,19 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
     await wipeSubject();
     await dumpSvc.restoreDumpSql(foreignDump);
 
-    // Môn neo về context hệ thống CỦA MÔI TRƯỜNG ĐÍCH; cây + sổ
-    // giữ nguyên tập id như trước khi xoá.
+    // Môn neo về context hệ thống CỦA MÔI TRƯỜNG ĐÍCH; cây + sổ giữ nguyên tập id như trước khi xoá.
     const rows = await sql<{ id: string; context_id: string }>(
       `select id, context_id from subjects where slug = $1`, [SLUG]);
     expect(rows.length).toBe(1);
     expect(rows[0]!.context_id).toBe(systemCtxId);
     expect(await snapshotIds()).toEqual(before);
-    // Bề mặt đọc công khai đọc được môn (khi chưa có bước neo,
-    // lần đọc này ném access.context_not_found vì context lạ
+    // Bề mặt đọc công khai đọc được môn (khi chưa có bước neo, lần đọc này ném access.context_not_found vì context lạ
     // không tồn tại ở môi trường đích).
     const view = await curriculumSvc.getSubject(adminId, rows[0]!.id);
     expect(view.id).toBe(rows[0]!.id);
   }, 180_000);
 
   it('bản vá trung tâm — sửa văn bản giữ nguyên id outcome và mọi tham chiếu', async () => {
-    // --- dựng tham chiếu quanh cây vừa restore ---------------------
     const derivedRes = await http(app).post('/api/v1/curriculum/outcomes').set(bearer(admin))
       .send({ nodeId: lessonA, content: 'YCCĐ suy ra phục vụ kiểm chứng.', sourceKind: 'derived', derivedFromId: outcomeA1 });
     expect(derivedRes.status).toBe(201);
@@ -336,9 +316,8 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
                (select curriculum_id from curriculum_program_records where dataset_key = $2 and record_id = $3), $4)
        returning id`,
       [programSubjectId(SLUG), DATASET_KEY, recC.id, systemCtxId]);
-    // Ô phải thuộc về một version bất biến của ma trận (bất biến từ
-    // đợt version hoá ma trận, issue #228 S1): fixture dựng kèm
-    // hàng version 1 như đường tạo ma trận thật.
+    // Ô phải thuộc về một version bất biến của ma trận (bất biến từ đợt version hoá ma trận, issue #228 S1): fixture
+    // dựng kèm hàng version 1 như đường tạo ma trận thật.
     const matrixVersion = await sql<{ id: string }>(
       `insert into exam_matrix_versions (matrix_id, version, created_by) values ($1, 1, $2) returning id`,
       [matrix[0]!.id, adminId]);
@@ -349,7 +328,6 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
     const refsBefore = await referenceSnapshot();
     const outcomeTotalBefore = (await snapshotIds()).outcomes.length;
 
-    // --- dataset đính chính 3 kiểu --------------------------------
     const mutated = structuredClone(file) as ProgramDatasetFile;
     const mA = mutated.records.find((r) => r.id === recA.id)!;
     mA.topic = `${recA.topic} (đính chính)`;
@@ -372,8 +350,7 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
     const nodeA = await sql<{ id: string; title: string }>(`select id, title from curriculum_nodes where id = $1`, [lessonA]);
     expect(nodeA[0]!.title).toBe(mA.topic);
 
-    // (b) Sửa chữ YCCĐ: CÙNG dòng, CÙNG id — nội dung cập nhật tại
-    // chỗ; không sinh dòng mới, không dòng nào bị rút.
+    // (b) Sửa chữ YCCĐ: CÙNG dòng, CÙNG id — nội dung cập nhật tại chỗ; không sinh dòng mới, không dòng nào bị rút.
     const bRows = await outcomesOf(lessonB);
     const corrected = bRows.find((r) => r.id === outcomeB1);
     expect(corrected, 'the corrected outcome keeps its row and id').toBeTruthy();
@@ -479,8 +456,8 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
     expect(removed).toBeTruthy();
     expect(removed!.linkedQuestions).toBeGreaterThanOrEqual(1);
 
-    // Dòng còn nguyên trong DB với retired_at có giá trị; dòng nối
-    // câu hỏi còn nguyên; tra đích danh theo id vẫn thấy dòng.
+    // Dòng còn nguyên trong DB với retired_at có giá trị; dòng nối câu hỏi còn nguyên; tra đích danh theo id vẫn thấy
+    // dòng.
     const row = await sql<{ id: string; retired_at: Date | null }>(
       `select id, retired_at from learning_outcomes where id = $1`, [outcomeE1]);
     expect(row.length).toBe(1);
@@ -508,8 +485,8 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
     step1.records.find((r) => r.id === recF.id)!.outcomes = [twin, twin, third];
     await svc.importDatasetFileInternal(DATASET_KEY, step1);
     const allRows = await outcomesOf(lessonF);
-    // Luật không-xoá: các dòng gốc bị thay thế nằm lại ở trạng thái
-    // đã rút; tập HIỆN HÀNH phải đúng 3 dòng mới theo thứ tự dataset.
+    // Luật không-xoá: các dòng gốc bị thay thế nằm lại ở trạng thái đã rút; tập HIỆN HÀNH phải đúng 3 dòng mới theo thứ
+    // tự dataset.
     const rows = allRows.filter((r) => r.retired_at === null);
     expect(rows.length).toBe(3);
     expect(rows.map((r) => programOutcomeDocText(r.content))).toEqual([twin, twin, third]);
@@ -579,7 +556,6 @@ describe('Định danh chương trình + phân phối dump đã đóng băng (is
     expect(gone.length).toBe(0);
   }, 120_000);
 
-  /** Ảnh chụp các dòng tham chiếu dựng trong spec (so nguyên vẹn trước/sau đính chính). */
   async function referenceSnapshot(): Promise<unknown> {
     const mappings = await sql(
       `select id, book_node_id, curriculum_node_id, learning_outcome_id from book_mappings where book_node_id = $1 order by position`, [bookNodeId]);

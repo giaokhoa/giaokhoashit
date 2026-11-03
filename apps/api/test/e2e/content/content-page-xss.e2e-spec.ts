@@ -5,22 +5,16 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
 import { createCategory, createCourse, createEnrolInstance, enrolUser, getFirstSectionId } from '../../support/course-enrolment-helpers';
 
 /**
- * Gác XSS lưu trữ của học liệu (trang đọc mod_page + URL tài nguyên
- * mod_resource):
- *  - Nội dung HTML của trang đọc được làm sạch THEO ALLOWLIST phía
- *    server ở cả đường ghi (tạo/sửa qua ContentService) lẫn đường đọc
- *    phục vụ trang học — bản ghi đã lưu payload độc từ trước khi có
- *    cổng ghi (mô phỏng bằng cách ghi thẳng xuống DB) cũng không
- *    được phát nguyên văn qua đáp ứng đọc/player của học viên.
- *  - Định dạng học liệu hợp lệ (đoạn văn, in đậm, liên kết https,
- *    ảnh) phải đi qua nguyên vẹn — làm sạch không được phá nội dung.
- *  - URL tài nguyên ngoài chỉ còn scheme http/https: `javascript:`/
- *    `data:` bị từ chối khi lưu (400) ở cả đường tạo lẫn đường sửa;
- *    bản ghi cũ mang scheme nguy hiểm (ghi thẳng xuống DB) không
- *    được phát ra đáp ứng đọc cho người xem.
- * Kiểm chứng âm tính ngược: vô hiệu hoá bước làm sạch trong
- * ContentService thì các ca payload độc dưới đây đỏ (đã chạy tay khi
- * thi công, xem thân PR).
+ * Gác XSS lưu trữ của học liệu (trang đọc mod_page + URL tài nguyên mod_resource):
+ *  - Nội dung HTML của trang đọc được làm sạch THEO ALLOWLIST phía server ở cả đường ghi (tạo/sửa qua ContentService)
+ *    lẫn đường đọc phục vụ trang học — bản ghi đã lưu payload độc từ trước khi có cổng ghi (mô phỏng bằng cách ghi
+ *    thẳng xuống DB) cũng không được phát nguyên văn qua đáp ứng đọc/player của học viên.
+ *  - Định dạng học liệu hợp lệ (đoạn văn, in đậm, liên kết https, ảnh) phải đi qua nguyên vẹn — làm sạch không được phá
+ *    nội dung.
+ *  - URL tài nguyên ngoài chỉ còn scheme http/https: `javascript:`/ `data:` bị từ chối khi lưu (400) ở cả đường tạo lẫn
+ *    đường sửa; bản ghi cũ mang scheme nguy hiểm (ghi thẳng xuống DB) không được phát ra đáp ứng đọc cho người xem.
+ * Kiểm chứng âm tính ngược: vô hiệu hoá bước làm sạch trong ContentService thì các ca payload độc dưới đây đỏ (đã chạy
+ * tay khi thi công, xem thân PR).
  */
 describe('Rào stored-XSS nội dung (làm sạch nội dung trang + scheme URL tài nguyên)', () => {
   let app: INestApplication;
@@ -105,8 +99,8 @@ describe('Rào stored-XSS nội dung (làm sạch nội dung trang + scheme URL 
     const created = await http(app).post(`/api/v1/courses/${f.courseId}/pages`).set('Authorization', `Bearer ${admin}`)
       .send({ sectionId: f.sectionId, name: 'Bài đọc cũ', content: '<p>Nội dung sạch</p>' });
     expect(created.status).toBe(201);
-    // Mô phỏng dữ kiện đã lưu trước khi có cổng làm sạch ở đường ghi:
-    // ghi đè content thẳng xuống DB, bỏ qua hoàn toàn tầng service.
+    // Mô phỏng dữ kiện đã lưu trước khi có cổng làm sạch ở đường ghi: ghi đè content thẳng xuống DB, bỏ qua hoàn toàn
+    // tầng service.
     await pg.query('UPDATE pages SET content = $1 WHERE id = $2', [PAYLOAD, created.body.id]);
 
     const read = await http(app).get(`/api/v1/pages/${created.body.id}`).set('Authorization', `Bearer ${f.studentToken}`);

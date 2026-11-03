@@ -13,39 +13,28 @@ import {
 } from '../../support/ordinary-worker-module';
 
 /**
- * Cơ chế chuyển tiếp một lần của consumer thông báo sự kiện (điểm
- * sửa theo phân xử trên PR #542, issue con #520 của #491): khi
- * consumer polling phía API bị gỡ, các dòng outbox thuộc mười loại
- * sự kiện thông báo có `seq` lớn hơn watermark cuối của consumer cũ
- * nhưng đã bị relay đóng dấu `publishedAt` (vì trước đây relay đóng
- * dấu cả loại chưa định tuyến) sẽ không thành job và không còn ai
- * đọc theo watermark — mất vĩnh viễn nếu không phát bù.
+ * Cơ chế chuyển tiếp một lần của consumer thông báo sự kiện (điểm sửa theo phân xử trên PR #542, issue con #520 của
+ * #491): khi consumer polling phía API bị gỡ, các dòng outbox thuộc mười loại sự kiện thông báo có `seq` lớn hơn
+ * watermark cuối của consumer cũ nhưng đã bị relay đóng dấu `publishedAt` (vì trước đây relay đóng dấu cả loại chưa
+ * định tuyến) sẽ không thành job và không còn ai đọc theo watermark — mất vĩnh viễn nếu không phát bù.
  *
  * Spec này dựng đúng trạng thái chuyển đổi đó và khẳng định:
- *  1. Dòng trên watermark cũ, đã đóng dấu `publishedAt`, được phát
- *     bù thành job và xử lý đúng một lần (đúng một thông báo).
- *  2. Dòng dưới watermark cũ không bị xử lý lại (không thông báo,
- *     không job).
- *  3. Dòng trên watermark đã có dấu đã xử lý theo `outboxId` thì
- *     job phát bù kết luận trùng ở processor và không sinh thông
- *     báo thứ hai.
- *  4. Sau khi rút cạn, khoá watermark cũ bị xoá và lần phát bù sau
- *     là no-op — cơ chế không thành consumer polling thường trực.
- *  5. Hệ mới tinh (không có khoá watermark cũ) thì không phát bù
- *     gì: dòng đã đóng dấu không thành job, không có thông báo.
- *  6. Đường khởi động thật: khoá watermark đã tồn tại TRƯỚC khi
- *     module worker khởi tạo thì hook `OnModuleInit` tự phát bù
- *     trong lúc khởi tạo — không cần lời gọi tay
- *     `drainLegacyBacklog()` (phân xử vòng 2 trên PR #542: bản
- *     spec trước chỉ gọi tay sau khi module đã boot xong nên
- *     không khoá được hành vi này).
- *  7. Lỗi thoáng qua giữa lượt phát bù (lần đẩy job đầu tiên ném
- *     lỗi) không làm kẹt tồn đọng: lượt phát bù tự thử lại có
- *     backoff trong cùng tiến trình tới khi rút cạn trọn vẹn,
- *     khoá cũ chỉ bị xoá sau khi thành công, và lần thử thất bại
- *     được ghi log mức error kèm số lần thử (phân xử vòng 2 trên
- *     PR #542: cơ chế cũ nuốt lỗi sau một lần thử duy nhất, tồn
- *     đọng kẹt tới lần khởi động worker kế tiếp).
+ *  1. Dòng trên watermark cũ, đã đóng dấu `publishedAt`, được phát bù thành job và xử lý đúng một lần (đúng một thông
+ *     báo).
+ *  2. Dòng dưới watermark cũ không bị xử lý lại (không thông báo, không job).
+ *  3. Dòng trên watermark đã có dấu đã xử lý theo `outboxId` thì job phát bù kết luận trùng ở processor và không sinh
+ *     thông báo thứ hai.
+ *  4. Sau khi rút cạn, khoá watermark cũ bị xoá và lần phát bù sau là no-op — cơ chế không thành consumer polling
+ *     thường trực.
+ *  5. Hệ mới tinh (không có khoá watermark cũ) thì không phát bù gì: dòng đã đóng dấu không thành job, không có thông
+ *     báo.
+ *  6. Đường khởi động thật: khoá watermark đã tồn tại TRƯỚC khi module worker khởi tạo thì hook `OnModuleInit` tự phát
+ *     bù trong lúc khởi tạo — không cần lời gọi tay `drainLegacyBacklog()` (phân xử vòng 2 trên PR #542: bản spec trước
+ *     chỉ gọi tay sau khi module đã boot xong nên không khoá được hành vi này).
+ *  7. Lỗi thoáng qua giữa lượt phát bù (lần đẩy job đầu tiên ném lỗi) không làm kẹt tồn đọng: lượt phát bù tự thử lại
+ *     có backoff trong cùng tiến trình tới khi rút cạn trọn vẹn, khoá cũ chỉ bị xoá sau khi thành công, và lần thử thất
+ *     bại được ghi log mức error kèm số lần thử (phân xử vòng 2 trên PR #542: cơ chế cũ nuốt lỗi sau một lần thử duy
+ *     nhất, tồn đọng kẹt tới lần khởi động worker kế tiếp).
  */
 describe('Worker notification events catch-up (phát bù tồn đọng theo watermark cũ ở #520)', () => {
   let context: INestApplicationContext;
@@ -220,11 +209,9 @@ describe('Worker notification events catch-up (phát bù tồn đọng theo wate
     // đúng trạng thái của lần triển khai chuyển đổi thật.
     await redis.set(legacyWatermarkKey, String(below.seq));
 
-    // Boot một module worker mới: hook OnModuleInit của service
-    // phát bù phải tự rút cạn trong lúc context.init() chạy. Ca
-    // này không hề gọi drainLegacyBacklog() — nếu sau khi boot
-    // xong mà khoá đã mất và job đã vào hàng đợi thì chỉ có thể
-    // do đường khởi động tự chạy.
+    // Boot một module worker mới: hook OnModuleInit của service phát bù phải tự rút cạn trong lúc context.init() chạy.
+    // Ca này không hề gọi drainLegacyBacklog() — nếu sau khi boot xong mà khoá đã mất và job đã vào hàng đợi thì chỉ có
+    // thể do đường khởi động tự chạy.
     const bootHarness = await bootWorkerModuleAsOrdinaryRole();
     try {
       expect(await redis.get(legacyWatermarkKey)).toBeNull();
@@ -249,12 +236,9 @@ describe('Worker notification events catch-up (phát bù tồn đọng theo wate
     await marker.markProcessed(marked.id);
     await redis.set(legacyWatermarkKey, String(below.seq));
 
-    // Tiêm lỗi thoáng qua: lần queue.add đầu tiên cho đúng dòng
-    // tồn đọng này ném lỗi, mọi lần đẩy khác đi qua bình thường
-    // (relay thường trực đẩy các dòng khác không bị ảnh hưởng).
-    // Tại thời điểm lỗi nổ ra, ghi lại giá trị khoá để khẳng định
-    // khoá vẫn còn nguyên — khoá chỉ được xoá sau khi rút cạn
-    // thành công.
+    // Tiêm lỗi thoáng qua: lần queue.add đầu tiên cho đúng dòng tồn đọng này ném lỗi, mọi lần đẩy khác đi qua bình
+    // thường (relay thường trực đẩy các dòng khác không bị ảnh hưởng). Tại thời điểm lỗi nổ ra, ghi lại giá trị khoá để
+    // khẳng định khoá vẫn còn nguyên — khoá chỉ được xoá sau khi rút cạn thành công.
     const originalAdd = eventsQueue.add.bind(eventsQueue);
     let faultArmed = true;
     let keyValueAtFailure: string | null = null;

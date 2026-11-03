@@ -5,16 +5,14 @@ import { CoursesService } from '../courses/courses.service';
 import { SocialRepository, type CommentRow } from '@lms/db/repositories/social';
 
 /**
- * CommentsModule (Moodle core_comment): các bình luận đa hình trên
- * (component, commentArea, itemId, contextId). Capability được kiểm tra TẠI
- * CONTEXT CỦA CHÍNH MỤC ĐÓ: comment:view để đọc, comment:post để thêm,
- * comment:delete (hoặc quyền tác giả) để xoá (oracle: comment/tests/
- * externallib_test test_get_comments / test_add_comments_single).
+ * CommentsModule (Moodle core_comment): các bình luận đa hình trên (component, commentArea, itemId, contextId).
+ * Capability được kiểm tra TẠI CONTEXT CỦA CHÍNH MỤC ĐÓ: comment:view để đọc, comment:post để thêm, comment:delete
+ * (hoặc quyền tác giả) để xoá (oracle: comment/tests/ externallib_test test_get_comments / test_add_comments_single).
  */
 @Injectable()
 /**
- * Bình luận theo (context, component, area, item).
- * Đối chiếu Moodle: lib/commentlib (comment). Xoá là xoá mềm; chỉ tác giả hoặc người có capability mới xoá được.
+ * Bình luận theo (context, component, area, item). Đối chiếu Moodle: lib/commentlib (comment). Xoá là xoá mềm; chỉ tác
+ * giả hoặc người có capability mới xoá được.
  */
 export class CommentsService {
   constructor(
@@ -24,7 +22,10 @@ export class CommentsService {
     private readonly courses: CoursesService,
   ) {}
 
-  /** Với context của khoá học/module, việc bình luận còn yêu cầu quyền truy cập khoá học thật (chỉ riêng role 'user' ảo không bao giờ mở được một khoá học). */
+  /**
+   * Với context của khoá học/module, việc bình luận còn yêu cầu quyền truy cập khoá học thật (chỉ riêng role 'user' ảo
+   * không bao giờ mở được một khoá học).
+   */
   private async assertItemAccess(actorId: string, contextId: string): Promise<void> {
     const ctx = await this.contexts.getContext(contextId).catch(() => undefined);
     if (!ctx) return;

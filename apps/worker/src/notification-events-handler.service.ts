@@ -5,9 +5,8 @@ import { NotificationDeliveryService } from './notification-delivery.service';
 import { SpaceDatabaseService } from './db/routing/space-database.service';
 
 /**
- * Mười loại sự kiện outbox mà consumer thông báo sự kiện xử lý.
- * Bảng định tuyến của relay ánh xạ cả mười loại này vào hàng đợi
- * `notification-events`; processor chỉ nhận diện đúng tập này.
+ * Mười loại sự kiện outbox mà consumer thông báo sự kiện xử lý. Bảng định tuyến của relay ánh xạ cả mười loại này vào
+ * hàng đợi `notification-events`; processor chỉ nhận diện đúng tập này.
  */
 export const NOTIFICATION_EVENT_TYPES = [
   'grade_updated',
@@ -39,56 +38,40 @@ function displayNameOf(user: { firstName: string; lastName: string; username: st
 }
 
 /**
- * Handler nghiệp vụ của consumer thông báo sự kiện ở worker (issue
- * con #520 của #491), thay consumer polling phía API trước đây.
+ * Handler nghiệp vụ của consumer thông báo sự kiện ở worker (issue con #520 của #491), thay consumer polling phía API
+ * trước đây.
  *
- * @remarks
- * Flow tổng thể: relay outbox duy nhất phát mỗi dòng sự kiện thành
- * một job BullMQ trong hàng đợi `notification-events` với `jobId`
- * bằng id dòng outbox; `NotificationEventsProcessor` chống trùng
- * theo `outboxId` rồi gọi {@link handle} ở đây. Handler tra dữ kiện
- * tối thiểu từ DB dùng chung tại thời điểm xử lý, dựng nội dung
- * tiếng Việt và phát qua bề mặt dùng chung
- * {@link NotificationDeliveryService.notify} — không dựng đường
- * phát thông báo riêng. Mọi truy vấn chạy trong ngữ cảnh platform
- * do processor thiết lập; tenant của từng thông báo được truyền
- * tường minh vào `notify()` theo đúng nguồn của consumer cũ:
- * tenant trong payload hoặc tenant của khoá/conversation nguồn,
+ * @remarks Flow tổng thể: relay outbox duy nhất phát mỗi dòng sự kiện thành một job BullMQ trong hàng đợi
+ * `notification-events` với `jobId` bằng id dòng outbox; `NotificationEventsProcessor` chống trùng theo `outboxId` rồi
+ * gọi {@link handle} ở đây. Handler tra dữ kiện tối thiểu từ DB dùng chung tại thời điểm xử lý, dựng nội dung tiếng
+ * Việt và phát qua bề mặt dùng chung {@link NotificationDeliveryService.notify} — không dựng đường phát thông báo
+ * riêng. Mọi truy vấn chạy trong ngữ cảnh platform do processor thiết lập; tenant của từng thông báo được truyền tường
+ * minh vào `notify()` theo đúng nguồn của consumer cũ: tenant trong payload hoặc tenant của khoá/conversation nguồn,
  * thiếu nữa mới tới tenant mặc định của người nhận.
  *
  * Các cổng nghiệp vụ được giữ nguyên theo từng loại:
- * - `grade_updated`: bỏ qua item tổng/công thức, item bị ẩn và
- *   điểm bị ẩn theo từng user; nội dung không chứa điểm số.
- * - `course_completed` và `enrol_expiry_warning`: phát trực tiếp
- *   cho user của sự kiện sau khi đủ định danh và mốc thời gian.
- * - `message_sent`: bỏ qua tin đã xoá, thành viên đã tắt tiếng
- *   conversation, thành viên đã chặn người gửi và thành viên đã có
- *   một `message_new` chưa đọc của cùng conversation.
- * - `activity_due_reminder`: phân biệt bài tập và hoạt động đề
- *   bằng `activityType`/`assignmentId`/`pinId` như sự kiện gốc.
- * - `assignment_created` và `exam_pinned`: chỉ phát khi khoá và
- *   module còn hiển thị với học sinh; người nhận là học viên đang
- *   ghi danh hiệu lực trừ người thực hiện.
- * - `assignment_submitted`: gửi xác nhận cho người nộp và bản gộp
- *   có số bài đang chờ chấm cho đội ngũ phụ trách.
- * - `assignment_returned`: gửi cho chủ bài nộp; điểm và mức trong
- *   payload tuyệt đối không đi vào nội dung.
- * - `quiz_attempt_finished`: chỉ phát bản gộp cho đội ngũ phụ
- *   trách khi lượt làm cần chấm tay và không phải preview.
+ * - `grade_updated`: bỏ qua item tổng/công thức, item bị ẩn và điểm bị ẩn theo từng user; nội dung không chứa điểm số.
+ * - `course_completed` và `enrol_expiry_warning`: phát trực tiếp cho user của sự kiện sau khi đủ định danh và mốc thời
+ *   gian.
+ * - `message_sent`: bỏ qua tin đã xoá, thành viên đã tắt tiếng conversation, thành viên đã chặn người gửi và thành viên
+ *   đã có một `message_new` chưa đọc của cùng conversation.
+ * - `activity_due_reminder`: phân biệt bài tập và hoạt động đề bằng `activityType`/`assignmentId`/`pinId` như sự kiện
+ *   gốc.
+ * - `assignment_created` và `exam_pinned`: chỉ phát khi khoá và module còn hiển thị với học sinh; người nhận là học
+ *   viên đang ghi danh hiệu lực trừ người thực hiện.
+ * - `assignment_submitted`: gửi xác nhận cho người nộp và bản gộp có số bài đang chờ chấm cho đội ngũ phụ trách.
+ * - `assignment_returned`: gửi cho chủ bài nộp; điểm và mức trong payload tuyệt đối không đi vào nội dung.
+ * - `quiz_attempt_finished`: chỉ phát bản gộp cho đội ngũ phụ trách khi lượt làm cần chấm tay và không phải preview.
  *
- * Khác biệt cơ chế duy nhất so với consumer polling: consumer cũ
- * khử dội các sự kiện điểm của cùng (user, item) trong MỘT lô quét
- * 500 ms và chỉ báo sự kiện cuối. Hàng đợi xử lý từng sự kiện thành
- * một job độc lập, không còn cửa sổ lô để gộp; việc dựng lại cửa sổ
- * chờ nhân tạo sẽ trì hoãn thông báo và tạo ngữ nghĩa mới ngoài
- * đặc tả. Điều kiện phát, người nhận và nội dung của từng sự kiện
- * không đổi; chống trùng khi phát lại do processor phụ trách bằng
- * dấu theo `outboxId`.
+ * Khác biệt cơ chế duy nhất so với consumer polling: consumer cũ khử dội các sự kiện điểm của cùng (user, item) trong
+ * MỘT lô quét 500 ms và chỉ báo sự kiện cuối. Hàng đợi xử lý từng sự kiện thành một job độc lập, không còn cửa sổ lô để
+ * gộp; việc dựng lại cửa sổ chờ nhân tạo sẽ trì hoãn thông báo và tạo ngữ nghĩa mới ngoài đặc tả. Điều kiện phát, người
+ * nhận và nội dung của từng sự kiện không đổi; chống trùng khi phát lại do processor phụ trách bằng dấu theo
+ * `outboxId`.
  *
- * Payload thiếu hoặc sai kiểu ở trường bắt buộc được bỏ qua lặng
- * lẽ như consumer cũ. Lỗi DB hoặc lỗi của đường phát được ném ra
- * cho processor/BullMQ thử lại, vì thông báo không có chốt nghiệp
- * vụ bền nào ngoài dấu đã xử lý của processor để nuốt lỗi an toàn.
+ * Payload thiếu hoặc sai kiểu ở trường bắt buộc được bỏ qua lặng lẽ như consumer cũ. Lỗi DB hoặc lỗi của đường phát
+ * được ném ra cho processor/BullMQ thử lại, vì thông báo không có chốt nghiệp vụ bền nào ngoài dấu đã xử lý của
+ * processor để nuốt lỗi an toàn.
  */
 @Injectable()
 export class NotificationEventsHandlerService {
@@ -103,11 +86,10 @@ export class NotificationEventsHandlerService {
    * thông báo.
    *
    * @param type Loại sự kiện outbox.
-   * @param payload Payload của sự kiện; processor đã chuẩn hoá
-   * payload null thành object rỗng để các cổng kiểm tra trường bắt
-   * buộc bỏ qua lặng lẽ như consumer cũ.
-   * @returns true khi loại thuộc mười loại của consumer này (kể cả
-   * khi handler bỏ qua vì payload thiếu trường); false với loại lạ.
+   * @param payload Payload của sự kiện; processor đã chuẩn hoá payload null thành object rỗng để các cổng kiểm tra
+   * trường bắt buộc bỏ qua lặng lẽ như consumer cũ.
+   * @returns true khi loại thuộc mười loại của consumer này (kể cả khi handler bỏ qua vì payload thiếu trường); false
+   * với loại lạ.
    */
   async handle(type: string, payload: Record<string, unknown>): Promise<boolean> {
     if (type === 'grade_updated') { await this.handleGradeUpdated(payload); return true; }
@@ -244,12 +226,10 @@ export class NotificationEventsHandlerService {
   }
 
   /**
-   * Phát thông báo kiểu gộp theo (người nhận, provider, contextUrl):
-   * còn một bản chưa đọc của cùng ngữ cảnh thì cập nhật nội dung của
-   * bản đó, không sinh bản mới; đã đọc hết thì lần phát sau sinh bản
-   * mới như thường. Khi phải sinh bản mới, tenant mặc định của
-   * người nhận được phân giải và truyền tường minh cho `notify()`,
-   * giữ đúng kết quả phân giải tenant của consumer cũ.
+   * Phát thông báo kiểu gộp theo (người nhận, provider, contextUrl): còn một bản chưa đọc của cùng ngữ cảnh thì cập
+   * nhật nội dung của bản đó, không sinh bản mới; đã đọc hết thì lần phát sau sinh bản mới như thường. Khi phải sinh
+   * bản mới, tenant mặc định của người nhận được phân giải và truyền tường minh cho `notify()`, giữ đúng kết quả phân
+   * giải tenant của consumer cũ.
    *
    * @param userId Người nhận.
    * @param provider Provider thông báo.

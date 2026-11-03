@@ -13,7 +13,10 @@ import {
 
 const COURSE_UPDATE = 'course:update';
 
-/** Một đích ánh xạ của một bài SGK trong cây sách: node chương trình hoặc YCCĐ cụ thể, kèm mã bản ghi chương trình để truy vết. */
+/**
+ * Một đích ánh xạ của một bài SGK trong cây sách: node chương trình hoặc YCCĐ cụ thể, kèm mã bản ghi chương trình để
+ * truy vết.
+ */
 export interface BookMappingView {
   curriculumNodeId: string | null;
   learningOutcomeId: string | null;
@@ -21,7 +24,6 @@ export interface BookMappingView {
   targetTitle: string | null;
 }
 
-/** Một bài SGK trong cây sách, kèm ánh xạ và YCCĐ suy qua ánh xạ. */
 export interface BookLessonView {
   id: string;
   title: string;
@@ -33,7 +35,6 @@ export interface BookLessonView {
   outcomes: { outcomeId: string; content: string }[];
 }
 
-/** Một chủ đề SGK và các bài trong nó. */
 export interface BookChapterView {
   id: string;
   title: string;
@@ -42,7 +43,6 @@ export interface BookChapterView {
   lessons: BookLessonView[];
 }
 
-/** Cây đầy đủ của một cuốn SGK cho bề mặt quản trị và bề mặt chọn khung. */
 export interface BookTreeView {
   book: BookRow;
   subject: { id: string; name: string; slug: string } | null;
@@ -57,22 +57,16 @@ interface TreeIndex {
 
 @Injectable()
 /**
- * Tầng SGK "Kết nối tri thức với cuộc sống" (K0b): nạp dataset sách đã
- * kiểm chứng vào cây sách + ánh xạ sang chương trình, đọc cây sách, và
- * cung cấp đơn vị khung SGK cho cơ chế nạp khung vào khoá của Courses.
+ * Tầng SGK "Kết nối tri thức với cuộc sống" (K0b): nạp dataset sách đã kiểm chứng vào cây sách + ánh xạ sang chương
+ * trình, đọc cây sách, và cung cấp đơn vị khung SGK cho cơ chế nạp khung vào khoá của Courses.
  *
- * Nạp idempotent theo sổ đăng ký `book_records` (khoá
- * dataset + mã bản ghi, hash nội dung gồm cả danh sách ánh xạ) — cùng
- * kỷ luật với nạp chương trình của K0a. Khác biệt cốt lõi: trước khi
- * ghi bất cứ dòng nào, lượt nạp **phân giải toàn bộ mã ánh xạ** sang
- * node chương trình thật qua sổ đăng ký chương trình; mã nào không
- * phân giải được → lỗi cứng, không ghi dở (ánh xạ treo là lỗi dữ liệu,
- * không phải trạng thái chấp nhận được).
+ * Nạp idempotent theo sổ đăng ký `book_records` (khoá dataset + mã bản ghi, hash nội dung gồm cả danh sách ánh xạ) —
+ * cùng kỷ luật với nạp chương trình của K0a. Khác biệt cốt lõi: trước khi ghi bất cứ dòng nào, lượt nạp **phân giải
+ * toàn bộ mã ánh xạ** sang node chương trình thật qua sổ đăng ký chương trình; mã nào không phân giải được → lỗi cứng,
+ * không ghi dở (ánh xạ treo là lỗi dữ liệu, không phải trạng thái chấp nhận được).
  *
- * Cổng quyền như K0a: quản trị dataset/cây sách cần `curriculum:view` /
- * `curriculum:manage` tại context hệ thống; đường đọc phục vụ chọn
- * khung cho một khoá (`forCourseId`) mở thêm nhánh `course:update` tại
- * khoá đích.
+ * Cổng quyền như K0a: quản trị dataset/cây sách cần `curriculum:view` / `curriculum:manage` tại context hệ thống; đường
+ * đọc phục vụ chọn khung cho một khoá (`forCourseId`) mở thêm nhánh `course:update` tại khoá đích.
  */
 export class BookService implements OnModuleInit {
   private readonly running = new Set<string>();
@@ -85,14 +79,11 @@ export class BookService implements OnModuleInit {
     private readonly courses: CoursesService,
   ) {}
 
-  /** Khởi tạo: đăng ký nguồn đơn vị khung SGK cho cơ chế nạp khung vào khoá của Courses (dependency inversion như khung chương trình). */
   onModuleInit(): void {
     this.courses.registerBookFrameProvider({
       getBookFrameUnits: (actorId, bookId) => this.getBookFrameUnits(actorId, bookId),
     });
   }
-
-  // --- nạp dataset ---------------------------------------------------------------
 
   /** Trạng thái nạp của mọi dataset SGK trong manifest (đọc cần curriculum:view tại context hệ thống). */
   async listDatasetStatus(actorId: string): Promise<BookDatasetStatus[]> {
@@ -146,7 +137,6 @@ export class BookService implements OnModuleInit {
     if (file.records.length === 0) {
       throw new BadRequestException({ message: `Book dataset ${def.key} has no records`, code: 'book.dataset_empty' });
     }
-    // Phân giải TRƯỚC toàn bộ ánh xạ: mã bản ghi chương trình → node id.
     const nodeIdByProgramRecord = new Map<string, string>();
     const unresolved: string[] = [];
     for (const record of file.records) {
@@ -163,7 +153,6 @@ export class BookService implements OnModuleInit {
         code: 'book.mapping_unresolved',
       });
     }
-    // Môn đích ở context hệ thống: tìm theo slug, chưa có thì tạo (như nạp chương trình).
     let subject = await this.curriculumRepo.getSubjectBySlug(def.slug);
     if (!subject) {
       subject = await this.curriculumRepo.insertSubject({
@@ -173,12 +162,10 @@ export class BookService implements OnModuleInit {
         position: BOOK_DATASETS.indexOf(def) + 1,
       });
     }
-    // Cuốn sách đích: tìm theo (môn, khối, tựa), chưa có thì tạo.
     let book = await this.repo.findBook(subject.id, def.grade, def.bookTitle);
     if (!book) {
       book = await this.repo.insertBook({ kind: 'textbook', subjectId: subject.id, grade: def.grade, title: def.bookTitle, series: file.series, publisher: file.publisher, attributionPublic: def.attributionPublic, position: 1 });
     }
-    // Chỉ mục cây sách hiện có.
     const nodes = await this.repo.listBookNodes(book.id);
     const index: TreeIndex = { chapterByKey: new Map(), nextPosByParent: new Map() };
     for (const node of nodes) {
@@ -222,7 +209,6 @@ export class BookService implements OnModuleInit {
         mappingsWritten += mappingNodeIds.length;
         continue;
       }
-      // Dataset đã đính chính (hash lệch): cập nhật node bài + thay toàn bộ ánh xạ.
       await this.repo.transaction(async (tx) => {
         const current = await this.repo.getBookNode(reg.nodeId);
         const patch: { title: string; volume: number; lessonNumber: number | null; parentId?: string; position?: number } = {
@@ -253,7 +239,10 @@ export class BookService implements OnModuleInit {
     };
   }
 
-  /** Tìm-tạo node chương (chủ đề) của một bản ghi trong cây sách; chương là node gốc, position = số thứ tự chương trong sách. */
+  /**
+   * Tìm-tạo node chương (chủ đề) của một bản ghi trong cây sách; chương là node gốc, position = số thứ tự chương trong
+   * sách.
+   */
   private async ensureChapter(index: TreeIndex, bookId: string, record: BookRecord): Promise<BookNodeRow> {
     const key = `${record.volume}|${record.chapter}`;
     const existing = index.chapterByKey.get(key);
@@ -266,15 +255,12 @@ export class BookService implements OnModuleInit {
     return chapter;
   }
 
-  /** Cấp position tiếp theo dưới một node cha trong lượt nạp (giữ thứ tự dataset). */
   private takePosition(index: TreeIndex, parentId: string | null): number {
     const key = parentId ?? '';
     const position = index.nextPosByParent.get(key) ?? 1;
     index.nextPosByParent.set(key, position + 1);
     return position;
   }
-
-  // --- đọc cây sách -----------------------------------------------------------------
 
   /** Liệt kê sách (lọc theo môn khi có); cổng đọc như danh sách môn của K0a. */
   async listBooks(actorId: string, subjectId?: string, forCourseId?: string, kind?: string): Promise<BookRow[]> {
@@ -288,7 +274,6 @@ export class BookService implements OnModuleInit {
     return this.repo.listBooks(undefined, kind);
   }
 
-  /** Cây đầy đủ của một cuốn sách: chương → bài, mỗi bài kèm ánh xạ và YCCĐ suy qua ánh xạ. */
   async getBookTree(actorId: string, bookId: string, forCourseId?: string): Promise<BookTreeView> {
     const { book, subject } = await this.bookChainOr404(bookId);
     if (subject) {
@@ -301,11 +286,9 @@ export class BookService implements OnModuleInit {
   }
 
   /**
-   * Truy nguồn chiều sách → câu: các câu hỏi ghi nguồn gốc từ cuốn
-   * sách này (cặp truy vết source_kind='book'/source_ref). Cổng đọc
-   * như cây sách. Đây là bề mặt NỘI BỘ phía giáo viên/quản trị —
-   * trường nguồn sách không bao giờ lộ ở bề mặt học viên (quy tắc
-   * bản quyền ở schema question).
+   * Truy nguồn chiều sách → câu: các câu hỏi ghi nguồn gốc từ cuốn sách này (cặp truy vết
+   * source_kind='book'/source_ref). Cổng đọc như cây sách. Đây là bề mặt NỘI BỘ phía giáo viên/quản trị — trường nguồn
+   * sách không bao giờ lộ ở bề mặt học viên (quy tắc bản quyền ở schema question).
    */
   async listBookQuestions(actorId: string, bookId: string) {
     const { book, subject } = await this.bookChainOr404(bookId);
@@ -319,11 +302,9 @@ export class BookService implements OnModuleInit {
   }
 
   /**
-   * Đơn vị khung SGK cho cơ chế nạp khung vào khoá: mỗi chương là một
-   * đơn vị (thành section), các bài trong chương là mục, YCCĐ của mỗi
-   * bài suy qua ánh xạ tại thời điểm gọi. Provider tin cậy cổng
-   * `course:update` tại khoá đích do Courses kiểm trước (như K0a) —
-   * hàm này không đòi thêm quyền.
+   * Đơn vị khung SGK cho cơ chế nạp khung vào khoá: mỗi chương là một đơn vị (thành section), các bài trong chương là
+   * mục, YCCĐ của mỗi bài suy qua ánh xạ tại thời điểm gọi. Provider tin cậy cổng `course:update` tại khoá đích do
+   * Courses kiểm trước (như K0a) — hàm này không đòi thêm quyền.
    */
   async getBookFrameUnits(_actorId: string, bookId: string): Promise<{
     chapterNodeId: string; title: string;
@@ -342,17 +323,14 @@ export class BookService implements OnModuleInit {
     }));
   }
 
-  /** Dựng cây sách kèm ánh xạ + YCCĐ đã phân giải cho từng bài. */
   private async buildTree(book: BookRow, subject: SubjectRow | null): Promise<BookTreeView> {
     const nodes = await this.repo.listBookNodes(book.id);
     const chapters = nodes.filter((n) => n.kind === 'chapter');
     const lessons = nodes.filter((n) => n.kind === 'lesson');
     const mappings = await this.repo.listMappingsForNodes(lessons.map((l) => l.id));
-    // Truy vết mã bản ghi chương trình: node chương trình → mã bản ghi (theo mọi dataset chương trình đã nạp của môn này).
     const programRecords = subject ? await this.curriculumRepo.listProgramRecordsBySubject(subject.id) : [];
     const recordIdByNodeId = new Map(programRecords.map((r) => [r.nodeId, r.recordId]));
     const registryByNodeId = new Map((await this.repo.listBookRecordsByBook(book.id)).map((r) => [r.nodeId, r.recordId]));
-    // YCCĐ của các node chương trình được ánh xạ + tựa của chúng.
     const mappedNodeIds = [...new Set(mappings.map((m) => m.curriculumNodeId).filter((x): x is string => x !== null))];
     const outcomes = await this.curriculumRepo.listOutcomesForNodes(mappedNodeIds);
     const outcomesByNode = new Map<string, { outcomeId: string; content: string }[]>();
@@ -422,8 +400,6 @@ export class BookService implements OnModuleInit {
     };
   }
 
-  // --- helpers -----------------------------------------------------------------------
-
   private async subjectOr404(id: string): Promise<SubjectRow> {
     const row = await this.curriculumRepo.getSubject(id);
     if (!row) {
@@ -442,7 +418,10 @@ export class BookService implements OnModuleInit {
     return { book, subject };
   }
 
-  /** Cổng đọc dùng chung: curriculum:view tại context của môn, hoặc course:update tại khoá đích khi kèm forCourseId (như CurriculumService). */
+  /**
+   * Cổng đọc dùng chung: curriculum:view tại context của môn, hoặc course:update tại khoá đích khi kèm forCourseId (như
+   * CurriculumService).
+   */
   private async assertCanRead(actorId: string, subjectContextId: string, forCourseId?: string): Promise<void> {
     if (await this.evaluator.hasCapability(actorId, CURRICULUM_VIEW, subjectContextId)) return;
     if (forCourseId) {

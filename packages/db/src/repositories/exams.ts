@@ -1,71 +1,47 @@
 /**
- * Repository của cụm NGÂN HÀNG ĐỀ trên Kysely — nhóm G3 của chiến
- * dịch chuyển tầng dữ liệu sang Kysely (issue #643), chuyển từ
- * `apps/api/src/modules/exams/exams.repository.ts`.
+ * Repository của cụm NGÂN HÀNG ĐỀ trên Kysely — nhóm G3 của chiến dịch chuyển tầng dữ liệu sang Kysely (issue #643),
+ * chuyển từ `apps/api/src/modules/exams/exams.repository.ts`.
  *
- * Vai trò: mọi truy cập tới danh tính đề (exams), version nội dung
- * bất biến (exam_versions), slots ghim version câu (exam_slots),
- * đề xuất đóng góp (exam_contributions + exam_contribution_reviews)
- * và bộ hồ sơ duyệt đề (exam_dossiers + exam_dossier_reviews) tập
- * trung ở đây, cộng các đường đọc tham chiếu phục vụ các truy vấn
- * trên: lần ghim của đề (exam_pins — bề mặt sở hữu ở repository
- * quiz cùng package), thông tin câu của slots (question,
- * question_bank_entries, question_versions), tên/số version ma trận
- * (exam_matrices, exam_matrix_versions — bề mặt sở hữu ở repository
- * quiz) và kiểm tra giáo viên dạy khối (role_assignments, role,
- * context, course). Repository không chứa luật nghiệp vụ — cổng
- * quyền và vòng đời nằm ở tầng service phía ứng dụng; repository
- * chỉ nhận handle (instance gốc hoặc transaction đang mở) để phía
- * gọi ghép nhiều thao tác vào một transaction khi cần.
+ * Vai trò: mọi truy cập tới danh tính đề (exams), version nội dung bất biến (exam_versions), slots ghim version câu
+ * (exam_slots), đề xuất đóng góp (exam_contributions + exam_contribution_reviews) và bộ hồ sơ duyệt đề (exam_dossiers +
+ * exam_dossier_reviews) tập trung ở đây, cộng các đường đọc tham chiếu phục vụ các truy vấn trên: lần ghim của đề
+ * (exam_pins — bề mặt sở hữu ở repository quiz cùng package), thông tin câu của slots (question, question_bank_entries,
+ * question_versions), tên/số version ma trận (exam_matrices, exam_matrix_versions — bề mặt sở hữu ở repository quiz) và
+ * kiểm tra giáo viên dạy khối (role_assignments, role, context, course). Repository không chứa luật nghiệp vụ — cổng
+ * quyền và vòng đời nằm ở tầng service phía ứng dụng; repository chỉ nhận handle (instance gốc hoặc transaction đang
+ * mở) để phía gọi ghép nhiều thao tác vào một transaction khi cần.
  *
- * Khuôn hình dạng dữ liệu ở biên repository (khuôn pilot #640 — xem
- * mục playbook trong `AGENTS.md` của package):
- * - Bên trong repository, truy vấn viết trên interface schema sinh
- *   bằng codegen: tên bảng/cột giữ nguyên snake_case của database,
- *   kiểu dòng nội bộ qua `Selectable`/`Insertable`/`Updateable`.
- * - Bên ngoài, repository trả NHẬN các hình dạng dòng camelCase như
- *   phía tiêu thụ đang dùng: cột được chọn bằng danh sách tường
- *   minh có bí danh (`bank_id as bankId`), giá trị ghi được ánh xạ
- *   từng trường từ camelCase sang snake_case ở các hàm
- *   `*InsertValues`/`*UpdateSet` trong file này. Phía tiêu thụ vì
- *   vậy chỉ đổi điểm import khi kho này chuyển đổi.
- * - Giá trị `undefined` bị LOẠI khỏi values/set trước khi gọi
- *   builder (thử nghiệm T-4 của pilot): trường vắng mặt phải để
- *   default của database quyết định; ngược lại `undefined` lọt vào
- *   mệnh đề WHERE sẽ bị driver gắn NULL và lặng lẽ không khớp dòng
- *   nào — vì vậy mọi giá trị where trong repository đều là tham số
- *   bắt buộc, không bao giờ `undefined`.
- * - Mọi giá trị jsonb khi ghi đều qua `jsonbValue` (serialize tường
- *   minh + `::jsonb`): driver `pg` hiểu nhầm một MẢNG ở cấp cao
- *   nhất là mảng PostgreSQL thay vì JSON (đo tại pilot).
- * - Repository không import từ `apps/*`, không đọc ALS/ngữ cảnh
- *   ứng dụng, không tự mở pool, không đọc biến môi trường: handle
- *   do tầng ứng dụng dựng bằng factory của package rồi truyền vào.
+ * Khuôn hình dạng dữ liệu ở biên repository (khuôn pilot #640 — xem mục playbook trong `AGENTS.md` của package):
+ * - Bên trong repository, truy vấn viết trên interface schema sinh bằng codegen: tên bảng/cột giữ nguyên snake_case của
+ *   database, kiểu dòng nội bộ qua `Selectable`/`Insertable`/`Updateable`.
+ * - Bên ngoài, repository trả NHẬN các hình dạng dòng camelCase như phía tiêu thụ đang dùng: cột được chọn bằng danh
+ *   sách tường minh có bí danh (`bank_id as bankId`), giá trị ghi được ánh xạ từng trường từ camelCase sang snake_case
+ *   ở các hàm `*InsertValues`/`*UpdateSet` trong file này. Phía tiêu thụ vì vậy chỉ đổi điểm import khi kho này chuyển
+ *   đổi.
+ * - Giá trị `undefined` bị LOẠI khỏi values/set trước khi gọi builder (thử nghiệm T-4 của pilot): trường vắng mặt phải
+ *   để default của database quyết định; ngược lại `undefined` lọt vào mệnh đề WHERE sẽ bị driver gắn NULL và lặng lẽ
+ *   không khớp dòng nào — vì vậy mọi giá trị where trong repository đều là tham số bắt buộc, không bao giờ `undefined`.
+ * - Mọi giá trị jsonb khi ghi đều qua `jsonbValue` (serialize tường minh + `::jsonb`): driver `pg` hiểu nhầm một MẢNG ở
+ *   cấp cao nhất là mảng PostgreSQL thay vì JSON (đo tại pilot).
+ * - Repository không import từ `apps/*`, không đọc ALS/ngữ cảnh ứng dụng, không tự mở pool, không đọc biến môi trường:
+ *   handle do tầng ứng dụng dựng bằng factory của package rồi truyền vào.
  */
 import { sql, type Insertable, type InsertObject, type RawBuilder, type Updateable, type UpdateObject } from 'kysely';
 import { extractRichTextPlainText, type RichTextDocument } from '@lms/contracts';
 import type { CentreDb, CentreTx, CentreDB } from '../client';
 
-/** Handle giao dịch của kho trung tâm — kiểu `Transaction<CentreDB>` của package. */
 export type ExamsTx = CentreTx;
-/** Handle đọc/ghi mà repository nhận: transaction đang mở hoặc chính instance gốc. */
 export type ExamsDb = CentreDb | CentreTx;
 
 /**
- * Bọc một giá trị jsonb thành biểu thức tham số JSON tường minh
- * (khuôn của pilot): serialize + ép kiểu `::jsonb` cho MỌI giá trị
- * jsonb khi ghi (object lẫn mảng) để một khuôn duy nhất, không phụ
- * thuộc nhánh xử lý riêng của driver theo hình dạng giá trị.
- *
- * @param value - Giá trị nghiệp vụ sẽ nằm trong cột jsonb.
- * @returns Biểu thức Kysely mang chuỗi JSON đã serialize, giữ
- *   nguyên kiểu `T` ở tầng TypeScript.
+ * Bọc một giá trị jsonb thành biểu thức tham số JSON tường minh (khuôn của pilot): serialize + ép kiểu `::jsonb` cho
+ * MỌI giá trị jsonb khi ghi (object lẫn mảng) để một khuôn duy nhất, không phụ thuộc nhánh xử lý riêng của driver theo
+ * hình dạng giá trị.
  */
 function jsonbValue<T>(value: T): RawBuilder<T> {
   return sql<T>`${JSON.stringify(value)}::jsonb`;
 }
 
-/** Một dòng của bảng `exams` (hình dạng camelCase phía tiêu thụ dùng). */
 export interface ExamRow {
   bankId: string;
   copyCount: number;
@@ -87,7 +63,6 @@ export interface ExamRow {
   withdrawnReason: string | null;
 }
 
-/** Dữ kiện ghi một dòng `exams` mới (trường có mặc định ở DB hoặc nullable thì tùy chọn). */
 export interface NewExam {
   bankId: string;
   copyCount?: number;
@@ -109,7 +84,6 @@ export interface NewExam {
   withdrawnReason?: string | null;
 }
 
-/** Danh sách cột tường minh có bí danh camelCase cho bảng `exams` (dùng cho cả select lẫn returning). */
 export const EXAM_COLUMNS = [
   'bank_id as bankId',
   'copy_count as copyCount',
@@ -132,10 +106,9 @@ export const EXAM_COLUMNS = [
 ] as const;
 
 /**
- * Ánh xạ dữ kiện ghi dòng `exams` (camelCase) sang values insert
- * (snake_case), LOẠI mọi trường mang `undefined`: trường vắng mặt
- * phải để default của database quyết định (quy tắc T-4). Giá trị
- * jsonb đi qua `jsonbValue` (serialize + `::jsonb`).
+ * Ánh xạ dữ kiện ghi dòng `exams` (camelCase) sang values insert (snake_case), LOẠI mọi trường mang `undefined`: trường
+ * vắng mặt phải để default của database quyết định (quy tắc T-4). Giá trị jsonb đi qua `jsonbValue` (serialize +
+ * `::jsonb`).
  */
 function examInsertValues(values: NewExam): Insertable<CentreDB['exams']> {
   const row: Insertable<CentreDB['exams']> = {
@@ -162,11 +135,9 @@ function examInsertValues(values: NewExam): Insertable<CentreDB['exams']> {
 }
 
 /**
- * Ánh xạ một patch cập nhật dòng `exams` (camelCase) sang set
- * update (snake_case), LOẠI mọi trường `undefined` — patch chỉ
- * chứa trường nào thì chỉ trường đó đổi (quy tắc T-4); giá trị
- * jsonb đi qua `jsonbValue`. Mốc `updated_at` do repository
- * gắn sau cùng.
+ * Ánh xạ một patch cập nhật dòng `exams` (camelCase) sang set update (snake_case), LOẠI mọi trường `undefined` — patch
+ * chỉ chứa trường nào thì chỉ trường đó đổi (quy tắc T-4); giá trị jsonb đi qua `jsonbValue`. Mốc `updated_at` do
+ * repository gắn sau cùng.
  */
 function examUpdateSet(patch: Partial<ExamRow>): Updateable<CentreDB['exams']> {
   const set: Updateable<CentreDB['exams']> = {};
@@ -191,7 +162,6 @@ function examUpdateSet(patch: Partial<ExamRow>): Updateable<CentreDB['exams']> {
   return set;
 }
 
-/** Một dòng của bảng `exam_versions` (hình dạng camelCase phía tiêu thụ dùng). */
 export interface ExamVersionRow {
   createdAt: Date;
   createdBy: string;
@@ -210,7 +180,6 @@ export interface ExamVersionRow {
   version: number;
 }
 
-/** Dữ kiện ghi một dòng `exam_versions` mới (trường có mặc định ở DB hoặc nullable thì tùy chọn). */
 export interface NewExamVersion {
   createdAt?: Date;
   createdBy: string;
@@ -229,7 +198,6 @@ export interface NewExamVersion {
   version: number;
 }
 
-/** Danh sách cột tường minh có bí danh camelCase cho bảng `exam_versions` (dùng cho cả select lẫn returning). */
 export const EXAM_VERSION_COLUMNS = [
   'created_at as createdAt',
   'created_by as createdBy',
@@ -249,10 +217,9 @@ export const EXAM_VERSION_COLUMNS = [
 ] as const;
 
 /**
- * Ánh xạ dữ kiện ghi dòng `exam_versions` (camelCase) sang values insert
- * (snake_case), LOẠI mọi trường mang `undefined`: trường vắng mặt
- * phải để default của database quyết định (quy tắc T-4). Giá trị
- * jsonb đi qua `jsonbValue` (serialize + `::jsonb`).
+ * Ánh xạ dữ kiện ghi dòng `exam_versions` (camelCase) sang values insert (snake_case), LOẠI mọi trường mang
+ * `undefined`: trường vắng mặt phải để default của database quyết định (quy tắc T-4). Giá trị jsonb đi qua `jsonbValue`
+ * (serialize + `::jsonb`).
  */
 function examVersionInsertValues(values: NewExamVersion): InsertObject<CentreDB, 'exam_versions'> {
   const row: InsertObject<CentreDB, 'exam_versions'> = {
@@ -275,7 +242,6 @@ function examVersionInsertValues(values: NewExamVersion): InsertObject<CentreDB,
   return row;
 }
 
-/** Một dòng của bảng `exam_slots` (hình dạng camelCase phía tiêu thụ dùng). */
 export interface ExamSlotRow {
   clusterId: string | null;
   createdAt: Date;
@@ -290,7 +256,6 @@ export interface ExamSlotRow {
   section: string;
 }
 
-/** Dữ kiện ghi một dòng `exam_slots` mới (trường có mặc định ở DB hoặc nullable thì tùy chọn). */
 export interface NewExamSlot {
   clusterId?: string | null;
   createdAt?: Date;
@@ -305,7 +270,6 @@ export interface NewExamSlot {
   section?: string;
 }
 
-/** Danh sách cột tường minh có bí danh camelCase cho bảng `exam_slots` (dùng cho cả select lẫn returning). */
 export const EXAM_SLOT_COLUMNS = [
   'cluster_id as clusterId',
   'created_at as createdAt',
@@ -321,10 +285,9 @@ export const EXAM_SLOT_COLUMNS = [
 ] as const;
 
 /**
- * Ánh xạ dữ kiện ghi dòng `exam_slots` (camelCase) sang values insert
- * (snake_case), LOẠI mọi trường mang `undefined`: trường vắng mặt
- * phải để default của database quyết định (quy tắc T-4). Giá trị
- * jsonb đi qua `jsonbValue` (serialize + `::jsonb`).
+ * Ánh xạ dữ kiện ghi dòng `exam_slots` (camelCase) sang values insert (snake_case), LOẠI mọi trường mang `undefined`:
+ * trường vắng mặt phải để default của database quyết định (quy tắc T-4). Giá trị jsonb đi qua `jsonbValue` (serialize +
+ * `::jsonb`).
  */
 function examSlotInsertValues(values: NewExamSlot): Insertable<CentreDB['exam_slots']> {
   const row: Insertable<CentreDB['exam_slots']> = {
@@ -343,7 +306,6 @@ function examSlotInsertValues(values: NewExamSlot): Insertable<CentreDB['exam_sl
   return row;
 }
 
-/** Một dòng của bảng `exam_contributions` (hình dạng camelCase phía tiêu thụ dùng). */
 export interface ExamContributionRow {
   contentHash: string;
   createdAt: Date;
@@ -369,7 +331,6 @@ export interface ExamContributionRow {
   updatedAt: Date;
 }
 
-/** Dữ kiện ghi một dòng `exam_contributions` mới (trường có mặc định ở DB hoặc nullable thì tùy chọn). */
 export interface NewExamContribution {
   contentHash?: string;
   createdAt?: Date;
@@ -395,7 +356,6 @@ export interface NewExamContribution {
   updatedAt?: Date;
 }
 
-/** Danh sách cột tường minh có bí danh camelCase cho bảng `exam_contributions` (dùng cho cả select lẫn returning). */
 const EXAM_CONTRIBUTION_COLUMNS = [
   'content_hash as contentHash',
   'created_at as createdAt',
@@ -422,10 +382,9 @@ const EXAM_CONTRIBUTION_COLUMNS = [
 ] as const;
 
 /**
- * Ánh xạ dữ kiện ghi dòng `exam_contributions` (camelCase) sang values insert
- * (snake_case), LOẠI mọi trường mang `undefined`: trường vắng mặt
- * phải để default của database quyết định (quy tắc T-4). Giá trị
- * jsonb đi qua `jsonbValue` (serialize + `::jsonb`).
+ * Ánh xạ dữ kiện ghi dòng `exam_contributions` (camelCase) sang values insert (snake_case), LOẠI mọi trường mang
+ * `undefined`: trường vắng mặt phải để default của database quyết định (quy tắc T-4). Giá trị jsonb đi qua `jsonbValue`
+ * (serialize + `::jsonb`).
  */
 function examContributionInsertValues(values: NewExamContribution): InsertObject<CentreDB, 'exam_contributions'> {
   const row: InsertObject<CentreDB, 'exam_contributions'> = {
@@ -456,11 +415,9 @@ function examContributionInsertValues(values: NewExamContribution): InsertObject
 }
 
 /**
- * Ánh xạ một patch cập nhật dòng `exam_contributions` (camelCase) sang set
- * update (snake_case), LOẠI mọi trường `undefined` — patch chỉ
- * chứa trường nào thì chỉ trường đó đổi (quy tắc T-4); giá trị
- * jsonb đi qua `jsonbValue`. Mốc `updated_at` do repository
- * gắn sau cùng.
+ * Ánh xạ một patch cập nhật dòng `exam_contributions` (camelCase) sang set update (snake_case), LOẠI mọi trường
+ * `undefined` — patch chỉ chứa trường nào thì chỉ trường đó đổi (quy tắc T-4); giá trị jsonb đi qua `jsonbValue`. Mốc
+ * `updated_at` do repository gắn sau cùng.
  */
 function examContributionUpdateSet(patch: Partial<ExamContributionRow>): UpdateObject<CentreDB, 'exam_contributions'> {
   const set: UpdateObject<CentreDB, 'exam_contributions'> = {};
@@ -489,7 +446,6 @@ function examContributionUpdateSet(patch: Partial<ExamContributionRow>): UpdateO
   return set;
 }
 
-/** Một dòng của bảng `exam_contribution_reviews` (hình dạng camelCase phía tiêu thụ dùng). */
 export interface ExamContributionReviewRow {
   contributionId: string;
   createdAt: Date;
@@ -500,7 +456,6 @@ export interface ExamContributionReviewRow {
   reviewerId: string;
 }
 
-/** Dữ kiện ghi một dòng `exam_contribution_reviews` mới (trường có mặc định ở DB hoặc nullable thì tùy chọn). */
 export interface NewExamContributionReview {
   contributionId: string;
   createdAt?: Date;
@@ -511,7 +466,6 @@ export interface NewExamContributionReview {
   reviewerId: string;
 }
 
-/** Danh sách cột tường minh có bí danh camelCase cho bảng `exam_contribution_reviews` (dùng cho cả select lẫn returning). */
 const EXAM_CONTRIBUTION_REVIEW_COLUMNS = [
   'contribution_id as contributionId',
   'created_at as createdAt',
@@ -523,10 +477,9 @@ const EXAM_CONTRIBUTION_REVIEW_COLUMNS = [
 ] as const;
 
 /**
- * Ánh xạ dữ kiện ghi dòng `exam_contribution_reviews` (camelCase) sang values insert
- * (snake_case), LOẠI mọi trường mang `undefined`: trường vắng mặt
- * phải để default của database quyết định (quy tắc T-4). Giá trị
- * jsonb đi qua `jsonbValue` (serialize + `::jsonb`).
+ * Ánh xạ dữ kiện ghi dòng `exam_contribution_reviews` (camelCase) sang values insert (snake_case), LOẠI mọi trường mang
+ * `undefined`: trường vắng mặt phải để default của database quyết định (quy tắc T-4). Giá trị jsonb đi qua `jsonbValue`
+ * (serialize + `::jsonb`).
  */
 function examContributionReviewInsertValues(values: NewExamContributionReview): Insertable<CentreDB['exam_contribution_reviews']> {
   const row: Insertable<CentreDB['exam_contribution_reviews']> = {
@@ -541,7 +494,6 @@ function examContributionReviewInsertValues(values: NewExamContributionReview): 
   return row;
 }
 
-/** Một dòng của bảng `exam_dossiers` (hình dạng camelCase phía tiêu thụ dùng). */
 export interface ExamDossierRow {
   createdAt: Date;
   examId: string;
@@ -560,7 +512,6 @@ export interface ExamDossierRow {
   updatedAt: Date;
 }
 
-/** Dữ kiện ghi một dòng `exam_dossiers` mới (trường có mặc định ở DB hoặc nullable thì tùy chọn). */
 export interface NewExamDossier {
   createdAt?: Date;
   examId: string;
@@ -579,7 +530,6 @@ export interface NewExamDossier {
   updatedAt?: Date;
 }
 
-/** Danh sách cột tường minh có bí danh camelCase cho bảng `exam_dossiers` (dùng cho cả select lẫn returning). */
 const EXAM_DOSSIER_COLUMNS = [
   'created_at as createdAt',
   'exam_id as examId',
@@ -599,10 +549,9 @@ const EXAM_DOSSIER_COLUMNS = [
 ] as const;
 
 /**
- * Ánh xạ dữ kiện ghi dòng `exam_dossiers` (camelCase) sang values insert
- * (snake_case), LOẠI mọi trường mang `undefined`: trường vắng mặt
- * phải để default của database quyết định (quy tắc T-4). Giá trị
- * jsonb đi qua `jsonbValue` (serialize + `::jsonb`).
+ * Ánh xạ dữ kiện ghi dòng `exam_dossiers` (camelCase) sang values insert (snake_case), LOẠI mọi trường mang
+ * `undefined`: trường vắng mặt phải để default của database quyết định (quy tắc T-4). Giá trị jsonb đi qua `jsonbValue`
+ * (serialize + `::jsonb`).
  */
 function examDossierInsertValues(values: NewExamDossier): InsertObject<CentreDB, 'exam_dossiers'> {
   const row: InsertObject<CentreDB, 'exam_dossiers'> = {
@@ -626,11 +575,9 @@ function examDossierInsertValues(values: NewExamDossier): InsertObject<CentreDB,
 }
 
 /**
- * Ánh xạ một patch cập nhật dòng `exam_dossiers` (camelCase) sang set
- * update (snake_case), LOẠI mọi trường `undefined` — patch chỉ
- * chứa trường nào thì chỉ trường đó đổi (quy tắc T-4); giá trị
- * jsonb đi qua `jsonbValue`. Mốc `updated_at` do repository
- * gắn sau cùng.
+ * Ánh xạ một patch cập nhật dòng `exam_dossiers` (camelCase) sang set update (snake_case), LOẠI mọi trường `undefined`
+ * — patch chỉ chứa trường nào thì chỉ trường đó đổi (quy tắc T-4); giá trị jsonb đi qua `jsonbValue`. Mốc `updated_at`
+ * do repository gắn sau cùng.
  */
 function examDossierUpdateSet(patch: Partial<ExamDossierRow>): UpdateObject<CentreDB, 'exam_dossiers'> {
   const set: UpdateObject<CentreDB, 'exam_dossiers'> = {};
@@ -652,7 +599,6 @@ function examDossierUpdateSet(patch: Partial<ExamDossierRow>): UpdateObject<Cent
   return set;
 }
 
-/** Một dòng của bảng `exam_dossier_reviews` (hình dạng camelCase phía tiêu thụ dùng). */
 export interface ExamDossierReviewRow {
   createdAt: Date;
   decision: string;
@@ -663,7 +609,6 @@ export interface ExamDossierReviewRow {
   reviewerId: string;
 }
 
-/** Dữ kiện ghi một dòng `exam_dossier_reviews` mới (trường có mặc định ở DB hoặc nullable thì tùy chọn). */
 export interface NewExamDossierReview {
   createdAt?: Date;
   decision: string;
@@ -674,7 +619,6 @@ export interface NewExamDossierReview {
   reviewerId: string;
 }
 
-/** Danh sách cột tường minh có bí danh camelCase cho bảng `exam_dossier_reviews` (dùng cho cả select lẫn returning). */
 const EXAM_DOSSIER_REVIEW_COLUMNS = [
   'created_at as createdAt',
   'decision',
@@ -686,10 +630,9 @@ const EXAM_DOSSIER_REVIEW_COLUMNS = [
 ] as const;
 
 /**
- * Ánh xạ dữ kiện ghi dòng `exam_dossier_reviews` (camelCase) sang values insert
- * (snake_case), LOẠI mọi trường mang `undefined`: trường vắng mặt
- * phải để default của database quyết định (quy tắc T-4). Giá trị
- * jsonb đi qua `jsonbValue` (serialize + `::jsonb`).
+ * Ánh xạ dữ kiện ghi dòng `exam_dossier_reviews` (camelCase) sang values insert (snake_case), LOẠI mọi trường mang
+ * `undefined`: trường vắng mặt phải để default của database quyết định (quy tắc T-4). Giá trị jsonb đi qua `jsonbValue`
+ * (serialize + `::jsonb`).
  */
 function examDossierReviewInsertValues(values: NewExamDossierReview): Insertable<CentreDB['exam_dossier_reviews']> {
   const row: Insertable<CentreDB['exam_dossier_reviews']> = {
@@ -704,21 +647,17 @@ function examDossierReviewInsertValues(values: NewExamDossierReview): Insertable
   return row;
 }
 /**
- * Kho dữ liệu của lớp Ngân hàng đề (EB-1): danh tính đề
- * (exam_papers) + version nội dung bất biến (exam_paper_versions) +
- * slots ghim version câu (exam_paper_slots) + đề xuất đóng góp
- * (exam_paper_contributions). Mọi truy vấn là truy vấn thuần; cổng
- * quyền và vòng đời nằm ở ExamsService.
+ * Kho dữ liệu của lớp Ngân hàng đề (EB-1): danh tính đề (exam_papers) + version nội dung bất biến
+ * (exam_paper_versions) + slots ghim version câu (exam_paper_slots) + đề xuất đóng góp (exam_paper_contributions). Mọi
+ * truy vấn là truy vấn thuần; cổng quyền và vòng đời nằm ở ExamsService.
  */
 export class ExamsRepository {
   constructor(private readonly handle: CentreDb) {}
 
-  /** Instance gốc (handle định tuyến theo trung tâm do tầng ứng dụng truyền vào). */
   private db(): CentreDb {
     return this.handle;
   }
 
-  /** Mở một transaction trên kho trung tâm. */
   async transaction<T>(fn: (tx: ExamsTx) => Promise<T>): Promise<T> {
     return this.db().transaction().execute(fn);
   }
@@ -728,7 +667,6 @@ export class ExamsRepository {
     return rows[0]!;
   }
 
-  /** Các lần ghim của một đề (kèm tên khoá + số version đã ghim) — bề mặt thay cho danh sách deployments cũ. */
   async listPinsOfExam(examId: string, db: ExamsDb = this.db()): Promise<{ id: string; courseId: string; courseName: string; examVersionId: string; versionNumber: number; name: string | null; variantCount: number; variants: { code: string }[]; targetGroupId: string | null; createdAt: Date }[]> {
     return db
       .selectFrom('exam_pins')
@@ -819,11 +757,9 @@ export class ExamsRepository {
   }
 
   /**
-   * Thông tin hiển thị của các câu trong slots: qtype + NHÃN hiển thị.
-   * Câu hỏi không còn trường tên (quyết 12:04 ngày 26/10/2026) nên nhãn
-   * là TRÍCH ĐOẠN nội dung thân câu của version mới nhất (text thuần,
-   * cắt 120 ký tự) — trường trả về vẫn tên `name` vì đó là nhãn hiển
-   * thị của slot ở mọi bề mặt tiêu thụ, không phải tên của câu hỏi.
+   * Thông tin hiển thị của các câu trong slots: qtype + NHÃN hiển thị. Câu hỏi không còn trường tên (quyết 12:04 ngày
+   * 26/10/2026) nên nhãn là TRÍCH ĐOẠN nội dung thân câu của version mới nhất (text thuần, cắt 120 ký tự) — trường trả
+   * về vẫn tên `name` vì đó là nhãn hiển thị của slot ở mọi bề mặt tiêu thụ, không phải tên của câu hỏi.
    */
   async listSlotQuestionInfo(questionIds: string[], db: ExamsDb = this.db()): Promise<{ questionId: string; name: string; qtype: string }[]> {
     if (questionIds.length === 0) return [];
@@ -849,10 +785,8 @@ export class ExamsRepository {
   }
 
   /**
-   * Bản mới nhất của một câu ở trạng thái ready (điểm phân giải ghim
-   * khi soạn đề — cùng kỷ luật ghim của quiz.addSlot QB-3). Trả
-   * undefined khi câu không có entry nào ở trạng thái ready
-   * (draft/hidden đều không được đưa vào đề).
+   * Bản mới nhất của một câu ở trạng thái ready (điểm phân giải ghim khi soạn đề — cùng kỷ luật ghim của quiz.addSlot
+   * QB-3). Trả undefined khi câu không có entry nào ở trạng thái ready (draft/hidden đều không được đưa vào đề).
    */
   async resolveReadyVersion(questionId: string, db: ExamsDb = this.db()): Promise<{ versionId: string; versionNumber: number; defaultMark: number } | undefined> {
     const entries = await db
@@ -872,7 +806,6 @@ export class ExamsRepository {
     return { versionId: ver.id, versionNumber: ver.version, defaultMark: ver.defaultMark };
   }
 
-  /** Trạng thái entry của các câu (để hiển thị trong chi tiết đề: câu đã rút khỏi ngân hàng vẫn đọc được trong version đã chụp). */
   async listQuestionEntryStatuses(questionIds: string[], db: ExamsDb = this.db()): Promise<{ questionId: string; status: string }[]> {
     if (questionIds.length === 0) return [];
     return db
@@ -882,7 +815,6 @@ export class ExamsRepository {
       .execute();
   }
 
-  /** Câu có tồn tại hay không (phân biệt 404 câu với 400 câu-chưa-ready). */
   async questionExists(questionId: string, db: ExamsDb = this.db()): Promise<boolean> {
     const row = await db
       .selectFrom('question')
@@ -911,14 +843,10 @@ export class ExamsRepository {
   }
 
   /**
-   * Đóng góp CHƯA CHỐT của cùng một đề vào cùng bank đích — diện
-   * "chưa chốt" gồm cả `pending` (chờ cấp 1) và `pending_board`
-   * (đã qua cấp 1, chờ ban giám hiệu): cả hai đều là một đề xuất
-   * đang sống nên lần đề xuất trùng tiếp theo bị chặn. Mode
-   * 'update' phân biệt theo đề đích (target_exam_id) vì một đề
-   * nguồn có thể đồng thời đề xuất bản mới cho các đề đích khác
-   * nhau ở các bank khác nhau; mode 'new' tra theo (đề, bank đích)
-   * như trước.
+   * Đóng góp CHƯA CHỐT của cùng một đề vào cùng bank đích — diện "chưa chốt" gồm cả `pending` (chờ cấp 1) và
+   * `pending_board` (đã qua cấp 1, chờ ban giám hiệu): cả hai đều là một đề xuất đang sống nên lần đề xuất trùng tiếp
+   * theo bị chặn. Mode 'update' phân biệt theo đề đích (target_exam_id) vì một đề nguồn có thể đồng thời đề xuất bản
+   * mới cho các đề đích khác nhau ở các bank khác nhau; mode 'new' tra theo (đề, bank đích) như trước.
    */
   async findPendingContribution(paperId: string, targetBankId: string, mode: 'new' | 'update' = 'new', targetExamId?: string, db: ExamsDb = this.db()): Promise<ExamContributionRow | undefined> {
     let query = db
@@ -934,7 +862,6 @@ export class ExamsRepository {
     return query.executeTakeFirst();
   }
 
-  /** Đóng góp sinh ra từ việc chuyển đổi một bộ hồ sơ cụ thể (neo idempotent của đường chuyển đổi hồ sơ treo). */
   async findContributionBySourceDossier(dossierId: string, db: ExamsDb = this.db()): Promise<ExamContributionRow | undefined> {
     return db
       .selectFrom('exam_contributions')
@@ -951,7 +878,6 @@ export class ExamsRepository {
       .execute();
   }
 
-  /** Ghi một mốc duyệt của đóng góp (cấp 1 hoặc cấp 2) — sổ mốc duyệt của đường đóng góp duy nhất. */
   async insertContributionReview(v: NewExamContributionReview, db: ExamsDb = this.db()): Promise<ExamContributionReviewRow> {
     const rows = await db.insertInto('exam_contribution_reviews').values(examContributionReviewInsertValues(v)).returning(EXAM_CONTRIBUTION_REVIEW_COLUMNS).execute();
     return rows[0]!;
@@ -968,10 +894,8 @@ export class ExamsRepository {
   }
 
   /**
-   * Tăng copy_count của đề nguồn sau một lần copy thành công.
-   * Biểu thức tăng giữ nguyên dạng SQL của đường bộ máy cũ
-   * (`"exams"."copy_count" + 1`): cấm đổi thành đọc-cộng-ghi vì hai
-   * lượt copy đồng thời sẽ mất một lượt tăng.
+   * Tăng copy_count của đề nguồn sau một lần copy thành công. Biểu thức tăng giữ nguyên dạng SQL của đường bộ máy cũ
+   * (`"exams"."copy_count" + 1`): cấm đổi thành đọc-cộng-ghi vì hai lượt copy đồng thời sẽ mất một lượt tăng.
    */
   async bumpCopyCount(paperId: string, db: ExamsDb = this.db()): Promise<void> {
     await db
@@ -981,9 +905,6 @@ export class ExamsRepository {
       .execute();
   }
 
-  // --- bộ hồ sơ duyệt đề (EB-3) --------------------------------------------------
-
-  /** Tên + số version hiện tại của một ma trận (ghim vào bộ hồ sơ lúc nộp khi paper version không mang sẵn matrixVersion). */
   async getMatrixInfo(matrixId: string, db: ExamsDb = this.db()): Promise<{ name: string; version: number } | undefined> {
     return db
       .selectFrom('exam_matrices')
@@ -993,10 +914,9 @@ export class ExamsRepository {
   }
 
   /**
-   * Id của hàng version bất biến tương ứng (ma trận, số version) —
-   * điểm neo FK cho exam_versions/exam_dossiers.matrix_version_id.
-   * Không có hàng version (ma trận dựng ngoài các đường tạo của
-   * service) → null, nơi gọi giữ số version làm căn cứ hiển thị.
+   * Id của hàng version bất biến tương ứng (ma trận, số version) — điểm neo FK cho
+   * exam_versions/exam_dossiers.matrix_version_id. Không có hàng version (ma trận dựng ngoài các đường tạo của service)
+   * → null, nơi gọi giữ số version làm căn cứ hiển thị.
    */
   async getMatrixVersionRowId(matrixId: string, version: number, db: ExamsDb = this.db()): Promise<string | null> {
     const row = await db
@@ -1039,12 +959,14 @@ export class ExamsRepository {
       .execute();
   }
 
-  /** MỌI bộ hồ sơ trong hệ thống — chỉ dùng cho đợt chuyển đổi hồ sơ treo sang đường đóng góp (chạy một lần ở ngữ cảnh platform). */
+  /**
+   * MỌI bộ hồ sơ trong hệ thống — chỉ dùng cho đợt chuyển đổi hồ sơ treo sang đường đóng góp (chạy một lần ở ngữ cảnh
+   * platform).
+   */
   async listAllDossiers(db: ExamsDb = this.db()): Promise<ExamDossierRow[]> {
     return db.selectFrom('exam_dossiers').select(EXAM_DOSSIER_COLUMNS).orderBy('created_at', 'asc').execute();
   }
 
-  /** Mọi bộ hồ sơ của một người đóng góp (xem kết quả duyệt + lý do từ chối xuyên bank). */
   async listDossiersByProposer(proposerId: string, db: ExamsDb = this.db()): Promise<ExamDossierRow[]> {
     return db
       .selectFrom('exam_dossiers')
@@ -1054,7 +976,6 @@ export class ExamsRepository {
       .execute();
   }
 
-  /** Bộ hồ sơ ĐANG HIỆU LỰC chờ duyệt (pending/pending_board) của cùng một đề vào cùng bank đích — nộp trùng bị chặn 409. */
   async findActiveDossier(paperId: string, targetBankId: string, excludeId?: string, db: ExamsDb = this.db()): Promise<ExamDossierRow | undefined> {
     let query = db
       .selectFrom('exam_dossiers')
@@ -1085,9 +1006,8 @@ export class ExamsRepository {
   }
 
   /**
-   * Người dùng có đang DẠY khối `grade` hay không (lớp bảo mật đề
-   * định kỳ A.3.4): tồn tại một gán vai archetype giáo viên
-   * (teacher/editingteacher) tại context của một khoá có grade khớp.
+   * Người dùng có đang DẠY khối `grade` hay không (lớp bảo mật đề định kỳ A.3.4): tồn tại một gán vai archetype giáo
+   * viên (teacher/editingteacher) tại context của một khoá có grade khớp.
    */
   async userTeachesGrade(userId: string, grade: number, db: ExamsDb = this.db()): Promise<boolean> {
     const rows = await db

@@ -20,27 +20,20 @@ import { SpaceDatabaseService } from '../../../src/db/routing/space-database.ser
 import { DEFAULT_ROLES } from '../../../src/modules/access/domain/capabilities';
 
 /**
- * Ca tích hợp của BƯỚC CÀI BỘ VAI MẶC ĐỊNH CHO TRUNG TÂM KHO RIÊNG
- * (cơ chế chuyển tiếp của chương trình tenant, issue #587): cấp
- * phát một trung tâm mới trên cụm Postgres thật thì kho đích phải
- * có đủ bộ vai mặc định hiện hành kèm đúng ma trận năng lực tại
- * context hệ thống như kho chung được gieo; lệnh cài riêng cho
- * trung tâm đã cấp phát phải lấp được một kho đang trống vai và
- * chạy lại phải là no-op tuyệt đối (không tạo trùng, không ghi đè
- * thay đổi cục bộ của trung tâm).
+ * Ca tích hợp của BƯỚC CÀI BỘ VAI MẶC ĐỊNH CHO TRUNG TÂM KHO RIÊNG (cơ chế chuyển tiếp của chương trình tenant, issue
+ * #587): cấp phát một trung tâm mới trên cụm Postgres thật thì kho đích phải có đủ bộ vai mặc định hiện hành kèm đúng
+ * ma trận năng lực tại context hệ thống như kho chung được gieo; lệnh cài riêng cho trung tâm đã cấp phát phải lấp được
+ * một kho đang trống vai và chạy lại phải là no-op tuyệt đối (không tạo trùng, không ghi đè thay đổi cục bộ của trung
+ * tâm).
  *
- * Phía "kho chung được gieo" được dựng bằng ĐÚNG closure sản xuất:
- * một database trắng chạy migration nghiệp vụ hiện hành rồi gọi
- * `RolesService.seedDefaults` — cùng hàm mà `SeedService` của ứng
- * dụng gọi khi khởi động — trên handle của chính database đó. Mọi
- * đối chiếu là trực tiếp hai phía (cùng câu đọc trên kho tham
- * chiếu và kho trung tâm), không chép kỳ vọng cứng vào ca test.
+ * Phía "kho chung được gieo" được dựng bằng ĐÚNG closure sản xuất: một database trắng chạy migration nghiệp vụ hiện
+ * hành rồi gọi `RolesService.seedDefaults` — cùng hàm mà `SeedService` của ứng dụng gọi khi khởi động — trên handle của
+ * chính database đó. Mọi đối chiếu là trực tiếp hai phía (cùng câu đọc trên kho tham chiếu và kho trung tâm), không
+ * chép kỳ vọng cứng vào ca test.
  *
- * Mọi tên đều mang hậu tố ngẫu nhiên theo lượt chạy: chạy lại spec
- * trên cùng cụm không va chạm, và không tái dùng tên database cũ
- * (tránh khoá cache siteadmins cũ trong Redis theo tên database).
- * Cụm test lấy từ `DATABASE_URL` đã được Vitest phân giải (biến
- * `LMS_TEST_DATABASE_URL` ghi đè khi chạy ngoài CI).
+ * Mọi tên đều mang hậu tố ngẫu nhiên theo lượt chạy: chạy lại spec trên cùng cụm không va chạm, và không tái dùng tên
+ * database cũ (tránh khoá cache siteadmins cũ trong Redis theo tên database). Cụm test lấy từ `DATABASE_URL` đã được
+ * Vitest phân giải (biến `LMS_TEST_DATABASE_URL` ghi đè khi chạy ngoài CI).
  */
 const RUN_SUFFIX = Math.random().toString(36).slice(2, 8);
 const CP_DATABASE = `lms_test_cp_td7_${RUN_SUFFIX}`;
@@ -54,7 +47,6 @@ const ACTOR_ID = '22222222-2222-4222-8222-222222222222';
 
 const UUIDV7_SHIM = `CREATE OR REPLACE FUNCTION uuidv7() RETURNS uuid AS $$ DECLARE ts_ms bigint := (extract(epoch from clock_timestamp()) * 1000)::bigint; b bytea; BEGIN b := decode(lpad(to_hex(ts_ms), 12, '0'), 'hex') || gen_random_bytes(10); b := set_byte(b, 6, (get_byte(b, 6) & 15) | 112); b := set_byte(b, 8, (get_byte(b, 8) & 63) | 128); RETURN encode(b, 'hex')::uuid; END; $$ LANGUAGE plpgsql VOLATILE`;
 
-/** Dựng URL kết nối tới một database trên cùng cụm với database test. */
 function clusterUrl(database: string, username?: string, secret?: string): string {
   const base = new URL(process.env.DATABASE_URL!);
   base.pathname = `/${database}`;
@@ -63,7 +55,6 @@ function clusterUrl(database: string, username?: string, secret?: string): strin
   return base.toString();
 }
 
-/** Bọc một định danh Postgres trong dấu nháy kép cho các câu lệnh quản trị của ca test. */
 function quoted(identifier: string): string {
   return `"${identifier.replace(/"/g, '""')}"`;
 }
@@ -78,7 +69,6 @@ async function withClient<T>(connectionString: string, fn: (client: Client) => P
   }
 }
 
-/** Áp một file migration SQL (tách theo dấu phân đoạn của file) lên một database qua kết nối cho trước. */
 async function applySqlFile(connectionString: string, filePath: string): Promise<void> {
   await withClient(connectionString, async (client) => {
     const version = await client.query<{ server_version_num: string }>('SHOW server_version_num');
@@ -94,7 +84,6 @@ async function applySqlFile(connectionString: string, filePath: string): Promise
   });
 }
 
-/** Áp bộ migration riêng của control plane từ rỗng (đọc chính các file SQL đã sinh trong repo). */
 async function applyControlPlaneMigrations(connectionString: string): Promise<void> {
   const outDir = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'control-plane');
   const folders = readdirSync(outDir, { withFileTypes: true })
@@ -119,7 +108,10 @@ function provisionEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
 
 const MIGRATIONS_DIR = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre');
 
-/** Hình chụp đường cơ sở vai của một kho: tập vai, tập định nghĩa năng lực, và ma trận tại context hệ thống dạng dòng chuẩn hoá. */
+/**
+ * Hình chụp đường cơ sở vai của một kho: tập vai, tập định nghĩa năng lực, và ma trận tại context hệ thống dạng dòng
+ * chuẩn hoá.
+ */
 type RoleBaselineSnapshot = {
   roles: string[];
   capabilities: string[];
@@ -148,7 +140,6 @@ async function readRoleBaseline(connectionString: string): Promise<RoleBaselineS
   });
 }
 
-/** Đếm số dòng của ba bảng làm nên đường cơ sở vai trong một kho. */
 async function countRoleBaselineRows(connectionString: string): Promise<{ roles: number; roleCapabilities: number; capabilities: number }> {
   return withClient(connectionString, async (client) => {
     await client.query(`SELECT set_config('app.platform', 'on', false)`);
@@ -164,22 +155,16 @@ async function countRoleBaselineRows(connectionString: string): Promise<{ roles:
 }
 
 /**
- * Gieo kho tham chiếu bằng đúng closure sản xuất của kho chung:
- * dựng bộ service của module access trên handle của kho rồi gọi
- * `RolesService.seedDefaults` — cùng hàm `SeedService` gọi lúc
- * khởi động ứng dụng.
+ * Gieo kho tham chiếu bằng đúng closure sản xuất của kho chung: dựng bộ service của module access trên handle của kho
+ * rồi gọi `RolesService.seedDefaults` — cùng hàm `SeedService` gọi lúc khởi động ứng dụng.
  */
 async function seedSharedStoreDefaults(connectionString: string): Promise<void> {
   await withClient(connectionString, async (client) => {
     await client.query(`SELECT set_config('app.platform', 'on', false)`);
-    // AccessRepository nay nhận handle Kysely (issue #651): pool
-    // riêng trần 1 kết nối trên cùng connection string, GUC
-    // platform ở mức phiên như kết nối pg bên cạnh. Cùng
-    // handle dựng `OutboxService` (đã chuyển sang Kysely ở D1,
-    // issue #653) và hai facade access qua stub `routedKysely`:
-    // `seedDefaults` không phát sự kiện qua outbox và không
-    // truy vấn qua hai lõi access nên các handle đó chỉ để
-    // dựng service đúng hợp đồng.
+    // AccessRepository nay nhận handle Kysely (issue #651): pool riêng trần 1 kết nối trên cùng connection string, GUC
+    // platform ở mức phiên như kết nối pg bên cạnh. Cùng handle dựng `OutboxService` (đã chuyển sang Kysely ở D1, issue
+    // #653) và hai facade access qua stub `routedKysely`: `seedDefaults` không phát sự kiện qua outbox và không truy
+    // vấn qua hai lõi access nên các handle đó chỉ để dựng service đúng hợp đồng.
     const accessPool = new Pool({ connectionString, max: 1 });
     const accessDb = createCentreKysely(accessPool);
     const accessRepository = new AccessRepository(accessDb);
@@ -206,8 +191,8 @@ async function buildReferenceStore(): Promise<void> {
   });
   const pool = new Pool({ connectionString: clusterUrl(SHARED_DATABASE) });
   try {
-    // Bộ máy migration của `@lms/db` tự cài shim `uuidv7()` khi
-    // server dưới PG18 (xem `installUuidv7Shim` trong package).
+    // Bộ máy migration của `@lms/db` tự cài shim `uuidv7()` khi server dưới PG18 (xem `installUuidv7Shim` trong
+    // package).
     const db = createCentreKysely(pool);
     await applyStoreMigrations(db, 'centre', MIGRATIONS_DIR);
   } finally {
@@ -267,8 +252,8 @@ describe('Cài bộ vai mặc định cho trung tâm kho riêng (tích hợp)', 
   });
 
   it('cấp phát một kho riêng mới thì kho đích có đủ bộ vai mặc định, mỗi vai mang đúng tập năng lực như kho chung được gieo', async () => {
-    // Kho tham chiếu tự nó phải mang đúng bộ vai mặc định theo định
-    // nghĩa ở code — neo này giữ phép đối chiếu hai phía có nghĩa.
+    // Kho tham chiếu tự nó phải mang đúng bộ vai mặc định theo định nghĩa ở code — neo này giữ phép đối chiếu hai phía
+    // có nghĩa.
     expect(reference.roles).toEqual(DEFAULT_ROLES.map((definition) => definition.shortName).sort());
     expect(reference.matrix.length).toBeGreaterThan(0);
 
@@ -290,9 +275,8 @@ describe('Cài bộ vai mặc định cho trung tâm kho riêng (tích hợp)', 
     const centreUrlB = clusterUrl(provisionedB.databaseName, provisionedB.connectionRole, DB_PASSWORD);
     const envB = provisionEnv({ [deriveCentreSecretEnvVar(SLUG_B)]: centreUrlB });
 
-    // Đưa kho B về trạng thái của một trung tâm cấp phát trước khi
-    // pipeline có bước cài vai: xoá sạch đường cơ sở vai, giữ
-    // nguyên mọi dữ kiện nền khác.
+    // Đưa kho B về trạng thái của một trung tâm cấp phát trước khi pipeline có bước cài vai: xoá sạch đường cơ sở vai,
+    // giữ nguyên mọi dữ kiện nền khác.
     await withClient(centreUrlB, async (client) => {
       await client.query(`SELECT set_config('app.platform', 'on', false)`);
       await client.query('DELETE FROM role');
@@ -304,9 +288,8 @@ describe('Cài bộ vai mặc định cho trung tâm kho riêng (tích hợp)', 
     expect(installed.outcome).toBe('created');
     expect(await readRoleBaseline(centreUrlB)).toEqual(reference);
 
-    // Thay đổi cục bộ của trung tâm sau khi cài: đổi giá trị một
-    // dòng ma trận thành mốc nhận diện riêng và xoá hẳn một dòng
-    // khác — lần chạy lại của lệnh cài không được động vào cả hai.
+    // Thay đổi cục bộ của trung tâm sau khi cài: đổi giá trị một dòng ma trận thành mốc nhận diện riêng và xoá hẳn một
+    // dòng khác — lần chạy lại của lệnh cài không được động vào cả hai.
     const localMarker = 4242;
     await withClient(centreUrlB, async (client) => {
       await client.query(`SELECT set_config('app.platform', 'on', false)`);
@@ -341,10 +324,8 @@ describe('Cài bộ vai mặc định cho trung tâm kho riêng (tích hợp)', 
     const centreUrlB = clusterUrl(provisionedB.databaseName, provisionedB.connectionRole, DB_PASSWORD);
     const envB = provisionEnv({ [deriveCentreSecretEnvVar(SLUG_B)]: centreUrlB });
 
-    // Đưa kho B về một lượt cài trọn sạch do ca này tự dựng:
-    // xoá đường cơ sở vai của các ca trước lẫn dấu mốc hoàn
-    // tất (dòng config mang khoá `rolebaseline` của bước cài),
-    // rồi cài lại bằng chính đường vận hành.
+    // Đưa kho B về một lượt cài trọn sạch do ca này tự dựng: xoá đường cơ sở vai của các ca trước lẫn dấu mốc hoàn tất
+    // (dòng config mang khoá `rolebaseline` của bước cài), rồi cài lại bằng chính đường vận hành.
     await withClient(centreUrlB, async (client) => {
       await client.query(`SELECT set_config('app.platform', 'on', false)`);
       await client.query('DELETE FROM role');
@@ -355,15 +336,11 @@ describe('Cài bộ vai mặc định cho trung tâm kho riêng (tích hợp)', 
     expect(installed.outcome).toBe('created');
     expect(await readRoleBaseline(centreUrlB)).toEqual(reference);
 
-    // Dựng đúng trạng thái một lượt cài chết dở dang để lại.
-    // Vai `user` được gieo cuối cùng nên dòng vai của nó đã có
-    // nhưng ma trận tại context hệ thống mới ghi được một
-    // phần — xoá 5 dòng của nó. Đồng thời dấu mốc hoàn tất
-    // không tồn tại: dấu mốc chỉ ghi sau khi gieo trọn nên
-    // lượt cài chết không bao giờ ghi được. Hai nửa này cùng
-    // nhau mới là trạng thái chết dở dang thật; chính sự vắng
-    // mặt của dấu mốc tách nó khỏi một kho đã cài trọn rồi bị
-    // quản trị xoá dòng ma trận có chủ đích (ca trước).
+    // Dựng đúng trạng thái một lượt cài chết dở dang để lại. Vai `user` được gieo cuối cùng nên dòng vai của nó đã có
+    // nhưng ma trận tại context hệ thống mới ghi được một phần — xoá 5 dòng của nó. Đồng thời dấu mốc hoàn tất không
+    // tồn tại: dấu mốc chỉ ghi sau khi gieo trọn nên lượt cài chết không bao giờ ghi được. Hai nửa này cùng nhau mới là
+    // trạng thái chết dở dang thật; chính sự vắng mặt của dấu mốc tách nó khỏi một kho đã cài trọn rồi bị quản trị xoá
+    // dòng ma trận có chủ đích (ca trước).
     await withClient(centreUrlB, async (client) => {
       await client.query(`SELECT set_config('app.platform', 'on', false)`);
       await client.query(
@@ -381,15 +358,13 @@ describe('Cài bộ vai mặc định cho trung tâm kho riêng (tích hợp)', 
     expect(partial.roles).toEqual(reference.roles);
     expect(partial.matrix.length).toBe(reference.matrix.length - 5);
 
-    // Chạy lại đường vận hành: phần ma trận thiếu phải được
-    // lấp đủ tới mức khớp kho tham chiếu, không bị phán quyết
+    // Chạy lại đường vận hành: phần ma trận thiếu phải được lấp đủ tới mức khớp kho tham chiếu, không bị phán quyết
     // nhầm thành đã cài chỉ vì đủ dòng vai.
     const recovered = await installSpaceRoleBaseline({ slug: SLUG_B, env: envB, log: () => undefined });
     expect(recovered.outcome).toBe('created');
     expect(await readRoleBaseline(centreUrlB)).toEqual(reference);
 
-    // Sau khi đã lấp đủ (dấu mốc hoàn tất đã ghi), chạy lại
-    // là no-op tuyệt đối như mọi kho đã cài trọn.
+    // Sau khi đã lấp đủ (dấu mốc hoàn tất đã ghi), chạy lại là no-op tuyệt đối như mọi kho đã cài trọn.
     const countsBefore = await countRoleBaselineRows(centreUrlB);
     const rerun = await installSpaceRoleBaseline({ slug: SLUG_B, env: envB, log: () => undefined });
     expect(rerun.outcome).toBe('reused');

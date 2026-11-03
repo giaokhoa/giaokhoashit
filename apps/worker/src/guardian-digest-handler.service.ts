@@ -29,49 +29,33 @@ export interface GuardianOverdueAlertPayload {
 }
 
 /**
- * Nửa TIÊU THỤ của digest phụ huynh (PH-2, issue #159) — đã chuyển từ
- * phía API sang worker ở issue con #518 của #491: trước đây
- * `GuardianDigestService.processDigestDue/processOverdueAlert` phía
- * API được nuôi bởi consumer polling `GuardianDigestConsumer` đọc
- * `outbox_events` mỗi 500 ms bằng watermark riêng; nay relay outbox
- * duy nhất của worker định tuyến hai loại sự kiện này vào hàng đợi
- * `guardian-digest-events` (bảng `OUTBOX_EVENT_QUEUE_ROUTES`) và
- * `GuardianDigestEventsProcessor` gọi thẳng hai hàm xử lý ở đây. Mọi
- * luật nghiệp vụ giữ nguyên văn như bản phía API; các truy vấn vốn đi
- * qua service/repository phía API (dashboard/grades/guardians/users)
- * được viết lại bằng bộ máy cũ trực tiếp trên cùng các bảng — khuôn
- * mẫu đã có của phía worker (processor quét digest đọc thẳng DB).
+ * Nửa TIÊU THỤ của digest phụ huynh (PH-2, issue #159) — đã chuyển từ phía API sang worker ở issue con #518 của #491:
+ * trước đây `GuardianDigestService.processDigestDue/processOverdueAlert` phía API được nuôi bởi consumer polling
+ * `GuardianDigestConsumer` đọc `outbox_events` mỗi 500 ms bằng watermark riêng; nay relay outbox duy nhất của worker
+ * định tuyến hai loại sự kiện này vào hàng đợi `guardian-digest-events` (bảng `OUTBOX_EVENT_QUEUE_ROUTES`) và
+ * `GuardianDigestEventsProcessor` gọi thẳng hai hàm xử lý ở đây. Mọi luật nghiệp vụ giữ nguyên văn như bản phía API;
+ * các truy vấn vốn đi qua service/repository phía API (dashboard/grades/guardians/users) được viết lại bằng bộ máy cũ
+ * trực tiếp trên cùng các bảng — khuôn mẫu đã có của phía worker (processor quét digest đọc thẳng DB).
  *
  * Nguyên tắc cứng của research phụ huynh áp ở mọi đường:
- * - Chỉ dữ liệu ĐÃ CÔNG BỐ: kết quả mới qua đúng cổng PH-0/DASH1
- *   (đếm kết quả đã công bố trong cửa sổ — bản đếm của
- *   `publishedNewResultsFor` phía API), thông báo lớp lọc loại
- *   `grade_updated` như bề mặt PH-1 — item chưa công bố vắng tuyệt
- *   đối khỏi digest, kể cả ở dạng số đếm suy ra được.
- * - Nội dung thông báo CHỈ là số lượng mục + link sâu tới màn PH-1
- *   của con: không điểm số, không tên việc chi tiết (trừ tên hoạt
- *   động ở đẩy quá hạn — dữ kiện học sinh tự thấy trong khoá, tiền lệ
- *   activity_due_soon), kênh ngoài nhận bản tối thiểu hoá riêng qua
- *   `externalSubject`/`externalBody` của notify().
- * - Cổng liên kết kiểm LẠI tại thời điểm gửi: liên kết đã thu hồi sau
- *   khi lượt quét chốt lượt → lượt bị huỷ (skipped_revoked), không
- *   gửi.
- * - Mỗi lượt gửi/huỷ đều để lại vết ở guardian_digests + audit
- *   event_log qua outbox aggregate `guardian` (chỉ số đếm, không
- *   điểm): sự kiện audit ghi vào `outbox_events` như
- *   `OutboxService.enqueueStandalone` phía API vẫn làm, relay duy
- *   nhất đóng dấu và phản chiếu sang event_log ở nhịp kế tiếp.
+ * - Chỉ dữ liệu ĐÃ CÔNG BỐ: kết quả mới qua đúng cổng PH-0/DASH1 (đếm kết quả đã công bố trong cửa sổ — bản đếm của
+ *   `publishedNewResultsFor` phía API), thông báo lớp lọc loại `grade_updated` như bề mặt PH-1 — item chưa công bố vắng
+ *   tuyệt đối khỏi digest, kể cả ở dạng số đếm suy ra được.
+ * - Nội dung thông báo CHỈ là số lượng mục + link sâu tới màn PH-1 của con: không điểm số, không tên việc chi tiết (trừ
+ *   tên hoạt động ở đẩy quá hạn — dữ kiện học sinh tự thấy trong khoá, tiền lệ activity_due_soon), kênh ngoài nhận bản
+ *   tối thiểu hoá riêng qua `externalSubject`/`externalBody` của notify().
+ * - Cổng liên kết kiểm LẠI tại thời điểm gửi: liên kết đã thu hồi sau khi lượt quét chốt lượt → lượt bị huỷ
+ *   (skipped_revoked), không gửi.
+ * - Mỗi lượt gửi/huỷ đều để lại vết ở guardian_digests + audit event_log qua outbox aggregate `guardian` (chỉ số đếm,
+ *   không điểm): sự kiện audit ghi vào `outbox_events` như `OutboxService.enqueueStandalone` phía API vẫn làm, relay
+ *   duy nhất đóng dấu và phản chiếu sang event_log ở nhịp kế tiếp.
  *
- * Đường phát thông báo đi qua bề mặt dùng chung của worker
- * (`NotificationDeliveryService.notify` — dựng ở chính issue này cho
- * cả đợt chuyển consumer; issue #520 dùng lại): trọn luật notify()
- * phía API gồm kênh trong-app + job email vào hàng đợi
- * `notification-dispatch` + sự kiện `notification_created`.
+ * Đường phát thông báo đi qua bề mặt dùng chung của worker (`NotificationDeliveryService.notify` — dựng ở chính issue
+ * này cho cả đợt chuyển consumer; issue #520 dùng lại): trọn luật notify() phía API gồm kênh trong-app + job email vào
+ * hàng đợi `notification-dispatch` + sự kiện `notification_created`.
  *
- * Idempotent theo vết lượt: lượt không còn `queued` (đã xử lý ở lần
- * phát trước) thì bỏ qua — cùng chốt bền mà consumer phía API dựa
- * vào; kết hợp khoá jobId = outboxId của relay, một sự kiện phát lại
- * không bao giờ sinh thông báo thứ hai.
+ * Idempotent theo vết lượt: lượt không còn `queued` (đã xử lý ở lần phát trước) thì bỏ qua — cùng chốt bền mà consumer
+ * phía API dựa vào; kết hợp khoá jobId = outboxId của relay, một sự kiện phát lại không bao giờ sinh thông báo thứ hai.
  */
 @Injectable()
 export class GuardianDigestHandlerService {
@@ -84,9 +68,8 @@ export class GuardianDigestHandlerService {
   ) {}
 
   /**
-   * Xử lý một sự kiện guardian_digest_due: tổng hợp cửa sổ và gửi.
-   * Idempotent theo vết lượt: lượt không còn `queued` (đã xử lý ở lần
-   * phát lại trước) thì bỏ qua — đường phát có tính ít-nhất-một-lần.
+   * Xử lý một sự kiện guardian_digest_due: tổng hợp cửa sổ và gửi. Idempotent theo vết lượt: lượt không còn `queued`
+   * (đã xử lý ở lần phát lại trước) thì bỏ qua — đường phát có tính ít-nhất-một-lần.
    */
   async processDigestDue(payload: GuardianDigestDuePayload): Promise<void> {
     const row = await this.getDigest(payload.digestId);
@@ -118,9 +101,8 @@ export class GuardianDigestHandlerService {
     }
 
     const studentName = await this.studentDisplayName(studentId);
-    // Link sâu trỏ thẳng path theo con của khu vực phụ huynh (chuẩn
-    // đường dẫn #221, lát R2); thông báo đã phát trước đây mang dạng
-    // cũ /guardian?student= vẫn tới được nhờ lớp redirect phía web.
+    // Link sâu trỏ thẳng path theo con của khu vực phụ huynh (chuẩn đường dẫn #221, lát R2); thông báo đã phát trước
+    // đây mang dạng cũ /guardian?student= vẫn tới được nhờ lớp redirect phía web.
     const deepLink = `/guardian/students/${studentId}`;
     const subject = this.t(payload.kind === 'weekly' ? 'platform.guardianDigestWeeklySubject' : 'platform.guardianDigestDailySubject', { name: studentName });
     const body = this.t('platform.guardianDigestBody', {
@@ -191,12 +173,10 @@ export class GuardianDigestHandlerService {
   }
 
   /**
-   * Tổng hợp bốn con số của một cửa sổ digest cho một học sinh:
-   * kết quả mới ĐÃ CÔNG BỐ trong cửa sổ (cổng PH-0 qua DASH1), thông
-   * báo lớp trong cửa sổ (quy tắc PH-1), việc quá hạn chưa nộp ở thời
-   * điểm gửi, việc sắp đến hạn trong cửa sổ kế tiếp (tuần tới / ngày
-   * mai theo loại digest). Chỉ trả SỐ ĐẾM — nội dung chi tiết của con
-   * sống ở bề mặt PH-1 phía sau link sâu.
+   * Tổng hợp bốn con số của một cửa sổ digest cho một học sinh: kết quả mới ĐÃ CÔNG BỐ trong cửa sổ (cổng PH-0 qua
+   * DASH1), thông báo lớp trong cửa sổ (quy tắc PH-1), việc quá hạn chưa nộp ở thời điểm gửi, việc sắp đến hạn trong
+   * cửa sổ kế tiếp (tuần tới / ngày mai theo loại digest). Chỉ trả SỐ ĐẾM — nội dung chi tiết của con sống ở bề mặt
+   * PH-1 phía sau link sâu.
    */
   private async aggregateWindow(
     studentId: string,
@@ -249,15 +229,11 @@ export class GuardianDigestHandlerService {
   }
 
   /**
-   * ĐẾM kết quả đã công bố mới của học sinh trong cửa sổ — bản phía
-   * worker của `publishedNewResultsFor` + bộ lọc cửa sổ của digest
-   * phía API (`DashboardService.buildNewResults`): ứng viên là điểm
-   * đổi sau mốc HOẶC item chỉ được công bố sau mốc; qua cổng công bố
-   * PH-0 theo trạng thái hiệu lực của từng khoá; thời điểm hiệu lực
-   * là max(lần sửa điểm, lần công bố) và phải nằm trong
-   * (windowStart, windowEnd). Digest chỉ cần số đếm nên truy vấn chỉ
-   * lấy các cột luật cần (điều kiện "có điểm hoặc phản hồi" giữ
-   * nguyên trong mệnh đề WHERE như bản phía API).
+   * ĐẾM kết quả đã công bố mới của học sinh trong cửa sổ — bản phía worker của `publishedNewResultsFor` + bộ lọc cửa sổ
+   * của digest phía API (`DashboardService.buildNewResults`): ứng viên là điểm đổi sau mốc HOẶC item chỉ được công bố
+   * sau mốc; qua cổng công bố PH-0 theo trạng thái hiệu lực của từng khoá; thời điểm hiệu lực là max(lần sửa điểm, lần
+   * công bố) và phải nằm trong (windowStart, windowEnd). Digest chỉ cần số đếm nên truy vấn chỉ lấy các cột luật cần
+   * (điều kiện "có điểm hoặc phản hồi" giữ nguyên trong mệnh đề WHERE như bản phía API).
    */
   private async countPublishedNewResults(studentId: string, courseIds: string[], windowStart: Date, windowEnd: Date): Promise<number> {
     if (!courseIds.length) return 0;
@@ -344,11 +320,9 @@ export class GuardianDigestHandlerService {
   }
 
   /**
-   * Trạng thái công bố hiệu lực của mọi item trong một khoá — bản
-   * phía worker của `GradesService.publicationStatesForCourse` phía
-   * API (PH-0): item 'auto' luôn coi là đã công bố (điểm hiện ngay
-   * khi chấm); item 'manual' chỉ hiện khi vết mới nhất trong
-   * grade_publications (scope item) là 'publish'.
+   * Trạng thái công bố hiệu lực của mọi item trong một khoá — bản phía worker của
+   * `GradesService.publicationStatesForCourse` phía API (PH-0): item 'auto' luôn coi là đã công bố (điểm hiện ngay khi
+   * chấm); item 'manual' chỉ hiện khi vết mới nhất trong grade_publications (scope item) là 'publish'.
    */
   private async publicationStatesForCourse(courseId: string): Promise<Map<string, { published: boolean }>> {
     const items = await this.spaceDb.routedKysely
@@ -375,7 +349,10 @@ export class GuardianDigestHandlerService {
     return states;
   }
 
-  /** Khoá học sinh đang ghi danh hiệu lực (user_enrolments active, chưa hết hạn) — bản phía worker của `DashboardRepository.enrolledCourseIds` phía API. */
+  /**
+   * Khoá học sinh đang ghi danh hiệu lực (user_enrolments active, chưa hết hạn) — bản phía worker của
+   * `DashboardRepository.enrolledCourseIds` phía API.
+   */
   private async enrolledCourseIds(userId: string, now: Date): Promise<string[]> {
     const rows = await this.spaceDb.routedKysely
       .selectFrom('user_enrolments')
@@ -392,7 +369,10 @@ export class GuardianDigestHandlerService {
     return rows.map((r) => r.courseId);
   }
 
-  /** Quiz có hạn nộp không muộn hơn `until` trong tập khoá kèm các attempt của học sinh — bản phía worker của `GuardianViewRepository.quizDueRows` phía API. */
+  /**
+   * Quiz có hạn nộp không muộn hơn `until` trong tập khoá kèm các attempt của học sinh — bản phía worker của
+   * `GuardianViewRepository.quizDueRows` phía API.
+   */
   private async quizDueRows(courseIds: string[], studentUserId: string, until: Date) {
     if (!courseIds.length) return [];
     return this.spaceDb.routedKysely
@@ -418,7 +398,10 @@ export class GuardianDigestHandlerService {
       .execute();
   }
 
-  /** Bài tập C2 có hạn nộp không muộn hơn `until` trong tập khoá kèm bài nộp hiện hành của học sinh — bản phía worker của `GuardianViewRepository.assignmentDueRows` phía API. */
+  /**
+   * Bài tập C2 có hạn nộp không muộn hơn `until` trong tập khoá kèm bài nộp hiện hành của học sinh — bản phía worker
+   * của `GuardianViewRepository.assignmentDueRows` phía API.
+   */
   private async assignmentDueRows(courseIds: string[], studentUserId: string, until: Date) {
     if (!courseIds.length) return [];
     return this.spaceDb.routedKysely
@@ -441,7 +424,10 @@ export class GuardianDigestHandlerService {
       .execute();
   }
 
-  /** Vết lượt digest theo id (lượt quét đã chốt khi phát sự kiện) — bản phía worker của `GuardianDigestRepository.getDigest` phía API. */
+  /**
+   * Vết lượt digest theo id (lượt quét đã chốt khi phát sự kiện) — bản phía worker của
+   * `GuardianDigestRepository.getDigest` phía API.
+   */
   private async getDigest(id: string) {
     const row = await this.spaceDb.routedKysely
       .selectFrom('guardian_digests')
@@ -451,7 +437,10 @@ export class GuardianDigestHandlerService {
     return row;
   }
 
-  /** Chốt kết quả một lượt digest: trạng thái + số đếm tóm tắt + notification đã sinh — bản phía worker của `GuardianDigestRepository.finishDigest` phía API. */
+  /**
+   * Chốt kết quả một lượt digest: trạng thái + số đếm tóm tắt + notification đã sinh — bản phía worker của
+   * `GuardianDigestRepository.finishDigest` phía API.
+   */
   private async finishDigest(id: string, patch: {
     status: string;
     newResultsCount?: number;
@@ -497,7 +486,10 @@ export class GuardianDigestHandlerService {
       .execute();
   }
 
-  /** Liên kết giám hộ ĐANG hiệu lực của cặp (phụ huynh, con) — cổng kiểm lại tại thời điểm gửi; không có → undefined. Chỉ lấy tenantId vì đó là trường duy nhất phía gửi dùng. */
+  /**
+   * Liên kết giám hộ ĐANG hiệu lực của cặp (phụ huynh, con) — cổng kiểm lại tại thời điểm gửi; không có → undefined.
+   * Chỉ lấy tenantId vì đó là trường duy nhất phía gửi dùng.
+   */
   private async findActiveLink(guardianUserId: string, studentUserId: string) {
     const row = await this.spaceDb.routedKysely
       .selectFrom('guardian_links')
@@ -520,10 +512,9 @@ export class GuardianDigestHandlerService {
   }
 
   /**
-   * Tên hiển thị của học sinh cho nội dung digest (họ + tên như phía
-   * API vẫn dựng). Học sinh không còn tồn tại là lỗi dữ liệu: ném lỗi
-   * để processor ghi vết và lượt giữ nguyên `queued`, như hành vi
-   * phía API khi `getUser` không tìm thấy.
+   * Tên hiển thị của học sinh cho nội dung digest (họ + tên như phía API vẫn dựng). Học sinh không còn tồn tại là lỗi
+   * dữ liệu: ném lỗi để processor ghi vết và lượt giữ nguyên `queued`, như hành vi phía API khi `getUser` không tìm
+   * thấy.
    */
   private async studentDisplayName(studentId: string): Promise<string> {
     const row = await this.spaceDb.routedKysely
@@ -536,12 +527,10 @@ export class GuardianDigestHandlerService {
   }
 
   /**
-   * Ghi một sự kiện audit digest vào outbox — bản phía worker của
-   * `OutboxService.enqueueStandalone` phía API cho aggregate
-   * `guardian`: hàng chờ relay duy nhất đóng dấu + phản chiếu sang
-   * event_log. Payload của hai sự kiện audit digest không mang sẵn
-   * khoá tenantId nên tenantId luôn được phản chiếu vào payload, đúng
-   * luật phản chiếu của enqueue phía API.
+   * Ghi một sự kiện audit digest vào outbox — bản phía worker của `OutboxService.enqueueStandalone` phía API cho
+   * aggregate `guardian`: hàng chờ relay duy nhất đóng dấu + phản chiếu sang event_log. Payload của hai sự kiện audit
+   * digest không mang sẵn khoá tenantId nên tenantId luôn được phản chiếu vào payload, đúng luật phản chiếu của enqueue
+   * phía API.
    */
   private async enqueueAuditEvent(type: string, tenantId: string, payload: Record<string, unknown>): Promise<void> {
     await this.spaceDb.routedKysely.insertInto('outbox_events').values({
@@ -553,12 +542,9 @@ export class GuardianDigestHandlerService {
   }
 
   /**
-   * Seam Zalo OA cho digest phụ huynh — BẢN LOG-ONLY chuyển nguyên
-   * từ phía API: chưa có hạ tầng Zalo OA nên "gửi" chỉ là một dòng
-   * log giữ chỗ cho tích hợp thật sau này; KHÔNG có hàng đợi, KHÔNG
-   * có dispatch log, KHÔNG chạm dữ liệu học tập của con. Lỗi của
-   * seam không bao giờ được làm hỏng lượt digest (nơi gọi nuốt lỗi
-   * như phía API).
+   * Seam Zalo OA cho digest phụ huynh — BẢN LOG-ONLY chuyển nguyên từ phía API: chưa có hạ tầng Zalo OA nên "gửi" chỉ
+   * là một dòng log giữ chỗ cho tích hợp thật sau này; KHÔNG có hàng đợi, KHÔNG có dispatch log, KHÔNG chạm dữ liệu học
+   * tập của con. Lỗi của seam không bao giờ được làm hỏng lượt digest (nơi gọi nuốt lỗi như phía API).
    */
   private async sendZaloNotice(input: { guardianUserId: string; studentUserId: string; kind: string; deepLink: string }): Promise<void> {
     this.logger.log(

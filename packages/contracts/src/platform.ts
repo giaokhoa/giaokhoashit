@@ -3,7 +3,6 @@ import { uuidIdSchema } from './ids.js';
 
 /** Contract Dịch vụ nền tảng — các shape dùng chung giữa api và web. */
 
-/* ---- Search ---- */
 export const searchDocumentSchema = z.object({
   id: uuidIdSchema,
   area: z.enum(['courses', 'users', 'contentbank']),
@@ -14,7 +13,6 @@ export const searchDocumentSchema = z.object({
 });
 export type SearchDocument = z.infer<typeof searchDocumentSchema>;
 
-/* ---- Dịch vụ web ---- */
 export const externalServiceSchema = z.object({
   id: uuidIdSchema,
   name: z.string(),
@@ -25,7 +23,6 @@ export const externalServiceSchema = z.object({
 export type ExternalService = z.infer<typeof externalServiceSchema>;
 
 export const externalTokenCreatedSchema = z.object({
-  /** Token thô chỉ xuất hiện đúng một lần trong response tạo token. */
   token: z.string().length(64),
   id: uuidIdSchema,
   userId: uuidIdSchema,
@@ -33,9 +30,7 @@ export const externalTokenCreatedSchema = z.object({
 });
 export type ExternalTokenCreated = z.infer<typeof externalTokenCreatedSchema>;
 
-/* ---- Backup ---- */
 export const BACKUP_FORMAT_VERSION = 1;
-/** Phạm vi sao lưu: `course` gắn với một khoá học; `site` là sao lưu mức hệ thống (không gắn khoá, courseId = null). */
 export const BACKUP_SCOPES = ['course', 'site'] as const;
 export const backupJobSchema = z.object({
   id: uuidIdSchema,
@@ -58,7 +53,6 @@ export const backupIdMappingSchema = z.object({
 }).refine((m) => m.newId !== m.oldId, { message: 'restore must remap ids, never keep the original id' });
 export type BackupIdMapping = z.infer<typeof backupIdMappingSchema>;
 
-/* ---- Analytics ---- */
 export const insightSchema = z.object({
   id: uuidIdSchema,
   modelId: uuidIdSchema,
@@ -70,7 +64,6 @@ export const insightSchema = z.object({
 });
 export type Insight = z.infer<typeof insightSchema>;
 
-/* ---- Reports ---- */
 export const REPORT_DATASOURCES = ['enrolments', 'grades', 'completion'] as const;
 export const reportSchema = z.object({
   id: uuidIdSchema,
@@ -81,7 +74,6 @@ export const reportSchema = z.object({
 });
 export type Report = z.infer<typeof reportSchema>;
 
-/* ---- Content Bank / Kho học liệu (CB-1) ---- */
 /** Loại học liệu: đúng 5 nhóm của Điều 7 TT 09/2021 (bài giảng đa phương tiện gồm cả video). */
 export const contentBankResourceTypeSchema = z.enum(['multimedia_lecture', 'lab_guide', 'simulation', 'question_set', 'reference']);
 export type ContentBankResourceType = z.infer<typeof contentBankResourceTypeSchema>;
@@ -156,7 +148,6 @@ export const contentBankSpaceSchema = z.object({
 });
 export type ContentBankSpace = z.infer<typeof contentBankSpaceSchema>;
 
-/* ---- Payments ---- */
 export const paymentSchema = z.object({
   id: uuidIdSchema,
   accountId: uuidIdSchema,
@@ -165,18 +156,15 @@ export const paymentSchema = z.object({
   amount: z.number().int().positive(),
   currency: z.string().length(3),
   /**
-   * Vòng đời payment: `needs_review` là trạng thái chờ người xử lý khi
-   * tiền về nhưng không khớp đủ 3 điều kiện đối soát của issue #189
-   * (đúng mã thanh toán + đúng số tiền + đúng tài khoản nhận) — thiếu
-   * trạng thái này, mọi bề mặt parse qua schema sẽ từ chối payment
-   * đang chờ đối soát dù DB và API đều mang trạng thái đó hợp lệ.
+   * Vòng đời payment: `needs_review` là trạng thái chờ người xử lý khi tiền về nhưng không khớp đủ 3 điều kiện đối soát
+   * của issue #189 (đúng mã thanh toán + đúng số tiền + đúng tài khoản nhận) — thiếu trạng thái này, mọi bề mặt parse
+   * qua schema sẽ từ chối payment đang chờ đối soát dù DB và API đều mang trạng thái đó hợp lệ.
    */
   status: z.enum(['pending', 'succeeded', 'failed', 'refunded', 'needs_review']),
   gateway: z.string(),
 });
 export type Payment = z.infer<typeof paymentSchema>;
 
-/* ---- Privacy ---- */
 export const privacyRequestSchema = z.object({
   id: uuidIdSchema,
   userId: uuidIdSchema,
@@ -185,18 +173,16 @@ export const privacyRequestSchema = z.object({
 });
 export type PrivacyRequest = z.infer<typeof privacyRequestSchema>;
 
-/* ---- Request payload schemas (Zod là nguồn sự thật duy nhất cho
+/* Request payload schemas (Zod là nguồn sự thật duy nhất cho
  * validation: API kiểm chứng qua Standard Schema và form phía React
- * dùng cùng một schema, không định nghĩa bộ validation riêng) ---- */
+ * dùng cùng một schema, không định nghĩa bộ validation riêng) */
 
-/** Payload lập chỉ mục một item của một search area đã đăng ký. */
 export const searchIndexItemSchema = z.strictObject({
   area: z.string().min(1),
   itemId: uuidIdSchema,
 });
 export type SearchIndexItem = z.infer<typeof searchIndexItemSchema>;
 
-/** Payload tạo external service. */
 export const createExternalServiceSchema = z.strictObject({
   name: z.string().min(1),
   shortName: z.string().min(1),
@@ -205,11 +191,9 @@ export const createExternalServiceSchema = z.strictObject({
 });
 export type CreateExternalService = z.infer<typeof createExternalServiceSchema>;
 
-/** Payload bật/tắt external service. */
 export const setExternalServiceEnabledSchema = z.strictObject({ enabled: z.boolean() });
 export type SetExternalServiceEnabled = z.infer<typeof setExternalServiceEnabledSchema>;
 
-/** Payload tạo external token cho một user trong một service. */
 export const createExternalTokenSchema = z.strictObject({
   userId: uuidIdSchema,
   serviceId: uuidIdSchema,
@@ -218,7 +202,6 @@ export const createExternalTokenSchema = z.strictObject({
 });
 export type CreateExternalToken = z.infer<typeof createExternalTokenSchema>;
 
-/** Payload gọi một external function qua envelope thống nhất. */
 export const callExternalFunctionSchema = z.strictObject({
   token: z.string().min(1),
   functionName: z.string().min(1),
@@ -227,10 +210,9 @@ export const callExternalFunctionSchema = z.strictObject({
 export type CallExternalFunction = z.infer<typeof callExternalFunctionSchema>;
 
 /**
- * Payload tạo backup job. Phạm vi mặc định là `course` và bắt buộc có
- * `courseId`; phạm vi `site` (sao lưu mức hệ thống: category câu hỏi mức
- * site, ngân hàng câu hỏi mức site, badge mức site, sự kiện/subscription
- * mức site) thì KHÔNG được gắn khoá học.
+ * Payload tạo backup job. Phạm vi mặc định là `course` và bắt buộc có `courseId`; phạm vi `site` (sao lưu mức hệ thống:
+ * category câu hỏi mức site, ngân hàng câu hỏi mức site, badge mức site, sự kiện/subscription mức site) thì KHÔNG được
+ * gắn khoá học.
  */
 export const createBackupSchema = z.strictObject({
   courseId: uuidIdSchema.optional(),
@@ -255,7 +237,6 @@ export const restoreCourseSchema = z.strictObject({
 });
 export type RestoreCourse = z.infer<typeof restoreCourseSchema>;
 
-/** Payload chạy một model phân tích cho một khoá. */
 export const runAnalyticsModelSchema = z.strictObject({ courseId: uuidIdSchema });
 export type RunAnalyticsModel = z.infer<typeof runAnalyticsModelSchema>;
 
@@ -270,16 +251,12 @@ export const createReportSchema = z.strictObject({
 });
 export type CreateReport = z.infer<typeof createReportSchema>;
 
-/** Payload đặt lịch chạy báo cáo. */
 export const createReportScheduleSchema = z.strictObject({ cron: z.string().optional() });
 export type CreateReportSchedule = z.infer<typeof createReportScheduleSchema>;
 
-/* ---- Nhật ký sự kiện (logstore) ---- */
-
 /**
- * Bộ lọc truy vấn nhật ký sự kiện (báo cáo "ai đã làm gì"): `userId` là
- * người thực hiện (actor), `relatedUserId` là người bị tác động; `from`/`to`
- * là mốc thời gian ISO của sự kiện. Phân trang theo chuẩn chung của repo.
+ * Bộ lọc truy vấn nhật ký sự kiện (báo cáo "ai đã làm gì"): `userId` là người thực hiện (actor), `relatedUserId` là
+ * người bị tác động; `from`/`to` là mốc thời gian ISO của sự kiện. Phân trang theo chuẩn chung của repo.
  */
 export const listEventLogsQuerySchema = z.strictObject({
   userId: uuidIdSchema.optional(),
@@ -296,11 +273,9 @@ export const listEventLogsQuerySchema = z.strictObject({
 export type ListEventLogsQuery = z.infer<typeof listEventLogsQuerySchema>;
 
 /**
- * Payload tạo học liệu Kho học liệu (CB-1). `contextId` không còn bắt buộc:
- * server tự suy theo `scope` (personal → context của tác giả, org/school →
- * context hệ thống); chỉ truyền khi cần bám hành vi cũ. Metadata chương
- * trình (môn/khối/node/YCCĐ) bắt buộc khi gửi duyệt scope org/school —
- * server kiểm ở bước submit.
+ * Payload tạo học liệu Kho học liệu (CB-1). `contextId` không còn bắt buộc: server tự suy theo `scope` (personal →
+ * context của tác giả, org/school → context hệ thống); chỉ truyền khi cần bám hành vi cũ. Metadata chương trình
+ * (môn/khối/node/YCCĐ) bắt buộc khi gửi duyệt scope org/school — server kiểm ở bước submit.
  */
 export const createContentBankContentSchema = z.strictObject({
   name: z.string().min(1),
@@ -334,7 +309,6 @@ export const createContentBankContentSchema = z.strictObject({
 });
 export type CreateContentBankContent = z.infer<typeof createContentBankContentSchema>;
 
-/** Payload sửa học liệu Content Bank. */
 export const updateContentBankContentSchema = createContentBankContentSchema
   .omit({ contextId: true })
   .partial()
@@ -342,9 +316,8 @@ export const updateContentBankContentSchema = createContentBankContentSchema
 export type UpdateContentBankContent = z.infer<typeof updateContentBankContentSchema>;
 
 /**
- * Payload duyệt học liệu (tổ trưởng/quản trị): quyết định + ghi chú +
- * checklist tiêu chí Bộ (CB1-B3). Service ép: từ chối thì ghi chú (lý do)
- * là BẮT BUỘC; phê duyệt thì checklist phải đủ 4 tiêu chí đạt.
+ * Payload duyệt học liệu (tổ trưởng/quản trị): quyết định + ghi chú + checklist tiêu chí Bộ (CB1-B3). Service ép: từ
+ * chối thì ghi chú (lý do) là BẮT BUỘC; phê duyệt thì checklist phải đủ 4 tiêu chí đạt.
  */
 export const reviewContentBankContentSchema = z.strictObject({
   decision: z.enum(['approved', 'rejected']),
@@ -368,10 +341,11 @@ export const uploadContentBankFileSchema = z.strictObject({
 });
 export type UploadContentBankFile = z.infer<typeof uploadContentBankFileSchema>;
 
-/** Payload tạo tài khoản thanh toán. `config` giữ cấu hình gateway (với SePay:
- * bankBin/bankCode, bankAccountNumber, sepayApiKey, sepayBankAccountXid…) —
- * giá trị nhạy cảm trong config KHÔNG bao giờ được trả nguyên qua API đọc
- * (che ở tầng service, tiêu chí 6.4.5 của issue #189). */
+/**
+ * Payload tạo tài khoản thanh toán. `config` giữ cấu hình gateway (với SePay: bankBin/bankCode, bankAccountNumber,
+ * sepayApiKey, sepayBankAccountXid…) — giá trị nhạy cảm trong config KHÔNG bao giờ được trả nguyên qua API đọc (che ở
+ * tầng service, tiêu chí 6.4.5 của issue #189).
+ */
 export const createPaymentAccountSchema = z.strictObject({
   name: z.string().min(1),
   gateway: z.string().optional(),
@@ -398,24 +372,22 @@ export const paymentWebhookSchema = z.strictObject({
 });
 export type PaymentWebhook = z.infer<typeof paymentWebhookSchema>;
 
-/** Trạng thái vòng đời của một dòng hoàn (lát 3, issue #189):
- * `requested` (đã tạo, chờ duyệt cấp 2) → `approved` (đã duyệt, chờ
- * xác nhận chi) → `settled` (lệnh chi đã xác nhận); `requested` hoặc
- * `approved` → `rejected` (từ chối). Đảo quyền lợi của khoản thu gốc
- * chỉ xảy ra tại mốc `settled` khi cộng dồn đã `settled` đạt 100%. */
+/**
+ * Trạng thái vòng đời của một dòng hoàn (lát 3, issue #189): `requested` (đã tạo, chờ duyệt cấp 2) → `approved` (đã
+ * duyệt, chờ xác nhận chi) → `settled` (lệnh chi đã xác nhận); `requested` hoặc `approved` → `rejected` (từ chối). Đảo
+ * quyền lợi của khoản thu gốc chỉ xảy ra tại mốc `settled` khi cộng dồn đã `settled` đạt 100%.
+ */
 export const paymentRefundStatusSchema = z.enum(['requested', 'approved', 'settled', 'rejected']);
 export type PaymentRefundStatus = z.infer<typeof paymentRefundStatusSchema>;
 
-/** Payload tạo YÊU CẦU hoàn tiền (lát 3, issue #189 — thay hình thức
- * hoàn một bước trước đây): tạo một dòng hoàn ở đầu vòng đời của nó,
- * payment gốc không đổi trạng thái cho tới khi dòng hoàn được xác
- * nhận chi và cộng dồn đạt 100%. `reason` là BẮT BUỘC (vết kiểm toán
- * của khoản chi). `externalTransactionId` là mã lệnh chi DỰ KIẾN mà
- * chủ tiền sẽ dùng khi chuyển khoản ra — đây là khoá để hệ thống tự
- * đối khớp sự kiện `debit` của SePay về sau; có thể bổ sung ở bước
- * xác nhận chi nếu lúc tạo chưa biết. Cấp duyệt (một cấp hay hai cấp)
- * do hệ thống quyết từ số tiền + ngưỡng cấu hình + luật hoàn đủ,
- * client không chọn. */
+/**
+ * Payload tạo YÊU CẦU hoàn tiền (lát 3, issue #189 — thay hình thức hoàn một bước trước đây): tạo một dòng hoàn ở đầu
+ * vòng đời của nó, payment gốc không đổi trạng thái cho tới khi dòng hoàn được xác nhận chi và cộng dồn đạt 100%.
+ * `reason` là BẮT BUỘC (vết kiểm toán của khoản chi). `externalTransactionId` là mã lệnh chi DỰ KIẾN mà chủ tiền sẽ
+ * dùng khi chuyển khoản ra — đây là khoá để hệ thống tự đối khớp sự kiện `debit` của SePay về sau; có thể bổ sung ở
+ * bước xác nhận chi nếu lúc tạo chưa biết. Cấp duyệt (một cấp hay hai cấp) do hệ thống quyết từ số tiền + ngưỡng cấu
+ * hình + luật hoàn đủ, client không chọn.
+ */
 export const createRefundSchema = z.strictObject({
   amount: z.number().int().min(1),
   reason: z.string().trim().min(1).max(500),
@@ -431,23 +403,22 @@ export const rejectRefundSchema = z.strictObject({
 });
 export type RejectRefund = z.infer<typeof rejectRefundSchema>;
 
-/** Payload xác nhận chi cho một dòng hoàn đã duyệt: gắn mã lệnh chi
- * thực tế của lệnh chuyển khoản ra. Nếu dòng hoàn đã ghi mã lệnh chi
- * dự kiến lúc tạo thì payload có thể vắng — khi cả hai cùng có, hai mã
- * phải trùng nhau. Xác nhận chi là mốc `settled`: nếu lần xác nhận này
- * làm cộng dồn đã chi đạt 100% khoản thu, quyền lợi bị đảo tại đây. */
+/**
+ * Payload xác nhận chi cho một dòng hoàn đã duyệt: gắn mã lệnh chi thực tế của lệnh chuyển khoản ra. Nếu dòng hoàn đã
+ * ghi mã lệnh chi dự kiến lúc tạo thì payload có thể vắng — khi cả hai cùng có, hai mã phải trùng nhau. Xác nhận chi là
+ * mốc `settled`: nếu lần xác nhận này làm cộng dồn đã chi đạt 100% khoản thu, quyền lợi bị đảo tại đây.
+ */
 export const settleRefundSchema = z.strictObject({
   externalTransactionId: z.string().trim().min(1).max(128).optional(),
 });
 export type SettleRefund = z.infer<typeof settleRefundSchema>;
 
-/** Một dòng hoàn ở dạng API: trọn vết kiểm toán của vòng đời — người
- * tạo + lý do, cấp duyệt áp dụng + ngưỡng hiệu lực tại thời điểm tạo,
- * người duyệt/từ chối kèm mốc thời gian, và xác nhận chi (người xác
- * nhận tay hoặc sự kiện `debit` đã khớp). Mốc thời gian là chuỗi ISO;
- * trường null nghĩa là mốc đó chưa xảy ra. `entitlementReversed` cho
- * biết dòng hoàn này có phải là dòng làm cộng dồn đạt 100% và đã đảo
- * quyền lợi hay không (null khi chưa tới mốc `settled`). */
+/**
+ * Một dòng hoàn ở dạng API: trọn vết kiểm toán của vòng đời — người tạo + lý do, cấp duyệt áp dụng + ngưỡng hiệu lực
+ * tại thời điểm tạo, người duyệt/từ chối kèm mốc thời gian, và xác nhận chi (người xác nhận tay hoặc sự kiện `debit` đã
+ * khớp). Mốc thời gian là chuỗi ISO; trường null nghĩa là mốc đó chưa xảy ra. `entitlementReversed` cho biết dòng hoàn
+ * này có phải là dòng làm cộng dồn đạt 100% và đã đảo quyền lợi hay không (null khi chưa tới mốc `settled`).
+ */
 export const paymentRefundSchema = z.object({
   id: uuidIdSchema,
   paymentId: uuidIdSchema,
@@ -473,11 +444,11 @@ export const paymentRefundSchema = z.object({
 });
 export type PaymentRefund = z.infer<typeof paymentRefundSchema>;
 
-/** Quyết định xử lý tay một khoản chờ trong hàng đợi `needs_review`:
- * `matched` = khớp tay về `succeeded` (kích hoạt quyền lợi trực tiếp
- * trước nhịp lật trạng thái và phát cùng outbox `payment_succeeded`
- * như đường khớp tự động); `rejected` = bác bỏ, khoản thu chuyển
- * `failed`. */
+/**
+ * Quyết định xử lý tay một khoản chờ trong hàng đợi `needs_review`: `matched` = khớp tay về `succeeded` (kích hoạt
+ * quyền lợi trực tiếp trước nhịp lật trạng thái và phát cùng outbox `payment_succeeded` như đường khớp tự động);
+ * `rejected` = bác bỏ, khoản thu chuyển `failed`.
+ */
 export const paymentReviewDecisionSchema = z.enum(['matched', 'rejected']);
 export type PaymentReviewDecision = z.infer<typeof paymentReviewDecisionSchema>;
 
@@ -490,23 +461,23 @@ export const resolvePaymentReviewSchema = z.strictObject({
 });
 export type ResolvePaymentReview = z.infer<typeof resolvePaymentReviewSchema>;
 
-/** Mã điều kiện lệch của một khoản chờ trong hàng đợi `needs_review`,
- * suy từ đối chiếu sự kiện provider với khoản thu tại thời điểm xem:
- * `amount_mismatch` (sai số tiền), `account_mismatch` (sai tài khoản
- * nhận), `expired` (tiền về sau hạn thanh toán), `unknown_code` (sự
- * kiện tiền vào không gắn được với khoản thu nào), `unmatched_debit`
- * (sự kiện tiền ra không khớp được dòng hoàn chờ xác nhận nào). */
+/**
+ * Mã điều kiện lệch của một khoản chờ trong hàng đợi `needs_review`, suy từ đối chiếu sự kiện provider với khoản thu
+ * tại thời điểm xem: `amount_mismatch` (sai số tiền), `account_mismatch` (sai tài khoản nhận), `expired` (tiền về sau
+ * hạn thanh toán), `unknown_code` (sự kiện tiền vào không gắn được với khoản thu nào), `unmatched_debit` (sự kiện tiền
+ * ra không khớp được dòng hoàn chờ xác nhận nào).
+ */
 export const paymentReviewMismatchSchema = z.enum([
   'amount_mismatch', 'account_mismatch', 'expired', 'unknown_code', 'unmatched_debit',
 ]);
 export type PaymentReviewMismatch = z.infer<typeof paymentReviewMismatchSchema>;
 
-/** Một mục của hàng đợi `needs_review`: hoặc một KHOẢN THU đang chờ
- * (kèm sự kiện provider liên quan gần nhất làm ngữ cảnh đối soát),
- * hoặc một SỰ KIỆN provider mồ côi không gắn được với khoản thu nào.
- * `ageHours` là tuổi của khoản chờ; `overdue` đánh dấu quá hạn theo
- * khoá cấu hình `payments/reviewtargethours` của tenant chủ tiền —
- * chỉ để cảnh báo, hệ thống không tự xử lý khoản quá hạn. */
+/**
+ * Một mục của hàng đợi `needs_review`: hoặc một KHOẢN THU đang chờ (kèm sự kiện provider liên quan gần nhất làm ngữ
+ * cảnh đối soát), hoặc một SỰ KIỆN provider mồ côi không gắn được với khoản thu nào. `ageHours` là tuổi của khoản chờ;
+ * `overdue` đánh dấu quá hạn theo khoá cấu hình `payments/reviewtargethours` của tenant chủ tiền — chỉ để cảnh báo, hệ
+ * thống không tự xử lý khoản quá hạn.
+ */
 export const paymentReviewQueueItemSchema = z.object({
   kind: z.enum(['payment', 'event']),
   tenantId: uuidIdSchema,
@@ -534,21 +505,21 @@ export const paymentReviewQueueItemSchema = z.object({
 });
 export type PaymentReviewQueueItem = z.infer<typeof paymentReviewQueueItemSchema>;
 
-/** Loại gói bán qua pipeline thanh toán (lát 2, issue #189): gói trung
- * tâm (`tenant_plan` — bên hưởng là một tenant) và gói giáo viên
- * (`teacher_plan` — bên hưởng là một người dùng giáo viên). Giá của mỗi
- * gói KHÔNG nằm trong code: giá hiệu lực đọc từ cấu hình hệ thống
- * (component `payments`, khoá `tenantplanprice` / `teacherplanprice`)
- * tại thời điểm tạo khoản thu. */
+/**
+ * Loại gói bán qua pipeline thanh toán (lát 2, issue #189): gói trung tâm (`tenant_plan` — bên hưởng là một tenant) và
+ * gói giáo viên (`teacher_plan` — bên hưởng là một người dùng giáo viên). Giá của mỗi gói KHÔNG nằm trong code: giá
+ * hiệu lực đọc từ cấu hình hệ thống (component `payments`, khoá `tenantplanprice` / `teacherplanprice`) tại thời điểm
+ * tạo khoản thu.
+ */
 export const planComponentSchema = z.enum(['tenant_plan', 'teacher_plan']);
 export type PlanComponent = z.infer<typeof planComponentSchema>;
 
-/** Payload mua/nâng gói: bên gọi chỉ chọn LOẠI gói — số tiền luôn do
- * hệ thống quyết từ cấu hình giá tại thời điểm giao dịch, không nhận
- * amount từ client. `couponCode` là trường tuỳ chọn: mã coupon giảm
- * giá do quản trị platform tạo (xem `createCouponSchema`); khi có mã,
- * hệ thống kiểm tra coupon và trừ mức giảm vào giá cấu hình TRƯỚC khi
- * tạo khoản thu — client vẫn không gửi được bất kỳ con số nào. */
+/**
+ * Payload mua/nâng gói: bên gọi chỉ chọn LOẠI gói — số tiền luôn do hệ thống quyết từ cấu hình giá tại thời điểm giao
+ * dịch, không nhận amount từ client. `couponCode` là trường tuỳ chọn: mã coupon giảm giá do quản trị platform tạo (xem
+ * `createCouponSchema`); khi có mã, hệ thống kiểm tra coupon và trừ mức giảm vào giá cấu hình TRƯỚC khi tạo khoản thu —
+ * client vẫn không gửi được bất kỳ con số nào.
+ */
 export const purchasePlanSchema = z.strictObject({
   component: planComponentSchema,
   couponCode: z.string().trim().min(1).max(64).optional(),
@@ -565,15 +536,13 @@ export type CouponDiscountType = z.infer<typeof couponDiscountTypeSchema>;
 export const couponAppliesToSchema = z.enum(['tenant_plan', 'teacher_plan', 'all']);
 export type CouponAppliesTo = z.infer<typeof couponAppliesToSchema>;
 
-/** Payload tạo coupon (bề mặt quản trị platform): mọi mức giảm là dữ
- * liệu do quản trị tạo qua payload này — không có mã hay mức giảm nào
- * ghim trong code. Ràng buộc hình dạng bám đặc tả coupon của issue
- * #189: phần trăm hợp lệ 1–99 (kiểm tra chéo theo `discountType` bằng
- * superRefine dưới đây); số tiền cố định là số nguyên dương; cửa sổ
- * hiệu lực và giới hạn lượt dùng cho phép vắng (không giới hạn phía
- * đó / không giới hạn lượt). Tầng service kiểm tra lại các ràng buộc
- * này trên trạng thái gộp cuối cùng khi cập nhật (payload cập nhật
- * cho phép thiếu trường). */
+/**
+ * Payload tạo coupon (bề mặt quản trị platform): mọi mức giảm là dữ liệu do quản trị tạo qua payload này — không có mã
+ * hay mức giảm nào ghim trong code. Ràng buộc hình dạng bám đặc tả coupon của issue #189: phần trăm hợp lệ 1–99 (kiểm
+ * tra chéo theo `discountType` bằng superRefine dưới đây); số tiền cố định là số nguyên dương; cửa sổ hiệu lực và giới
+ * hạn lượt dùng cho phép vắng (không giới hạn phía đó / không giới hạn lượt). Tầng service kiểm tra lại các ràng buộc
+ * này trên trạng thái gộp cuối cùng khi cập nhật (payload cập nhật cho phép thiếu trường).
+ */
 export const createCouponSchema = z.strictObject({
   code: z.string().trim().min(1).max(64),
   discountType: couponDiscountTypeSchema,
@@ -601,10 +570,10 @@ export const createCouponSchema = z.strictObject({
 });
 export type CreateCoupon = z.infer<typeof createCouponSchema>;
 
-/** Payload cập nhật coupon: mọi trường đều tuỳ chọn; ngừng sử dụng
- * coupon bằng cách đặt `isActive` thành false (không xoá cứng). Mã
- * coupon là định danh tra cứu khi áp dụng nên không sửa được qua
- * payload này. */
+/**
+ * Payload cập nhật coupon: mọi trường đều tuỳ chọn; ngừng sử dụng coupon bằng cách đặt `isActive` thành false (không
+ * xoá cứng). Mã coupon là định danh tra cứu khi áp dụng nên không sửa được qua payload này.
+ */
 export const updateCouponSchema = z.strictObject({
   discountType: couponDiscountTypeSchema.optional(),
   discountValue: z.number().int().min(1).max(99_999_999).optional(),
@@ -635,10 +604,11 @@ export const couponSchema = z.object({
 });
 export type Coupon = z.infer<typeof couponSchema>;
 
-/** Quyền lợi gói đã kích hoạt: cửa sổ hiệu lực [startsAt, expiresAt)
- * sinh từ một payment gói thành công; `userId` chỉ có ở `teacher_plan`
- * (gói trung tâm hưởng theo `tenantId`, userId = null). Hoàn đủ tiền
- * của payment sinh ra nó thì trạng thái chuyển `suspended`. */
+/**
+ * Quyền lợi gói đã kích hoạt: cửa sổ hiệu lực [startsAt, expiresAt) sinh từ một payment gói thành công; `userId` chỉ có
+ * ở `teacher_plan` (gói trung tâm hưởng theo `tenantId`, userId = null). Hoàn đủ tiền của payment sinh ra nó thì trạng
+ * thái chuyển `suspended`.
+ */
 export const planEntitlementSchema = z.object({
   id: uuidIdSchema,
   tenantId: uuidIdSchema,
@@ -652,13 +622,11 @@ export const planEntitlementSchema = z.object({
 });
 export type PlanEntitlement = z.infer<typeof planEntitlementSchema>;
 
-/** Payload người dùng tự gửi yêu cầu privacy cho chính mình. */
 export const createPrivacyRequestSchema = z.strictObject({
   type: z.enum(['export', 'delete']),
 });
 export type CreatePrivacyRequest = z.infer<typeof createPrivacyRequestSchema>;
 
-/** Payload phê duyệt/từ chối yêu cầu privacy. */
 export const decidePrivacyRequestSchema = z.strictObject({
   decision: z.enum(['approved', 'rejected']),
 });

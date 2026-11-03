@@ -14,43 +14,27 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Ca đầu-cuối của ĐỊNH TUYẾN THEO TRUNG TÂM Ở TẦNG API (issue
- * #582): ứng dụng thật (toàn bộ chuỗi guard) chạy với hai trung
- * tâm kiểm chứng ở kho riêng dựng riêng cho đợt này — hai
- * database mới trên cùng cụm test (`lms_test_centre_a_582`,
- * `lms_test_centre_b_582`), mỗi kho có role ứng dụng riêng,
- * CONNECT của PUBLIC bị thu hồi, baseline nghiệp vụ áp bằng role
- * chủ kho; sổ đăng ký nằm ở database control plane riêng
- * (`lms_test_cp_582`) mà ứng dụng đọc qua biến
- * `CONTROL_PLANE_DATABASE_URL` đặt trước khi ứng dụng khởi động.
- * Hai tenant tương ứng được tạo bằng chính API công khai ở kho
- * chung, rồi dòng tenant (và với trung tâm A: dòng user + dòng
- * membership của giáo viên) được sao vào kho riêng tương ứng —
- * đúng trạng thái sau di trú mà đợt di trú dữ kiện (#587) sẽ tạo:
- * dữ kiện của trung tâm nằm ở kho của nó. Địa chỉ của trung tâm
- * là tên miền con mang slug (`<slug>.test.local`) theo quy ước
- * địa chỉ của hệ.
+ * Ca đầu-cuối của ĐỊNH TUYẾN THEO TRUNG TÂM Ở TẦNG API (issue #582): ứng dụng thật (toàn bộ chuỗi guard) chạy với hai
+ * trung tâm kiểm chứng ở kho riêng dựng riêng cho đợt này — hai database mới trên cùng cụm test
+ * (`lms_test_centre_a_582`, `lms_test_centre_b_582`), mỗi kho có role ứng dụng riêng, CONNECT của PUBLIC bị thu hồi,
+ * baseline nghiệp vụ áp bằng role chủ kho; sổ đăng ký nằm ở database control plane riêng (`lms_test_cp_582`) mà ứng
+ * dụng đọc qua biến `CONTROL_PLANE_DATABASE_URL` đặt trước khi ứng dụng khởi động. Hai tenant tương ứng được tạo bằng
+ * chính API công khai ở kho chung, rồi dòng tenant (và với trung tâm A: dòng user + dòng membership của giáo viên) được
+ * sao vào kho riêng tương ứng — đúng trạng thái sau di trú mà đợt di trú dữ kiện (#587) sẽ tạo: dữ kiện của trung tâm
+ * nằm ở kho của nó. Địa chỉ của trung tâm là tên miền con mang slug (`<slug>.test.local`) theo quy ước địa chỉ của hệ.
  *
  * Các ca khoá các tiêu chí nghiệm thu của issue ở phía API:
- * (1) access token của phiên thuộc trung tâm kho riêng mang
- *     claim `centre_id` bằng định danh đăng ký của trung tâm;
+ * (1) access token của phiên thuộc trung tâm kho riêng mang claim `centre_id` bằng định danh đăng ký của trung tâm;
  *     token của phiên ở kho chung không mang claim;
- * (2) token của trung tâm A mang tới địa chỉ của trung tâm B bị
- *     từ chối 401 `auth.centre_mismatch` TRƯỚC tầng dữ kiện —
- *     kiểm chứng bằng số kết nối thật vào kho B (không một kết
- *     nối nào của role kho B được mở bởi request bị từ chối);
- * (3) đăng nhập tại địa chỉ của trung tâm A đọc/ghi ở kho A:
- *     family refresh được tạo trong kho A (không tạo ở kho
- *     chung), tài khoản chỉ có ở kho chung thì đăng nhập tại địa
- *     chỉ A thất bại, và hồ sơ đọc tại địa chỉ A mang dữ kiện
- *     của kho A trong khi cùng token đọc ở địa chỉ gốc cho dữ
- *     kiện của kho chung;
- * (4) trung tâm bị đình chỉ trên sổ thì traffic nghiệp vụ tại
- *     địa chỉ của nó bị từ chối 403 `space.not_active`, dữ kiện
- *     trong kho của nó còn nguyên, và đường vận hành platform
- *     (quản trị viên site chính ở tenant platform) vẫn vào được;
- * (5) trung tâm ở kho chung giữ nguyên hành vi hiện tại ở cả địa
- *     chỉ gốc lẫn tên miền con của nó.
+ * (2) token của trung tâm A mang tới địa chỉ của trung tâm B bị từ chối 401 `auth.centre_mismatch` TRƯỚC tầng dữ kiện —
+ *     kiểm chứng bằng số kết nối thật vào kho B (không một kết nối nào của role kho B được mở bởi request bị từ chối);
+ * (3) đăng nhập tại địa chỉ của trung tâm A đọc/ghi ở kho A: family refresh được tạo trong kho A (không tạo ở kho
+ *     chung), tài khoản chỉ có ở kho chung thì đăng nhập tại địa chỉ A thất bại, và hồ sơ đọc tại địa chỉ A mang dữ
+ *     kiện của kho A trong khi cùng token đọc ở địa chỉ gốc cho dữ kiện của kho chung;
+ * (4) trung tâm bị đình chỉ trên sổ thì traffic nghiệp vụ tại địa chỉ của nó bị từ chối 403 `space.not_active`, dữ kiện
+ *     trong kho của nó còn nguyên, và đường vận hành platform (quản trị viên site chính ở tenant platform) vẫn vào
+ *     được;
+ * (5) trung tâm ở kho chung giữ nguyên hành vi hiện tại ở cả địa chỉ gốc lẫn tên miền con của nó.
  */
 const CP_DATABASE = 'lms_test_cp_582';
 const CP_ROLE = 'lms_cp_test_582';
@@ -61,11 +45,9 @@ const CENTRE_A_PASSWORD = 'centre-a-582';
 const CENTRE_B_DATABASE = 'lms_test_centre_b_582';
 const CENTRE_B_ROLE = 'lms_centre_b_582_app';
 const CENTRE_B_PASSWORD = 'centre-b-582';
-// Slug của hai trung tâm mang hậu tố ngẫu nhiên theo lượt chạy:
-// tenant tương ứng được tạo thật trong database nghiệp vụ test
-// DÙNG CHUNG của tầng e2e, nên slug cố định sẽ va chạm khi chạy
-// lại spec trên cùng một database; địa chỉ (tên miền con) và dòng
-// đăng ký đều suy ra từ slug nên tính nhất quán không đổi.
+// Slug của hai trung tâm mang hậu tố ngẫu nhiên theo lượt chạy: tenant tương ứng được tạo thật trong database nghiệp vụ
+// test DÙNG CHUNG của tầng e2e, nên slug cố định sẽ va chạm khi chạy lại spec trên cùng một database; địa chỉ (tên miền
+// con) và dòng đăng ký đều suy ra từ slug nên tính nhất quán không đổi.
 const RUN_SUFFIX = Math.random().toString(36).slice(2, 8);
 const CENTRE_A_SLUG = `trung-tam-a-${RUN_SUFFIX}`;
 const CENTRE_B_SLUG = `trung-tam-b-${RUN_SUFFIX}`;
@@ -73,12 +55,13 @@ const HOST_A = `${CENTRE_A_SLUG}.test.local`;
 const HOST_B = `${CENTRE_B_SLUG}.test.local`;
 const SHARED_SLUG = 'truong-mac-dinh';
 const HOST_SHARED = `${SHARED_SLUG}.test.local`;
-/** Dấu phân biệt ghi thẳng vào dòng user ở kho A: hồ sơ đọc qua địa chỉ A phải mang dấu này, đọc ở kho chung thì không. */
+/**
+ * Dấu phân biệt ghi thẳng vào dòng user ở kho A: hồ sơ đọc qua địa chỉ A phải mang dấu này, đọc ở kho chung thì không.
+ */
 const CENTRE_A_FIRST_NAME = 'DauAnKhoA582';
 
 const UUIDV7_SHIM = `CREATE OR REPLACE FUNCTION uuidv7() RETURNS uuid AS $$ DECLARE ts_ms bigint := (extract(epoch from clock_timestamp()) * 1000)::bigint; b bytea; BEGIN b := decode(lpad(to_hex(ts_ms), 12, '0'), 'hex') || gen_random_bytes(10); b := set_byte(b, 6, (get_byte(b, 6) & 15) | 112); b := set_byte(b, 8, (get_byte(b, 8) & 63) | 128); RETURN encode(b, 'hex')::uuid; END; $$ LANGUAGE plpgsql VOLATILE`;
 
-/** Dựng URL kết nối tới một database trên cùng cụm với database nghiệp vụ test. */
 function clusterUrl(database: string, username?: string, secret?: string): string {
   const base = new URL(process.env.DATABASE_URL!);
   base.pathname = `/${database}`;
@@ -87,7 +70,6 @@ function clusterUrl(database: string, username?: string, secret?: string): strin
   return base.toString();
 }
 
-/** Bọc một định danh Postgres trong dấu nháy kép cho các câu lệnh quản trị của ca test. */
 function quoted(identifier: string): string {
   return `"${identifier.replace(/"/g, '""')}"`;
 }
@@ -102,7 +84,6 @@ async function withClient<T>(connectionString: string, fn: (client: Client) => P
   }
 }
 
-/** Áp một file migration SQL (tách theo dấu phân đoạn của file) lên một database qua kết nối cho trước. */
 async function applySqlFile(connectionString: string, filePath: string, withUuidShim: boolean): Promise<void> {
   await withClient(connectionString, async (client) => {
     if (withUuidShim) {
@@ -120,7 +101,6 @@ async function applySqlFile(connectionString: string, filePath: string, withUuid
   });
 }
 
-/** Áp bộ migration riêng của control plane từ rỗng (đọc chính các file SQL đã sinh trong repo). */
 async function applyControlPlaneMigrations(connectionString: string): Promise<void> {
   const outDir = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'control-plane');
   const folders = readdirSync(outDir, { withFileTypes: true })
@@ -132,7 +112,6 @@ async function applyControlPlaneMigrations(connectionString: string): Promise<vo
   }
 }
 
-/** Áp baseline nghiệp vụ vào một kho riêng bằng kết nối của chính role chủ kho đó. */
 async function applyBusinessBaseline(connectionString: string): Promise<void> {
   const baseline = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre', '20261025163710_baseline', 'migration.sql');
   await applySqlFile(connectionString, baseline, true);
@@ -146,8 +125,8 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
 }
 
 /**
- * Sao một dòng (đọc từ kho chung) vào cùng bảng ở kho đích với
- * nguyên bộ cột — mô phỏng phần dữ kiện đã di trú của trung tâm.
+ * Sao một dòng (đọc từ kho chung) vào cùng bảng ở kho đích với nguyên bộ cột — mô phỏng phần dữ kiện đã di trú của
+ * trung tâm.
  */
 async function copyRow(
   sourceUrl: string,
@@ -175,7 +154,6 @@ async function copyRow(
   });
 }
 
-/** Đếm kết nối đang mở vào một database của một role trên cụm (qua pg_stat_activity ở database quản trị). */
 async function countConnections(database: string, role: string): Promise<number> {
   return withClient(clusterUrl('postgres'), async (admin) => {
     const result = await admin.query<{ count: string }>(
@@ -186,7 +164,6 @@ async function countConnections(database: string, role: string): Promise<number>
   });
 }
 
-/** Đếm family refresh của một user trong một kho bằng kết nối trực tiếp (nền platform tường minh). */
 async function countFamilies(connectionString: string, userId: string): Promise<number> {
   return withClient(connectionString, async (client) => {
     await client.query("SELECT set_config('app.platform', 'on', false)");
@@ -219,9 +196,8 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
   };
 
   beforeAll(async () => {
-    // Cấp phát control plane + hai kho riêng trên cụm test, đúng
-    // khuôn ca tích hợp của khung (issue #581): role riêng cho
-    // từng kho, CONNECT của PUBLIC bị thu hồi.
+    // Cấp phát control plane + hai kho riêng trên cụm test, đúng khuôn ca tích hợp của khung (issue #581): role riêng
+    // cho từng kho, CONNECT của PUBLIC bị thu hồi.
     await withClient(clusterUrl('postgres'), async (admin) => {
       for (const database of [CP_DATABASE, CENTRE_A_DATABASE, CENTRE_B_DATABASE]) {
         await admin.query(`DROP DATABASE IF EXISTS ${quoted(database)} WITH (FORCE)`);
@@ -246,17 +222,16 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
     await applyBusinessBaseline(clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD));
     await applyBusinessBaseline(clusterUrl(CENTRE_B_DATABASE, CENTRE_B_ROLE, CENTRE_B_PASSWORD));
 
-    // Ứng dụng phải thấy control plane và hai bí mật kho riêng
-    // ngay từ lúc khởi động (seed lúc boot ghi sổ cho hai không
-    // gian hiện hữu vào chính control plane này).
+    // Ứng dụng phải thấy control plane và hai bí mật kho riêng ngay từ lúc khởi động (seed lúc boot ghi sổ cho hai
+    // không gian hiện hữu vào chính control plane này).
     process.env.CONTROL_PLANE_DATABASE_URL = clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD);
     process.env.SPACE_TEST_A_582_URL = clusterUrl('postgres', CENTRE_A_ROLE, CENTRE_A_PASSWORD);
     process.env.SPACE_TEST_B_582_URL = clusterUrl('postgres', CENTRE_B_ROLE, CENTRE_B_PASSWORD);
 
     app = await createTestApp();
 
-    // Hai dòng đăng ký kho riêng trong sổ (seed của ứng dụng đã
-    // ghi hai dòng kho chung của Trang chính và trường mặc định).
+    // Hai dòng đăng ký kho riêng trong sổ (seed của ứng dụng đã ghi hai dòng kho chung của Trang chính và trường mặc
+    // định).
     const cpPool = new Pool({ connectionString: clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD) });
     const cpDb = createControlPlaneKysely(cpPool);
     try {
@@ -295,9 +270,8 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
 
     adminToken = (await login(app, 'admin', 'Admin123!')).accessToken;
 
-    // Hai tenant của hai trung tâm tạo bằng API công khai ở kho
-    // chung (đường hiện tại), rồi dòng tenant được sao vào kho
-    // riêng tương ứng — trạng thái sau di trú.
+    // Hai tenant của hai trung tâm tạo bằng API công khai ở kho chung (đường hiện tại), rồi dòng tenant được sao vào
+    // kho riêng tương ứng — trạng thái sau di trú.
     const createdA = (await must(
       await http(app).post('/api/v1/tenants').set(auth(adminToken)).send({
         name: 'Trung tâm A (spec 582)',
@@ -319,10 +293,8 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
     await copyRow(process.env.DATABASE_URL!, clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD), 'tenants', 'id', tenantAId);
     await copyRow(process.env.DATABASE_URL!, clusterUrl(CENTRE_B_DATABASE, CENTRE_B_ROLE, CENTRE_B_PASSWORD), 'tenants', 'id', tenantBId);
 
-    // Giáo viên là thành viên của trung tâm A: tạo ở kho chung,
-    // thêm membership bằng API, rồi sao dòng user + dòng
-    // membership vào kho A và đóng dấu phân biệt lên dòng user
-    // ở kho A.
+    // Giáo viên là thành viên của trung tâm A: tạo ở kho chung, thêm membership bằng API, rồi sao dòng user + dòng
+    // membership vào kho A và đóng dấu phân biệt lên dòng user ở kho A.
     const teacher = await createUserViaApi(app, adminToken);
     teacherId = teacher.id;
     teacherUsername = teacher.username;
@@ -352,8 +324,7 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
       await client.query('UPDATE users SET first_name = $1 WHERE id = $2', [CENTRE_A_FIRST_NAME, teacherId]);
     });
 
-    // Token của giáo viên cho tenant A qua đường chuyển tenant
-    // như người dùng thật.
+    // Token của giáo viên cho tenant A qua đường chuyển tenant như người dùng thật.
     const teacherApex = await login(app, teacherUsername, STRONG_PASSWORD);
     const switched = (await must(
       await http(app).post(`/api/v1/auth/switch-tenant/${tenantAId}`).set(auth(teacherApex.accessToken)),
@@ -361,13 +332,11 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
     )) as { accessToken: string };
     teacherTokenA = switched.accessToken;
 
-    // Một tài khoản chỉ tồn tại ở kho chung (không sao vào kho
-    // riêng nào) cho ca đăng nhập lệch kho.
+    // Một tài khoản chỉ tồn tại ở kho chung (không sao vào kho riêng nào) cho ca đăng nhập lệch kho.
     const sharedOnly = await createUserViaApi(app, adminToken);
     sharedOnlyUsername = sharedOnly.username;
 
-    // Tenant ở kho chung cho ca hồi quy: trường mặc định đã được
-    // seed cùng ứng dụng.
+    // Tenant ở kho chung cho ca hồi quy: trường mặc định đã được seed cùng ứng dụng.
     const tenantsList = (await must(
       await http(app).get('/api/v1/tenants').set(auth(adminToken)),
       'list tenants',
@@ -394,8 +363,7 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
     expect(decodeJwtPayload(teacherTokenA)['centre_id']).toBe(registryAId);
     expect(decodeJwtPayload(teacherTokenA)['tid']).toBe(tenantAId);
 
-    // Giáo viên thứ hai là thành viên của tenant ở kho chung:
-    // token chuyển tenant của họ không mang centre_id.
+    // Giáo viên thứ hai là thành viên của tenant ở kho chung: token chuyển tenant của họ không mang centre_id.
     const member = await createUserViaApi(app, adminToken);
     await must(
       await http(app).post(`/api/v1/tenants/${sharedTenantId}/members`).set(auth(adminToken)).send({ userId: member.id }),
@@ -412,8 +380,7 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
   });
 
   it('token của trung tâm A tới địa chỉ của trung tâm B bị từ chối 401 auth.centre_mismatch trước tầng dữ kiện — không một kết nối nào vào kho B', async () => {
-    // Chưa có request hợp lệ nào tới địa chỉ B trước ca này nên
-    // kho B chưa có kết nối nào của role kho B từ ứng dụng.
+    // Chưa có request hợp lệ nào tới địa chỉ B trước ca này nên kho B chưa có kết nối nào của role kho B từ ứng dụng.
     expect(await countConnections(CENTRE_B_DATABASE, CENTRE_B_ROLE)).toBe(0);
 
     const res = await http(app)
@@ -423,9 +390,8 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
 
     expect(res.status).toBe(401);
     expect((res.body as { code?: string }).code).toBe('auth.centre_mismatch');
-    // Việc từ chối xảy ra ở guard trước bước chuẩn bị: kho B vẫn
-    // không có kết nối nào — request bị từ chối không chạm được
-    // vào kho của trung tâm tại địa chỉ.
+    // Việc từ chối xảy ra ở guard trước bước chuẩn bị: kho B vẫn không có kết nối nào — request bị từ chối không chạm
+    // được vào kho của trung tâm tại địa chỉ.
     expect(await countConnections(CENTRE_B_DATABASE, CENTRE_B_ROLE)).toBe(0);
   });
 
@@ -446,8 +412,8 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
     ).toBeGreaterThanOrEqual(1);
     expect(await countFamilies(process.env.DATABASE_URL!, teacherId)).toBe(familiesInSharedBefore);
 
-    // Cùng một token, hồ sơ đọc tại địa chỉ A mang dấu của kho A;
-    // đọc ở địa chỉ gốc (kho chung) mang dữ kiện gốc ở kho chung.
+    // Cùng một token, hồ sơ đọc tại địa chỉ A mang dấu của kho A; đọc ở địa chỉ gốc (kho chung) mang dữ kiện gốc ở kho
+    // chung.
     const meAtA = await http(app).get('/api/v1/users/me').set('Host', HOST_A).set(auth(teacherTokenA));
     expect(meAtA.status).toBe(200);
     expect((meAtA.body as { firstName?: string }).firstName).toBe(CENTRE_A_FIRST_NAME);
@@ -474,8 +440,7 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
       expect(blocked.status).toBe(403);
       expect((blocked.body as { code?: string }).code).toBe('space.not_active');
 
-      // Đường vận hành platform tường minh: quản trị viên ở
-      // tenant platform không bị chặn bởi trạng thái của trung tâm.
+      // Đường vận hành platform tường minh: quản trị viên ở tenant platform không bị chặn bởi trạng thái của trung tâm.
       const operations = await http(app).get('/api/v1/users/me').set('Host', HOST_A).set(auth(adminToken));
       expect(operations.status).toBe(200);
 

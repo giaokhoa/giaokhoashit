@@ -5,12 +5,10 @@ import { createCategory, createCm, createCourse, createEnrolInstance, createSect
 import { addExamSlot, createExamDraft, createReadyQuestion, pinExam } from '../../support/exam-pin-helpers';
 
 /**
- * K1 (issue #68): wizard tạo khoá — nhân bản khoá theo bảng Re-run,
- * dùng lại nội dung từ khoá khác, Builder Outline (đổi thứ tự, nhân
- * bản tại dòng), khoá mẫu tổ/trường và gác ngày mở `open_at`.
- * Oracle nghiệp vụ: bảng sao chép Re-run trong thân issue #68 (có cấu
- * trúc/nội dung/cài đặt/chính sách điểm — KHÔNG người học/bài làm/tiến
- * độ; bản sao nháp; hạn lùi theo mốc mới).
+ * K1 (issue #68): wizard tạo khoá — nhân bản khoá theo bảng Re-run, dùng lại nội dung từ khoá khác, Builder Outline
+ * (đổi thứ tự, nhân bản tại dòng), khoá mẫu tổ/trường và gác ngày mở `open_at`. Oracle nghiệp vụ: bảng sao chép Re-run
+ * trong thân issue #68 (có cấu trúc/nội dung/cài đặt/chính sách điểm — KHÔNG người học/bài làm/tiến độ; bản sao nháp;
+ * hạn lùi theo mốc mới).
  */
 describe('K1: nhân bản khoá, outline, mẫu và ngày mở', () => {
   let app: INestApplication;
@@ -137,8 +135,8 @@ describe('K1: nhân bản khoá, outline, mẫu và ngày mở', () => {
     const sectionsWith2 = content.sections.filter((s: { modules: unknown[] }) => s.modules.length === 2);
     expect(sectionsWith2).toHaveLength(2);
 
-    // Item điểm 'mod' của module có idNumber: nhân bản trong CÙNG khoá
-    // không được vi phạm unique (courseId, idNumber) của grade_items.
+    // Item điểm 'mod' của module có idNumber: nhân bản trong CÙNG khoá không được vi phạm unique (courseId, idNumber)
+    // của grade_items.
     const modItem = await http(app).post(`/api/v1/courses/${course.id}/grade-items`).set('Authorization', `Bearer ${admin}`)
       .send({ itemName: 'Điểm mục 2', itemType: 'mod', cmId: m2.id, idNumber: 'MUC-2', gradeMax: 10 });
     expect(modItem.status).toBe(201);

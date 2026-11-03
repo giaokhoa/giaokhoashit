@@ -6,23 +6,17 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser, getFirstS
 import { addExamSlot, createExamDraft, pinExam } from '../../support/exam-pin-helpers';
 
 /**
- * ĐX-3 (issue #181): phản hồi quiz phải TỚI được học sinh ở trang xem lại.
- * API attempt view đã mang feedback theo đáp án + generalFeedback +
- * overallFeedback theo cổng review; lát này bổ sung manualComment (nhận
- * xét chấm tay) vào cùng view theo cổng review_specific_feedback.
- * Spec khoá hai phía của cổng:
- *  - cổng mở (mặc định): HS thấy đủ 4 tầng — feedback của ĐÁP ÁN ĐÃ CHỌN,
- *    lời giải chung, nhận xét chấm tay sau khi GV chấm, nhận xét tổng quát.
- *  - cổng đóng (masks = 0): cả 4 tầng đều null ở phía HS (không lộ qua
- *    API), trong khi GV (privileged) vẫn thấy — dữ liệu có thật, chính
- *    cổng review là thứ che phía học sinh.
- * Bổ sung — chốt đáp án shortanswer: trường `answers` của câu
- * shortanswer chính là tập đáp án được chấp nhận (chấm khớp chính
- * xác), nên nó phải qua cùng cổng reviewRightAnswer như `solution`.
- * Các ca shortanswer ở cuối spec khoá ba phía: đang làm và sau nộp
- * khi cổng đóng thì `answers` rỗng và toàn bộ payload không chứa
- * nguyên văn đáp án được chấp nhận; cổng mở thì `solution` hiện như
- * cũ; phía GV (privileged) không bị che.
+ * ĐX-3 (issue #181): phản hồi quiz phải TỚI được học sinh ở trang xem lại. API attempt view đã mang feedback theo đáp
+ * án + generalFeedback + overallFeedback theo cổng review; lát này bổ sung manualComment (nhận xét chấm tay) vào cùng
+ * view theo cổng review_specific_feedback. Spec khoá hai phía của cổng:
+ *  - cổng mở (mặc định): HS thấy đủ 4 tầng — feedback của ĐÁP ÁN ĐÃ CHỌN, lời giải chung, nhận xét chấm tay sau khi GV
+ *    chấm, nhận xét tổng quát.
+ *  - cổng đóng (masks = 0): cả 4 tầng đều null ở phía HS (không lộ qua API), trong khi GV (privileged) vẫn thấy — dữ
+ *    liệu có thật, chính cổng review là thứ che phía học sinh.
+ * Bổ sung — chốt đáp án shortanswer: trường `answers` của câu shortanswer chính là tập đáp án được chấp nhận (chấm khớp
+ * chính xác), nên nó phải qua cùng cổng reviewRightAnswer như `solution`. Các ca shortanswer ở cuối spec khoá ba phía:
+ * đang làm và sau nộp khi cổng đóng thì `answers` rỗng và toàn bộ payload không chứa nguyên văn đáp án được chấp nhận;
+ * cổng mở thì `solution` hiện như cũ; phía GV (privileged) không bị che.
  */
 describe('Quiz attempt feedback tới học sinh (ĐX-3, #181)', () => {
   let app: INestApplication;
@@ -57,11 +51,9 @@ describe('Quiz attempt feedback tới học sinh (ĐX-3, #181)', () => {
 
   const MANUAL_COMMENT = 'Bài viết mạch lạc, dẫn chứng tốt.';
   const BAND_TEXT = 'Nhận xét tổng quát: đã hoàn thành bài.';
-  // Câu shortanswer của fixture: API chuẩn hoá MỌI đáp án liệt kê của
-  // shortanswer đều là đáp án được chấp nhận (các biến thể chính tả
-  // của cùng một đáp án, không có dòng mồi như trắc nghiệm) — cả hai
-  // chuỗi đều không được xuất hiện trong bất kỳ đáp ứng nào phía học
-  // viên khi cổng đáp án đúng đang đóng.
+  // Câu shortanswer của fixture: API chuẩn hoá MỌI đáp án liệt kê của shortanswer đều là đáp án được chấp nhận (các
+  // biến thể chính tả của cùng một đáp án, không có dòng mồi như trắc nghiệm) — cả hai chuỗi đều không được xuất hiện
+  // trong bất kỳ đáp ứng nào phía học viên khi cổng đáp án đúng đang đóng.
   const SA_ACCEPTED = 'Hà Nội';
   const SA_VARIANT = 'hà nội';
 
@@ -183,13 +175,12 @@ describe('Quiz attempt feedback tới học sinh (ĐX-3, #181)', () => {
 
   it('guidance hiện kèm câu hỏi NGAY trong lúc làm (D-4); solution chỉ lộ theo cổng reviewRightAnswer', async () => {
     const ctx = await setup();
-    // Mask 4368 = đủ các cửa sổ sau nộp (ngay sau nộp + trong lúc mở +
-    // sau đóng) như preset 'regular' — mặc định DB của reviewRightAnswer
-    // (272) không gồm cửa sổ "ngay sau nộp" nên phải mở tường minh.
+    // Mask 4368 = đủ các cửa sổ sau nộp (ngay sau nộp + trong lúc mở + sau đóng) như preset 'regular' — mặc định DB của
+    // reviewRightAnswer (272) không gồm cửa sổ "ngay sau nộp" nên phải mở tường minh.
     const quizId = await mkQuiz(ctx, 'Đề hướng dẫn + lời giải', { reviewRightAnswer: 4368 });
 
-    // Đang làm bài: học sinh thấy guidance của cả hai câu; solution
-    // (đáp án đúng/lời giải mẫu) chưa lộ ở bất kỳ dạng nào.
+    // Đang làm bài: học sinh thấy guidance của cả hai câu; solution (đáp án đúng/lời giải mẫu) chưa lộ ở bất kỳ dạng
+    // nào.
     const start = await http(app).post(`/api/v1/exam-pins/${quizId}/attempts`).set('Authorization', `Bearer ${ctx.student}`).send({});
     expect(start.status === 200 || start.status === 201).toBe(true);
     const inProgress = start.body as AttemptViewBody;
@@ -200,8 +191,8 @@ describe('Quiz attempt feedback tới học sinh (ĐX-3, #181)', () => {
     expect(mcDoing.solution).toBeNull();
     expect(essayDoing.solution).toBeNull();
 
-    // Sau khi nộp + chấm (cổng reviewRightAnswer mặc định mở): solution
-    // của MC trỏ đúng dòng đáp án đúng; của essay là lời giải mẫu.
+    // Sau khi nộp + chấm (cổng reviewRightAnswer mặc định mở): solution của MC trỏ đúng dòng đáp án đúng; của essay là
+    // lời giải mẫu.
     const attemptId = (inProgress.attempt as { id: string }).id;
     const mc = inProgress.questions.find((q) => q.questionId === ctx.mcId)!;
     await http(app).post(`/api/v1/quiz-attempts/${attemptId}/responses`).set('Authorization', `Bearer ${ctx.student}`)
@@ -250,8 +241,8 @@ describe('Quiz attempt feedback tới học sinh (ĐX-3, #181)', () => {
     expect(essayS.manualComment).toBeNull();
     expect(studentView.overallFeedback).toBeNull();
 
-    // Dữ liệu có thật — GV (privileged) xem cùng attempt vẫn thấy đủ,
-    // chứng tỏ chính cổng review che phía học sinh chứ không phải thiếu dữ liệu.
+    // Dữ liệu có thật — GV (privileged) xem cùng attempt vẫn thấy đủ, chứng tỏ chính cổng review che phía học sinh chứ
+    // không phải thiếu dữ liệu.
     const teacherView = await getView(attemptId, admin);
     const essayT = teacherView.questions.find((q) => q.questionId === ctx.essayId)!;
     const mcT = teacherView.questions.find((q) => q.questionId === ctx.mcId)!;
@@ -273,8 +264,8 @@ describe('Quiz attempt feedback tới học sinh (ĐX-3, #181)', () => {
     expect(JSON.stringify(view)).not.toContain(SA_ACCEPTED);
     expect(JSON.stringify(view)).not.toContain(SA_VARIANT);
 
-    // Lưu một câu trả lời đoán sai rồi tải lại view: bề mặt lưu từng
-    // câu cũng trả lại toàn bộ view qua cùng một hàm dựng — vẫn sạch.
+    // Lưu một câu trả lời đoán sai rồi tải lại view: bề mặt lưu từng câu cũng trả lại toàn bộ view qua cùng một hàm
+    // dựng — vẫn sạch.
     await http(app).post(`/api/v1/quiz-attempts/${view.attempt.id}/responses`).set('Authorization', `Bearer ${ctx.student}`)
       .send({ questionAttemptId: sa.questionAttemptId, response: 'Đà Nẵng' });
     const reloaded = await getView(view.attempt.id, ctx.student);
@@ -283,8 +274,7 @@ describe('Quiz attempt feedback tới học sinh (ĐX-3, #181)', () => {
     expect(JSON.stringify(reloaded)).not.toContain(SA_ACCEPTED);
     expect(JSON.stringify(reloaded)).not.toContain(SA_VARIANT);
 
-    // GV (privileged) xem cùng lượt đang làm: answers vẫn đầy đủ —
-    // chốt chỉ che phía chủ lượt không đặc quyền.
+    // GV (privileged) xem cùng lượt đang làm: answers vẫn đầy đủ — chốt chỉ che phía chủ lượt không đặc quyền.
     const teacherView = await getView(view.attempt.id, admin);
     const saTeacher = teacherView.questions.find((q) => q.questionId === ctx.saId)!;
     expect(JSON.stringify(saTeacher.answers)).toContain(SA_ACCEPTED);
@@ -303,8 +293,8 @@ describe('Quiz attempt feedback tới học sinh (ĐX-3, #181)', () => {
 
     const view = await getView(doing.attempt.id, ctx.student);
     const sa = view.questions.find((q) => q.questionId === ctx.saId)!;
-    // Cửa sổ xem lại mở (thấy nội dung câu) nhưng cổng đáp án đúng
-    // đóng: solution null VÀ answers rỗng — không còn đường vòng.
+    // Cửa sổ xem lại mở (thấy nội dung câu) nhưng cổng đáp án đúng đóng: solution null VÀ answers rỗng — không còn
+    // đường vòng.
     expect(sa.solution).toBeNull();
     expect(sa.answers).toEqual([]);
     expect(JSON.stringify(view)).not.toContain(SA_ACCEPTED);
@@ -325,11 +315,9 @@ describe('Quiz attempt feedback tới học sinh (ĐX-3, #181)', () => {
 
     const view = await getView(doing.attempt.id, ctx.student);
     const sa = view.questions.find((q) => q.questionId === ctx.saId)!;
-    // Tính năng xem lại giữ nguyên: đáp án được chấp nhận hiện qua
-    // solution đã qua cổng. Tại cửa sổ này khía cạnh đáp án đúng đã
-    // được phép hiện nên chốt không áp dụng — answers (nếu còn) cũng
-    // chỉ chứa đúng tập đáp án đã công bố qua solution, không lộ thêm
-    // gì; phần phải khoá là hai ca cổng đóng ở trên.
+    // Tính năng xem lại giữ nguyên: đáp án được chấp nhận hiện qua solution đã qua cổng. Tại cửa sổ này khía cạnh đáp
+    // án đúng đã được phép hiện nên chốt không áp dụng — answers (nếu còn) cũng chỉ chứa đúng tập đáp án đã công bố qua
+    // solution, không lộ thêm gì; phần phải khoá là hai ca cổng đóng ở trên.
     expect(sa.solution).toEqual({ acceptedAnswers: [SA_ACCEPTED, SA_VARIANT] });
   });
 });

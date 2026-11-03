@@ -8,14 +8,11 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * K0a (issue #66) — cơ chế nạp dữ liệu chương trình chuẩn GDPT 2018.
- * Oracle: chính các file dataset đã kiểm chứng nguyên văn với văn bản
- * ban hành kèm Thông tư 32/2018/TT-BGDĐT (hồ sơ kiểm chứng của dự án:
- * Toán 314/314, Ngữ văn 238/238, 0 chênh lệch chữ) — bản sao vendor tại
- * `src/modules/curriculum/program-data/`. Spec này đối chiếu TỪNG bản
- * ghi qua API cây: vị trí trong cây (mạch → section → topic → nội dung),
- * toàn bộ YCCĐ theo thứ tự, và truy vết nguồn (source_ref chứa mã bản
- * ghi + trang) — khớp 100% mới đạt, theo đúng tiêu chí xong của issue.
+ * K0a (issue #66) — cơ chế nạp dữ liệu chương trình chuẩn GDPT 2018. Oracle: chính các file dataset đã kiểm chứng
+ * nguyên văn với văn bản ban hành kèm Thông tư 32/2018/TT-BGDĐT (hồ sơ kiểm chứng của dự án: Toán 314/314, Ngữ văn
+ * 238/238, 0 chênh lệch chữ) — bản sao vendor tại `src/modules/curriculum/program-data/`. Spec này đối chiếu TỪNG bản
+ * ghi qua API cây: vị trí trong cây (mạch → section → topic → nội dung), toàn bộ YCCĐ theo thứ tự, và truy vết nguồn
+ * (source_ref chứa mã bản ghi + trang) — khớp 100% mới đạt, theo đúng tiêu chí xong của issue.
  */
 
 /** Node của một YCCĐ dạng Tiptap doc trong dataset (doc/paragraph/text + bulletList/listItem cho ý con). */
@@ -42,13 +39,11 @@ function loadDataset(fileName: string): ProgramDataset {
 }
 
 /**
- * Text của một YCCĐ dạng doc — ORACLE trích độc lập trong spec (không
- * dùng code nạp, giữ tính độc lập của oracle): mỗi paragraph là một
- * dòng, listItem cho dòng của paragraph của nó rồi tới các dòng của
- * bulletList lồng bên trong (đệ quy); các dòng nối bằng '\n', cắt
- * khoảng trắng hai đầu — đúng semantics text canonical mà hệ lưu vào
- * `learning_outcomes.content` nay là cột jsonb lưu trực tiếp tài liệu
- * này; text canonical trích từ tài liệu bằng đúng semantics này.
+ * Text của một YCCĐ dạng doc — ORACLE trích độc lập trong spec (không dùng code nạp, giữ tính độc lập của oracle): mỗi
+ * paragraph là một dòng, listItem cho dòng của paragraph của nó rồi tới các dòng của bulletList lồng bên trong (đệ
+ * quy); các dòng nối bằng '\n', cắt khoảng trắng hai đầu — đúng semantics text canonical mà hệ lưu vào
+ * `learning_outcomes.content` nay là cột jsonb lưu trực tiếp tài liệu này; text canonical trích từ tài liệu bằng đúng
+ * semantics này.
  */
 function docOutcomeText(doc: OutcomeDoc): string {
   const lines: string[] = [];
@@ -63,7 +58,10 @@ function docOutcomeText(doc: OutcomeDoc): string {
   return lines.join('\n').trim();
 }
 
-/** Các dòng YCCĐ kỳ vọng của một bản ghi — cùng quy tắc với cơ chế nạp (outcomes[] → từng dòng, phần tử dạng doc trích text bằng docOutcomeText; rỗng + outcome_text → một dòng; cả hai rỗng → không dòng). */
+/**
+ * Các dòng YCCĐ kỳ vọng của một bản ghi — cùng quy tắc với cơ chế nạp (outcomes[] → từng dòng, phần tử dạng doc trích
+ * text bằng docOutcomeText; rỗng + outcome_text → một dòng; cả hai rỗng → không dòng).
+ */
 function expectedOutcomeTexts(r: ProgramRecord): string[] {
   if (r.outcomes.length > 0) {
     return r.outcomes.map((o) => (typeof o === 'string' ? o : docOutcomeText(o)));
@@ -132,7 +130,6 @@ describe('Nhập chương trình K0a (dataset GDPT 2018 đã kiểm chứng → 
     return out;
   }
 
-  /** Đối chiếu toàn bộ bản ghi của một dataset với cây đã nạp, từng bản ghi một. */
   async function verifyDatasetAgainstTree(slug: string, dataset: ProgramDataset): Promise<void> {
     const grades = [...new Set(dataset.records.map((r) => r.grade))].sort((a, b) => a - b);
     let lessonTotal = 0;
@@ -197,8 +194,7 @@ describe('Nhập chương trình K0a (dataset GDPT 2018 đã kiểm chứng → 
     expect(teacherStatus.status).toBe(200);
     const teacherImport = await http(app).post('/api/v1/curriculum/program-import').set(bearer(teacherToken)).send({ datasetKey: 'toan' });
     expect(teacherImport.status).toBe(403);
-    // Dataset không có trong manifest → 404 tường minh (khoá bịa —
-    // mọi khoá môn thật đều đã vào manifest từ #161).
+    // Dataset không có trong manifest → 404 tường minh (khoá bịa — mọi khoá môn thật đều đã vào manifest từ #161).
     const bogus = await http(app).post('/api/v1/curriculum/program-import').set(bearer(admin)).send({ datasetKey: 'mon-khong-ton-tai' });
     expect(bogus.status).toBe(404);
     expect(bogus.body.code).toBe('curriculum.program_dataset_not_found');

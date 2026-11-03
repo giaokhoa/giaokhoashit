@@ -21,29 +21,21 @@ import {
 } from './dto/quiz.dto';
 
 /**
- * Bề mặt `/quizzes` (soạn bài trong khoá) đã BỎ hẳn theo feat hợp
- * nhất #226: bài kiểm tra trong khoá là một PIN của thực thể Đề —
- * tạo/sửa/attempt đi qua `/exam-pins` (ExamPinsController ở
- * ExamsModule). File này chỉ còn ma trận đề và lượt làm (đường
- * `/quiz-attempts` giữ nguyên theo hồ sơ — tên kỹ thuật mod_quiz
- * không đổi).
+ * Bề mặt `/quizzes` (soạn bài trong khoá) đã BỎ hẳn theo feat hợp nhất #226: bài kiểm tra trong khoá là một PIN của
+ * thực thể Đề — tạo/sửa/attempt đi qua `/exam-pins` (ExamPinsController ở ExamsModule). File này chỉ còn ma trận đề và
+ * lượt làm (đường `/quiz-attempts` giữ nguyên theo hồ sơ — tên kỹ thuật mod_quiz không đổi).
  */
 
 @ApiTags('exam-matrices')
 @Controller({ path: 'exam-matrices', version: '1' })
 /**
- * API ma trận đề (Quiz Chặng 3): thực thể lưu trữ neo Chương trình GDPT
- * 2018, các ô YCCĐ × mức × dạng, kiểm tra khả dụng ngân hàng và sinh
- * đề từ ma trận. Đây là nền của ngân hàng ma trận trong khu vực Ngân
- * hàng hệ thống về sau.
+ * API ma trận đề (Quiz Chặng 3): thực thể lưu trữ neo Chương trình GDPT 2018, các ô YCCĐ × mức × dạng, kiểm tra khả
+ * dụng ngân hàng và sinh đề từ ma trận. Đây là nền của ngân hàng ma trận trong khu vực Ngân hàng hệ thống về sau.
  *
- * Đây là controller sở hữu duy nhất của tiền tố `/exam-matrices`
- * (issue #343): hai hành động bank neo trên một ma trận (copy, đóng
- * góp — MB-1 của issue #111) trước đây nằm ở một controller riêng
- * cùng khai tiền tố này, và handler sinh đề trước đây nằm ở
- * ExamsModule; cả ba đã chuyển về lớp này. Handler sinh đề vẫn uỷ
- * thác `ExamsService` của ExamsModule — chỉ lớp controller di
- * chuyển, tầng service không đổi.
+ * Đây là controller sở hữu duy nhất của tiền tố `/exam-matrices` (issue #343): hai hành động bank neo trên một ma trận
+ * (copy, đóng góp — MB-1 của issue #111) trước đây nằm ở một controller riêng cùng khai tiền tố này, và handler sinh đề
+ * trước đây nằm ở ExamsModule; cả ba đã chuyển về lớp này. Handler sinh đề vẫn uỷ thác `ExamsService` của ExamsModule —
+ * chỉ lớp controller di chuyển, tầng service không đổi.
  */
 export class ExamMatricesController {
   constructor(
@@ -62,12 +54,10 @@ export class ExamMatricesController {
   }
   @Get('template')
   /**
-   * GET /exam-matrices/template?subjectId&curriculumId&levelSet&scopeNodeIds —
-   * tải workbook MẪU nhập ma trận (.xlsx, lát I-1 của issue #233):
-   * hệ sinh sẵn hàng theo đơn vị kiến thức của chương trình + cột khoá
-   * "Mã ĐVK", giáo viên chỉ điền số. `scopeNodeIds` truyền dạng danh
-   * sách id phân tách bằng dấu phẩy. Route tĩnh phải đứng trước
-   * `@Get(':id')` để không bị nuốt thành id.
+   * GET /exam-matrices/template?subjectId&curriculumId&levelSet&scopeNodeIds — tải workbook MẪU nhập ma trận (.xlsx,
+   * lát I-1 của issue #233): hệ sinh sẵn hàng theo đơn vị kiến thức của chương trình + cột khoá "Mã ĐVK", giáo viên chỉ
+   * điền số. `scopeNodeIds` truyền dạng danh sách id phân tách bằng dấu phẩy. Route tĩnh phải đứng trước `@Get(':id')`
+   * để không bị nuốt thành id.
    */
   async template(@Query('subjectId') subjectId: string | undefined, @Query('curriculumId') curriculumId: string | undefined, @Query('levelSet') levelSet: string | undefined, @Query('scopeNodeIds') scopeNodeIds: string | undefined, @CurrentUser() actor: AuthenticatedUser, @Res() res: Response) {
     if (!subjectId || !uuidIdSchema.safeParse(subjectId).success || !curriculumId || !uuidIdSchema.safeParse(curriculumId).success) {
@@ -94,15 +84,12 @@ export class ExamMatricesController {
   @HttpCode(200)
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
   /**
-   * POST /exam-matrices/import/preview (multipart, trường `file`) —
-   * parse file mẫu đã điền và trả XEM TRƯỚC (lát I-1, issue #233):
-   * dự thảo ma trận + lỗi cứng định vị theo sheet/dòng/cột + cảnh báo
-   * tỉ lệ + khả dụng ngân hàng theo ô. KHÔNG ghi DB — ghi nguyên tử
-   * là lát I-2. Route tĩnh phải đứng trước `@Post(':id/cells')`.
+   * POST /exam-matrices/import/preview (multipart, trường `file`) — parse file mẫu đã điền và trả XEM TRƯỚC (lát I-1,
+   * issue #233): dự thảo ma trận + lỗi cứng định vị theo sheet/dòng/cột + cảnh báo tỉ lệ + khả dụng ngân hàng theo ô.
+   * KHÔNG ghi DB — ghi nguyên tử là lát I-2. Route tĩnh phải đứng trước `@Post(':id/cells')`.
    *
-   * Mã trả LUÔN 200 kể cả khi file sai khuôn (đây là thao tác phân
-   * tích, không tạo tài nguyên): lỗi nằm trong payload preview
-   * (`valid=false` + `errors[]`), để web hiển thị định vị từng lỗi.
+   * Mã trả LUÔN 200 kể cả khi file sai khuôn (đây là thao tác phân tích, không tạo tài nguyên): lỗi nằm trong payload
+   * preview (`valid=false` + `errors[]`), để web hiển thị định vị từng lỗi.
    */
   async importPreview(@UploadedFile() file: { buffer: Buffer } | undefined, @CurrentUser() actor: AuthenticatedUser) {
     if (!file) {
@@ -113,18 +100,13 @@ export class ExamMatricesController {
   @Post('import')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
   /**
-   * POST /exam-matrices/import (multipart, trường `file`) — GHI ma
-   * trận từ file đã điền (lát I-2, issue #233): client tải lại chính
-   * file đã xem trước; server parse lại từ đầu, chạy lại toàn bộ luật
-   * hợp lệ của bước xem trước tại thời điểm ghi rồi ghi NGUYÊN TỬ
-   * (ma trận mới + toàn bộ ô trong một transaction) vào bank ma trận
-   * cá nhân của người nhập, trạng thái draft. Trả 201 + view ma trận
-   * như `GET /exam-matrices/:id`. File không còn hợp lệ tại thời điểm
-   * ghi → 422 ProblemDetails mã `quiz.matrix_import_invalid` kèm
-   * `matrixImportIssues` định vị từng lỗi, không ghi một phần. Gửi
-   * lại cùng một nội dung (double submit/retry) trả ma trận đã có
-   * thay vì tạo bản thứ hai. Route tĩnh phải đứng trước
-   * `@Post(':id/cells')`.
+   * POST /exam-matrices/import (multipart, trường `file`) — GHI ma trận từ file đã điền (lát I-2, issue #233): client
+   * tải lại chính file đã xem trước; server parse lại từ đầu, chạy lại toàn bộ luật hợp lệ của bước xem trước tại thời
+   * điểm ghi rồi ghi NGUYÊN TỬ (ma trận mới + toàn bộ ô trong một transaction) vào bank ma trận cá nhân của người nhập,
+   * trạng thái draft. Trả 201 + view ma trận như `GET /exam-matrices/:id`. File không còn hợp lệ tại thời điểm ghi →
+   * 422 ProblemDetails mã `quiz.matrix_import_invalid` kèm `matrixImportIssues` định vị từng lỗi, không ghi một phần.
+   * Gửi lại cùng một nội dung (double submit/retry) trả ma trận đã có thay vì tạo bản thứ hai. Route tĩnh phải đứng
+   * trước `@Post(':id/cells')`.
    */
   async importCommit(@UploadedFile() file: { buffer: Buffer } | undefined, @CurrentUser() actor: AuthenticatedUser) {
     if (!file) {
@@ -148,9 +130,8 @@ export class ExamMatricesController {
   }
   @Get(':id/versions/:version')
   /**
-   * GET /exam-matrices/:id/versions/:version — nội dung nguyên vẹn
-   * của đúng một version bất biến của ma trận (cấu hình + ô tại
-   * version đó); version không tồn tại → 404.
+   * GET /exam-matrices/:id/versions/:version — nội dung nguyên vẹn của đúng một version bất biến của ma trận (cấu
+   * hình + ô tại version đó); version không tồn tại → 404.
    */
   async getVersion(@Param('id', { schema: uuidIdSchema }) id: string, @Param('version') version: string, @CurrentUser() actor: AuthenticatedUser) {
     const parsed = Number(version);
@@ -161,10 +142,8 @@ export class ExamMatricesController {
   }
   @Get(':id/generated-exams')
   /**
-   * GET /exam-matrices/:id/generated-exams — truy nguồn chiều ngược
-   * của ma trận: các version đề đã sinh từ ma trận này (kèm số
-   * version ma trận đã neo lúc sinh đề). Cổng xem như đọc chi tiết
-   * ma trận.
+   * GET /exam-matrices/:id/generated-exams — truy nguồn chiều ngược của ma trận: các version đề đã sinh từ ma trận này
+   * (kèm số version ma trận đã neo lúc sinh đề). Cổng xem như đọc chi tiết ma trận.
    */
   async generatedExams(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.quiz.listGeneratedExams(actor.id, id);
@@ -178,7 +157,8 @@ export class ExamMatricesController {
   }
   @Post(':id/withdraw')
   /**
-   * POST /exam-matrices/:id/withdraw — rút ma trận khỏi ngân hàng kèm lý do bắt buộc và truy vết người rút/thời điểm (ngang hàng rút đề/câu hỏi); đề đã sinh từ ma trận không bị ảnh hưởng.
+   * POST /exam-matrices/:id/withdraw — rút ma trận khỏi ngân hàng kèm lý do bắt buộc và truy vết người rút/thời điểm
+   * (ngang hàng rút đề/câu hỏi); đề đã sinh từ ma trận không bị ảnh hưởng.
    */
   async withdraw(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: withdrawExamMatrixSchema }) dto: WithdrawExamMatrixDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.quiz.withdrawMatrix(actor.id, id, dto);
@@ -228,21 +208,18 @@ export class ExamMatricesController {
   }
   @Post(':id/generate')
   /**
-   * POST /exam-matrices/:id/generate — sinh đề từ ma trận (một thao
-   * tác): rút một bộ câu cố định thành đề snapshot rồi ghim vào khoá.
-   * Generate hai bước (EB-2, điểm E-3) giữ nguyên URL + payload của
-   * Chặng 3 nhưng điều phối ở lớp ngân hàng đề qua `ExamsService`:
-   * matrix → exams (snapshot) → ghim vào khoá qua exam-pins. Thiếu
-   * câu ở bất kỳ ô nào trả 422 kèm chi tiết từng ô.
+   * POST /exam-matrices/:id/generate — sinh đề từ ma trận (một thao tác): rút một bộ câu cố định thành đề snapshot rồi
+   * ghim vào khoá. Generate hai bước (EB-2, điểm E-3) giữ nguyên URL + payload của Chặng 3 nhưng điều phối ở lớp ngân
+   * hàng đề qua `ExamsService`: matrix → exams (snapshot) → ghim vào khoá qua exam-pins. Thiếu câu ở bất kỳ ô nào trả
+   * 422 kèm chi tiết từng ô.
    */
   async generate(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: generateFromMatrixSchema }) dto: GenerateFromMatrixDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.exams.generateFromMatrix(actor.id, id, dto);
   }
   @Get(':id/specification')
   /**
-   * GET /exam-matrices/:id/specification — view model bản đặc tả theo
-   * Mẫu 2 CV 7991; truyền `pinId` của bài đã sinh từ ma trận này để
-   * có vị trí câu thật.
+   * GET /exam-matrices/:id/specification — view model bản đặc tả theo Mẫu 2 CV 7991; truyền `pinId` của bài đã sinh từ
+   * ma trận này để có vị trí câu thật.
    */
   async specification(@Param('id', { schema: uuidIdSchema }) id: string, @Query('pinId') pinId: string | undefined, @CurrentUser() actor: AuthenticatedUser) {
     if (pinId !== undefined && !uuidIdSchema.safeParse(pinId).success) {
@@ -266,18 +243,15 @@ export class ExamMatricesController {
     res.send(buffer);
   }
 
-  // --- Lớp BANK trên ma trận (MB-1, issue #111) ----------------------------
-  // Ba handler dưới đây trước đây nằm ở ExamMatrixBankController
-  // riêng cùng khai tiền tố `exam-matrices`; đã chuyển về lớp này để
-  // tiền tố có đúng một controller sở hữu (issue #343). Tầng service
-  // giữ nguyên: mọi handler vẫn uỷ thác `MatrixBanksService`.
+  // Ba handler dưới đây trước đây nằm ở ExamMatrixBankController riêng cùng khai tiền tố `exam-matrices`; đã chuyển về
+  // lớp này để tiền tố có đúng một controller sở hữu (issue #343). Tầng service giữ nguyên: mọi handler vẫn uỷ thác
+  // `MatrixBanksService`.
 
   @Get(':id/attribution')
   /**
-   * GET /exam-matrices/:id/attribution — dòng ghi công của ma trận
-   * theo đúng khuôn attribution của câu hỏi: nguồn đã copy, tác giả
-   * gốc, bank nguồn và hai bộ đếm dùng thật (lượt copy đi + số
-   * version đề đã sinh từ ma trận). Cổng: quyền xem trên ma trận.
+   * GET /exam-matrices/:id/attribution — dòng ghi công của ma trận theo đúng khuôn attribution của câu hỏi: nguồn đã
+   * copy, tác giả gốc, bank nguồn và hai bộ đếm dùng thật (lượt copy đi + số version đề đã sinh từ ma trận). Cổng:
+   * quyền xem trên ma trận.
    */
   async attribution(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.matrixBanks.getAttribution(actor.id, id);
@@ -285,10 +259,9 @@ export class ExamMatricesController {
 
   @Post(':id/copy')
   /**
-   * POST /exam-matrices/:id/copy — copy sâu ma trận (kèm toàn bộ ô) về
-   * bank đích; không gửi targetBankId thì về bank ma trận cá nhân của
-   * người copy. Bản copy là ma trận LÀM VIỆC (draft, không phải mẫu),
-   * derived_from_matrix_id trỏ về nguồn.
+   * POST /exam-matrices/:id/copy — copy sâu ma trận (kèm toàn bộ ô) về bank đích; không gửi targetBankId thì về bank ma
+   * trận cá nhân của người copy. Bản copy là ma trận LÀM VIỆC (draft, không phải mẫu), derived_from_matrix_id trỏ về
+   * nguồn.
    */
   async copy(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: copyExamMatrixSchema }) dto: CopyExamMatrixDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.matrixBanks.copyMatrix(actor.id, id, dto);
@@ -296,8 +269,8 @@ export class ExamMatricesController {
 
   @Post(':id/contributions')
   /**
-   * POST /exam-matrices/:id/contributions — đề xuất đóng góp ma trận
-   * ready này vào một bank ma trận dùng chung (hàng chờ duyệt QB-4).
+   * POST /exam-matrices/:id/contributions — đề xuất đóng góp ma trận ready này vào một bank ma trận dùng chung (hàng
+   * chờ duyệt QB-4).
    */
   async propose(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: createMatrixContributionSchema }) dto: CreateMatrixContributionDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.matrixBanks.proposeContribution(actor.id, id, dto);
@@ -307,30 +280,32 @@ export class ExamMatricesController {
 @ApiTags('quiz-attempts')
 @Controller({ path: 'quiz-attempts', version: '1' })
 /**
- * API một lượt làm bài: đọc đề theo trang, lưu câu trả lời, nộp bài và
- * chấm tay từng câu (ủy quyền cho question engine). Đường giữ nguyên
- * theo hồ sơ hợp nhất #226 (attempt neo pin ở tầng dữ liệu).
+ * API một lượt làm bài: đọc đề theo trang, lưu câu trả lời, nộp bài và chấm tay từng câu (ủy quyền cho question
+ * engine). Đường giữ nguyên theo hồ sơ hợp nhất #226 (attempt neo pin ở tầng dữ liệu).
  */
 export class QuizAttemptsController {
   constructor(private readonly quiz: QuizService) {}
 
   @Get(':id')
   /**
-   * GET /quiz-attempts/:id — toàn bộ lượt làm (câu theo trang, đáp án đã lưu, điểm khi đã nộp); quá hạn làm bài thì lượt bị chốt phía server.
+   * GET /quiz-attempts/:id — toàn bộ lượt làm (câu theo trang, đáp án đã lưu, điểm khi đã nộp); quá hạn làm bài thì
+   * lượt bị chốt phía server.
    */
   async get(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.quiz.getAttemptView(actor.id, id);
   }
   @Post(':id/responses')
   /**
-   * POST /quiz-attempts/:id/responses — lưu câu trả lời cho một câu (cổng subnet được kiểm lại tại đây theo IP khách thật).
+   * POST /quiz-attempts/:id/responses — lưu câu trả lời cho một câu (cổng subnet được kiểm lại tại đây theo IP khách
+   * thật).
    */
   async respond(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: submitQuizResponseSchema }) dto: SubmitQuizResponseDto, @CurrentUser() actor: AuthenticatedUser, @Req() req: Request) {
     return this.quiz.submitResponse(actor.id, id, dto, clientIpOf(req));
   }
   @Post(':id/submit')
   /**
-   * POST /quiz-attempts/:id/submit — nộp bài: engine chấm, điểm bài ghi vào sổ điểm (essay chưa chấm thì lượt ở trạng thái chờ chấm tay).
+   * POST /quiz-attempts/:id/submit — nộp bài: engine chấm, điểm bài ghi vào sổ điểm (essay chưa chấm thì lượt ở trạng
+   * thái chờ chấm tay).
    */
   async submit(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.quiz.submitAttempt(actor.id, id);
@@ -344,7 +319,8 @@ export class QuizAttemptsController {
   }
   @Post(':id/events')
   /**
-   * POST /quiz-attempts/:id/events — client báo một sự kiện giám sát (thoát fullscreen / mất focus / ngắt kết nối dài). CHỈ GHI NHẬN: không tự kết luận gian lận, không hệ quả lên lượt làm.
+   * POST /quiz-attempts/:id/events — client báo một sự kiện giám sát (thoát fullscreen / mất focus / ngắt kết nối dài).
+   * CHỈ GHI NHẬN: không tự kết luận gian lận, không hệ quả lên lượt làm.
    */
   async recordEvent(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: recordQuizAttemptEventSchema }) dto: RecordQuizAttemptEventDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.quiz.recordAttemptEvent(actor.id, id, dto);

@@ -5,10 +5,8 @@ import { compressBuffer, isCompressibleType, pickEncoding } from './compression.
 /**
  * Hồi quy nén asset tĩnh của prod-server.mjs (F-12 của rà soát #133).
  *
- * Ghim: thương lượng Accept-Encoding đúng q-value (br ưu tiên, q=0 là
- * cấm), chỉ nén loại nội dung text, và buffer nén giải nén lại được
- * nguyên bản. Nén chỉ áp ở đường tĩnh — spec này không thay smoke
- * prod-server thật ở bàn giao.
+ * Ghim: thương lượng Accept-Encoding đúng q-value (br ưu tiên, q=0 là cấm), chỉ nén loại nội dung text, và buffer nén
+ * giải nén lại được nguyên bản. Nén chỉ áp ở đường tĩnh — spec này không thay smoke prod-server thật ở bàn giao.
  */
 describe('pickEncoding', () => {
   it('không header hoặc chỉ identity → không nén', () => {

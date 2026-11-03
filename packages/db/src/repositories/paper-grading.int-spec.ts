@@ -8,31 +8,22 @@ import { buildTestDatabase, dropTestDatabase, withDatabase } from '../test-suppo
 import { PaperGradingRepository } from './paper-grading';
 
 /**
- * Spec tích hợp của repository chấm bài giấy trên Kysely (issue
- * #644).
+ * Spec tích hợp của repository chấm bài giấy trên Kysely (issue #644).
  *
- * Database trung tâm dựng từ rỗng bằng chính cầu nối migration
- * của package trên cụm PostgreSQL thật của môi trường test (biến
- * `LMS_DB_TEST_ADMIN_URL` ghi đè cụm khi cần, mặc định suy từ
- * `DATABASE_URL`). Mọi ca chạy qua repository production ở
- * `paper-grading.ts` — không mô phỏng handle.
+ * Database trung tâm dựng từ rỗng bằng chính cầu nối migration của package trên cụm PostgreSQL thật của môi trường test
+ * (biến `LMS_DB_TEST_ADMIN_URL` ghi đè cụm khi cần, mặc định suy từ `DATABASE_URL`). Mọi ca chạy qua repository
+ * production ở `paper-grading.ts` — không mô phỏng handle.
  *
  * Các tính chất chốt tại đây:
- * - Ghi/đọc jsonb nghiệp vụ (`layout`/`roster` của lô, `quality`/
- *   `readings` của phiếu) khớp hai chiều repository ↔ oracle độc
- *   lập trên cùng dữ kiện mẫu (mục `JSONColumnType` của tài liệu
- *   Kysely + thử nghiệm T-6): phía repository ghi qua helper xâu
- *   hoá + `::jsonb`, phía oracle (Kysely thô ngoài repository)
- *   đọc lại phải thấy đúng giá trị.
- * - `readings` có DEFAULT `[]` của database: insert không truyền
- *   thì nhận mảng rỗng, repository không tự điền.
- * - Patch phiếu theo T-4 với cột jsonb nullable đủ ba trạng
- *   thái: `undefined` giữ nguyên, giá trị thay mới, `null` ghi
+ * - Ghi/đọc jsonb nghiệp vụ (`layout`/`roster` của lô, `quality`/ `readings` của phiếu) khớp hai chiều repository ↔
+ *   oracle độc lập trên cùng dữ kiện mẫu (mục `JSONColumnType` của tài liệu Kysely + thử nghiệm T-6): phía repository
+ *   ghi qua helper xâu hoá + `::jsonb`, phía oracle (Kysely thô ngoài repository) đọc lại phải thấy đúng giá trị.
+ * - `readings` có DEFAULT `[]` của database: insert không truyền thì nhận mảng rỗng, repository không tự điền.
+ * - Patch phiếu theo T-4 với cột jsonb nullable đủ ba trạng thái: `undefined` giữ nguyên, giá trị thay mới, `null` ghi
  *   SQL NULL.
- * - Lọc theo trạng thái, thứ tự theo thời gian tạo và phiếu mới
- *   nhất giữ nguyên hành vi của repository cũ. Repository không
- *   có bề mặt giao dịch ở bản cũ nên bản Kysely cũng không thêm
- *   (rủi ro R-G4-3) — spec này không kiểm tra tham số tx nào.
+ * - Lọc theo trạng thái, thứ tự theo thời gian tạo và phiếu mới nhất giữ nguyên hành vi của repository cũ. Repository
+ *   không có bề mặt giao dịch ở bản cũ nên bản Kysely cũng không thêm (rủi ro R-G4-3) — spec này không kiểm tra tham số
+ *   tx nào.
  */
 
 const adminUrl =
@@ -73,7 +64,6 @@ interface Seed {
 
 let seed: Seed;
 
-/** Gieo chuỗi neo tối thiểu tenant → khoá → bank → đề → version → pin qua Kysely thô. */
 async function seedData(): Promise<Seed> {
   const tenant = await db.insertInto('tenants')
     .values({ slug: 'g644-paper', name: 'Tenant giấy G644', kind: 'centre' })

@@ -1,31 +1,29 @@
 /**
  * GradeFormula — bộ đánh giá công thức điểm AN TOÀN (parser đệ quy, KHÔNG dùng eval).
  *
- * Nguồn oracle: MoodleDocs "Grade calculations" (docs.moodle.org/en/Grade_calculations,
- * tra cứu trực tuyến 2026-10-23): công thức bắt đầu bằng dấu `=`, tham chiếu một grade item
- * bằng idNumber của nó đặt trong ngoặc vuông kép — ví dụ `[[Quiz1]]` — các phép toán số học
- * `+ - * /`, dấu ngoặc, và các hàm `sum`, `average`, `min`, `max` với đối số tách bằng dấu phẩy.
- * Ví dụ trong tài liệu: `=average([[item1]], [[item2]])`,
- * `=sum([[item1]]*0.3, [[item2]]*0.6, [[item3]]*0.1)`, `=max([[A]], [[B]], 100)`.
+ * Nguồn oracle: MoodleDocs "Grade calculations" (docs.moodle.org/en/Grade_calculations, tra cứu trực tuyến 2026-10-23):
+ * công thức bắt đầu bằng dấu `=`, tham chiếu một grade item bằng idNumber của nó đặt trong ngoặc vuông kép — ví dụ
+ * `[[Quiz1]]` — các phép toán số học `+ - * /`, dấu ngoặc, và các hàm `sum`, `average`, `min`, `max` với đối số tách
+ * bằng dấu phẩy. Ví dụ trong tài liệu: `=average([[item1]], [[item2]])`, `=sum([[item1]]*0.3, [[item2]]*0.6,
+ * [[item3]]*0.1)`, `=max([[A]], [[B]], 100)`.
  *
  * Ngữ nghĩa đã chốt cho hệ này (ghi rõ vì Moodle không định nghĩa hết trong một trang):
  *  - Chia cho 0 cho kết quả null (không có điểm) thay vì lỗi/Infinity — khớp yêu cầu nghiệp vụ.
- *  - Điểm trống (null) truyền qua phép toán hai ngôi thành null; riêng các hàm
- *    sum/average/min/max BỎ QUA đối số trống, và chỉ cho null khi mọi đối số đều trống.
- *  - power/mod/round truyền null như phép toán hai ngôi: một đối số trống là cả hàm cho null.
- *    mod có mẫu số 0 cho null (cùng luật chia cho 0); mod giữ phần dư theo dấu của số bị chia
- *    (ngữ nghĩa fmod — giữ phần thập phân, ví dụ mod(10.5, 3) = 1.5). power cho kết quả NaN
- *    (cơ số âm, số mũ phân số) thì cho null thay vì lan truyền NaN.
- *  - round dùng ngữ nghĩa PHP của Moodle: làm tròn nửa ra xa số 0 (round(2.5) = 3,
- *    round(-2.5) = -3), tham số thứ hai là số chữ số thập phân (mặc định 0).
- *  - if(điều kiện, đúng, sai) đánh giá LƯỜI: điều kiện trống → null; điều kiện khác 0 → nhánh
- *    thứ hai, bằng 0 → nhánh thứ ba; nhánh không được chọn không được đánh giá.
- *  - Toán tử so sánh (>, <, >=, <=, ==, !=) cho 1/0, là tầng ưu tiên thấp nhất và không
- *    chuỗi được (a > b > c là lỗi cú pháp); một vế trống → null. Đây là cách viết điều kiện
- *    chuẩn cho if theo ví dụ của MoodleDocs: `=if([[midtermexam]]>=5, [[midtermexam]]+[[lab]], 0)`.
- *  - Các hàm Moodle ngoài tập lõi của sổ điểm (sin/cos/sqrt/ceil/floor/ln/log/exp… theo
- *    MoodleDocs là "many other mathematical functions" của engine tính toán dùng chung)
- *    vẫn bị từ chối ngay lúc phân tích cú pháp bằng lỗi rõ ràng — không âm thầm tính sai.
+ *  - Điểm trống (null) truyền qua phép toán hai ngôi thành null; riêng các hàm sum/average/min/max BỎ QUA đối số trống,
+ *    và chỉ cho null khi mọi đối số đều trống.
+ *  - power/mod/round truyền null như phép toán hai ngôi: một đối số trống là cả hàm cho null. mod có mẫu số 0 cho null
+ *    (cùng luật chia cho 0); mod giữ phần dư theo dấu của số bị chia (ngữ nghĩa fmod — giữ phần thập phân, ví dụ
+ *    mod(10.5, 3) = 1.5). power cho kết quả NaN (cơ số âm, số mũ phân số) thì cho null thay vì lan truyền NaN.
+ *  - round dùng ngữ nghĩa PHP của Moodle: làm tròn nửa ra xa số 0 (round(2.5) = 3, round(-2.5) = -3), tham số thứ hai
+ *    là số chữ số thập phân (mặc định 0).
+ *  - if(điều kiện, đúng, sai) đánh giá LƯỜI: điều kiện trống → null; điều kiện khác 0 → nhánh thứ hai, bằng 0 → nhánh
+ *    thứ ba; nhánh không được chọn không được đánh giá.
+ *  - Toán tử so sánh (>, <, >=, <=, ==, !=) cho 1/0, là tầng ưu tiên thấp nhất và không chuỗi được (a > b > c là lỗi cú
+ *    pháp); một vế trống → null. Đây là cách viết điều kiện chuẩn cho if theo ví dụ của MoodleDocs:
+ *    `=if([[midtermexam]]>=5, [[midtermexam]]+[[lab]], 0)`.
+ *  - Các hàm Moodle ngoài tập lõi của sổ điểm (sin/cos/sqrt/ceil/floor/ln/log/exp… theo MoodleDocs là "many other
+ *    mathematical functions" của engine tính toán dùng chung) vẫn bị từ chối ngay lúc phân tích cú pháp bằng lỗi rõ
+ *    ràng — không âm thầm tính sai.
  */
 
 /** Lỗi công thức: `reason` phân biệt cú pháp sai, hàm lạ và tham chiếu vòng để tầng service ánh xạ sang mã lỗi i18n. */
@@ -39,7 +37,6 @@ export class GradeFormulaError extends Error {
   }
 }
 
-/** Các hàm được hỗ trợ trong công thức tính điểm (đúng tập hàm lõi của tài liệu Moodle được yêu cầu). */
 export const FORMULA_FUNCTIONS = ['sum', 'average', 'min', 'max', 'power', 'round', 'mod', 'pi', 'if'] as const;
 export type FormulaFunction = (typeof FORMULA_FUNCTIONS)[number];
 
@@ -60,7 +57,6 @@ const FUNCTION_ARITY: Record<FormulaFunction, readonly [number, number]> = {
 export type ComparisonOp = '>' | '<' | '>=' | '<=' | '==' | '!=';
 const COMPARISON_OPS: readonly string[] = ['>', '<', '>=', '<=', '==', '!='];
 
-/** Nút cây cú pháp của công thức điểm. */
 export type FormulaNode =
   | { kind: 'number'; value: number }
   | { kind: 'reference'; idNumber: string }
@@ -76,8 +72,8 @@ type Token =
   | { type: 'op'; value: string };
 
 /**
- * Token hoá công thức: số, tham chiếu `[[idNumber]]`, tên hàm và toán tử/ngoặc/dấu phẩy.
- * Ném GradeFormulaError('syntax') khi gặp ký tự lạ hoặc tham chiếu không đóng ngoặc.
+ * Token hoá công thức: số, tham chiếu `[[idNumber]]`, tên hàm và toán tử/ngoặc/dấu phẩy. Ném
+ * GradeFormulaError('syntax') khi gặp ký tự lạ hoặc tham chiếu không đóng ngoặc.
  */
 function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
@@ -134,11 +130,10 @@ function tokenize(input: string): Token[] {
 }
 
 /**
- * Phân tích công thức (có hoặc không có dấu `=` ở đầu) thành cây cú pháp bằng parser đệ quy:
- * comparison → additive (comparisonOp additive)? → term ((+|-) term)* → factor ((*|/) factor)*
- * → unary → primary. So sánh không chuỗi được: sau một phép so sánh, token so sánh thứ hai
- * sẽ thành token thừa và bị từ chối.
- * Hàm lạ ném GradeFormulaError('unknown_function'); cú pháp sai ném ('syntax').
+ * Phân tích công thức (có hoặc không có dấu `=` ở đầu) thành cây cú pháp bằng parser đệ quy: comparison → additive
+ * (comparisonOp additive)? → term ((+|-) term)* → factor ((*|/) factor)* → unary → primary. So sánh không chuỗi được:
+ * sau một phép so sánh, token so sánh thứ hai sẽ thành token thừa và bị từ chối. Hàm lạ ném
+ * GradeFormulaError('unknown_function'); cú pháp sai ném ('syntax').
  */
 export function parseGradeFormula(formula: string): FormulaNode {
   const body = formula.trim().startsWith('=') ? formula.trim().slice(1) : formula;
@@ -247,9 +242,8 @@ export function formulaReferences(node: FormulaNode): string[] {
 }
 
 /**
- * Làm tròn theo ngữ nghĩa PHP (nửa ra xa số 0) như Moodle: round(2.5) = 3, round(-2.5) = -3.
- * toPrecision(15) khử nhiễu nhị phân kiểu 2.675 * 100 = 267.49999… trước khi làm tròn,
- * giống cách PHP tự sửa ở độ chính xác hiển thị của nó.
+ * Làm tròn theo ngữ nghĩa PHP (nửa ra xa số 0) như Moodle: round(2.5) = 3, round(-2.5) = -3. toPrecision(15) khử nhiễu
+ * nhị phân kiểu 2.675 * 100 = 267.49999… trước khi làm tròn, giống cách PHP tự sửa ở độ chính xác hiển thị của nó.
  */
 function roundHalfAwayFromZero(value: number, digits: number): number {
   const factor = 10 ** digits;
@@ -258,9 +252,8 @@ function roundHalfAwayFromZero(value: number, digits: number): number {
 }
 
 /**
- * Đánh giá cây cú pháp với hàm tra điểm theo idNumber (null = chưa có điểm).
- * Chia cho 0 → null; phép toán hai ngôi/so sánh có toán hạng null → null;
- * hàm tổng hợp bỏ qua đối số null; power/mod/round truyền null; if đánh giá lười.
+ * Đánh giá cây cú pháp với hàm tra điểm theo idNumber (null = chưa có điểm). Chia cho 0 → null; phép toán hai ngôi/so
+ * sánh có toán hạng null → null; hàm tổng hợp bỏ qua đối số null; power/mod/round truyền null; if đánh giá lười.
  */
 export function evaluateGradeFormula(node: FormulaNode, resolve: (idNumber: string) => number | null): number | null {
   switch (node.kind) {

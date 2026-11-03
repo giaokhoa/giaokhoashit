@@ -1,11 +1,3 @@
-/**
- * Cột xem trước như học sinh của màn soạn câu hỏi (tách cấu trúc
- * từ `pages/question-editor.tsx` theo đợt A của issue #223): dựng
- * bản xem trực tiếp từ trạng thái form đang soạn (`StudentPreview`)
- * và hàm trích đoạn nội dung (`formExcerpt`) mà trang dùng làm
- * nhãn hiển thị của câu hỏi. Chỉ trình bày từ dữ liệu được truyền
- * qua props, không gọi API.
- */
 import type { StimulusView } from '@lms/contracts';
 import { RichTextView, splitMultipleChoiceDocument, splitTrueFalseDocument } from '@lms/editor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@lms/ui/components/card';
@@ -15,22 +7,6 @@ import { plainText } from '#features/questions/utils/shared';
 import { docHasContent, type Doc, type QuestionEditorFormState } from '../types/form-model';
 import { numberingLabel } from './rich-fields';
 
-// ---------------------------------------------------------------------------
-// Xem trước như học sinh
-// ---------------------------------------------------------------------------
-
-/**
- * Cột xem trước TRỰC TIẾP như học sinh sẽ thấy câu hỏi: ngữ liệu (nếu
- * gắn), thân câu, khối Hướng dẫn (guidance hiện kèm câu hỏi trong lúc
- * làm — điểm quyết D-4) và vùng trả lời tĩnh theo loại câu. Với
- * multichoice, bản xem trước dựng từ tài liệu thống nhất ĐÃ TÁCH
- * (cùng hàm split với đường lưu) nên thứ tự/đánh số lựa chọn khớp
- * đúng thứ tự đáp án khi lưu; đáp án đúng không lộ ở bề mặt này.
- * Riêng tự luận có thêm khối Lời giải mẫu ở cuối — đó là phần giáo
- * viên đối chiếu khi soạn (học sinh chỉ thấy ở màn xem lại sau khi
- * nộp, theo cổng xem lại của lần ghim). Phản hồi sau làm bài không
- * thuộc bề mặt này.
- */
 export function StudentPreview({ form, stimulus }: { form: QuestionEditorFormState; stimulus: StimulusView | null }) {
   const { t } = useTranslation('app');
   const mcSplit = form.qtype === 'multichoice' ? splitMultipleChoiceDocument(form.mcDocument) : null;
@@ -118,17 +94,6 @@ export function StudentPreview({ form, stimulus }: { form: QuestionEditorFormSta
   );
 }
 
-/**
- * Trích đoạn nội dung của form đang soạn — nhãn hiển thị của câu hỏi
- * ở các bề mặt cần nhãn (tiêu đề màn sửa) vì câu hỏi không còn trường
- * tên (quyết 11:28 ngày 26/10/2026). Nguồn trích đoạn theo loại:
- * multichoice lấy phần thân câu của tài liệu thống nhất đã tách,
- * truefalse lấy phần thân chung của tài liệu TF-A đã tách, hai loại
- * còn lại lấy thân câu.
- *
- * @param form - Trạng thái form hiện tại.
- * @returns Chuỗi thuần tối đa 80 ký tự đầu của nội dung câu hỏi.
- */
 export function formExcerpt(form: QuestionEditorFormState): string {
   if (form.qtype === 'multichoice') {
     const { question } = splitMultipleChoiceDocument(form.mcDocument);

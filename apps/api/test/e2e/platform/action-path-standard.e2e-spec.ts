@@ -4,28 +4,21 @@ import { adminToken, createTestApp, createUserViaApi, http, uniqueName } from '.
 import { createCategory, createCm, createCourse, createSection } from '../../support/course-enrolment-helpers';
 
 /**
- * Lưới an toàn cho việc áp danh sách hành động đóng toàn hệ (issue
- * #345: giai đoạn 1 các bề mặt ngoài module exams + giai đoạn 2 phần
- * `board-*` của module exams).
+ * Lưới an toàn cho việc áp danh sách hành động đóng toàn hệ (issue #345: giai đoạn 1 các bề mặt ngoài module exams +
+ * giai đoạn 2 phần `board-*` của module exams).
  *
  * Các khẳng định chính còn lại ở spec này (hành vi qua HTTP):
- * - Hai bảng route tĩnh của các bề mặt đổi tên (16 cặp của giai đoạn 1
- *   và 16 cặp của giai đoạn 2) nay được ghim ở spec hợp đồng bảng
- *   route tại tầng integration:
- *   `test/integration/platform/route-table-contract.int-spec.ts`.
- *   Hành vi alias của giai đoạn 2 (đường cũ vẫn duyệt cấp 2, kèm
- *   header sắp bỏ) do flow S4 của đóng góp khoá riêng, không dựng lại
- *   ở spec này.
- * - Hành vi alias: path cũ vẫn tới được đúng handler (kết quả như
- *   canonical), response qua alias mang header Deprecation/Sunset và
- *   mỗi lượt gọi alias sinh log có cấu trúc `deprecated_route_alias`;
- *   path canonical không mang header đó. Log alias là căn cứ của điều
- *   kiện gỡ alias (0 lượt gọi trong 14 ngày), nên spec kiểm cả nội
- *   dung bản ghi log, không chỉ kiểm header.
- * - Hai đích xuất file: định dạng là dữ liệu yêu cầu (`format` qua
- *   tham số truy vấn) tại path đích không còn hậu tố file; định dạng
- *   không hỗ trợ bị từ chối 400 với mã lỗi ổn định; nội dung file xuất
- *   qua canonical và qua alias là một.
+ * - Hai bảng route tĩnh của các bề mặt đổi tên (16 cặp của giai đoạn 1 và 16 cặp của giai đoạn 2) nay được ghim ở spec
+ *   hợp đồng bảng route tại tầng integration: `test/integration/platform/route-table-contract.int-spec.ts`. Hành vi
+ *   alias của giai đoạn 2 (đường cũ vẫn duyệt cấp 2, kèm header sắp bỏ) do flow S4 của đóng góp khoá riêng, không dựng
+ *   lại ở spec này.
+ * - Hành vi alias: path cũ vẫn tới được đúng handler (kết quả như canonical), response qua alias mang header
+ *   Deprecation/Sunset và mỗi lượt gọi alias sinh log có cấu trúc `deprecated_route_alias`; path canonical không mang
+ *   header đó. Log alias là căn cứ của điều kiện gỡ alias (0 lượt gọi trong 14 ngày), nên spec kiểm cả nội dung bản ghi
+ *   log, không chỉ kiểm header.
+ * - Hai đích xuất file: định dạng là dữ liệu yêu cầu (`format` qua tham số truy vấn) tại path đích không còn hậu tố
+ *   file; định dạng không hỗ trợ bị từ chối 400 với mã lỗi ổn định; nội dung file xuất qua canonical và qua alias là
+ *   một.
  */
 describe('Chuẩn đường dẫn action (issue #345)', () => {
   let app: INestApplication;
@@ -64,8 +57,7 @@ describe('Chuẩn đường dẫn action (issue #345)', () => {
     const suspended = await http(app).post(`/api/v1/users/${user.id}/suspend`).set('Authorization', `Bearer ${admin}`);
     expect(suspended.status).toBeLessThan(300);
 
-    // Bắt đầu theo dõi log cảnh báo sau khi dựng xong, để các bản ghi
-    // bắt được chỉ đến từ các lượt gọi alias dưới đây.
+    // Bắt đầu theo dõi log cảnh báo sau khi dựng xong, để các bản ghi bắt được chỉ đến từ các lượt gọi alias dưới đây.
     const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
 
     // Alias nhân bản badge: vẫn tạo bản sao như canonical, kèm header sắp bỏ.
@@ -118,8 +110,8 @@ describe('Chuẩn đường dẫn action (issue #345)', () => {
     expect(canonicalReactivate.body.suspended).toBe(false);
     expect(canonicalReactivate.headers['deprecation']).toBeUndefined();
 
-    // Trong các log cảnh báo đã ghi phải có bản ghi JSON của sự kiện
-    // deprecated_route_alias cho từng alias đã gọi, trỏ đúng canonical.
+    // Trong các log cảnh báo đã ghi phải có bản ghi JSON của sự kiện deprecated_route_alias cho từng alias đã gọi, trỏ
+    // đúng canonical.
     const aliasLogs = warn.mock.calls
       .map((call) => String(call[0]))
       .flatMap((message) => {
@@ -165,8 +157,8 @@ describe('Chuẩn đường dẫn action (issue #345)', () => {
     expect(badFormat.status).toBe(400);
     expect((badFormat.body as { code?: string }).code).toBe('calendar.export_format_unsupported');
 
-    // Báo cáo tiến độ: alias và canonical cho cùng một kết quả (nội
-    // dung file xuất không đổi), chỉ khác header sắp bỏ ở alias.
+    // Báo cáo tiến độ: alias và canonical cho cùng một kết quả (nội dung file xuất không đổi), chỉ khác header sắp bỏ ở
+    // alias.
     const aliasCsv = await http(app).get(`/api/v1/courses/${course.id}/progress/report.csv`).set('Authorization', `Bearer ${admin}`);
     const canonicalCsv = await http(app).get(`/api/v1/courses/${course.id}/progress/reports?format=csv`).set('Authorization', `Bearer ${admin}`);
     expect(aliasCsv.status).toBe(canonicalCsv.status);

@@ -6,14 +6,11 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Curriculum GDPT 2018 — Chặng 1 của issue #20 (port từ giaokhoa).
- * Oracle: mô hình giaokhoa đã kiểm chứng tận schema
- * (packages/database/src/schema/curriculum.ts): subjects (slug duy nhất) →
- * curricula (duy nhất theo môn + khối 1–12) → curriculum_nodes (cây, khoá
- * ngoại ghép giữ node con trong cùng chương trình) → learning_outcomes.
- * Phần LMS bổ sung: môn neo context + capability curriculum:view|manage
- * qua PermissionEvaluator (mẫu ngân hàng câu hỏi/stimulus), node có kind
- * (strand = mạch nội dung) và thời lượng/% thời lượng cho số hoá GDPT 2018.
+ * Curriculum GDPT 2018 — Chặng 1 của issue #20 (port từ giaokhoa). Oracle: mô hình giaokhoa đã kiểm chứng tận schema
+ * (packages/database/src/schema/curriculum.ts): subjects (slug duy nhất) → curricula (duy nhất theo môn + khối 1–12) →
+ * curriculum_nodes (cây, khoá ngoại ghép giữ node con trong cùng chương trình) → learning_outcomes. Phần LMS bổ sung:
+ * môn neo context + capability curriculum:view|manage qua PermissionEvaluator (mẫu ngân hàng câu hỏi/stimulus), node có
+ * kind (strand = mạch nội dung) và thời lượng/% thời lượng cho số hoá GDPT 2018.
  */
 
 interface NodeView {
@@ -172,8 +169,8 @@ describe('Luồng chương trình (môn học → chương trình → cây node 
   });
 
   it('cổng đọc và ghi theo năng lực tại ngữ cảnh môn học', async () => {
-    // Kiểm tra thẳng qua evaluator API: user thường không có cả view lẫn manage;
-    // editingteacher được view theo archetype nhưng không có manage.
+    // Kiểm tra thẳng qua evaluator API: user thường không có cả view lẫn manage; editingteacher được view theo
+    // archetype nhưng không có manage.
     expect(await hasCapability(app, admin, plainId, 'curriculum:view', systemCtxId)).toBe(false);
     expect(await hasCapability(app, admin, plainId, 'curriculum:manage', systemCtxId)).toBe(false);
     expect(await hasCapability(app, admin, teacherId, 'curriculum:view', systemCtxId)).toBe(true);

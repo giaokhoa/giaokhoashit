@@ -16,10 +16,9 @@ import { addExamSlot, createExamDraft, pinExam } from '../../support/exam-pin-he
 import { createGradeItem, setGrade } from '../../support/assessment-helpers';
 
 /**
- * DASH1 — Dashboard việc cần làm (issue #121, Đợt 6): một endpoint tổng
- * hợp cho khối đầu dashboard. Oracle: issue #121 (việc sắp đến hạn 7
- * ngày; điểm mới CHỈ đã công bố theo cổng PH-0; hàng đợi chấm theo khoá;
- * thẻ khoá màu/biệt danh chỉ chủ nhân thấy) + hồ sơ lộ trình dòng DASH1.
+ * DASH1 — Dashboard việc cần làm (issue #121, Đợt 6): một endpoint tổng hợp cho khối đầu dashboard. Oracle: issue #121
+ * (việc sắp đến hạn 7 ngày; điểm mới CHỈ đã công bố theo cổng PH-0; hàng đợi chấm theo khoá; thẻ khoá màu/biệt danh chỉ
+ * chủ nhân thấy) + hồ sơ lộ trình dòng DASH1.
  */
 describe('DASH1: dashboard việc cần làm (issue #121)', () => {
   let app: INestApplication;
@@ -178,14 +177,14 @@ describe('DASH1: dashboard việc cần làm (issue #121)', () => {
     await setGrade(app, ctx.teacher, autoItem.id, ctx.student.id, 7, 'Tốt');
 
     const second = await overview(ctx.studentToken);
-    // Item auto đã công bố (auto) → hiện; item manual chưa công bố → KHÔNG
-    // lọt dưới bất kỳ hình thức nào (kiểm cả thân JSON thô).
+    // Item auto đã công bố (auto) → hiện; item manual chưa công bố → KHÔNG lọt dưới bất kỳ hình thức nào (kiểm cả thân
+    // JSON thô).
     expect(second.newResults.map((r) => r.itemId)).toEqual([autoItem.id]);
     expect(JSON.stringify(second)).not.toContain(manualItem.id);
     expect(JSON.stringify(second)).not.toContain('Vẫn chưa công bố');
 
-    // GV công bố item manual → điểm hiện tại lần xem sau, dù điểm chấm
-    // TRƯỚC thời điểm công bố (thời điểm hiệu lực = lúc công bố).
+    // GV công bố item manual → điểm hiện tại lần xem sau, dù điểm chấm TRƯỚC thời điểm công bố (thời điểm hiệu lực =
+    // lúc công bố).
     const publish = await http(app).post(`/api/v1/grade-items/${manualItem.id}/publish`)
       .set('Authorization', `Bearer ${ctx.teacher}`).send({});
     expect([200, 201]).toContain(publish.status);
@@ -240,8 +239,8 @@ describe('DASH1: dashboard việc cần làm (issue #121)', () => {
     const quizA = await createQuizWithMc(ctx, { name: 'Quiz giấy A' });
     const quizB = await createQuizWithMc(ctx, { name: 'Quiz giấy B' });
 
-    // Chèn thẳng phiếu quét vào DB (đường tắt fixture như các spec CAM-0
-    // vẫn dùng pg Client): file_id/uploaded_by là uuid không FK.
+    // Chèn thẳng phiếu quét vào DB (đường tắt fixture như các spec CAM-0 vẫn dùng pg Client): file_id/uploaded_by là
+    // uuid không FK.
     const uploader = ctx.student.id;
     const insertScan = async (quizId: string, status: string, createdAt: string) => {
       await pg.query(
@@ -264,8 +263,8 @@ describe('DASH1: dashboard việc cần làm (issue #121)', () => {
 
     let view = await overview(ctx.teacher);
     let queue = view.gradingQueue.find((q) => q.courseId === ctx.course.id);
-    // 3 phiếu chờ, tách bạch khỏi bài nộp/lượt quiz; đích deep-link là
-    // quiz A (phiếu chờ lâu nhất); mốc chờ lâu nhất lấy từ phiếu giấy.
+    // 3 phiếu chờ, tách bạch khỏi bài nộp/lượt quiz; đích deep-link là quiz A (phiếu chờ lâu nhất); mốc chờ lâu nhất
+    // lấy từ phiếu giấy.
     expect(queue).toMatchObject({
       pendingCount: 3, assignmentPending: 0, quizPending: 0,
       paperPending: 3, paperPinId: quizA.id,
@@ -279,8 +278,8 @@ describe('DASH1: dashboard việc cần làm (issue #121)', () => {
     const otherView = await overview(otherCtx.teacher);
     expect(otherView.gradingQueue.some((q) => q.courseId === ctx.course.id)).toBe(false);
 
-    // Xử lý hết phiếu chờ (chuyển sang recorded) → đếm về 0, khoá biến
-    // mất khỏi hàng đợi vì không còn việc chờ nào khác.
+    // Xử lý hết phiếu chờ (chuyển sang recorded) → đếm về 0, khoá biến mất khỏi hàng đợi vì không còn việc chờ nào
+    // khác.
     await pg.query(
       `UPDATE exam_scans SET status = 'recorded'
        WHERE exam_pin_id = ANY($1) AND status IN ('needs_review', 'needs_identity')`,

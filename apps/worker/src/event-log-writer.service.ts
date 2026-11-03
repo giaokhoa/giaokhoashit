@@ -4,12 +4,10 @@ import { sql, type CentreDB } from '@lms/db';
 import { SpaceDatabaseService } from './db/routing/space-database.service';
 
 /**
- * Hình dáng row outbox mà writer phản chiếu — khai tay đúng các cột
- * writer đọc (trước đây suy từ định nghĩa bảng bộ máy cũ dùng chung
- * `@lms/db`; bảng bộ máy cũ bị xoá ở hạng mục gỡ bộ máy cũ nên kiểu phải
- * sống độc lập với nó). `payload` thu hẹp về record vì writer chỉ đọc
- * payload dạng object; `seq` là số thứ tự đã được phía gọi (relay)
- * chuyển về số từ giá trị int8 thô của kho.
+ * Hình dáng row outbox mà writer phản chiếu — khai tay đúng các cột writer đọc (trước đây suy từ định nghĩa bảng bộ máy
+ * cũ dùng chung `@lms/db`; bảng bộ máy cũ bị xoá ở hạng mục gỡ bộ máy cũ nên kiểu phải sống độc lập với nó). `payload`
+ * thu hẹp về record vì writer chỉ đọc payload dạng object; `seq` là số thứ tự đã được phía gọi (relay) chuyển về số từ
+ * giá trị int8 thô của kho.
  */
 export interface OutboxRowLike {
   id: string;
@@ -24,9 +22,8 @@ export interface OutboxRowLike {
 const COURSE_CONTEXT_LEVEL = 50;
 
 /**
- * Các khoá payload ứng viên đặt tên cho đối tượng chính của một sự kiện, theo từng outbox
- * aggregate. Khoá đầu tiên hiện diện sẽ thắng; giá trị được đưa vào trường
- * `objectId` đã chuẩn hoá của payload log đã lưu.
+ * Các khoá payload ứng viên đặt tên cho đối tượng chính của một sự kiện, theo từng outbox aggregate. Khoá đầu tiên hiện
+ * diện sẽ thắng; giá trị được đưa vào trường `objectId` đã chuẩn hoá của payload log đã lưu.
  */
 const OBJECT_ID_KEYS: Record<string, string[]> = {
   course: ['courseId'],
@@ -54,22 +51,16 @@ function str(value: unknown): string | null {
 }
 
 /**
- * Bản sao phía worker của EventLogWriter phía API (worker giữ góc nhìn riêng
- * của mình về hạ tầng dùng chung, giống như chính outbox relay): observer logstore duy nhất.
- * Mọi dòng outbox mà relay của worker phát hành đều được phản chiếu
- * vào `event_log` với payload đã chuẩn hoá (component / action / actor /
- * related user / course / object / IP). Việc phản chiếu KHÔNG BAO GIỜ làm gãy relay:
- * lỗi được ghi log và nuốt, ngữ nghĩa phát hành giữ nguyên không đổi.
+ * Bản sao phía worker của EventLogWriter phía API (worker giữ góc nhìn riêng của mình về hạ tầng dùng chung, giống như
+ * chính outbox relay): observer logstore duy nhất. Mọi dòng outbox mà relay của worker phát hành đều được phản chiếu
+ * vào `event_log` với payload đã chuẩn hoá (component / action / actor / related user / course / object / IP). Việc
+ * phản chiếu KHÔNG BAO GIỜ làm gãy relay: lỗi được ghi log và nuốt, ngữ nghĩa phát hành giữ nguyên không đổi.
  *
- * @remarks
- * Mọi truy vấn đi qua handle Kysely định tuyến
- * (`SpaceDatabaseService.routedKysely`): relay gọi writer ngay trong
- * phiên của kho chứa dòng outbox (kho chung ở ngữ cảnh platform, kho
- * riêng trong phiên theo trung tâm đã chuẩn bị phía Kysely), nên dòng
- * `event_log` và tra cứu context đều vào đúng kho đó — cùng đích kho
- * với handle bộ máy cũ định tuyến trước đây. Cột jsonb `payload` khi ghi
- * đi qua serialize tường minh + `::jsonb` (khuôn pilot: driver `pg`
- * hiểu mảng cấp cao nhất là mảng PostgreSQL nếu không serialize).
+ * @remarks Mọi truy vấn đi qua handle Kysely định tuyến (`SpaceDatabaseService.routedKysely`): relay gọi writer ngay
+ * trong phiên của kho chứa dòng outbox (kho chung ở ngữ cảnh platform, kho riêng trong phiên theo trung tâm đã chuẩn bị
+ * phía Kysely), nên dòng `event_log` và tra cứu context đều vào đúng kho đó — cùng đích kho với handle bộ máy cũ định
+ * tuyến trước đây. Cột jsonb `payload` khi ghi đi qua serialize tường minh + `::jsonb` (khuôn pilot: driver `pg` hiểu
+ * mảng cấp cao nhất là mảng PostgreSQL nếu không serialize).
  */
 @Injectable()
 export class EventLogWriter {
@@ -91,10 +82,8 @@ export class EventLogWriter {
       const sourceComponent = str(source.component);
       const payload: Record<string, unknown> = {
         ...source,
-        // Một số payload đã mang sẵn trường `component` của riêng chúng (component
-        // hoạt động của một course module) — giữ nó dưới
-        // `sourceComponent`; `component` đã chuẩn hoá là phân hệ của sự kiện
-        // (outbox aggregate).
+        // Một số payload đã mang sẵn trường `component` của riêng chúng (component hoạt động của một course module) —
+        // giữ nó dưới `sourceComponent`; `component` đã chuẩn hoá là phân hệ của sự kiện (outbox aggregate).
         ...(sourceComponent ? { sourceComponent } : {}),
         component: row.aggregate,
         action: row.type,

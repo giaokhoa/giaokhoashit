@@ -22,41 +22,27 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Ca đầu-cuối của HẠNG MỤC 3 — tiền điều kiện Phần B (issue #587):
- * các lượt đọc phía quản trị tenant, bộ chọn trung tâm và mã tham
- * gia lớp phải tới được dữ kiện của một trung tâm đã chuyển sang
- * kho riêng, theo thiết kế A1+B1+C1:
- * - A1: lượt đọc quản trị (thông tin tenant, danh sách thành
- *   viên, danh sách người dùng) phân giải tenant → slug qua sổ
+ * Ca đầu-cuối của HẠNG MỤC 3 — tiền điều kiện Phần B (issue #587): các lượt đọc phía quản trị tenant, bộ chọn trung tâm
+ * và mã tham gia lớp phải tới được dữ kiện của một trung tâm đã chuyển sang kho riêng, theo thiết kế A1+B1+C1:
+ * - A1: lượt đọc quản trị (thông tin tenant, danh sách thành viên, danh sách người dùng) phân giải tenant → slug qua sổ
  *   đăng ký rồi chạy tại kho đích của tenant đó;
- * - B1: bộ chọn trung tâm (`GET /auth/tenants`) hợp nhất THƯ MỤC
- *   THÀNH VIÊN ở control plane — thư mục chỉ là chỉ mục định
- *   tuyến, dữ kiện của từng trung tâm vẫn đọc tại kho của nó;
- * - C1: mã tham gia lớp phân giải qua THƯ MỤC MÃ ở control plane
- *   trước, toàn bộ bước ghi của luồng tham gia chạy trong kho
- *   của lớp.
+ * - B1: bộ chọn trung tâm (`GET /auth/tenants`) hợp nhất THƯ MỤC THÀNH VIÊN ở control plane — thư mục chỉ là chỉ mục
+ *   định tuyến, dữ kiện của từng trung tâm vẫn đọc tại kho của nó;
+ * - C1: mã tham gia lớp phân giải qua THƯ MỤC MÃ ở control plane trước, toàn bộ bước ghi của luồng tham gia chạy trong
+ *   kho của lớp.
  *
- * Bối cảnh dựng như các spec kho riêng trước (#584/#587 Phần A):
- * một trung tâm kiểm chứng ở kho riêng dựng riêng cho đợt này
- * (database + role riêng trên cụm test, baseline áp bằng role
- * chủ kho), sổ đăng ký ở database control plane riêng mà ứng
- * dụng đọc qua `CONTROL_PLANE_DATABASE_URL`. Trạng thái "đã di
- * trú" được dựng bằng cách tạo dữ kiện qua API ở kho chung rồi
- * sao dòng sang kho riêng và xoá khỏi kho chung — đúng ba ca
- * thí điểm từng trượt trước khi có hạng mục này:
- * (1) quản trị trung tâm mở danh sách thành viên/người dùng của
- *     trung tâm mình và nhận RỖNG GIẢ dù membership chỉ còn ở
+ * Bối cảnh dựng như các spec kho riêng trước (#584/#587 Phần A): một trung tâm kiểm chứng ở kho riêng dựng riêng cho
+ * đợt này (database + role riêng trên cụm test, baseline áp bằng role chủ kho), sổ đăng ký ở database control plane
+ * riêng mà ứng dụng đọc qua `CONTROL_PLANE_DATABASE_URL`. Trạng thái "đã di trú" được dựng bằng cách tạo dữ kiện qua
+ * API ở kho chung rồi sao dòng sang kho riêng và xoá khỏi kho chung — đúng ba ca thí điểm từng trượt trước khi có hạng
+ * mục này:
+ * (1) quản trị trung tâm mở danh sách thành viên/người dùng của trung tâm mình và nhận RỖNG GIẢ dù membership chỉ còn ở
  *     kho đích;
- * (2) bộ chọn trung tâm của một thành viên làm họ MẤT trung tâm
- *     đã di trú khỏi danh sách;
- * (3) học viên của trung tâm tham gia lớp bằng mã bị từ chối
- *     `class.join_code_invalid` vì mã chỉ tồn tại ở kho đích.
- * Kèm các khoá phụ: điểm ghi duy trì thư mục (tạo người dùng
- * trong kho riêng, thêm thành viên, đổi trạng thái) cập nhật
- * thư mục trong cùng thao tác; công cụ lấp thư mục chạy lại
- * không sinh trùng và báo cáo va chạm mã thay vì ghi đè; thư
- * mục trỏ tới kho đích không chuẩn bị được thì lỗi tường minh
- * chứ không trả rỗng giả.
+ * (2) bộ chọn trung tâm của một thành viên làm họ MẤT trung tâm đã di trú khỏi danh sách;
+ * (3) học viên của trung tâm tham gia lớp bằng mã bị từ chối `class.join_code_invalid` vì mã chỉ tồn tại ở kho đích.
+ * Kèm các khoá phụ: điểm ghi duy trì thư mục (tạo người dùng trong kho riêng, thêm thành viên, đổi trạng thái) cập nhật
+ * thư mục trong cùng thao tác; công cụ lấp thư mục chạy lại không sinh trùng và báo cáo va chạm mã thay vì ghi đè; thư
+ * mục trỏ tới kho đích không chuẩn bị được thì lỗi tường minh chứ không trả rỗng giả.
  */
 const CP_DATABASE = 'lms_test_cp_td3';
 const CP_ROLE = 'lms_cp_test_td3';
@@ -72,7 +58,6 @@ const BROKEN_CODE = 'BRKN587X';
 
 const UUIDV7_SHIM = `CREATE OR REPLACE FUNCTION uuidv7() RETURNS uuid AS $$ DECLARE ts_ms bigint := (extract(epoch from clock_timestamp()) * 1000)::bigint; b bytea; BEGIN b := decode(lpad(to_hex(ts_ms), 12, '0'), 'hex') || gen_random_bytes(10); b := set_byte(b, 6, (get_byte(b, 6) & 15) | 112); b := set_byte(b, 8, (get_byte(b, 8) & 63) | 128); RETURN encode(b, 'hex')::uuid; END; $$ LANGUAGE plpgsql VOLATILE`;
 
-/** Dựng URL kết nối tới một database trên cùng cụm với database nghiệp vụ test. */
 function clusterUrl(database: string, username?: string, secret?: string): string {
   const base = new URL(process.env.DATABASE_URL!);
   base.pathname = `/${database}`;
@@ -81,7 +66,6 @@ function clusterUrl(database: string, username?: string, secret?: string): strin
   return base.toString();
 }
 
-/** Bọc một định danh Postgres trong dấu nháy kép cho các câu lệnh quản trị của ca test. */
 function quoted(identifier: string): string {
   return `"${identifier.replace(/"/g, '""')}"`;
 }
@@ -96,7 +80,6 @@ async function withClient<T>(connectionString: string, fn: (client: Client) => P
   }
 }
 
-/** Áp một file migration SQL (tách theo dấu phân đoạn của file) lên một database qua kết nối cho trước. */
 async function applySqlFile(connectionString: string, filePath: string, withUuidShim: boolean): Promise<void> {
   await withClient(connectionString, async (client) => {
     if (withUuidShim) {
@@ -114,7 +97,6 @@ async function applySqlFile(connectionString: string, filePath: string, withUuid
   });
 }
 
-/** Áp bộ migration riêng của control plane từ rỗng (đọc chính các file SQL đã sinh trong repo, gồm cả hai bảng thư mục mới). */
 async function applyControlPlaneMigrations(connectionString: string): Promise<void> {
   const outDir = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'control-plane');
   const folders = readdirSync(outDir, { withFileTypes: true })
@@ -126,13 +108,15 @@ async function applyControlPlaneMigrations(connectionString: string): Promise<vo
   }
 }
 
-/** Áp baseline nghiệp vụ vào kho riêng bằng kết nối của chính role chủ kho đó. */
 async function applyBusinessBaseline(connectionString: string): Promise<void> {
   const baseline = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre', '20261025163710_baseline', 'migration.sql');
   await applySqlFile(connectionString, baseline, true);
 }
 
-/** Sao một dòng (đọc từ kho chung) vào cùng bảng ở kho đích với nguyên bộ cột — mô phỏng phần dữ kiện đã di trú của trung tâm. */
+/**
+ * Sao một dòng (đọc từ kho chung) vào cùng bảng ở kho đích với nguyên bộ cột — mô phỏng phần dữ kiện đã di trú của
+ * trung tâm.
+ */
 async function copyRow(
   sourceUrl: string,
   targetUrl: string,
@@ -157,7 +141,6 @@ async function copyRow(
   });
 }
 
-/** Đếm dòng theo một cột định danh trong một bảng ở một kho (nền platform tường minh). */
 async function countRows(connectionString: string, table: string, column: string, value: string): Promise<number> {
   return withClient(connectionString, async (client) => {
     await client.query("SELECT set_config('app.platform', 'on', false)");
@@ -203,12 +186,10 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
     return res.body as never;
   };
   /**
-   * Chạy công cụ lấp thư mục cho trung tâm kiểm chứng: biến URL
-   * của không gian trong môi trường của runner trỏ thẳng tới
-   * database của trung tâm (đúng ngữ nghĩa production của biến
-   * bí mật — URL đầy đủ của kho đích; biến SPACE_TEST_TD3_URL
-   * của ứng dụng thì trỏ database `postgres` vì tầng định tuyến
-   * tự đổi đích theo tên database trong sổ đăng ký).
+   * Chạy công cụ lấp thư mục cho trung tâm kiểm chứng: biến URL của không gian trong môi trường của runner trỏ thẳng
+   * tới database của trung tâm (đúng ngữ nghĩa production của biến bí mật — URL đầy đủ của kho đích; biến
+   * SPACE_TEST_TD3_URL của ứng dụng thì trỏ database `postgres` vì tầng định tuyến tự đổi đích theo tên database trong
+   * sổ đăng ký).
    */
   const runBackfill = () =>
     runSpaceDirectoryBackfill({
@@ -225,8 +206,7 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
   };
 
   beforeAll(async () => {
-    // Cấp phát control plane + kho riêng trên cụm test: role
-    // riêng cho từng kho, CONNECT của PUBLIC bị thu hồi.
+    // Cấp phát control plane + kho riêng trên cụm test: role riêng cho từng kho, CONNECT của PUBLIC bị thu hồi.
     await withClient(clusterUrl('postgres'), async (admin) => {
       for (const database of [CP_DATABASE, CENTRE_DATABASE]) {
         await admin.query(`DROP DATABASE IF EXISTS ${quoted(database)} WITH (FORCE)`);
@@ -249,8 +229,7 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
     process.env.CONTROL_PLANE_DATABASE_URL = cpUrl();
     process.env.SPACE_TEST_TD3_URL = clusterUrl('postgres', CENTRE_ROLE, CENTRE_PASSWORD);
 
-    // Dòng đăng ký kho riêng trong sổ, ghi trước khi ứng dụng
-    // khởi động như spec Phần A.
+    // Dòng đăng ký kho riêng trong sổ, ghi trước khi ứng dụng khởi động như spec Phần A.
     await withCpDb(async (cpDb) => {
       await cpDb.insertInto('space_registry').values([
         {
@@ -270,8 +249,7 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
     app = await createTestApp();
     adminToken = (await login(app, 'admin', 'Admin123!')).accessToken;
 
-    // Tenant tạo bằng API ở kho chung rồi sao dòng tenant vào
-    // kho riêng — trạng thái sau di trú.
+    // Tenant tạo bằng API ở kho chung rồi sao dòng tenant vào kho riêng — trạng thái sau di trú.
     const created = (await must(
       await http(app).post('/api/v1/tenants').set(auth(adminToken)).send({
         name: 'Trung tâm TĐ3 (spec 587)',
@@ -283,8 +261,8 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
     tenantId = created.id;
     await copyRow(process.env.DATABASE_URL!, centreUrl(), 'tenants', 'id', tenantId);
 
-    // Quản trị đầu tiên của trung tâm, tạo bằng chính service
-    // của ứng dụng bên trong kho của trung tâm (khuôn spec #584).
+    // Quản trị đầu tiên của trung tâm, tạo bằng chính service của ứng dụng bên trong kho của trung tâm (khuôn spec
+    // #584).
     const spaceDb = app.get(SpaceDatabaseService, { strict: false });
     const users = app.get(UsersService, { strict: false });
     const tenants = app.get(TenantsService, { strict: false });
@@ -305,17 +283,13 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
         const ctx = await contexts.ensureTenantContext(tenantId);
         const role = await roles.createRole({ name: 'Quản trị trung tâm (spec TĐ3)', shortName: `spec-td3-admin-${RUN_SUFFIX}` });
         await roles.setCapabilityOverride(role.id, 'tenant:manage', ctx.id, CAP_ALLOW);
-        // Cả quyền tạo/sửa lớp ở context tenant (chảy xuống context
-        // lớp): kho riêng không có bộ vai mẫu archetype như kho
-        // chung nên quản trị trung tâm phải được cấp tường minh —
-        // các ca lớp của spec này đi qua đường API thật.
+        // Cả quyền tạo/sửa lớp ở context tenant (chảy xuống context lớp): kho riêng không có bộ vai mẫu archetype như
+        // kho chung nên quản trị trung tâm phải được cấp tường minh — các ca lớp của spec này đi qua đường API thật.
         await roles.setCapabilityOverride(role.id, 'class:create', ctx.id, CAP_ALLOW);
         await roles.setCapabilityOverride(role.id, 'class:update', ctx.id, CAP_ALLOW);
         await roles.assignRole(user.id, role.id, ctx.id);
-        // Vai archetype `editingteacher` phải có trong kho của
-        // trung tâm thì đường tạo lớp mới chạy được (ở kho chung
-        // nó do seedDefaults gieo; ở một trung tâm đã di trú nó
-        // nằm trong dữ kiện được sao sang — spec dựng thẳng vai
+        // Vai archetype `editingteacher` phải có trong kho của trung tâm thì đường tạo lớp mới chạy được (ở kho chung
+        // nó do seedDefaults gieo; ở một trung tâm đã di trú nó nằm trong dữ kiện được sao sang — spec dựng thẳng vai
         // này để mô phỏng đúng trạng thái đó).
         await roles.createRole({ name: 'Editing teacher', shortName: 'editingteacher', archetype: 'teacher' });
         return user;
@@ -324,9 +298,8 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
     );
     centreAdminToken = (await loginAt(HOST, adminUsername, STRONG_PASSWORD)).accessToken;
 
-    // Thành viên đã di trú: tạo ở kho chung, thêm membership
-    // bằng API, sao user + membership vào kho riêng rồi XOÁ
-    // khỏi kho chung — membership của họ chỉ còn ở kho đích.
+    // Thành viên đã di trú: tạo ở kho chung, thêm membership bằng API, sao user + membership vào kho riêng rồi XOÁ khỏi
+    // kho chung — membership của họ chỉ còn ở kho đích.
     const member = await createUserViaApi(app, adminToken);
     memberId = member.id;
     memberUsername = member.username;
@@ -378,8 +351,7 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
     )) as { id: string; slug: string };
     expect(tenantView.slug).toBe(CENTRE_SLUG);
 
-    // Cùng lượt đọc từ bề mặt platform (địa chỉ mặc định): A1
-    // định tuyến theo TENANT, không theo địa chỉ của request.
+    // Cùng lượt đọc từ bề mặt platform (địa chỉ mặc định): A1 định tuyến theo TENANT, không theo địa chỉ của request.
     const membersFromPlatform = (await must(
       await http(app).get(`/api/v1/tenants/${tenantId}/members`).set(auth(adminToken)),
       'list members from platform surface',
@@ -388,9 +360,8 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
   });
 
   it('điểm ghi duy trì thư mục: tạo người dùng trong kho riêng, thêm thành viên và đổi trạng thái đều cập nhật thư mục trong cùng thao tác', async () => {
-    // Tạo người dùng qua API của tenant tại địa chỉ trung tâm:
-    // tài khoản chỉ sinh ra trong kho riêng, mục thư mục phải có
-    // ngay sau thao tác (không chờ lấp thư mục).
+    // Tạo người dùng qua API của tenant tại địa chỉ trung tâm: tài khoản chỉ sinh ra trong kho riêng, mục thư mục phải
+    // có ngay sau thao tác (không chờ lấp thư mục).
     const username = uniqueName('spaceuser');
     const createdUser = (await must(
       await http(app).post(`/api/v1/tenants/${tenantId}/users`).set('Host', HOST).set(auth(centreAdminToken)).send({
@@ -409,9 +380,8 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
     expect(entry!.global_user_id).toBe(spaceUserId);
     expect(entry!.status).toBe('active');
 
-    // Thêm thành viên (tài khoản toàn cục) cho tenant kho riêng
-    // rồi đổi trạng thái: trạng thái trong thư mục đi theo từng
-    // thao tác ghi.
+    // Thêm thành viên (tài khoản toàn cục) cho tenant kho riêng rồi đổi trạng thái: trạng thái trong thư mục đi theo
+    // từng thao tác ghi.
     const globalUser = await createUserViaApi(app, adminToken);
     await must(
       await http(app).post(`/api/v1/tenants/${tenantId}/members`).set(auth(adminToken)).send({ userId: globalUser.id }),
@@ -438,10 +408,8 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
   it('bộ chọn trung tâm: thành viên đã di trú mất trung tâm khi chưa có thư mục và thấy lại trung tâm sau khi lấp thư mục', async () => {
     const memberToken = (await loginAt(HOST, memberUsername, STRONG_PASSWORD)).accessToken;
 
-    // Mô phỏng đúng đối tượng của công cụ lấp thư mục: một
-    // không gian đã di trú TRƯỚC khi thư mục tồn tại — membership
-    // của thành viên chỉ nằm ở kho đích và thư mục chưa có mục
-    // nào của họ (mục do điểm ghi addMember tạo ở beforeAll bị
+    // Mô phỏng đúng đối tượng của công cụ lấp thư mục: một không gian đã di trú TRƯỚC khi thư mục tồn tại — membership
+    // của thành viên chỉ nằm ở kho đích và thư mục chưa có mục nào của họ (mục do điểm ghi addMember tạo ở beforeAll bị
     // gỡ để dựng lại trạng thái tiền-thư mục đó).
     await withClient(cpUrl(), async (client) => {
       await client.query('DELETE FROM space_membership_directory WHERE space_slug = $1 AND global_user_id = $2', [
@@ -450,8 +418,7 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
       ]);
     });
 
-    // Trước khi lấp: bộ chọn không thấy trung tâm (đúng ca thí
-    // điểm từng trượt).
+    // Trước khi lấp: bộ chọn không thấy trung tâm (đúng ca thí điểm từng trượt).
     const before = (await must(
       await http(app).get('/api/v1/auth/tenants').set('Host', HOST).set(auth(memberToken)),
       'my tenants before backfill',
@@ -472,8 +439,7 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
   });
 
   it('học viên của trung tâm tham gia lớp bằng mã qua thư mục: xem trước và tham gia thành công, toàn bộ ghi rơi vào kho đích', async () => {
-    // Lớp tạo tại địa chỉ trung tâm (chỉ tồn tại ở kho đích), mở
-    // tự báo danh → mã được sinh và đăng ký vào thư mục ngay
+    // Lớp tạo tại địa chỉ trung tâm (chỉ tồn tại ở kho đích), mở tự báo danh → mã được sinh và đăng ký vào thư mục ngay
     // trong thao tác cập nhật lớp.
     const createdClass = (await must(
       await http(app).post('/api/v1/classes').set('Host', HOST).set(auth(centreAdminToken)).send({ name: 'Lớp TĐ3' }),
@@ -496,8 +462,7 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
     // Mã và lớp không hề tồn tại ở kho chung.
     expect(await countRows(process.env.DATABASE_URL!, 'classes', 'id', classId)).toBe(0);
 
-    // Học viên là tài khoản của chính trung tâm (tạo trong kho
-    // riêng qua API của tenant).
+    // Học viên là tài khoản của chính trung tâm (tạo trong kho riêng qua API của tenant).
     const studentUsername = uniqueName('studenttd3');
     const createdStudent = (await must(
       await http(app).post(`/api/v1/tenants/${tenantId}/users`).set('Host', HOST).set(auth(centreAdminToken)).send({
@@ -550,8 +515,7 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
   });
 
   it('lấp thư mục cho mã tham gia: gỡ mục thì mã mất hiệu lực, lấp lại khôi phục, chạy lại không trùng, va chạm được báo cáo chứ không ghi đè', async () => {
-    // Gỡ mục thư mục của mã: đường phân giải rơi về kho chung và
-    // mã mất hiệu lực — thư mục là điểm chịu lực của C1.
+    // Gỡ mục thư mục của mã: đường phân giải rơi về kho chung và mã mất hiệu lực — thư mục là điểm chịu lực của C1.
     await withClient(cpUrl(), async (client) => {
       await client.query('DELETE FROM space_join_code_directory WHERE join_code = $1', [joinCode]);
     });
@@ -573,9 +537,8 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
     const codeRows = await withCpDb((cpDb) => cpDb.selectFrom('space_join_code_directory').selectAll().execute());
     expect(codeRows.filter((row) => row.join_code === joinCode)).toHaveLength(1);
 
-    // Va chạm: một lớp thứ hai trong kho đích mang mã mà thư
-    // mục đang ghi cho một không gian khác → lấp thư mục BÁO
-    // CÁO va chạm và giữ nguyên mục của không gian kia.
+    // Va chạm: một lớp thứ hai trong kho đích mang mã mà thư mục đang ghi cho một không gian khác → lấp thư mục BÁO CÁO
+    // va chạm và giữ nguyên mục của không gian kia.
     const secondClass = (await must(
       await http(app).post('/api/v1/classes').set('Host', HOST).set(auth(centreAdminToken)).send({ name: 'Lớp TĐ3 thứ hai' }),
       'create second class',
@@ -595,8 +558,7 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
   });
 
   it('thư mục trỏ tới kho đích không chuẩn bị được thì lỗi tường minh, không trả rỗng giả hay từ chối oan', async () => {
-    // Không gian "hỏng": đăng ký kho riêng trỏ tới một database
-    // không tồn tại trên cụm; thư mục có mục trỏ về nó.
+    // Không gian "hỏng": đăng ký kho riêng trỏ tới một database không tồn tại trên cụm; thư mục có mục trỏ về nó.
     process.env.SPACE_TEST_BROKEN_TD3_URL = clusterUrl('lms_test_khong_ton_tai_td3', CENTRE_ROLE, CENTRE_PASSWORD);
     await withCpDb(async (cpDb) => {
       await cpDb.insertInto('space_registry').values([
@@ -619,15 +581,13 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
     });
     emitSpaceRegistryChanged(BROKEN_SLUG);
 
-    // Bộ chọn: mục thư mục trỏ tới kho không chuẩn bị được →
-    // lỗi máy chủ tường minh, không phải danh sách thiếu trung
+    // Bộ chọn: mục thư mục trỏ tới kho không chuẩn bị được → lỗi máy chủ tường minh, không phải danh sách thiếu trung
     // tâm một cách lặng lẽ.
     const memberToken = (await loginAt(HOST, memberUsername, STRONG_PASSWORD)).accessToken;
     const picker = await http(app).get('/api/v1/auth/tenants').set('Host', HOST).set(auth(memberToken));
     expect(picker.status).toBeGreaterThanOrEqual(500);
 
-    // Mã tham gia: thư mục có mục nhưng kho đích không đọc được
-    // → lỗi máy chủ tường minh, không phải 404 từ chối oan.
+    // Mã tham gia: thư mục có mục nhưng kho đích không đọc được → lỗi máy chủ tường minh, không phải 404 từ chối oan.
     const preview = await http(app).get('/api/v1/classes/join-preview').query({ code: BROKEN_CODE }).set('Host', HOST).set(auth(studentToken));
     expect(preview.status).toBeGreaterThanOrEqual(500);
   });

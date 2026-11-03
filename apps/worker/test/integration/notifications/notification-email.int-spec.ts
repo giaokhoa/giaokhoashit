@@ -14,44 +14,31 @@ import type { WorkerMailMessage, WorkerMailSendResult } from '../../../src/resen
 /**
  * Kênh email thật qua Resend + tổng hợp theo ngày (NB-5, issue #174).
  *
- * Spec chạy trên database test thật của worker, dựng hai processor
- * bằng tay với TRANSPORT GIẢ ghi lại mọi bức mail được yêu cầu gửi —
- * hành vi phải quan sát được ở đây là LUẬT PHÂN PHỐI EMAIL, không
- * phải kết nối Resend thật (transport thật có spec hành vi riêng ở
- * tầng fail-soft: môi trường test không cấu hình khoá thì bỏ qua có
- * khai báo — ca đó khẳng định ở engagement-jobs.spec.ts):
+ * Spec chạy trên database test thật của worker, dựng hai processor bằng tay với TRANSPORT GIẢ ghi lại mọi bức mail được
+ * yêu cầu gửi — hành vi phải quan sát được ở đây là LUẬT PHÂN PHỐI EMAIL, không phải kết nối Resend thật (transport
+ * thật có spec hành vi riêng ở tầng fail-soft: môi trường test không cấu hình khoá thì bỏ qua có khai báo — ca đó khẳng
+ * định ở engagement-jobs.spec.ts):
  *
- * - Tần suất `immediate` → gửi ngay đúng một mail tới địa chỉ của
- *   người nhận, mang đúng tiêu đề/thân TỐI THIỂU HOÁ mà job mang
- *   theo (P4), dispatch log chốt `sent`.
+ * - Tần suất `immediate` → gửi ngay đúng một mail tới địa chỉ của người nhận, mang đúng tiêu đề/thân TỐI THIỂU HOÁ mà
+ *   job mang theo (P4), dispatch log chốt `sent`.
  * - Tần suất `daily` → KHÔNG gửi; dispatch log chốt `digest-queued`.
- * - Người dùng tắt email theo loại (tuỳ chọn v2 = off) SAU khi job
- *   đã xếp hàng → lúc phát vẫn bị chặn `skipped-preference` (P2:
- *   kênh ngoài là quyền cá nhân tuyệt đối).
- * - Lượt quét digest gom các mục chờ của một người thành ĐÚNG MỘT
- *   email tổng hợp (thân chỉ gồm các tiêu đề sự kiện), chốt các mục
- *   thành `digest-sent`; người nhận đã bị đình chỉ thì các mục chốt
- *   `skipped-suspended` và không có mail nào; chạy lại lượt quét
- *   không gửi trùng; transport chưa cấu hình thì các mục GIỮ trạng
- *   thái chờ (không mất, không ghi nhận giả).
- * - Luật tại lúc tổng hợp (sửa theo phán quyết review vòng 2 của PR
- *   này): digest kiểm LẠI tuỳ chọn và chính sách site tại lúc gửi —
- *   người dùng tắt email theo loại sau khi xếp hàng thì mục chốt
- *   `skipped-preference`; admin tắt loại ở cấp site (NB-7) thì mục
- *   chốt `skipped-admin-disabled`; loại bắt buộc P2 được miễn trừ
- *   NB-7 như mọi đường phát; transport ném lỗi thì mục giữ trạng
- *   thái chờ và lượt quét không sập.
+ * - Người dùng tắt email theo loại (tuỳ chọn v2 = off) SAU khi job đã xếp hàng → lúc phát vẫn bị chặn
+ *   `skipped-preference` (P2: kênh ngoài là quyền cá nhân tuyệt đối).
+ * - Lượt quét digest gom các mục chờ của một người thành ĐÚNG MỘT email tổng hợp (thân chỉ gồm các tiêu đề sự kiện),
+ *   chốt các mục thành `digest-sent`; người nhận đã bị đình chỉ thì các mục chốt `skipped-suspended` và không có mail
+ *   nào; chạy lại lượt quét không gửi trùng; transport chưa cấu hình thì các mục GIỮ trạng thái chờ (không mất, không
+ *   ghi nhận giả).
+ * - Luật tại lúc tổng hợp (sửa theo phán quyết review vòng 2 của PR này): digest kiểm LẠI tuỳ chọn và chính sách site
+ *   tại lúc gửi — người dùng tắt email theo loại sau khi xếp hàng thì mục chốt `skipped-preference`; admin tắt loại ở
+ *   cấp site (NB-7) thì mục chốt `skipped-admin-disabled`; loại bắt buộc P2 được miễn trừ NB-7 như mọi đường phát;
+ *   transport ném lỗi thì mục giữ trạng thái chờ và lượt quét không sập.
  *
- * Từ lát 2 của issue #294, spec này boot WorkerModule qua harness
- * role thường (`test/ordinary-worker-module.ts`): module chạy bằng
- * role NOSUPERUSER/NOBYPASSRLS như production. Hai processor tự
- * dựng bằng tay ở đây nhận đúng kết nối role thường của harness
- * (`harness.ordinaryDb`) — đó là phần xử lý cần kiểm chứng dưới
- * RLS; fixture và đọc kiểm chứng đi qua kết nối quản trị của
- * harness — khẳng định nghiệp vụ của spec không đổi.
+ * Từ lát 2 của issue #294, spec này boot WorkerModule qua harness role thường (`test/ordinary-worker-module.ts`):
+ * module chạy bằng role NOSUPERUSER/NOBYPASSRLS như production. Hai processor tự dựng bằng tay ở đây nhận đúng kết nối
+ * role thường của harness (`harness.ordinaryDb`) — đó là phần xử lý cần kiểm chứng dưới RLS; fixture và đọc kiểm chứng
+ * đi qua kết nối quản trị của harness — khẳng định nghiệp vụ của spec không đổi.
  */
 
-/** Transport giả: 'sent' ghi lại mail; 'skipped' giả lập chưa cấu hình Resend; 'throw' giả lập Resend trả lỗi thật. */
 class FakeMail {
   readonly sent: WorkerMailMessage[] = [];
   mode: 'sent' | 'skipped' | 'throw' = 'sent';
@@ -64,8 +51,8 @@ class FakeMail {
 }
 
 /**
- * I18n giả đọc ĐÚNG catalog thật `src/i18n/vi/platform.json`: khoá
- * digest thiếu trong catalog thì spec đỏ tại đây thay vì lặng lẽ qua.
+ * I18n giả đọc ĐÚNG catalog thật `src/i18n/vi/platform.json`: khoá digest thiếu trong catalog thì spec đỏ tại đây thay
+ * vì lặng lẽ qua.
  */
 function buildFakeI18n() {
   const catalog = JSON.parse(
@@ -216,10 +203,9 @@ describe('Kênh email thông báo của worker + digest hàng ngày (NB-5, issue
     expect((await logRow(`nb5-dg4-${suffix}`)).status).toBe('skipped-suspended');
     expect(mail.sent.some((m) => m.to === `nb5-s-${suffix}@x.io`)).toBe(false);
 
-    // Chạy lại lượt quét: không còn mục chờ của hai người trên (mục
-    // của ca 'daily frequency' ở trên thuộc userActive — lượt quét
-    // đầu đã gom cả mục đó; khẳng định ở đây là không có mail digest
-    // THỨ HAI nào cho userDigest và trạng thái các mục không đổi).
+    // Chạy lại lượt quét: không còn mục chờ của hai người trên (mục của ca 'daily frequency' ở trên thuộc userActive —
+    // lượt quét đầu đã gom cả mục đó; khẳng định ở đây là không có mail digest THỨ HAI nào cho userDigest và trạng thái
+    // các mục không đổi).
     const second = await digest.process({} as never);
     expect(mail.sent.filter((m) => m.to === `nb5-d-${suffix}@x.io`)).toHaveLength(1);
     expect(second.itemsSent).toBe(0);
@@ -253,10 +239,9 @@ describe('Kênh email thông báo của worker + digest hàng ngày (NB-5, issue
   });
 
   it('digest tôn trọng chính sách site (NB-7) lúc gửi, kèm ngoại lệ bắt buộc P2', async () => {
-    // Admin tắt grade_updated và cả admin_announcement ở cấp site
-    // SAU khi các mục đã xếp hàng: mục grade_updated bị chặn ở lúc
-    // tổng hợp; mục admin_announcement là loại bắt buộc P2 — chính
-    // sách site không chặn được nó ở bất kỳ đường phát nào.
+    // Admin tắt grade_updated và cả admin_announcement ở cấp site SAU khi các mục đã xếp hàng: mục grade_updated bị
+    // chặn ở lúc tổng hợp; mục admin_announcement là loại bắt buộc P2 — chính sách site không chặn được nó ở bất kỳ
+    // đường phát nào.
     await db.insertInto('plugin_config').values({ plugin: 'notifications', name: 'provider_grade_updated_enabled', value: 'false' }).onConflict((oc) => oc.doNothing()).execute();
     await db.insertInto('plugin_config').values({ plugin: 'notifications', name: 'provider_admin_announcement_enabled', value: 'false' }).onConflict((oc) => oc.doNothing()).execute();
     try {

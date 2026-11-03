@@ -1,16 +1,12 @@
-/**
- * VneduExport — dựng bảng điểm Excel theo cấu trúc vnEdu trên nền Thông tư
- * 22/2021/TT-BGDĐT (issue #53; kết quả kiểm chứng mẫu ở comment Bước 0 của
- * issue). Thuần dữ liệu + một hàm render ExcelJS:
+/** VneduExport — dựng bảng điểm Excel theo cấu trúc vnEdu trên nền Thông tư 22/2021/TT-BGDĐT (issue #53; kết quả kiểm
+ * chứng mẫu ở comment Bước 0 của issue). Thuần dữ liệu + một hàm render ExcelJS:
  *
- * - Điểm thành phần: ĐĐGtx hệ số 1 (mỗi mục điểm thường xuyên là một cột),
- *   ĐĐGgk hệ số 2, ĐĐGck hệ số 3 (Điều 6, Điều 7).
- * - Điểm xuất là finalGrade của gradebook QUY ĐỔI về thang 10 theo
- *   gradeMin/gradeMax của mục điểm, làm tròn đến chữ số thập phân thứ nhất
- *   (Điều 5 khoản 3 điểm b).
- * - ĐTBmhk = (TĐĐGtx + 2×ĐĐGgk + 3×ĐĐGck) / (số ĐĐGtx + 5) (Điều 9 khoản 1
- *   điểm b); chỉ tính khi học sinh có đủ mọi điểm thành phần — thiếu bất kỳ
- *   điểm nào thì ô ĐTBmhk để trống, đúng cách vnEdu chỉ tổng kết khi đủ điểm.
+ * - Điểm thành phần: ĐĐGtx hệ số 1 (mỗi mục điểm thường xuyên là một cột), ĐĐGgk hệ số 2, ĐĐGck hệ số 3 (Điều 6, Điều
+ * 7).
+ * - Điểm xuất là finalGrade của gradebook QUY ĐỔI về thang 10 theo gradeMin/gradeMax của mục điểm, làm tròn đến chữ số
+ * thập phân thứ nhất (Điều 5 khoản 3 điểm b).
+ * - ĐTBmhk = (TĐĐGtx + 2×ĐĐGgk + 3×ĐĐGck) / (số ĐĐGtx + 5) (Điều 9 khoản 1 điểm b); chỉ tính khi học sinh có đủ mọi
+ * điểm thành phần — thiếu bất kỳ điểm nào thì ô ĐTBmhk để trống, đúng cách vnEdu chỉ tổng kết khi đủ điểm.
  */
 import ExcelJS from 'exceljs';
 
@@ -65,18 +61,15 @@ export function roundToOneDecimal(value: number): number {
   return rounded === 0 ? 0 : rounded;
 }
 
-/**
- * Quy đổi một finalGrade về thang 10 theo khoảng [gradeMin, gradeMax] của
- * mục điểm rồi làm tròn 1 chữ số thập phân. Người gọi phải bảo đảm
- * gradeMax > gradeMin (service kiểm tra khi validate ánh xạ).
+/** Quy đổi một finalGrade về thang 10 theo khoảng [gradeMin, gradeMax] của mục điểm rồi làm tròn 1 chữ số thập phân.
+ * Người gọi phải bảo đảm gradeMax > gradeMin (service kiểm tra khi validate ánh xạ).
  */
 export function toTenScale(finalGrade: number, gradeMin: number, gradeMax: number): number {
   return roundToOneDecimal(((finalGrade - gradeMin) / (gradeMax - gradeMin)) * 10);
 }
 
-/**
- * ĐTBmhk theo Điều 9 TT22 từ các điểm thành phần ĐÃ quy đổi thang 10.
- * Trả null khi thiếu bất kỳ điểm thành phần nào (chưa đủ điều kiện tổng kết).
+/** ĐTBmhk theo Điều 9 TT22 từ các điểm thành phần ĐÃ quy đổi thang 10. Trả null khi thiếu bất kỳ điểm thành phần nào
+ * (chưa đủ điều kiện tổng kết).
  */
 export function semesterAverage(
   regularValues: readonly (number | null)[],
@@ -89,18 +82,15 @@ export function semesterAverage(
   return roundToOneDecimal((totalRegular + 2 * midterm + 3 * final) / (regularValues.length + 5));
 }
 
-/** Điểm thang 10 của một học sinh cho một mục điểm; null khi chưa có finalGrade. */
 function studentValue(student: VneduExportStudent, item: VneduExportItem): number | null {
   const raw = student.grades.get(item.id);
   if (raw === null || raw === undefined) return null;
   return toTenScale(raw, item.gradeMin, item.gradeMax);
 }
 
-/**
- * Dựng lưới ô của sheet bảng điểm:
- * dòng 1 tựa đề, dòng 2 thông tin lớp/môn/kỳ/năm, dòng 3 trống, dòng 4–5 đầu
- * bảng hai tầng (nhóm Thường xuyên / Định kỳ), từ dòng 6 là dữ liệu học sinh.
- * Cột: STT | Mã học sinh | Họ và tên | các cột ĐĐGtx | ĐĐGgk | ĐĐGck | ĐTBmhk.
+/** Dựng lưới ô của sheet bảng điểm: dòng 1 tựa đề, dòng 2 thông tin lớp/môn/kỳ/năm, dòng 3 trống, dòng 4–5 đầu bảng hai
+ * tầng (nhóm Thường xuyên / Định kỳ), từ dòng 6 là dữ liệu học sinh. Cột: STT | Mã học sinh | Họ và tên | các cột ĐĐGtx
+ * | ĐĐGgk | ĐĐGck | ĐTBmhk.
  */
 export function buildVneduGrid(model: VneduExportModel): VneduGrid {
   const regularCount = model.regular.length;
@@ -166,7 +156,6 @@ export function buildVneduGrid(model: VneduExportModel): VneduGrid {
   return { rows, merges, columnCount };
 }
 
-/** Render lưới ô thành file .xlsx (một sheet "Bảng điểm") bằng ExcelJS: đầu bảng in đậm/căn giữa, điểm định dạng 0.0, đóng băng 5 dòng đầu. */
 export async function renderVneduWorkbook(model: VneduExportModel): Promise<Buffer> {
   const grid = buildVneduGrid(model);
   const workbook = new ExcelJS.Workbook();

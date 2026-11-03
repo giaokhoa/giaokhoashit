@@ -8,38 +8,25 @@ import { resolveDefaultTenantId } from '../db/default-tenant';
 import { SpaceDatabaseService } from '../db/routing/space-database.service';
 
 /**
- * Các processor platform services của worker. Mỗi processor là bản song sinh (twin) của
- * logic API tương ứng, chạy trên cùng bảng: backup, restore, search reindex,
- * analytics run, report schedule, privacy export/delete, payment
+ * Các processor platform services của worker. Mỗi processor là bản song sinh (twin) của logic API tương ứng, chạy trên
+ * cùng bảng: backup, restore, search reindex, analytics run, report schedule, privacy export/delete, payment
  * reconciliation/webhook. Tất cả đều idempotent theo khoá nghiệp vụ của job.
  *
- * @remarks
- * Mọi truy vấn của các processor trong file này đi qua handle Kysely
- * định tuyến (`SpaceDatabaseService.routedKysely`): các processor chạy
- * trong ngữ cảnh platform tường minh (xem TENANT-1 ở từng `process`)
- * nên handle vào kho chung — cùng đích kho với handle bộ máy cũ định
- * tuyến trước đây. Các cột jsonb khi ghi (`archive`, `detail`,
- * `indicators`, `data`, `last_result`, `manifest`, `result`,
- * payload outbox) đi qua serialize tường minh + `::jsonb` theo khuôn
- * pilot (driver `pg` hiểu mảng cấp cao nhất là mảng PostgreSQL nếu
- * không serialize); khoá bên trong các giá trị jsonb là khoá dữ kiện
- * đã lưu nên giữ nguyên camelCase như trước.
+ * @remarks Mọi truy vấn của các processor trong file này đi qua handle Kysely định tuyến
+ * (`SpaceDatabaseService.routedKysely`): các processor chạy trong ngữ cảnh platform tường minh (xem TENANT-1 ở từng
+ * `process`) nên handle vào kho chung — cùng đích kho với handle bộ máy cũ định tuyến trước đây. Các cột jsonb khi ghi
+ * (`archive`, `detail`, `indicators`, `data`, `last_result`, `manifest`, `result`, payload outbox) đi qua serialize
+ * tường minh + `::jsonb` theo khuôn pilot (driver `pg` hiểu mảng cấp cao nhất là mảng PostgreSQL nếu không serialize);
+ * khoá bên trong các giá trị jsonb là khoá dữ kiện đã lưu nên giữ nguyên camelCase như trước.
  */
 
 /** Backup: dựng archive (format riêng v1) cho job backup đang pending và ghi các bước contributor. */
 @Processor('backup')
-/**
- * Xử lý job sao lưu khoá học nền.
- */
 export class BackupProcessor extends WorkerHost {
   constructor(private readonly spaceDb: SpaceDatabaseService) { super(); }
-  /**
-   * Xử lý một job của queue tương ứng.
-   */
   async process(job: Job<{ jobId: string }>): Promise<{ status: string; sections?: number; cms?: number }> {
-    // TENANT-1 (#196): processor nền quét/xử lý xuyên tenant — bọc
-    // ngữ cảnh platform tường minh để RLS fail-closed không làm mù
-    // dữ liệu tenant (pool gắn GUC theo ALS ở mọi checkout).
+    // TENANT-1 (#196): processor nền quét/xử lý xuyên tenant — bọc ngữ cảnh platform tường minh để RLS fail-closed
+    // không làm mù dữ liệu tenant (pool gắn GUC theo ALS ở mọi checkout).
     return tenantAls.run({ platform: true }, () => this.processInContext(job));
   }
 
@@ -89,11 +76,9 @@ export class BackupProcessor extends WorkerHost {
         })
         .execute();
     }
-    // Archive dùng CHUNG định dạng lms-backup v1 với API: bản tóm
-    // tắt của worker mang đủ các section contributor mới (questions/badges/
-    // calendar) bên cạnh các section cũ; attempts/usages của question bank
-    // và assertions của badge KHÔNG bao giờ vào archive (dữ liệu vận hành /
-    // bằng chứng lịch sử của khoá gốc).
+    // Archive dùng CHUNG định dạng lms-backup v1 với API: bản tóm tắt của worker mang đủ các section contributor mới
+    // (questions/badges/ calendar) bên cạnh các section cũ; attempts/usages của question bank và assertions của badge
+    // KHÔNG bao giờ vào archive (dữ liệu vận hành / bằng chứng lịch sử của khoá gốc).
     const extended = {
       questions: { categories: qCategories.length, questions: qRows.length, entries: qEntries.length, versions: qVersions.length },
       badges: { badges: badges.length, criteria: criteria.length },
@@ -132,7 +117,10 @@ export class BackupProcessor extends WorkerHost {
   }
 }
 
-/** Restore: với job restore pending mang archive ở trường archive, sao chép section/cm sang course đích và ghi id mapping. */
+/**
+ * Restore: với job restore pending mang archive ở trường archive, sao chép section/cm sang course đích và ghi id
+ * mapping.
+ */
 @Processor('restore')
 /**
  * Xử lý job khôi phục khoá học nền.
@@ -375,14 +363,16 @@ export class AnalyticsRunProcessor extends WorkerHost {
   }
 }
 
-/** Report schedule: chạy báo cáo enrolments dưới danh tính người tạo (đếm dòng enrolment) + notification + lưu lastResult. */
+/**
+ * Report schedule: chạy báo cáo enrolments dưới danh tính người tạo (đếm dòng enrolment) + notification + lưu
+ * lastResult.
+ */
 @Processor('report-schedule')
 /**
- * Xử lý job báo cáo theo lịch: sinh báo cáo và gửi notification (nội dung từ catalog i18n).
- * Thông báo đi qua hàm luật phân phối dùng chung ({@link NotificationDeliveryService},
- * NB-6): trước lát này processor insert thẳng vào bảng notifications —
- * không kiểm đình chỉ, không kiểm tuỳ chọn, không ghi dispatch log; nay áp
- * đúng luật như `notify()` phía API cho kênh trong-app.
+ * Xử lý job báo cáo theo lịch: sinh báo cáo và gửi notification (nội dung từ catalog i18n). Thông báo đi qua hàm luật
+ * phân phối dùng chung ({@link NotificationDeliveryService}, NB-6): trước lát này processor insert thẳng vào bảng
+ * notifications — không kiểm đình chỉ, không kiểm tuỳ chọn, không ghi dispatch log; nay áp đúng luật như `notify()`
+ * phía API cho kênh trong-app.
  */
 export class ReportScheduleProcessor extends WorkerHost {
   constructor(
@@ -423,18 +413,16 @@ export class ReportScheduleProcessor extends WorkerHost {
       .where('id', '=', schedule.id)
       .execute();
     /**
-     * Text thông báo tra trong catalog i18n theo ngôn ngữ của người nhận:
-     * worker chạy ngoài request context nên truyền `locale` tường minh vào
-     * `I18nService.t()` (mẫu dịch ngoài request của docs @nestjs/i18n). Hệ
-     * thống chưa lưu locale riêng cho từng user nên dùng locale mặc định 'vi';
-     * khi có user preference về ngôn ngữ, chỉ cần thay hằng số này.
+     * Text thông báo tra trong catalog i18n theo ngôn ngữ của người nhận: worker chạy ngoài request context nên truyền
+     * `locale` tường minh vào `I18nService.t()` (mẫu dịch ngoài request của docs @nestjs/i18n). Hệ thống chưa lưu
+     * locale riêng cho từng user nên dùng locale mặc định 'vi'; khi có user preference về ngôn ngữ, chỉ cần thay hằng
+     * số này.
      */
     const recipientLocale = 'vi';
     const subject = this.i18n.t('platform.reportReadySubject', { locale: recipientLocale });
-    // TENANT-1 (#196): báo cáo chưa mang tenant riêng — notification
-    // gắn tenant mặc định của người tạo lịch theo membership (người
-    // sẽ đọc thông báo), truyền xuống hàm luật dùng chung để dòng
-    // thông báo + dispatch log mang đúng tenant.
+    // TENANT-1 (#196): báo cáo chưa mang tenant riêng — notification gắn tenant mặc định của người tạo lịch theo
+    // membership (người sẽ đọc thông báo), truyền xuống hàm luật dùng chung để dòng thông báo + dispatch log mang đúng
+    // tenant.
     const tenantId = await resolveDefaultTenantId(this.spaceDb.routedKysely, schedule.createdBy);
     await this.delivery.deliverInApp(schedule.createdBy, 'report_scheduled', {
       subject,

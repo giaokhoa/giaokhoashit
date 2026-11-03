@@ -6,14 +6,11 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
 import { createGradeItem, getGradebook, setGrade } from '../../support/assessment-helpers';
 
 /**
- * Xuất bảng điểm Excel vnEdu (issue #53; nguồn đổi ở issue #224).
- * Oracle: Thông tư 22/2021/TT-BGDĐT (Điều 5 thang 10 + làm tròn 1 chữ
- * số thập phân; Điều 9 công thức ĐTBmhk — bản công thức ĐTB DUY NHẤT
- * còn lại của hệ nằm trong domain/vnedu-export và test này kiểm trực
- * tiếp qua file xuất) và kết quả kiểm chứng mẫu ở comment Bước 0 của
- * issue #53. Test đối chiếu TỪNG Ô điểm trong file .xlsx với điểm theo
- * bài (qua GET gradebook — đường đọc độc lập): khớp 100% mới đạt.
- * Nguồn xuất (issue #224): chỉ bài ĐÃ CÔNG BỐ mới được xuất.
+ * Xuất bảng điểm Excel vnEdu (issue #53; nguồn đổi ở issue #224). Oracle: Thông tư 22/2021/TT-BGDĐT (Điều 5 thang 10 +
+ * làm tròn 1 chữ số thập phân; Điều 9 công thức ĐTBmhk — bản công thức ĐTB DUY NHẤT còn lại của hệ nằm trong
+ * domain/vnedu-export và test này kiểm trực tiếp qua file xuất) và kết quả kiểm chứng mẫu ở comment Bước 0 của issue
+ * #53. Test đối chiếu TỪNG Ô điểm trong file .xlsx với điểm theo bài (qua GET gradebook — đường đọc độc lập): khớp 100%
+ * mới đạt. Nguồn xuất (issue #224): chỉ bài ĐÃ CÔNG BỐ mới được xuất.
  */
 describe('Xuất sổ điểm Excel vnEdu (issue #53)', () => {
   let app: INestApplication;
@@ -43,7 +40,8 @@ describe('Xuất sổ điểm Excel vnEdu (issue #53)', () => {
     return http(app)
       .post(`/api/v1/courses/${courseId}/grade-exports`)
       .set('Authorization', `Bearer ${token}`)
-      // Path canonical grade-exports khai nhà cung cấp trong thân yêu cầu: provider: 'vnedu', phần còn lại là payload vnEdu như cũ.
+      // Path canonical grade-exports khai nhà cung cấp trong thân yêu cầu: provider: 'vnedu', phần còn lại là payload
+      // vnEdu như cũ.
       .send({ provider: 'vnedu', ...body })
       .buffer(true)
       .parse((res, cb) => {
@@ -57,7 +55,8 @@ describe('Xuất sổ điểm Excel vnEdu (issue #53)', () => {
     return http(app)
       .post(`/api/v1/courses/${courseId}/grade-exports`)
       .set('Authorization', `Bearer ${token}`)
-      // Path canonical grade-exports khai nhà cung cấp trong thân yêu cầu: provider: 'vnedu', phần còn lại là payload vnEdu như cũ.
+      // Path canonical grade-exports khai nhà cung cấp trong thân yêu cầu: provider: 'vnedu', phần còn lại là payload
+      // vnEdu như cũ.
       .send({ provider: 'vnedu', ...body });
   }
 
@@ -126,9 +125,8 @@ describe('Xuất sổ điểm Excel vnEdu (issue #53)', () => {
     expect(sheet.getCell(4, 8).value).toBe('Điểm trung bình môn học kỳ (ĐTBmhk)');
     expect(sheet.rowCount).toBe(7); // 5 dòng đầu + đúng 2 học sinh, không dòng thừa
 
-    // Đối chiếu từng ô với điểm theo bài qua GET gradebook (đường đọc
-    // độc lập): ô = finalGrade quy đổi thang 10 theo gradeMax của mục,
-    // làm tròn 1 số thập phân.
+    // Đối chiếu từng ô với điểm theo bài qua GET gradebook (đường đọc độc lập): ô = finalGrade quy đổi thang 10 theo
+    // gradeMax của mục, làm tròn 1 số thập phân.
     const maxByItemName = new Map([['Kiểm tra miệng', 10], ['Kiểm tra 15 phút', 100], ['Giữa kỳ', 10], ['Cuối kỳ', 10]]);
     const colByItemName = new Map([['Kiểm tra miệng', 4], ['Kiểm tra 15 phút', 5], ['Giữa kỳ', 6], ['Cuối kỳ', 7]]);
     for (const student of [s1, s2]) {

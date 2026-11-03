@@ -7,29 +7,21 @@ import { CoursesRepository, type CategoryRow } from './courses';
 /**
  * Spec tích hợp của repository khoá học trên Kysely (issue #645).
  *
- * Database trung tâm dựng từ rỗng bằng chính cầu nối migration
- * của package trên cụm PostgreSQL thật của môi trường test (biến
- * `LMS_DB_TEST_ADMIN_URL` ghi đè cụm khi cần, mặc định suy từ
- * `DATABASE_URL`). Mọi ca chạy qua repository production ở
- * `courses.ts` — không mô phỏng handle.
+ * Database trung tâm dựng từ rỗng bằng chính cầu nối migration của package trên cụm PostgreSQL thật của môi trường test
+ * (biến `LMS_DB_TEST_ADMIN_URL` ghi đè cụm khi cần, mặc định suy từ `DATABASE_URL`). Mọi ca chạy qua repository
+ * production ở `courses.ts` — không mô phỏng handle.
  *
  * Các tính chất chốt tại đây:
- * - Insert không truyền id nhận id UUIDv7 do database sinh
- *   (phụ lục U) và đọc lại nguyên vẹn qua chính repository.
- * - Cây category: path vật chất hoá + `subtreeOf` theo tiền tố
- *   path + `countSiblingCategories` trả `number` thật (ép
+ * - Insert không truyền id nhận id UUIDv7 do database sinh (phụ lục U) và đọc lại nguyên vẹn qua chính repository.
+ * - Cây category: path vật chất hoá + `subtreeOf` theo tiền tố path + `countSiblingCategories` trả `number` thật (ép
  *   `::int`, T-7).
- * - Jsonb `availability`: ghi/đọc khớp cả object lẫn MẢNG ở tầng
- *   cao nhất (đường nhân bản cm chép mảng availability), và đủ ba
- *   trạng thái của T-4 ở update patch — `undefined` giữ nguyên,
- *   `null` ghi SQL NULL, giá trị ghi qua xâu hoá + `::jsonb`.
- * - `shiftSections` hai pass qua vùng đệm +100000 giữ unique
- *   (course, section) và cho đúng số section đích.
- * - `setFormatOption` giữ cả hai nhánh của hợp đồng cũ: upsert
- *   thủ công khi `sectionId` null và `onConflictDoUpdate` trên
- *   unique bốn cột khi có section.
- * - Giao dịch của repository nguyên tử: lỗi giữa chừng rollback
- *   sạch dòng vừa ghi.
+ * - Jsonb `availability`: ghi/đọc khớp cả object lẫn MẢNG ở tầng cao nhất (đường nhân bản cm chép mảng availability),
+ *   và đủ ba trạng thái của T-4 ở update patch — `undefined` giữ nguyên, `null` ghi SQL NULL, giá trị ghi qua xâu hoá +
+ *   `::jsonb`.
+ * - `shiftSections` hai pass qua vùng đệm +100000 giữ unique (course, section) và cho đúng số section đích.
+ * - `setFormatOption` giữ cả hai nhánh của hợp đồng cũ: upsert thủ công khi `sectionId` null và `onConflictDoUpdate`
+ *   trên unique bốn cột khi có section.
+ * - Giao dịch của repository nguyên tử: lỗi giữa chừng rollback sạch dòng vừa ghi.
  */
 
 const adminUrl =
@@ -66,7 +58,6 @@ afterAll(async () => {
   if (adminUrl) await dropTestDatabase(adminUrl, TEST_DB);
 });
 
-/** Tạo một category gốc hoàn chỉnh (path/depth như đường tạo của service). */
 async function makeCategory(name: string, parent: CategoryRow | null = null): Promise<CategoryRow> {
   const cat = await repo.insertCategory({
     tenantId,

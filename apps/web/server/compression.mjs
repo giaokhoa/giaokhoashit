@@ -1,29 +1,23 @@
 /**
  * Nén asset tĩnh cho prod-server.mjs (F-12 của rà soát #133).
  *
- * Module thuần (không I/O) tách riêng để có spec độc lập, cùng khuôn
- * proxy-paths.mjs của PR #128. CHỈ đường phục vụ file tĩnh (tryStatic)
- * được dùng module này — đường SSR streaming và đường proxy API/SSE
- * không qua đây, giữ nguyên hành vi stream không đệm.
+ * Module thuần (không I/O) tách riêng để có spec độc lập, cùng khuôn proxy-paths.mjs của PR #128. CHỈ đường phục vụ
+ * file tĩnh (tryStatic) được dùng module này — đường SSR streaming và đường proxy API/SSE không qua đây, giữ nguyên
+ * hành vi stream không đệm.
  *
- * Thương lượng theo RFC 9110: đọc q-value của Accept-Encoding, ưu tiên
- * brotli khi q ngang hoặc cao hơn gzip; encoding bị q=0 là bị cấm tường
- * minh. Ngưỡng kích thước tối thiểu tránh nén file nhỏ (chi phí CPU và
- * tỉ lệ nén không đáng).
+ * Thương lượng theo RFC 9110: đọc q-value của Accept-Encoding, ưu tiên brotli khi q ngang hoặc cao hơn gzip; encoding
+ * bị q=0 là bị cấm tường minh. Ngưỡng kích thước tối thiểu tránh nén file nhỏ (chi phí CPU và tỉ lệ nén không đáng).
  */
 import { brotliCompressSync, gzipSync, constants as zlibConstants } from 'node:zlib';
 
-/** File tĩnh nhỏ hơn ngưỡng này trả thẳng, không nén. */
 export const MIN_COMPRESS_BYTES = 1024;
 
 const COMPRESSIBLE_TYPE = /^(?:text\/|application\/json\b|image\/svg\+xml\b)/;
 
-/** Loại nội dung có lợi khi nén (JS/CSS/HTML/JSON/SVG/text); ảnh và font đã nén sẵn thì không. */
 export function isCompressibleType(contentType) {
   return COMPRESSIBLE_TYPE.test(contentType ?? '');
 }
 
-/** q-value của một encoding trong Accept-Encoding; undefined nếu không được nhắc tới. */
 function encodingQ(entries, name) {
   if (entries.has(name)) return entries.get(name);
   return entries.get('*');

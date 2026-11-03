@@ -9,18 +9,15 @@ import {
 } from '../../support/ordinary-worker-module';
 
 /**
- * Các job enrol & completion của worker. Oracles nghiệp vụ: ngữ nghĩa hết hạn ghi danh từ
- * enrol/tests/enrollib_test.php + report §2#5 (hết hạn ⇒ không còn active), và
- * reaggregation của completion từ lib/tests/completionlib_test.php
- * ::test_aggregate_completions (thay đổi criteria ⇒ tính lại có kiểm soát).
- * Các dòng được chèn trực tiếp vì schema API chuẩn sở hữu việc tạo;
- * các processor được kiểm thử vận hành trên góc nhìn của worker về cùng các bảng đó.
+ * Các job enrol & completion của worker. Oracles nghiệp vụ: ngữ nghĩa hết hạn
+ * ghi danh từ enrol/tests/enrollib_test.php + report §2#5 (hết hạn ⇒ không còn active), và reaggregation của completion
+ * từ lib/tests/completionlib_test.php ::test_aggregate_completions (thay đổi criteria ⇒ tính lại có kiểm soát). Các
+ * dòng được chèn trực tiếp vì schema API chuẩn sở hữu việc tạo; các processor được kiểm thử vận hành trên góc nhìn của
+ * worker về cùng các bảng đó.
  *
- * Từ lát 2 của issue #294, spec này boot WorkerModule qua harness
- * role thường (`test/ordinary-worker-module.ts`): module chạy bằng
- * role NOSUPERUSER/NOBYPASSRLS như production, fixture và đọc kiểm
- * chứng đi qua kết nối quản trị của harness — khẳng định nghiệp vụ
- * của spec không đổi.
+ * Từ lát 2 của issue #294, spec này boot WorkerModule qua harness role thường (`test/ordinary-worker-module.ts`):
+ * module chạy bằng role NOSUPERUSER/NOBYPASSRLS như production, fixture và đọc kiểm chứng đi qua kết nối quản trị của
+ * harness — khẳng định nghiệp vụ của spec không đổi.
  */
 describe('Ghi danh và hoàn thành của worker: bộ xử lý enrol-expiry + completion-recalculate', () => {
   let context: INestApplicationContext;
@@ -167,11 +164,9 @@ describe('Ghi danh và hoàn thành của worker: bộ xử lý enrol-expiry + c
     await processor.process({ data: { courseId } } as never);
     expect(await statusOf(userId)).toBe('complete');
 
-    // role: dùng chung đường bằng chứng markedKeys với self, nhưng
-    // dòng crit_compl được ghi bởi một MARKER (markedBy ≠ người học) —
-    // "manual completion by others". Worker chỉ đọc bằng chứng;
-    // ai được phép ghi các dòng này là kiểm tra role phía API (issue #23 F1).
-    // Cần một dòng role thật: criteria.role_id có FK tới role.id.
+    // role: dùng chung đường bằng chứng markedKeys với self, nhưng dòng crit_compl được ghi bởi một MARKER (markedBy ≠
+    // người học) — "manual completion by others". Worker chỉ đọc bằng chứng; ai được phép ghi các dòng này là kiểm tra
+    // role phía API (issue #23 F1). Cần một dòng role thật: criteria.role_id có FK tới role.id.
     const roleRows = await sql`insert into role (name, short_name) values ('Worker marker role', ${`wkmarker${suffix}`}) returning id`.execute(db);
     const markerRoleId = (roleRows.rows[0] as { id: string }).id;
     await db.deleteFrom('course_completion_criteria').where('course', '=', courseId).execute();

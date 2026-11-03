@@ -9,28 +9,20 @@ import {
 } from '../../support/engagement-helpers';
 
 /**
- * Kiểm thử luồng Badges + Competencies.
- * Oracle (Moodle MOODLE_503_STABLE, đọc ngày 2026-10-22):
- *  - public/badges/tests/badgeslib_test.php: test_create_badge_criteria,
- *    test_badge_awards, test_clone_badge (duplicate = cách để sửa),
- *    test_delete_badge (delete = archive). Báo cáo §2#14: cây tiêu chí
- *    ALL/ANY; tiêu chí bị ĐÔNG CỨNG khi đã cấp/đang hoạt động; assertion bất biến;
- *    revoke ≠ delete.
- *  - Behat (badges/tests/behat): criteria_cohort.feature (lá cohort),
- *    criteria_profile.feature (lá profile), award_badge.feature /
- *    "Badge awarded depending on the course completion by-date"
- *    (lá coursecompletion tôn trọng tham số by-date của nó). Các bước UI
- *    của những kịch bản đó được bỏ qua theo quy ước; các bước nghiệp vụ
- *    và kết quả cấp huy hiệu kỳ vọng được khẳng định qua API bên dưới.
- *  - public/competency/tests/api_test.php: test_list_frameworks,
- *    test_create_plan_from_template, test_create_template_cohort,
- *    test_complete_plan, test_plan_request_review / test_plan_start_review /
- *    test_plan_stop_review / test_approve_plan / test_unapprove_plan,
- *    test_add_evidence_complete, test_add_evidence_and_send_for_review,
- *    test_validate_grade_in_user_competency,
- *    test_set_ruleoutcome_course_competency,
- *    test_observe_course_completed. Báo cáo §2#15: mức thành thạo (proficiency) đến từ
- *    THANG (SCALE) của framework, không bao giờ từ điểm số.
+ * Kiểm thử luồng Badges + Competencies. Oracle (Moodle MOODLE_503_STABLE, đọc ngày 2026-10-22):
+ *  - public/badges/tests/badgeslib_test.php: test_create_badge_criteria, test_badge_awards, test_clone_badge (duplicate
+ *    = cách để sửa), test_delete_badge (delete = archive). Báo cáo §2#14: cây tiêu chí ALL/ANY; tiêu chí bị ĐÔNG CỨNG
+ *    khi đã cấp/đang hoạt động; assertion bất biến; revoke ≠ delete.
+ *  - Behat (badges/tests/behat): criteria_cohort.feature (lá cohort), criteria_profile.feature (lá profile),
+ *    award_badge.feature / "Badge awarded depending on the course completion by-date" (lá coursecompletion tôn trọng
+ *    tham số by-date của nó). Các bước UI của những kịch bản đó được bỏ qua theo quy ước; các bước nghiệp vụ và kết quả
+ *    cấp huy hiệu kỳ vọng được khẳng định qua API bên dưới.
+ *  - public/competency/tests/api_test.php: test_list_frameworks, test_create_plan_from_template,
+ *    test_create_template_cohort, test_complete_plan, test_plan_request_review / test_plan_start_review /
+ *    test_plan_stop_review / test_approve_plan / test_unapprove_plan, test_add_evidence_complete,
+ *    test_add_evidence_and_send_for_review, test_validate_grade_in_user_competency,
+ *    test_set_ruleoutcome_course_competency, test_observe_course_completed. Báo cáo §2#15: mức thành thạo (proficiency)
+ *    đến từ THANG (SCALE) của framework, không bao giờ từ điểm số.
  */
 describe('Huy hiệu và năng lực', () => {
   let app: INestApplication;
@@ -88,8 +80,7 @@ describe('Huy hiệu và năng lực', () => {
     // Trước khi hoàn thành: chưa thoả mãn theo ALL.
     let evaluation = await http(app).post(`/api/v1/badges/${badgeId}/evaluate`).set('Authorization', `Bearer ${admin}`).send({ userId: student.id });
     expect(evaluation.body.satisfied).toBe(false);
-    // Hoàn thành hoạt động thì hoàn thành khoá học → cả hai lá đều đúng →
-    // hook hoàn thành tự động cấp huy hiệu.
+    // Hoàn thành hoạt động thì hoàn thành khoá học → cả hai lá đều đúng → hook hoàn thành tự động cấp huy hiệu.
     await markCmComplete(app, admin, course.id, cm.id, student.id);
     const studentToken = (await login(app, student.username, STRONG_PASSWORD)).accessToken;
     const mine = await http(app).get('/api/v1/badges/mine').set('Authorization', `Bearer ${studentToken}`);
@@ -223,10 +214,9 @@ describe('Huy hiệu và năng lực', () => {
     const field = await http(app).post('/api/v1/custom-fields/fields').set('Authorization', `Bearer ${admin}`)
       .send({ categoryId: cat.body.id, shortName, name: 'Badge department', type: 'text', configData: {} });
     expect(field.status).toBe(201);
-    // DB kiểm thử của api tồn tại qua các lượt chạy và được dùng chung bởi các spec của suite này
-    // : một spec khác có thể đã khai báo các trường core_user BẮT BUỘC
-    // (ví dụ một select `department`), và việc tạo người dùng kiểm chứng mọi
-    // trường bắt buộc — hãy thoả mãn chúng theo cách tổng quát.
+    // DB kiểm thử của api tồn tại qua các lượt chạy và được dùng chung bởi các spec của suite này : một spec khác có
+    // thể đã khai báo các trường core_user BẮT BUỘC (ví dụ một select `department`), và việc tạo người dùng kiểm chứng
+    // mọi trường bắt buộc — hãy thoả mãn chúng theo cách tổng quát.
     const fieldsRes = await http(app).get('/api/v1/custom-fields/fields?component=core_user&area=user').set('Authorization', `Bearer ${admin}`);
     expect(fieldsRes.status).toBe(200);
     const requiredValues: Record<string, string> = {};
@@ -251,7 +241,8 @@ describe('Huy hiệu và năng lực', () => {
     expect((await evaluateLeaves(stdBadgeId, matching.id)).satisfied).toBe(true);
     const stdValueBadgeId = await activeBadgeWithCriteria('Last name is User', [{ criteriaType: 'profile', params: { field: 'lastName', value: 'User' } }]);
     expect((await evaluateLeaves(stdValueBadgeId, matching.id)).satisfied).toBe(true);
-    expect((await evaluateLeaves(stdValueBadgeId, different.id)).satisfied).toBe(true); // lastName mặc định của helper cũng là 'User'
+    // lastName mặc định của helper cũng là 'User'
+    expect((await evaluateLeaves(stdValueBadgeId, different.id)).satisfied).toBe(true);
     const stdMissBadgeId = await activeBadgeWithCriteria('Last name is Nobody', [{ criteriaType: 'profile', params: { field: 'lastName', value: 'Nobody' } }]);
     expect((await evaluateLeaves(stdMissBadgeId, matching.id)).satisfied).toBe(false);
   });
@@ -346,8 +337,8 @@ describe('Huy hiệu và năng lực', () => {
     await http(app).post(`/api/v1/competencies/plans/${planId}/activate`).set('Authorization', `Bearer ${ownerToken}`).send({});
     const requested = await http(app).post(`/api/v1/competencies/plans/${planId}/request-review`).set('Authorization', `Bearer ${ownerToken}`).send({});
     expect(requested.body.status).toBe(2);
-    // Chủ sở hữu không thể review kế hoạch của chính mình (không có capability review) — một
-    // giáo viên có capability review tại một assignment thật thì có thể.
+    // Chủ sở hữu không thể review kế hoạch của chính mình (không có capability review) — một giáo viên có capability
+    // review tại một assignment thật thì có thể.
     const startByOwner = await http(app).post(`/api/v1/competencies/plans/${planId}/start-review`).set('Authorization', `Bearer ${ownerToken}`).send({});
     expect(startByOwner.status).toBe(403);
     const started = await http(app).post(`/api/v1/competencies/plans/${planId}/start-review`).set('Authorization', `Bearer ${admin}`).send({});

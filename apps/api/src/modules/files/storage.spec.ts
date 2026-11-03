@@ -26,9 +26,8 @@ function s3Error(name: string, httpStatusCode: number): Error {
   return Object.assign(new Error(name), { name, $metadata: { httpStatusCode } });
 }
 
-/**
- * Double S3 trong bộ nhớ cho tầng test hợp đồng: cài đặt đúng ngữ nghĩa
- * Head/Put/Get/Delete theo key mà adapter dùng, không cần mạng/MinIO.
+/** Double S3 trong bộ nhớ cho tầng test hợp đồng: cài đặt đúng ngữ nghĩa Head/Put/Get/Delete theo key mà adapter dùng,
+ * không cần mạng/MinIO.
  */
 class FakeS3Client {
   readonly objects = new Map<string, Buffer>();
@@ -72,10 +71,9 @@ function makeS3Storage(): { storage: S3ObjectStorage; fake: FakeS3Client } {
 }
 
 /**
- * Bộ test HỢP ĐỒNG của port ObjectStorage — chạy nguyên vẹn cho mọi adapter:
- * vòng put/get/delete/exists, và ngữ nghĩa dedup (put trùng hash
- * KHÔNG ghi đè nội dung đã lưu). Bố cục key nội bộ và số lần gọi adapter
- * là chi tiết triển khai — không khẳng định ở đây (rà soát #219).
+ * Bộ test HỢP ĐỒNG của port ObjectStorage — chạy nguyên vẹn cho mọi adapter: vòng put/get/delete/exists, và ngữ nghĩa
+ * dedup (put trùng hash KHÔNG ghi đè nội dung đã lưu). Bố cục key nội bộ và số lần gọi adapter là chi tiết triển khai —
+ * không khẳng định ở đây (rà soát #219).
  */
 function storageContract(name: string, make: () => Promise<{ storage: ObjectStorage; cleanup: () => Promise<void> }>): void {
   describe(`Hợp đồng ObjectStorage — ${name}`, () => {

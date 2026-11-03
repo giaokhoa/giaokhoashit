@@ -6,22 +6,16 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Cân bằng trải nghiệm ngân hàng cho ADMIN (việc nối tiếp feat #70,
- * đính chính 25/10/2026): CHỈ MỘT quy tắc — admin có khu riêng ĐÚNG
- * NHƯ giáo viên trên bề mặt ngân hàng, không ẩn theo vai, không đặc
- * cách. Spec này khoá parity admin ↔ giáo viên (vai teacher tại hệ
- * thống — nhóm archetype staff) ở tầng API, đúng các đường web dùng:
- *  - GET /question-banks (kind=question): bank cá nhân tự tạo lười,
- *    đủ capabilities, có category mặc định, tạo được câu trong bank
- *    của chính mình.
- *  - GET /question-banks?kind=matrix: bank ma trận cá nhân tự tạo
- *    lười, đủ matrix capabilities, tạo được ma trận trong bank mình.
- *  - GET /question-banks?kind=exam (tầng bank của EB-1): bank đề cá
- *    nhân tự tạo lười cho cả hai.
- *  - Đối chứng âm: người dùng thường (không archetype staff, không
- *    phải site admin) vẫn KHÔNG có bank cá nhân — cổng staff của
- *    điểm chặn 3 (PR #83) giữ nguyên, parity không có nghĩa là mở
- *    cho tất cả.
+ * Cân bằng trải nghiệm ngân hàng cho ADMIN (việc nối tiếp feat #70, đính chính 25/10/2026): CHỈ MỘT quy tắc — admin có
+ * khu riêng ĐÚNG NHƯ giáo viên trên bề mặt ngân hàng, không ẩn theo vai, không đặc cách. Spec này khoá parity admin ↔
+ * giáo viên (vai teacher tại hệ thống — nhóm archetype staff) ở tầng API, đúng các đường web dùng:
+ *  - GET /question-banks (kind=question): bank cá nhân tự tạo lười, đủ capabilities, có category mặc định, tạo được câu
+ *    trong bank của chính mình.
+ *  - GET /question-banks?kind=matrix: bank ma trận cá nhân tự tạo lười, đủ matrix capabilities, tạo được ma trận trong
+ *    bank mình.
+ *  - GET /question-banks?kind=exam (tầng bank của EB-1): bank đề cá nhân tự tạo lười cho cả hai.
+ *  - Đối chứng âm: người dùng thường (không archetype staff, không phải site admin) vẫn KHÔNG có bank cá nhân — cổng
+ *    staff của điểm chặn 3 (PR #83) giữ nguyên, parity không có nghĩa là mở cho tất cả.
  */
 
 function bearer(token: string): { Authorization: string } {
@@ -69,10 +63,9 @@ describe('Ngang bằng admin ngân hàng (feat #70 follow-up)', () => {
   async function personalBank(token: string, kind: string, ownerId: string): Promise<BankBody | undefined> {
     const res = await http(app).get(`/api/v1/question-banks?kind=${kind}`).set(bearer(token));
     expect(res.status, JSON.stringify(res.body)).toBe(200);
-    // Lọc theo CHỦ SỞ HỮU: danh sách của staff hiện còn lẫn bank cá
-    // nhân của người khác (kế thừa question:useall qua cây context) —
-    // đó là phạm vi của issue #123 đang thi công riêng, không thuộc
-    // parity này. Parity khẳng định trên bank CỦA CHÍNH actor.
+    // Lọc theo CHỦ SỞ HỮU: danh sách của staff hiện còn lẫn bank cá nhân của người khác (kế thừa question:useall qua
+    // cây context) — đó là phạm vi của issue #123 đang thi công riêng, không thuộc parity này. Parity khẳng định trên
+    // bank CỦA CHÍNH actor.
     return (res.body as BankBody[]).find((b) => b.scope === 'personal' && b.ownerId === ownerId);
   }
 

@@ -4,11 +4,9 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
 import { createCategory, createCm, createCourse, createEnrolInstance, enrolUser, getFirstSectionId } from '../../support/course-enrolment-helpers';
 
 /**
- * Luồng Availability + Completion.
- * Oracle: availability/tests/tree_test.php::test_check_available và
- * availability/tests/info_test.php (hạn chế áp dụng tại lớp info/access
- * , không chỉ ở hiển thị); lib/tests/completionlib_test.php
- * (test_update_state, test_set_module_viewed, test_aggregate_completions trong
+ * Luồng Availability + Completion. Oracle: availability/tests/tree_test.php::test_check_available và
+ * availability/tests/info_test.php (hạn chế áp dụng tại lớp info/access , không chỉ ở hiển thị);
+ * lib/tests/completionlib_test.php (test_update_state, test_set_module_viewed, test_aggregate_completions trong
  * completion/tests + các kiểm thử tiêu chí trong completion/tests/api_test.php).
  */
 describe('Khả dụng và hoàn thành', () => {
@@ -88,7 +86,8 @@ describe('Khả dụng và hoàn thành', () => {
     };
     const cm = await createCm(app, admin, course.id, sectionId, { name: 'Gated', availability: tree });
     expect((await http(app).get(`/api/v1/courses/${course.id}/modules/${cm.id}/access`).set('Authorization', `Bearer ${studentToken}`)).status).toBe(200);
-    // Đưa học viên vào nhóm: cả hai điều kiện trong nay đều đúng (username chứa 'user' do cách dựng username kiểm thử) ⇒ NOT-OR thất bại ⇒ bị chặn.
+    // Đưa học viên vào nhóm: cả hai điều kiện trong nay đều đúng (username chứa 'user' do cách dựng username kiểm thử)
+    // ⇒ NOT-OR thất bại ⇒ bị chặn.
     await http(app).post(`/api/v1/courses/${course.id}/groups/${groupId}/members`).set('Authorization', `Bearer ${admin}`).send({ userId: student.id });
     expect((await http(app).get(`/api/v1/courses/${course.id}/modules/${cm.id}/access`).set('Authorization', `Bearer ${studentToken}`)).status).toBe(403);
   });

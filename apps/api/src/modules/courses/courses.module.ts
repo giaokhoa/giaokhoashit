@@ -10,18 +10,14 @@ import { TenantsModule } from '../tenants/tenants.module';
 import { CoursesController } from './courses.controller';
 import { CoursesService } from './courses.service';
 
-/** Facade của CoursesModule: CoursesService. Phụ thuộc Access, CustomFields, Availability (report §3.12). */
 @Module({
   imports: [AccessModule, CustomFieldsModule, AvailabilityModule, EventsModule, TenantsModule, SpaceRoutingModule],
   controllers: [CoursesController],
   providers: [
     {
-      // CoursesRepository nay là repository Kysely của `@lms/db`
-      // (issue #645): provider dựng bằng factory với handle kho
-      // trung tâm ĐÃ ĐỊNH TUYẾN THEO KHÔNG GIAN (`routedKysely`
-      // của SpaceDatabaseService — cùng pool dùng chung có gắn
-      // ngữ cảnh tenant mà tầng bộ máy cũ đang chạy trên đó), không
-      // phải handle tĩnh theo một database cố định.
+      // CoursesRepository nay là repository Kysely của `@lms/db` (issue #645): provider dựng bằng factory với handle
+      // kho trung tâm ĐÃ ĐỊNH TUYẾN THEO KHÔNG GIAN (`routedKysely` của SpaceDatabaseService — cùng pool dùng chung có
+      // gắn ngữ cảnh tenant mà tầng bộ máy cũ đang chạy trên đó), không phải handle tĩnh theo một database cố định.
       provide: CoursesRepository,
       useFactory: (spaceDb: SpaceDatabaseService) => new CoursesRepository(spaceDb.routedKysely),
       inject: [SpaceDatabaseService],
@@ -30,5 +26,4 @@ import { CoursesService } from './courses.service';
   ],
   exports: [CoursesService],
 })
-/** Module khoá học. */
 export class CoursesModule {}

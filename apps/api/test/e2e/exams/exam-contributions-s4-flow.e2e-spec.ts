@@ -9,31 +9,22 @@ import { ExamDossiersService } from '../../../src/modules/exams/exam-dossiers.se
 import { tenantAls } from '../../../src/modules/tenants/tenant-als';
 
 /**
- * Lát S4 của issue #228 — đường đóng góp DUY NHẤT của đề nâng lên
- * khuôn QB-4 đầy đủ, đối chiếu các tiêu chí đã chốt trong issue:
- *  - mode 'update': đề xuất bản mới cho một đề đã có trong bank
- *    đích — thiếu targetExamId → 400 exam.contribution_target_required;
- *    đích không nằm trong bank đích → 400
- *    exam.contribution_target_not_in_bank; nguồn không phải bản sao
- *    suy từ đích → 400 exam.contribution_not_derived; hợp lệ →
- *    duyệt tạo VERSION MỚI trên chính danh tính đề đích
- *    (result_exam_id = đề đích), mốc duyệt ghi vào sổ mốc duyệt.
- *  - bộ hồ sơ đính kèm (withDossier): đề không gắn ma trận → 400
- *    exam.contribution_dossier_requires_matrix; có bộ hồ sơ +
- *    tenant/bank đích bật cấu hình cấp duyệt 2 → duyệt cấp 1 chỉ
- *    sang pending_board (đề chưa vào bank), cổng cấp 2 chặn người
- *    không có exam:moderate tại context hệ thống (403
- *    exam.contribution_board_forbidden), ban giám hiệu duyệt mới
- *    chốt — bản vào bank là PHIÊN BẢN ĐÃ GHIM ở trạng thái ready;
- *    từ chối cấp 2 giữ vết cả hai cấp; cấu hình tắt → một cấp chốt.
- *  - chống trùng cho ma trận: đề xuất ghi content_hash và
- *    near_duplicate_of khi bank đích có ma trận trùng nội dung;
- *    duyệt đóng góp mà bank đích đã có bản copy suy từ chính ma
- *    trận nguồn → 409 quiz.matrix_duplicate_in_bank.
- *  - chuyển đổi hồ sơ treo (ExamDossiersService.convertLegacyDossiers):
- *    pending/pending_board → đóng góp mang bộ hồ sơ + lịch sử mốc
- *    duyệt (idempotent theo source_dossier_id); draft → đóng băng
- *    (không sinh đóng góp); approved/rejected → giữ lịch sử.
+ * Lát S4 của issue #228 — đường đóng góp DUY NHẤT của đề nâng lên khuôn QB-4 đầy đủ, đối chiếu các tiêu chí đã chốt
+ * trong issue:
+ *  - mode 'update': đề xuất bản mới cho một đề đã có trong bank đích — thiếu targetExamId → 400
+ *    exam.contribution_target_required; đích không nằm trong bank đích → 400 exam.contribution_target_not_in_bank;
+ *    nguồn không phải bản sao suy từ đích → 400 exam.contribution_not_derived; hợp lệ → duyệt tạo VERSION MỚI trên
+ *    chính danh tính đề đích (result_exam_id = đề đích), mốc duyệt ghi vào sổ mốc duyệt.
+ *  - bộ hồ sơ đính kèm (withDossier): đề không gắn ma trận → 400 exam.contribution_dossier_requires_matrix; có bộ hồ
+ *    sơ + tenant/bank đích bật cấu hình cấp duyệt 2 → duyệt cấp 1 chỉ sang pending_board (đề chưa vào bank), cổng cấp 2
+ *    chặn người không có exam:moderate tại context hệ thống (403 exam.contribution_board_forbidden), ban giám hiệu
+ *    duyệt mới chốt — bản vào bank là PHIÊN BẢN ĐÃ GHIM ở trạng thái ready; từ chối cấp 2 giữ vết cả hai cấp; cấu hình
+ *    tắt → một cấp chốt.
+ *  - chống trùng cho ma trận: đề xuất ghi content_hash và near_duplicate_of khi bank đích có ma trận trùng nội dung;
+ *    duyệt đóng góp mà bank đích đã có bản copy suy từ chính ma trận nguồn → 409 quiz.matrix_duplicate_in_bank.
+ *  - chuyển đổi hồ sơ treo (ExamDossiersService.convertLegacyDossiers): pending/pending_board → đóng góp
+ *    mang bộ hồ sơ + lịch sử mốc duyệt (idempotent theo source_dossier_id); draft → đóng băng (không sinh đóng góp);
+ *    approved/rejected → giữ lịch sử.
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -137,9 +128,8 @@ describe('Exam contributions S4 (issue #228): QB-4 đầy đủ cho đề + ch�
     expect(approveNew.status, JSON.stringify(approveNew.body)).toBe(201);
     const targetId = (approveNew.body as ContributionBody).resultExamId!;
     expect(targetId).toBeTruthy();
-    // Bản copy duyệt đóng góp hạ cánh ready ngay tại bank đích (quy
-    // tắc hoàn thiện: duyệt đóng góp đạt là đường vào bank ở dạng đã
-    // hoàn thiện) — dùng thẳng làm đề đích cho bản đề xuất cập nhật.
+    // Bản copy duyệt đóng góp hạ cánh ready ngay tại bank đích (quy tắc hoàn thiện: duyệt đóng góp đạt là đường vào
+    // bank ở dạng đã hoàn thiện) — dùng thẳng làm đề đích cho bản đề xuất cập nhật.
     const targetView = await http(app).get(`/api/v1/exams/${targetId}`).set(bearer(admin));
     expect((targetView.body as PaperBody).paper.status).toBe('ready');
 
@@ -268,13 +258,15 @@ describe('Exam contributions S4 (issue #228): QB-4 đầy đủ cho đề + ch�
       const inBankBefore = await http(app).get(`/api/v1/exams/banks/${schoolBank.id}/exams`).set(bearer(admin));
       expect((inBankBefore.body as { derivedFromExamId: string | null }[]).some((p) => p.derivedFromExamId === official.paper.id)).toBe(false);
 
-      // Người không có exam:moderate tại context hệ thống không qua được cổng cấp 2 — đường alias cũ giữ nguyên mã lỗi này.
+      // Người không có exam:moderate tại context hệ thống không qua được cổng cấp 2 — đường alias cũ giữ nguyên mã lỗi
+      // này.
       const ownerBoard = await http(app).post(`/api/v1/exams/banks/${schoolBank.id}/contributions/${contribution.id}/board-approve`)
         .set(bearer(owner.token)).send({});
       expect(ownerBoard.status).toBe(403);
       expect((ownerBoard.body as { code?: string }).code).toBe('exam.contribution_board_forbidden');
 
-      // Ban giám hiệu (site admin) duyệt cấp 2 qua đường canonical hợp nhất `approve` → chốt: bản ghim vào bank ở ready.
+      // Ban giám hiệu (site admin) duyệt cấp 2 qua đường canonical hợp nhất `approve` → chốt: bản ghim vào bank ở
+      // ready.
       const board = await http(app).post(`/api/v1/exams/banks/${schoolBank.id}/contributions/${contribution.id}/approve`)
         .set(bearer(admin)).send({});
       expect(board.status, JSON.stringify(board.body)).toBe(201);
@@ -375,9 +367,8 @@ describe('Exam contributions S4 (issue #228): QB-4 đầy đủ cho đề + ch�
     expect(approve1.status, JSON.stringify(approve1.body)).toBe(201);
     const landedId = (approve1.body as { resultMatrixId: string }).resultMatrixId;
 
-    // Đề xuất lần 2 (sau khi lần 1 đã chốt): bank đích nay có bản
-    // copy CÙNG NỘI DUNG → near_duplicate_of trỏ đúng bản đã vào
-    // bank; duyệt lần 2 bị chặn 409 vì bản đó suy từ chính nguồn.
+    // Đề xuất lần 2 (sau khi lần 1 đã chốt): bank đích nay có bản copy CÙNG NỘI DUNG → near_duplicate_of trỏ đúng bản
+    // đã vào bank; duyệt lần 2 bị chặn 409 vì bản đó suy từ chính nguồn.
     const propose2 = await http(app).post(`/api/v1/exam-matrices/${matrixId}/contributions`).set(bearer(owner.token))
       .send({ targetBankId: schoolMatrixBank.id });
     expect(propose2.status, JSON.stringify(propose2.body)).toBe(201);

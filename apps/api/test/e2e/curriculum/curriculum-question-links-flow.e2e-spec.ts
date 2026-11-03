@@ -6,12 +6,10 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Curriculum Chặng 2 của issue #20 (theo hồ sơ thiết kế tổng hợp, mục A):
- * hai bảng nối ở cấp DANH TÍNH câu hỏi (question_subjects,
- * question_learning_outcomes), mức độ nhận thức nằm trên dòng nối
- * câu × YCCĐ (biet/hieu/van_dung + van_dung_cao dự phòng), truy vết
- * nguồn nguyên văn chương trình cho learning_outcomes (A.3), và sửa lỗi
- * updateNode chưa chặn vòng cha–con gián tiếp (A.7).
+ * Curriculum Chặng 2 của issue #20 (theo hồ sơ thiết kế tổng hợp, mục A): hai bảng nối ở cấp DANH TÍNH câu hỏi
+ * (question_subjects, question_learning_outcomes), mức độ nhận thức nằm trên dòng nối câu × YCCĐ (biet/hieu/van_dung +
+ * van_dung_cao dự phòng), truy vết nguồn nguyên văn chương trình cho learning_outcomes (A.3), và sửa lỗi updateNode
+ * chưa chặn vòng cha–con gián tiếp (A.7).
  */
 
 const RANDOM_UUID = '018e0000-0000-7000-8000-000000000000';
@@ -143,10 +141,9 @@ describe('Chương trình giai đoạn 2 (liên kết câu hỏi ↔ chương tr
       .send({ outcomeId: tree.outcomeLesson, cognitiveLevel: 'kho' });
     expect(badLevel.status).toBe(400);
 
-    // KHÔNG còn quy tắc lệch môn (vòng sửa F1): gắn YCCĐ thuộc môn khác
-    // hẳn môn đã khai tường minh vẫn được — môn của câu khi lọc là hợp
-    // nhất khai tường minh và môn suy ngược từ YCCĐ đã gắn. Gắn rồi gỡ
-    // ngay để các khẳng định phía dưới giữ nguyên trạng thái.
+    // KHÔNG còn quy tắc lệch môn (vòng sửa F1): gắn YCCĐ thuộc môn khác hẳn môn đã khai tường minh vẫn được — môn của
+    // câu khi lọc là hợp nhất khai tường minh và môn suy ngược từ YCCĐ đã gắn. Gắn rồi gỡ ngay để các khẳng định phía
+    // dưới giữ nguyên trạng thái.
     const crossSubject = await http(app).post(`/api/v1/questions/${q}/outcomes`).set(bearer(admin))
       .send({ outcomeId: other.outcomeTopic, cognitiveLevel: 'hieu' });
     expect(crossSubject.status).toBe(201);
@@ -211,9 +208,8 @@ describe('Chương trình giai đoạn 2 (liên kết câu hỏi ↔ chương tr
     const treeB = await mkTree();
     const categoryId = await mkCategory();
 
-    // Cửa 1 — gắn YCCĐ của môn B TRƯỚC, khai môn A SAU: trước vòng sửa,
-    // gắn tiếp YCCĐ thứ hai của B bị 400 outcome_subject_mismatch dù câu
-    // đã mang sẵn một YCCĐ của B. Nay cả ba thao tác đều 201.
+    // Cửa 1 — gắn YCCĐ của môn B TRƯỚC, khai môn A SAU: trước vòng sửa, gắn tiếp YCCĐ thứ hai của B bị 400
+    // outcome_subject_mismatch dù câu đã mang sẵn một YCCĐ của B. Nay cả ba thao tác đều 201.
     const q1 = await mkQuestion(categoryId, 'multichoice');
     const linkB1 = await http(app).post(`/api/v1/questions/${q1}/outcomes`).set(bearer(admin))
       .send({ outcomeId: treeB.outcomeTopic, cognitiveLevel: 'biet' });
@@ -234,8 +230,8 @@ describe('Chương trình giai đoạn 2 (liên kết câu hỏi ↔ chương tr
     const bySubjectB = await http(app).get('/api/v1/questions').query({ subjectId: treeB.subjectId }).set(bearer(admin));
     expect((bySubjectB.body as { question: { id: string } }[]).map((v) => v.question.id)).toContain(q1);
 
-    // Cửa 2 — câu khai {A, B} và đã gắn YCCĐ của B; gỡ môn B → 200, rồi
-    // gắn tiếp YCCĐ của B phải 201 (trước vòng sửa bị 400 như cửa 1).
+    // Cửa 2 — câu khai {A, B} và đã gắn YCCĐ của B; gỡ môn B → 200, rồi gắn tiếp YCCĐ của B phải 201 (trước vòng sửa bị
+    // 400 như cửa 1).
     const q2 = await mkQuestion(categoryId, 'truefalse');
     const attachA2 = await http(app).post(`/api/v1/questions/${q2}/subjects`).set(bearer(admin))
       .send({ subjectId: treeA.subjectId });
@@ -412,8 +408,8 @@ describe('Chương trình giai đoạn 2 (liên kết câu hỏi ↔ chương tr
     expect(withOrigin.status).toBe(201);
     expect((withOrigin.body as OutcomeRow).derivedFromId).toBe(tree.outcomeTopic);
 
-    // PATCH chỉ lật kind sang 'derived', không kèm gốc, và bản ghi hiện
-    // tại (program) chưa có gốc → trạng thái gộp thiếu gốc → 400.
+    // PATCH chỉ lật kind sang 'derived', không kèm gốc, và bản ghi hiện tại (program) chưa có gốc → trạng thái gộp
+    // thiếu gốc → 400.
     const flipNoOrigin = await http(app).patch(`/api/v1/curriculum/outcomes/${tree.outcomeLesson}`).set(bearer(admin))
       .send({ sourceKind: 'derived' });
     expect(flipNoOrigin.status).toBe(400);
@@ -428,8 +424,7 @@ describe('Chương trình giai đoạn 2 (liên kết câu hỏi ↔ chương tr
     expect(flipWithOrigin.status).toBe(200);
     expect((flipWithOrigin.body as OutcomeRow).sourceKind).toBe('derived');
     expect((flipWithOrigin.body as OutcomeRow).derivedFromId).toBe(tree.outcomeTopic);
-    // Bản ghi đã là derived có gốc: PATCH không đụng truy vết → 200
-    // (trạng thái gộp vẫn đủ gốc).
+    // Bản ghi đã là derived có gốc: PATCH không đụng truy vết → 200 (trạng thái gộp vẫn đủ gốc).
     const touchDerived = await http(app).patch(`/api/v1/curriculum/outcomes/${tree.outcomeLesson}`).set(bearer(admin))
       .send({ content: 'Xét được tính đơn điệu của hàm số (bản phái sinh).' });
     expect(touchDerived.status).toBe(200);

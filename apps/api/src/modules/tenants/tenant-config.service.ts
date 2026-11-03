@@ -13,15 +13,12 @@ import { TenantsRepository } from '@lms/db/repositories/tenants';
 import { TenantContextService } from './tenant-context.service';
 
 /**
- * TenantConfigService — phân giải cấu hình theo tenant (TENANT-0, #168;
- * hồ sơ mục 3.5): giá trị hiệu lực của một khoá cho một tenant =
- * ghi đè của tenant (bảng `tenant_config`) → giá trị platform (bảng
- * `config`/`plugin_config` qua cùng quy tắc lưu trữ của SiteConfig) →
- * mặc định trong registry. Chỉ các setting có scope `tenant`/`both` mới
- * được tenant ghi đè; setting scope `platform` tenant admin không chạm
- * được. Mọi thay đổi của tenant đều ghi vết vào `admin_setting_audit`
- * với tenant_id đi kèm — đây là seam mà công tắc cấp duyệt của EB-3 sẽ
- * đọc qua {@link getEffectiveValue} khi chuyển về tenant_config.
+ * TenantConfigService — phân giải cấu hình theo tenant (TENANT-0, #168; hồ sơ mục 3.5): giá trị hiệu lực của một khoá
+ * cho một tenant = ghi đè của tenant (bảng `tenant_config`) → giá trị platform (bảng `config`/`plugin_config` qua cùng
+ * quy tắc lưu trữ của SiteConfig) → mặc định trong registry. Chỉ các setting có scope `tenant`/`both` mới được tenant
+ * ghi đè; setting scope `platform` tenant admin không chạm được. Mọi thay đổi của tenant đều ghi vết vào
+ * `admin_setting_audit` với tenant_id đi kèm — đây là seam mà công tắc cấp duyệt của EB-3 sẽ đọc qua {@link
+ * getEffectiveValue} khi chuyển về tenant_config.
  */
 @Injectable()
 export class TenantConfigService {
@@ -38,20 +35,17 @@ export class TenantConfigService {
   }
 
   /**
-   * Giá trị đã lưu ở tầng platform; undefined khi chưa có ghi đè.
-   * Quy tắc lưu trữ (bảng `config` cho core, `plugin_config` cho
-   * component kèm nhánh đọc JSON) do `SiteConfigRepository` của
-   * `@lms/db` giữ — service này uỷ quyền thẳng, không giữ bản sao
-   * đường truy vấn riêng.
+   * Giá trị đã lưu ở tầng platform; undefined khi chưa có ghi đè. Quy tắc lưu trữ (bảng `config` cho core,
+   * `plugin_config` cho component kèm nhánh đọc JSON) do `SiteConfigRepository` của `@lms/db` giữ — service này uỷ
+   * quyền thẳng, không giữ bản sao đường truy vấn riêng.
    */
   private async platformStoredValue(component: string, name: string): Promise<unknown> {
     return this.siteConfig.getStoredValue(component, name);
   }
 
   /**
-   * Giá trị hiệu lực của một setting cho một tenant cụ thể — API đọc
-   * chuẩn cho mọi module cần cấu hình theo tenant (EB-3 đọc công tắc
-   * duyệt qua đây). Setting chưa đăng ký trả về undefined.
+   * Giá trị hiệu lực của một setting cho một tenant cụ thể — API đọc chuẩn cho mọi module cần cấu hình theo tenant
+   * (EB-3 đọc công tắc duyệt qua đây). Setting chưa đăng ký trả về undefined.
    */
   async getEffectiveValue<T = unknown>(tenantId: string, component: string, name: string): Promise<T | undefined> {
     const def = findSiteSetting(component, name);
@@ -98,7 +92,10 @@ export class TenantConfigService {
     };
   }
 
-  /** Danh sách setting của tenant hiệu lực (scope tenant|both) kèm giá trị hiệu lực — cổng xem: tenant:viewall/manage tại context tenant. */
+  /**
+   * Danh sách setting của tenant hiệu lực (scope tenant|both) kèm giá trị hiệu lực — cổng xem: tenant:viewall/manage
+   * tại context tenant.
+   */
   async listForTenant(actorId: string, tenantId: string): Promise<SiteSetting[]> {
     const tenantCtx = await this.contexts.ensureTenantContext(tenantId);
     const canView =

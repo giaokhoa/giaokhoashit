@@ -9,33 +9,23 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
 import { addGroupMember, contextIdByLevelInstance, createGroupViaApi } from '../../support/engagement-helpers';
 
 /**
- * Lớp B (nghiệp vụ) của issue #33 — bộ chính sách đã chốt
- * (comment 6367872889 + 6368023587 trên issue):
- *  1. Nhắn riêng CHỈ giữa liên hệ đã duyệt kết bạn (yêu cầu–chấp
- *     nhận thay danh bạ một chiều) — mô hình chốt lại 24/10/2026:
- *     cùng khoá không còn mở cổng nhắn riêng, công tắc site
- *     `core/messagingallusers` mất hiệu lực với tin nhắn (kiểm chứng
- *     đầy đủ ở messaging-roster-flow + messaging-calendar-flow);
- *     khám phá bạn bè đi qua roster thành viên khoá.
- *  2. Nhóm tự do CHỈ do quản trị viên hệ thống hoặc chủ trung tâm
- *     (manager tại context của tenant hiện hành) tạo thủ công —
- *     giáo viên, nhân viên và học sinh đều bị chặn tại tầng service;
- *     nhóm còn lại chỉ sinh theo cấu trúc lớp/khoá.
- *  3. Nhóm lớp chat hai chiều mặc định; giáo viên tắt được qua cột
- *     `enabled` (đường gửi phải tôn trọng); tắt thì học sinh dừng gửi,
- *     giáo viên vẫn gửi được.
- *  4. Vòng đời tin nhắn theo vai (bổ sung PR #94): XOÁ-PHÍA-MÌNH chỉ
- *     ẩn tin với chính tác giả (phía kia thấy nguyên vẹn); moderator
- *     gỡ cho mọi người bằng XOÁ CỨNG có lý do qua capability
- *     `moderation:manage` — dòng tin biến mất khỏi mọi đường đọc.
- *     (Thu hồi trong cửa sổ và gỡ hàng loạt kiểm chứng đầy đủ ở
- *     messaging-message-lifecycle.)
- *  5. Báo cáo trong conversation → giáo viên phụ trách + admin; chỉ
- *     người có thẩm quyền theo phạm vi mới xem lại được nội dung của
- *     đúng conversation bị báo cáo; mọi lần xem ghi event_log.
- *  6. Gỡ thành viên trong chat (bổ sung MSG-T4): CHỈ nhóm tự do và
- *     CHỈ người có thẩm quyền quản lý mới gỡ được; nhóm cấu trúc bị
- *     từ chối để quản qua roster; người bị gỡ mất quyền ngay.
+ * Lớp B (nghiệp vụ) của issue #33 — bộ chính sách đã chốt (comment 6367872889 + 6368023587 trên issue):
+ *  1. Nhắn riêng CHỈ giữa liên hệ đã duyệt kết bạn (yêu cầu–chấp nhận thay danh bạ một chiều) — mô hình chốt lại
+ *     24/10/2026: cùng khoá không còn mở cổng nhắn riêng, công tắc site `core/messagingallusers` mất hiệu lực với tin
+ *     nhắn (kiểm chứng đầy đủ ở messaging-roster-flow + messaging-calendar-flow); khám phá bạn bè đi qua roster thành
+ *     viên khoá.
+ *  2. Nhóm tự do CHỈ do quản trị viên hệ thống hoặc chủ trung tâm (manager tại context của tenant hiện hành) tạo thủ
+ *     công — giáo viên, nhân viên và học sinh đều bị chặn tại tầng service; nhóm còn lại chỉ sinh theo cấu trúc
+ *     lớp/khoá.
+ *  3. Nhóm lớp chat hai chiều mặc định; giáo viên tắt được qua cột `enabled` (đường gửi phải tôn trọng); tắt thì học
+ *     sinh dừng gửi, giáo viên vẫn gửi được.
+ *  4. Vòng đời tin nhắn theo vai (bổ sung PR #94): XOÁ-PHÍA-MÌNH chỉ ẩn tin với chính tác giả (phía kia thấy nguyên
+ *     vẹn); moderator gỡ cho mọi người bằng XOÁ CỨNG có lý do qua capability `moderation:manage` — dòng tin biến mất
+ *     khỏi mọi đường đọc. (Thu hồi trong cửa sổ và gỡ hàng loạt kiểm chứng đầy đủ ở messaging-message-lifecycle.)
+ *  5. Báo cáo trong conversation → giáo viên phụ trách + admin; chỉ người có thẩm quyền theo phạm vi mới xem lại được
+ *     nội dung của đúng conversation bị báo cáo; mọi lần xem ghi event_log.
+ *  6. Gỡ thành viên trong chat (bổ sung MSG-T4): CHỈ nhóm tự do và CHỈ người có thẩm quyền quản lý mới gỡ được; nhóm
+ *     cấu trúc bị từ chối để quản qua roster; người bị gỡ mất quyền ngay.
  */
 
 interface Person { id: string; username: string; token: string }
@@ -47,15 +37,11 @@ interface MessageBody {
 }
 
 /**
- * Ghi thẳng một dòng gán vai vào DB cho fixture. Các fixture của bộ
- * spec nhắn tin dựng persona giáo viên vừa ghi danh trong khoá vừa
- * giữ vai giảng dạy tại context khoá (giáo viên hiện diện trong khoá
- * như một thành viên và giữ vai trò kiểm duyệt). Từ issue #425,
- * trạng thái lẫn vai cùng khoá này không còn tạo được qua API — cả
- * hai chiều ghi danh/gán vai đều bị chốt tách vai chặn — và chỉ còn
- * tồn tại như dữ kiện có sẵn; các ca của bộ spec này kiểm hành vi
- * nhắn tin trên đúng dữ kiện đó, nên dòng gán vai được ghi thẳng
- * vào DB trong lúc phần ghi danh vẫn đi qua API như cũ.
+ * Ghi thẳng một dòng gán vai vào DB cho fixture. Các fixture của bộ spec nhắn tin dựng persona giáo viên vừa ghi danh
+ * trong khoá vừa giữ vai giảng dạy tại context khoá (giáo viên hiện diện trong khoá như một thành viên và giữ vai trò
+ * kiểm duyệt). Từ issue #425, trạng thái lẫn vai cùng khoá này không còn tạo được qua API — cả hai chiều ghi danh/gán
+ * vai đều bị chốt tách vai chặn — và chỉ còn tồn tại như dữ kiện có sẵn; các ca của bộ spec này kiểm hành vi nhắn tin
+ * trên đúng dữ kiện đó, nên dòng gán vai được ghi thẳng vào DB trong lúc phần ghi danh vẫn đi qua API như cũ.
  */
 async function insertAssignmentRow(roleId: string, userId: string, contextId: string): Promise<void> {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
@@ -100,14 +86,11 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
   }
 
   beforeAll(async () => {
-    // Dọn tồn đọng outbox của các spec đã chạy trước trên cùng DB:
-    // relay ở app test chỉ chạy khi gọi tay, nên row chưa publish khi
-    // app trước đóng là row chết — không test nào còn tiêu thụ.
-    // Không dọn thì vòng xả ở test 5 phải duyệt toàn bộ tồn đọng của
-    // cả suite (O(backlog)) và vượt trần timeout dưới tải CI dù mọi
-    // assertion đều đúng (CI run 40097046131 trên commit chỉ nới trần
-    // 120s vẫn đỏ, chênh đúng ~2×90s so với run cũ). Dọn xong, vòng xả
-    // chỉ còn duyệt event của chính spec này.
+    // Dọn tồn đọng outbox của các spec đã chạy trước trên cùng DB: relay ở app test chỉ chạy khi gọi tay, nên row chưa
+    // publish khi app trước đóng là row chết — không test nào còn tiêu thụ. Không dọn thì vòng xả ở test 5 phải duyệt
+    // toàn bộ tồn đọng của cả suite (O(backlog)) và vượt trần timeout dưới tải CI dù mọi assertion đều đúng (CI run
+    // 40097046131 trên commit chỉ nới trần 120s vẫn đỏ, chênh đúng ~2×90s so với run cũ). Dọn xong, vòng xả chỉ còn
+    // duyệt event của chính spec này.
     const stale = new Client({ connectionString: process.env.DATABASE_URL });
     await stale.connect();
     await stale.query('DELETE FROM outbox_events WHERE published_at IS NULL');
@@ -126,8 +109,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     for (const p of [teacher, s1, s2]) await enrolUser(app, admin, course.id, instance.id, p.id);
     const courseCtx = await contextIdByLevelInstance(app, admin, 50, course.id);
     const editingTeacher = await roleIdByShortname(app, admin, 'editingteacher');
-    // Persona giáo viên ở đây vừa ghi danh vừa giữ vai giảng dạy tại
-    // chính khoá: dòng gán vai ghi thẳng vào DB (xem insertAssignmentRow).
+    // Persona giáo viên ở đây vừa ghi danh vừa giữ vai giảng dạy tại chính khoá: dòng gán vai ghi thẳng vào DB (xem
+    // insertAssignmentRow).
     await insertAssignmentRow(editingTeacher, teacher.id, courseCtx);
 
     // Giáo viên của một khoá KHÁC — ngoài phạm vi phụ trách của khoá chính.
@@ -137,10 +120,9 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const course2Ctx = await contextIdByLevelInstance(app, admin, 50, course2.id);
     await assignRole(app, admin, otherTeacher.id, editingTeacher, course2Ctx);
 
-    // Chủ trung tâm của tenant hiện hành (tenant mặc định của môi
-    // trường test): thành viên của tenant + vai manager tại context
-    // của tenant — đúng predicate `tenant:manage` tại context tenant
-    // mà cổng tạo nhóm tự do dùng cho nhánh chủ trung tâm.
+    // Chủ trung tâm của tenant hiện hành (tenant mặc định của môi trường test): thành viên của tenant + vai manager tại
+    // context của tenant — đúng predicate `tenant:manage` tại context tenant mà cổng tạo nhóm tự do dùng cho nhánh chủ
+    // trung tâm.
     owner = await person();
     const currentTenant = await http(app).get('/api/v1/tenants/current').set('Authorization', `Bearer ${admin}`);
     const tenantId = (currentTenant.body as { id: string }).id;
@@ -151,9 +133,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const managerRole = await roleIdByShortname(app, admin, 'manager');
     await assignRole(app, admin, owner.id, managerRole, tenantCtx);
 
-    // Nhóm lớp (course group) gồm giáo viên + 2 học sinh; conversation
-    // gắn group do một học sinh là thành viên group tạo (đường cấu trúc
-    // lớp/khoá — khác với nhóm tự do bị cấm ở test 2).
+    // Nhóm lớp (course group) gồm giáo viên + 2 học sinh; conversation gắn group do một học sinh là thành viên group
+    // tạo (đường cấu trúc lớp/khoá — khác với nhóm tự do bị cấm ở test 2).
     const group = await createGroupViaApi(app, admin, course.id, 'Lớp B Team');
     for (const p of [teacher, s1, s2]) await addGroupMember(app, admin, course.id, group.id, p.id);
     const created = await http(app).post('/api/v1/messages/conversations/group')
@@ -174,8 +155,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const bNotifications = await http(app).get('/api/v1/notifications/items').set('Authorization', `Bearer ${b.token}`);
     expect((bNotifications.body.items as { eventType: string }[]).some((n) => n.eventType === 'contact_request')).toBe(true);
 
-    // B TỪ CHỐI: hàng chờ sạch cả hai phía, quan hệ không hình thành,
-    // cổng liên lạc vẫn đóng (A tạo conversation 1-1 bị 403).
+    // B TỪ CHỐI: hàng chờ sạch cả hai phía, quan hệ không hình thành, cổng liên lạc vẫn đóng (A tạo conversation 1-1 bị
+    // 403).
     const declined = await http(app).post(`/api/v1/messages/contacts/requests/${a.id}/decline`).set('Authorization', `Bearer ${b.token}`).send({});
     expect(declined.status).toBe(201);
     expect(declined.body.declined).toBe(true);
@@ -211,9 +192,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
       .send({ type: 2, memberIds: [s1.id, s2.id], name: 'Nhóm của người lạ' });
     expect(byNobody.status).toBe(403);
     expect(byNobody.body.code).toBe('messaging.group_creation_forbidden');
-    // Giáo viên (có gán vai trò staff tại context khoá) cũng bị từ
-    // chối: nhóm của giáo viên chỉ sinh theo cấu trúc lớp/khoá, không
-    // tạo thủ công.
+    // Giáo viên (có gán vai trò staff tại context khoá) cũng bị từ chối: nhóm của giáo viên chỉ sinh theo cấu trúc
+    // lớp/khoá, không tạo thủ công.
     const byTeacher = await http(app).post('/api/v1/messages/conversations').set('Authorization', `Bearer ${teacher.token}`)
       .send({ type: 2, memberIds: [s1.id, s2.id], name: 'Nhóm giáo viên tạo' });
     expect(byTeacher.status).toBe(403);
@@ -237,8 +217,7 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const warm = await send(s1.token, groupConvId, 'tin mở đầu lớp');
     expect(warm.status).toBe(201);
 
-    // Học sinh (kể cả người đã tạo conversation gắn group này) không có
-    // quyền quản lý: PATCH tắt chat → 403.
+    // Học sinh (kể cả người đã tạo conversation gắn group này) không có quyền quản lý: PATCH tắt chat → 403.
     const studentToggle = await http(app).patch(`/api/v1/messages/conversations/${groupConvId}`)
       .set('Authorization', `Bearer ${s1.token}`).send({ enabled: false });
     expect(studentToggle.status).toBe(403);
@@ -272,10 +251,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const again = await send(s2.token, groupConvId, 'lớp mở lại rồi');
     expect(again.status).toBe(201);
 
-    // Nhóm tự do do chủ trung tâm tạo: người tạo quản lý được nhóm
-    // của mình (tắt → mọi thành viên thường dừng gửi, kể cả giáo
-    // viên chỉ là thành viên thường trong nhóm này; người tạo vẫn
-    // gửi được).
+    // Nhóm tự do do chủ trung tâm tạo: người tạo quản lý được nhóm của mình (tắt → mọi thành viên thường dừng gửi, kể
+    // cả giáo viên chỉ là thành viên thường trong nhóm này; người tạo vẫn gửi được).
     const freeGroup = await http(app).post('/api/v1/messages/conversations').set('Authorization', `Bearer ${owner.token}`)
       .send({ type: 2, memberIds: [teacher.id, s1.id], name: 'Nhóm ôn tập' });
     expect(freeGroup.status).toBe(201);
@@ -296,8 +273,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
   it('4. vòng đời theo vai: xoá-phía-mình chỉ ẩn với chính chủ; moderator gỡ cho mọi người bằng xoá cứng có lý do', async () => {
     const m1 = await send(s2.token, groupConvId, 'tin của s2 giữ lại sau');
     expect(m1.status).toBe(201);
-    // s2 đọc hết tới hiện tại (kể cả các tin khởi động của test 3) để
-    // mốc chưa đọc đo dưới đây chỉ còn phản ánh đúng m2.
+    // s2 đọc hết tới hiện tại (kể cả các tin khởi động của test 3) để mốc chưa đọc đo dưới đây chỉ còn phản ánh đúng
+    // m2.
     const marked = await http(app).post(`/api/v1/messages/conversations/${groupConvId}/read`)
       .set('Authorization', `Bearer ${s2.token}`).send({});
     expect(marked.status).toBe(201);
@@ -306,8 +283,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const m1Id = m1.body.id as string;
     const m2Id = m2.body.id as string;
 
-    // Học sinh này xoá tin của học sinh khác → 403: xoá-phía-mình chỉ
-    // dành cho TÁC GIẢ (gỡ cho mọi người là thu hồi/xoá cứng).
+    // Học sinh này xoá tin của học sinh khác → 403: xoá-phía-mình chỉ dành cho TÁC GIẢ (gỡ cho mọi người là thu hồi/xoá
+    // cứng).
     const foreign = await http(app).delete(`/api/v1/messages/${m2Id}`).set('Authorization', `Bearer ${s2.token}`);
     expect(foreign.status).toBe(403);
     expect(foreign.body.code).toBe('messaging.message_delete_forbidden');
@@ -321,23 +298,22 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const entryBefore = (listBefore.body as { id: string; unread: number }[]).find((c) => c.id === groupConvId);
     expect(entryBefore?.unread).toBe(1);
 
-    // s1 XOÁ-PHÍA-MÌNH m2: dòng tin KHÔNG bị đánh dấu xoá toàn cục —
-    // chỉ một cờ cá nhân được đặt cho s1, response là dòng nguyên trạng.
+    // s1 XOÁ-PHÍA-MÌNH m2: dòng tin KHÔNG bị đánh dấu xoá toàn cục — chỉ một cờ cá nhân được đặt cho s1, response là
+    // dòng nguyên trạng.
     const del = await http(app).delete(`/api/v1/messages/${m2Id}`).set('Authorization', `Bearer ${s1.token}`);
     expect(del.status).toBe(200);
     expect(del.body.deletedAt).toBeNull();
     expect(del.body.deletedBy).toBeNull();
     expect(del.body.fullMessage).toBe('tin s1 sẽ tự xoá phía mình');
 
-    // Chính s1 không còn thấy m2 và tin cuối trong danh sách của s1
-    // lùi về m1…
+    // Chính s1 không còn thấy m2 và tin cuối trong danh sách của s1 lùi về m1…
     const s1View = await viewMessages(s1.token, groupConvId);
     expect(s1View.messages.map((m) => m.id)).not.toContain(m2Id);
     const s1List = await http(app).get('/api/v1/messages/conversations').set('Authorization', `Bearer ${s1.token}`);
     const s1Entry = (s1List.body as { id: string; lastMessage: MessageBody | null }[]).find((c) => c.id === groupConvId);
     expect(s1Entry?.lastMessage?.id).toBe(m1Id);
-    // …nhưng s2 thấy NGUYÊN VẸN: nội dung, số chưa đọc và tin cuối
-    // đều không đổi — xoá-phía-mình không rò sang phía kia chút nào.
+    // …nhưng s2 thấy NGUYÊN VẸN: nội dung, số chưa đọc và tin cuối đều không đổi — xoá-phía-mình không rò sang phía kia
+    // chút nào.
     const s2View = await viewMessages(s2.token, groupConvId);
     expect(s2View.canModerate).toBe(false);
     const m2ForS2 = s2View.messages.find((m) => m.id === m2Id);
@@ -357,8 +333,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const againForMe = await http(app).delete(`/api/v1/messages/${m2Id}`).set('Authorization', `Bearer ${s1.token}`);
     expect(againForMe.status).toBe(200);
 
-    // Giáo viên bấm DELETE (đường xoá-phía-mình) lên tin của s2 →
-    // 403: moderator gỡ cho mọi người phải đi đường xoá cứng có lý do.
+    // Giáo viên bấm DELETE (đường xoá-phía-mình) lên tin của s2 → 403: moderator gỡ cho mọi người phải đi đường xoá
+    // cứng có lý do.
     const teacherForMe = await http(app).delete(`/api/v1/messages/${m1Id}`).set('Authorization', `Bearer ${teacher.token}`);
     expect(teacherForMe.status).toBe(403);
     expect(teacherForMe.body.code).toBe('messaging.message_delete_forbidden');
@@ -366,10 +342,9 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const noReason = await http(app).post(`/api/v1/messages/${m1Id}/hard-delete`)
       .set('Authorization', `Bearer ${teacher.token}`).send({});
     expect(noReason.status).toBe(400);
-    // Xoá cứng CÓ lý do: dòng tin biến mất khỏi MỌI đường đọc — học
-    // sinh không thấy, và đường truy vết của chính giáo viên cũng
-    // không còn (xoá cứng là xoá thật; căn cứ còn lại là dòng
-    // moderator_action — kiểm chứng ở spec vòng đời riêng).
+    // Xoá cứng CÓ lý do: dòng tin biến mất khỏi MỌI đường đọc — học sinh không thấy, và đường truy vết của chính giáo
+    // viên cũng không còn (xoá cứng là xoá thật; căn cứ còn lại là dòng moderator_action — kiểm chứng ở spec vòng đời
+    // riêng).
     const hardDel = await http(app).post(`/api/v1/messages/${m1Id}/hard-delete`)
       .set('Authorization', `Bearer ${teacher.token}`).send({ reason: 'Nội dung không phù hợp với lớp học' });
     expect(hardDel.status).toBe(201);
@@ -384,16 +359,12 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     expect(hardAgain.status).toBe(404);
   });
 
-  // Trần 120s (không phải 30s mặc định): vòng xả relay ở cuối test phải
-  // duyệt TUẦN TỰ toàn bộ outbox tồn đọng của cả suite trên cùng DB
-  // (relay API không tự chạy theo lịch), nên dưới tải CI nó vượt 30s
-  // dù mọi assertion đều đúng — xem bàn giao fix CI PR #76. Không bỏ
-  // assertion nào, chỉ nới trần cho thao tác xả tồn đọng này.
+  // Trần 120s (không phải 30s mặc định): vòng xả relay ở cuối test phải duyệt TUẦN TỰ toàn bộ outbox tồn đọng của cả
+  // suite trên cùng DB (relay API không tự chạy theo lịch), nên dưới tải CI nó vượt 30s dù mọi assertion đều đúng — xem
+  // bàn giao fix CI PR #76. Không bỏ assertion nào, chỉ nới trần cho thao tác xả tồn đọng này.
   it('5. báo cáo chỉ tới giáo viên phụ trách và admin; duyệt được kiểm tra phạm vi và mọi lượt xem đều ghi vào event_log', async () => {
-    // Một tin riêng 1-1 (s1–s2 kết bạn trước vì cổng nhắn riêng nay
-    // chỉ mở cho liên hệ đã duyệt) bị chính tác giả THU HỒI trong cửa
-    // sổ — nội dung bị vô hiệu với phía kia và chỉ còn truy vết được
-    // qua đường báo cáo có thẩm quyền.
+    // Một tin riêng 1-1 (s1–s2 kết bạn trước vì cổng nhắn riêng nay chỉ mở cho liên hệ đã duyệt) bị chính tác giả THU
+    // HỒI trong cửa sổ — nội dung bị vô hiệu với phía kia và chỉ còn truy vết được qua đường báo cáo có thẩm quyền.
     const friendReq = await http(app).post(`/api/v1/messages/contacts/${s2.id}`).set('Authorization', `Bearer ${s1.token}`).send({});
     expect(friendReq.status).toBe(201);
     const friendAcc = await http(app).post(`/api/v1/messages/contacts/requests/${s1.id}/accept`).set('Authorization', `Bearer ${s2.token}`).send({});
@@ -434,8 +405,7 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const adminNotifications = await http(app).get('/api/v1/notifications/items').set('Authorization', `Bearer ${admin}`);
     expect((adminNotifications.body.items as { eventType: string }[]).some((n) => n.eventType === 'conversation_reported')).toBe(true);
 
-    // Hàng đợi theo phạm vi: admin thấy, giáo viên phụ trách thấy,
-    // giáo viên khoá khác KHÔNG, học sinh KHÔNG.
+    // Hàng đợi theo phạm vi: admin thấy, giáo viên phụ trách thấy, giáo viên khoá khác KHÔNG, học sinh KHÔNG.
     const adminQueue = await http(app).get('/api/v1/messages/reports').set('Authorization', `Bearer ${admin}`);
     expect((adminQueue.body as { id: string }[]).map((r) => r.id)).toContain(reportId);
     const teacherQueue = await http(app).get('/api/v1/messages/reports').set('Authorization', `Bearer ${teacher.token}`);
@@ -445,9 +415,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const studentQueue = await http(app).get('/api/v1/messages/reports').set('Authorization', `Bearer ${s1.token}`);
     expect((studentQueue.body as { id: string }[]).map((r) => r.id)).not.toContain(reportId);
 
-    // Xem lại nội dung: học sinh (kể cả người báo cáo) và giáo viên
-    // ngoài phạm vi bị chặn; giáo viên phụ trách và admin xem được —
-    // gồm cả tin đã THU HỒI với nguyên nội dung và dấu thu hồi.
+    // Xem lại nội dung: học sinh (kể cả người báo cáo) và giáo viên ngoài phạm vi bị chặn; giáo viên phụ trách và admin
+    // xem được — gồm cả tin đã THU HỒI với nguyên nội dung và dấu thu hồi.
     const studentView = await http(app).get(`/api/v1/messages/reports/${reportId}/conversation`).set('Authorization', `Bearer ${s2.token}`);
     expect(studentView.status).toBe(403);
     expect(studentView.body.code).toBe('messaging.report_review_forbidden');
@@ -463,9 +432,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     expect(adminView.status).toBe(200);
     expect(adminView.body.report.id).toBe(reportId);
 
-    // Mọi lần xem đều vào event_log: chạy một lượt relay của worker
-    // (đúng việc worker làm mỗi 5 giây; issue #523: relay phía API
-    // đã gỡ) rồi truy vấn logstore bằng tài khoản admin.
+    // Mọi lần xem đều vào event_log: chạy một lượt relay của worker (đúng việc worker làm mỗi 5 giây; issue #523: relay
+    // phía API đã gỡ) rồi truy vấn logstore bằng tài khoản admin.
     await flushWorkerRelay();
     const logs = await http(app).get('/api/v1/event-logs?eventType=message_conversation_report_viewed')
       .set('Authorization', `Bearer ${admin}`);
@@ -477,8 +445,7 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     const adminRow = items.find((i) => i.userId === adminId && i.objectId === convId);
     expect(adminRow).toBeDefined();
 
-    // Xử lý báo cáo: học sinh đổi trạng thái → 403; giáo viên phụ trách
-    // đóng báo cáo được, dấu người xử lý được ghi.
+    // Xử lý báo cáo: học sinh đổi trạng thái → 403; giáo viên phụ trách đóng báo cáo được, dấu người xử lý được ghi.
     const studentResolve = await http(app).patch(`/api/v1/messages/reports/${reportId}`)
       .set('Authorization', `Bearer ${s1.token}`).send({ status: 'resolved' });
     expect(studentResolve.status).toBe(403);
@@ -488,15 +455,12 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     expect(resolved.body.status).toBe('resolved');
     expect(resolved.body.resolvedBy).toBe(teacher.id);
     expect(resolved.body.resolvedAt).toBeTruthy();
-    // Trần 120s: main đã nới 30s → 60s vì test này chạy ~25 gọi HTTP +
-    // tạo user (argon2) + nhiều lượt relay, từng chạm trần 30s khi máy
-    // tải nặng; PR #76 giữ 120s (vòng xả tồn đọng) — lấy max hai phía,
-    // không bỏ assertion nào.
+    // Trần 120s: main đã nới 30s → 60s vì test này chạy ~25 gọi HTTP + tạo user (argon2) + nhiều lượt relay, từng chạm
+    // trần 30s khi máy tải nặng; PR #76 giữ 120s (vòng xả tồn đọng) — lấy max hai phía, không bỏ assertion nào.
   }, 120000);
 
   it('6. gỡ thành viên nhóm tự do (MSG-T4): chỉ người quản lý gỡ được; nhóm cấu trúc bị từ chối để về roster; người bị gỡ mất quyền ngay', async () => {
-    // Chủ trung tâm tạo nhóm tự do với giáo viên và hai học sinh —
-    // người tạo là chủ nhóm.
+    // Chủ trung tâm tạo nhóm tự do với giáo viên và hai học sinh — người tạo là chủ nhóm.
     const created = await http(app).post('/api/v1/messages/conversations').set('Authorization', `Bearer ${owner.token}`)
       .send({ type: 2, memberIds: [teacher.id, s1.id, s2.id], name: 'Nhóm gỡ thành viên' });
     expect(created.status).toBe(201);
@@ -513,9 +477,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
       .set('Authorization', `Bearer ${owner.token}`);
     expect(removeSelf.status).toBe(400);
     expect(removeSelf.body.code).toBe('messaging.member_remove_self');
-    // Kể cả quản trị viên site (có thẩm quyền quản lý qua kiểm duyệt)
-    // cũng không gỡ được NGƯỜI TẠO nhóm — nhóm không mất chủ sở hữu
-    // qua đường này.
+    // Kể cả quản trị viên site (có thẩm quyền quản lý qua kiểm duyệt) cũng không gỡ được NGƯỜI TẠO nhóm — nhóm không
+    // mất chủ sở hữu qua đường này.
     const removeCreator = await http(app).delete(`/api/v1/messages/conversations/${freeId}/members/${owner.id}`)
       .set('Authorization', `Bearer ${admin}`);
     expect(removeCreator.status).toBe(403);
@@ -527,10 +490,8 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     expect(removed.status).toBe(200);
     expect(new Set(removed.body.members as string[])).toEqual(new Set([owner.id, teacher.id, s1.id]));
 
-    // Người bị gỡ mất quyền NGAY: đọc lại conversation bị cổng thành
-    // viên của đường đọc chặn 403 messaging.not_member (đúng hành vi
-    // sẵn có của đường đọc chi tiết với người không còn là thành
-    // viên), gửi tin cũng bị chặn ở cùng cổng.
+    // Người bị gỡ mất quyền NGAY: đọc lại conversation bị cổng thành viên của đường đọc chặn 403 messaging.not_member
+    // (đúng hành vi sẵn có của đường đọc chi tiết với người không còn là thành viên), gửi tin cũng bị chặn ở cùng cổng.
     const viewAfter = await http(app).get(`/api/v1/messages/conversations/${freeId}`)
       .set('Authorization', `Bearer ${s2.token}`);
     expect(viewAfter.status).toBe(403);
@@ -544,10 +505,9 @@ describe('Messaging Lớp B — chính sách nghiệp vụ (issue #33)', () => {
     expect(removeAgain.status).toBe(404);
     expect(removeAgain.body.code).toBe('messaging.member_not_found');
 
-    // Nhóm CẤU TRÚC (conversation gắn group của khoá): giáo viên phụ
-    // trách CÓ thẩm quyền quản lý nhưng gỡ trong chat vẫn bị từ chối
-    // 400 member_remove_structural — thành viên của nhóm này chỉ đổi
-    // qua roster/ghi danh, đồng bộ lười sẽ lắp lại nếu gỡ tay.
+    // Nhóm CẤU TRÚC (conversation gắn group của khoá): giáo viên phụ trách CÓ thẩm quyền quản lý nhưng gỡ trong chat
+    // vẫn bị từ chối 400 member_remove_structural — thành viên của nhóm này chỉ đổi qua roster/ghi danh, đồng bộ lười
+    // sẽ lắp lại nếu gỡ tay.
     const structural = await http(app).delete(`/api/v1/messages/conversations/${groupConvId}/members/${s1.id}`)
       .set('Authorization', `Bearer ${teacher.token}`);
     expect(structural.status).toBe(400);

@@ -25,9 +25,8 @@ function buildService(values: Record<string, unknown>): BetterAuthService {
 }
 
 /**
- * Nền Better Auth sau cờ (issue #7, Giai đoạn 1): cờ tắt phải hoàn toàn
- * bất hoạt, cờ bật thiếu secret phải từ chối khởi tạo, và các tuỳ chọn
- * đã chốt trong issue phải được ghim đúng trên instance.
+ * Nền Better Auth sau cờ (issue #7, Giai đoạn 1): cờ tắt phải hoàn toàn bất hoạt, cờ bật thiếu secret phải từ chối khởi
+ * tạo, và các tuỳ chọn đã chốt trong issue phải được ghim đúng trên instance.
  */
 describe('Khối BetterAuthService', () => {
   it('hoàn toàn trơ khi cờ đang tắt (mặc định)', () => {
@@ -52,22 +51,18 @@ describe('Khối BetterAuthService', () => {
     // Ghim tường minh false: Better Auth tự bỏ qua kiểm tra Origin khi
     // NODE_ENV=test nếu không khai — xem báo cáo Giai đoạn 0.
     expect(auth.options.advanced?.disableOriginCheck).toBe(false);
-    // BA-1: generateId ghim "uuid" thay cho false trước đây. Id
-    // thường vẫn do PostgreSQL sinh UUIDv7 (adapter khai
-    // supportsUUIDs cho pg nên shouldGenerateId = false); "uuid" chỉ
-    // đổi dạng id tất định của verification lock sang UUID để hết
-    // lỗi 22P02 (xem ghi chú tại advanced.database trong instance).
+        // BA-1: generateId ghim "uuid" thay cho false trước đây. Id thường vẫn do PostgreSQL sinh UUIDv7 (adapter khai
+    // supportsUUIDs cho pg nên shouldGenerateId = false); "uuid" chỉ đổi dạng id tất định của verification lock sang
+    // UUID để hết lỗi 22P02 (xem ghi chú tại advanced.database trong instance).
     expect(auth.options.advanced?.database?.generateId).toBe('uuid');
     // Cookie cache tắt để thu hồi phiên có hiệu lực ngay.
     expect(auth.options.session?.cookieCache?.enabled).toBe(false);
-    // Plugin username chính chủ phải có mặt (đăng nhập bằng username).
     expect(auth.options.plugins?.some((plugin) => plugin.id === 'username')).toBe(true);
-    // Plugin twoFactor chủ đích KHÔNG có mặt: cổng quyết định và
-    // bước hoàn tất MFA đều đi qua `user_totp` (cổng riêng
-    // mfa-gate.ts + endpoint hoàn tất ở tầng Nest), còn plugin đòi
-    // trường user `twoFactorEnabled` không có trong ánh xạ của hệ —
-    // lý do đầy đủ ở khối plugins của factory. Đăng ký lại plugin
-    // này là hỏng mọi đường tạo user, ca này phải đỏ.
+        // Plugin twoFactor chủ đích KHÔNG có mặt: cổng quyết định và bước hoàn tất MFA đều đi qua `user_totp` (cổng
+        // riêng
+    // mfa-gate.ts + endpoint hoàn tất ở tầng Nest), còn plugin đòi trường user `twoFactorEnabled` không có trong ánh xạ
+    // của hệ — lý do đầy đủ ở khối plugins của factory. Đăng ký lại plugin này là hỏng mọi đường tạo user, ca này phải
+    // đỏ.
     expect(auth.options.plugins?.some((plugin) => (plugin.id as string) === 'two-factor')).toBe(false);
     // Endpoint hooks của lockout theo tài khoản phải được gắn (điểm
     // 2.4): before chặn trước khi kiểm mật khẩu, after ghi attempt.
@@ -79,8 +74,7 @@ describe('Khối BetterAuthService', () => {
     const service = buildService({ BETTER_AUTH_ENABLED: true, BETTER_AUTH_SECRET: SECRET, PORT: 3000 });
     expect(service.cutoverStage).toBe('off');
     const auth = service.requireAuth();
-    // Ngoài cửa sổ bake: không database hook, không callback đồng bộ
-    // ngược — hành vi auth như trước chặng 2.7-prep.
+        // Ngoài cửa sổ bake: không database hook, không callback đồng bộ ngược — hành vi auth như trước chặng 2.7-prep.
     expect(auth.options.databaseHooks).toBeUndefined();
     expect(auth.options.emailAndPassword?.onPasswordReset).toBeUndefined();
   });
@@ -102,10 +96,10 @@ describe('Khối BetterAuthService', () => {
     });
     expect(service.cutoverStage).toBe('bake');
     const auth = service.requireAuth();
-    // Ba điểm nối đồng bộ ngược (xem legacyPasswordSync ở factory):
-    // hook tạo credential + callback sau reset. Đường cập nhật mật
-    // khẩu KHÔNG có database hook update — updatePassword của 1.7.12
-    // đi qua updateMany (hook nhận số dòng, không phải bản ghi).
+        // Ba điểm nối đồng bộ ngược (xem legacyPasswordSync ở factory): hook tạo credential + callback sau reset. Đường
+        // cập
+    // nhật mật khẩu KHÔNG có database hook update — updatePassword của 1.7.12 đi qua updateMany (hook nhận số dòng,
+    // không phải bản ghi).
     expect(typeof auth.options.databaseHooks?.account?.create?.after).toBe('function');
     expect(Object.keys(auth.options.databaseHooks?.account ?? {})).toEqual(['create']);
     expect(typeof auth.options.emailAndPassword?.onPasswordReset).toBe('function');
@@ -114,9 +108,9 @@ describe('Khối BetterAuthService', () => {
   it('không có bề mặt mail khi cổng mail chưa nối (giai đoạn 2.5 chưa kết nối)', () => {
     const service = buildService({ BETTER_AUTH_ENABLED: true, BETTER_AUTH_SECRET: SECRET, PORT: 3000 });
     const auth = service.requireAuth();
-    // Chưa nối cổng mail: không callback reset (endpoint reset của
-    // Better Auth tự từ chối RESET_PASSWORD_DISABLED) và không plugin
-    // OTP — không có luồng nào nhận yêu cầu rồi để mất.
+        // Chưa nối cổng mail: không callback reset (endpoint reset của Better Auth tự từ chối RESET_PASSWORD_DISABLED)
+        // và
+    // không plugin OTP — không có luồng nào nhận yêu cầu rồi để mất.
     expect(auth.options.emailAndPassword?.sendResetPassword).toBeUndefined();
     expect(auth.options.plugins?.some((plugin) => plugin.id === 'email-otp')).toBe(false);
   });
@@ -139,7 +133,6 @@ describe('Khối BetterAuthService', () => {
     const auth = service.requireAuth();
     // Thu hồi phiên khi reset là chốt của issue, đặt sẵn từ Giai đoạn 1.
     expect(auth.options.emailAndPassword?.revokeSessionsOnPasswordReset).toBe(true);
-    // Plugin emailOTP có mặt (đăng nhập bằng mã qua email).
     expect(auth.options.plugins?.some((plugin) => plugin.id === 'email-otp')).toBe(true);
     // Callback reset chuyển đúng { user, url } của Better Auth sang cổng mail.
     const sendReset = auth.options.emailAndPassword?.sendResetPassword;
@@ -175,7 +168,6 @@ describe('Khối BetterAuthService', () => {
     expect(pluginIds).toContain('jwt');
     expect(pluginIds).toContain('oauth-provider');
     expect(pluginIds).toContain('cimd');
-    // Endpoint /token của plugin jwt bị tắt khi compose AS.
     expect(auth.options.disabledPaths).toContain('/token');
     // Hai hiệu chỉnh bắt buộc của addendum phải nằm trong cấu hình
     // plugin: cửa sổ tái dùng refresh = 0 và TTL resource /mcp = 3600s.

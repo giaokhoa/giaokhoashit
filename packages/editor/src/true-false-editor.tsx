@@ -12,43 +12,32 @@ import {
 } from './true-false.js';
 
 /**
- * Editor soạn câu đúng/sai chùm (TF-A) trên tài liệu thân câu đầy đủ
- * (port từ `TrueFalseEditor` của giaokhoa — xem module `true-false.ts`
- * để rõ flow tổng thể của mô hình).
+ * Editor soạn câu đúng/sai chùm (TF-A) trên tài liệu thân câu đầy đủ (port từ `TrueFalseEditor` của giaokhoa — xem
+ * module `true-false.ts` để rõ flow tổng thể của mô hình).
  *
- * Component này là một lớp bọc quanh {@link RichTextEditor}: thay bộ
- * extension hợp đồng bằng {@link trueFalseExtensions} (thân câu +
- * danh sách mệnh đề trong cùng một tài liệu — cũng là chính tài liệu
- * lưu trữ) và cộng extension decoration vẽ CẶP radio Đúng/Sai vào
- * từng node `statement`.
+ * Component này là một lớp bọc quanh {@link RichTextEditor}: thay bộ extension hợp đồng bằng {@link
+ * trueFalseExtensions} (thân câu + danh sách mệnh đề trong cùng một tài liệu — cũng là chính tài liệu lưu trữ) và cộng
+ * extension decoration vẽ CẶP radio Đúng/Sai vào từng node `statement`.
  *
- * Đáp án sống NGOÀI tài liệu (prop `answers` dạng bản đồ
- * `statementId → boolean` + `onAnswerChange`): radio chỉ là widget
- * trang trí trỏ theo id của statement; nghiêm cấm đưa thông tin
- * đúng/sai vào nội dung tài liệu của mệnh đề. Vì đáp án bám theo id
- * nên nó đi theo đúng mệnh đề qua mọi thao tác sửa nội dung.
+ * Đáp án sống NGOÀI tài liệu (prop `answers` dạng bản đồ `statementId → boolean` + `onAnswerChange`): radio chỉ là
+ * widget trang trí trỏ theo id của statement; nghiêm cấm đưa thông tin đúng/sai vào nội dung tài liệu của mệnh đề. Vì
+ * đáp án bám theo id nên nó đi theo đúng mệnh đề qua mọi thao tác sửa nội dung.
  */
 
 /**
- * Điều khiển radio đáp án mà decoration đọc tại thời điểm vẽ widget:
- * giữ trong một ref để widget luôn thấy giá trị mới nhất mà không
- * phải dựng lại extension khi prop đổi.
+ * Điều khiển radio đáp án mà decoration đọc tại thời điểm vẽ widget: giữ trong một ref để widget luôn thấy giá trị mới
+ * nhất mà không phải dựng lại extension khi prop đổi.
  */
 interface StatementAnswerControl {
-  /** Tiền tố tên nhóm radio (duy nhất cho mỗi instance editor trên trang); tên nhóm đầy đủ gắn thêm id của từng mệnh đề. */
+  /**
+   * Tiền tố tên nhóm radio (duy nhất cho mỗi instance editor trên trang); tên nhóm đầy đủ gắn thêm id của từng mệnh đề.
+   */
   groupPrefix: string;
   /** Bản đồ đáp án hiện tại theo id mệnh đề; mệnh đề chưa chọn thì vắng mặt trong bản đồ. */
   answers: Readonly<Record<string, boolean | undefined>>;
-  /** Báo ra ngoài khi người soạn chọn Đúng/Sai cho một mệnh đề. */
   onAnswerChange: (statementId: string, value: boolean) => void;
 }
 
-/**
- * Các id mệnh đề theo thứ tự trong tài liệu hiện tại của editor.
- *
- * @param doc - Tài liệu ProseMirror hiện tại.
- * @returns Mảng id của các node statement thuộc `statementList` chốt đuôi.
- */
 function getStatementIds(doc: ProseMirrorNode): string[] {
   const statementList = doc.lastChild;
   if (statementList?.type.name !== STATEMENT_LIST_NODE_TYPE) {
@@ -63,23 +52,16 @@ function getStatementIds(doc: ProseMirrorNode): string[] {
   return ids;
 }
 
-/** Hai danh sách id có giống hệt nhau (cả phần tử lẫn thứ tự) không. */
 function sameIds(left: string[], right: string[]): boolean {
   return left.length === right.length && left.every((id, index) => id === right[index]);
 }
 
 /**
- * Dựng extension decoration vẽ cặp radio Đúng/Sai cho từng mệnh đề
- * (port từ giaokhoa).
+ * Dựng extension decoration vẽ cặp radio Đúng/Sai cho từng mệnh đề (port từ giaokhoa).
  *
- * Decoration chỉ dựng lại khi TẬP id mệnh đề thay đổi (mệnh đề mới
- * sinh id, mệnh đề bị xoá, thứ tự đổi) — đáp án hiện tại được đọc từ
- * `controlRef` tại lúc tạo widget nên không cần dựng lại khi đáp án
- * đổi: bản thân các radio trong cùng một nhóm (mỗi mệnh đề một nhóm
- * riêng) tự loại trừ nhau theo hành vi gốc của trình duyệt khi người
- * soạn bấm chọn.
- *
- * @param controlRef - Ref giữ điều khiển radio mới nhất.
+ * Decoration chỉ dựng lại khi TẬP id mệnh đề thay đổi (mệnh đề mới sinh id, mệnh đề bị xoá, thứ tự đổi) — đáp án hiện
+ * tại được đọc từ `controlRef` tại lúc tạo widget nên không cần dựng lại khi đáp án đổi: bản thân các radio trong cùng
+ * một nhóm (mỗi mệnh đề một nhóm riêng) tự loại trừ nhau theo hành vi gốc của trình duyệt khi người soạn bấm chọn.
  * @returns Extension Tiptap mang decoration radio Đ/S.
  */
 function createStatementAnswerDecoration(controlRef: { current: StatementAnswerControl }) {

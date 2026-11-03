@@ -10,34 +10,25 @@ import type {
 import { messageQuoteOf } from './message-wire.js';
 
 /**
- * Bề mặt ĐỌC dữ kiện messaging dùng chung giữa hai tiến trình
- * (issue #521): repository phía API (đường đọc REST/sync) và consumer
- * phân phối realtime phía worker cùng chạy MỘT cài đặt truy vấn ở
- * package này — luật đọc (lọc tin đã xoá, đếm chưa đọc theo mốc của
- * chính người nhận, dựng trích dẫn theo quyền người xem...) không
- * được phép có hai bản cài đặt lệch nhau giữa nơi hiển thị và nơi
- * phân phối.
+ * Bề mặt ĐỌC dữ kiện messaging dùng chung giữa hai tiến trình (issue #521): repository phía API (đường đọc REST/sync)
+ * và consumer phân phối realtime phía worker cùng chạy MỘT cài đặt truy vấn ở package này — luật đọc (lọc tin đã xoá,
+ * đếm chưa đọc theo mốc của chính người nhận, dựng trích dẫn theo quyền người xem...) không được phép có hai bản cài
+ * đặt lệch nhau giữa nơi hiển thị và nơi phân phối.
  *
- * Các hàm thuần nhận `db` làm tham số đầu: mỗi app truyền handle
- * Kysely của chính nó (kèm ngữ cảnh tenant/RLS của app đó); package
- * không giữ kết nối và không phụ thuộc framework nào. Handle là
- * handle kho trung tâm của `@lms/db` (`CentreDb` hoặc handle giao
- * dịch `CentreTx`). Package không khai phụ thuộc trực tiếp vào
- * `kysely` (đóng băng ở nền của chiến dịch): hàm `sql` của Kysely
- * được lấy qua kênh re-export chính thức ở barrel của `@lms/db`
- * dành cho phía tiêu thụ, còn kiểu dòng và cổng store lấy type-only
- * từ `@lms/db/repositories/messaging` — chiều phụ thuộc giữ là DAG
- * vì `@lms/db` không import package này ở bất kỳ dạng nào
- * (issue #658: gỡ vòng phụ thuộc `@lms/db` ↔ `@lms/messaging`).
+ * Các hàm thuần nhận `db` làm tham số đầu: mỗi app truyền handle Kysely của chính nó (kèm ngữ cảnh tenant/RLS của app
+ * đó); package không giữ kết nối và không phụ thuộc framework nào. Handle là handle kho trung tâm của `@lms/db`
+ * (`CentreDb` hoặc handle giao dịch `CentreTx`). Package không khai phụ thuộc trực tiếp vào `kysely` (đóng băng ở nền
+ * của chiến dịch): hàm `sql` của Kysely được lấy qua kênh re-export chính thức ở barrel của `@lms/db` dành cho phía
+ * tiêu thụ, còn kiểu dòng và cổng store lấy type-only từ `@lms/db/repositories/messaging` — chiều phụ thuộc giữ là DAG
+ * vì `@lms/db` không import package này ở bất kỳ dạng nào (issue #658: gỡ vòng phụ thuộc `@lms/db` ↔ `@lms/messaging`).
  */
 export type MessagingDatabase = CentreDb | CentreTx;
 
 /** Hình dạng cửa sổ tin được khai tại `@lms/db/repositories/messaging` — re-export để bề mặt package giữ nguyên. */
 export type { MessageWindowOptions } from '@lms/db/repositories/messaging';
 
-// Danh sách cột đọc tường minh kèm bí danh camelCase — cùng hình
-// dạng với danh sách cột của repository tại `@lms/db` (khai cục bộ
-// ở đây để tầng store không phải import module repository).
+// Danh sách cột đọc tường minh kèm bí danh camelCase — cùng hình dạng với danh sách cột của repository tại `@lms/db`
+// (khai cục bộ ở đây để tầng store không phải import module repository).
 
 const CONVERSATION_COLUMNS = [
   'id',
@@ -72,7 +63,6 @@ const MESSAGE_COLUMNS = [
   'created_at as createdAt',
 ] as const;
 
-/** Lấy conversation theo id. */
 export async function getConversationById(db: MessagingDatabase, id: string): Promise<ConversationRow | undefined> {
   return db
     .selectFrom('message_conversations')
@@ -81,7 +71,6 @@ export async function getConversationById(db: MessagingDatabase, id: string): Pr
     .executeTakeFirst() as Promise<ConversationRow | undefined>;
 }
 
-/** Thành viên của conversation. */
 export async function listConversationMemberIds(db: MessagingDatabase, conversationId: string): Promise<string[]> {
   const rows = await db
     .selectFrom('message_conversation_members')
@@ -101,7 +90,6 @@ export async function getConversationTenantId(db: MessagingDatabase, conversatio
   return row?.tenantId ?? null;
 }
 
-/** Lấy tin nhắn theo id. */
 export async function getMessageById(db: MessagingDatabase, id: string): Promise<MessageRow | undefined> {
   return db
     .selectFrom('message')
@@ -121,9 +109,8 @@ export async function getMessagesByIds(db: MessagingDatabase, ids: string[]): Pr
 }
 
 /**
- * Một cửa sổ tin của conversation theo cursor seq, luôn trả tăng dần
- * theo seq. Không cursor: cửa sổ MỚI NHẤT (limit tin cuối). beforeSeq:
- * cửa sổ ngay trước mốc. afterSeq: các tin sau mốc (đồng bộ thiếu hụt).
+ * Một cửa sổ tin của conversation theo cursor seq, luôn trả tăng dần theo seq. Không cursor: cửa sổ MỚI NHẤT (limit tin
+ * cuối). beforeSeq: cửa sổ ngay trước mốc. afterSeq: các tin sau mốc (đồng bộ thiếu hụt).
  */
 export async function listMessagesPage(db: MessagingDatabase, conversationId: string, opts: MessageWindowOptions = {}): Promise<MessageRow[]> {
   const limit = Math.min(Math.max(opts.limit ?? 50, 1), 100);
@@ -131,11 +118,11 @@ export async function listMessagesPage(db: MessagingDatabase, conversationId: st
     .selectFrom('message')
     .select(MESSAGE_COLUMNS)
     .where('conversation_id', '=', conversationId);
-  // Mặc định: tin đã xoá mềm bị lọc khỏi MỌI cửa sổ đọc — chỉ cửa sổ
-  // truy vết của người có thẩm quyền mới truyền includeDeleted.
+  // Mặc định: tin đã xoá mềm bị lọc khỏi MỌI cửa sổ đọc — chỉ cửa sổ truy vết của người có thẩm quyền mới truyền
+  // includeDeleted.
   if (!opts.includeDeleted) base = base.where('deleted_at', 'is', null);
-  // Cờ xoá-phía-mình của người xem (vòng đời theo vai): chỉ áp ở
-  // đường đọc thường — chế độ truy vết phải thấy đầy đủ dấu vết.
+  // Cờ xoá-phía-mình của người xem (vòng đời theo vai): chỉ áp ở đường đọc thường — chế độ truy vết phải thấy đầy đủ
+  // dấu vết.
   if (opts.viewerId && !opts.includeDeleted) {
     const viewerId = opts.viewerId;
     base = base.where(sql<SqlBool>`not exists (select 1 from message_user_deletions d where d.message_id = message.id and d.user_id = ${viewerId})`);
@@ -165,21 +152,15 @@ export async function listDeletedForUserIds(db: MessagingDatabase, messageIds: s
 }
 
 /**
- * Gắn khối trích dẫn (lát M3, issue #229) cho một lô tin: tra lô
- * các tin gốc một lần (không N+1), dựng quote theo quyền của người
- * nhận bằng {@link messageQuoteOf}. Tin gốc tra không thấy (chỉ
- * còn xảy ra khi khoá ngoại chưa kịp set null sau xoá cứng) hoặc
- * thuộc conversation khác (dữ liệu không thể sinh qua đường gửi —
- * gác ở service) thì `replyTo = null`: hiển thị như tin thường,
- * không dựng khối trích dẫn rỗng.
+ * Gắn khối trích dẫn (lát M3, issue #229) cho một lô tin: tra lô các tin gốc một lần (không N+1), dựng quote theo quyền
+ * của người nhận bằng {@link messageQuoteOf}. Tin gốc tra không thấy (chỉ còn xảy ra khi khoá ngoại chưa kịp set null
+ * sau xoá cứng) hoặc thuộc conversation khác (dữ liệu không thể sinh qua đường gửi — gác ở service) thì `replyTo =
+ * null`: hiển thị như tin thường, không dựng khối trích dẫn rỗng.
  *
- * `viewerId` chỉ áp khi KHÔNG privileged: tin gốc bị chính người
- * xem xoá-phía-mình thì quote thành unavailable như đã xoá. Đường
- * realtime phân phối theo room dùng privileged=false và KHÔNG
- * truyền viewerId (khối trích dẫn là dữ kiện chung của room; việc
- * cá nhân hoá xoá-phía-mình chốt ở các đường đọc REST/sync vốn có
- * viewerId — người đã ẩn tin gốc vốn đã thấy nó khi còn là thành
- * viên nên đây không phải kênh lộ nội dung mới).
+ * `viewerId` chỉ áp khi KHÔNG privileged: tin gốc bị chính người xem xoá-phía-mình thì quote thành unavailable như đã
+ * xoá. Đường realtime phân phối theo room dùng privileged=false và KHÔNG truyền viewerId (khối trích dẫn là dữ kiện
+ * chung của room; việc cá nhân hoá xoá-phía-mình chốt ở các đường đọc REST/sync vốn có viewerId — người đã ẩn tin gốc
+ * vốn đã thấy nó khi còn là thành viên nên đây không phải kênh lộ nội dung mới).
  */
 export async function attachQuotesToRows(
   db: MessagingDatabase,
@@ -223,12 +204,9 @@ export async function getMemberLastReadSeq(db: MessagingDatabase, conversationId
  * count(*) theo mốc đã đọc của chính user — consumer realtime dùng
  * để gửi kèm sự kiện cập nhật cho từng người nhận).
  *
- * Vũ trụ đếm chuẩn (issue #592): hội thoại đã TẮT TIẾNG không đóng
- * góp số chưa đọc cho bất kỳ bề mặt nào — kể cả số kèm sự kiện
- * realtime — nên hàm trả 0 ngay khi dòng thành viên mang cờ tắt
- * tiếng, dù tin chưa đọc vẫn còn trong hộp thư. Tin vẫn tới và mốc
- * đã đọc vẫn cập nhật bình thường; chỉ số đếm hiển thị là 0 cho
- * tới khi bật tiếng lại.
+ * Vũ trụ đếm chuẩn (issue #592): hội thoại đã TẮT TIẾNG không đóng góp số chưa đọc cho bất kỳ bề mặt nào — kể cả số kèm
+ * sự kiện realtime — nên hàm trả 0 ngay khi dòng thành viên mang cờ tắt tiếng, dù tin chưa đọc vẫn còn trong hộp thư.
+ * Tin vẫn tới và mốc đã đọc vẫn cập nhật bình thường; chỉ số đếm hiển thị là 0 cho tới khi bật tiếng lại.
  */
 export async function countUnreadForConversation(db: MessagingDatabase, conversationId: string, userId: string): Promise<number> {
   const member = await db
@@ -291,11 +269,9 @@ export async function listBlockedCounterpartIds(db: MessagingDatabase, userId: s
 }
 
 /**
- * Dựng cài đặt của cổng store dùng chung {@link MessagingStorePort}
- * (khai tại `@lms/db/repositories/messaging`) trên một handle
- * Kysely của app gọi: phía API gắn cài đặt này vào
- * `MessagingRepository` — repository uỷ quyền mọi phép đọc dùng
- * chung qua cổng này thay vì import trực tiếp các hàm ở đây.
+ * Dựng cài đặt của cổng store dùng chung {@link MessagingStorePort} (khai tại `@lms/db/repositories/messaging`) trên
+ * một handle Kysely của app gọi: phía API gắn cài đặt này vào `MessagingRepository` — repository uỷ quyền mọi phép đọc
+ * dùng chung qua cổng này thay vì import trực tiếp các hàm ở đây.
  */
 export function createMessagingStore(db: MessagingDatabase): MessagingStorePort {
   return {

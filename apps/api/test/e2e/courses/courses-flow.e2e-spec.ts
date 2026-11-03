@@ -4,10 +4,8 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
 import { createCategory, createCm, createCourse, createEnrolInstance, createSection, enrolUser, fixtureClassId, getFirstSectionId } from '../../support/course-enrolment-helpers';
 
 /**
- * Luồng Courses.
- * Oracle: course/tests/category_test.php (test_create_coursecat,
- * test_hierarchy, test_delete) và course/tests/courselib_test.php
- * (test_create_course, test_create_course_sections, test_create_module,
+ * Luồng Courses. Oracle: course/tests/category_test.php (test_create_coursecat, test_hierarchy, test_delete) và
+ * course/tests/courselib_test.php (test_create_course, test_create_course_sections, test_create_module,
  * test_course_module_deleted_event_exceptions / sự kiện vòng đời cm).
  */
 describe('Khoá học: danh mục, khoá học, section, module khoá học', () => {
@@ -22,7 +20,8 @@ describe('Khoá học: danh mục, khoá học, section, module khoá học', ()
     const child = await createCategory(app, admin, { parent: parent.id });
     expect(child.path).toBe(`${parent.path}/${child.id}`);
     expect(child.depth).toBe(parent.depth + 1);
-    // Context: context coursecat (40) tồn tại cho danh mục (qua danh sách context của Access vì probe bằng admin bị bảo vệ theo vai; kiểm tra việc tạo khoá hoạt động dưới nó).
+    // Context: context coursecat (40) tồn tại cho danh mục (qua danh sách context của Access vì probe bằng admin bị bảo
+    // vệ theo vai; kiểm tra việc tạo khoá hoạt động dưới nó).
     const course = await createCourse(app, admin, child.id);
     const content = await http(app).get(`/api/v1/courses/${course.id}/content`).set('Authorization', `Bearer ${admin}`);
     expect(content.status).toBe(200);
@@ -165,7 +164,8 @@ describe('Khoá học: danh mục, khoá học, section, module khoá học', ()
     const completionBefore = await http(app).get(`/api/v1/courses/${course.id}/completion/users/${student.id}`).set('Authorization', `Bearer ${admin}`);
     expect(completionBefore.body.activities.find((a: { cmId: string }) => a.cmId === cm.id)?.state).toBe(1);
 
-    // Xoá cm: bản ghi hoàn thành và bản ghi file của context của nó phải được dọn bởi trình xử lý sự kiện của các module sở hữu.
+    // Xoá cm: bản ghi hoàn thành và bản ghi file của context của nó phải được dọn bởi trình xử lý sự kiện của các
+    // module sở hữu.
     const del = await http(app).delete(`/api/v1/courses/${course.id}/modules/${cm.id}`).set('Authorization', `Bearer ${admin}`);
     expect(del.status).toBe(200);
     const completionAfter = await http(app).get(`/api/v1/courses/${course.id}/completion/users/${student.id}`).set('Authorization', `Bearer ${admin}`);

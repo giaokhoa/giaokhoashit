@@ -17,9 +17,8 @@ const COURSE_CONTEXT_LEVEL = 50;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Các khoá payload ứng viên đặt tên cho đối tượng chính của một sự kiện, theo từng aggregate
- * của outbox. Khoá đầu tiên xuất hiện sẽ thắng; giá trị rơi vào trường
- * `objectId` đã chuẩn hoá của payload log đã lưu.
+ * Các khoá payload ứng viên đặt tên cho đối tượng chính của một sự kiện, theo từng aggregate của outbox. Khoá đầu tiên
+ * xuất hiện sẽ thắng; giá trị rơi vào trường `objectId` đã chuẩn hoá của payload log đã lưu.
  */
 const OBJECT_ID_KEYS: Record<string, string[]> = {
   course: ['courseId'],
@@ -47,30 +46,25 @@ function str(value: unknown): string | null {
 }
 
 /**
- * Observer logstore duy nhất (tương đương logstore_standard của Moodle): mọi
- * dòng outbox đã commit được relay bởi một trong hai relay (API hoặc worker) đều được phản chiếu
- * vào `event_log` — một vết kiểm toán bất biến, truy vấn được — với payload
- * đã chuẩn hoá (component / action / actor / related user / course / object / IP)
- * để API đọc có thể lọc mà không cần biết hình dạng payload thô của từng sự kiện.
+ * Observer logstore duy nhất (tương đương logstore_standard của Moodle): mọi dòng outbox đã commit được relay bởi một
+ * trong hai relay (API hoặc worker) đều được phản chiếu vào `event_log` — một vết kiểm toán bất biến, truy vấn được —
+ * với payload đã chuẩn hoá (component / action / actor / related user / course / object / IP) để API đọc có thể lọc mà
+ * không cần biết hình dạng payload thô của từng sự kiện.
  *
- * Việc phản chiếu KHÔNG BAO GIỜ làm hỏng relay: lỗi được ghi log và nuốt,
- * dòng outbox vẫn giữ nguyên trạng thái published như trước (ngữ nghĩa at-least-once của
- * relay không đổi; một lần relay phát lại vì vậy có thể nhân đôi một dòng log,
- * cùng đánh đổi mà đường emit trong tiến trình đã chấp nhận).
+ * Việc phản chiếu KHÔNG BAO GIỜ làm hỏng relay: lỗi được ghi log và nuốt, dòng outbox vẫn giữ nguyên trạng thái
+ * published như trước (ngữ nghĩa at-least-once của relay không đổi; một lần relay phát lại vì vậy có thể nhân đôi một
+ * dòng log, cùng đánh đổi mà đường emit trong tiến trình đã chấp nhận).
  */
 @Injectable()
 export class EventLogWriter {
   private readonly logger = new Logger(EventLogWriter.name);
 
   /**
-   * @param db - Handle Kysely kho trung tâm (ở tầng ứng dụng là
-   * facade định tuyến theo không gian).
-   * @param resolveDb - Hàm phân giải handle theo ngữ cảnh, tuỳ
-   * chọn — cùng lý do với đường standalone của `OutboxService`:
-   * phiên mở bằng đường chuẩn bị phía bộ máy cũ chưa chuẩn bị phía
-   * Kysely, nên tầng wiring cấp hàm này để chuẩn bị phía Kysely
-   * cho slug đang hiệu lực trước khi ghi; điểm dựng tay trên
-   * handle của đúng kho đích thì không cần.
+   * @param db - Handle Kysely kho trung tâm (ở tầng ứng dụng là facade định tuyến theo không gian).
+   * @param resolveDb - Hàm phân giải handle theo ngữ cảnh, tuỳ chọn — cùng lý do với đường standalone của
+   * `OutboxService`: phiên mở bằng đường chuẩn bị phía bộ máy cũ chưa chuẩn bị phía Kysely, nên tầng wiring cấp hàm này
+   * để chuẩn bị phía Kysely cho slug đang hiệu lực trước khi ghi; điểm dựng tay trên handle của đúng kho đích thì không
+   * cần.
    */
   constructor(
     private readonly db: CentreDb,
@@ -96,10 +90,8 @@ export class EventLogWriter {
       const sourceComponent = str(source.component);
       const payload: Record<string, unknown> = {
         ...source,
-        // Một số payload đã mang sẵn trường `component` của riêng chúng (component
-        // hoạt động của một course module) — giữ nó dưới
-        // `sourceComponent`; `component` đã chuẩn hoá là subsystem
-        // của sự kiện (aggregate của outbox).
+        // Một số payload đã mang sẵn trường `component` của riêng chúng (component hoạt động của một course module) —
+        // giữ nó dưới `sourceComponent`; `component` đã chuẩn hoá là subsystem của sự kiện (aggregate của outbox).
         ...(sourceComponent ? { sourceComponent } : {}),
         component: row.aggregate,
         action: row.type,
@@ -111,8 +103,7 @@ export class EventLogWriter {
         outboxId: row.id,
         outboxSeq: row.seq,
       };
-      // Cột `payload` jsonb đi qua serialize tường minh kèm
-      // `::jsonb` theo khuôn ghi jsonb của `@lms/db` (driver `pg`
+      // Cột `payload` jsonb đi qua serialize tường minh kèm `::jsonb` theo khuôn ghi jsonb của `@lms/db` (driver `pg`
       // hiểu MẢNG cấp cao nhất là mảng PostgreSQL nếu ghi thẳng).
       await (await this.handle())
         .insertInto('event_log')

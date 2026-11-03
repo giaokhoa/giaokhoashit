@@ -13,16 +13,13 @@ import { CommentsController, NotesController, RatingsController, TagsController 
 import { TagsService } from './tags.service';
 
 /**
- * SocialModule — bốn hệ thống con đa hình của report §2#16
- * (Tags / Comments / Ratings / Notes) dùng chung một repository trên
- * các bảng (component, itemType/area, itemId, contextId) không có FK cứng.
- * Mỗi service con được export dưới dạng facade riêng của nó.
+ * SocialModule — bốn hệ thống con đa hình của report §2#16 (Tags / Comments / Ratings / Notes) dùng chung một
+ * repository trên các bảng (component, itemType/area, itemId, contextId) không có FK cứng. Mỗi service con được export
+ * dưới dạng facade riêng của nó.
  *
- * Từ issue #647, repository dùng chung sống ở `@lms/db` trên
- * Kysely (lớp thuần, không phụ thuộc Nest) nên module lắp nó bằng
- * factory provider trên handle định tuyến theo không gian
- * (`SpaceDatabaseService.routedKysely`) — cùng khuôn lắp repository
- * của pilot control plane.
+ * Từ issue #647, repository dùng chung sống ở `@lms/db` trên Kysely (lớp thuần, không phụ thuộc Nest) nên module lắp nó
+ * bằng factory provider trên handle định tuyến theo không gian (`SpaceDatabaseService.routedKysely`) — cùng khuôn lắp
+ * repository của pilot control plane.
  */
 @Module({
   imports: [AccessModule, CoursesModule, EnrolModule, GradesModule, SpaceRoutingModule],
@@ -37,5 +34,4 @@ import { TagsService } from './tags.service';
   ],
   exports: [TagsService, CommentsService, RatingsService, NotesService],
 })
-/** Module xã hội: tag, bình luận, đánh giá, ghi chú. */
 export class SocialModule {}

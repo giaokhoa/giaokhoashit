@@ -4,13 +4,15 @@ import * as argon2 from 'argon2';
 
 export interface PasswordPolicy { minLength: number; minDigits: number; minLower: number; minUpper: number; minNonAlnum: number }
 
-/** Băm mật khẩu (argon2id) + chính sách có thể cấu hình (chính sách auth của Moodle — là cấu hình, không bao giờ fix cứng luật trong code). */
+/**
+ * Băm mật khẩu (argon2id) + chính sách có thể cấu hình (chính sách auth của Moodle — là cấu hình, không bao giờ fix
+ * cứng luật trong code).
+ */
 @Injectable()
 /**
- * Chính sách và băm mật khẩu.
- * Đối chiếu Moodle: lib/moodlelib.php (check_password_policy) + password_hash bcrypt.
- * Chính sách mặc định: tối thiểu 8 ký tự, có chữ thường, chữ hoa, số và ký tự đặc biệt;
- * các thông điệp con được gộp vào message nội bộ của lỗi user.password_policy (chi tiết hiển thị lấy từ catalog i18n).
+ * Chính sách và băm mật khẩu. Đối chiếu Moodle: lib/moodlelib.php (check_password_policy) + password_hash bcrypt. Chính
+ * sách mặc định: tối thiểu 8 ký tự, có chữ thường, chữ hoa, số và ký tự đặc biệt; các thông điệp con được gộp vào
+ * message nội bộ của lỗi user.password_policy (chi tiết hiển thị lấy từ catalog i18n).
  */
 export class PasswordService {
   constructor(private readonly config: ConfigService) {}

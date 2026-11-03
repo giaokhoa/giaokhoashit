@@ -25,34 +25,6 @@ import {
 } from '#lib/curriculum';
 import '#config/i18n';
 
-/**
- * Quản trị chương trình GDPT 2018 (K0a + GDPT-SEED): bề mặt chính là
- * danh sách môn học — thu/mở ra chương trình theo khối, cây của một
- * khối trình bày theo mẫu Bộ (bảng Nội dung | Yêu cầu cần đạt nhóm
- * theo mạch). Tạo/sửa môn, chương trình, node và YCCĐ đều là MÀN
- * RIÊNG; Sửa/Xoá nằm ngay tại dòng (§9). Panel đồng bộ dữ liệu chuẩn
- * nằm cuối trang như tiện ích phụ: chương trình đã được seed tự động
- * khi dựng DB (restore từ dump đông cứng, định danh cố định theo dump), panel chỉ để đồng bộ lại
- * khi dataset được đính chính — nạp lại không nhân đôi và không xoá
- * (sổ đăng ký + luật không-xoá phía API quyết định). Mọi lời gọi bị
- * API gác bằng curriculum:manage tại context hệ thống: 403 thì trang
- * hiện thông báo không có quyền thay vì sập (học sinh không vào được
- * trang này).
- *
- * Luồng dữ liệu (F-01 của rà soát #133): bốn nguồn nền — trạng thái
- * dataset chương trình, contexts (để neo danh sách môn ở context hệ
- * thống), trạng thái dataset SGK và danh sách sách — đọc qua
- * TanStack Query từ lib/curriculum; lỗi 403 ở bất kỳ nguồn nào thì
- * trang coi là không có quyền, lỗi khác hiện thông báo tải thất bại.
- * Chương trình của một môn và cây của một cuốn sách chỉ tải khi mở
- * lần đầu (truy vấn con theo từng dòng, bật theo trạng thái mở) rồi
- * giữ trong bộ nhớ đệm; đồng bộ dataset và xoá đi qua các đột biến
- * của lib/curriculum, làm mới đúng cụm khoá bị ảnh hưởng.
- */
-
-// --- Các dòng con lười tải ----------------------------------------------------
-
-/** Danh sách chương trình theo khối của một môn đang mở — chỉ tải khi môn được mở lần đầu. */
 function SubjectCurricula({
   subject,
   onLoadError,
@@ -111,7 +83,6 @@ function SubjectCurricula({
   );
 }
 
-/** Một dòng môn: nút thu/mở, sửa/xoá môn và (khi mở) danh sách chương trình của môn. */
 function SubjectRow({
   subject,
   open,
@@ -128,7 +99,6 @@ function SubjectRow({
   const { t } = useTranslation('app');
   const deleteSubjectMutation = useDeleteCurriculumSubject();
 
-  /** Xoá một môn (cascade toàn bộ chương trình của môn) sau xác nhận. */
   async function deleteSubject() {
     if (!window.confirm(t('curriculumConfirmDeleteSubject', { name: subject.name }))) return;
     try {
@@ -160,7 +130,6 @@ function SubjectRow({
   );
 }
 
-/** Một dòng SGK: cây sách chỉ tải khi mở lần đầu rồi giữ lại (huy hiệu số bài vẫn hiện khi đã đóng). */
 function BookRow({
   book,
   subjectName,
@@ -239,8 +208,6 @@ function BookRow({
   );
 }
 
-// --- Màn danh sách + nạp dữ liệu chuẩn ---------------------------------------
-
 export function AdminCurriculumPage() {
   const { t } = useTranslation('app');
   const [openSubjects, setOpenSubjects] = useState<string[]>([]);
@@ -276,7 +243,6 @@ export function AdminCurriculumPage() {
   const handleLoadError = useCallback(() => setExtraError(true), []);
   const handleMessage = useCallback((text: string) => setMessage(text), []);
 
-  /** Thu/mở một môn: việc tải chương trình của môn do truy vấn con đảm nhiệm. */
   function toggleSubject(subject: CurriculumSubject) {
     setExtraError(false);
     setOpenSubjects((prev) =>
@@ -284,7 +250,6 @@ export function AdminCurriculumPage() {
     );
   }
 
-  /** Nạp một dataset đã kiểm chứng vào cây chương trình (idempotent phía API). */
   async function importDataset(dataset: ProgramDatasetStatus) {
     setMessage(null);
     try {
@@ -296,7 +261,6 @@ export function AdminCurriculumPage() {
     }
   }
 
-  /** Nạp một dataset SGK đã kiểm chứng vào cây sách + ánh xạ (idempotent phía API). */
   async function importBookDataset(dataset: BookDatasetStatus) {
     setMessage(null);
     try {
@@ -308,7 +272,6 @@ export function AdminCurriculumPage() {
     }
   }
 
-  /** Thu/mở một cuốn SGK: việc tải cây sách do truy vấn ở dòng sách đảm nhiệm. */
   function toggleBook(book: Book) {
     setExtraError(false);
     setOpenBooks((prev) =>
@@ -491,9 +454,8 @@ export function AdminCurriculumPage() {
                       </summary>
                       <ul className="mt-1 flex flex-col gap-1">
                         {result.changes.map((change, i) => {
-                          // Mục cần mắt người: nghi ghép nhầm khi vừa
-                          // sửa chữ vừa xô lệch, ca mơ hồ trong nhóm
-                          // trùng hệt, hoặc dòng còn liên kết trỏ vào.
+                          // Mục cần mắt người: nghi ghép nhầm khi vừa sửa chữ vừa xô lệch, ca mơ hồ trong nhóm trùng
+                          // hệt, hoặc dòng còn liên kết trỏ vào.
                           const needsReview = change.shiftSuspected || change.identicalTextAmbiguous
                             || (change.linkedQuestions ?? 0) > 0 || (change.linkedBookMappings ?? 0) > 0;
                           const kindText = change.kind === 'text-changed'
@@ -536,10 +498,9 @@ export function AdminCurriculumPage() {
 }
 
 /**
- * Nạp trước cho route danh sách quản trị chương trình: bốn nguồn nền
- * của trang; danh sách môn cần id context hệ thống nên nạp sau khi
- * contexts về (đúng thứ tự phụ thuộc của trang). Lỗi nạp bỏ qua —
- * trang tự hiện trạng thái lỗi/cấm như khi không có loader.
+ * Nạp trước cho route danh sách quản trị chương trình: bốn nguồn nền của trang; danh sách môn cần id context hệ thống
+ * nên nạp sau khi contexts về (đúng thứ tự phụ thuộc của trang). Lỗi nạp bỏ qua — trang tự hiện trạng thái lỗi/cấm như
+ * khi không có loader.
  */
 export async function adminCurriculumPageClientLoader() {
   await Promise.allSettled([
@@ -556,22 +517,14 @@ export async function adminCurriculumPageClientLoader() {
   return null;
 }
 
-// --- Màn cây chương trình ------------------------------------------------------
-
-/** Export mặc định cho route danh sách (xem src/routes.ts). */
 export default AdminCurriculumPage;
 
-// Tái xuất cho spec trang (màn cây đã tách sang components/tree-page của feature).
 export { AdminCurriculumTreePage } from '../components/tree-page';
 
-// Biên lỗi + tiêu đề theo route (cụm khung SSR #146, từ rà soát #133) —
-// trước đây nằm ở wrapper mỏng của route, gộp vào route module này khi
-// tổ chức lại theo mô hình features/ (issue #500).
 export { RouteErrorBoundary as ErrorBoundary } from '#components/route-error-boundary';
 import { appKeyMeta } from '#lib/route-meta';
 export function meta() {
   return appKeyMeta('navCurriculum');
 }
 
-/** clientLoader của route danh sách: nạp trước các nguồn nền của trang. */
 export const clientLoader = adminCurriculumPageClientLoader;

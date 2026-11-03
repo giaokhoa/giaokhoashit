@@ -12,25 +12,19 @@ import { queryKeys } from '#lib/query-keys';
 import { baNoSessionResponse, baSessionResponse, isGetSessionUrl } from '#test/ba-session';
 
 /**
- * Test kiểm soát state cho khung route (bước kiểm soát state của đợt
- * gộp frontend): dựng ĐÚNG cây thật của ứng dụng — App của root route
- * (QueryClientProvider → AuthProvider → PermissionsProvider) làm gốc,
- * Shell làm layout, và một trang thăm dò (probe) thay cho trang thật ở
- * TỪNG route khai trong routes.ts. Phiên được cho resolve CHẬM bằng
- * một promise treo ở GET /users/me để tái hiện đúng cửa sổ đua khi
- * vào thẳng/F5:
+ * Test kiểm soát state cho khung route (bước kiểm soát state của đợt gộp frontend): dựng ĐÚNG cây thật của ứng dụng —
+ * App của root route (QueryClientProvider → AuthProvider → PermissionsProvider) làm gốc, Shell làm layout, và một trang
+ * thăm dò (probe) thay cho trang thật ở TỪNG route khai trong routes.ts. Phiên được cho resolve CHẬM bằng một promise
+ * treo ở GET /users/me để tái hiện đúng cửa sổ đua khi vào thẳng/F5:
  *
- * - Trong lúc phiên chưa resolve: trang con KHÔNG được mount, khung
- *   giữ chỗ đúng hình học hiện thay, và không lóe khung công khai.
- * - Sau khi resolve có người dùng: trang con mount bên trong provider
- *   quyền (usePermissions đọc được dữ liệu thật, không ném lỗi).
- * - Sau khi resolve KHÔNG có người dùng: trang con vẫn mount trong
- *   provider (nay bọc ở root) — usePermissions trả ảnh chụp rỗng sẵn
- *   sàng thay vì ném "must be used inside PermissionsProvider" như lỗi
- *   sập trang /courses trên bản live.
- * - Đăng xuất: phiên cookie bị huỷ phía server và toàn bộ Query
- *   cache (gồm ảnh chụp quyền của phiên trước) bị dọn sạch; web
- *   không còn giữ token nào ở localStorage (cutover GĐ2, issue #7).
+ * - Trong lúc phiên chưa resolve: trang con KHÔNG được mount, khung giữ chỗ đúng hình học hiện thay, và không lóe khung
+ *   công khai.
+ * - Sau khi resolve có người dùng: trang con mount bên trong provider quyền (usePermissions đọc được dữ liệu thật,
+ *   không ném lỗi).
+ * - Sau khi resolve KHÔNG có người dùng: trang con vẫn mount trong provider (nay bọc ở root) — usePermissions trả ảnh
+ *   chụp rỗng sẵn sàng thay vì ném "must be used inside PermissionsProvider" như lỗi sập trang /courses trên bản live.
+ * - Đăng xuất: phiên cookie bị huỷ phía server và toàn bộ Query cache (gồm ảnh chụp quyền của phiên trước) bị dọn sạch;
+ *   web không còn giữ token nào ở localStorage (cutover GĐ2, issue #7).
  */
 
 const ADMIN_ID = '01900000-0000-7000-8000-0000000000a1';
@@ -53,7 +47,6 @@ const PROFILE = {
 
 const ACCESS = { userId: ADMIN_ID, isSiteAdmin: true, assignments: [], contexts: [] };
 
-/** Trang thăm dò: đọc cả hai context toàn cục như một trang thật và phơi trạng thái ra DOM cho assertion. */
 function Probe({ pattern }: { pattern: string }) {
   const { user, logout } = useAuth();
   const perms = usePermissions();
@@ -73,15 +66,11 @@ function Probe({ pattern }: { pattern: string }) {
 }
 
 interface RouteCase {
-  /** Mẫu đường dẫn như khai trong routes.ts ('/' cho route index). */
   pattern: string;
-  /** URL cụ thể để vào thẳng (đoạn :id thay bằng một id mẫu). */
   url: string;
-  /** Cấu hình route con tương ứng cho router test (index hoặc path). */
   route: { index: true } | { path: string };
 }
 
-/** Mọi route con của layout Shell, lấy thẳng từ bảng route thật của app. */
 const ROUTE_CASES: RouteCase[] = (() => {
   const layoutEntry = routesConfig[0] as unknown as {
     children: Array<{ path?: string; index?: boolean }>;
@@ -113,12 +102,10 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 /**
- * Stub fetch toàn cục: get-session của Better Auth trả phiên ngay,
- * nhưng GET /users/me (khâu nạp hồ sơ của AuthProvider) treo cho tới
- * khi test chủ động resolve — tái hiện phiên resolve chậm. Trạng
- * thái phiên phía "server" của stub lật khi sign-out được gọi: từ
- * đó get-session trả null và các endpoint dữ liệu trả 401 như API
- * thật khi request không còn cookie phiên.
+ * Stub fetch toàn cục: get-session của Better Auth trả phiên ngay, nhưng GET /users/me (khâu nạp hồ sơ của
+ * AuthProvider) treo cho tới khi test chủ động resolve — tái hiện phiên resolve chậm. Trạng thái phiên phía "server"
+ * của stub lật khi sign-out được gọi: từ đó get-session trả null và các endpoint dữ liệu trả 401 như API thật khi
+ * request không còn cookie phiên.
  */
 function stubFetchWithSlowSession() {
   const me = deferred<Response>();
@@ -144,7 +131,6 @@ function stubFetchWithSlowSession() {
   return me;
 }
 
-/** Dựng cây thật tại một URL vào thẳng, với probe thay trang thật ở mọi route. */
 function renderAt(url: string) {
   const router = createMemoryRouter(
     [
@@ -168,8 +154,8 @@ function renderAt(url: string) {
 }
 
 beforeAll(() => {
-  // jsdom không có matchMedia; hook useIsMobile của @lms/ui cần nó khi
-  // sidebar mount — stub tối thiểu trả "không phải mobile".
+  // jsdom không có matchMedia; hook useIsMobile của @lms/ui cần nó khi sidebar mount — stub tối thiểu trả "không phải
+  // mobile".
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
@@ -196,8 +182,6 @@ describe('cổng chờ phiên — vào thẳng/F5 từng route với phiên reso
       const me = stubFetchWithSlowSession();
       const { container } = renderAt(routeCase.url);
 
-      // Phiên chưa resolve: trang con chưa mount, khung giữ chỗ hiện,
-      // khung công khai (có liên kết đăng nhập) không được lóe lên.
       expect(screen.queryByTestId('route-probe')).not.toBeInTheDocument();
       expect(container.querySelector('[data-testid="app-shell-skeleton"]')).not.toBeNull();
       expect(screen.queryByRole('link', { name: /đăng nhập/i })).not.toBeInTheDocument();
@@ -207,7 +191,6 @@ describe('cổng chờ phiên — vào thẳng/F5 từng route với phiên reso
       const probe = await screen.findByTestId('route-probe');
       expect(probe.dataset.pattern).toBe(routeCase.pattern);
       expect(probe.dataset.user).toBe('admin');
-      // Ảnh chụp quyền thật chảy qua provider (site admin ⇒ canAdminister).
       await waitFor(() => expect(probe.dataset.ready).toBe('true'));
       expect(probe.dataset.admin).toBe('true');
       expect(container.querySelector('[data-testid="app-shell-skeleton"]')).toBeNull();
@@ -244,18 +227,14 @@ describe('dọn dẹp khi đăng xuất', () => {
     const probe = await screen.findByTestId('route-probe');
     await waitFor(() => expect(probe.dataset.ready).toBe('true'));
     expect(queryClient.getQueryCache().findAll().length).toBeGreaterThan(0);
-    // Hợp đồng sau cutover: web không giữ token nào ở localStorage.
     expect(localStorage.getItem('lms.accessToken')).toBeNull();
     expect(localStorage.getItem('lms.refreshToken')).toBeNull();
 
     await userEvent.click(screen.getByTestId('probe-logout'));
 
-    // Bất biến dọn dẹp: giao diện thôi mang quyền của người trước, và
-    // cache không còn giữ payload của phiên trước — query đang quan
-    // sát có thể tự nạp lại sau clear() nhưng chỉ với trạng thái chưa
-    // đăng nhập (401 ⇒ dữ liệu null), không phải dữ liệu người cũ.
-    // (Truy vấn lại probe: cây khung thay toàn bộ khi đăng xuất nên
-    // node cũ đã rời DOM.)
+    // Bất biến dọn dẹp: giao diện thôi mang quyền của người trước, và cache không còn giữ payload của phiên trước —
+    // query đang quan sát có thể tự nạp lại sau clear() nhưng chỉ với trạng thái chưa đăng nhập (401 ⇒ dữ liệu null),
+    // không phải dữ liệu người cũ. (Truy vấn lại probe: cây khung thay toàn bộ khi đăng xuất nên node cũ đã rời DOM.)
     await waitFor(() => expect(screen.getByTestId('route-probe').dataset.admin).toBe('false'));
     expect(screen.getByTestId('route-probe').dataset.user).toBe('');
     await waitFor(() => expect(queryClient.getQueryData(queryKeys.capabilities)).toBeFalsy());

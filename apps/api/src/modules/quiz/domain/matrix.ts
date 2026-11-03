@@ -1,7 +1,6 @@
 /**
- * Dữ liệu + quy tắc thuần của ma trận đề (Chặng 3, mục C.1/C.4 của hồ
- * sơ thiết kế). Preset là DỮ LIỆU CẤU HÌNH chụp vào ma trận lúc tạo —
- * không hard-code tỉ lệ vào logic kiểm tra: lệch tỉ lệ chỉ cảnh báo.
+ * Dữ liệu + quy tắc thuần của ma trận đề (Chặng 3, mục C.1/C.4 của hồ sơ thiết kế). Preset là DỮ LIỆU CẤU HÌNH chụp vào
+ * ma trận lúc tạo — không hard-code tỉ lệ vào logic kiểm tra: lệch tỉ lệ chỉ cảnh báo.
  */
 
 /** Thang Đ–S mặc định theo QĐ 764: 0/1/2/3/4 ý đúng → 0/10/25/50/100% điểm chùm. */
@@ -16,12 +15,10 @@ export interface MatrixPreset {
 }
 
 /**
- * Tỉ lệ % ĐIỂM tham chiếu của khuôn ma trận DUY NHẤT — CV 7991
- * (kiểm tra định kỳ, mẫu THPT): dạng trắc nghiệm 30 / Đ–S 20 /
- * trả lời ngắn 20 / tự luận 30; mức Biết 40 / Hiểu 30 / Vận dụng 30.
- * Đây là HẰNG CẤU HÌNH chụp vào ma trận lúc tạo (chốt 26/10: bỏ hẳn
- * cơ chế chọn preset), không phải một lựa chọn của giáo viên; tỉ lệ
- * từng ô do giáo viên quyết theo đối tượng, lệch tỉ lệ chỉ cảnh báo.
+ * Tỉ lệ % ĐIỂM tham chiếu của khuôn ma trận DUY NHẤT — CV 7991 (kiểm tra định kỳ, mẫu THPT): dạng trắc nghiệm 30 / Đ–S
+ * 20 / trả lời ngắn 20 / tự luận 30; mức Biết 40 / Hiểu 30 / Vận dụng 30. Đây là HẰNG CẤU HÌNH chụp vào ma trận lúc tạo
+ * (chốt 26/10: bỏ hẳn cơ chế chọn preset), không phải một lựa chọn của giáo viên; tỉ lệ từng ô do giáo viên quyết theo
+ * đối tượng, lệch tỉ lệ chỉ cảnh báo.
  */
 export const MATRIX_PRESETS: Record<'cv7991_periodic', MatrixPreset> = {
   cv7991_periodic: {
@@ -55,11 +52,9 @@ export interface MatrixCellLike {
 }
 
 /**
- * Tính % điểm thực tế theo dạng và theo mức từ các ô, so với mục tiêu
- * đã chụp; trả danh sách cảnh báo (rỗng = khớp). Ngưỡng cảnh báo 0,5
- * điểm % để tránh nhiễu làm tròn. Tổng điểm các ô khác totalScore của
- * ma trận cũng là một cảnh báo (đề sinh ra sẽ quy điểm về thang của
- * quiz, nhưng ma trận lệch tổng là dấu hiệu soạn sai).
+ * Tính % điểm thực tế theo dạng và theo mức từ các ô, so với mục tiêu đã chụp; trả danh sách cảnh báo (rỗng = khớp).
+ * Ngưỡng cảnh báo 0,5 điểm % để tránh nhiễu làm tròn. Tổng điểm các ô khác totalScore của ma trận cũng là một cảnh báo
+ * (đề sinh ra sẽ quy điểm về thang của quiz, nhưng ma trận lệch tổng là dấu hiệu soạn sai).
  */
 export function matrixWarnings(input: {
   cells: MatrixCellLike[];
@@ -105,20 +100,15 @@ function round1(v: number): number {
 }
 
 /**
- * Preset quy tắc thi theo hình thức kiểm tra (hồ sơ tổ chức thi trực
- * tuyến VN, mục 5.1 — theo TT 22 + Quy chế thi TN TT 24/2024): chọn
- * exam_kind lúc tạo quiz là ĐIỀN SẴN các trường dưới đây, giáo viên
- * vẫn sửa từng trường sau đó. Điểm theo hình thức:
- *  - thường xuyên (regular): xem điểm/đáp án/feedback NGAY SAU NỘP
- *    (bitmask = mọi cửa sổ sau nộp: 0x1110 = 4368);
- *  - định kỳ (periodic) và thi thử (mock): các khía cạnh chỉ mở ở cửa
- *    sổ SAU KHI ĐÓNG (0x10) — và mốc đóng hiệu lực cho review là
- *    max(timeClose) của cả đợt (xem reviewWindowBit);
+ * Preset quy tắc thi theo hình thức kiểm tra (hồ sơ tổ chức thi trực tuyến VN, mục 5.1 — theo TT 22 + Quy chế thi TN TT
+ * 24/2024): chọn exam_kind lúc tạo quiz là ĐIỀN SẴN các trường dưới đây, giáo viên vẫn sửa từng trường sau đó. Điểm
+ * theo hình thức:
+ *  - thường xuyên (regular): xem điểm/đáp án/feedback NGAY SAU NỘP (bitmask = mọi cửa sổ sau nộp: 0x1110 = 4368);
+ *  - định kỳ (periodic) và thi thử (mock): các khía cạnh chỉ mở ở cửa sổ SAU KHI ĐÓNG (0x10) — và mốc đóng hiệu lực cho
+ *    review là max(timeClose) của cả đợt (xem reviewWindowBit);
  *  - thi thử: late_entry_minutes = 15 (Điều 21 TT 24/2024);
- *  - giám sát sự kiện (chỉ ghi nhận): định kỳ/thi thử bật, thường
- *    xuyên tắt.
- * Mật khẩu/subnet KHÔNG nằm trong preset: preset chỉ nêu kỳ vọng
- * (định kỳ/thi thử phát mật khẩu đầu buổi) — giá trị do giáo viên đặt.
+ *  - giám sát sự kiện (chỉ ghi nhận): định kỳ/thi thử bật, thường xuyên tắt. Mật khẩu/subnet KHÔNG nằm trong preset:
+ *    preset chỉ nêu kỳ vọng (định kỳ/thi thử phát mật khẩu đầu buổi) — giá trị do giáo viên đặt.
  */
 export type ExamKind = 'regular' | 'periodic' | 'mock';
 
@@ -177,7 +167,10 @@ export const EXAM_KIND_PRESETS: Record<ExamKind, ExamKindPreset> = {
   },
 };
 
-/** Tên thang Đ–S để nêu BẰNG CHỮ trong trình bày review chùm (Q-a): thang mặc định gọi đúng tên văn bản, thang khác gọi là thang tuỳ chỉnh kèm các mốc %. */
+/**
+ * Tên thang Đ–S để nêu BẰNG CHỮ trong trình bày review chùm (Q-a): thang mặc định gọi đúng tên văn bản, thang khác gọi
+ * là thang tuỳ chỉnh kèm các mốc %.
+ */
 export function tfScaleLabel(scale: number[]): string {
   const isQd764 = scale.length === TF_SCALE_QD764.length && scale.every((v, i) => v === TF_SCALE_QD764[i]);
   return isQd764 ? 'thang QĐ 764' : `thang tuỳ chỉnh [${scale.join('/')}]`;

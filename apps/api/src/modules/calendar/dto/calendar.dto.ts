@@ -9,10 +9,6 @@ import {
   type CreateCalendarSubscription,
 } from '@lms/contracts';
 
-/**
- * Validation của Calendar dùng Zod qua Standard Schema — schema nền ở
- * `@lms/contracts` là nguồn sự thật duy nhất.
- */
 export {
   calendarRemindSchema,
   createCalendarEventSchema,

@@ -13,14 +13,16 @@ import { OAuthFlowException, OAuthService } from './oauth.service';
 @ApiTags('auth')
 @Controller({ path: 'auth/oauth', version: '1' })
 /**
- * API đăng nhập xã hội (plugin lõi auth_oauth2 của Moodle): cấu hình
- * issuer công khai, khởi tạo luồng authorize, callback của nhà cung cấp,
- * đổi mã bàn giao, và quản lý liên kết của chính user (Linked logins).
+ * API đăng nhập xã hội (plugin lõi auth_oauth2 của Moodle): cấu hình issuer công khai, khởi tạo luồng authorize,
+ * callback của nhà cung cấp, đổi mã bàn giao, và quản lý liên kết của chính user (Linked logins).
  */
 export class OAuthController {
   constructor(private readonly oauth: OAuthService, private readonly config: ConfigService) {}
 
-  /** URL callback tuyệt đối của issuer theo origin của request hiện tại — redirect_uri phải khớp nguyên vẹn giữa bước authorize và bước đổi code nên nó được nhúng vào state đã ký. */
+  /**
+   * URL callback tuyệt đối của issuer theo origin của request hiện tại — redirect_uri phải khớp nguyên vẹn giữa bước
+   * authorize và bước đổi code nên nó được nhúng vào state đã ký.
+   */
   private callbackUrl(req: Request, issuer: string): string {
     return `${req.protocol}://${req.get('host')}/api/v1/auth/oauth/${issuer}/callback`;
   }
@@ -34,7 +36,8 @@ export class OAuthController {
   @Public()
   @Get('providers')
   /**
-   * GET /auth/oauth/providers — issuer dựng sẵn nào đang bật (trang login chỉ hiện nút của issuer đã bật, đúng hành vi Moodle).
+   * GET /auth/oauth/providers — issuer dựng sẵn nào đang bật (trang login chỉ hiện nút của issuer đã bật, đúng hành vi
+   * Moodle).
    */
   async providers() {
     return { providers: this.oauth.listProviders() };
@@ -42,16 +45,14 @@ export class OAuthController {
 
   @Public()
   @Get(':issuer/authorize')
-  /**
-   * GET /auth/oauth/:issuer/authorize — URL authorize cho luồng đăng nhập (khách chưa đăng nhập).
-   */
   async authorize(@Param('issuer', { schema: oauthIssuerSchema }) issuer: OAuthIssuerParam, @Req() req: Request) {
     return { authorizeUrl: await this.oauth.buildAuthorizeUrl(issuer, this.callbackUrl(req, issuer)) };
   }
 
   @Get(':issuer/link')
   /**
-   * GET /auth/oauth/:issuer/link — URL authorize cho luồng liên kết: user đang đăng nhập gắn thêm tài khoản provider vào tài khoản của mình.
+   * GET /auth/oauth/:issuer/link — URL authorize cho luồng liên kết: user đang đăng nhập gắn thêm tài khoản provider
+   * vào tài khoản của mình.
    */
   async link(@Param('issuer', { schema: oauthIssuerSchema }) issuer: OAuthIssuerParam, @CurrentUser() actor: AuthenticatedUser, @Req() req: Request) {
     return { authorizeUrl: await this.oauth.buildAuthorizeUrl(issuer, this.callbackUrl(req, issuer), actor.id) };
@@ -60,13 +61,10 @@ export class OAuthController {
   @Public()
   @Get(':issuer/callback')
   /**
-   * GET /auth/oauth/:issuer/callback — điểm về của nhà cung cấp. Thành
-   * công: đặt cookie phiên như đăng nhập thường rồi chuyển hướng về SPA
-   * kèm mã bàn giao một lần. Tài khoản đã bật MFA: CHƯA đặt cookie nào,
-   * chuyển hướng về trang login kèm challenge MFA đích `oauth` — phiên
-   * và mã bàn giao chỉ sinh ở POST /auth/oauth/mfa/verify sau khi qua
-   * bước hai. Thất bại nghiệp vụ: về trang login kèm mã lỗi để giao
-   * diện dịch ra thông báo (không trả JSON giữa luồng duyệt).
+   * GET /auth/oauth/:issuer/callback — điểm về của nhà cung cấp. Thành công: đặt cookie phiên như đăng nhập thường rồi
+   * chuyển hướng về SPA kèm mã bàn giao một lần. Tài khoản đã bật MFA: CHƯA đặt cookie nào, chuyển hướng về trang login
+   * kèm challenge MFA đích `oauth` — phiên và mã bàn giao chỉ sinh ở POST /auth/oauth/mfa/verify sau khi qua bước hai.
+   * Thất bại nghiệp vụ: về trang login kèm mã lỗi để giao diện dịch ra thông báo (không trả JSON giữa luồng duyệt).
    */
   async callback(
     @Param('issuer', { schema: oauthIssuerSchema }) issuer: OAuthIssuerParam,
@@ -96,12 +94,10 @@ export class OAuthController {
   @Public()
   @Post('mfa/verify')
   /**
-   * POST /auth/oauth/mfa/verify — bước hai của đăng nhập OAuth:
-   * challenge đích `oauth` (callback chuyển hướng về trang login kèm
-   * theo) + mã TOTP ⇒ tạo phiên web (đặt cookie như callback thành
-   * công) và trả mã bàn giao một lần để đổi cặp token như luồng
-   * thường. Mã sai/challenge sai đích bị từ chối bởi lõi MFA dùng
-   * chung (kèm lockout như mọi luồng MFA).
+   * POST /auth/oauth/mfa/verify — bước hai của đăng nhập OAuth: challenge đích `oauth` (callback chuyển hướng về trang
+   * login kèm theo) + mã TOTP ⇒ tạo phiên web (đặt cookie như callback thành công) và trả mã bàn giao một lần để đổi
+   * cặp token như luồng thường. Mã sai/challenge sai đích bị từ chối bởi lõi MFA dùng chung (kèm lockout như mọi luồng
+   * MFA).
    */
   async mfaVerify(@Body({ schema: mfaVerifySchema }) dto: MfaVerifyDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { user, sessionId, handoffCode } = await this.oauth.completeOAuthMfa(dto.challengeToken, dto.code, {
@@ -122,9 +118,6 @@ export class OAuthController {
   }
 
   @Get('links')
-  /**
-   * GET /auth/oauth/links — các liên kết đăng nhập ngoài của chính người gọi (trang Linked logins).
-   */
   async links(@CurrentUser() actor: AuthenticatedUser) {
     const { links, hasPassword } = await this.oauth.listLinks(actor.id);
     return {
@@ -137,7 +130,8 @@ export class OAuthController {
 
   @Delete('links/:linkId')
   /**
-   * DELETE /auth/oauth/links/:linkId — gỡ một liên kết của chính người gọi; bị chặn khi đó là đường đăng nhập duy nhất của tài khoản chưa có mật khẩu.
+   * DELETE /auth/oauth/links/:linkId — gỡ một liên kết của chính người gọi; bị chặn khi đó là đường đăng nhập duy nhất
+   * của tài khoản chưa có mật khẩu.
    */
   async unlink(@Param('linkId', { schema: uuidIdSchema }) linkId: string, @CurrentUser() actor: AuthenticatedUser) {
     await this.oauth.unlink(actor.id, linkId);

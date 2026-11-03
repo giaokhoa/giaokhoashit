@@ -24,45 +24,32 @@ import {
 } from '../../support/ordinary-worker-module';
 
 /**
- * Phân phối realtime messaging ở worker (issue #521) — đường THẬT
- * của production sau khi consumer chuyển khỏi tiến trình API:
- * dòng outbox (ghi như đường nghiệp vụ phía API vẫn ghi) → relay
- * outbox duy nhất đóng dấu `publishedAt` và phát job vào hàng đợi
- * `messaging-realtime` → `MessagingRealtimeProcessor` → luật phân
- * phối dùng chung ở `@lms/messaging` → phát qua Redis adapter tới
- * một Socket.IO server độc lập đóng vai phía API (gắn socket vào
- * room đúng luật gateway: room riêng của user + room của các
- * conversation, `data.userId` gắn lúc bắt tay).
+ * Phân phối realtime messaging ở worker (issue #521) — đường THẬT của production sau khi consumer chuyển khỏi tiến
+ * trình API: dòng outbox (ghi như đường nghiệp vụ phía API vẫn ghi) → relay outbox duy nhất đóng dấu `publishedAt` và
+ * phát job vào hàng đợi `messaging-realtime` → `MessagingRealtimeProcessor` → luật phân phối dùng chung ở
+ * `@lms/messaging` → phát qua Redis adapter tới một Socket.IO server độc lập đóng vai phía API (gắn socket vào room
+ * đúng luật gateway: room riêng của user + room của các conversation, `data.userId` gắn lúc bắt tay).
  *
- * Các ca ở đây là nơi cư trú mới của các khẳng định phân phối vốn
- * nằm ở e2e phía API (messaging-realtime-flow, messaging-message-
- * lifecycle ca 6, messaging-block-visibility ca biên đã-đọc,
- * messaging-quote ca 8) và ở spec neo watermark phía API
- * (messaging-outbox-reanchor) — cùng khẳng định hành vi quan sát
- * được, đổi cơ chế vận hành:
- *  - tin mới tới đúng room, `conversation.updated` mang số chưa đọc
- *    của CHÍNH từng thành viên;
+ * Các ca ở đây là nơi cư trú mới của các khẳng định phân phối vốn nằm ở e2e phía API (messaging-realtime-flow,
+ * messaging-message- lifecycle ca 6, messaging-block-visibility ca biên đã-đọc, messaging-quote ca 8) và ở spec neo
+ * watermark phía API (messaging-outbox-reanchor) — cùng khẳng định hành vi quan sát được, đổi cơ chế vận hành:
+ *  - tin mới tới đúng room, `conversation.updated` mang số chưa đọc của CHÍNH từng thành viên;
  *  - `message.new` của tin trả lời mang đủ dữ kiện trích dẫn;
  *  - biên đã-đọc tới các thành viên còn lại;
  *  - thứ tự phát theo đúng thứ tự sự kiện;
- *  - thành viên đã bị gỡ khỏi conversation không nhận tin nữa và
- *    socket của họ bị đẩy khỏi room tại thời điểm phân phối (F1);
- *  - thu hồi: phía kia nhận `message.deleted` + `conversation.invalidate`,
- *    xem trước không lộ nội dung đã thu hồi;
+ *  - thành viên đã bị gỡ khỏi conversation không nhận tin nữa và socket của họ bị đẩy khỏi room tại thời điểm phân phối
+ *    (F1);
+ *  - thu hồi: phía kia nhận `message.deleted` + `conversation.invalidate`, xem trước không lộ nội dung đã thu hồi;
  *  - xoá-phía-mình: chỉ chính người xoá nhận tín hiệu;
- *  - cổng chặn 1–1: sự kiện ghi TRƯỚC lúc chặn vẫn bị nén ở tầng
- *    phân phối (tin mới lẫn biên đã-đọc);
- *  - chống trùng/phát lại: cùng một sự kiện phân phối đúng một lần
- *    dù relay phát lại hay job được xử lý lại (dấu theo `outboxId`);
- *  - không watermark: cơ chế hàng đợi không giữ mốc `seq` nào, sự
- *    kiện ghi sau khi các dòng outbox của "đời trước" bị xoá sạch
- *    vẫn được phân phối (bài học issue #125 không còn đất tái diễn);
- *  - không lọt tenant: room có đoạn namespace tenant, socket ở
- *    tenant khác không nhận sự kiện dù trùng id conversation.
+ *  - cổng chặn 1–1: sự kiện ghi TRƯỚC lúc chặn vẫn bị nén ở tầng phân phối (tin mới lẫn biên đã-đọc);
+ *  - chống trùng/phát lại: cùng một sự kiện phân phối đúng một lần dù relay phát lại hay job được xử lý lại (dấu theo
+ *    `outboxId`);
+ *  - không watermark: cơ chế hàng đợi không giữ mốc `seq` nào, sự kiện ghi sau khi các dòng outbox của "đời trước" bị
+ *    xoá sạch vẫn được phân phối (bài học issue #125 không còn đất tái diễn);
+ *  - không lọt tenant: room có đoạn namespace tenant, socket ở tenant khác không nhận sự kiện dù trùng id conversation.
  *
- * Tín hiệu chốt của mỗi ca là dấu đã-phân-phối theo `outboxId`
- * trong Redis (processor chỉ ghi dấu sau khi phân phối xong) —
- * không sleep cố định nào thay cho tín hiệu trạng thái.
+ * Tín hiệu chốt của mỗi ca là dấu đã-phân-phối theo `outboxId` trong Redis (processor chỉ ghi dấu sau khi phân phối
+ * xong) — không sleep cố định nào thay cho tín hiệu trạng thái.
  */
 describe('Worker — phân phối realtime messaging qua hàng đợi (issue #521)', () => {
   let context: INestApplicationContext;
@@ -134,7 +121,6 @@ describe('Worker — phân phối realtime messaging qua hàng đợi (issue #52
     await new Promise((resolve) => { setTimeout(resolve, ms); });
   }
 
-  // --- fixture -----------------------------------------------------
 
   async function makeUser(id: string): Promise<void> {
     await sql`insert into users (id, username, email, first_name, last_name, suspended, deleted) values (${id}, ${`u521-${id.slice(-8)}`}, ${`u521-${id.slice(-8)}@x.io`}, 'An', 'Nguyễn', false, false) on conflict (id) do nothing`.execute(db);
@@ -188,11 +174,9 @@ describe('Worker — phân phối realtime messaging qua hàng đợi (issue #52
   }
 
   async function insertOutbox(type: string, payload: Record<string, unknown>, tenantId: string | null): Promise<string> {
-    // Id của dòng outbox BẮT BUỘC là uuid v7 như production (mặc
-    // định của cột đều sinh v7): relay
-    // chuyển tiếp theo thứ tự id tăng dần, nên id ngẫu nhiên v4 sẽ
-    // làm thứ tự chuyển tiếp lệch khỏi thứ tự ghi — giữ v7 để ca
-    // thứ tự seq kiểm chứng đúng tiền đề của cơ chế thật.
+    // Id của dòng outbox BẮT BUỘC là uuid v7 như production (mặc định của cột đều sinh v7): relay chuyển tiếp theo thứ
+    // tự id tăng dần, nên id ngẫu nhiên v4 sẽ làm thứ tự chuyển tiếp lệch khỏi thứ tự ghi — giữ v7 để ca thứ tự seq
+    // kiểm chứng đúng tiền đề của cơ chế thật.
     const id = uuidv7();
     await db.insertInto('outbox_events').values({ id, aggregate: 'messaging', type, payload: sql<JsonValue>`${JSON.stringify(payload)}::jsonb`, tenant_id: tenantId }).execute();
     return id;
@@ -549,12 +533,10 @@ describe('Worker — phân phối realtime messaging qua hàng đợi (issue #52
   });
 
   /**
-   * Vũ trụ đếm chưa đọc chuẩn (issue #592): conversation đã tắt
-   * thông báo thì số chưa đọc realtime cũng bằng 0 — cùng luật
-   * với badge sidebar và danh sách (luật đếm duy nhất trong
-   * `countUnreadForConversation`), nên các bề mặt hội tụ ngay
-   * trong cùng một chu kỳ cập nhật thay vì lệch nhau tới 30–60s.
-   * Thành viên không tắt vẫn nhận đúng số chưa đọc thật.
+   * Vũ trụ đếm chưa đọc chuẩn (issue #592): conversation đã tắt thông báo thì số chưa đọc realtime cũng bằng 0 — cùng
+   * luật với badge sidebar và danh sách (luật đếm duy nhất trong `countUnreadForConversation`), nên các bề mặt hội tụ
+   * ngay trong cùng một chu kỳ cập nhật thay vì lệch nhau tới 30–60s. Thành viên không tắt vẫn nhận đúng số chưa đọc
+   * thật.
    */
   it('thành viên đã tắt thông báo nhận conversation.updated với unreadCount bằng 0, thành viên còn lại nhận đúng số', async () => {
     const tenantId = randomUUID();

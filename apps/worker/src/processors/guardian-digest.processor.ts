@@ -17,7 +17,9 @@ export interface GuardianDigestSweepResult {
   queued: GuardianDigestQueuedItem[];
 }
 
-/** Khoá tuỳ chọn tần suất digest trong user_preferences (theo từng con) — nguồn sự thật phía API cũng đọc đúng khoá này. */
+/**
+ * Khoá tuỳ chọn tần suất digest trong user_preferences (theo từng con) — nguồn sự thật phía API cũng đọc đúng khoá này.
+ */
 export function guardianDigestFrequencyPreferenceName(studentUserId: string): string {
   return `guardian_digest_frequency:${studentUserId}`;
 }
@@ -30,7 +32,9 @@ const SUBMITTED_ATTEMPT_STATES = ['needsgrading', 'finished'];
 
 type Frequency = 'weekly' | 'daily' | 'off';
 
-/** Dòng liên kết tối thiểu mà `sweepLink` cần — đúng các cột select ở `sweep`, không phải toàn bộ dòng guardian_links. */
+/**
+ * Dòng liên kết tối thiểu mà `sweepLink` cần — đúng các cột select ở `sweep`, không phải toàn bộ dòng guardian_links.
+ */
 interface GuardianLinkRow {
   guardianUserId: string;
   studentUserId: string;
@@ -52,47 +56,37 @@ function weekStartUtc(now: Date): Date {
 }
 
 /**
- * Quét digest phụ huynh (PH-2, issue #159): phía PHÁT hiện của lát —
- * worker chỉ quyết "ai đến lượt digest/đẩy quá hạn" một cách bền và
- * idempotent; phần tổng hợp nội dung + gửi nằm ở nửa tiêu thụ phía
- * worker (relay outbox → hàng đợi `guardian-digest-events` →
- * `GuardianDigestHandlerService`, từ issue con #518 của #491 — trước
- * đó là consumer polling phía API) dùng đúng đường đọc đã công bố
- * của PH-1.
+ * Quét digest phụ huynh (PH-2, issue #159): phía PHÁT hiện của lát — worker chỉ quyết "ai đến lượt digest/đẩy quá hạn"
+ * một cách bền và idempotent; phần tổng hợp nội dung + gửi nằm ở nửa tiêu thụ phía worker (relay outbox → hàng đợi
+ * `guardian-digest-events` → `GuardianDigestHandlerService`, từ issue con #518 của #491 — trước đó là consumer polling
+ * phía API) dùng đúng đường đọc đã công bố của PH-1.
  *
  * Hai loại lượt được chốt:
- *  - Digest định kỳ: với mỗi liên kết giám hộ đang `active`, theo tần
- *    suất của chính phụ huynh cho con đó (user_preferences, mặc định
- *    weekly; `off` = tắt hẳn digest định kỳ), cửa sổ đầy
- *    đủ vừa đóng (tuần: Thứ Hai→Thứ Hai UTC; ngày: hôm qua UTC) được
- *    chốt đúng MỘT lần. Đổi tần suất hiệu lực từ cửa sổ kế tiếp: lượt
- *    quét chỉ xét tần suất hiện hành, cửa sổ đã có vết không sinh lại.
- *  - Đẩy riêng quá hạn ≥7 ngày: việc (quiz/bài tập) của con chưa nộp,
- *    hạn đã qua từ 7 ngày, được chốt đúng MỘT lần cho từng (phụ huynh,
- *    con, hoạt động) — research mục 5.3.6: đẩy chỉ trong digest, ngoại
- *    lệ duy nhất là quá hạn kéo dài được đẩy riêng một lần. Ngoại lệ
- *    này TÁCH khỏi digest nên chạy bất kể tần suất — kể cả `off`
- *    (tần suất là của digest, không chi phối đẩy ngoại lệ).
+ *  - Digest định kỳ: với mỗi liên kết giám hộ đang `active`, theo tần suất của chính phụ huynh cho con đó
+ *    (user_preferences, mặc định weekly; `off` = tắt hẳn digest định kỳ), cửa sổ đầy đủ vừa đóng (tuần: Thứ Hai→Thứ Hai
+ *    UTC; ngày: hôm qua UTC) được chốt đúng MỘT lần. Đổi tần suất hiệu lực từ cửa sổ kế tiếp: lượt quét chỉ xét tần
+ *    suất hiện hành, cửa sổ đã có vết không sinh lại.
+ *  - Đẩy riêng quá hạn ≥7 ngày: việc (quiz/bài tập) của con chưa nộp, hạn đã qua từ 7 ngày, được chốt đúng MỘT lần cho
+ *    từng (phụ huynh, con, hoạt động) — research mục 5.3.6: đẩy chỉ trong digest, ngoại lệ duy nhất là quá hạn kéo dài
+ *    được đẩy riêng một lần. Ngoại lệ này TÁCH khỏi digest nên chạy bất kể tần suất — kể cả `off` (tần suất là của
+ *    digest, không chi phối đẩy ngoại lệ).
  *
- * Chống trùng bền nằm ở INSERT vào `guardian_digests` (dedupe_key
- * UNIQUE, onConflictDoNothing): chỉ khi INSERT thật sự tạo hàng mới
- * thì sự kiện outbox mới được phát — quét lại, worker khởi động lại,
- * hay quét chồng nhau đều không sinh lượt/sự kiện trùng. Liên kết tạo
- * sau khi cửa sổ đã đóng hẳn (created_at >= window_end) không nhận
- * digest cho cửa sổ đó (tiền lệ PH-1: lần đầu không dội dữ liệu cũ).
+ * Chống trùng bền nằm ở INSERT vào `guardian_digests` (dedupe_key UNIQUE, onConflictDoNothing): chỉ khi INSERT thật sự
+ * tạo hàng mới thì sự kiện outbox mới được phát — quét lại, worker khởi động lại, hay quét chồng nhau đều không sinh
+ * lượt/sự kiện trùng. Liên kết tạo sau khi cửa sổ đã đóng hẳn (created_at >= window_end) không nhận digest cho cửa sổ
+ * đó (tiền lệ PH-1: lần đầu không dội dữ liệu cũ).
  */
 @Processor('guardian-digests')
 /**
- * Xử lý job quét digest phụ huynh: chốt các lượt digest/đẩy quá hạn đến hạn và phát sự kiện outbox cho nửa tiêu thụ phía worker tổng hợp + gửi.
+ * Xử lý job quét digest phụ huynh: chốt các lượt digest/đẩy quá hạn đến hạn và phát sự kiện outbox cho nửa tiêu thụ
+ * phía worker tổng hợp + gửi.
  */
 export class GuardianDigestProcessor extends WorkerHost {
   constructor(private readonly spaceDb: SpaceDatabaseService, private readonly taskLog: TaskLogService) { super(); }
 
   /**
-   * Xử lý một job của queue tương ứng: chốt các lượt digest/đẩy quá
-   * hạn đến hạn và phát sự kiện outbox cho relay chuyển sang hàng
-   * đợi xử lý phía worker. Mỗi lượt quét được ghi vào task_log qua
-   * TaskLogService.
+   * Xử lý một job của queue tương ứng: chốt các lượt digest/đẩy quá hạn đến hạn và phát sự kiện outbox cho relay chuyển
+   * sang hàng đợi xử lý phía worker. Mỗi lượt quét được ghi vào task_log qua TaskLogService.
    */
   async process(_job: Job): Promise<GuardianDigestSweepResult> {
     // TENANT-1 (#196): processor nền quét/xử lý xuyên tenant — bọc
@@ -119,11 +113,9 @@ export class GuardianDigestProcessor extends WorkerHost {
 
     const frequencyByPair = await this.frequencyMap(links.map((l) => l.guardianUserId));
 
-    // TENANT-1 (#196): quét THEO TỪNG TENANT — các liên kết được gom
-    // theo tenant của chúng và phần việc của mỗi tenant chạy trong
-    // đúng ngữ cảnh tenant đó (RLS tự giới hạn enrol/khoá khi đọc quá
-    // hạn), dedupe_key mang đoạn tenant, hàng digest + sự kiện outbox
-    // đều gắn tenant_id của liên kết.
+    // TENANT-1 (#196): quét THEO TỪNG TENANT — các liên kết được gom theo tenant của chúng và phần việc của mỗi tenant
+    // chạy trong đúng ngữ cảnh tenant đó (RLS tự giới hạn enrol/khoá khi đọc quá hạn), dedupe_key mang đoạn tenant,
+    // hàng digest + sự kiện outbox đều gắn tenant_id của liên kết.
     const linksByTenant = new Map<string, typeof links>();
     for (const link of links) {
       const group = linksByTenant.get(link.tenantId) ?? [];
@@ -232,11 +224,9 @@ export class GuardianDigestProcessor extends WorkerHost {
   }
 
   /**
-   * Việc quá hạn ≥7 ngày chưa nộp của học sinh: quiz (time_close) + bài
-   * tập (due_date) thuộc các khoá con đang ghi danh hiệu lực, module
-   * đang hiển thị — cùng ngữ nghĩa "chưa nộp" của bề mặt PH-1 (quiz:
-   * chưa có attempt finished/needsgrading không-preview; bài tập:
-   * chưa có submission ở trạng thái submitted).
+   * Việc quá hạn ≥7 ngày chưa nộp của học sinh: quiz (time_close) + bài tập (due_date) thuộc các khoá con đang ghi danh
+   * hiệu lực, module đang hiển thị — cùng ngữ nghĩa "chưa nộp" của bề mặt PH-1 (quiz: chưa có attempt
+   * finished/needsgrading không-preview; bài tập: chưa có submission ở trạng thái submitted).
    */
   private async longOverdueItems(studentUserId: string, now: Date): Promise<{ cmId: string; courseId: string; kind: 'quiz' | 'assignment'; name: string; dueAt: Date }[]> {
     const courseIds = await this.enrolledCourseIds(studentUserId, now);

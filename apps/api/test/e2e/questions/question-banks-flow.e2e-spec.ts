@@ -10,17 +10,14 @@ import { addExamSlot, createExamDraft } from '../../support/exam-pin-helpers';
 
 /**
  * Feat Ngân hàng câu hỏi chung (issue #70, QB-1 → QB-4):
- *  - QB-1: bank 4 scope có context riêng; quyền theo vai tại context bank
- *    (chủ bank cá nhân / tổ trưởng / thành viên tổ / giáo viên trường);
- *    học sinh không vào được bề mặt bank chung.
- *  - QB-2: copy = deep copy độc lập + derived_from + ghi công tác giả
- *    gốc; copy_count tăng; người ngoài copy câu ở bank kín → 403.
- *  - QB-3: slot từ bank tổ mặc định pinned; attempt giữ version đã ghim
- *    kể cả khi câu đã lên bản mới và cả khi câu bị rút; nâng version ghi
- *    nhật ký; xoá vật lý bị chặn khi còn slot tham chiếu.
- *  - QB-4: đóng góp → duyệt (copy vào bank đích / version mới qua
- *    derived_from) → từ chối có lý do → đề xuất lại; chống trùng hoàn
- *    toàn; khám phá theo bank/từ khoá kèm use_count.
+ *  - QB-1: bank 4 scope có context riêng; quyền theo vai tại context bank (chủ bank cá nhân / tổ trưởng / thành viên tổ
+ *    / giáo viên trường); học sinh không vào được bề mặt bank chung.
+ *  - QB-2: copy = deep copy độc lập + derived_from + ghi công tác giả gốc; copy_count tăng; người ngoài copy câu ở bank
+ *    kín → 403.
+ *  - QB-3: slot từ bank tổ mặc định pinned; attempt giữ version đã ghim kể cả khi câu đã lên bản mới và cả khi câu bị
+ *    rút; nâng version ghi nhật ký; xoá vật lý bị chặn khi còn slot tham chiếu.
+ *  - QB-4: đóng góp → duyệt (copy vào bank đích / version mới qua derived_from) → từ chối có lý do → đề xuất lại; chống
+ *    trùng hoàn toàn; khám phá theo bank/từ khoá kèm use_count.
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -86,10 +83,9 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
   async function myPersonalBank(user: { id: string; token: string }): Promise<BankBody> {
     const res = await http(app).get('/api/v1/question-banks').set(bearer(user.token));
     expect(res.status).toBe(200);
-    // Phải lọc theo ownerId của chính người gọi: listBanks còn liệt kê bank
-    // cá nhân của người khác cho giáo viên có vai tại hệ thống (phạm vi siết
-    // riêng tư của #123) và danh sách sắp theo createdAt — lấy bank personal
-    // đầu tiên sẽ trúng bank của người tạo sớm nhất trong DB dùng chung.
+    // Phải lọc theo ownerId của chính người gọi: listBanks còn liệt kê bank cá nhân của người khác cho giáo viên có vai
+    // tại hệ thống (phạm vi siết riêng tư của #123) và danh sách sắp theo createdAt — lấy bank personal đầu tiên sẽ
+    // trúng bank của người tạo sớm nhất trong DB dùng chung.
     const bank = (res.body as BankBody[]).find((b) => b.scope === 'personal' && b.ownerId === user.id);
     expect(bank).toBeTruthy();
     return bank!;
@@ -119,8 +115,6 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
     await enrolUser(app, admin, course.id, instance.id, student.id);
     return { course, sectionId, courseCtxId: courseCtx.id, teacher, student };
   }
-
-  // --- QB-1 + QB-2 ------------------------------------------------------------
 
   it('QB-1/QB-2: bank cá nhân + copy deep copy truy vết, độc lập hai chiều, người ngoài bị chặn', async () => {
     const alice = await mkStaffUser();
@@ -178,10 +172,9 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
     expect(results.every((r) => r.ok && r.newQuestionId)).toBe(true);
   });
 
-  // QB-2 (bổ sung theo phán quyết ĐG cuối chuỗi 6419937157): bản copy
-  // phải mang đủ answerKey của bản gốc — guidance + solution là dữ
-  // liệu phía đáp án, mất chúng là mất dữ liệu dù câu vẫn copy được.
-  // Sửa answerKey ở bản copy không được đụng bản gốc (answerKey độc lập).
+  // QB-2 (bổ sung theo phán quyết ĐG cuối chuỗi 6419937157): bản copy phải mang đủ answerKey của bản gốc — guidance +
+  // solution là dữ liệu phía đáp án, mất chúng là mất dữ liệu dù câu vẫn copy được. Sửa answerKey ở bản copy không được
+  // đụng bản gốc (answerKey độc lập).
   it('QB-2: copy mang đủ guidance + solution của bản gốc, sửa answerKey bản copy không đụng bản gốc', async () => {
     const alice = await mkStaffUser();
     const bank = await myPersonalBank(alice);
@@ -282,8 +275,8 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
     expect(copied.question.sourceKind).toBe('book');
     expect(copied.question.sourceRef).toBe('sgk-toan-6-kntt-trang-42');
 
-    // Quy tắc bản quyền: bề mặt attempt/usage (phía học viên) KHÔNG chứa
-    // bất kỳ trường nguồn/truy vết nào trong payload.
+    // Quy tắc bản quyền: bề mặt attempt/usage (phía học viên) KHÔNG chứa bất kỳ trường nguồn/truy vết nào trong
+    // payload.
     const usageRes = await http(app).post('/api/v1/question-usages').set(bearer(dave.token))
       .send({ component: 'question_bank', slots: [{ questionId: created.question.id }] });
     expect(usageRes.status, JSON.stringify(usageRes.body)).toBe(201);
@@ -431,8 +424,6 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
     expect(asStudent.status).toBe(404);
   });
 
-  // --- QB-3 -------------------------------------------------------------------
-
   it('QB-3: slot đề ghim bản câu hỏi — attempt giữ bản ghim qua sửa + rút; nâng version qua sửa đề + nâng pin; xoá bị chặn', async () => {
     const leader = await mkUser();
     const cohortRes = await http(app).post('/api/v1/cohorts').set(bearer(admin)).send({ name: uniqueName('Tổ Lý') });
@@ -443,8 +434,8 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
     const bank = bankRes.body as BankBody;
     const q = await createQuestion(leader.token, bank.defaultCategoryId!, 'Câu ghim', 'Phiên bản MỘT của câu?');
 
-    // Khoá do leader phụ trách (gán editingteacher tại khoá); đề soạn
-    // trong bank cá nhân của leader với slot ghim câu ở version 1.
+    // Khoá do leader phụ trách (gán editingteacher tại khoá); đề soạn trong bank cá nhân của leader với slot ghim câu ở
+    // version 1.
     const { course, sectionId, courseCtxId, student } = await mkCourseWithTeacherAndStudent();
     await assignRole(app, admin, leader.id, await roleIdByShortname(app, admin, 'editingteacher'), courseCtxId);
     const draft = await createExamDraft(app, leader.token, 'Đề kiểm tra');
@@ -474,8 +465,8 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
     const attemptQuestions = (start1.body as { questions: { questionText: unknown }[] }).questions;
     expect(JSON.stringify(attemptQuestions[0]!.questionText)).toContain('MỘT');
 
-    // Rút câu: attempt mới vẫn phục vụ bản đã ghim; soạn slot mới với
-    // câu đã rút bị chặn; xoá vật lý bị chặn vì còn slot đề dùng tới.
+    // Rút câu: attempt mới vẫn phục vụ bản đã ghim; soạn slot mới với câu đã rút bị chặn; xoá vật lý bị chặn vì còn
+    // slot đề dùng tới.
     const withdraw = await http(app).post(`/api/v1/questions/${q.question.id}/withdraw`).set(bearer(leader.token)).send({ reason: 'Sai đáp án, rút để soát lại' });
     expect(withdraw.status, JSON.stringify(withdraw.body)).toBe(201);
     expect((withdraw.body as { affectedPinIds: string[] }).affectedPinIds).toContain(quizId);
@@ -492,10 +483,8 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
     const found = (disc.body as { questionId: string; status: string }[]).find((d) => d.questionId === q.question.id);
     expect(found?.status).toBe('hidden');
 
-    // Hoàn rút + nâng version: pin đã có attempt thì KHOÁ đổi version
-    // (exam.pin_locked — kỷ luật đóng băng của mô hình gộp). Đường
-    // nâng đúng: sửa đề (version đề mới ghim câu v2) rồi GHIM MỚI —
-    // attempt ở lần ghim mới nhận v2.
+    // Hoàn rút + nâng version: pin đã có attempt thì KHOÁ đổi version (exam.pin_locked — kỷ luật đóng băng của mô hình
+    // gộp). Đường nâng đúng: sửa đề (version đề mới ghim câu v2) rồi GHIM MỚI — attempt ở lần ghim mới nhận v2.
     await http(app).post(`/api/v1/questions/${q.question.id}/restore`).set(bearer(leader.token)).send({});
     const upgraded = await http(app).put(`/api/v1/exams/${draft.examId}/slots`).set(bearer(leader.token))
       .send({ slots: [{ questionId: q.question.id }] });
@@ -523,7 +512,7 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
     expect((await http(app).get(`/api/v1/questions/${fresh.question.id}`).set(bearer(leader.token))).status).toBe(404);
   });
 
-  // --- QE-3 (#248): endpoint trạng thái draft ↔ ready cho màn soạn web --------
+  // QE-3 (#248): endpoint trạng thái draft ↔ ready cho màn soạn web
 
   it('QE-3: chủ bank chuyển câu ready → draft → ready; người ngoài 403; câu đã rút 409', async () => {
     const alice = await mkStaffUser();
@@ -532,8 +521,8 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
     const q = await createQuestion(alice.token, bank.defaultCategoryId!, 'Câu chuyển trạng thái', 'Thân câu chuyển trạng thái?');
     expect(q.entry.status).toBe('ready');
 
-    // Về draft: endpoint xác nhận { questionId, status }; trạng thái thật
-    // kiểm qua GET — đổi trạng thái KHÔNG tạo phiên bản mới.
+    // Về draft: endpoint xác nhận { questionId, status }; trạng thái thật kiểm qua GET — đổi trạng thái KHÔNG tạo phiên
+    // bản mới.
     const toDraft = await http(app).post(`/api/v1/questions/${q.question.id}/status`).set(bearer(alice.token)).send({ status: 'draft' });
     expect(toDraft.status, JSON.stringify(toDraft.body)).toBe(201);
     expect(toDraft.body).toEqual({ questionId: q.question.id, status: 'draft' });
@@ -563,8 +552,6 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
     const hiddenTry = await http(app).post(`/api/v1/questions/${q.question.id}/status`).set(bearer(alice.token)).send({ status: 'draft' });
     expect(hiddenTry.status).toBe(409);
   });
-
-  // --- QB-4 -------------------------------------------------------------------
 
   it('QB-4: vòng đời đóng góp — duyệt copy vào bank đích, chống trùng, từ chối có lý do, bản mới qua derived_from', async () => {
     const leader = await mkUser();
@@ -603,7 +590,8 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
 
     // Chống trùng hoàn toàn: câu nội dung y hệt đề xuất lại → 409 trỏ câu đã có.
     const clone = await createQuestion(member.token, memberBank.defaultCategoryId!, 'Câu đóng góp (bản gõ lại)', 'Nội dung câu đóng góp?');
-    // createQuestion dùng cùng thân câu + answers mặc định nên hash nội dung trùng hoàn toàn (hash chỉ phủ nội dung câu, không phủ siêu dữ liệu).
+    // createQuestion dùng cùng thân câu + answers mặc định nên hash nội dung trùng hoàn toàn (hash chỉ phủ nội dung
+    // câu, không phủ siêu dữ liệu).
     const dupPropose = await http(app).post(`/api/v1/question-banks/${bank.id}/contributions`).set(bearer(member.token))
       .send({ questionId: clone.question.id });
     expect(dupPropose.status, JSON.stringify(dupPropose.body)).toBe(409);
@@ -702,16 +690,15 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
       .set(bearer(leader.token)).send({});
     expect(approve.status, JSON.stringify(approve.body)).toBe(201);
 
-    // Cùng thân câu và cùng nội dung 4 mệnh đề, chỉ khác Đ/S ở ý 4:
-    // là câu KHÁC về đáp án — đóng góp phải qua cổng (201), không bị
-    // kết luận trùng hoàn toàn.
+    // Cùng thân câu và cùng nội dung 4 mệnh đề, chỉ khác Đ/S ở ý 4: là câu KHÁC về đáp án — đóng góp phải qua cổng
+    // (201), không bị kết luận trùng hoàn toàn.
     const flippedId = await createTf([true, true, true, false]);
     const proposeFlipped = await http(app).post(`/api/v1/question-banks/${bank.id}/contributions`).set(bearer(member.token))
       .send({ questionId: flippedId });
     expect(proposeFlipped.status, JSON.stringify(proposeFlipped.body)).toBe(201);
 
-    // Giống hệt cả nội dung lẫn Đ/S của từng mệnh đề: vẫn trùng hoàn
-    // toàn như trước — 409 trỏ về câu đã có trong bank tổ.
+    // Giống hệt cả nội dung lẫn Đ/S của từng mệnh đề: vẫn trùng hoàn toàn như trước — 409 trỏ về câu đã có trong bank
+    // tổ.
     const identicalId = await createTf([true, true, true, true]);
     const proposeIdentical = await http(app).post(`/api/v1/question-banks/${bank.id}/contributions`).set(bearer(member.token))
       .send({ questionId: identicalId });

@@ -5,31 +5,20 @@ import { buildProxyHeaders, buildUpgradeRequestLines } from './proxy-headers.mjs
  * Hồi quy header của đường proxy HTTP trong prod-server.mjs
  * (topology C, tiền điều kiện TĐ5 của issue #587).
  *
- * Bối cảnh production: tầng ứng dụng phân giải trung tâm theo nhãn
- * đầu tiên của header Host (issue #582) — tại địa chỉ của một trung
- * tâm ở kho riêng, handler đăng nhập Better Auth chỉ kiểm chứng
- * credential ở kho của trung tâm đó khi Host tới API còn nguyên là
- * tên miền của trung tâm. prod-server bản cũ ghi đè Host bằng
- * origin nội bộ của API (`api:3100`) nên API không bao giờ thấy
- * địa chỉ trung tâm: tài khoản chỉ sống ở kho riêng đăng nhập tại
- * chính địa chỉ của trung tâm bị từ chối, còn tài khoản của kho
- * chung lại đăng nhập thành công tại địa chỉ đó (kiểm chứng tại
- * thí điểm nhantin ngày 01/11/2026). Spec này ghim: header dựng
- * cho request phía API phải giữ nguyên Host gốc, đồng thời giữ
- * đúng hành vi nối chuỗi X-Forwarded-For và mặc định
- * X-Forwarded-Proto như trước.
+ * Bối cảnh production: tầng ứng dụng phân giải trung tâm theo nhãn đầu tiên của header Host (issue #582) — tại địa chỉ
+ * của một trung tâm ở kho riêng, handler đăng nhập Better Auth chỉ kiểm chứng credential ở kho của trung tâm đó khi
+ * Host tới API còn nguyên là tên miền của trung tâm. prod-server bản cũ ghi đè Host bằng origin nội bộ của API
+ * (`api:3100`) nên API không bao giờ thấy địa chỉ trung tâm: tài khoản chỉ sống ở kho riêng đăng nhập tại chính địa chỉ
+ * của trung tâm bị từ chối, còn tài khoản của kho chung lại đăng nhập thành công tại địa chỉ đó (kiểm chứng tại thí
+ * điểm nhantin ngày 01/11/2026). Spec này ghim: header dựng cho request phía API phải giữ nguyên Host gốc, đồng thời
+ * giữ đúng hành vi nối chuỗi X-Forwarded-For và mặc định X-Forwarded-Proto như trước.
  *
- * Cùng bất biến đó áp cho đường hầm WebSocket upgrade (điểm B1 của
- * PR #634): client của hệ cấu hình `transports: ['websocket',
- * 'polling']` nên handshake của socket.io là một request upgrade
- * WebSocket ngay từ đầu, và socket auth ở API phân giải trung tâm
- * theo Host của chính request bắt tay đó. `proxyUpgrade` bản cũ
- * cũng ghi đè Host bằng origin nội bộ trong đầu request thô, nên
- * phiên của trung tâm kho riêng bị tra ở kho chung còn phiên kho
- * chung lại được chấp nhận tại địa chỉ trung tâm. Khối describe thứ
- * hai ghim đầu request upgrade mà đường hầm ghi về API: Host giữ
- * nguyên giá trị gốc, X-Forwarded-For và mọi header còn lại giữ
- * nguyên hành vi hiện hành.
+ * Cùng bất biến đó áp cho đường hầm WebSocket upgrade (điểm B1 của PR #634): client của hệ cấu hình `transports:
+ * ['websocket', 'polling']` nên handshake của socket.io là một request upgrade WebSocket ngay từ đầu, và socket auth ở
+ * API phân giải trung tâm theo Host của chính request bắt tay đó. `proxyUpgrade` bản cũ cũng ghi đè Host bằng origin
+ * nội bộ trong đầu request thô, nên phiên của trung tâm kho riêng bị tra ở kho chung còn phiên kho chung lại được chấp
+ * nhận tại địa chỉ trung tâm. Khối describe thứ hai ghim đầu request upgrade mà đường hầm ghi về API: Host giữ nguyên
+ * giá trị gốc, X-Forwarded-For và mọi header còn lại giữ nguyên hành vi hiện hành.
  */
 describe('buildProxyHeaders', () => {
   it('giữ nguyên Host của request gốc để địa chỉ trung tâm kho riêng tới được tầng phân giải của API', () => {

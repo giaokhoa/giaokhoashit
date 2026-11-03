@@ -13,26 +13,19 @@ import {
 } from '../../support/ordinary-worker-module';
 
 /**
- * Cơ chế phát bù một lần khi chuyển đổi consumer đồng bộ cohort
- * (điểm chặn 1 trên PR #550): các dòng outbox cohort đã bị relay
- * đóng dấu `publishedAt` khi còn chưa có trong bảng định tuyến —
- * relay không bao giờ phát lại chúng, consumer polling cũ đọc
- * theo watermark thì đã bị gỡ — phải được phát bù thành job đúng
- * một lần theo watermark cũ trước khi khoá watermark bị xoá.
+ * Cơ chế phát bù một lần khi chuyển đổi consumer đồng bộ cohort (điểm chặn 1 trên PR #550): các dòng outbox cohort đã
+ * bị relay đóng dấu `publishedAt` khi còn chưa có trong bảng định tuyến — relay không bao giờ phát lại chúng, consumer
+ * polling cũ đọc theo watermark thì đã bị gỡ — phải được phát bù thành job đúng một lần theo watermark cũ trước khi
+ * khoá watermark bị xoá.
  *
- * Các ca đi qua đường thật của production: dòng outbox được
- * chèn đúng hình dạng phía phát vẫn ghi (kèm `publishedAt` đã
- * đóng dấu), khoá watermark cũ được đặt trên Redis thật, rồi
- * gọi `drainLegacyBacklog()` của service thật — hoặc để
- * `OnModuleInit` tự chạy khi boot module mới — và khẳng định
- * tác dụng phụ nghiệp vụ ở tầng DB (ghi danh, sự kiện phát
+ * Các ca đi qua đường thật của production: dòng outbox được chèn đúng hình dạng phía phát vẫn ghi (kèm `publishedAt` đã
+ * đóng dấu), khoá watermark cũ được đặt trên Redis thật, rồi gọi `drainLegacyBacklog()` của service thật — hoặc để
+ * `OnModuleInit` tự chạy khi boot module mới — và khẳng định tác dụng phụ nghiệp vụ ở tầng DB (ghi danh, sự kiện phát
  * tiếp), không khẳng định qua chi tiết triển khai.
  *
- * Mỗi ca dùng đồ thị riêng (id ngẫu nhiên) nên các ca độc lập
- * dữ kiện nghiệp vụ. Các dòng đã đóng dấu không bị relay quét
- * lại giữa chừng (relay chỉ lấy dòng chưa có dấu) nên khẳng
- * định "không có job" là khẳng định thật, không phải do relay
- * chen ngang.
+ * Mỗi ca dùng đồ thị riêng (id ngẫu nhiên) nên các ca độc lập dữ kiện nghiệp vụ. Các dòng đã đóng dấu không bị relay
+ * quét lại giữa chừng (relay chỉ lấy dòng chưa có dấu) nên khẳng định "không có job" là khẳng định thật, không phải do
+ * relay chen ngang.
  */
 describe('Worker cohort sync catchup (phát bù tồn đọng khi chuyển đổi ở #550)', () => {
   let context: INestApplicationContext;
@@ -85,10 +78,9 @@ describe('Worker cohort sync catchup (phát bù tồn đọng khi chuyển đổ
   }
 
   /**
-   * Chèn một dòng sự kiện cohort ĐÃ BỊ ĐÓNG DẤU `publishedAt`
-   * (đúng trạng thái dòng tồn đọng tại thời điểm chuyển đổi:
-   * relay đã quét qua và đóng dấu khi loại này chưa có trong
-   * bảng định tuyến) và trả id + seq để đặt watermark và chờ job.
+   * Chèn một dòng sự kiện cohort ĐÃ BỊ ĐÓNG DẤU `publishedAt` (đúng trạng thái dòng tồn đọng tại thời điểm chuyển đổi:
+   * relay đã quét qua và đóng dấu khi loại này chưa có trong bảng định tuyến) và trả id + seq để đặt watermark và chờ
+   * job.
    */
   async function emitMarkedRow(
     type: 'cohort_member_added' | 'cohort_member_removed',
@@ -112,11 +104,9 @@ describe('Worker cohort sync catchup (phát bù tồn đọng khi chuyển đổ
   }
 
   /**
-   * Thêm thành viên qua đường phát bù trực tiếp (không qua
-   * relay): đẩy job vào hàng đợi với jobId mới, chờ completed
-   * — dùng để dựng trạng thái "đã ghi danh" trước ca phát bù
-   * sự kiện rút thành viên, đúng hình dạng phát lại ngoài cửa
-   * sổ lưu giữ của `jobId`.
+   * Thêm thành viên qua đường phát bù trực tiếp (không qua relay): đẩy job vào hàng đợi với jobId mới, chờ completed —
+   * dùng để dựng trạng thái "đã ghi danh" trước ca phát bù sự kiện rút thành viên, đúng hình dạng phát lại ngoài cửa sổ
+   * lưu giữ của `jobId`.
    */
   async function enrolDirectly(type: string, outboxId: string, payload: Record<string, unknown>): Promise<void> {
     const job = await eventsQueue.add(type, {
@@ -251,11 +241,9 @@ describe('Worker cohort sync catchup (phát bù tồn đọng khi chuyển đổ
     const marked = await emitMarkedRow('cohort_member_added', payload);
     await redis.set(legacyWatermarkKey, String(marked.seq - 1));
 
-    // Tiêm lỗi thoáng qua: lần queue.add đầu tiên cho đúng dòng
-    // tồn đọng này ném lỗi, mọi lần đẩy khác đi qua bình thường.
-    // Tại thời điểm lỗi nổ ra, ghi lại giá trị khoá để khẳng
-    // định khoá vẫn còn nguyên — khoá chỉ được xoá sau khi rút
-    // cạn thành công.
+    // Tiêm lỗi thoáng qua: lần queue.add đầu tiên cho đúng dòng tồn đọng này ném lỗi, mọi lần đẩy khác đi qua bình
+    // thường. Tại thời điểm lỗi nổ ra, ghi lại giá trị khoá để khẳng định khoá vẫn còn nguyên — khoá chỉ được xoá sau
+    // khi rút cạn thành công.
     const originalAdd = eventsQueue.add.bind(eventsQueue);
     let faultArmed = true;
     let keyValueAtFailure: string | null = null;
@@ -306,15 +294,11 @@ describe('Worker cohort sync catchup (phát bù tồn đọng khi chuyển đổ
   }, 180000);
 
   /**
-   * Ca hồi quy cho nửa "không trùng" của yêu cầu ngắt-rồi-chạy-lại
-   * (điểm chặn còn lại trên PR #550 sau phân xử `6507833974`): ca
-   * tiêm lỗi trước đây chỉ có một dòng và lỗi ngay lần đẩy đầu
-   * tiên nên chưa từng đẩy lại dòng đã đẩy thành công. Ca này
-   * dùng hai đồ thị độc lập: dòng đầu đẩy thành công, dòng tiếp
-   * theo lỗi — lần thử sau quét lại từ watermark nên đẩy lại
-   * dòng đầu, và khẳng định mỗi hệ quả nghiệp vụ chỉ xuất hiện
-   * đúng một lần (không trùng) trong khi cả hai dòng đều được xử
-   * lý (không sót), khoá chỉ bị xoá sau khi rút cạn trọn vẹn.
+   * Ca hồi quy cho nửa "không trùng" của yêu cầu ngắt-rồi-chạy-lại (điểm chặn còn lại trên PR #550 sau phân xử
+   * `6507833974`): ca tiêm lỗi trước đây chỉ có một dòng và lỗi ngay lần đẩy đầu tiên nên chưa từng đẩy lại dòng đã đẩy
+   * thành công. Ca này dùng hai đồ thị độc lập: dòng đầu đẩy thành công, dòng tiếp theo lỗi — lần thử sau quét lại từ
+   * watermark nên đẩy lại dòng đầu, và khẳng định mỗi hệ quả nghiệp vụ chỉ xuất hiện đúng một lần (không trùng) trong
+   * khi cả hai dòng đều được xử lý (không sót), khoá chỉ bị xoá sau khi rút cạn trọn vẹn.
    */
   it('phát bù bị ngắt giữa lô rồi chạy lại: dòng đã đẩy không sinh tác dụng phụ lần hai, dòng chưa đẩy vẫn được xử lý, khoá chỉ bị xoá sau khi rút cạn', async () => {
     const graphA = await makeCourseGraph('unenrol');
@@ -329,10 +313,8 @@ describe('Worker cohort sync catchup (phát bù tồn đọng khi chuyển đổ
     expect(rowB.seq).toBeGreaterThan(rowA.seq);
     await redis.set(legacyWatermarkKey, String(rowA.seq - 1));
 
-    // Tiêm lỗi giữa lô: lần đẩy đầu tiên của dòng B ném lỗi,
-    // mọi lần đẩy khác — kể cả đẩy lại dòng A ở lần thử sau —
-    // đi qua bình thường. Tại thời điểm lỗi, ghi lại giá trị
-    // khoá để khẳng định khoá vẫn còn nguyên.
+    // Tiêm lỗi giữa lô: lần đẩy đầu tiên của dòng B ném lỗi, mọi lần đẩy khác — kể cả đẩy lại dòng A ở lần thử sau — đi
+    // qua bình thường. Tại thời điểm lỗi, ghi lại giá trị khoá để khẳng định khoá vẫn còn nguyên.
     const originalAdd = eventsQueue.add.bind(eventsQueue);
     let faultArmed = true;
     let keyValueAtFailure: string | null = null;

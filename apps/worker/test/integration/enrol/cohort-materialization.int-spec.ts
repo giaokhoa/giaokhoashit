@@ -6,39 +6,29 @@ import { createCentreKysely, sql, type CentreDB, type CentreDb } from '@lms/db';
 import { tenantAls } from '../../../src/db/tenant-als';
 
 /**
- * Spec đặc tả hoá cho bề mặt vật chất hoá cohort dùng chung
- * `@lms/enrol` ở phía WORKER (issue #527, tiêu chí nghiệm thu về
- * tính gọi được từ worker).
+ * Spec đặc tả hoá cho bề mặt vật chất hoá cohort dùng chung `@lms/enrol` ở phía WORKER (issue #527, tiêu chí nghiệm thu
+ * về tính gọi được từ worker).
  *
- * Bối cảnh: đường đồng bộ cohort trước đây chỉ chạy được trong
- * tiến trình API — funnel ghi danh sống trong `EnrolService` và phụ
- * thuộc các cơ chế đăng ký lúc khởi tạo của tiến trình API (probe
- * dữ liệu liên quan, hook tái tổng hợp). Spec này chứng minh bề mặt
- * đã trích xuất dựng và chạy trọn vẹn trong NGỮ CẢNH CỦA WORKER:
- * chính tiến trình test của worker import package, dựng bề mặt
- * bằng tay cầm Kysely trên cơ sở dữ liệu test của worker
- * (`lms_test_worker`), cổng outbox do phía gọi tự cấp (chèn thẳng
- * vào `outbox_events` trên schema dùng chung, gương `tenantId` vào
- * payload như dịch vụ outbox của API vẫn làm) và cổng ngữ cảnh
- * platform là `tenantAls` của worker — không qua bất kỳ service
- * nào của API. Kết quả trên cơ sở dữ liệu phải khớp từng khẳng
- * định với đường vật chất hoá ở phía API:
+ * Bối cảnh: đường đồng bộ cohort trước đây chỉ chạy được trong tiến trình API — funnel ghi danh sống trong
+ * `EnrolService` và phụ thuộc các cơ chế đăng ký lúc khởi tạo của tiến trình API (probe dữ liệu liên quan, hook tái
+ * tổng hợp). Spec này chứng minh bề mặt đã trích xuất dựng và chạy trọn vẹn trong NGỮ CẢNH CỦA WORKER: chính tiến trình
+ * test của worker import package, dựng bề mặt bằng tay cầm Kysely trên cơ sở dữ liệu test của worker
+ * (`lms_test_worker`), cổng outbox do phía gọi tự cấp (chèn thẳng vào `outbox_events` trên schema dùng chung, gương
+ * `tenantId` vào payload như dịch vụ outbox của API vẫn làm) và cổng ngữ cảnh platform là `tenantAls` của worker —
+ * không qua bất kỳ service nào của API. Kết quả trên cơ sở dữ liệu phải khớp từng khẳng định với đường vật chất hoá ở
+ * phía API:
  *
- * - thêm thành viên: ghi danh ACTIVE, gán vai của instance tại
- *   context khoá với truy vết nguồn của instance, sự kiện
+ * - thêm thành viên: ghi danh ACTIVE, gán vai của instance tại context khoá với truy vết nguồn của instance, sự kiện
  *   `user_enrolled`, membership active tại tenant của khoá;
  * - thành viên vi phạm chốt tách vai bị bỏ qua riêng lẻ;
- * - rời cohort ở chế độ rút khi không còn dữ liệu liên quan: xoá
- *   cứng ghi danh, gỡ vai của instance, phát `user_unenrolled` và
- *   `course_completion_reaggregation_requested` trong cùng đường
- *   rút;
- * - rời cohort ở chế độ đình chỉ: ghi danh SUSPENDED, vết người
- *   thao tác về null, sự kiện đình chỉ mang lý do `cohort_removed`.
+ * - rời cohort ở chế độ rút khi không còn dữ liệu liên quan: xoá cứng ghi danh, gỡ vai của instance, phát
+ *   `user_unenrolled` và `course_completion_reaggregation_requested` trong cùng đường rút;
+ * - rời cohort ở chế độ đình chỉ: ghi danh SUSPENDED, vết người thao tác về null, sự kiện đình chỉ mang lý do
+ *   `cohort_removed`.
  *
- * Việc DÂY consumer đồng bộ cohort của worker vào bề mặt này là
- * việc của issue con tiếp theo trong chuỗi; spec này chỉ ghim tính
- * gọi được và tính đúng hành vi của chính bề mặt từ phía worker.
- * Fixture dựng bằng SQL trực tiếp với id ngẫu nhiên theo từng ca.
+ * Việc DÂY consumer đồng bộ cohort của worker vào bề mặt này là việc của issue con tiếp theo trong chuỗi; spec này chỉ
+ * ghim tính gọi được và tính đúng hành vi của chính bề mặt từ phía worker. Fixture dựng bằng SQL trực tiếp với id ngẫu
+ * nhiên theo từng ca.
  */
 
 interface CourseGraph {
@@ -72,10 +62,9 @@ describe('Vật chất hoá cohort dùng chung — gọi được và đúng hà
     const cohortId = randomUUID();
     const instanceId = randomUUID();
     const courseCtxId = randomUUID();
-    // Cây context dùng chung của suite (hệ thống → tenant) đã dựng
-    // một lần ở beforeAll; mỗi đồ thị chỉ dựng thêm context khoá của
-    // riêng nó dưới tenant chung để các ca độc lập dữ kiện nghiệp vụ
-    // nhưng không chèn trùng các context dùng chung.
+    // Cây context dùng chung của suite (hệ thống → tenant) đã dựng một lần ở beforeAll; mỗi đồ thị chỉ dựng thêm
+    // context khoá của riêng nó dưới tenant chung để các ca độc lập dữ kiện nghiệp vụ nhưng không chèn trùng các
+    // context dùng chung.
     await pg.query(
       'INSERT INTO course (id, tenant_id, category, full_name, short_name, is_template) VALUES ($1, $2, $3, $4, $5, true)',
       [courseId, tenantId, categoryId, 'Khoá đặc tả hoá worker 527', `W527-${courseId.slice(0, 8)}`],
@@ -139,12 +128,9 @@ describe('Vật chất hoá cohort dùng chung — gọi được và đúng hà
     await pg.connect();
     pool = new Pool({ connectionString });
     db = createCentreKysely(pool);
-    // Cổng outbox phía worker tự cấp cho bề mặt: chèn thẳng vào
-    // outbox_events trên schema dùng chung; enqueue ghi trong
-    // transaction được truyền vào, enqueueStandalone ghi độc lập —
-    // đúng hợp đồng cổng mà package khai báo. Cột `payload` jsonb
-    // đi qua serialize tường minh kèm `::jsonb` theo khuôn ghi
-    // jsonb của `@lms/db`.
+    // Cổng outbox phía worker tự cấp cho bề mặt: chèn thẳng vào outbox_events trên schema dùng chung; enqueue ghi trong
+    // transaction được truyền vào, enqueueStandalone ghi độc lập — đúng hợp đồng cổng mà package khai báo. Cột
+    // `payload` jsonb đi qua serialize tường minh kèm `::jsonb` theo khuôn ghi jsonb của `@lms/db`.
     const outbox: SharedOutboxPort = {
       async enqueue(tx, input) {
         const tenantIdValue = input.tenantId ?? null;

@@ -8,23 +8,17 @@ import {
 import { createCategory, createCourse, getFirstSectionId } from '../../support/course-enrolment-helpers';
 
 /**
- * EB-3 (issue #165) + lát S4 của issue #228 — đường hồ sơ duyệt đề
- * và bề mặt lịch sử của nó sau khi cơ chế đóng góp được đồng bộ:
- *  - đường hồ sơ (EB-3 gốc) đã bị HẤP THỤ vào đường đóng góp duy
- *    nhất của đề: bộ hồ sơ thành phần đính kèm của một đóng góp,
- *    cấp duyệt 2 thành trạng thái pending_board của đóng góp (cơ
- *    chế mới kiểm ở spec exam-contributions-s4-flow). Mọi thao tác
- *    GHI của bề mặt hồ sơ trả 410 `exam.dossier_path_closed`.
- *  - bề mặt ĐỌC hồ sơ giữ nguyên để xem lại LỊCH SỬ: hàng chờ theo
- *    bank, chi tiết kèm vết duyệt, bản đặc tả đã chụp + xuất bản,
- *    danh sách hồ sơ của tôi — kiểm ở đây trên fixture hồ sơ gieo
- *    thẳng vào DB (đúng hình thái dữ liệu còn lại sau khi đóng
- *    đường), gồm cả cờ cấp duyệt 2 đọc qua điểm seam dùng chung.
- *  - đặc tả sinh từ examId khớp cấu trúc ma trận (pinId chỉ là
- *    tham số phụ), xuất xlsx/docx mở được;
- *  - đề định kỳ ready ở bank trường: GV khác khối bị chặn 403 ở mọi
- *    bề mặt nội dung, GV dạy đúng khối xem được, mọi lần xem thành
- *    công thuộc diện đều có audit trong outbox.
+ * EB-3 (issue #165) + lát S4 của issue #228 — đường hồ sơ duyệt đề và bề mặt lịch sử của nó sau khi cơ chế đóng góp
+ * được đồng bộ:
+ *  - đường hồ sơ (EB-3 gốc) đã bị HẤP THỤ vào đường đóng góp duy nhất của đề: bộ hồ sơ thành phần đính kèm của một đóng
+ *    góp, cấp duyệt 2 thành trạng thái pending_board của đóng góp (cơ chế mới kiểm ở spec exam-contributions-s4-flow).
+ *    Mọi thao tác GHI của bề mặt hồ sơ trả 410 `exam.dossier_path_closed`.
+ *  - bề mặt ĐỌC hồ sơ giữ nguyên để xem lại LỊCH SỬ: hàng chờ theo bank, chi tiết kèm vết duyệt, bản đặc tả đã chụp +
+ *    xuất bản, danh sách hồ sơ của tôi — kiểm ở đây trên fixture hồ sơ gieo thẳng vào DB (đúng hình thái dữ liệu còn
+ *    lại sau khi đóng đường), gồm cả cờ cấp duyệt 2 đọc qua điểm seam dùng chung.
+ *  - đặc tả sinh từ examId khớp cấu trúc ma trận (pinId chỉ là tham số phụ), xuất xlsx/docx mở được;
+ *  - đề định kỳ ready ở bank trường: GV khác khối bị chặn 403 ở mọi bề mặt nội dung, GV dạy đúng khối xem được, mọi lần
+ *    xem thành công thuộc diện đều có audit trong outbox.
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -53,7 +47,10 @@ interface SpecBody {
   paper?: { id: string; version: number };
 }
 
-/** Bung các ô ma trận của một bản đặc tả thành danh sách phẳng (theo đúng view model MatrixSpecification — ô nằm ở cấp ĐVK, issue #249). */
+/**
+ * Bung các ô ma trận của một bản đặc tả thành danh sách phẳng (theo đúng view model MatrixSpecification — ô nằm ở cấp
+ * ĐVK, issue #249).
+ */
 function cellsOf(spec: SpecBody): SpecCell[] {
   const cells: SpecCell[] = [];
   for (const topic of spec.topics) {
@@ -101,7 +98,6 @@ describe('EB-3 duyệt hồ sơ + đặc tả đề + bảo mật đề định 
     member = await mkStaffUser();
     member2 = await mkStaffUser();
 
-    // --- ma trận + kho câu (khuôn EB-2) -------------------------------------
     const contexts = await http(app).get('/api/v1/access/contexts').set(bearer(admin));
     const systemCtx = (contexts.body as { id: string; contextLevel: number }[]).find((c) => c.contextLevel === 10)!;
     const subjRes = await http(app).post('/api/v1/curriculum/subjects').set(bearer(admin))
@@ -205,11 +201,9 @@ describe('EB-3 duyệt hồ sơ + đặc tả đề + bảo mật đề định 
   }
 
   /**
-   * Gieo một bộ hồ sơ LỊCH SỬ trực tiếp vào DB — đúng hình thái dữ
-   * liệu còn lại sau khi đường hồ sơ đóng (hồ sơ được lập/nộp/duyệt
-   * ở thời đường còn mở). Bản đặc tả chụp lấy từ endpoint đặc tả
-   * trực tiếp của chính đề (cùng view model mà đường nộp hồ sơ từng
-   * chụp tại lúc nộp).
+   * Gieo một bộ hồ sơ LỊCH SỬ trực tiếp vào DB — đúng hình thái dữ liệu còn lại sau khi đường hồ sơ đóng (hồ sơ được
+   * lập/nộp/duyệt ở thời đường còn mở). Bản đặc tả chụp lấy từ endpoint đặc tả trực tiếp của chính đề (cùng view model
+   * mà đường nộp hồ sơ từng chụp tại lúc nộp).
    */
   async function insertHistoricalDossier(args: {
     paper: PaperBody; targetBankId: string; proposerId: string; status: string;
@@ -245,11 +239,9 @@ describe('EB-3 duyệt hồ sơ + đặc tả đề + bảo mật đề định 
     const paper = await mkMemberPaper();
     const dossierId = await insertHistoricalDossier({ paper, targetBankId: teamBank.id, proposerId: member.id, status: 'pending' });
 
-    // Hàng chờ TRƯỚC: bề mặt này qua cổng bank (đồng bộ tư cách thành
-    // viên bank của người gọi) — tổ trưởng thấy bộ; thành viên khác
-    // của tổ chỉ thấy bộ của mình (không có bộ này) và mở trực tiếp
-    // bị 404. Đặt trước chi tiết vì cổng xem chi tiết đọc tư cách đã
-    // được đồng bộ, đúng thứ tự thao tác thật của người duyệt.
+    // Hàng chờ TRƯỚC: bề mặt này qua cổng bank (đồng bộ tư cách thành viên bank của người gọi) — tổ trưởng thấy bộ;
+    // thành viên khác của tổ chỉ thấy bộ của mình (không có bộ này) và mở trực tiếp bị 404. Đặt trước chi tiết vì cổng
+    // xem chi tiết đọc tư cách đã được đồng bộ, đúng thứ tự thao tác thật của người duyệt.
     const queue = await http(app).get(`/api/v1/exams/banks/${teamBank.id}/dossiers`).set(bearer(leader.token));
     expect(queue.status).toBe(200);
     expect((queue.body as DossierBody[]).map((d) => d.id)).toContain(dossierId);
@@ -333,8 +325,7 @@ describe('EB-3 duyệt hồ sơ + đặc tả đề + bảo mật đề định 
     const paper = await mkMemberPaper();
     const dossierId = await insertHistoricalDossier({ paper, targetBankId: teamBank.id, proposerId: member.id, status: 'pending' });
 
-    // Chạm bề mặt hàng chờ trước để tư cách bank của tổ trưởng được
-    // đồng bộ (như TC1) rồi mới đọc chi tiết.
+    // Chạm bề mặt hàng chờ trước để tư cách bank của tổ trưởng được đồng bộ (như TC1) rồi mới đọc chi tiết.
     const queue = await http(app).get(`/api/v1/exams/banks/${teamBank.id}/dossiers`).set(bearer(leader.token));
     expect((queue.body as DossierBody[]).map((d) => d.id)).toContain(dossierId);
     const off = await http(app).get(`/api/v1/exams/dossiers/${dossierId}`).set(bearer(leader.token));
@@ -444,8 +435,8 @@ describe('EB-3 duyệt hồ sơ + đặc tả đề + bảo mật đề định 
       return staff;
     })();
 
-    // Luồng vào bank thật: người dùng mở bank trước (bước này đồng bộ
-    // tư cách thành viên bank trường cho staff) rồi mới mở đề.
+    // Luồng vào bank thật: người dùng mở bank trước (bước này đồng bộ tư cách thành viên bank trường cho staff) rồi mới
+    // mở đề.
     for (const viewer of [teacher10, teacher11, plainStaff]) {
       const list = await http(app).get(`/api/v1/exams/banks/${schoolBank.id}/exams`).set(bearer(viewer.token));
       expect(list.status).toBe(200);

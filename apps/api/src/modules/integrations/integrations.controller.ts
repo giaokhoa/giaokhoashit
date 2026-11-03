@@ -8,7 +8,6 @@ import { Public } from '../../common/public.decorator';
 import { callExternalFunctionSchema, createExternalServiceSchema, createExternalTokenSchema, setExternalServiceEnabledSchema, type CallFunctionDto, type CreateServiceDto, type CreateTokenDto, type SetEnabledDto } from './dto/integrations.dto';
 import { IntegrationsService } from './integrations.service';
 
-/** Controller quản trị external services/tokens và endpoint gọi function. */
 @ApiTags('webservice')
 @Controller({ path: 'webservice', version: '1' })
 export class IntegrationsController {
@@ -40,8 +39,8 @@ export class IntegrationsController {
   @Public()
   @Post('call')
   async call(@Body({ schema: callExternalFunctionSchema }) dto: CallFunctionDto, @Req() req: Request) {
-    // IP khách thật qua cơ chế chung (common/client-ip) để đối chiếu
-    // allowlist của dịch vụ — không đọc tay X-Forwarded-For ở đây.
+    // IP khách thật qua cơ chế chung (common/client-ip) để đối chiếu allowlist của dịch vụ — không đọc tay
+    // X-Forwarded-For ở đây.
     const ip = clientIpOf(req) ?? '';
     const result = await this.integrations.callFunction({ token: dto.token, functionName: dto.functionName, args: dto.args, ip });
     return { result };

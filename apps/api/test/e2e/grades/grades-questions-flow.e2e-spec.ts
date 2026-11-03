@@ -7,14 +7,12 @@ import { createCategory, createCm, createCourse, createEnrolInstance, enrolUser,
 import { createGradeItem, getGradebook, setGrade } from '../../support/assessment-helpers';
 
 /**
- * Assessment flows — điểm theo TỪNG BÀI (issue #224: không còn tổng hợp
- * theo khoá/category, không còn letters/scales/outcomes/calculated).
- * Oracle: Moodle 5.3 PHPUnit:
- *  - public/question/engine/tests/questionusagebyactivity_test.php
- *    (usage nhóm các lần thử, phản hồi trì hoãn, các bước) — ĐÃ KIỂM CHỨNG ở bản 5.3;
- *  - các trường hợp điểm của public/lib/tests/completionlib_test.php
- *    (test_internal_get_state_with_grade_criteria, test_inform_grade_changed)
- *    — ĐÃ KIỂM CHỨNG ở bản 5.3: hoàn thành đi theo điểm.
+ * Assessment flows — điểm theo TỪNG BÀI (issue #224: không còn tổng hợp theo khoá/category, không còn
+ * letters/scales/outcomes/calculated). Oracle: Moodle 5.3 PHPUnit:
+ *  - public/question/engine/tests/questionusagebyactivity_test.php (usage nhóm các lần thử, phản hồi trì hoãn, các
+ *    bước) — ĐÃ KIỂM CHỨNG ở bản 5.3;
+ *  - các trường hợp điểm của public/lib/tests/completionlib_test.php (test_internal_get_state_with_grade_criteria,
+ *    test_inform_grade_changed) — ĐÃ KIỂM CHỨNG ở bản 5.3: hoàn thành đi theo điểm.
  */
 describe('Điểm và câu hỏi', () => {
   let app: INestApplication;
@@ -157,9 +155,8 @@ describe('Điểm và câu hỏi', () => {
     const docText = (doc: { content: { content?: { text?: string }[] }[] }) => doc.content[0]?.content?.[0]?.text;
     expect(docText(versions.body[0].questionText)).toBe('The sky is blue.');
     expect(docText(versions.body[1].questionText)).toBe('The sky is green.');
-    // Đáp án TF-A nằm ở phía đáp án (question_answer_keys.solution)
-    // theo TỪNG VERSION: v1 giữ nguyên đáp án gốc, v2 mang đáp án đã
-    // lật — kiểm chứng thẳng ở DB và qua view.
+    // Đáp án TF-A nằm ở phía đáp án (question_answer_keys.solution) theo TỪNG VERSION: v1 giữ nguyên đáp án gốc, v2
+    // mang đáp án đã lật — kiểm chứng thẳng ở DB và qua view.
     const keyOf = async (versionId: string) => {
       const rows = await pg.query(
         'select solution from question_answer_keys where question_version_id = $1', [versionId]);
@@ -187,12 +184,10 @@ describe('Điểm và câu hỏi', () => {
     const qid = qRes.body.question.id as string;
     const student = await createUserViaApi(app, admin);
     const studentToken = (await login(app, student.username, STRONG_PASSWORD)).accessToken;
-    // Usage được tạo và BẮT ĐẦU khi v1 là mới nhất ⇒ ghim v1.
-    // Mẫu dựng sau khi #60 (chủ sở hữu) + #55 (cổng tạo usage qua HTTP
-    // đòi question:useall) cùng có mặt: usage do hoạt động tạo ở tầng
-    // service với actor là chính học sinh (trước đây học sinh tự tạo
-    // qua HTTP — cổng #55 chặn 404 vì usage thô qua HTTP là đường đọc
-    // đáp án). Mọi assertion bất biến version bên dưới giữ nguyên.
+    // Usage được tạo và BẮT ĐẦU khi v1 là mới nhất ⇒ ghim v1. Mẫu dựng sau khi #60 (chủ sở hữu) + #55 (cổng tạo usage
+    // qua HTTP đòi question:useall) cùng có mặt: usage do hoạt động tạo ở tầng service với actor là chính học sinh
+    // (trước đây học sinh tự tạo qua HTTP — cổng #55 chặn 404 vì usage thô qua HTTP là đường đọc đáp án). Mọi assertion
+    // bất biến version bên dưới giữ nguyên.
     const created = await app.get(QuestionsService).createUsage(student.id, {
       component: 'mod_quiz', instanceId: '01900000-0000-7000-8000-000000000042', slots: [{ questionId: qid }],
     });

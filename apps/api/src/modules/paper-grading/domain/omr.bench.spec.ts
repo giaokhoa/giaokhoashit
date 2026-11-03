@@ -1,12 +1,9 @@
 /**
- * BỘ ẢNH KIỂM CHỨNG MÔ PHỎNG của CAM-0 (issue #112, tiêu chí nghiệm thu
- * Phần 4.2 của hồ sơ research): phiếu dựng từ chính template hệ thống,
- * tô theo kịch bản, "chụp" mô phỏng (lệch phối cảnh + nhiễu + gradient
- * sáng + mờ nhẹ) rồi đọc bằng đúng engine sản xuất. Các ngưỡng khẳng
- * định trong file này là tiêu chí nghiệm thu cứng của issue:
+ * BỘ ẢNH KIỂM CHỨNG MÔ PHỎNG của CAM-0 (issue #112, tiêu chí nghiệm thu Phần 4.2 của hồ sơ research): phiếu dựng từ
+ * chính template hệ thống, tô theo kịch bản, "chụp" mô phỏng (lệch phối cảnh + nhiễu + gradient sáng + mờ nhẹ) rồi đọc
+ * bằng đúng engine sản xuất. Các ngưỡng khẳng định trong file này là tiêu chí nghiệm thu cứng của issue:
  *  - độ chính xác đọc ô ≥ 99,5% trên ảnh đạt cổng chất lượng;
- *  - 100% ca mơ hồ (tô mờ, dấu ✓, tô hai ô, tẩy xoá) vào hàng chờ —
- *    không ca nào bị đoán;
+ *  - 100% ca mơ hồ (tô mờ, dấu ✓, tô hai ô, tẩy xoá) vào hàng chờ — không ca nào bị đoán;
  *  - QR định danh đúng 100%;
  *  - mã tô sai bị phát hiện 100% (số kiểm tra hỏng → không gán nhầm).
  */
@@ -75,8 +72,8 @@ describe('Tập nghiệm thu mô phỏng CAM-0', () => {
     let checked = 0;
     for (let round = 0; round < special.length; round++) {
       const fills = new Map<number, SlotFill>();
-      // 8 câu đặc biệt mỗi phiếu, còn lại tô chuẩn để phiếu giống thật.
-      // secondChoice phải nằm trong số ô của câu (câu đúng/sai chỉ có 2 ô).
+      // 8 câu đặc biệt mỗi phiếu, còn lại tô chuẩn để phiếu giống thật. secondChoice phải nằm trong số ô của câu (câu
+      // đúng/sai chỉ có 2 ô).
       for (let k = 0; k < 8; k++) {
         const row = geometry.rows[k]!;
         const base = special[round]!;
@@ -127,9 +124,8 @@ describe('Tập nghiệm thu mô phỏng CAM-0', () => {
   });
 
   it('định danh toàn diện: MỌI vị trí thân × delta chẵn và lẻ đều bị phát hiện trên phiếu đã render (mã lớp)', LONG, () => {
-    // Ca mù của bench cũ: chỉ thử delta +3 (lẻ) ở một vị trí. Bộ trọng
-    // số cũ (3, 5, 7) lọt delta CHẴN ở vị trí trọng số 5 — nay phủ mọi
-    // vị trí × {+2, +3, +8 (≡ −2)} trên ảnh mô phỏng thật.
+    // Ca mù của bench cũ: chỉ thử delta +3 (lẻ) ở một vị trí. Bộ trọng số cũ (3, 5, 7) lọt delta CHẴN ở vị trí trọng số
+    // 5 — nay phủ mọi vị trí × {+2, +3, +8 (≡ −2)} trên ảnh mô phỏng thật.
     const geometry = computeSheetGeometry(OPTION_COUNTS_40);
     const fills = new Map<number, SlotFill>();
     for (let slot = 1; slot <= 40; slot++) fills.set(slot, { choice: slot % 4, style: 'full' });
@@ -172,11 +168,9 @@ describe('Tập nghiệm thu mô phỏng CAM-0', () => {
 });
 
 /**
- * Mở rộng cho lát sửa flow (phiếu DÙNG CHUNG + mã đề + mã SBD 8 số):
- * lưới mã đề đọc bằng đúng luật của lưới mã học sinh — chắc chắn mới
- * kết luận, mơ hồ thì null (hàng chờ), tô mã nào đọc đúng mã đó (hệ
- * thống không "sửa" mã đề về mã gần nhất); mã thí sinh 8 số đọc đúng
- * và bắt sai một chữ số 100% như mã 4 số.
+ * Mở rộng cho lát sửa flow (phiếu DÙNG CHUNG + mã đề + mã SBD 8 số): lưới mã đề đọc bằng đúng luật của lưới mã học sinh
+ * — chắc chắn mới kết luận, mơ hồ thì null (hàng chờ), tô mã nào đọc đúng mã đó (hệ thống không "sửa" mã đề về mã gần
+ * nhất); mã thí sinh 8 số đọc đúng và bắt sai một chữ số 100% như mã 4 số.
  */
 describe('Luồng phiếu chung CAM-0 (lưới biến thể + mã SBD)', () => {
   const FILLS_40 = () => {
@@ -242,8 +236,8 @@ describe('Luồng phiếu chung CAM-0 (lưới biến thể + mã SBD)', () => {
   });
 
   it('định danh SBD toàn diện: MỌI vị trí thân × delta chẵn và lẻ đều bị phát hiện trên phiếu đã render', LONG, () => {
-    // Hai vị trí trọng số 5 của bộ cũ là 0 và 6 — delta CHẴN ở đó từng
-    // lọt 12,70% đột biến. Phủ cả 7 vị trí thân × {+2, +3, +8 (≡ −2)}.
+    // Hai vị trí trọng số 5 của bộ cũ là 0 và 6 — delta CHẴN ở đó từng lọt 12,70% đột biến. Phủ cả 7 vị trí thân × {+2,
+    // +3, +8 (≡ −2)}.
     const geometry = computeSheetGeometry(OPTION_COUNTS_40, 8);
     const fills = FILLS_40();
     const good = sbdCodeForIndex(12_345); // thân 0012346

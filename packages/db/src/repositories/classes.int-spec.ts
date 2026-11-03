@@ -8,22 +8,16 @@ import { ClassesRepository } from './classes';
 /**
  * Spec tích hợp của repository lớp học trên Kysely (issue #645).
  *
- * Database trung tâm dựng từ rỗng bằng chính cầu nối migration
- * của package trên cụm PostgreSQL thật của môi trường test. Mọi
- * ca chạy qua repository production ở `classes.ts` — không mô
- * phỏng handle. (Ba lệnh ghi của giao dịch tạo lớp không thuộc
- * repository này — chúng ở repository chuyển tiếp phía api theo
- * điểm dừng của điểm nối C-8/B.)
+ * Database trung tâm dựng từ rỗng bằng chính cầu nối migration của package trên cụm PostgreSQL thật của môi trường
+ * test. Mọi ca chạy qua repository production ở `classes.ts` — không mô phỏng handle. (Ba lệnh ghi của giao dịch tạo
+ * lớp không thuộc repository này — chúng ở repository chuyển tiếp phía api theo điểm dừng của điểm nối C-8/B.)
  *
  * Các tính chất chốt tại đây:
- * - Tra lớp theo mã tham gia giữ đúng hành vi của bản bộ máy cũ:
- *   mã là unique toàn hệ khi có đặt nên tra KHÔNG kèm tenant
- *   (lớp thuộc tenant khác vẫn phân giải được — đường tự báo
- *   danh xuyên tenant), trong khi tra theo mã lớp thì bó trong
- *   đúng tenant.
+ * - Tra lớp theo mã tham gia giữ đúng hành vi của bản bộ máy cũ: mã là unique toàn hệ khi có đặt nên tra KHÔNG kèm
+ *   tenant (lớp thuộc tenant khác vẫn phân giải được — đường tự báo danh xuyên tenant), trong khi tra theo mã lớp thì
+ *   bó trong đúng tenant.
  * - `countCoursesInClass` trả `number` thật (ép `::int`, T-7).
- * - Hai truy vấn `distinct` (khoá đang ghi danh ACTIVE của một
- *   học sinh; học sinh đã đình chỉ của một cohort) khử trùng
+ * - Hai truy vấn `distinct` (khoá đang ghi danh ACTIVE của một học sinh; học sinh đã đình chỉ của một cohort) khử trùng
  *   đúng khi dữ kiện có nhiều dòng ghi danh cho cùng một đích.
  * - Hàng chờ tự báo danh: chèn, tra đang chờ, quyết định.
  */
@@ -93,7 +87,6 @@ afterAll(async () => {
   if (adminUrl) await dropTestDatabase(adminUrl, TEST_DB);
 });
 
-/** Gieo một khoá thuộc lớp kèm một instance ghi danh theo phương thức cho trước. */
 async function makeCourseWithInstance(method: string, customInt1: string | null): Promise<{ courseId: string; instanceId: string }> {
   const category = await db
     .insertInto('course_categories')
@@ -150,9 +143,8 @@ describe('ClassesRepository trên Kysely (issue #645)', () => {
   });
 
   it('hàng chờ tự báo danh: chèn, tra đang chờ theo cặp lớp/học sinh, rồi quyết định', async () => {
-    // `class_join_requests.user_id` có khoá ngoại sang `users` —
-    // phải gieo một user thật (khác với `user_enrolments`, bảng
-    // không neo khoá ngoại này).
+    // `class_join_requests.user_id` có khoá ngoại sang `users` — phải gieo một user thật (khác với `user_enrolments`,
+    // bảng không neo khoá ngoại này).
     const student = await db
       .insertInto('users')
       .values({ username: 'g645-joiner', email: 'g645-joiner@example.com' })

@@ -16,11 +16,9 @@ import {
 /**
  * Facade của Site Config (Moodle `config` + `config_plugins` + thiết lập admin).
  *
- * Phân tầng giá trị: mặc định khai trong registry (code) < giá trị quản trị
- * lưu cơ sở dữ liệu. Mọi thay đổi qua API đều bị kiểm chứng theo kiểu đã
- * đăng ký và đều để lại vết trong `admin_setting_audit`. Các module khác
- * đọc giá trị hiệu lực qua {@link SiteConfigService.getValue} thay vì tự
- * chạm vào bảng config.
+ * Phân tầng giá trị: mặc định khai trong registry (code) < giá trị quản trị lưu cơ sở dữ liệu. Mọi thay đổi qua API đều
+ * bị kiểm chứng theo kiểu đã đăng ký và đều để lại vết trong `admin_setting_audit`. Các module khác đọc giá trị hiệu
+ * lực qua {@link SiteConfigService.getValue} thay vì tự chạm vào bảng config.
  */
 @Injectable()
 export class SiteConfigService {
@@ -34,8 +32,8 @@ export class SiteConfigService {
   }
 
   /**
-   * Chiếu một setting thành dạng API trả về: giá trị hiệu lực + nguồn của
-   * nó (mặc định code hay ghi đè trong cơ sở dữ liệu).
+   * Chiếu một setting thành dạng API trả về: giá trị hiệu lực + nguồn của nó (mặc định code hay ghi đè trong cơ sở dữ
+   * liệu).
    */
   private async toView(def: SiteSettingDefinition): Promise<SiteSetting> {
     const stored = await this.repo.getStoredValue(def.component, def.name);
@@ -51,8 +49,8 @@ export class SiteConfigService {
   }
 
   /**
-   * Tìm định nghĩa setting hoặc ném lỗi 400 `site_config.unknown_setting` —
-   * API không chấp nhận ghi vào khoá chưa đăng ký.
+   * Tìm định nghĩa setting hoặc ném lỗi 400 `site_config.unknown_setting` — API không chấp nhận ghi vào khoá chưa đăng
+   * ký.
    */
   private requireDefinition(component: string, name: string): SiteSettingDefinition {
     const def = findSiteSetting(component, name);
@@ -82,9 +80,8 @@ export class SiteConfigService {
   }
 
   /**
-   * Giá trị hiệu lực đã ép kiểu cho các module khác tiêu thụ (ví dụ cổng
-   * nhắn tin đọc `core/messagingallusers`). Setting chưa đăng ký trả về
-   * undefined để bên gọi tự quyết định mặc định của mình.
+   * Giá trị hiệu lực đã ép kiểu cho các module khác tiêu thụ (ví dụ cổng nhắn tin đọc `core/messagingallusers`).
+   * Setting chưa đăng ký trả về undefined để bên gọi tự quyết định mặc định của mình.
    */
   async getValue<T extends string | number | boolean>(component: string, name: string): Promise<T | undefined> {
     const def = findSiteSetting(component, name);
@@ -94,8 +91,8 @@ export class SiteConfigService {
   }
 
   /**
-   * Đặt giá trị mới cho một setting: kiểm chứng kiểu theo registry, lưu
-   * ghi đè và ghi vết (giá trị hiệu lực trước → sau, người thực hiện).
+   * Đặt giá trị mới cho một setting: kiểm chứng kiểu theo registry, lưu ghi đè và ghi vết (giá trị hiệu lực trước →
+   * sau, người thực hiện).
    */
   async setSetting(
     actorId: string,
@@ -111,11 +108,9 @@ export class SiteConfigService {
         code: 'site_config.invalid_value',
       });
     }
-    // Chính sách P2 (issue #174) ở tầng site (NB-7): hai loại thông báo
-    // bắt buộc (mandatoryInApp trong registry provider) thì ADMIN cũng
-    // không tắt được — đặt false cho khoá chính sách của chúng bị từ
-    // chối ngay tại đây để mọi đường ghi (API site-config) đều bị chặn,
-    // không chỉ giao diện admin khoá công tắc.
+    // Chính sách P2 (issue #174) ở tầng site (NB-7): hai loại thông báo bắt buộc (mandatoryInApp trong registry
+    // provider) thì ADMIN cũng không tắt được — đặt false cho khoá chính sách của chúng bị từ chối ngay tại đây để mọi
+    // đường ghi (API site-config) đều bị chặn, không chỉ giao diện admin khoá công tắc.
     if (def.component === NOTIFICATION_POLICY_COMPONENT && value === false) {
       const provider = MESSAGE_PROVIDERS.find((p) => notificationPolicySettingName(p.name) === def.name);
       if (provider?.mandatoryInApp) {
@@ -137,8 +132,7 @@ export class SiteConfigService {
   }
 
   /**
-   * Xoá ghi đè của một setting (giá trị hiệu lực trở về mặc định code) và
-   * ghi vết; setting chưa có ghi đè thì báo 404.
+   * Xoá ghi đè của một setting (giá trị hiệu lực trở về mặc định code) và ghi vết; setting chưa có ghi đè thì báo 404.
    */
   async clearSetting(actorId: string, component: string, name: string): Promise<SiteSetting> {
     const def = this.requireDefinition(component, name);

@@ -8,15 +8,11 @@ import type { SpaceDatabaseService } from '../db/routing/space-database.service'
 import { NotificationEventsProcessor } from './notification-events.processor';
 
 /**
- * Đặc tả hoá chốt chống trùng theo `outboxId` của consumer thông
- * báo sự kiện (issue con #520 của #491) — chạy processor THẬT với
- * marker giả trong bộ nhớ (đúng ngữ nghĩa hai khoá của marker thật:
- * dấu đã xử lý chỉ ghi sau khi xử lý xong; lease có token chủ và
- * chỉ chủ mới nhả được) và handler giả đếm số lần chạy. Các khẳng
- * định đều là hệ quả nghiệp vụ quan sát được: handler của một sự
- * kiện chạy tối đa một lần dù job bị phát lại, chạy song song xen
- * kẽ, hay bị thử lại sau lỗi; job bị hoãn vì lease không bị tính là
- * đã xử lý và cũng không đốt một lần thử.
+ * Đặc tả hoá chốt chống trùng theo `outboxId` của consumer thông báo sự kiện (issue con #520 của #491) — chạy processor
+ * THẬT với marker giả trong bộ nhớ (đúng ngữ nghĩa hai khoá của marker thật: dấu đã xử lý chỉ ghi sau khi xử lý xong;
+ * lease có token chủ và chỉ chủ mới nhả được) và handler giả đếm số lần chạy. Các khẳng định đều là hệ quả nghiệp vụ
+ * quan sát được: handler của một sự kiện chạy tối đa một lần dù job bị phát lại, chạy song song xen kẽ, hay bị thử lại
+ * sau lỗi; job bị hoãn vì lease không bị tính là đã xử lý và cũng không đốt một lần thử.
  */
 class FakeMarker {
   readonly processed = new Set<string>();
@@ -85,11 +81,9 @@ function makeJob(partial: Partial<OutboxEventJobData> = {}) {
 }
 
 /**
- * Bộ chạy job THẬT với khung định tuyến không có sổ phía sau
- * (issue #582): các job của spec này không mang slug trung tâm
- * nên bộ chạy luôn mở ngữ cảnh platform như đường xử lý trước
- * đợt này — spec khoá hành vi của processor, không khoá định
- * tuyến kho (định tuyến có spec riêng của bộ chạy và của relay).
+ * Bộ chạy job THẬT với khung định tuyến không có sổ phía sau (issue #582): các job của spec này không mang slug trung
+ * tâm nên bộ chạy luôn mở ngữ cảnh platform như đường xử lý trước đợt này — spec khoá hành vi của processor, không khoá
+ * định tuyến kho (định tuyến có spec riêng của bộ chạy và của relay).
  */
 function makeJobRunner(): SpaceJobRunner {
   return new SpaceJobRunner({

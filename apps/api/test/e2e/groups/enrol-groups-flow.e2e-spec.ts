@@ -7,19 +7,14 @@ import {
 import { createCategory, createCourse, createEnrolInstance, enrolUser } from '../../support/course-enrolment-helpers';
 
 /**
- * Luồng Enrol + Groups/Cohort.
- * Oracle: enrol/tests/enrollib_test.php (test_user_enrolment_created_event,
- * test_enrol_get_my_courses_only_enrolled_courses, ngữ nghĩa đình chỉ từ
- * lib/tests/enrollib trong báo cáo §2#5), group/tests/lib_test.php
- * (test_member_added_event, test_groups_delete_groupings_groups,
- * tư cách thành viên nhóm), hành vi đồng bộ cohort từ ngữ nghĩa của plugin enrol_cohort
- * như mô tả trong báo cáo §2#6.
- * Oracle Behat (đợt business-gaps): enrol/self/tests/behat/
- * self_enrolment.feature ("Self-enrolment enabled requiring an enrolment
- * key", "...requiring a group enrolment key", "Self unenrol as a
- * self-enrolled student"), các kịch bản welcome-message của enrol/self + enrol/manual
- * , enrol/cohort/tests/behat/enrolcohorts.feature ("Editing a
- * cohort enrolment method's role should change participants' role").
+ * Luồng Enrol + Groups/Cohort. Oracle: enrol/tests/enrollib_test.php (test_user_enrolment_created_event,
+ * test_enrol_get_my_courses_only_enrolled_courses, ngữ nghĩa đình chỉ từ lib/tests/enrollib trong báo cáo §2#5),
+ * group/tests/lib_test.php (test_member_added_event, test_groups_delete_groupings_groups, tư cách thành viên nhóm),
+ * hành vi đồng bộ cohort từ ngữ nghĩa của plugin enrol_cohort như mô tả trong báo cáo §2#6. Oracle Behat (đợt
+ * business-gaps): enrol/self/tests/behat/ self_enrolment.feature ("Self-enrolment enabled requiring an enrolment key",
+ * "...requiring a group enrolment key", "Self unenrol as a self-enrolled student"), các kịch bản welcome-message của
+ * enrol/self + enrol/manual , enrol/cohort/tests/behat/enrolcohorts.feature ("Editing a cohort enrolment method's role
+ * should change participants' role").
  */
 describe('Ghi danh và nhóm/cohort', () => {
   let app: INestApplication;
@@ -85,12 +80,10 @@ describe('Ghi danh và nhóm/cohort', () => {
     await enrolUser(app, admin, course.id, instance.id, user.id);
     const content = await http(app).get(`/api/v1/courses/${course.id}/content`).set('Authorization', `Bearer ${admin}`);
     const teacherRole = await roleIdByShortname(app, admin, 'teacher');
-    // Thứ tự fixture: đình chỉ ghi danh TRƯỚC khi gán vai giáo viên.
-    // Từ issue #425, gán vai giảng dạy cho học viên đang học ĐANG
-    // HOẠT ĐỘNG trong chính khoá đó bị chốt tách vai chặn (lẫn vai
-    // cùng khoá); ghi danh đã đình chỉ (status khác 0) không thuộc
-    // định nghĩa lẫn vai nên trạng thái "đã đình chỉ + có gán vai
-    // thật" của ca này vẫn dựng được nguyên vẹn.
+    // Thứ tự fixture: đình chỉ ghi danh TRƯỚC khi gán vai giáo viên. Từ issue #425, gán vai giảng dạy cho học viên đang
+    // học ĐANG HOẠT ĐỘNG trong chính khoá đó bị chốt tách vai chặn (lẫn vai cùng khoá); ghi danh đã đình chỉ (status
+    // khác 0) không thuộc định nghĩa lẫn vai nên trạng thái "đã đình chỉ + có gán vai thật" của ca này vẫn dựng được
+    // nguyên vẹn.
     await http(app).post(`/api/v1/courses/${course.id}/enrol/instances/${instance.id}/users/${user.id}/suspend`).set('Authorization', `Bearer ${admin}`);
     await assignRole(app, admin, user.id, teacherRole, content.body.contextId);
     const userLogin = await login(app, user.username, STRONG_PASSWORD);
@@ -157,9 +150,8 @@ describe('Ghi danh và nhóm/cohort', () => {
     // Bản tổng hợp thành viên hiển thị chỉ chứa tư cách thành viên của chính cô ấy.
     const visibleMembers = await http(app).get(`/api/v1/courses/${course.id}/groups/visible-members`).set('Authorization', `Bearer ${aliceLogin.accessToken}`);
     expect(visibleMembers.body).toEqual([{ groupId: gA.body.id, userId: alice.id }]);
-    // Admin (accessallgroups via manager/siteadmin) sees everything —
-    // gồm cả nhóm "Cả lớp" tự sinh của CLASS-0 khi khoá nằm trong lớp
-    // (đóng gói PR #200: mọi khoá dạy thật đều thuộc một lớp).
+    // Admin (accessallgroups via manager/siteadmin) sees everything — gồm cả nhóm "Cả lớp" tự sinh của CLASS-0 khi khoá
+    // nằm trong lớp (đóng gói PR #200: mọi khoá dạy thật đều thuộc một lớp).
     const adminList = await http(app).get(`/api/v1/courses/${course.id}/groups`).set('Authorization', `Bearer ${admin}`);
     expect((adminList.body as unknown[]).length).toBe(3);
   });
@@ -301,7 +293,8 @@ describe('Ghi danh và nhóm/cohort', () => {
     const selfInstance = await createEnrolInstance(app, admin, course.id, { method: 'self' });
     const manualInstance = await createEnrolInstance(app, admin, course.id, { method: 'manual' });
 
-    // Học viên được ghi danh thủ công không thể tự huỷ ghi danh: ghi danh đó không thuộc quyền của họ để kết thúc qua endpoint này.
+    // Học viên được ghi danh thủ công không thể tự huỷ ghi danh: ghi danh đó không thuộc quyền của họ để kết thúc qua
+    // endpoint này.
     const other = await createUserViaApi(app, admin);
     await enrolUser(app, admin, course.id, manualInstance.id, other.id);
     const otherLogin = await login(app, other.username, STRONG_PASSWORD);
@@ -395,15 +388,12 @@ describe('Ghi danh và nhóm/cohort', () => {
     expect((await http(app).get(`/api/v1/courses/${course.id}/content`).set('Authorization', `Bearer ${userLogin.accessToken}`)).status).toBe(200);
   });
 
-  // Các chế độ hiển thị nhóm (separate/visible) — đợt business-gaps.
-  // Oracle: MoodleDocs "Groups" (separate groups: mỗi nhóm chỉ thấy được
-  // nhóm của mình, các nhóm khác vô hình; visible groups: mỗi nhóm làm việc
-  // trong nhóm của mình nhưng cũng thấy được các nhóm khác — chỉ đọc) và Behat
-  // mod/assign/tests/behat/assign_group_override.feature ("A teacher without
-  // accessallgroups permission should only be able to add group override for
-  // groups that he/she is a member of, when the activity's group mode is
-  // 'separate groups'" — tức hạn chế separate-groups được gỡ bỏ bởi
-  // các capability của nhân sự accessallgroups/managegroups).
+  // Các chế độ hiển thị nhóm (separate/visible) — đợt business-gaps. Oracle: MoodleDocs "Groups" (separate groups: mỗi
+  // nhóm chỉ thấy được nhóm của mình, các nhóm khác vô hình; visible groups: mỗi nhóm làm việc trong nhóm của mình
+  // nhưng cũng thấy được các nhóm khác — chỉ đọc) và Behat mod/assign/tests/behat/assign_group_override.feature ("A
+  // teacher without accessallgroups permission should only be able to add group override for groups that he/she is a
+  // member of, when the activity's group mode is 'separate groups'" — tức hạn chế separate-groups được gỡ bỏ bởi các
+  // capability của nhân sự accessallgroups/managegroups).
   async function setupTwoGroups(groupMode: number) {
     const { course, instance } = await setupCourse(groupMode);
     const alice = await createUserViaApi(app, admin);
@@ -420,8 +410,8 @@ describe('Ghi danh và nhóm/cohort', () => {
 
   it('VISIBLE GROUPS: học viên nhóm A thấy CẢ hai nhóm và thành viên nhóm B, nhưng thao tác ghi vẫn cổng theo năng lực (MoodleDocs Groups — visible groups chỉ-đọc với nhóm khác)', async () => {
     const { course, bob, gA, gB, aliceLogin } = await setupTwoGroups(2); // VISIBLEGROUPS
-    // Group list contains both groups — cộng nhóm "Cả lớp" tự sinh của
-    // CLASS-0 (khoá thuộc lớp thì có thêm nhóm này, PR #200).
+    // Group list contains both groups — cộng nhóm "Cả lớp" tự sinh của CLASS-0 (khoá thuộc lớp thì có thêm nhóm này, PR
+    // #200).
     const adminGroups = await http(app).get(`/api/v1/courses/${course.id}/groups`).set('Authorization', `Bearer ${admin}`);
     const classGroupId = (adminGroups.body as { id: string; name: string }[]).find((g) => g.name === 'Cả lớp')!.id;
     const list = await http(app).get(`/api/v1/courses/${course.id}/groups`).set('Authorization', `Bearer ${aliceLogin.accessToken}`);
@@ -556,8 +546,8 @@ describe('Ghi danh và nhóm/cohort', () => {
     expect(refusedWithdrawn.body.code).toBe('group.member_not_enrolled');
     expect(await memberIds()).not.toContain(withdrawn.id);
 
-    // Ghi danh bị đình chỉ thì không hoạt động, nên thao tác thêm bị từ chối — nhưng chính
-    // thao tác thêm đó thành công khi ghi danh được kích hoạt lại.
+    // Ghi danh bị đình chỉ thì không hoạt động, nên thao tác thêm bị từ chối — nhưng chính thao tác thêm đó thành công
+    // khi ghi danh được kích hoạt lại.
     const suspended = await createUserViaApi(app, admin);
     await enrolUser(app, admin, course.id, instance.id, suspended.id);
     await http(app).post(`/api/v1/courses/${course.id}/enrol/instances/${instance.id}/users/${suspended.id}/suspend`).set('Authorization', `Bearer ${admin}`);

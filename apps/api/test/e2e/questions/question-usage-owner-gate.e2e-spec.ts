@@ -7,11 +7,10 @@ import { addExamSlot, createExamDraft, pinExam } from '../../support/exam-pin-he
 
 /**
  * Issue #60 — cổng chủ sở hữu cho các route thao tác question usage thô:
- *  - người khác (không phải chủ usage) start/submit/finish qua route thô
- *    → 404 không-oracle, lượt của nạn nhân nguyên vẹn;
- *  - usage gắn lượt quiz đang `inprogress` bị khoá kênh thô kể cả với
- *    chính chủ (403 `question.usage_managed_by_quiz`) để đáp án đúng chỉ
- *    lộ qua luồng quiz sau khi nộp;
+ *  - người khác (không phải chủ usage) start/submit/finish qua route thô → 404 không-oracle, lượt của nạn nhân nguyên
+ *    vẹn;
+ *  - usage gắn lượt quiz đang `inprogress` bị khoá kênh thô kể cả với chính chủ (403 `question.usage_managed_by_quiz`)
+ *    để đáp án đúng chỉ lộ qua luồng quiz sau khi nộp;
  *  - usage tự do của ngân hàng: chủ sở hữu vẫn làm trọn luồng như cũ.
  */
 describe('Cổng chủ sở hữu usage câu hỏi (issue #60)', () => {
@@ -41,8 +40,7 @@ describe('Cổng chủ sở hữu usage câu hỏi (issue #60)', () => {
   }
 
 
-  // Câu TF-A của spec: thân + 4 mệnh đề đều ĐÚNG; response đúng là
-  // JSON map cả 4 ý true.
+  // Câu TF-A của spec: thân + 4 mệnh đề đều ĐÚNG; response đúng là JSON map cả 4 ý true.
   const TF_TEXT = {
     type: 'doc',
     content: [
@@ -96,13 +94,10 @@ describe('Cổng chủ sở hữu usage câu hỏi (issue #60)', () => {
       });
     const questionId = qRes.body.question.id as string;
 
-    // Ngữ nghĩa review của Chặng 2 (issue #30): mặc định Moodle cho
-    // review_right_answer = 272 chỉ gồm cửa sổ "sau đó khi đề còn mở"
-    // (0x00100) + "sau khi đóng" (0x00010), KHÔNG gồm cửa sổ "ngay sau
-    // nộp" (0x01000) — nộp xong đáp án đúng chưa lộ ngay. Spec này cần
-    // khẳng định đáp án lộ qua luồng quiz ngay sau khi nộp nên ghim
-    // tường minh bitmask 4368 (gồm cửa sổ ngay-sau-nộp); cửa sổ "đang
-    // làm" (0x10000) vẫn tắt nên đáp án vẫn ẩn trong lúc làm như cũ.
+    // Ngữ nghĩa review của Chặng 2 (issue #30): mặc định Moodle cho review_right_answer = 272 chỉ gồm cửa sổ "sau đó
+    // khi đề còn mở" (0x00100) + "sau khi đóng" (0x00010), KHÔNG gồm cửa sổ "ngay sau nộp" (0x01000) — nộp xong đáp án
+    // đúng chưa lộ ngay. Spec này cần khẳng định đáp án lộ qua luồng quiz ngay sau khi nộp nên ghim tường minh bitmask
+    // 4368 (gồm cửa sổ ngay-sau-nộp); cửa sổ "đang làm" (0x10000) vẫn tắt nên đáp án vẫn ẩn trong lúc làm như cũ.
     const draft = await createExamDraft(app, teacher, 'Gate quiz', 10);
     await addExamSlot(app, teacher, draft, { questionId });
     const pin = await pinExam(app, teacher, course.id, draft, { sectionId, reviewRightAnswer: 4368 });
@@ -214,12 +209,10 @@ describe('Cổng chủ sở hữu usage câu hỏi (issue #60)', () => {
 
   it('usage ngân hàng tự do: chủ sở hữu chạy đầy đủ luồng thô; người lạ nhận 404 và đường dẫn lệch không tìm thấy', async () => {
     const s = await setup();
-    // Mẫu dựng sau khi cổng tạo usage của #55 có mặt: tạo usage thô qua
-    // HTTP đòi `question:useall` (usage thô là đường đọc đáp án) nên học
-    // sinh không tự tạo qua HTTP được nữa; usage tự do của A do hoạt
-    // động tạo ở tầng service với actor là chính A — đúng mô hình mà
-    // assertCanCreateUsage của #55 ghi. Mọi assertion hành vi của cổng
-    // chủ sở hữu bên dưới giữ nguyên.
+    // Mẫu dựng sau khi cổng tạo usage của #55 có mặt: tạo usage thô qua HTTP đòi `question:useall` (usage thô là đường
+    // đọc đáp án) nên học sinh không tự tạo qua HTTP được nữa; usage tự do của A do hoạt động tạo ở tầng service với
+    // actor là chính A — đúng mô hình mà assertCanCreateUsage của #55 ghi. Mọi assertion hành vi của cổng chủ sở hữu
+    // bên dưới giữ nguyên.
     const created = await app.get(QuestionsService).createUsage(s.userIdA, {
       component: 'mod_quiz', slots: [{ questionId: s.questionId }],
     });

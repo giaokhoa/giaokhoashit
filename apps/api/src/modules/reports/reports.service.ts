@@ -15,11 +15,9 @@ export interface ReportDatasource {
 export const REPORT_DATASOURCES = ['enrolments', 'grades', 'completion'] as const;
 
 /**
- * Facade của ReportsModule (Moodle core_reportbuilder, §2#24).
- * Bất biến: quyền xem = audience ∩ quyền trên TỪNG DÒNG theo context của
- * dòng đó. Filter do user cấu hình KHÔNG BAO GIỜ nới quyền — filter chỉ
- * thu hẹp tập dòng đã được phép. Báo cáo theo lịch chạy dưới danh tính
- * người tạo với quyền TẠI THỜI ĐIỂM CHẠY.
+ * Facade của ReportsModule (Moodle core_reportbuilder, §2#24). Bất biến: quyền xem = audience ∩ quyền trên TỪNG DÒNG
+ * theo context của dòng đó. Filter do user cấu hình KHÔNG BAO GIỜ nới quyền — filter chỉ thu hẹp tập dòng đã được phép.
+ * Báo cáo theo lịch chạy dưới danh tính người tạo với quyền TẠI THỜI ĐIỂM CHẠY.
  */
 @Injectable()
 export class ReportsService {
@@ -37,12 +35,10 @@ export class ReportsService {
   }
 
   /**
-   * Cổng metadata báo cáo (H15, rà soát #134 + §7.3): định nghĩa báo cáo,
-   * datasource và lịch chạy là thông tin vận hành nội bộ — mọi đường đọc
-   * metadata và đường kích hoạt chạy theo lịch đều đòi
-   * `reportbuilder:manage` tại system, cùng cổng với createReport/
-   * createSchedule. Dữ liệu báo cáo vẫn gác riêng theo audience + từng
-   * dòng ở runReport, không đổi.
+   * Cổng metadata báo cáo (H15, rà soát #134 + §7.3): định nghĩa báo cáo, datasource và lịch chạy là thông tin vận hành
+   * nội bộ — mọi đường đọc metadata và đường kích hoạt chạy theo lịch đều đòi `reportbuilder:manage` tại system, cùng
+   * cổng với createReport/ createSchedule. Dữ liệu báo cáo vẫn gác riêng theo audience + từng dòng ở runReport, không
+   * đổi.
    */
   private async requireManage(actorId: string): Promise<void> {
     const sys = await this.contexts.ensureSystemContext();
@@ -146,16 +142,14 @@ export class ReportsService {
     // Audience theo role: resolve bằng bảng role_assignments (role shortName).
     const roleNames = audience.filter((a) => a.role).map((a) => a.role!);
     if (!roleNames.length) return false;
-    // Truy vấn ghép danh sách tên vai trò bằng sql.join nằm ở
-    // repository (khuôn T-11 chốt tại issue #648).
+    // Truy vấn ghép danh sách tên vai trò bằng sql.join nằm ở repository (khuôn T-11 chốt tại issue #648).
     return this.repo.userHasAnyRole(userId, roleNames);
   }
 
   /**
-   * Chạy báo cáo cho một viewer: audience ∩ lọc từng dòng theo quyền.
-   * Một dòng course chỉ hiện nếu viewer có course:view ở course
-   * context của dòng (hoặc là chính chủ dòng dữ liệu của mình cho grades/
-   * enrolments/completion của bản thân — học viên xem được dòng của mình).
+   * Chạy báo cáo cho một viewer: audience ∩ lọc từng dòng theo quyền. Một dòng course chỉ hiện nếu viewer có
+   * course:view ở course context của dòng (hoặc là chính chủ dòng dữ liệu của mình cho grades/ enrolments/completion
+   * của bản thân — học viên xem được dòng của mình).
    */
   async runReport(viewerId: string, reportId: string): Promise<{ report: ReportRow; rows: Record<string, unknown>[] }> {
     const report = await this.getReportRow(reportId);
@@ -180,7 +174,8 @@ export class ReportsService {
         }
         const ctxId = ctxCache.get(courseId)!;
         if (ctxId) {
-          // Staff có grade:viewall thấy mọi dòng của course; người thường chỉ thấy dòng của chính mình trong course họ được xem.
+          // Staff có grade:viewall thấy mọi dòng của course; người thường chỉ thấy dòng của chính mình trong course họ
+          // được xem.
           allowed = (await this.evaluator.hasCapability(viewerId, 'grade:viewall', ctxId))
             || ((await this.evaluator.hasCapability(viewerId, 'course:view', ctxId)) && String(row.userId) === viewerId);
         }
@@ -214,9 +209,8 @@ export class ReportsService {
   }
 
   /**
-   * Chạy một schedule: chạy báo cáo DƯỚI DANH TÍNH NGƯỜI TẠO với quyền tại
-   * thời điểm chạy, lưu kết quả vào schedule, và gửi notification qua
-   * MessagingModule cho người tạo.
+   * Chạy một schedule: chạy báo cáo DƯỚI DANH TÍNH NGƯỜI TẠO với quyền tại thời điểm chạy, lưu kết quả vào schedule, và
+   * gửi notification qua MessagingModule cho người tạo.
    */
   async runSchedule(scheduleId: string): Promise<{ scheduleId: string; rows: number }> {
     const schedule = await this.repo.getSchedule(scheduleId);

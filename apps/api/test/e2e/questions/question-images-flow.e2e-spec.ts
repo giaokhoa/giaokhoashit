@@ -9,14 +9,11 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser, getFirstS
 import { addExamSlot, createExamDraft, pinExam } from '../../support/exam-pin-helpers';
 
 /**
- * Issue #248 (lát QE-2) — luồng ảnh nhúng trong câu hỏi, đầu-cuối:
- * giáo viên tải ảnh vào bank CÁ NHÂN của mình (endpoint chỉ nhận ảnh
- * thật theo magic bytes), ảnh nằm trong thân câu bằng định danh bền;
- * học sinh ghi danh trong khoá làm bài thì THẤY ảnh (server phát URL
- * ký ở bề mặt attempt) và tải được byte ảnh từ URL ký đó mà không cần
- * đăng nhập — nhưng học sinh KHÔNG tự mint được URL ký cũng như
- * không đọc thẳng được file qua các đường có gác, vì em không có
- * quyền tại context bank cá nhân của giáo viên.
+ * Issue #248 (lát QE-2) — luồng ảnh nhúng trong câu hỏi, đầu-cuối: giáo viên tải ảnh vào bank CÁ NHÂN của mình
+ * (endpoint chỉ nhận ảnh thật theo magic bytes), ảnh nằm trong thân câu bằng định danh bền; học sinh ghi danh trong
+ * khoá làm bài thì THẤY ảnh (server phát URL ký ở bề mặt attempt) và tải được byte ảnh từ URL ký đó mà không cần đăng
+ * nhập — nhưng học sinh KHÔNG tự mint được URL ký cũng như không đọc thẳng được file qua các đường có gác, vì em không
+ * có quyền tại context bank cá nhân của giáo viên.
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -141,8 +138,8 @@ describe('Ảnh nhúng câu hỏi: GV tải vào bank cá nhân → HS thấy tr
     expect(created.status, JSON.stringify(created.body)).toBe(201);
     const questionId = created.body.question.id as string;
 
-    // Chèn node ảnh (định danh bền) vào thân câu của version hiện hành —
-    // mô phỏng đúng tài liệu editor QE-1 sẽ lưu khi contracts có node image.
+    // Chèn node ảnh (định danh bền) vào thân câu của version hiện hành — mô phỏng đúng tài liệu editor QE-1 sẽ lưu khi
+    // contracts có node image.
     const view0 = await http(app).get(`/api/v1/questions/${questionId}`).set(bearer(f.teacher.token));
     expect(view0.status).toBe(200);
     const versionId = view0.body.latestVersion.id as string;
@@ -186,8 +183,8 @@ describe('Ảnh nhúng câu hỏi: GV tải vào bank cá nhân → HS thấy tr
     expect(dl.status).toBe(200);
     expect((dl.body as Buffer).equals(PNG_1PX)).toBe(true);
 
-    // Nhưng học sinh không tự lấy được URL ký cũng không đọc thẳng được
-    // file: em không có files:view tại context bank cá nhân của GV.
+    // Nhưng học sinh không tự lấy được URL ký cũng không đọc thẳng được file: em không có files:view tại context bank
+    // cá nhân của GV.
     const mint = await http(app).post(`/api/v1/files/${f.fileId}/signed-url`).set(bearer(f.student.token)).send({});
     expect(mint.status).toBe(403);
     const direct = await http(app).get(`/api/v1/files/${f.fileId}/content`).set(bearer(f.student.token));

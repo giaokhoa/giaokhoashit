@@ -19,40 +19,29 @@ import {
 import { addExamSlot, createExamDraft } from '../../support/exam-pin-helpers';
 
 /**
- * Ca đầu-cuối của KHO NGÂN HÀNG HỆ THỐNG (issue #585): ứng dụng thật
- * chạy với một database kho ngân hàng riêng dựng riêng cho đợt này
- * (`lms_test_bank_585`, role riêng, CONNECT của PUBLIC bị thu hồi,
- * migration kho ngân hàng áp bằng chính role chủ kho như đường triển
- * khai thật), đọc qua biến `SYSTEM_BANK_DATABASE_URL` đặt trước khi
- * ứng dụng khởi động. Shim `uuidv7()` chỉ áp khi server dưới PG18.
+ * Ca đầu-cuối của KHO NGÂN HÀNG HỆ THỐNG (issue #585): ứng dụng thật chạy với một database kho ngân hàng riêng dựng
+ * riêng cho đợt này (`lms_test_bank_585`, role riêng, CONNECT của PUBLIC bị thu hồi, migration kho ngân hàng áp bằng
+ * chính role chủ kho như đường triển khai thật), đọc qua biến `SYSTEM_BANK_DATABASE_URL` đặt trước khi ứng dụng khởi
+ * động. Shim `uuidv7()` chỉ áp khi server dưới PG18.
  *
- * Các ca khoá các tiêu chí nghiệm thu ở phía HTTP: (1) phát hành câu
- * + phiên bản mới, phiên bản cũ đọc lại không đổi; (2) giáo viên khám
- * phá theo dạng câu và nhập bản chụp — đủ nội dung + truy vết,
- * checksum khớp gói nguồn; (3) checksum lệch thì nhập bị từ chối;
- * (4) rút câu: khám phá + nhập mới không còn thấy, sự kiện rút được
- * ghi và trung tâm ghi nhận; (5) sửa câu đã nhập ở trung tâm thành
- * bản phái sinh, phiên bản nguyên trạng còn nguyên; (6) bank-off:
- * ứng dụng không cấu hình kho ngân hàng vẫn đọc câu đã nhập và tạo
- * đề từ câu đó (đường thi chỉ đọc kho trung tâm). Chạy bài thi và
- * chấm điểm đầy đủ thuộc các suite quiz hiện hữu (chúng chỉ vận hành
- * trên slot trong kho trung tâm); ca này khoá phần delta của PR:
- * đường trung tâm không gọi kho ngân hàng.
+ * Các ca khoá các tiêu chí nghiệm thu ở phía HTTP: (1) phát hành câu + phiên bản mới, phiên bản cũ đọc lại không đổi;
+ * (2) giáo viên khám phá theo dạng câu và nhập bản chụp — đủ nội dung + truy vết, checksum khớp gói nguồn; (3) checksum
+ * lệch thì nhập bị từ chối;
+ * (4) rút câu: khám phá + nhập mới không còn thấy, sự kiện rút được ghi và trung tâm ghi nhận; (5) sửa câu đã nhập ở
+ *     trung tâm thành bản phái sinh, phiên bản nguyên trạng còn nguyên; (6) bank-off: ứng dụng không cấu hình kho ngân
+ *     hàng vẫn đọc câu đã nhập và tạo đề từ câu đó (đường thi chỉ đọc kho trung tâm). Chạy bài thi và chấm điểm đầy đủ
+ *     thuộc các suite quiz hiện hữu (chúng chỉ vận hành trên slot trong kho trung tâm); ca này khoá phần delta của PR:
+ *     đường trung tâm không gọi kho ngân hàng.
  *
- * Vòng sửa theo phán quyết trên PR #612 bổ sung: (7) đường đọc nội
- * dung gói đi qua cổng người xem `question:useall` — học sinh bị từ
- * chối ở cả 3 route đọc, giáo viên đọc được; (8) trung tâm liệt kê
- * được sự kiện rút chưa ghi nhận qua API mà không cần biết trước id
- * sự kiện, ghi nhận xong thì hết; (9) nhập bị từ chối ở cổng quyền
- * `question:add` thì không để lại dòng importer ở kho ngân hàng và
- * không có dòng nhập ở kho trung tâm.
+ * Vòng sửa theo phán quyết trên PR #612 bổ sung: (7) đường đọc nội dung gói đi qua cổng người xem `question:useall` —
+ * học sinh bị từ chối ở cả 3 route đọc, giáo viên đọc được; (8) trung tâm liệt kê được sự kiện rút chưa ghi nhận qua
+ * API mà không cần biết trước id sự kiện, ghi nhận xong thì hết; (9) nhập bị từ chối ở cổng quyền `question:add` thì
+ * không để lại dòng importer ở kho ngân hàng và không có dòng nhập ở kho trung tâm.
  *
- * Vòng sửa 2 theo phán quyết trên PR #612 bổ sung: (10) hai route
- * sự kiện phía trung tâm (liệt kê + ghi nhận) cũng đi qua cổng
- * `question:useall` tại context hệ thống — học sinh bị từ chối ở
- * cả hai route, lần ghi nhận bị từ chối không để lại vết ghi nhận
- * nào và sự kiện vẫn còn nguyên trong danh sách chờ của giáo viên,
- * giáo viên ghi nhận xong thì sự kiện hết như hành vi hiện hành.
+ * Vòng sửa 2 theo phán quyết trên PR #612 bổ sung: (10) hai route sự kiện phía trung tâm (liệt kê + ghi nhận) cũng đi
+ * qua cổng `question:useall` tại context hệ thống — học sinh bị từ chối ở cả hai route, lần ghi nhận bị từ chối không
+ * để lại vết ghi nhận nào và sự kiện vẫn còn nguyên trong danh sách chờ của giáo viên, giáo viên ghi nhận xong thì sự
+ * kiện hết như hành vi hiện hành.
  */
 const BANK_DATABASE = 'lms_test_bank_585';
 const BANK_ROLE = 'lms_bank_test_585';
@@ -304,8 +293,8 @@ describe('Ngân hàng hệ thống thành kho riêng + API (issue #585)', () => 
   it('đọc nội dung gói qua cổng người xem: học sinh bị từ chối ở cả 3 route đọc, giáo viên đọc được', async () => {
     const created = await publish('Câu để kiểm cổng người xem');
     const questionId = created.question.id;
-    // Gói câu chứa đáp án nên cả 3 route đọc phải dừng ở cổng người
-    // xem và trả 404 như câu không tồn tại, không lộ sự tồn tại.
+    // Gói câu chứa đáp án nên cả 3 route đọc phải dừng ở cổng người xem và trả 404 như câu không tồn tại, không lộ sự
+    // tồn tại.
     for (const path of [
       `/api/v1/system-bank/questions/${questionId}`,
       `/api/v1/system-bank/questions/${questionId}/versions`,
@@ -337,8 +326,8 @@ describe('Ngân hàng hệ thống thành kho riêng + API (issue #585)', () => 
       reason: 'Nội dung lỗi thời',
     });
     expect(withdrawn.status).toBe(201);
-    // Sau khi rút, sự kiện hiện trong danh sách của trung tâm đã
-    // nhập — id sự kiện lấy TỪ danh sách này, không truy vấn DB.
+    // Sau khi rút, sự kiện hiện trong danh sách của trung tâm đã nhập — id sự kiện lấy TỪ danh sách này, không truy vấn
+    // DB.
     const pending = await http(app).get('/api/v1/system-bank/events/pending').set(bearer(teacher.token));
     expect(pending.status).toBe(200);
     const mine = (pending.body as { id: string; type: string; sourceQuestionId: string }[])
@@ -364,11 +353,9 @@ describe('Ngân hàng hệ thống thành kho riêng + API (issue #585)', () => 
       reason: 'Nội dung lỗi thời',
     });
     expect(withdrawn.status).toBe(201);
-    // Id sự kiện đọc thẳng từ kho ngân hàng (như ca rút câu đầu
-    // tiên): học sinh không có đường hợp lệ nào để biết id này —
-    // danh sách chờ là kênh duy nhất và kênh đó cũng đóng với học
-    // sinh — nên ca này đưa id vào tay học sinh để chứng minh cổng
-    // chặn ở chính thao tác ghi nhận, không phải chặn nhờ giấu id.
+    // Id sự kiện đọc thẳng từ kho ngân hàng (như ca rút câu đầu tiên): học sinh không có đường hợp lệ nào để biết id
+    // này — danh sách chờ là kênh duy nhất và kênh đó cũng đóng với học sinh — nên ca này đưa id vào tay học sinh để
+    // chứng minh cổng chặn ở chính thao tác ghi nhận, không phải chặn nhờ giấu id.
     const events = await bankPg.query(
       `SELECT id FROM system_bank_events WHERE source_question_id = $1 AND type = 'question_withdrawn'`,
       [questionId],
@@ -382,15 +369,14 @@ describe('Ngân hàng hệ thống thành kho riêng + API (issue #585)', () => 
     const deniedAck = await http(app).post(`/api/v1/system-bank/events/${eventId}/acknowledge`).set(bearer(student.token)).send();
     expect(deniedAck.status).toBe(403);
     expect((deniedAck.body as { code?: string }).code).toBe('access.capability_denied');
-    // (b) Lần ghi nhận bị từ chối không để lại vết ghi nhận nào và
-    // sự kiện vẫn nằm nguyên trong danh sách chờ của giáo viên.
+    // (b) Lần ghi nhận bị từ chối không để lại vết ghi nhận nào và sự kiện vẫn nằm nguyên trong danh sách chờ của giáo
+    // viên.
     const receipts = await pg.query(`SELECT id FROM system_bank_event_receipts WHERE event_id = $1`, [eventId]);
     expect(receipts.rowCount).toBe(0);
     const pending = await http(app).get('/api/v1/system-bank/events/pending').set(bearer(teacher.token));
     expect(pending.status).toBe(200);
     expect((pending.body as { id: string }[]).find((event) => event.id === eventId)).toBeDefined();
-    // (c) Giáo viên ghi nhận được và sự kiện biến khỏi danh sách
-    // chờ của trung tâm như hành vi hiện hành.
+    // (c) Giáo viên ghi nhận được và sự kiện biến khỏi danh sách chờ của trung tâm như hành vi hiện hành.
     const ack = await http(app).post(`/api/v1/system-bank/events/${eventId}/acknowledge`).set(bearer(teacher.token)).send();
     expect(ack.status).toBe(201);
     const after = await http(app).get('/api/v1/system-bank/events/pending').set(bearer(teacher.token));
@@ -402,14 +388,10 @@ describe('Ngân hàng hệ thống thành kho riêng + API (issue #585)', () => 
     const questionId = created.question.id;
     const teacherRoleId = await roleIdByShortname(app, admin, 'teacher');
     const systemId = await systemContextId(app, admin);
-    // Cấm hẳn question:add của vai giáo viên ở context hệ thống:
-    // PROHIBIT ở context cha thắng mọi ALLOW ở context con (kể cả
-    // vai lead ở bank cá nhân) nên đường nhập chắc chắn dừng ở cổng
-    // quyền. Gỡ cấm cũng qua API (đặt lại INHERIT) ngay trong
-    // finally: evaluator cache kết quả theo version của context,
-    // chỉ đường ghi qua service mới bump version làm mất hiệu lực
-    // cache — xoá thẳng bằng SQL sẽ để lại kết quả cấm trong cache
-    // và rò sang ca khác dùng chung DB.
+    // Cấm hẳn question:add của vai giáo viên ở context hệ thống: PROHIBIT ở context cha thắng mọi ALLOW ở context con
+    // (kể cả vai lead ở bank cá nhân) nên đường nhập chắc chắn dừng ở cổng quyền. Gỡ cấm cũng qua API (đặt lại INHERIT)
+    // ngay trong finally: evaluator cache kết quả theo version của context, chỉ đường ghi qua service mới bump version
+    // làm mất hiệu lực cache — xoá thẳng bằng SQL sẽ để lại kết quả cấm trong cache và rò sang ca khác dùng chung DB.
     await setOverride(app, admin, teacherRoleId, 'question:add', systemId, -1000);
     try {
       const denied = await http(app).post('/api/v1/system-bank/import').set(bearer(teacher.token)).send({
@@ -430,9 +412,8 @@ describe('Ngân hàng hệ thống thành kho riêng + API (issue #585)', () => 
       [questionId],
     );
     expect(importRows.rowCount).toBe(0);
-    // Đối chứng: gỡ cấm xong thì chính câu đó nhập được và dòng
-    // importer xuất hiện — chứng tỏ lần từ chối ở trên dừng đúng ở
-    // cổng quyền chứ không phải câu có lỗi khác.
+    // Đối chứng: gỡ cấm xong thì chính câu đó nhập được và dòng importer xuất hiện — chứng tỏ lần từ chối ở trên dừng
+    // đúng ở cổng quyền chứ không phải câu có lỗi khác.
     const imported = await http(app).post('/api/v1/system-bank/import').set(bearer(teacher.token)).send({
       sourceQuestionId: questionId,
     });
@@ -453,8 +434,8 @@ describe('Ngân hàng hệ thống thành kho riêng + API (issue #585)', () => 
     const centreQuestionId = imported.body.question.question.id as string;
     delete process.env.SYSTEM_BANK_DATABASE_URL;
     appNoBank = await createTestApp();
-    // Token JWT ký bằng JWT_SECRET của tiến trình nên token từ app1 vẫn
-    // hợp lệ trên app2 (cùng env, cùng DB nghiệp vụ shard).
+    // Token JWT ký bằng JWT_SECRET của tiến trình nên token từ app1 vẫn hợp lệ trên app2 (cùng env, cùng DB nghiệp vụ
+    // shard).
     const read = await http(appNoBank).get(`/api/v1/questions/${centreQuestionId}`).set(bearer(teacher.token));
     expect(read.status).toBe(200);
     expect(read.body.latestVersion.questionText).toMatchObject(doc('Câu cho bank-off'));

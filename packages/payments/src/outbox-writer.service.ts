@@ -2,13 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { sql, type CentreDB, type CentreDb, type CentreTx } from '@lms/db';
 
 /**
- * Kiểu JSON của cột jsonb theo codegen (xem chú thích tương ứng
- * trong `payments.repository.ts`); helper này cũng giữ private
- * trong file vì cùng lý do TS2883.
+ * Kiểu JSON của cột jsonb theo codegen (xem chú thích tương ứng trong `payments.repository.ts`); helper này cũng giữ
+ * private trong file vì cùng lý do TS2883.
  */
 type CentreJson = NonNullable<CentreDB['payments']['data']>;
 
-/** Xâu hoá một giá trị jsonb để ghi qua Kysely (xem `payments.repository.ts`). */
 function jsonbValue(value: unknown) {
   return sql<CentreJson>`${JSON.stringify(value)}::jsonb`;
 }
@@ -23,26 +21,18 @@ export interface OutboxEventInput {
 }
 
 /**
- * Bề mặt phát outbox dùng chung của package `@lms/payments` (issue
- * #538): ghi dòng sự kiện vào bảng `outbox_events` dùng chung với
- * ĐÚNG khuôn dòng của `OutboxService` phía apps/api (aggregate, type,
- * payload, tenant_id; tenant được gương vào payload khi payload chưa
- * có khoá `tenantId`, để các consumer chạy ở ngữ cảnh platform biết
- * sự kiện thuộc tenant nào).
+ * Bề mặt phát outbox dùng chung của package `@lms/payments` (issue #538): ghi dòng sự kiện vào bảng `outbox_events`
+ * dùng chung với ĐÚNG khuôn dòng của `OutboxService` phía apps/api (aggregate, type, payload, tenant_id; tenant được
+ * gương vào payload khi payload chưa có khoá `tenantId`, để các consumer chạy ở ngữ cảnh platform biết sự kiện thuộc
+ * tenant nào).
  *
- * Vì sao bề mặt này tồn tại cạnh `OutboxService` của apps/api: các
- * luồng của package (matching IPN SePay) phải chạy được ở cả tiến
- * trình API lẫn tiến trình worker, mà `OutboxService` của apps/api
- * còn một hành vi riêng của tiến trình API — tenant hiệu lực mặc
- * định lấy từ ngữ cảnh ALS của request (`tenantAls`). Ngữ cảnh chạy
- * của matching (consumer theo nhịp trong API; điểm quét ở worker ở
- * issue con tiếp theo của #522) không nằm trong request nào nên
- * store ALS luôn rỗng và mặc định đó luôn cho kết quả null; bề mặt
- * này vì vậy lấy tenant CHỈ từ tham số tường minh của nơi gọi, cho
- * cùng kết quả ghi ở mọi ngữ cảnh matching. Các luồng nghiệp vụ khác
- * của apps/api (phát sự kiện trong transaction của request) vẫn dùng
- * `OutboxService` của apps/api như cũ — bề mặt này chỉ phục vụ các
- * service của package.
+ * Vì sao bề mặt này tồn tại cạnh `OutboxService` của apps/api: các luồng của package (matching IPN SePay) phải chạy
+ * được ở cả tiến trình API lẫn tiến trình worker, mà `OutboxService` của apps/api còn một hành vi riêng của tiến trình
+ * API — tenant hiệu lực mặc định lấy từ ngữ cảnh ALS của request (`tenantAls`). Ngữ cảnh chạy của matching (consumer
+ * theo nhịp trong API; điểm quét ở worker ở issue con tiếp theo của #522) không nằm trong request nào nên store ALS
+ * luôn rỗng và mặc định đó luôn cho kết quả null; bề mặt này vì vậy lấy tenant CHỈ từ tham số tường minh của nơi gọi,
+ * cho cùng kết quả ghi ở mọi ngữ cảnh matching. Các luồng nghiệp vụ khác của apps/api (phát sự kiện trong transaction
+ * của request) vẫn dùng `OutboxService` của apps/api như cũ — bề mặt này chỉ phục vụ các service của package.
  */
 @Injectable()
 export class OutboxWriterService {

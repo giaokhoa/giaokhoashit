@@ -12,8 +12,8 @@ import { createGradeItem, setGrade } from '../../support/assessment-helpers';
 const PROHIBIT = -1000;
 
 /**
- * Luồng Platform: Search / Web Services / Content Bank / Analytics / Reports.
- * Oracle Moodle 5.3 (MOODLE_503_STABLE, đã kiểm chứng live 22/10/2026):
+ * Luồng Platform: Search / Web Services / Content Bank / Analytics / Reports. Oracle Moodle 5.3 (MOODLE_503_STABLE, đã
+ * kiểm chứng live 22/10/2026):
  * - search/tests/manager_test.php + base_test.php (area registry, quyền khi tìm)
  * - webservice/tests/externallib_test.php (token + các hàm service)
  * - contentbank/tests/contentbank_test.php (nội dung theo context, draft/public)
@@ -67,7 +67,8 @@ describe('Dịch vụ platform: kiểm tra lại quyền tìm kiếm, token webs
     expect(stale.status).toBeLessThan(300);
     const res2 = await http(app).get(`/api/v1/search?q=StaleSecretCourse`).set('Authorization', `Bearer ${blockedToken}`);
     expect((res2.body as unknown[]).length).toBe(0);
-    // Admin (site admin bypass có chủ đích) vẫn thấy tài liệu stale vì area fetch trả null? — re-check bản ghi gốc: itemId không tồn tại nên admin cũng không thấy.
+    // Admin (site admin bypass có chủ đích) vẫn thấy tài liệu stale vì area fetch trả null? — re-check bản ghi gốc:
+    // itemId không tồn tại nên admin cũng không thấy.
     const resAdmin = await http(app).get(`/api/v1/search?q=StaleSecretCourse`).set('Authorization', `Bearer ${admin}`);
     expect((resAdmin.body as unknown[]).length).toBe(0);
     void student;
@@ -94,30 +95,27 @@ describe('Dịch vụ platform: kiểm tra lại quyền tìm kiếm, token webs
       expect(res.status).toBe(200);
       return res.body as Doc[];
     };
-    // Người dùng đích, được lập chỉ mục qua area thật (fetch mới không
-    // còn đưa email vào nội dung lập chỉ mục).
+    // Người dùng đích, được lập chỉ mục qua area thật (fetch mới không còn đưa email vào nội dung lập chỉ mục).
     const target = await createUserViaApi(app, admin);
     const idx = await http(app).post('/api/v1/search/index').set('Authorization', `Bearer ${admin}`).send({ area: 'users', itemId: target.id });
     expect(idx.body.indexed).toBe(true);
     const sysCtx = await systemContextId(app, admin);
     const ALLOW = 1;
-    // Người tìm KHÔNG có quyền quản trị người dùng nhưng xem được hồ sơ
-    // (role riêng chỉ có override ALLOW cho user:viewdetails tại context
-    // hệ thống — đúng cổng lớp 1 hiện hành của area users; không phải
-    // site admin, không giữ user:update ở bất kỳ đâu).
+    // Người tìm KHÔNG có quyền quản trị người dùng nhưng xem được hồ sơ (role riêng chỉ có override ALLOW cho
+    // user:viewdetails tại context hệ thống — đúng cổng lớp 1 hiện hành của area users; không phải site admin, không
+    // giữ user:update ở bất kỳ đâu).
     const viewer = await createUserViaApi(app, admin);
     const viewerRole = await createRoleViaApi(app, admin);
     await assignRole(app, admin, viewer.id, viewerRole, sysCtx);
     await setOverride(app, admin, viewerRole, 'user:viewdetails', sysCtx, ALLOW);
     const viewerToken = (await login(app, viewer.username, STRONG_PASSWORD)).accessToken;
-    // Một tài khoản hoàn toàn thường (không gán thêm quyền nào): dù thấy
-    // hay không thấy tài liệu, payload của họ không bao giờ chứa email.
+    // Một tài khoản hoàn toàn thường (không gán thêm quyền nào): dù thấy hay không thấy tài liệu, payload của họ không
+    // bao giờ chứa email.
     const plain = await createUserViaApi(app, admin);
     const plainToken = (await login(app, plain.username, STRONG_PASSWORD)).accessToken;
-    // Người tìm CÓ quyền quản trị người dùng theo đúng định nghĩa áp cho
-    // bề mặt này: không phải site admin, nhưng giữ user:update tại
-    // context hệ thống (kèm user:viewdetails để qua cổng lớp 1 như một
-    // tài khoản quản trị người dùng thật).
+    // Người tìm CÓ quyền quản trị người dùng theo đúng định nghĩa áp cho bề mặt này: không phải site admin, nhưng giữ
+    // user:update tại context hệ thống (kèm user:viewdetails để qua cổng lớp 1 như một tài khoản quản trị người dùng
+    // thật).
     const mgr = await createUserViaApi(app, admin);
     const mgrRole = await createRoleViaApi(app, admin);
     await assignRole(app, admin, mgr.id, mgrRole, sysCtx);
@@ -126,13 +124,13 @@ describe('Dịch vụ platform: kiểm tra lại quyền tìm kiếm, token webs
     const mgrToken = (await login(app, mgr.username, STRONG_PASSWORD)).accessToken;
 
     const expectHiddenForNonManager = async (token: string) => {
-      // Tìm theo username: tài liệu users hiện ra nhưng toàn bộ payload
-      // không chứa email của người bị tìm ở bất kỳ trường nào.
+      // Tìm theo username: tài liệu users hiện ra nhưng toàn bộ payload không chứa email của người bị tìm ở bất kỳ
+      // trường nào.
       const byName = await searchAs(token, target.username);
       expect(byName.some((d) => d.area === 'users' && d.itemId === target.id)).toBe(true);
       expect(JSON.stringify(byName)).not.toContain(target.email);
-      // Tìm bằng địa chỉ email đầy đủ: không có kết quả users nào khớp
-      // theo email đó — tính chất truy vấn cũng không được lộ email.
+      // Tìm bằng địa chỉ email đầy đủ: không có kết quả users nào khớp theo email đó — tính chất truy vấn cũng không
+      // được lộ email.
       const byEmail = await searchAs(token, target.email);
       expect(byEmail.some((d) => d.area === 'users' && d.itemId === target.id)).toBe(false);
       expect(JSON.stringify(byEmail)).not.toContain(target.email);
@@ -154,8 +152,7 @@ describe('Dịch vụ platform: kiểm tra lại quyền tìm kiếm, token webs
     await expectFullForManager(admin);
     await expectFullForManager(mgrToken);
 
-    // Sau khi lập chỉ mục lại toàn bộ, cả hai hành vi vẫn đúng — cơ chế
-    // sửa không bị việc dựng lại chỉ mục phá vỡ.
+    // Sau khi lập chỉ mục lại toàn bộ, cả hai hành vi vẫn đúng — cơ chế sửa không bị việc dựng lại chỉ mục phá vỡ.
     const re = await http(app).post('/api/v1/search/reindex').set('Authorization', `Bearer ${admin}`).send({});
     expect(re.status).toBeLessThan(300);
     await expectHiddenForNonManager(viewerToken);
@@ -170,13 +167,10 @@ describe('Dịch vụ platform: kiểm tra lại quyền tìm kiếm, token webs
       expect(res.status).toBe(200);
       return res.body as Doc[];
     };
-    // Người dùng đích, nhưng tài liệu trong chỉ mục là bản kiểu cũ còn
-    // sót từ trước khi sửa: content mang cả username lẫn email, ghi
-    // thẳng qua route index-raw thay vì qua fetch mới. Tài liệu cũ thật
-    // phải mang đúng context mà fetch của area users từng ghi — context
-    // người dùng cấp 30 của chính target (tạo cùng lúc với tài khoản);
-    // ghi context hệ thống thì lớp re-check loại tài liệu vì context
-    // không khớp bản ghi gốc, và đó không còn là tài liệu cũ thật.
+    // Người dùng đích, nhưng tài liệu trong chỉ mục là bản kiểu cũ còn sót từ trước khi sửa: content mang cả username
+    // lẫn email, ghi thẳng qua route index-raw thay vì qua fetch mới. Tài liệu cũ thật phải mang đúng context mà fetch
+    // của area users từng ghi — context người dùng cấp 30 của chính target (tạo cùng lúc với tài khoản); ghi context hệ
+    // thống thì lớp re-check loại tài liệu vì context không khớp bản ghi gốc, và đó không còn là tài liệu cũ thật.
     const target = await createUserViaApi(app, admin);
     const sysCtx = await systemContextId(app, admin);
     const userCtx = await contextIdByLevelInstance(app, admin, 30, target.id);
@@ -184,17 +178,15 @@ describe('Dịch vụ platform: kiểm tra lại quyền tìm kiếm, token webs
       .send({ area: 'users', itemId: target.id, title: 'Test User', content: `${target.username} ${target.email}`, contextId: userCtx, ownerId: target.id });
     expect(stale.status).toBeLessThan(300);
     const ALLOW = 1;
-    // Người tìm KHÔNG có quyền quản trị người dùng: không phải site
-    // admin, không giữ user:update ở bất kỳ đâu, chỉ có user:viewdetails
-    // tại context hệ thống để qua cổng lớp 1 của area users.
+    // Người tìm KHÔNG có quyền quản trị người dùng: không phải site admin, không giữ user:update ở bất kỳ đâu, chỉ có
+    // user:viewdetails tại context hệ thống để qua cổng lớp 1 của area users.
     const viewer = await createUserViaApi(app, admin);
     const viewerRole = await createRoleViaApi(app, admin);
     await assignRole(app, admin, viewer.id, viewerRole, sysCtx);
     await setOverride(app, admin, viewerRole, 'user:viewdetails', sysCtx, ALLOW);
     const viewerToken = (await login(app, viewer.username, STRONG_PASSWORD)).accessToken;
-    // Người tìm CÓ quyền quản trị người dùng theo đúng định nghĩa áp
-    // cho bề mặt này: không phải site admin, nhưng giữ user:update tại
-    // context hệ thống (kèm user:viewdetails để qua cổng lớp 1).
+    // Người tìm CÓ quyền quản trị người dùng theo đúng định nghĩa áp cho bề mặt này: không phải site admin, nhưng giữ
+    // user:update tại context hệ thống (kèm user:viewdetails để qua cổng lớp 1).
     const mgr = await createUserViaApi(app, admin);
     const mgrRole = await createRoleViaApi(app, admin);
     await assignRole(app, admin, mgr.id, mgrRole, sysCtx);
@@ -202,9 +194,8 @@ describe('Dịch vụ platform: kiểm tra lại quyền tìm kiếm, token webs
     await setOverride(app, admin, mgrRole, 'user:update', sysCtx, ALLOW);
     const mgrToken = (await login(app, mgr.username, STRONG_PASSWORD)).accessToken;
 
-    // Người không có quyền: tìm theo username vẫn nhận tài liệu, nhưng
-    // payload đã định hình lại thành đúng username, không còn email ở
-    // bất kỳ trường nào; tìm bằng email đầy đủ không ra tài liệu đó.
+    // Người không có quyền: tìm theo username vẫn nhận tài liệu, nhưng payload đã định hình lại thành đúng username,
+    // không còn email ở bất kỳ trường nào; tìm bằng email đầy đủ không ra tài liệu đó.
     const byName = await searchAs(viewerToken, target.username);
     const hiddenDoc = byName.find((d) => d.area === 'users' && d.itemId === target.id);
     expect(hiddenDoc).toBeDefined();
@@ -214,8 +205,7 @@ describe('Dịch vụ platform: kiểm tra lại quyền tìm kiếm, token webs
     expect(byEmail.some((d) => d.area === 'users' && d.itemId === target.id)).toBe(false);
     expect(JSON.stringify(byEmail)).not.toContain(target.email);
 
-    // Người có quyền: vẫn nhận content mang email, cả khi tìm theo
-    // username lẫn khi tìm bằng email đầy đủ.
+    // Người có quyền: vẫn nhận content mang email, cả khi tìm theo username lẫn khi tìm bằng email đầy đủ.
     for (const token of [admin, mgrToken]) {
       const mgrByName = await searchAs(token, target.username);
       expect(mgrByName.find((d) => d.area === 'users' && d.itemId === target.id)?.content).toContain(target.email);
@@ -264,14 +254,14 @@ describe('Dịch vụ platform: kiểm tra lại quyền tìm kiếm, token webs
     const call = () => http(app).post('/api/v1/webservice/call').send({ token: tok.body.token, functionName: 'core_course_get_courses', args: {} });
     // Chủ token đang hoạt động ⇒ gọi được như thường lệ.
     expect((await call()).status).toBeLessThan(300);
-    // Đình chỉ chủ token: thao tác đình chỉ không thu hồi token, nhưng trạng
-    // thái chủ được kiểm tại lúc dùng nên cùng token đó bị 401 ngay.
+    // Đình chỉ chủ token: thao tác đình chỉ không thu hồi token, nhưng trạng thái chủ được kiểm tại lúc dùng nên cùng
+    // token đó bị 401 ngay.
     await suspendUser(app, admin, student.id);
     const whileSuspended = await call();
     expect(whileSuspended.status).toBe(401);
     expect(whileSuspended.body.code).toBe('webservice.owner_inactive');
-    // Gỡ đình chỉ ⇒ chính token cũ gọi lại được, không cần cấp token mới
-    // (đình chỉ là trạng thái khôi phục được, token không bị thu hồi cứng).
+    // Gỡ đình chỉ ⇒ chính token cũ gọi lại được, không cần cấp token mới (đình chỉ là trạng thái khôi phục được, token
+    // không bị thu hồi cứng).
     const reinstated = await http(app).post(`/api/v1/users/${student.id}/reactivate`).set('Authorization', `Bearer ${admin}`).send({});
     expect(reinstated.status).toBeLessThan(300);
     expect((await call()).status).toBeLessThan(300);

@@ -19,92 +19,56 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Ca đầu-cuối của TIỀN ĐIỀU KIỆN TĐ6 (issue #587): trung tâm CẤP
- * PHÁT MỚI chỉ có dòng tenant trong kho của chính nó — pipeline
- * cấp phát không ghi dòng thư mục nào vào kho chung — nên mọi
- * đường quản trị theo `:tenantId` phải phân giải được đích kho
- * từ ngữ cảnh không gian của request (địa chỉ riêng của trung
- * tâm) thay vì chỉ tra dòng thư mục ở kho chung.
+ * Ca đầu-cuối của TIỀN ĐIỀU KIỆN TĐ6 (issue #587): trung tâm CẤP PHÁT MỚI chỉ có dòng tenant trong kho của chính nó —
+ * pipeline cấp phát không ghi dòng thư mục nào vào kho chung — nên mọi đường quản trị theo `:tenantId` phải phân giải
+ * được đích kho từ ngữ cảnh không gian của request (địa chỉ riêng của trung tâm) thay vì chỉ tra dòng thư mục ở kho
+ * chung.
  *
- * Trạng thái trước TĐ6 (bằng chứng sống của thí điểm nhantin
- * ngày 01/11/2026): quản trị trung tâm đăng nhập thành công tại
- * địa chỉ của trung tâm, nhưng lời gọi tạo người dùng đầu tiên
- * `POST /api/v1/tenants/<tenantId>/users` trả 404
- * `tenant.not_found` vì bước kiểm tra tenant đọc ở kho chung;
- * ba lượt đọc quản trị (chi tiết tenant, danh sách thành viên,
- * danh sách người dùng) cùng vấp một gốc ở bước suy slug từ
- * dòng thư mục kho chung.
+ * Trạng thái trước TĐ6 (bằng chứng sống của thí điểm nhantin ngày 01/11/2026): quản trị trung tâm đăng nhập thành công
+ * tại địa chỉ của trung tâm, nhưng lời gọi tạo người dùng đầu tiên `POST /api/v1/tenants/<tenantId>/users` trả 404
+ * `tenant.not_found` vì bước kiểm tra tenant đọc ở kho chung; ba lượt đọc quản trị (chi tiết tenant, danh sách thành
+ * viên, danh sách người dùng) cùng vấp một gốc ở bước suy slug từ dòng thư mục kho chung.
  *
- * Sửa xong gốc 404, ca (a) vẫn đỏ ở cổng quyền — 403
- * `access.capability_denied` — vì một khuyết tật liên đới thứ
- * hai: cache của cấu hình `siteadmins` trong PermissionEvaluator
- * chốt khoá theo `DATABASE_URL` của tiến trình, mù kho, nên
- * danh sách site admin của kho nào được đọc trước sẽ thắng cả
- * TTL cho mọi ngữ cảnh; quản trị của trung tâm kho riêng (là
- * site admin của chính kho của mình theo pipeline cấp phát)
- * không bao giờ được nhận diện khi cache đã chứa danh sách của
- * kho chung. TĐ6 sửa cả hai trong cùng một luồng: khoá cache
- * mang danh tính của kho mà ngữ cảnh hiện tại đang đọc (kho
- * chung là tên database chính của tiến trình; kho riêng là
- * tên database trong sổ đăng ký mà tầng phân giải kho đã chốt
- * cho ngữ cảnh).
+ * Sửa xong gốc 404, ca (a) vẫn đỏ ở cổng quyền — 403 `access.capability_denied` — vì một khuyết tật liên đới thứ hai:
+ * cache của cấu hình `siteadmins` trong PermissionEvaluator chốt khoá theo `DATABASE_URL` của tiến trình, mù kho, nên
+ * danh sách site admin của kho nào được đọc trước sẽ thắng cả TTL cho mọi ngữ cảnh; quản trị của trung tâm kho riêng
+ * (là site admin của chính kho của mình theo pipeline cấp phát) không bao giờ được nhận diện khi cache đã chứa danh
+ * sách của kho chung. TĐ6 sửa cả hai trong cùng một luồng: khoá cache mang danh tính của kho mà ngữ cảnh hiện tại đang
+ * đọc (kho chung là tên database chính của tiến trình; kho riêng là tên database trong sổ đăng ký mà tầng phân giải kho
+ * đã chốt cho ngữ cảnh).
  *
- * Cô lập của chính bài test: mọi kho bài test dựng (kho riêng
- * của trung tâm và kho control plane) mang tên duy nhất theo
- * lượt chạy, nên khoá cache suy từ tên kho cũng duy nhất theo
- * lượt — lượt chạy lại trên cùng một Redis giữ nguyên không
- * bao giờ đọc trúng danh sách quản trị của lượt trước (danh
- * sách đó mang id quản trị của một thế hệ dữ kiện đã bị xoá–
- * tạo lại cùng tên kho), và không lượt chạy nào phải xoá khoá
- * cache bằng tay để xanh. Nhờ đó kết quả xanh của bài test
- * này phân biệt được "code đã đúng" với "cache đã được dọn
- * tay" — đúng bản chất bằng chứng hồi quy của khuyết tật
+ * Cô lập của chính bài test: mọi kho bài test dựng (kho riêng của trung tâm và kho control plane) mang tên duy nhất
+ * theo lượt chạy, nên khoá cache suy từ tên kho cũng duy nhất theo lượt — lượt chạy lại trên cùng một Redis giữ nguyên
+ * không bao giờ đọc trúng danh sách quản trị của lượt trước (danh sách đó mang id quản trị của một thế hệ dữ kiện đã bị
+ * xoá– tạo lại cùng tên kho), và không lượt chạy nào phải xoá khoá cache bằng tay để xanh. Nhờ đó kết quả xanh của bài
+ * test này phân biệt được "code đã đúng" với "cache đã được dọn tay" — đúng bản chất bằng chứng hồi quy của khuyết tật
  * cache ở trên.
  *
- * Bối cảnh dựng đúng trạng thái sau cấp phát: database riêng +
- * role riêng trên cụm test, baseline áp bằng role chủ kho, sổ
- * đăng ký ở database control plane riêng; dữ kiện nền ghi
- * THẲNG vào kho riêng theo đúng các bước của pipeline cấp phát
- * (context hệ thống, dòng tenant sinh id tại kho đích, context
- * tenant, tài khoản quản trị đầu tiên + membership, cấu hình
- * `siteadmins` của chính kho đó) — kho chung KHÔNG có dòng
- * tenant của trung tâm này ở bất kỳ thời điểm nào.
+ * Bối cảnh dựng đúng trạng thái sau cấp phát: database riêng + role riêng trên cụm test, baseline áp bằng role chủ kho,
+ * sổ đăng ký ở database control plane riêng; dữ kiện nền ghi THẲNG vào kho riêng theo đúng các bước của pipeline cấp
+ * phát (context hệ thống, dòng tenant sinh id tại kho đích, context tenant, tài khoản quản trị đầu tiên + membership,
+ * cấu hình `siteadmins` của chính kho đó) — kho chung KHÔNG có dòng tenant của trung tâm này ở bất kỳ thời điểm nào.
  *
  * Các ca khoá:
- * (a) quản trị của trung tâm chỉ-có-ở-kho-riêng tạo được người
- *     dùng qua endpoint thật tại địa chỉ của trung tâm (201),
- *     người dùng nằm trong kho đích (không ở kho chung), ba
- *     lượt đọc quản trị tại địa chỉ của trung tâm thấy đúng dữ
- *     kiện ở kho đích, và mục thư mục thành viên ở control
- *     plane được ghi trong cùng thao tác như trước;
- * (a2) `siteadmins` hợp nhất một chiều trên cùng một Redis
- *     dùng chung: nạp cache từ kho chung trước rồi chấm trong
- *     ngữ cảnh kho riêng vẫn nhận diện đúng quản trị của kho
- *     riêng VÀ quản trị platform (lớp phủ một chiều giữ lượt
- *     đọc A1 của bề mặt platform, spec TĐ3), và sau khi cache
- *     của kho riêng đã nạp, ngữ cảnh kho chung vẫn chỉ thấy
- *     danh sách của kho chung — danh sách kho riêng không bao
- *     giờ rò sang;
- * (a3) cổng đăng nhập platform ghim kho chung: quản trị trung
- *     tâm gọi cổng platform tại địa chỉ trung tâm mình vẫn bị
- *     403 `auth.platform_admin_required` dù phép hợp nhất một
- *     chiều nhận diện quản trị đó trong ngữ cảnh kho riêng;
- * (b) tenant ở kho chung giữ nguyên hành vi: tạo người dùng
- *     qua endpoint thật sinh tài khoản toàn cục ở kho chung
- *     kèm membership ở kho chung;
- * (c) id tenant không tồn tại ở bất kỳ kho nào, gọi tại địa
- *     chỉ của trung tâm kho riêng (và tại địa chỉ platform),
- *     vẫn trả 404 `tenant.not_found` — fail-closed không đổi.
+ * (a) quản trị của trung tâm chỉ-có-ở-kho-riêng tạo được người dùng qua endpoint thật tại địa chỉ của trung tâm (201),
+ *     người dùng nằm trong kho đích (không ở kho chung), ba lượt đọc quản trị tại địa chỉ của trung tâm thấy đúng dữ
+ *     kiện ở kho đích, và mục thư mục thành viên ở control plane được ghi trong cùng thao tác như trước;
+ * (a2) `siteadmins` hợp nhất một chiều trên cùng một Redis dùng chung: nạp cache từ kho chung trước rồi chấm trong ngữ
+ * cảnh kho riêng vẫn nhận diện đúng quản trị của kho riêng VÀ quản trị platform (lớp phủ một chiều giữ lượt đọc A1 của
+ * bề mặt platform, spec TĐ3), và sau khi cache của kho riêng đã nạp, ngữ cảnh kho chung vẫn chỉ thấy danh sách của kho
+ * chung — danh sách kho riêng không bao giờ rò sang; (a3) cổng đăng nhập platform ghim kho chung: quản trị trung tâm
+ * gọi cổng platform tại địa chỉ trung tâm mình vẫn bị 403 `auth.platform_admin_required` dù phép hợp nhất một chiều
+ * nhận diện quản trị đó trong ngữ cảnh kho riêng;
+ * (b) tenant ở kho chung giữ nguyên hành vi: tạo người dùng qua endpoint thật sinh tài khoản toàn cục ở kho chung kèm
+ *     membership ở kho chung;
+ * (c) id tenant không tồn tại ở bất kỳ kho nào, gọi tại địa chỉ của trung tâm kho riêng (và tại địa chỉ platform), vẫn
+ *     trả 404 `tenant.not_found` — fail-closed không đổi.
  */
-// Cô lập cache giữa các lượt chạy: khoá cache `siteadmins` của
-// evaluator mang tên database của kho đang được đọc, nên mọi kho
-// bài test này dựng đều mang tên duy nhất theo lượt chạy
-// (RUN_SUFFIX) — khoá cache của lượt chạy này vì thế cũng duy
-// nhất, lượt chạy sau không bao giờ trúng mục cache của lượt
-// trước dù Redis được giữ nguyên, và bài test không cần (cũng
-// không được) xoá khoá cache bằng tay để xanh. (Kho của lượt
-// trước còn sót trên cụm được dọn ở beforeAll — chỉ database,
-// không đụng tới Redis.)
+// Cô lập cache giữa các lượt chạy: khoá cache `siteadmins` của evaluator mang tên database của kho đang được đọc, nên
+// mọi kho bài test này dựng đều mang tên duy nhất theo lượt chạy (RUN_SUFFIX) — khoá cache của lượt chạy này vì thế
+// cũng duy nhất, lượt chạy sau không bao giờ trúng mục cache của lượt trước dù Redis được giữ nguyên, và bài test không
+// cần (cũng không được) xoá khoá cache bằng tay để xanh. (Kho của lượt trước còn sót trên cụm được dọn ở beforeAll —
+// chỉ database, không đụng tới Redis.)
 const RUN_SUFFIX = Math.random().toString(36).slice(2, 8);
 const CP_DATABASE = `lms_test_cp_td6_${RUN_SUFFIX}`;
 const CP_ROLE = 'lms_cp_test_td6';
@@ -117,7 +81,6 @@ const HOST = `${CENTRE_SLUG}.test.local`;
 
 const UUIDV7_SHIM = `CREATE OR REPLACE FUNCTION uuidv7() RETURNS uuid AS $$ DECLARE ts_ms bigint := (extract(epoch from clock_timestamp()) * 1000)::bigint; b bytea; BEGIN b := decode(lpad(to_hex(ts_ms), 12, '0'), 'hex') || gen_random_bytes(10); b := set_byte(b, 6, (get_byte(b, 6) & 15) | 112); b := set_byte(b, 8, (get_byte(b, 8) & 63) | 128); RETURN encode(b, 'hex')::uuid; END; $$ LANGUAGE plpgsql VOLATILE`;
 
-/** Dựng URL kết nối tới một database trên cùng cụm với database nghiệp vụ test. */
 function clusterUrl(database: string, username?: string, secret?: string): string {
   const base = new URL(process.env.DATABASE_URL!);
   base.pathname = `/${database}`;
@@ -126,7 +89,6 @@ function clusterUrl(database: string, username?: string, secret?: string): strin
   return base.toString();
 }
 
-/** Bọc một định danh Postgres trong dấu nháy kép cho các câu lệnh quản trị của ca test. */
 function quoted(identifier: string): string {
   return `"${identifier.replace(/"/g, '""')}"`;
 }
@@ -141,7 +103,6 @@ async function withClient<T>(connectionString: string, fn: (client: Client) => P
   }
 }
 
-/** Áp một file migration SQL (tách theo dấu phân đoạn của file) lên một database qua kết nối cho trước. */
 async function applySqlFile(connectionString: string, filePath: string, withUuidShim: boolean): Promise<void> {
   await withClient(connectionString, async (client) => {
     if (withUuidShim) {
@@ -159,7 +120,6 @@ async function applySqlFile(connectionString: string, filePath: string, withUuid
   });
 }
 
-/** Áp bộ migration riêng của control plane từ rỗng (đọc chính các file SQL đã sinh trong repo). */
 async function applyControlPlaneMigrations(connectionString: string): Promise<void> {
   const outDir = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'control-plane');
   const folders = readdirSync(outDir, { withFileTypes: true })
@@ -171,13 +131,11 @@ async function applyControlPlaneMigrations(connectionString: string): Promise<vo
   }
 }
 
-/** Áp baseline nghiệp vụ vào kho riêng bằng kết nối của chính role chủ kho đó. */
 async function applyBusinessBaseline(connectionString: string): Promise<void> {
   const baseline = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre', '20261025163710_baseline', 'migration.sql');
   await applySqlFile(connectionString, baseline, true);
 }
 
-/** Đếm dòng theo một cột định danh trong một bảng ở một kho (nền platform tường minh). */
 async function countRows(connectionString: string, table: string, column: string, value: string): Promise<number> {
   return withClient(connectionString, async (client) => {
     await client.query("SELECT set_config('app.platform', 'on', false)");
@@ -209,17 +167,12 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
   };
 
   beforeAll(async () => {
-    // Cấp phát control plane + kho riêng trên cụm test: role
-    // riêng cho từng kho, CONNECT của PUBLIC bị thu hồi.
+    // Cấp phát control plane + kho riêng trên cụm test: role riêng cho từng kho, CONNECT của PUBLIC bị thu hồi.
     await withClient(clusterUrl('postgres'), async (admin) => {
-      // Dọn các kho của những lượt chạy trước còn sót lại: tên
-      // kho mang hậu tố lượt chạy nên lượt này không gặp lại
-      // đúng tên cũ; không dọn thì kho cũ còn giữ vai trò chủ
-      // kho, bước DROP ROLE ở dưới vấp phụ thuộc và cả bài sập
-      // trước ca đầu tiên. Chỉ dọn đúng tiền tố tên kho của bài
-      // test này — Redis và mọi khoá cache không bị đụng tới,
-      // nên điều kiện "chạy lại trên cùng một Redis giữ nguyên"
-      // vẫn nguyên vẹn.
+      // Dọn các kho của những lượt chạy trước còn sót lại: tên kho mang hậu tố lượt chạy nên lượt này không gặp lại
+      // đúng tên cũ; không dọn thì kho cũ còn giữ vai trò chủ kho, bước DROP ROLE ở dưới vấp phụ thuộc và cả bài sập
+      // trước ca đầu tiên. Chỉ dọn đúng tiền tố tên kho của bài test này — Redis và mọi khoá cache không bị đụng tới,
+      // nên điều kiện "chạy lại trên cùng một Redis giữ nguyên" vẫn nguyên vẹn.
       const leftovers = await admin.query<{ datname: string }>(
         "SELECT datname FROM pg_database WHERE datname ~ '^lms_test_(cp|centre)_td6_'",
       );
@@ -247,8 +200,7 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
     process.env.CONTROL_PLANE_DATABASE_URL = cpUrl();
     process.env.SPACE_TEST_TD6_URL = clusterUrl('postgres', CENTRE_ROLE, CENTRE_PASSWORD);
 
-    // Dòng đăng ký kho riêng trong sổ, ghi trước khi ứng dụng
-    // khởi động như các spec kho riêng trước.
+    // Dòng đăng ký kho riêng trong sổ, ghi trước khi ứng dụng khởi động như các spec kho riêng trước.
     const cpPool = new Pool({ connectionString: cpUrl() });
     const cpDb = createControlPlaneKysely(cpPool);
     try {
@@ -269,11 +221,9 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
       await cpDb.destroy();
     }
 
-    // Dữ kiện nền của trung tâm ghi THẲNG vào kho riêng, theo
-    // đúng các bước nền của pipeline cấp phát: context hệ
-    // thống, dòng tenant (id sinh tại kho đích), context
-    // tenant. Kho chung không nhận bất kỳ dòng nào của trung
-    // tâm này.
+    // Dữ kiện nền của trung tâm ghi THẲNG vào kho riêng, theo đúng các bước nền của pipeline cấp phát: context hệ
+    // thống, dòng tenant (id sinh tại kho đích), context tenant. Kho chung không nhận bất kỳ dòng nào của trung tâm
+    // này.
     await withClient(centreUrl(), async (client) => {
       await client.query("SELECT set_config('app.platform', 'on', false)");
       const system = await client.query<{ id: string }>(
@@ -300,12 +250,9 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
     app = await createTestApp();
     adminToken = (await login(app, 'admin', 'Admin123!')).accessToken;
 
-    // Quản trị đầu tiên của trung tâm: tạo bằng chính service
-    // của ứng dụng bên trong kho của trung tâm, membership
-    // trong cùng kho, và định danh quản trị nằm trong cấu hình
-    // `siteadmins` của chính kho đó — đúng trạng thái pipeline
-    // cấp phát để lại (quản trị của một kho là site admin của
-    // kho đó, không có gán vai archetype nào được gieo thêm).
+    // Quản trị đầu tiên của trung tâm: tạo bằng chính service của ứng dụng bên trong kho của trung tâm, membership
+    // trong cùng kho, và định danh quản trị nằm trong cấu hình `siteadmins` của chính kho đó — đúng trạng thái pipeline
+    // cấp phát để lại (quản trị của một kho là site admin của kho đó, không có gán vai archetype nào được gieo thêm).
     const spaceDb = app.get(SpaceDatabaseService, { strict: false });
     const users = app.get(UsersService, { strict: false });
     const tenants = app.get(TenantsService, { strict: false });
@@ -342,8 +289,7 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
   });
 
   it('trung tâm chỉ có ở kho riêng: quản trị trung tâm tạo được người dùng qua endpoint thật và mọi lượt đọc quản trị thấy dữ kiện tại kho đích', async () => {
-    // Tiền điều kiện của ca: kho chung không có dòng tenant của
-    // trung tâm này — đúng trạng thái sau cấp phát.
+    // Tiền điều kiện của ca: kho chung không có dòng tenant của trung tâm này — đúng trạng thái sau cấp phát.
     expect(await countRows(process.env.DATABASE_URL!, 'tenants', 'id', tenantId)).toBe(0);
     expect(await countRows(process.env.DATABASE_URL!, 'tenants', 'slug', CENTRE_SLUG)).toBe(0);
 
@@ -368,8 +314,7 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
     expect(await countRows(process.env.DATABASE_URL!, 'users', 'id', createdBody.id)).toBe(0);
     expect(await countRows(centreUrl(), 'tenant_memberships', 'user_id', createdBody.id)).toBe(1);
 
-    // Hiệu ứng thư mục của đường tạo user trong kho riêng giữ
-    // nguyên: mục thư mục thành viên ở control plane mang định
+    // Hiệu ứng thư mục của đường tạo user trong kho riêng giữ nguyên: mục thư mục thành viên ở control plane mang định
     // danh tại kho đích ở cả hai phía.
     const directoryRows = await withClient(cpUrl(), async (client) => {
       const result = await client.query<{ status: string }>(
@@ -381,10 +326,8 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
     expect(directoryRows).toHaveLength(1);
     expect(directoryRows[0]!.status).toBe('active');
 
-    // Ba lượt đọc quản trị tại địa chỉ của trung tâm đọc tại
-    // kho đích: chi tiết tenant đúng slug, danh sách người
-    // dùng gồm quản trị + người vừa tạo, danh sách thành viên
-    // gồm cả hai membership.
+    // Ba lượt đọc quản trị tại địa chỉ của trung tâm đọc tại kho đích: chi tiết tenant đúng slug, danh sách người dùng
+    // gồm quản trị + người vừa tạo, danh sách thành viên gồm cả hai membership.
     const detail = await http(app).get(`/api/v1/tenants/${tenantId}`).set('Host', HOST).set(auth(centreAdminToken));
     expect(detail.status).toBe(200);
     expect((detail.body as { slug: string }).slug).toBe(CENTRE_SLUG);
@@ -412,9 +355,8 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
     const evaluator = app.get(PermissionEvaluator, { strict: false });
     const spaceDb = app.get(SpaceDatabaseService, { strict: false });
 
-    // Danh sách site admin của kho chung đọc thẳng từ kho chung
-    // làm mốc đối chiếu: chứa quản trị platform đã seed, không
-    // chứa quản trị của trung tâm kho riêng.
+    // Danh sách site admin của kho chung đọc thẳng từ kho chung làm mốc đối chiếu: chứa quản trị platform đã seed,
+    // không chứa quản trị của trung tâm kho riêng.
     const sharedAdmins = await withClient(process.env.DATABASE_URL!, async (client) => {
       await client.query("SELECT set_config('app.platform', 'on', false)");
       const result = await client.query<{ value: unknown }>("SELECT value FROM config WHERE key = 'siteadmins'");
@@ -424,13 +366,10 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
     expect(sharedAdmins).not.toContain(centreAdminId);
     const sharedAdminId = sharedAdmins[0]!;
 
-    // Chiều kho chung → kho riêng: nạp cache bằng lượt đọc ở
-    // ngữ cảnh platform trước (đúng thứ tự làm ca (a) đỏ trước
-    // TĐ6), rồi chấm trong ngữ cảnh kho riêng qua chính
-    // evaluator của ứng dụng — quản trị kho riêng phải được
-    // nhận diện từ danh sách của kho riêng, và quản trị
-    // platform cũng được nhận diện nhờ lớp phủ một chiều (giữ
-    // lượt đọc A1 của bề mặt platform vào kho riêng).
+    // Chiều kho chung → kho riêng: nạp cache bằng lượt đọc ở ngữ cảnh platform trước (đúng thứ tự làm ca (a) đỏ trước
+    // TĐ6), rồi chấm trong ngữ cảnh kho riêng qua chính evaluator của ứng dụng — quản trị kho riêng phải được nhận diện
+    // từ danh sách của kho riêng, và quản trị platform cũng được nhận diện nhờ lớp phủ một chiều (giữ lượt đọc A1 của
+    // bề mặt platform vào kho riêng).
     await tenantAls.run({ platform: true }, async () => {
       expect(await evaluator.isSiteAdmin(sharedAdminId)).toBe(true);
       expect(await evaluator.isSiteAdmin(centreAdminId)).toBe(false);
@@ -444,10 +383,8 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
       { tenantId },
     );
 
-    // Chiều kho riêng → kho chung: cache của kho riêng vừa được
-    // nạp ở lượt trên; quay lại ngữ cảnh platform, kết quả phải
-    // y nguyên — danh sách của kho riêng không rò sang kho
-    // chung.
+    // Chiều kho riêng → kho chung: cache của kho riêng vừa được nạp ở lượt trên; quay lại ngữ cảnh platform, kết quả
+    // phải y nguyên — danh sách của kho riêng không rò sang kho chung.
     await tenantAls.run({ platform: true }, async () => {
       expect(await evaluator.isSiteAdmin(sharedAdminId)).toBe(true);
       expect(await evaluator.isSiteAdmin(centreAdminId)).toBe(false);
@@ -455,12 +392,9 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
   });
 
   it('cổng đăng nhập platform ghim kho chung: quản trị trung tâm gọi tại địa chỉ trung tâm mình vẫn bị 403 auth.platform_admin_required', async () => {
-    // Quản trị trung tâm xác thực được tại địa chỉ của trung
-    // tâm (tài khoản và mật khẩu nằm trong kho riêng) nên chỉ
-    // phép tra ghim kho chung mới chặn được: phép hợp nhất một
-    // chiều của isSiteAdmin sẽ nhận diện quản trị này trong
-    // ngữ cảnh kho riêng, nhưng cổng platform không dùng phép
-    // đó mà tra thẳng danh sách của kho chung.
+    // Quản trị trung tâm xác thực được tại địa chỉ của trung tâm (tài khoản và mật khẩu nằm trong kho riêng) nên chỉ
+    // phép tra ghim kho chung mới chặn được: phép hợp nhất một chiều của isSiteAdmin sẽ nhận diện quản trị này trong
+    // ngữ cảnh kho riêng, nhưng cổng platform không dùng phép đó mà tra thẳng danh sách của kho chung.
     const res = await http(app)
       .post('/api/v1/auth/platform/login')
       .set('Host', HOST)

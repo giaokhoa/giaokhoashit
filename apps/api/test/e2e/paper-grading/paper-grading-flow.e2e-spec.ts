@@ -9,16 +9,12 @@ import { renderSheetRgba, simulatePhoto, type SlotFill } from '../../../src/modu
 import { sheetQrPayload } from '../../../src/modules/paper-grading/domain/sheet-pdf';
 
 /**
- * CAM-0 — Chấm bài giấy bằng camera (issue #112), luồng đầu-cuối:
- * sinh lô IN phiếu (ghim layout + roster + mã đề 4 số) → tải PDF (mặc
- * định phiếu DÙNG CHUNG) → dựng ảnh chụp mô phỏng bằng chính template
- * hệ thống → tải ảnh theo lô hoặc theo BUỔI (lô chụp, định tuyến về
- * lô in theo mã đề/QR) qua cổng chất lượng → OMR + định danh (QR / ô
- * tô mã) → hai hàng chờ (ca mơ hồ, gán lô/gán định danh — ghi event
- * log) → ghi attempt "thi giấy" — điểm khớp chấm tay và attempt mang
- * dấu nguồn giấy trong DB. Nguyên tắc cứng được kiểm ở đây: ảnh hỏng
- * bị từ chối ở cổng, ca mơ hồ không bao giờ bị đoán, mã đề mơ hồ/kh lạ
- * không bao giờ bị đoán, học sinh không chạm được bề mặt chấm giấy.
+ * CAM-0 — Chấm bài giấy bằng camera (issue #112), luồng đầu-cuối: sinh lô IN phiếu (ghim layout + roster + mã đề 4 số)
+ * → tải PDF (mặc định phiếu DÙNG CHUNG) → dựng ảnh chụp mô phỏng bằng chính template hệ thống → tải ảnh theo lô hoặc
+ * theo BUỔI (lô chụp, định tuyến về lô in theo mã đề/QR) qua cổng chất lượng → OMR + định danh (QR / ô tô mã) → hai
+ * hàng chờ (ca mơ hồ, gán lô/gán định danh — ghi event log) → ghi attempt "thi giấy" — điểm khớp chấm tay và attempt
+ * mang dấu nguồn giấy trong DB. Nguyên tắc cứng được kiểm ở đây: ảnh hỏng bị từ chối ở cổng, ca mơ hồ không bao giờ bị
+ * đoán, mã đề mơ hồ/kh lạ không bao giờ bị đoán, học sinh không chạm được bề mặt chấm giấy.
  */
 describe('Luồng chấm bài giấy CAM-0', () => {
   let app: INestApplication;
@@ -80,8 +76,8 @@ describe('Luồng chấm bài giấy CAM-0', () => {
         answers: [0, 1, 2, 3].map((k) => ({ text: `Option ${k}`, correct: k === CORRECT[q] })),
       }));
     }
-    // Câu TF-A: 4 mệnh đề với đáp án [Đ, S, Đ, S] — trên phiếu, ý k
-    // chiếm cặp ô (2k, 2k+1) = (Đ, S) nên đáp án đúng là các ô 0,3,4,7.
+    // Câu TF-A: 4 mệnh đề với đáp án [Đ, S, Đ, S] — trên phiếu, ý k chiếm cặp ô (2k, 2k+1) = (Đ, S) nên đáp án đúng là
+    // các ô 0,3,4,7.
     const tfId = await makeQuestion({
       qtype: 'truefalse', defaultMark: 2,
       questionText: {
@@ -101,8 +97,8 @@ describe('Luồng chấm bài giấy CAM-0', () => {
       solution: { answers: [true, false, true, false].map((v, i) => ({ statementId: `s${i + 1}`, value: v })) },
     });
 
-    // Hành trình gộp Đề (#226): soạn đề trong bank → ghim vào khoá;
-    // ctx.quizId từ đây là id của LẦN GHIM (pin) — CAM neo pin.
+    // Hành trình gộp Đề (#226): soạn đề trong bank → ghim vào khoá; ctx.quizId từ đây là id của LẦN GHIM (pin) — CAM
+    // neo pin.
     const draft = await createExamDraft(app, teacher, 'Paper Quiz', 10);
     for (const qid of [...mcIds, tfId]) {
       await addExamSlot(app, teacher, draft, { questionId: qid, maxMark: 2 });
@@ -349,7 +345,7 @@ describe('Luồng chấm bài giấy CAM-0', () => {
     expect((queue.body as unknown[]).length).toBe(0);
   });
 
-  // --- Lát sửa flow: phiếu dùng chung, mã đề, lô in ↔ lô chụp, mã SBD 8 số ---
+  // Lát sửa flow: phiếu dùng chung, mã đề, lô in ↔ lô chụp, mã SBD 8 số
 
   type ScanOutcome = { fileName: string; stored: boolean; scan?: { id: string; batchId: string | null; sessionId: string | null; status: string; studentId: string | null; identitySource: string | null; identityCode: string | null; variantCodeRead: string | null } };
 
@@ -542,27 +538,24 @@ describe('Luồng chấm bài giấy CAM-0', () => {
   });
 
   it('đột biến một chữ số tại vị trí từng rò rỉ rơi vào hàng đợi định danh — không bao giờ lặng lẽ gán cho học viên khác', async () => {
-    // Khoá hồi quy cho phán quyết 6393776449 (PR #120): bộ trọng số cũ
-    // có trọng số 5 (gcd(5,10)=5) nên đột biến 1 chữ số với delta CHẴN
-    // ở vị trí đó làm tổng kiểm tra không đổi → phiếu của học sinh này
-    // thành mã HỢP LỆ của học sinh khác và bị ghi attempt im lặng.
-    // Roster 23 học sinh (A, B + 21 em mới) để mã đột biến có "nạn
-    // nhân" thật trong roster theo công thức cũ.
+    // Khoá hồi quy cho phán quyết 6393776449 (PR #120): bộ trọng số cũ có trọng số 5 (gcd(5,10)=5) nên đột biến 1 chữ
+    // số với delta CHẴN ở vị trí đó làm tổng kiểm tra không đổi → phiếu của học sinh này thành mã HỢP LỆ của học sinh
+    // khác và bị ghi attempt im lặng. Roster 23 học sinh (A, B + 21 em mới) để mã đột biến có "nạn nhân" thật trong
+    // roster theo công thức cũ.
     for (let k = 0; k < 21; k++) {
       const u = await createUserViaApi(app, admin);
       await enrolUser(app, admin, ctx.courseId, ctx.instanceId, u.id);
     }
 
-    // --- Mã lớp 4 số: vị trí 1 (trọng số 5 cũ), delta +2 ---
+    // Mã lớp 4 số: vị trí 1 (trọng số 5 cũ), delta +2
     const classBatch = await createBatch({ examCode: '1006' });
-    // Roster gồm A, B, C, D (các ca trước đã ghi danh thêm) + 21 em mới:
-    // chỉ cần đủ dài để thân 001 và thân 021 cùng có mặt.
+    // Roster gồm A, B, C, D (các ca trước đã ghi danh thêm) + 21 em mới: chỉ cần đủ dài để thân 001 và thân 021 cùng có
+    // mặt.
     expect(classBatch.roster.length).toBeGreaterThanOrEqual(21);
     const first = classBatch.roster.find((r) => Number(r.code.slice(0, 3)) === 1)!;
     const target = classBatch.roster.find((r) => Number(r.code.slice(0, 3)) === 21)!;
     const mutatedClass = `${first.code[0]}${(Number(first.code[1]) + 2) % 10}${first.code.slice(2)}`;
-    // Theo công thức cũ (3,5,7), chuỗi đột biến này CHÍNH LÀ mã của
-    // target — ở hệ cũ phiếu sẽ bị gán thẳng cho target.
+    // Theo công thức cũ (3,5,7), chuỗi đột biến này CHÍNH LÀ mã của target — ở hệ cũ phiếu sẽ bị gán thẳng cho target.
     const td = target.code.slice(0, 3).split('').map(Number);
     const oldFormulaTargetCode = `${td.join('')}${(td[0]! * 3 + td[1]! * 5 + td[2]! * 7) % 10}`;
     expect(mutatedClass).toBe(oldFormulaTargetCode);
@@ -585,10 +578,8 @@ describe('Luồng chấm bài giấy CAM-0', () => {
     const delClass = await http(app).delete(`/api/v1/exam-scans/${outClass.scan!.id}`).set('Authorization', `Bearer ${ctx.teacher}`);
     expect(delClass.status).toBe(200);
 
-    // --- Mã SBD 8 số: vị trí 6 (trọng số 5 cũ), delta +2 ---
-    // Sự thật số học của hệ cũ, kiểm ngay trong test: mã cũ của học
-    // sinh thân 0000001 là 00000015; đột biến +2 ở vị trí 6 cho
-    // 00000035 — chính là mã cũ của học sinh thân 0000003.
+    // Mã SBD 8 số: vị trí 6 (trọng số 5 cũ), delta +2 --- Sự thật số học của hệ cũ, kiểm ngay trong test: mã cũ của học
+    // sinh thân 0000001 là 00000015; đột biến +2 ở vị trí 6 cho 00000035 — chính là mã cũ của học sinh thân 0000003.
     const W_OLD = [3, 5, 7, 9, 1, 3, 5];
     const oldCodeOf = (body: string) => `${body}${body.split('').reduce((s, c, i) => s + Number(c) * W_OLD[i]!, 0) % 10}`;
     const oldFirst = oldCodeOf('0000001');
@@ -613,21 +604,18 @@ describe('Luồng chấm bài giấy CAM-0', () => {
     expect(outSbd.scan!.identityCode).toBe(mutatedSbd);
     const delSbd = await http(app).delete(`/api/v1/exam-scans/${outSbd.scan!.id}`).set('Authorization', `Bearer ${ctx.teacher}`);
     expect(delSbd.status).toBe(200);
-    // Ca này tạo 21 user + ghi danh + 2 lô + 2 ảnh nên cần timeout dài
-    // hơn mặc định 30s của suite.
+    // Ca này tạo 21 user + ghi danh + 2 lô + 2 ảnh nên cần timeout dài hơn mặc định 30s của suite.
   }, 180_000);
 
   it('hoán vị cặp biên SBD (chữ số thân cuối hoán với chữ số kiểm) bị checksum bắt — hàng đợi định danh, không bao giờ là học viên khác', async () => {
-    // Khoá hồi quy cho phán quyết 6394453120 (PR #120): trọng số thân
-    // cuối của mã SBD vòng trước là 9 ≡ −1 (mod 10) — bằng đúng trọng
-    // số hiệu dụng của vị trí số kiểm tra — nên hoán vị hai ký tự
-    // cuối lọt với MỌI cặp chữ số và thành mã thật của thí sinh khác
-    // (00000019 → 00000091). Nay trọng số cuối là 7, hiệu cặp biên
-    // −8: chỉ còn lọt cặp hơn kém đúng 5 như mọi cặp kề khác.
+    // Khoá hồi quy cho phán quyết 6394453120 (PR #120): trọng số thân cuối của mã SBD vòng trước là 9 ≡ −1 (mod 10) —
+    // bằng đúng trọng số hiệu dụng của vị trí số kiểm tra — nên hoán vị hai ký tự cuối lọt với MỌI cặp chữ số và thành
+    // mã thật của thí sinh khác (00000019 → 00000091). Nay trọng số cuối là 7, hiệu cặp biên −8: chỉ còn lọt cặp hơn
+    // kém đúng 5 như mọi cặp kề khác.
     const sbdBatch = await createBatch({ codeDigits: 8, examCode: '2003' });
     const firstSbd = sbdBatch.roster.find((r) => Number(r.code.slice(0, 7)) === 1)!;
-    // Thân 0000001 với trọng số (3,9,7,9,1,3,7) cho mã 00000017:
-    // cặp biên (1, 7) hơn kém 6 — KHÔNG thuộc hạng ±5 đã tuyên bố.
+    // Thân 0000001 với trọng số (3,9,7,9,1,3,7) cho mã 00000017: cặp biên (1, 7) hơn kém 6 — KHÔNG thuộc hạng ±5 đã
+    // tuyên bố.
     expect(firstSbd.code).toBe('00000017');
     const a = Number(firstSbd.code[6]);
     const b = Number(firstSbd.code[7]);

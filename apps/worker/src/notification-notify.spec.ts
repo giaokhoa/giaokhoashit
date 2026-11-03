@@ -2,10 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { NotificationDeliveryService } from './notification-delivery.service';
 
 /**
- * Trích payload JSON từ mẫu `sql` của Kysely: mẫu ghi jsonb chỉ có
- * một tham số là chuỗi JSON đã serialize, bọc trong nút giá trị của
- * cây thao tác — đọc đúng tham số service sẽ gửi đi, không đoán.
- * Hình nút giá trị thuộc API cây thao tác công khai của Kysely.
+ * Trích payload JSON từ mẫu `sql` của Kysely: mẫu ghi jsonb chỉ có một tham số là chuỗi JSON đã serialize, bọc trong
+ * nút giá trị của cây thao tác — đọc đúng tham số service sẽ gửi đi, không đoán. Hình nút giá trị thuộc API cây thao
+ * tác công khai của Kysely.
  */
 function sqlPayloadOf(value: unknown): Record<string, unknown> {
   const node = (value as { toOperationNode: () => { parameters: readonly { value?: unknown }[] } }).toOperationNode();
@@ -15,38 +14,27 @@ function sqlPayloadOf(value: unknown): Record<string, unknown> {
 }
 
 /**
- * Bề mặt phát thông báo TRỌN của worker — `NotificationDeliveryService.notify`
- * (issue con #518 của #491): bản phía worker của notify() phía API cho
- * các sự kiện mà worker là nơi phát và registry có kênh ngoài (hiện là
- * hai provider digest phụ huynh). Spec này ghim các luật cứng của bề
- * mặt dùng chung mà các consumer chuyển sau (issue #520) sẽ dựa vào:
+ * Bề mặt phát thông báo TRỌN của worker — `NotificationDeliveryService.notify` (issue con #518 của #491): bản phía
+ * worker của notify() phía API cho các sự kiện mà worker là nơi phát và registry có kênh ngoài (hiện là hai provider
+ * digest phụ huynh). Spec này ghim các luật cứng của bề mặt dùng chung mà các consumer chuyển sau (issue #520) sẽ dựa
+ * vào:
  *
- * - Nửa popup đi qua chính deliverInApp (đình chỉ/NB-7/tuỳ chọn) —
- *   người nhận bị đình chỉ là điểm dừng sớm: không kênh ngoài, không
- *   sự kiện `notification_created`, như notify() phía API.
- * - Nửa email: tần suất hiệu lực (v2 thắng; chưa đặt → mặc định theo
- *   nhóm 'learning' là 'daily'); 'off' → dispatch log
- *   `skipped-preference` kênh email và không xếp job; khác 'off' →
- *   job 'dispatch' vào hàng đợi dùng chung với jobId = dedupeKey đúng
- *   định dạng phía API (tiền tố tenant) và nội dung là CẶP TỐI THIỂU
- *   HOÁ (luật C-5), không phải nội dung trong-app.
- * - Cuối đường chính luôn ghi sự kiện outbox `notification_created`
- *   (kể cả khi popup bị tuỳ chọn tắt; notificationId null khi popup
- *   không sinh dòng).
- * - Thiếu cặp nội dung ngoài ở môi trường test → ném lỗi
- *   `messaging.external_minimization_required` như phía API.
+ * - Nửa popup đi qua chính deliverInApp (đình chỉ/NB-7/tuỳ chọn) — người nhận bị đình chỉ là điểm dừng sớm: không kênh
+ *   ngoài, không sự kiện `notification_created`, như notify() phía API.
+ * - Nửa email: tần suất hiệu lực (v2 thắng; chưa đặt → mặc định theo nhóm 'learning' là 'daily'); 'off' → dispatch log
+ *   `skipped-preference` kênh email và không xếp job; khác 'off' → job 'dispatch' vào hàng đợi dùng chung với jobId =
+ *   dedupeKey đúng định dạng phía API (tiền tố tenant) và nội dung là CẶP TỐI THIỂU HOÁ (luật C-5), không phải nội dung
+ *   trong-app.
+ * - Cuối đường chính luôn ghi sự kiện outbox `notification_created` (kể cả khi popup bị tuỳ chọn tắt; notificationId
+ *   null khi popup không sinh dòng).
+ * - Thiếu cặp nội dung ngoài ở môi trường test → ném lỗi `messaging.external_minimization_required` như phía API.
  *
- * Handle Kysely giả theo từng bảng như khuôn spec parity
- * (notification-parity.spec.ts): chỉ mô phỏng đúng chuỗi builder mà
- * service dùng (selectFrom → select → where… → executeTakeFirst;
- * insertInto → values → onConflict/returning → execute/
- * executeTakeFirst). Điều kiện where được bỏ qua như fake cũ — mỗi
- * kịch bản tối đa một dòng có nghĩa cho mỗi bảng nên hàng trả về chỉ
- * phụ thuộc bảng; các lần đọc user_preferences được cấp theo hàng
- * đợi vì thứ tự đọc của luật là xác định (popup v2 → cũ loggedin →
- * loggedoff, rồi email v2 → cũ loggedin → loggedoff). Tín hiệu badge
- * qua Redis được stub: hành vi cần khẳng định là luật phân phối,
- * không phải đường tín hiệu.
+ * Handle Kysely giả theo từng bảng như khuôn spec parity (notification-parity.spec.ts): chỉ mô phỏng đúng chuỗi builder
+ * mà service dùng (selectFrom → select → where… → executeTakeFirst; insertInto → values → onConflict/returning →
+ * execute/ executeTakeFirst). Điều kiện where được bỏ qua như fake cũ — mỗi kịch bản tối đa một dòng có nghĩa cho mỗi
+ * bảng nên hàng trả về chỉ phụ thuộc bảng; các lần đọc user_preferences được cấp theo hàng đợi vì thứ tự đọc của luật
+ * là xác định (popup v2 → cũ loggedin → loggedoff, rồi email v2 → cũ loggedin → loggedoff). Tín hiệu badge qua Redis
+ * được stub: hành vi cần khẳng định là luật phân phối, không phải đường tín hiệu.
  */
 function buildNotify(scenario: {
   user?: { id: string; suspended: boolean; deleted: boolean };
@@ -243,11 +231,9 @@ describe('NotificationDeliveryService.notify — chín provider sự kiện thô
   });
 
   it('notify truyền courseId của người nhận đã tắt tiếng khoá đó: dừng sớm skipped-course-mute — không thông báo, không job email, không sự kiện', async () => {
-    // Lượt đọc tuỳ chọn đầu tiên trong deliverInApp là khoá tắt tiếng
-    // theo khoá (NB-4): giá trị 'mute' nghĩa là người nhận đã tắt
-    // tiếng khoá đó theo luật ghi đè của phía API. Provider dùng ở
-    // ca này là activity_due_soon — loại THƯỜNG, không thuộc diện
-    // miễn trừ P3 như grade_updated.
+    // Lượt đọc tuỳ chọn đầu tiên trong deliverInApp là khoá tắt tiếng theo khoá (NB-4): giá trị 'mute' nghĩa là người
+    // nhận đã tắt tiếng khoá đó theo luật ghi đè của phía API. Provider dùng ở ca này là activity_due_soon — loại
+    // THƯỜNG, không thuộc diện miễn trừ P3 như grade_updated.
     const { delivery, queue, insertedNotifications, insertedLogs, insertedOutbox } = buildNotify({
       user: ACTIVE_USER, preferenceReads: ['mute'],
     });

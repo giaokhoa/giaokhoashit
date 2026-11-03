@@ -26,36 +26,27 @@ export const ASSIGN_CAPABILITIES = {
   viewAllSubmissions: 'assign:viewallsubmissions',
 } as const;
 
-/** Component/file area của tệp bài nộp trong module Files. */
 export const ASSIGN_FILE_AREA = 'submission_files';
 
 /**
- * Hoạt động Bài tập nộp tệp/ảnh (Moodle mod_assign, submission type
- * file/ảnh) — lát C2 của Đợt 3, đã hấp thụ hồ sơ "Chấm bài và phản hồi
- * theo năng lực GDPT 2018" (mục 6.1: C2-a..C2-e).
+ * Hoạt động Bài tập nộp tệp/ảnh (Moodle mod_assign, submission type file/ảnh) — lát C2 của Đợt 3, đã hấp thụ hồ sơ
+ * "Chấm bài và phản hồi theo năng lực GDPT 2018" (mục 6.1: C2-a..C2-e).
  *
- * Luồng nghiệp vụ: giáo viên tạo bài tập trong một section (kèm course
- * module + grade item 'mod' như mọi hoạt động); học sinh tải 1–nhiều
- * ảnh/tệp vào bài nộp nháp của mình (nội dung qua module Files: dedup
- * theo content hash, tải xuống bằng signed URL), chốt nộp trước/sau hạn
- * (sau hạn vẫn nhận, đánh dấu trễ).
+ * Luồng nghiệp vụ: giáo viên tạo bài tập trong một section (kèm course module + grade item 'mod' như mọi hoạt động);
+ * học sinh tải 1–nhiều ảnh/tệp vào bài nộp nháp của mình (nội dung qua module Files: dedup theo content hash, tải xuống
+ * bằng signed URL), chốt nộp trước/sau hạn (sau hạn vẫn nhận, đánh dấu trễ).
  *
- * Chấm theo vòng đời TRẢ BÀI (Google Return / Canvas posting policy):
- * giáo viên chấm trên bề mặt bài nộp — dấu vector trên ảnh (đúng/sai/vẽ
- * tay/ghi chú), điểm hoặc mức Đạt/Chưa đạt theo chế độ kết quả của bài,
- * lời phê cấu trúc 3 ô TT 22 (tiến bộ / ưu điểm / hạn chế), kết quả
- * rubric neo YCCĐ — tất cả ở trạng thái NHÁP, học sinh chưa thấy và sổ
- * điểm chưa nhận. Bấm TRẢ BÀI (từng em hoặc theo đợt) mới công bố
- * nguyên tử: gói chấm hiện với học sinh, điểm ghi vào sổ điểm qua grade
- * item của course module (GradesService.recordActivityGrade, source
- * 'mod/assign') tại đúng thời điểm trả nên chảy vào gradebook +
- * completion (theo điểm như mod_quiz), kèm sự kiện thông báo. Sửa gói
- * chấm sau khi đã trả ghi vết kiểm toán (assign_grade_revisions).
+ * Chấm theo vòng đời TRẢ BÀI (Google Return / Canvas posting policy): giáo viên chấm trên bề mặt bài nộp — dấu vector
+ * trên ảnh (đúng/sai/vẽ tay/ghi chú), điểm hoặc mức Đạt/Chưa đạt theo chế độ kết quả của bài, lời phê cấu trúc 3 ô TT
+ * 22 (tiến bộ / ưu điểm / hạn chế), kết quả rubric neo YCCĐ — tất cả ở trạng thái NHÁP, học sinh chưa thấy và sổ điểm
+ * chưa nhận. Bấm TRẢ BÀI (từng em hoặc theo đợt) mới công bố nguyên tử: gói chấm hiện với học sinh, điểm ghi vào sổ
+ * điểm qua grade item của course module (GradesService.recordActivityGrade, source 'mod/assign') tại đúng thời điểm trả
+ * nên chảy vào gradebook + completion (theo điểm như mod_quiz), kèm sự kiện thông báo. Sửa gói chấm sau khi đã trả ghi
+ * vết kiểm toán (assign_grade_revisions).
  *
- * Máy trạng thái bài nộp: (chưa có) → draft → submitted → graded (khi
- * gói chấm khớp attempt_number hiện hành VÀ đã trả bài). Gói chấm còn
- * nháp thì học sinh mở lại được về draft để sửa (nộp lại tăng
- * attempt_number); đã trả bài thì khoá hẳn.
+ * Máy trạng thái bài nộp: (chưa có) → draft → submitted → graded (khi gói chấm khớp attempt_number hiện hành VÀ đã trả
+ * bài). Gói chấm còn nháp thì học sinh mở lại được về draft để sửa (nộp lại tăng attempt_number); đã trả bài thì khoá
+ * hẳn.
  */
 @Injectable()
 export class AssignmentsService {
@@ -73,9 +64,6 @@ export class AssignmentsService {
     private readonly outbox: OutboxService,
   ) {}
 
-  // --- helpers ---------------------------------------------------------------
-
-  /** Lấy bài tập; ném assign.not_found khi vắng. */
   async getAssignment(id: string): Promise<AssignmentRow> {
     const row = await this.repo.getAssignment(id);
     if (!row) throw new NotFoundException({ message: `Assignment ${id} not found`, code: 'assign.not_found' });
@@ -149,7 +137,6 @@ export class AssignmentsService {
   private messageView(m: { id: string; authorId: string; body: string; createdAt: Date }): AssignFeedbackMessageView {
     return { id: m.id, authorId: m.authorId, body: m.body, createdAt: m.createdAt.toISOString() };
   }
-  /** Kết quả theo tiêu chí của một gói chấm (cho view). */
   private async evaluationsView(gradeId: string) {
     const rows = await this.repo.listEvaluations(gradeId);
     return rows.map((r) => ({ criterionId: r.criterionId, levelId: r.levelId, score: r.score, note: r.note }));
@@ -179,7 +166,9 @@ export class AssignmentsService {
       throw new BadRequestException({ message: 'A grade is required before returning this assignment', code: 'assign.grade_incomplete' });
     }
   }
-  /** View các tệp của bài nộp, kèm signed URL để client xem toàn màn (chỉ gọi sau khi đã kiểm quyền truy cập bài nộp). */
+  /**
+   * View các tệp của bài nộp, kèm signed URL để client xem toàn màn (chỉ gọi sau khi đã kiểm quyền truy cập bài nộp).
+   */
   private async submissionFilesView(submissionId: string, viewerId: string): Promise<AssignSubmissionFileView[]> {
     const links = await this.repo.listSubmissionFiles(submissionId);
     const out: AssignSubmissionFileView[] = [];
@@ -217,12 +206,9 @@ export class AssignmentsService {
     }
   }
 
-  // --- CRUD bài tập ------------------------------------------------------------
-
   /**
-   * Tạo bài tập: bản ghi assignment + course module (component mod_assign,
-   * completion tự động theo điểm) + grade item 'mod' mang thang điểm của
-   * bài. Quyền tạo hoạt động do CoursesService kiểm (course:manageactivities).
+   * Tạo bài tập: bản ghi assignment + course module (component mod_assign, completion tự động theo điểm) + grade item
+   * 'mod' mang thang điểm của bài. Quyền tạo hoạt động do CoursesService kiểm (course:manageactivities).
    */
   async createAssignment(actorId: string, courseId: string, input: {
     sectionId: string; name: string; intro?: string;
@@ -262,8 +248,7 @@ export class AssignmentsService {
   }
 
   /**
-   * Sửa cài đặt bài tập (assign:manage); tên và thang điểm được đồng bộ
-   * sang course module và grade item của hoạt động.
+   * Sửa cài đặt bài tập (assign:manage); tên và thang điểm được đồng bộ sang course module và grade item của hoạt động.
    */
   async updateAssignment(actorId: string, assignmentId: string, input: {
     name?: string; intro?: string;
@@ -307,9 +292,8 @@ export class AssignmentsService {
   }
 
   /**
-   * Xoá bài tập cùng bài nộp, tệp liên kết, điểm, course module và grade
-   * item của hoạt động (assign:manage). Bản ghi files của bài nộp được
-   * xoá qua FilesService để refcount/orphan-cleanup chạy đúng.
+   * Xoá bài tập cùng bài nộp, tệp liên kết, điểm, course module và grade item của hoạt động (assign:manage). Bản ghi
+   * files của bài nộp được xoá qua FilesService để refcount/orphan-cleanup chạy đúng.
    */
   async deleteAssignment(actorId: string, assignmentId: string): Promise<void> {
     const assignment = await this.getAssignment(assignmentId);
@@ -329,9 +313,8 @@ export class AssignmentsService {
   }
 
   /**
-   * Các bài tập trong khoá học (cho trang khoá học/danh sách hoạt động).
-   * H14 (rà soát #134): danh sách + cài đặt bài tập là cấu trúc theo khoá —
-   * qua cổng truy cập khoá như các đường đọc nội dung theo khoá khác.
+   * Các bài tập trong khoá học (cho trang khoá học/danh sách hoạt động). H14 (rà soát #134): danh sách + cài đặt bài
+   * tập là cấu trúc theo khoá — qua cổng truy cập khoá như các đường đọc nội dung theo khoá khác.
    */
   async listAssignments(actorId: string, courseId: string): Promise<AssignmentView[]> {
     await this.courses.assertCourseAccess(actorId, courseId);
@@ -339,12 +322,9 @@ export class AssignmentsService {
     return rows.map((r) => this.assignmentView(r));
   }
 
-  // --- View cho người dùng -------------------------------------------------------
-
   /**
-   * View bài tập cho một người xem: cấu hình + bài nộp của chính mình +
-   * cờ quyền tại context của module. Người xem phải có assign:view (học
-   * sinh đã ghi danh hoặc vai giảng dạy tại khoá).
+   * View bài tập cho một người xem: cấu hình + bài nộp của chính mình + cờ quyền tại context của module. Người xem phải
+   * có assign:view (học sinh đã ghi danh hoặc vai giảng dạy tại khoá).
    */
   async getAssignmentForUser(actorId: string, assignmentId: string): Promise<AssignmentForUserView> {
     const assignment = await this.getAssignment(assignmentId);
@@ -383,14 +363,10 @@ export class AssignmentsService {
     };
   }
 
-  // --- Luồng nộp của học sinh ------------------------------------------------------
-
   /**
-   * Tải một tệp vào bài nộp của chính mình (assign:submit). Bài nộp được
-   * tạo dạng nháp khi chưa có; chỉ sửa được khi đang nháp và chưa bị
-   * chấm. Nội dung đi qua FilesService (dedup + signed URL) với context
-   * là context của course module, component 'mod_assign', file area
-   * 'submission_files', item là bài nộp.
+   * Tải một tệp vào bài nộp của chính mình (assign:submit). Bài nộp được tạo dạng nháp khi chưa có; chỉ sửa được khi
+   * đang nháp và chưa bị chấm. Nội dung đi qua FilesService (dedup + signed URL) với context là context của course
+   * module, component 'mod_assign', file area 'submission_files', item là bài nộp.
    */
   async uploadSubmissionFile(actorId: string, assignmentId: string, file: {
     fileName: string; data: Buffer; mimeType?: string;
@@ -426,8 +402,7 @@ export class AssignmentsService {
   }
 
   /**
-   * Gỡ một tệp khỏi bài nộp của chính mình (chỉ khi đang nháp, chưa bị
-   * chấm); bản ghi files được xoá qua FilesService.
+   * Gỡ một tệp khỏi bài nộp của chính mình (chỉ khi đang nháp, chưa bị chấm); bản ghi files được xoá qua FilesService.
    */
   async removeSubmissionFile(actorId: string, assignmentId: string, fileId: string): Promise<void> {
     const assignment = await this.getAssignment(assignmentId);
@@ -473,9 +448,8 @@ export class AssignmentsService {
   }
 
   /**
-   * Mở lại bài đã nộp về nháp để sửa (chỉ khi chưa bị chấm): lần nộp sau
-   * tăng attempt_number; submitted_at được giữ làm dấu vết lần nộp trước
-   * cho tới khi nộp lại.
+   * Mở lại bài đã nộp về nháp để sửa (chỉ khi chưa bị chấm): lần nộp sau tăng attempt_number; submitted_at được giữ làm
+   * dấu vết lần nộp trước cho tới khi nộp lại.
    */
   async reopenSubmission(actorId: string, assignmentId: string): Promise<AssignmentForUserView> {
     const assignment = await this.getAssignment(assignmentId);
@@ -490,13 +464,9 @@ export class AssignmentsService {
     return this.getAssignmentForUser(actorId, assignmentId);
   }
 
-  // --- Luồng chấm của giáo viên ------------------------------------------------------
-
   /**
-   * Danh sách bài nộp cho giáo viên (assign:viewallsubmissions hoặc
-   * assign:grade): mọi học sinh đang ghi danh hiệu lực của khoá, kể cả
-   * người chưa nộp (trạng thái none), kèm trạng thái theo hạn và điểm
-   * hiện tại.
+   * Danh sách bài nộp cho giáo viên (assign:viewallsubmissions hoặc assign:grade): mọi học sinh đang ghi danh hiệu lực
+   * của khoá, kể cả người chưa nộp (trạng thái none), kèm trạng thái theo hạn và điểm hiện tại.
    */
   async listSubmissionsForTeacher(actorId: string, assignmentId: string): Promise<AssignSubmissionSummary[]> {
     const assignment = await this.getAssignment(assignmentId);
@@ -541,12 +511,10 @@ export class AssignmentsService {
   }
 
   /**
-   * Kết quả của MỘT bài tập cho giáo viên (issue #224 — bộ thống kê
-   * Azota, cùng khuôn với quiz results): tham gia = số HS ghi danh đã
-   * nộp so với tổng ghi danh + danh sách chưa nộp; điểm trung bình và
-   * phổ điểm tính trên điểm đã chấm của bài (kể cả gói chấm đang nháp
-   * chưa trả — đây là màn thống kê nội bộ của giáo viên); bảng điểm
-   * từng HS chính là danh sách bài nộp của giáo viên.
+   * Kết quả của MỘT bài tập cho giáo viên (issue #224 — bộ thống kê Azota, cùng khuôn với quiz results): tham gia = số
+   * HS ghi danh đã nộp so với tổng ghi danh + danh sách chưa nộp; điểm trung bình và phổ điểm tính trên điểm đã chấm
+   * của bài (kể cả gói chấm đang nháp chưa trả — đây là màn thống kê nội bộ của giáo viên); bảng điểm từng HS chính là
+   * danh sách bài nộp của giáo viên.
    */
   async getResults(actorId: string, assignmentId: string): Promise<{
     assignment: AssignmentView;
@@ -591,11 +559,6 @@ export class AssignmentsService {
     };
   }
 
-  /**
-   * Chi tiết một bài nộp cho giáo viên chấm (assign:viewallsubmissions
-   * hoặc assign:grade): các tệp kèm signed URL xem toàn màn + điểm/lời
-   * phê hiện tại.
-   */
   async getSubmissionForTeacher(actorId: string, assignmentId: string, userId: string): Promise<AssignSubmissionDetail> {
     const assignment = await this.getAssignment(assignmentId);
     await this.requireTeacherSurface(actorId, assignment);
@@ -655,7 +618,10 @@ export class AssignmentsService {
     }
   }
 
-  /** Điểm suy từ rubric khi giáo viên chấm theo tiêu chí mà không nhập điểm tổng: tổng điểm tiêu chí quy về thang bài, làm tròn 0,1. */
+  /**
+   * Điểm suy từ rubric khi giáo viên chấm theo tiêu chí mà không nhập điểm tổng: tổng điểm tiêu chí quy về thang bài,
+   * làm tròn 0,1.
+   */
   private async suggestGradeFromEvaluations(assignment: AssignmentRow, evaluations: AssignRubricEvaluationInput[]): Promise<number | null> {
     const rubric = await this.repo.getRubric(assignment.id);
     if (!rubric) return null;
@@ -678,12 +644,10 @@ export class AssignmentsService {
   }
 
   /**
-   * LƯU gói chấm (assign:grade) — bản NHÁP theo vòng đời trả bài: điểm/
-   * mức + lời phê cấu trúc + kết quả rubric được lưu vào assign_grades
-   * nhưng CHƯA công bố (học sinh không thấy, sổ điểm chưa nhận). Chỉ
-   * chấm được bài đã chốt nộp. Nếu gói chấm của lần nộp hiện hành ĐÃ TRẢ
-   * thì lần lưu này là SỬA SAU TRẢ: ghi vết kiểm toán (giá trị trước →
-   * sau), ghi lại sổ điểm ngay và phát sự kiện điểm thay đổi.
+   * LƯU gói chấm (assign:grade) — bản NHÁP theo vòng đời trả bài: điểm/ mức + lời phê cấu trúc + kết quả rubric được
+   * lưu vào assign_grades nhưng CHƯA công bố (học sinh không thấy, sổ điểm chưa nhận). Chỉ chấm được bài đã chốt nộp.
+   * Nếu gói chấm của lần nộp hiện hành ĐÃ TRẢ thì lần lưu này là SỬA SAU TRẢ: ghi vết kiểm toán (giá trị trước → sau),
+   * ghi lại sổ điểm ngay và phát sự kiện điểm thay đổi.
    */
   async gradeSubmission(actorId: string, assignmentId: string, userId: string, input: {
     grade?: number; level?: string | null; feedback?: string;
@@ -755,10 +719,9 @@ export class AssignmentsService {
   }
 
   /**
-   * TRẢ BÀI cho một học sinh (assign:grade): công bố nguyên tử gói chấm
-   * nháp của lần nộp hiện hành — điểm/mức + lời phê + annotation + kết
-   * quả rubric cùng hiện với học sinh, điểm ghi vào sổ điểm tại đúng
-   * thời điểm này, kèm sự kiện để tầng thông báo báo cho học sinh.
+   * TRẢ BÀI cho một học sinh (assign:grade): công bố nguyên tử gói chấm nháp của lần nộp hiện hành — điểm/mức + lời
+   * phê + annotation + kết quả rubric cùng hiện với học sinh, điểm ghi vào sổ điểm tại đúng thời điểm này, kèm sự kiện
+   * để tầng thông báo báo cho học sinh.
    */
   async releaseSubmission(actorId: string, assignmentId: string, userId: string): Promise<AssignSubmissionDetail> {
     const assignment = await this.getAssignment(assignmentId);
@@ -768,9 +731,8 @@ export class AssignmentsService {
   }
 
   /**
-   * TRẢ BÀI theo đợt (assign:grade): trả mọi gói chấm nháp đã đầy đủ
-   * (hoặc chỉ các học sinh được liệt kê); gói chấm chưa đầy đủ/chưa chấm
-   * bị bỏ qua và được kê trong kết quả để giáo viên xử lý tiếp.
+   * TRẢ BÀI theo đợt (assign:grade): trả mọi gói chấm nháp đã đầy đủ (hoặc chỉ các học sinh được liệt kê); gói chấm
+   * chưa đầy đủ/chưa chấm bị bỏ qua và được kê trong kết quả để giáo viên xử lý tiếp.
    */
   async releaseBatch(actorId: string, assignmentId: string, userIds?: string[]): Promise<{ releasedCount: number; skippedUserIds: string[] }> {
     const assignment = await this.getAssignment(assignmentId);
@@ -818,12 +780,9 @@ export class AssignmentsService {
     return true;
   }
 
-  // --- Annotation vector trên bề mặt bài nộp --------------------------------
-
   /**
-   * Thả một dấu chấm vector lên tệp của bài nộp (assign:grade) — chạm
-   * đúng/sai tại vị trí, vẽ tay, ghim ghi chú... Dấu thuộc gói chấm:
-   * học sinh chỉ thấy sau khi trả bài.
+   * Thả một dấu chấm vector lên tệp của bài nộp (assign:grade) — chạm đúng/sai tại vị trí, vẽ tay, ghim ghi chú... Dấu
+   * thuộc gói chấm: học sinh chỉ thấy sau khi trả bài.
    */
   async createAnnotation(actorId: string, assignmentId: string, userId: string, input: {
     fileId: string; page?: number; x: number; y: number; kind: string;
@@ -852,7 +811,6 @@ export class AssignmentsService {
     return this.annotationView(row);
   }
 
-  /** Các dấu chấm trên bài nộp của một học sinh (bề mặt chấm của giáo viên). */
   async listAnnotationsForTeacher(actorId: string, assignmentId: string, userId: string): Promise<AssignAnnotationView[]> {
     const assignment = await this.getAssignment(assignmentId);
     await this.requireTeacherSurface(actorId, assignment);
@@ -861,7 +819,6 @@ export class AssignmentsService {
     return (await this.repo.listAnnotations(submission.id)).map((a) => this.annotationView(a));
   }
 
-  /** Sửa một dấu chấm (dời vị trí/đổi nội dung) — assign:grade. */
   async updateAnnotation(actorId: string, assignmentId: string, userId: string, annotationId: string, input: {
     page?: number; x?: number; y?: number;
     color?: string | null; text?: string | null; points?: { x: number; y: number }[] | null;
@@ -881,7 +838,6 @@ export class AssignmentsService {
     return this.annotationView(updated!);
   }
 
-  /** Xoá một dấu chấm — assign:grade. */
   async deleteAnnotation(actorId: string, assignmentId: string, userId: string, annotationId: string): Promise<void> {
     const assignment = await this.getAssignment(assignmentId);
     await this.requireCap(actorId, assignment, ASSIGN_CAPABILITIES.grade);
@@ -898,8 +854,6 @@ export class AssignmentsService {
     }
     return annotation;
   }
-
-  // --- Bảng chấm (rubric / marking guide) -------------------------------------
 
   /** View bảng chấm của bài; mô tả dành cho người chấm chỉ hiện với vai quản lý/chấm. */
   private async rubricView(assignment: AssignmentRow, includeGraderNotes: boolean): Promise<AssignRubricView | null> {
@@ -931,10 +885,8 @@ export class AssignmentsService {
   }
 
   /**
-   * Dựng/cập nhật bảng chấm của bài (assign:manage; thay toàn bộ). Tiêu
-   * chí phải tồn tại TRƯỚC khi chấm (TT 22 Điều 7): bảng chấm bị khoá
-   * ngay khi đã có gói chấm được trả bài, vì tiêu chí là căn cứ của kết
-   * quả đã công bố.
+   * Dựng/cập nhật bảng chấm của bài (assign:manage; thay toàn bộ). Tiêu chí phải tồn tại TRƯỚC khi chấm (TT 22 Điều 7):
+   * bảng chấm bị khoá ngay khi đã có gói chấm được trả bài, vì tiêu chí là căn cứ của kết quả đã công bố.
    */
   async upsertRubric(actorId: string, assignmentId: string, input: {
     title?: string | null;
@@ -980,8 +932,6 @@ export class AssignmentsService {
     return view!;
   }
 
-  // --- Hội thoại phản hồi trên bài đã trả ---------------------------------------
-
   /** Hội thoại phản hồi của một bài nộp: chỉ tồn tại sau khi trả bài; học sinh chỉ xem hội thoại của chính mình. */
   async listFeedbackMessages(actorId: string, assignmentId: string, userId: string): Promise<AssignFeedbackMessageView[]> {
     const assignment = await this.getAssignment(assignmentId);
@@ -994,11 +944,6 @@ export class AssignmentsService {
     return (await this.repo.listMessages(current.id)).map((m) => this.messageView(m));
   }
 
-  /**
-   * Gửi một tin nhắn vào hội thoại phản hồi (học sinh trả lời lại trên
-   * bài đã trả, hoặc giáo viên trao đổi tiếp) — hội thoại chỉ mở SAU khi
-   * trả bài.
-   */
   async postFeedbackMessage(actorId: string, assignmentId: string, userId: string, body: string): Promise<AssignFeedbackMessageView> {
     const assignment = await this.getAssignment(assignmentId);
     if (actorId === userId) await this.requireCap(actorId, assignment, ASSIGN_CAPABILITIES.view);
@@ -1017,8 +962,6 @@ export class AssignmentsService {
     return this.messageView(row);
   }
 
-  // --- Ngân hàng lời phê cá nhân của giáo viên ---------------------------------
-
   private commentBankView(r: { id: string; category: string | null; text: string; createdAt: Date }): TeacherCommentBankEntryView {
     return {
       id: r.id,
@@ -1027,18 +970,15 @@ export class AssignmentsService {
     };
   }
 
-  /** Ngân hàng lời phê của chính giáo viên đang đăng nhập (phạm vi cá nhân). */
   async listMyCommentBank(actorId: string): Promise<TeacherCommentBankEntryView[]> {
     return (await this.repo.listCommentBank(actorId)).map((r) => this.commentBankView(r));
   }
 
-  /** Thêm một câu vào ngân hàng lời phê cá nhân (kể cả lưu nhanh từ câu vừa gõ khi chấm). */
   async addCommentBankEntry(actorId: string, input: { text: string; category?: string | null }): Promise<TeacherCommentBankEntryView> {
     const row = await this.repo.insertCommentBankEntry({ ownerId: actorId, category: input.category ?? null, text: input.text });
     return this.commentBankView(row);
   }
 
-  /** Xoá một câu khỏi ngân hàng lời phê cá nhân. */
   async deleteCommentBankEntry(actorId: string, entryId: string): Promise<void> {
     await this.repo.deleteCommentBankEntry(entryId, actorId);
   }

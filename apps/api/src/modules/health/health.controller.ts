@@ -15,9 +15,6 @@ export class HealthController {
   @Public()
   @Get()
   @ApiOkResponse({ description: 'Service health (database + redis checks)' })
-  /**
-   * GET /health — trạng thái API, DB và Redis.
-   */
   async getHealth(): Promise<HealthStatus> {
     return this.health.check();
   }

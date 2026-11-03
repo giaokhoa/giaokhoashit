@@ -9,7 +9,6 @@ export interface AnalyticsIndicator {
   name: string;
   calculate(userId: string, courseId: string): Promise<number>;
 }
-/** Một model đăng ký: target + danh sách indicator. */
 export interface AnalyticsModelProvider {
   name: string;
   target: string;
@@ -17,11 +16,9 @@ export interface AnalyticsModelProvider {
 }
 
 /**
- * Facade của AnalyticsModule (Moodle core_analytics, §2#23).
- * Model/indicator là provider đăng ký trong code. Insight là SUY LUẬN —
- * chỉ hiển thị cho user có capability ở context liên quan, và dự đoán
- * KHÔNG BAO GIỜ tự thay đổi điểm/ghi danh.
- * Model thật tối giản: "students at risk" = không truy cập gần đây + điểm thấp.
+ * Facade của AnalyticsModule (Moodle core_analytics, §2#23). Model/indicator là provider đăng ký trong code. Insight là
+ * SUY LUẬN — chỉ hiển thị cho user có capability ở context liên quan, và dự đoán KHÔNG BAO GIỜ tự thay đổi điểm/ghi
+ * danh. Model thật tối giản: "students at risk" = không truy cập gần đây + điểm thấp.
  */
 @Injectable()
 export class AnalyticsService {
@@ -99,14 +96,12 @@ export class AnalyticsService {
   }
 
   /**
-   * Chạy model cho một khoá: với mỗi học viên active, tính score từ các
-   * indicator; score ≥ 0.6 ⇒ tạo prediction + insight cho các teacher của khoá.
-   * Hàm này CHỈ ghi analytics_predictions/insights — không chạm grades/enrol.
+   * Chạy model cho một khoá: với mỗi học viên active, tính score từ các indicator; score ≥ 0.6 ⇒ tạo prediction +
+   * insight cho các teacher của khoá. Hàm này CHỈ ghi analytics_predictions/insights — không chạm grades/enrol.
    */
   async runModel(actorId: string, modelName: string, courseId: string): Promise<{ predictions: number; insights: number }> {
-    // H6 (#134): chạy mô hình là thao tác vận hành — đòi analytics:manage tại
-    // context khoá cho NGƯỜI GỌI (evaluator duyệt cây context: holder tại
-    // system qua được). Trước đây hàm không uỷ quyền người gọi chút nào.
+        // H6 (#134): chạy mô hình là thao tác vận hành — đòi analytics:manage tại context khoá cho NGƯỜI GỌI (evaluator
+    // duyệt cây context: holder tại system qua được). Trước đây hàm không uỷ quyền người gọi chút nào.
     const ctxId = await this.courses.courseContextId(courseId);
     await this.evaluator.requireCapability(actorId, 'analytics:manage', ctxId);
     const model = await this.getModelByName(modelName);
@@ -164,11 +159,9 @@ export class AnalyticsService {
     return out;
   }
   /**
-   * Danh sách insight toàn cục (H4, #134): lọc theo ĐÚNG vị từ của
-   * listInsightsFor — chỉ trả dòng mà người gọi có analytics:viewinsights tại
-   * context của dòng (không kèm điều kiện recipient). User không có
-   * viewinsights ở context nào (học viên thường) nhận danh sách rỗng, không
-   * còn thấy insight dự báo của người khác.
+   * Danh sách insight toàn cục (H4, #134): lọc theo ĐÚNG vị từ của listInsightsFor — chỉ trả dòng mà người gọi có
+   * analytics:viewinsights tại context của dòng (không kèm điều kiện recipient). User không có viewinsights ở context
+   * nào (học viên thường) nhận danh sách rỗng, không còn thấy insight dự báo của người khác.
    */
   async listAllInsights(actorId: string): Promise<InsightRow[]> {
     const rows = await this.repo.listInsights();

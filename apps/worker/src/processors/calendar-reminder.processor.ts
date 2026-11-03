@@ -10,18 +10,17 @@ export interface CalendarReminderJobData { eventId: string; userId: string; minu
 export interface CalendarReminderResult { status: 'notified' | 'duplicate' | 'skipped-suspended' | 'skipped-preference' | 'skipped-admin-disabled' | 'event-missing'; notificationId?: string }
 
 /**
- * Nhắc lịch (calendar reminders): API lập lịch các nhắc này dưới dạng job BullMQ DELAYED;
- * khi đến thời điểm kích hoạt, worker tạo nhắc dưới dạng thông báo Messaging
- * qua provider 'calendar_reminder'. Việc phân phối đi qua luật phân phối dùng chung của worker
- * ({@link NotificationDeliveryService}, NB-6) — cùng
- * luật với `notify()` phía API cho kênh trong-app: không gửi cho người nhận bị đình chỉ,
- * tuỳ chọn v2 hiệu lực (các khoá legacy vẫn được tôn trọng qua
- * suy diễn), dispatch log, và tín hiệu huy hiệu chưa đọc tức thì.
- * Idempotent: mỗi (user, event) chỉ có đúng một thông báo nhắc.
+ * Nhắc lịch (calendar reminders): API lập lịch các nhắc này dưới dạng job BullMQ DELAYED; khi đến thời điểm kích hoạt,
+ * worker tạo nhắc dưới dạng thông báo Messaging qua provider 'calendar_reminder'. Việc phân phối đi qua luật phân phối
+ * dùng chung của worker ({@link NotificationDeliveryService}, NB-6) — cùng luật với `notify()` phía API cho kênh
+ * trong-app: không gửi cho người nhận bị đình chỉ, tuỳ chọn v2 hiệu lực (các khoá legacy vẫn được tôn trọng qua suy
+ * diễn), dispatch log, và tín hiệu huy hiệu chưa đọc tức thì. Idempotent: mỗi (user, event) chỉ có đúng một thông báo
+ * nhắc.
  */
 @Processor('calendar-reminders')
 /**
- * Xử lý job nhắc lịch: gửi notification nhắc sự kiện; nội dung lấy từ catalog i18n (locale mặc định vi cho người nhận — xem recipientLocale).
+ * Xử lý job nhắc lịch: gửi notification nhắc sự kiện; nội dung lấy từ catalog i18n (locale mặc định vi cho người nhận —
+ * xem recipientLocale).
  */
 export class CalendarReminderProcessor extends WorkerHost {
   constructor(
@@ -30,13 +29,9 @@ export class CalendarReminderProcessor extends WorkerHost {
     private readonly spaceDb: SpaceDatabaseService,
   ) { super(); }
 
-  /**
-   * Xử lý một job của queue tương ứng.
-   */
   async process(job: Job<CalendarReminderJobData>): Promise<CalendarReminderResult> {
-    // TENANT-1 (#196): processor nền quét/xử lý xuyên tenant — bọc
-    // ngữ cảnh platform tường minh để RLS fail-closed không làm mù
-    // dữ liệu tenant (pool gắn GUC theo ALS ở mọi checkout).
+    // TENANT-1 (#196): processor nền quét/xử lý xuyên tenant — bọc ngữ cảnh platform tường minh để RLS fail-closed
+    // không làm mù dữ liệu tenant (pool gắn GUC theo ALS ở mọi checkout).
     return tenantAls.run({ platform: true }, () => this.processInContext(job));
   }
 
@@ -61,11 +56,9 @@ export class CalendarReminderProcessor extends WorkerHost {
     // truyền locale tường minh (mặc định 'vi' như các processor nền tảng).
     const recipientLocale = 'vi';
     const subject = this.i18n.t('platform.calendarReminderSubject', { locale: recipientLocale, args: { name: event.name } });
-    // TENANT-1 (#196): tenant của notification = tenant của khoá chứa
-    // sự kiện; sự kiện cá nhân/platform thì lấy tenant mặc định của
-    // người nhận theo membership. Truyền xuống hàm luật dùng chung để
-    // dòng thông báo + dispatch log mang đúng tenant (thiếu là thông
-    // báo thành "không gắn tenant", user trong tenant không thấy).
+    // TENANT-1 (#196): tenant của notification = tenant của khoá chứa sự kiện; sự kiện cá nhân/platform thì lấy tenant
+    // mặc định của người nhận theo membership. Truyền xuống hàm luật dùng chung để dòng thông báo + dispatch log mang
+    // đúng tenant (thiếu là thông báo thành "không gắn tenant", user trong tenant không thấy).
     let tenantId: string | null = null;
     if (event.courseId) {
       const courseRow = await this.spaceDb.routedKysely

@@ -5,13 +5,10 @@ import { applyDocumentSecurityHeaders, CONTENT_SECURITY_POLICY } from './securit
  * Hồi quy chính sách CSP của tài liệu HTML phía web (lớp phòng thủ
  * chiều sâu sau cổng làm sạch HTML của api cho nội dung trang học).
  *
- * Ghim: các chỉ thị khoá cứng không được nới lặng lẽ (default về
- * 'self', cấm object, cấm bị nhúng frame, không 'unsafe-eval' ở
- * bất kỳ đâu), các nới có chủ đích theo nhu cầu thật của ứng dụng
- * vẫn còn đúng chỗ (blob/https cho học liệu phát qua URL đã ký,
- * hai nguồn nhúng video YouTube/Vimeo), và hàm gắn header đặt
- * đúng hai header lên response. Thay đổi chính sách phải sửa spec
- * này trong cùng lượt để lý do nới/siết được rà lại.
+ * Ghim: các chỉ thị khoá cứng không được nới lặng lẽ (default về 'self', cấm object, cấm bị nhúng frame, không
+ * 'unsafe-eval' ở bất kỳ đâu), các nới có chủ đích theo nhu cầu thật của ứng dụng vẫn còn đúng chỗ (blob/https cho học
+ * liệu phát qua URL đã ký, hai nguồn nhúng video YouTube/Vimeo), và hàm gắn header đặt đúng hai header lên response.
+ * Thay đổi chính sách phải sửa spec này trong cùng lượt để lý do nới/siết được rà lại.
  */
 describe('CONTENT_SECURITY_POLICY', () => {
   it('mặc định chỉ tin chính origin và khoá các bề mặt thực thi lạ', () => {
@@ -36,9 +33,8 @@ describe('CONTENT_SECURITY_POLICY', () => {
     expect(frameSrc).toContain('blob:');
     expect(frameSrc).toContain('https://www.youtube.com');
     expect(frameSrc).toContain('https://player.vimeo.com');
-    // Không có token scheme `https:` đứng riêng (vốn sẽ cho phép nhúng
-    // từ mọi origin https) — kiểm theo token vì 'https:' là chuỗi con
-    // của các host-source hợp lệ ở trên.
+    // Không có token scheme `https:` đứng riêng (vốn sẽ cho phép nhúng từ mọi origin https) — kiểm theo token vì
+    // 'https:' là chuỗi con của các host-source hợp lệ ở trên.
     expect(frameSrc.split(' ')).not.toContain('https:');
   });
 

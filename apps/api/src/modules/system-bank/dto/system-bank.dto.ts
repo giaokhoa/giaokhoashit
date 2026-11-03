@@ -15,8 +15,8 @@ import {
 } from '@lms/contracts';
 
 /**
- * Validation của module System Bank dùng Zod qua Standard Schema —
- * schema nền ở `@lms/contracts` là nguồn sự thật duy nhất.
+ * Validation của module System Bank dùng Zod qua Standard Schema — schema nền ở `@lms/contracts` là nguồn sự thật duy
+ * nhất.
  */
 export {
   createSystemBankQuestionSchema,

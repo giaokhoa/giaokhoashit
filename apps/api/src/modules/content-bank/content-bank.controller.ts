@@ -9,7 +9,6 @@ import {
   type CreateContentDto, type InsertContentDto, type ReviewContentDto, type UpdateContentDto, type UploadContentFileDto,
 } from './dto/content-bank.dto';
 
-/** Controller Content Bank / Kho học liệu (CB-1). */
 @ApiTags('contentbank')
 @Controller({ path: 'contentbank', version: '1' })
 export class ContentBankController {
@@ -70,12 +69,10 @@ export class ContentBankController {
   async fileUrl(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.contentBank.signedUrl(actor.id, id);
   }
-  /** Gửi duyệt học liệu chia sẻ (scope tổ/trường) cho tổ trưởng. */
   @Post(':id/submit')
   async submit(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.contentBank.submitForReview(actor.id, id);
   }
-  /** Tổ trưởng duyệt/từ chối học liệu đang chờ duyệt. */
   @Post(':id/review')
   async review(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: reviewContentBankContentSchema }) dto: ReviewContentDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.contentBank.review(actor.id, id, dto);

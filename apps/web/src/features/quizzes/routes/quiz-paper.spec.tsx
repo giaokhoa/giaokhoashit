@@ -6,13 +6,6 @@ import { TestProviders } from '#test/providers';
 import { baSessionBody, isGetSessionUrl } from '#test/ba-session';
 import QuizPaperPage from './quiz-paper';
 
-/**
- * Spec trang chấm bài giấy (CAM-0, issue #112) theo endpoint thật:
- * lô phiếu qua GET /exam-batches?pinId=, hàng chờ qua
- * GET /exam-scans?pinId=, gán định danh qua POST .../assign-identity,
- * xác nhận câu mơ hồ qua POST .../resolve-readings, ghi điểm qua
- * POST .../record. Ảnh phiếu qua GET /exam-scans/:id/image/warped.
- */
 const COURSE_ID = '01900000-0000-7000-8000-0000000000c1';
 const QUIZ_ID = '01900000-0000-7000-8000-0000000000c2';
 const BATCH_ID = '01900000-0000-7000-8000-0000000000c3';
@@ -149,7 +142,6 @@ describe('Trang bài thi giấy — hàng đợi CAM-0', () => {
     stubFetch(calls, state);
     renderPage();
 
-    // Lô + ba hàng chờ hiện đúng.
     expect(await screen.findByText(/Mã đề A · mã tô 1001 — 2 học sinh, 2 câu/)).toBeInTheDocument();
     expect(await screen.findByText(/Hàng chờ gán học sinh \(1\)/)).toBeInTheDocument();
     expect(screen.getByText(/mã đọc được: 9999/)).toBeInTheDocument();
@@ -157,7 +149,6 @@ describe('Trang bài thi giấy — hàng đợi CAM-0', () => {
     expect(screen.getByText(/Sẵn sàng ghi điểm \(1\)/)).toBeInTheDocument();
 
     const user = userEvent.setup();
-    // Gán định danh: chọn học sinh trong danh sách ứng viên của phiếu → POST assign-identity.
     const select = [...document.querySelectorAll('select')]
       .find((s) => [...s.options].some((o) => o.value === STUDENT_A))!;
     await user.selectOptions(select, STUDENT_A);
@@ -167,7 +158,6 @@ describe('Trang bài thi giấy — hàng đợi CAM-0', () => {
         && (c.body as { studentId?: string }).studentId === STUDENT_A)).toBe(true));
     expect(await screen.findByText(/Hàng chờ gán học sinh \(0\)/)).toBeInTheDocument();
 
-    // Xác nhận câu mơ hồ: chọn đáp án B cho câu 2 → POST resolve-readings.
     await user.click(screen.getByRole('button', { name: 'B' }));
     await user.click(screen.getByRole('button', { name: 'Xác nhận các câu này' }));
     await waitFor(() =>
@@ -175,7 +165,6 @@ describe('Trang bài thi giấy — hàng đợi CAM-0', () => {
         && JSON.stringify(c.body) === JSON.stringify({ readings: [{ slot: 2, chosen: 1 }] }))).toBe(true));
     expect(await screen.findByText(/Hàng chờ xác nhận câu mơ hồ \(0\)/)).toBeInTheDocument();
 
-    // Ghi điểm cho phiếu ready đầu tiên → POST record, phiếu sang nhóm đã ghi.
     const recordButtons = screen.getAllByRole('button', { name: 'Ghi điểm' });
     await user.click(recordButtons[0]!);
     await waitFor(() =>

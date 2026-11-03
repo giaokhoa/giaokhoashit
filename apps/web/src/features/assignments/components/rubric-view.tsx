@@ -2,7 +2,6 @@ import type { AssignRubricCriterionView } from '@lms/contracts';
 import { Badge } from '@lms/ui/components/badge';
 import { useTranslation } from 'react-i18next';
 
-/** Bảng tiêu chí công khai của bài (học sinh xem trước khi nộp; giáo viên xem lại khi chấm). */
 export function RubricView({ criteria }: { criteria: AssignRubricCriterionView[] }) {
   const { t } = useTranslation('app');
   return (

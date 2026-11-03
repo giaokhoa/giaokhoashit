@@ -11,35 +11,22 @@ import {
 } from './outbox-event-routes';
 
 /**
- * Test đặc trưng hoá cho relay outbox duy nhất: ghim các tính chất của
- * ngữ nghĩa đóng dấu `publishedAt` và định tuyến phát job theo loại
- * sự kiện, làm căn cứ cho mọi issue chuyển consumer sang hàng đợi ở
- * worker sau này:
- * (i) `publishedAt` chỉ xuất hiện sau khi relay phát thành công,
- *     không bao giờ trước;
- * (ii) phát thất bại thì sự kiện không có `publishedAt` và được phát
- *     lại ở lượt relay sau;
- * (iii) mỗi loại sự kiện được phát vào đúng (các) hàng đợi của nó —
- *     một sự kiện có nhiều đích thì mỗi đích nhận đúng một job
- *     (fan-out một-sự-kiện-nhiều-handler, issue #520/#521);
- * (iv) `publishedAt` không phải dấu hoàn thành xử lý — relay đóng
- *     dấu ngay khi phát xong, dù job chưa được consumer nào xử lý;
- * (v) với sự kiện nhiều đích, dấu chỉ xuất hiện khi MỌI đích đã nhận
- *     job — lỗi ở một đích thì dòng chưa có dấu, và lượt phát lại
- *     không tạo job trùng ở các đích đã nhận (chống trùng `jobId`).
- * (vi) định tuyến theo trung tâm (issue #582): job mang slug của
- *     trung tâm mà tenant của dòng thuộc về, suy ra từ chính kho
- *     chứa dòng; và mỗi nhịp relay còn quét outbox của từng trung
- *     tâm ở kho riêng trong phiên theo trung tâm của khung — lỗi
- *     của một trung tâm không chặn các trung tâm khác.
+ * Test đặc trưng hoá cho relay outbox duy nhất: ghim các tính chất của ngữ nghĩa đóng dấu `publishedAt` và định tuyến
+ * phát job theo loại sự kiện, làm căn cứ cho mọi issue chuyển consumer sang hàng đợi ở worker sau này: (i)
+ * `publishedAt` chỉ xuất hiện sau khi relay phát thành công, không bao giờ trước; (ii) phát thất bại thì sự kiện không
+ * có `publishedAt` và được phát lại ở lượt relay sau; (iii) mỗi loại sự kiện được phát vào đúng (các) hàng đợi của nó —
+ * một sự kiện có nhiều đích thì mỗi đích nhận đúng một job (fan-out một-sự-kiện-nhiều-handler, issue #520/#521); (iv)
+ * `publishedAt` không phải dấu hoàn thành xử lý — relay đóng dấu ngay khi phát xong, dù job chưa được consumer nào xử
+ * lý; (v) với sự kiện nhiều đích, dấu chỉ xuất hiện khi MỌI đích đã nhận job — lỗi ở một đích thì dòng chưa có dấu, và
+ * lượt phát lại không tạo job trùng ở các đích đã nhận (chống trùng `jobId`). (vi) định tuyến theo trung tâm (issue
+ * #582): job mang slug của trung tâm mà tenant của dòng thuộc về, suy ra từ chính kho chứa dòng; và mỗi nhịp relay còn
+ * quét outbox của từng trung tâm ở kho riêng trong phiên theo trung tâm của khung — lỗi của một trung tâm không chặn
+ * các trung tâm khác.
  *
- * Toàn bộ test chạy trên DB/hàng đợi giả lập trong bộ nhớ theo đúng
- * bề mặt relay dùng (chuỗi truy vấn Kysely, `Queue.add` của BullMQ,
- * `EventLogWriter.record`, `TaskLogService.recordRun`); hàng đợi giả
- * mô phỏng đúng luật chống trùng của BullMQ theo `jobId`. Các khẳng
- * định đều là hệ quả quan sát được (dòng có dấu hay chưa, job nằm ở
- * hàng đợi nào với dữ liệu gì, dòng có được phản chiếu hay không),
- * không phải chi tiết gọi nội bộ.
+ * Toàn bộ test chạy trên DB/hàng đợi giả lập trong bộ nhớ theo đúng bề mặt relay dùng (chuỗi truy vấn Kysely,
+ * `Queue.add` của BullMQ, `EventLogWriter.record`, `TaskLogService.recordRun`); hàng đợi giả mô phỏng đúng luật chống
+ * trùng của BullMQ theo `jobId`. Các khẳng định đều là hệ quả quan sát được (dòng có dấu hay chưa, job nằm ở hàng đợi
+ * nào với dữ liệu gì, dòng có được phản chiếu hay không), không phải chi tiết gọi nội bộ.
  */
 
 interface FakeRow {
@@ -71,10 +58,9 @@ function makeRow(partial: Partial<FakeRow>): FakeRow {
 }
 
 /**
- * Hàng đợi giả theo khuôn BullMQ: `add` với `jobId` đã tồn tại thì
- * trả lại job cũ thay vì tạo job trùng; ghi lại trạng thái đóng dấu
- * của dòng tại đúng thời điểm job được đẩy để kiểm chứng thứ tự
- * phát → đóng dấu bằng trạng thái quan sát được.
+ * Hàng đợi giả theo khuôn BullMQ: `add` với `jobId` đã tồn tại thì trả lại job cũ thay vì tạo job trùng; ghi lại trạng
+ * thái đóng dấu của dòng tại đúng thời điểm job được đẩy để kiểm chứng thứ tự phát → đóng dấu bằng trạng thái quan sát
+ * được.
  */
 class FakeQueue {
   readonly jobs = new Map<string, { name: string; data: OutboxEventJobData }>();
@@ -100,12 +86,9 @@ class FakeQueue {
 }
 
 /**
- * DB giả theo chuỗi truy vấn Kysely mà relay dùng (`selectFrom` /
- * `updateTable` trên handle định tuyến): lượt quét outbox trả các
- * dòng chưa có dấu theo đúng thứ tự mảng và trần `limit`; tra cứu
- * `tenants` lọc theo danh sách id của điều kiện `in`; bước đóng dấu
- * áp `published_at` lên đúng dòng mà điều kiện `where` của lệnh
- * cập nhật chỉ tới.
+ * DB giả theo chuỗi truy vấn Kysely mà relay dùng (`selectFrom` / `updateTable` trên handle định tuyến): lượt quét
+ * outbox trả các dòng chưa có dấu theo đúng thứ tự mảng và trần `limit`; tra cứu `tenants` lọc theo danh sách id của
+ * điều kiện `in`; bước đóng dấu áp `published_at` lên đúng dòng mà điều kiện `where` của lệnh cập nhật chỉ tới.
  */
 function makeFakeDb(rows: FakeRow[], tenantSlugs: Record<string, string> = {}) {
   const control = { failNextStamp: false };
@@ -183,12 +166,10 @@ interface Harness {
 }
 
 /**
- * Khung định tuyến giả cho relay: danh sách đăng ký cấu hình sẵn
- * và một bản đồ slug → DB giả của kho trung tâm; `withSpaceKysely`
- * của giả chạy thân quét trên đúng DB giả của slug đó (mô phỏng
- * phiên theo trung tâm của khung thật) và ném lỗi cho slug được
- * đánh dấu lỗi — đủ để khoá hành vi quét theo trung tâm của relay
- * mà không cần Postgres thật (đường DB thật có spec tích hợp).
+ * Khung định tuyến giả cho relay: danh sách đăng ký cấu hình sẵn và một bản đồ slug → DB giả của kho trung tâm;
+ * `withSpaceKysely` của giả chạy thân quét trên đúng DB giả của slug đó (mô phỏng phiên theo trung tâm của khung thật)
+ * và ném lỗi cho slug được đánh dấu lỗi — đủ để khoá hành vi quét theo trung tâm của relay mà không cần Postgres thật
+ * (đường DB thật có spec tích hợp).
  */
 function makeFakeSpaceDb(
   spaces: SpaceRegistryEntry[],

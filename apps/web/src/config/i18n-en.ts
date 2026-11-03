@@ -1,10 +1,8 @@
 /**
- * Catalog tiếng Anh của frontend — module NẠP LƯỜI (issue #503, bước
- * gọn i18n ở root): file này KHÔNG nằm trong bundle khởi tạo. Khi ngôn
- * ngữ được chuyển sang `en`, backend nạp lười trong `i18n.ts` dynamic
- * import chính module này rồi đăng ký từng namespace qua cơ chế backend
- * của i18next; lượt tải đầu (mặc định tiếng Việt) không mang theo
- * catalog này (~47% số byte catalog trước khi tách).
+ * Catalog tiếng Anh của frontend — module NẠP LƯỜI (issue #503, bước gọn i18n ở root): file này KHÔNG nằm trong bundle
+ * khởi tạo. Khi ngôn ngữ được chuyển sang `en`, backend nạp lười trong `i18n.ts` dynamic import chính module này rồi
+ * đăng ký từng namespace qua cơ chế backend của i18next; lượt tải đầu (mặc định tiếng Việt) không mang theo catalog này
+ * (~47% số byte catalog trước khi tách).
  *
  * Hình dạng: ánh xạ namespace → object chuỗi, khớp đúng các khoá của
  * catalog tiếng Việt trong `i18n.ts` (parity khoá được kiểm ở test).
@@ -1258,7 +1256,6 @@ export const enResources = {
     sharedExamBank: 'Shared exam bank',
     sharedMatrixBank: 'Shared matrix bank',
     comingSoon: 'Not built yet — waiting for the Quiz matrix foundation.',
-    // MB-1 (issue #111): ngân hàng ma trận.
     matrixBank: 'Matrix bank',
     myMatrixBank: 'My matrices',
     myMatrixBankDescription:
@@ -1426,7 +1423,6 @@ export const enResources = {
     examPinsTitle: 'Pins of this exam',
     matrixCv7991Note: 'Matrix per CV 7991 specification (3 levels by default: Know / Understand / Apply).',
     matrixIncludeAdvanced: 'Add the Advanced application level',
-    // I-3 (issue #233): wizard nhập ma trận 5 bước từ file.
     matrixImport: 'Import matrix from file',
     matrixImportFromFile: 'Import from file',
     matrixImportStep1: '1. Choose subject and download template',

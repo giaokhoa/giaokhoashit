@@ -9,39 +9,29 @@ import { createCategory, createClass, createCourse, createEnrolInstance, enrolUs
 import { addGroupMember, contextIdByLevelInstance, createGroupViaApi } from '../../support/engagement-helpers';
 
 /**
- * MSG-T1 (issue #33 — thiết kế cấu trúc nhắn tin chốt 11:36 ngày
- * 26/10/2026): cây nhóm theo VAI dựng ở server (GET
+ * MSG-T1 (issue #33 — thiết kế cấu trúc nhắn tin chốt 11:36 ngày 26/10/2026): cây nhóm theo VAI dựng ở server (GET
  * /messages/group-tree) + phân loại conversation trên danh sách.
  *
  * Luồng nghiệp vụ được kiểm:
- *  (1) GV là chủ 2 lớp, mỗi lớp có khoá: cây của GV có đúng 2 nút lớp
- *      vai "đang dạy" (teaching), khoá nằm TRONG lớp theo quan hệ
- *      lớp–khoá, chat chưa ensure thì conversationId null + unread 0.
- *  (2) Sau khi chat khoá được ensure và có tin chưa đọc, nút khoá
- *      mang đúng conversationId + unread; nút lớp mang tổng chưa đọc
- *      của các nút con.
- *  (3) HS thuộc roster của lớp 1: cây chỉ có lớp 1 vai "đang học"
- *      (learning); HS đồng thời ghi danh vào một khoá thuộc lớp khác
- *      (không thuộc roster lớp đó): khoá hiện ở mục ngoài-lớp-trực-
- *      tiếp, KHÔNG kéo theo nút lớp lạ, lớp 2 của GV không xuất hiện.
+ *  (1) GV là chủ 2 lớp, mỗi lớp có khoá: cây của GV có đúng 2 nút lớp vai "đang dạy" (teaching), khoá nằm TRONG lớp
+ *      theo quan hệ lớp–khoá, chat chưa ensure thì conversationId null + unread 0.
+ *  (2) Sau khi chat khoá được ensure và có tin chưa đọc, nút khoá mang đúng conversationId + unread; nút lớp mang tổng
+ *      chưa đọc của các nút con.
+ *  (3) HS thuộc roster của lớp 1: cây chỉ có lớp 1 vai "đang học" (learning); HS đồng thời ghi danh vào một khoá thuộc
+ *      lớp khác (không thuộc roster lớp đó): khoá hiện ở mục ngoài-lớp-trực- tiếp, KHÔNG kéo theo nút lớp lạ, lớp 2 của
+ *      GV không xuất hiện.
  *  (4) Người ngoài hoàn toàn: cây rỗng cả ba mục.
- *  (5) Nhóm con trong khoá: thành viên thấy nút nhóm con dưới khoá
- *      (chưa ensure → null), ensure xong thì mang conversationId;
- *      nhóm tự do do quản trị viên tạo hiện ở mục freeGroups, GV và
- *      HS đều là thành viên thường vai learning. Cờ
- *      `canCreateFreeGroup` trên cây khớp đúng cổng tạo nhóm tự do:
- *      quản trị viên true; GV, HS, nhân viên và người ngoài false.
- *  (6) Phân loại trên GET /messages/conversations: chat khoá mang
- *      itemType 'course' + itemId đúng; nhóm con 'groups'; nhóm tự
- *      do cả ba trường null.
- *  (7) Mốc ghim cá nhân trên cây (vòng bổ sung bằng chứng của PR
- *      #607): HS vừa ghim vừa lưu trữ một nhóm tự do và chat khoá —
- *      hai hội thoại lúc đó chỉ còn nằm ở tập đã lưu trữ của HS —
- *      cây của HS vẫn báo pinnedAt khác null cho cả nút nhóm tự do
- *      lẫn nút khoá, tức mốc ghim được dựng từ cả hai tập tóm tắt;
- *      một nhóm tự do khác chỉ lưu trữ, không ghim, mang pinnedAt
- *      null; ghim là trạng thái cá nhân nên cây của GV (không ghim)
- *      báo null cho cùng các hội thoại đó.
+ *  (5) Nhóm con trong khoá: thành viên thấy nút nhóm con dưới khoá (chưa ensure → null), ensure xong thì mang
+ *      conversationId; nhóm tự do do quản trị viên tạo hiện ở mục freeGroups, GV và HS đều là thành viên thường vai
+ *      learning. Cờ `canCreateFreeGroup` trên cây khớp đúng cổng tạo nhóm tự do: quản trị viên true; GV, HS, nhân viên
+ *      và người ngoài false.
+ *  (6) Phân loại trên GET /messages/conversations: chat khoá mang itemType 'course' + itemId đúng; nhóm con 'groups';
+ *      nhóm tự do cả ba trường null.
+ *  (7) Mốc ghim cá nhân trên cây (vòng bổ sung bằng chứng của PR #607): HS vừa ghim vừa lưu trữ một nhóm tự do và chat
+ *      khoá — hai hội thoại lúc đó chỉ còn nằm ở tập đã lưu trữ của HS — cây của HS vẫn báo pinnedAt khác null cho cả
+ *      nút nhóm tự do lẫn nút khoá, tức mốc ghim được dựng từ cả hai tập tóm tắt; một nhóm tự do khác chỉ lưu trữ,
+ *      không ghim, mang pinnedAt null; ghim là trạng thái cá nhân nên cây của GV (không ghim) báo null cho cùng các hội
+ *      thoại đó.
  */
 
 interface Person { id: string; username: string; token: string }
@@ -58,15 +48,11 @@ interface TreeBody {
 }
 
 /**
- * Ghi thẳng một dòng gán vai vào DB cho fixture. Các fixture của bộ
- * spec nhắn tin dựng persona giáo viên vừa ghi danh trong khoá vừa
- * giữ vai giảng dạy tại context khoá (giáo viên hiện diện trong khoá
- * như một thành viên và giữ vai trò kiểm duyệt). Từ issue #425,
- * trạng thái lẫn vai cùng khoá này không còn tạo được qua API — cả
- * hai chiều ghi danh/gán vai đều bị chốt tách vai chặn — và chỉ còn
- * tồn tại như dữ kiện có sẵn; các ca của bộ spec này kiểm hành vi
- * nhắn tin trên đúng dữ kiện đó, nên dòng gán vai được ghi thẳng
- * vào DB trong lúc phần ghi danh vẫn đi qua API như cũ.
+ * Ghi thẳng một dòng gán vai vào DB cho fixture. Các fixture của bộ spec nhắn tin dựng persona giáo viên vừa ghi danh
+ * trong khoá vừa giữ vai giảng dạy tại context khoá (giáo viên hiện diện trong khoá như một thành viên và giữ vai trò
+ * kiểm duyệt). Từ issue #425, trạng thái lẫn vai cùng khoá này không còn tạo được qua API — cả hai chiều ghi danh/gán
+ * vai đều bị chốt tách vai chặn — và chỉ còn tồn tại như dữ kiện có sẵn; các ca của bộ spec này kiểm hành vi nhắn tin
+ * trên đúng dữ kiện đó, nên dòng gán vai được ghi thẳng vào DB trong lúc phần ghi danh vẫn đi qua API như cũ.
  */
 async function insertAssignmentRow(roleId: string, userId: string, contextId: string): Promise<void> {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
@@ -82,15 +68,12 @@ async function insertAssignmentRow(roleId: string, userId: string, contextId: st
 }
 
 /**
- * Dựng thẳng vào DB một ghi danh học viên đang hoạt động cho
- * fixture: bản ghi user_enrolments + dòng gán vai do ghi danh cấp
- * (component 'enrol', item_id là instance) + tư cách thành viên
- * tenant của khoá — đúng các dòng EnrolService.enrolUserInternal
- * vẫn ghi. Chỉ dùng cho persona giáo viên chủ lớp ở khoá 1 của spec
- * này: từ issue #425, ghi danh một chủ lớp vào khoá thuộc lớp mình
- * chủ nhiệm bị chốt funnel 1 chặn qua API (chủ lớp đã có cấp quyền
- * giảng dạy bao phủ khoá qua context lớp), nên ghi danh "theo thông
- * lệ seed" của fixture chỉ còn dựng được như dữ kiện có sẵn.
+ * Dựng thẳng vào DB một ghi danh học viên đang hoạt động cho fixture: bản ghi user_enrolments + dòng gán vai do ghi
+ * danh cấp (component 'enrol', item_id là instance) + tư cách thành viên tenant của khoá — đúng các dòng
+ * EnrolService.enrolUserInternal vẫn ghi. Chỉ dùng cho persona giáo viên chủ lớp ở khoá 1 của spec này: từ issue #425,
+ * ghi danh một chủ lớp vào khoá thuộc lớp mình chủ nhiệm bị chốt funnel 1 chặn qua API (chủ lớp đã có cấp quyền giảng
+ * dạy bao phủ khoá qua context lớp), nên ghi danh "theo thông lệ seed" của fixture chỉ còn dựng được như dữ kiện có
+ * sẵn.
  */
 async function insertLegacyEnrolment(instanceId: string, userId: string, courseId: string, contextId: string): Promise<void> {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
@@ -161,18 +144,16 @@ describe('Messaging — cây nhóm theo vai (MSG-T1, issue #33)', () => {
     outsider = await person();
     staff = await person();
 
-    // Nhân viên: vai coursecreator tại context HỆ THỐNG — có gán
-    // vai staff nhưng không dạy khoá nào và không quản lý tenant
-    // nào; dùng cho khẳng định cờ tạo nhóm tự do trên cây ở ca 5
-    // (persona tương ứng đã bị từ chối tạo nhóm ở spec cổng).
+    // Nhân viên: vai coursecreator tại context HỆ THỐNG — có gán vai staff nhưng không dạy khoá nào và không quản lý
+    // tenant nào; dùng cho khẳng định cờ tạo nhóm tự do trên cây ở ca 5 (persona tương ứng đã bị từ chối tạo nhóm ở
+    // spec cổng).
     const systemCtx = await systemContextId(app, admin);
     const courseCreator = await roleIdByShortname(app, admin, 'coursecreator');
     await assignRole(app, admin, staff.id, courseCreator, systemCtx);
 
-    // GV của spec làm chủ 2 lớp/khoá ở tenant platform: theo đặc tả
-    // slot đã duyệt của issue #189, giáo viên không có gói chỉ làm
-    // chủ được mức nền 1 khoá — cấp quyền lợi gói giáo viên đang
-    // hoạt động làm tiền đề fixture (xem grantActiveTeacherPlan).
+    // GV của spec làm chủ 2 lớp/khoá ở tenant platform: theo đặc tả slot đã duyệt của issue #189, giáo viên không có
+    // gói chỉ làm chủ được mức nền 1 khoá — cấp quyền lợi gói giáo viên đang hoạt động làm tiền đề fixture (xem
+    // grantActiveTeacherPlan).
     const pg = new Client({ connectionString: process.env.DATABASE_URL });
     await pg.connect();
     try {
@@ -181,9 +162,8 @@ describe('Messaging — cây nhóm theo vai (MSG-T1, issue #33)', () => {
       await pg.end();
     }
 
-    // Admin tạo 2 lớp với chủ lớp là GV (đường tạo hộ bằng
-    // tenant:manage đã có ở API của module classes) — GV là chủ lớp
-    // nên vai tại cây phải là "đang dạy".
+    // Admin tạo 2 lớp với chủ lớp là GV (đường tạo hộ bằng tenant:manage đã có ở API của module classes) — GV là chủ
+    // lớp nên vai tại cây phải là "đang dạy".
     class1 = (await createClass(app, admin, { ownerId: teacher.id })).id;
     class2 = (await createClass(app, admin, { ownerId: teacher.id })).id;
     classX = (await createClass(app, admin)).id;
@@ -209,12 +189,10 @@ describe('Messaging — cây nhóm theo vai (MSG-T1, issue #33)', () => {
     const instanceX = await createEnrolInstance(app, admin, courseX);
     await enrolUser(app, admin, courseX, instanceX.id, student.id);
 
-    // GV cũng ghi danh ở khoá 1 (thông lệ seed như test chat cấp
-    // khoá): cổng thêm thành viên nhóm con đòi ghi danh hiệu lực.
-    // Từ issue #425, ghi danh này không còn đi qua API được — chốt
-    // funnel 1 chặn vì GV là chủ lớp 1, đã có cấp quyền giảng dạy
-    // bao phủ khoá 1 qua context lớp — nên ghi danh được dựng thẳng
-    // vào DB như dữ kiện có sẵn (xem insertLegacyEnrolment).
+    // GV cũng ghi danh ở khoá 1 (thông lệ seed như test chat cấp khoá): cổng thêm thành viên nhóm con đòi ghi danh hiệu
+    // lực. Từ issue #425, ghi danh này không còn đi qua API được — chốt funnel 1 chặn vì GV là chủ lớp 1, đã có cấp
+    // quyền giảng dạy bao phủ khoá 1 qua context lớp — nên ghi danh được dựng thẳng vào DB như dữ kiện có sẵn (xem
+    // insertLegacyEnrolment).
     const instance1 = await createEnrolInstance(app, admin, course1);
     const course1Ctx = await contextIdByLevelInstance(app, admin, 50, course1);
     await insertLegacyEnrolment(instance1.id, teacher.id, course1, course1Ctx);
@@ -225,9 +203,8 @@ describe('Messaging — cây nhóm theo vai (MSG-T1, issue #33)', () => {
     await addGroupMember(app, admin, course1, group1, student.id);
     await addGroupMember(app, admin, course1, group1, teacher.id);
 
-    // Nhóm tự do do quản trị viên tạo (chỉ quản trị viên hệ thống
-    // hoặc chủ trung tâm mới tạo được nhóm thủ công), GV và HS là
-    // thành viên thường.
+    // Nhóm tự do do quản trị viên tạo (chỉ quản trị viên hệ thống hoặc chủ trung tâm mới tạo được nhóm thủ công), GV và
+    // HS là thành viên thường.
     const free = await http(app).post('/api/v1/messages/conversations')
       .set('Authorization', `Bearer ${admin}`)
       .send({ type: 2, memberIds: [teacher.id, student.id], name: 'Nhóm ôn thi' });
@@ -240,8 +217,8 @@ describe('Messaging — cây nhóm theo vai (MSG-T1, issue #33)', () => {
     const t = await tree(teacher.token);
     const byId = new Map(t.classes.map((c) => [c.classId, c]));
     expect([...byId.keys()].sort()).toEqual([class1, class2].sort());
-    // Khoá X: GV có gán vai dạy tại khoá nhưng KHÔNG có quan hệ với
-    // lớp X — khoá hiện ở mục ngoài-lớp-trực-tiếp, vai teaching.
+    // Khoá X: GV có gán vai dạy tại khoá nhưng KHÔNG có quan hệ với lớp X — khoá hiện ở mục ngoài-lớp-trực-tiếp, vai
+    // teaching.
     expect(t.coursesOutsideClasses.map((c) => c.courseId)).toEqual([courseX]);
     expect(t.coursesOutsideClasses[0]!.myRole).toBe('teaching');
 
@@ -254,15 +231,14 @@ describe('Messaging — cây nhóm theo vai (MSG-T1, issue #33)', () => {
     expect(courseNode.myRole).toBe('teaching');
     expect(courseNode.conversationId).toBeNull();
     expect(courseNode.unread).toBe(0);
-    // Nhóm con: chỉ "Tổ 1" — nhóm cấu trúc "Cả lớp" của lớp không
-    // phải nhóm con, không hiện ở mức này.
+    // Nhóm con: chỉ "Tổ 1" — nhóm cấu trúc "Cả lớp" của lớp không phải nhóm con, không hiện ở mức này.
     expect(courseNode.groups.map((g) => g.groupId)).toEqual([group1]);
     expect(courseNode.groups[0]!.conversationId).toBeNull();
 
     const c2 = byId.get(class2)!;
     expect(c2.courses.map((c) => c.courseId)).toEqual([course2]);
-    // Lớp X không phải của GV theo quan hệ lớp — GV chỉ dạy khoá trong
-    // đó qua gán vai khoá, lớp X không thành nút lớp của GV.
+    // Lớp X không phải của GV theo quan hệ lớp — GV chỉ dạy khoá trong đó qua gán vai khoá, lớp X không thành nút lớp
+    // của GV.
     expect(byId.has(classX)).toBe(false);
   });
 
@@ -329,15 +305,14 @@ describe('Messaging — cây nhóm theo vai (MSG-T1, issue #33)', () => {
 
     const teacherTree = await tree(teacher.token);
     expect(teacherTree.freeGroups.map((g) => g.conversationId)).toEqual([freeGroupId]);
-    // GV chỉ là thành viên thường của nhóm tự do này (quản trị viên
-    // mới là người tạo) — vai learning, và cờ tạo nhóm vẫn false dù
-    // GV có vai dạy trên cây.
+    // GV chỉ là thành viên thường của nhóm tự do này (quản trị viên mới là người tạo) — vai learning, và cờ tạo nhóm
+    // vẫn false dù GV có vai dạy trên cây.
     expect(teacherTree.freeGroups[0]!.myRole).toBe('learning');
     expect(teacherTree.freeGroups[0]!.name).toBe('Nhóm ôn thi');
     expect(teacherTree.canCreateFreeGroup).toBe(false);
 
-    // Nhân viên (gán vai staff tại context hệ thống, không quản lý
-    // tenant nào): cờ vẫn false, khớp cổng tạo nhóm ở tầng service.
+    // Nhân viên (gán vai staff tại context hệ thống, không quản lý tenant nào): cờ vẫn false, khớp cổng tạo nhóm ở tầng
+    // service.
     const staffTree = await tree(staff.token);
     expect(staffTree.canCreateFreeGroup).toBe(false);
 
@@ -360,9 +335,8 @@ describe('Messaging — cây nhóm theo vai (MSG-T1, issue #33)', () => {
   });
 
   it('7. mốc ghim trên cây dựng từ cả tập đã lưu trữ: nhóm tự do và chat khoá vừa ghim vừa lưu trữ vẫn báo pinnedAt, lưu trữ không ghim thì pinnedAt null', async () => {
-    // Hai nhóm tự do mới do quản trị viên tạo, GV và HS là thành
-    // viên thường: một nhóm để HS vừa ghim vừa lưu trữ, một nhóm
-    // chỉ lưu trữ mà không ghim.
+    // Hai nhóm tự do mới do quản trị viên tạo, GV và HS là thành viên thường: một nhóm để HS vừa ghim vừa lưu trữ, một
+    // nhóm chỉ lưu trữ mà không ghim.
     const pinnedFree = await http(app).post('/api/v1/messages/conversations')
       .set('Authorization', `Bearer ${admin}`)
       .send({ type: 2, memberIds: [teacher.id, student.id], name: 'Nhóm luyện thi' });
@@ -374,10 +348,8 @@ describe('Messaging — cây nhóm theo vai (MSG-T1, issue #33)', () => {
     expect(archivedFree.status).toBe(201);
     const archivedFreeId = archivedFree.body.id as string;
 
-    // HS đặt trạng thái cá nhân qua API thật: nhóm luyện thi vừa
-    // ghim vừa lưu trữ; nhóm tài liệu chỉ lưu trữ; chat khoá 1
-    // (nút cấu trúc trên cây, mốc ghim tra qua bản đồ theo
-    // conversation) cũng vừa ghim vừa lưu trữ.
+    // HS đặt trạng thái cá nhân qua API thật: nhóm luyện thi vừa ghim vừa lưu trữ; nhóm tài liệu chỉ lưu trữ; chat khoá
+    // 1 (nút cấu trúc trên cây, mốc ghim tra qua bản đồ theo conversation) cũng vừa ghim vừa lưu trữ.
     const statePinnedFree = await http(app).patch(`/api/v1/messages/conversations/${pinnedFreeId}/state`)
       .set('Authorization', `Bearer ${student.token}`).send({ pinned: true, archived: true });
     expect(statePinnedFree.status).toBe(200);
@@ -391,9 +363,8 @@ describe('Messaging — cây nhóm theo vai (MSG-T1, issue #33)', () => {
     expect(stateCourse.status).toBe(200);
     expect(stateCourse.body).toMatchObject({ pinned: true, archived: true });
 
-    // Cây của HS: cả ba hội thoại trên giờ chỉ còn nằm ở tập đã
-    // lưu trữ của HS — mốc ghim phải vẫn tới được cây từ chính
-    // tập đó, cho cả nút nhóm tự do lẫn nút khoá.
+    // Cây của HS: cả ba hội thoại trên giờ chỉ còn nằm ở tập đã lưu trữ của HS — mốc ghim phải vẫn tới được cây từ
+    // chính tập đó, cho cả nút nhóm tự do lẫn nút khoá.
     const t = await tree(student.token);
     const pinnedFreeNode = t.freeGroups.find((g) => g.conversationId === pinnedFreeId)!;
     expect(pinnedFreeNode.pinnedAt).not.toBeNull();
@@ -405,8 +376,7 @@ describe('Messaging — cây nhóm theo vai (MSG-T1, issue #33)', () => {
     expect(courseNode.conversationId).toBe(convCourse1);
     expect(courseNode.pinnedAt).not.toBeNull();
 
-    // Ghim là trạng thái CÁ NHÂN: GV không ghim các hội thoại này
-    // nên cây của GV báo pinnedAt null cho cùng các nút đó.
+    // Ghim là trạng thái CÁ NHÂN: GV không ghim các hội thoại này nên cây của GV báo pinnedAt null cho cùng các nút đó.
     const teacherTree = await tree(teacher.token);
     expect(teacherTree.freeGroups.find((g) => g.conversationId === pinnedFreeId)!.pinnedAt).toBeNull();
     expect(teacherTree.classes.find((c) => c.classId === class1)!.courses

@@ -11,33 +11,24 @@ import { createCategory, createCourse } from '../../support/course-enrolment-hel
 import { courseContextId } from '../../support/engagement-helpers';
 
 /**
- * Luồng nghiệp vụ của lát I-2 (issue #233) — GHI NGUYÊN TỬ khi nhập
- * ma trận, nối tiếp lát I-1 (mẫu + xem trước):
+ * Luồng nghiệp vụ của lát I-2 (issue #233) — GHI NGUYÊN TỬ khi nhập ma trận, nối tiếp lát I-1 (mẫu + xem trước):
  *
- * - Giáo viên tải lại CHÍNH file đã xem trước → POST
- *   /exam-matrices/import ghi ma trận mới + toàn bộ ô trong một lần,
- *   đọc lại được bằng các endpoint hiện hữu (chi tiết, availability,
- *   bản đặc tả) với ô/điểm/tổng khớp đúng kết quả xem trước.
- * - Gửi lại cùng một nội dung (double submit/retry) KHÔNG nhân đôi
- *   ma trận: trả chính ma trận đã ghi.
- * - File bị sửa tay sau xem trước mà vi phạm luật hợp lệ → ghi bị từ
- *   chối 422 kèm lỗi cứng ĐỊNH VỊ (extension member
+ * - Giáo viên tải lại CHÍNH file đã xem trước → POST /exam-matrices/import ghi ma trận mới + toàn bộ ô trong một lần,
+ *   đọc lại được bằng các endpoint hiện hữu (chi tiết, availability, bản đặc tả) với ô/điểm/tổng khớp đúng kết quả xem
+ *   trước.
+ * - Gửi lại cùng một nội dung (double submit/retry) KHÔNG nhân đôi ma trận: trả chính ma trận đã ghi.
+ * - File bị sửa tay sau xem trước mà vi phạm luật hợp lệ → ghi bị từ chối 422 kèm lỗi cứng ĐỊNH VỊ (extension member
  *   `matrixImportIssues`) và DB không còn dấu vết nào của lần ghi đó.
- * - Người không đủ tư cách dùng luồng nhập (không thuộc nhóm staff,
- *   không phụ trách được bank ma trận cá nhân) → bị chặn 403 tại cổng
- *   bank của luồng, không ghi.
- * - Giáo viên theo đúng mô hình gán vai của dữ liệu mẫu
- *   (editingteacher tại context khoá, KHÔNG vai nào tại context hệ
- *   thống) nhập trọn luồng được và tạo tay gắn bank được — hồi quy
- *   điểm chặn D-3 của chính issue này: trước đây đường nhập và
- *   đường tạo tay đòi thêm quyền tại context của môn (môn GDPT neo
- *   context hệ thống) nên giáo viên thật bị chặn dù thao tác ghi
- *   vốn đã chốt quyền tại bank đích.
+ * - Người không đủ tư cách dùng luồng nhập (không thuộc nhóm staff, không phụ trách được bank ma trận cá nhân) → bị
+ *   chặn 403 tại cổng bank của luồng, không ghi.
+ * - Giáo viên theo đúng mô hình gán vai của dữ liệu mẫu (editingteacher tại context khoá, KHÔNG vai nào tại context hệ
+ *   thống) nhập trọn luồng được và tạo tay gắn bank được — hồi quy điểm chặn D-3 của chính issue này: trước đây đường
+ *   nhập và đường tạo tay đòi thêm quyền tại context của môn (môn GDPT neo context hệ thống) nên giáo viên thật bị chặn
+ *   dù thao tác ghi vốn đã chốt quyền tại bank đích.
  *
- * Dữ kiện tự dựng bằng API như spec của I-1: môn + chương trình khối
- * 10 + chủ đề có hai ĐVK, mỗi ĐVK có YCCĐ, 3 câu ready ở outcome đầu
- * của ĐVK 1 (availability của ô Biết/trắc nghiệm ở ĐVK 1 thiếu 1 câu —
- * số đếm khả dụng phải khớp trước và sau khi ghi).
+ * Dữ kiện tự dựng bằng API như spec của I-1: môn + chương trình khối 10 + chủ đề có hai ĐVK, mỗi ĐVK có YCCĐ, 3 câu
+ * ready ở outcome đầu của ĐVK 1 (availability của ô Biết/trắc nghiệm ở ĐVK 1 thiếu 1 câu — số đếm khả dụng phải khớp
+ * trước và sau khi ghi).
  */
 
 const http = (app: INestApplication) => request(app.getHttpServer());
@@ -81,12 +72,10 @@ async function downloadTemplate(token: string): Promise<ExcelJS.Workbook> {
 }
 
 /**
- * Điền file hợp lệ đúng ca của spec I-1: sheet `Ma trận` giữ cả khối
- * thông tin chung (B2 tên; B5 tổng 10 và B6 "Không" do mẫu điền sẵn;
- * mã môn/chương trình ở cột D — không đụng) lẫn lưới. Điểm mỗi câu ở
- * B7–B10; 9 ô có câu, tổng tự tính khớp đúng 10 điểm, tỉ lệ dạng khớp
- * khuôn 30/20/20/30. Cột: MC F–H, Đ–S I–K, Trả lời ngắn L–N, Tự luận
- * O–Q theo thứ tự Biết/Hiểu/Vận dụng; hàng 15 = ĐVK 1, 16 = ĐVK 2.
+ * Điền file hợp lệ đúng ca của spec I-1: sheet `Ma trận` giữ cả khối thông tin chung (B2 tên; B5 tổng 10 và B6 "Không"
+ * do mẫu điền sẵn; mã môn/chương trình ở cột D — không đụng) lẫn lưới. Điểm mỗi câu ở B7–B10; 9 ô có câu, tổng tự tính
+ * khớp đúng 10 điểm, tỉ lệ dạng khớp khuôn 30/20/20/30. Cột: MC F–H, Đ–S I–K, Trả lời ngắn L–N, Tự luận O–Q theo thứ tự
+ * Biết/Hiểu/Vận dụng; hàng 15 = ĐVK 1, 16 = ĐVK 2.
  */
 function fillValid(wb: ExcelJS.Workbook, name: string): void {
   const ws = wb.getWorksheet('Ma trận')!;
@@ -164,9 +153,8 @@ beforeAll(async () => {
     const r = await http(app).post('/api/v1/questions').set(auth(admin)).send({
       categoryId: category.body.id, qtype: 'multichoice',
       questionText: `Câu I-2 ${i + 1}: chọn đáp án đúng.`, defaultMark: 1,
-      // Mô hình mới (quyết 12:04/12:12 ngày 26/10/2026): không còn
-      // name/fraction/single — MC đúng 4 lựa chọn, đúng một đáp án
-      // đúng đánh dấu bằng correct.
+      // Mô hình mới (quyết 12:04/12:12 ngày 26/10/2026): không còn name/fraction/single — MC đúng 4 lựa chọn, đúng một
+      // đáp án đúng đánh dấu bằng correct.
       answers: [
         { text: 'Đúng', correct: true },
         { text: 'Sai 1', correct: false },
@@ -206,8 +194,7 @@ describe('I-2: ghi nguyên tử khi nhập ma trận', () => {
       warnings: string[];
     };
     matrixId = view.id;
-    // Ma trận mới: draft, vào bank cá nhân của người nhập, đúng phạm
-    // vi hai ĐVK theo thứ tự hàng trong file.
+    // Ma trận mới: draft, vào bank cá nhân của người nhập, đúng phạm vi hai ĐVK theo thứ tự hàng trong file.
     expect(view.name).toBe('Ma trận nhập thử');
     expect(view.status).toBe('draft');
     expect(view.bankId).toBeTruthy();
@@ -227,8 +214,8 @@ describe('I-2: ghi nguyên tử khi nhập ma trận', () => {
       expect(got!.cellScore).toBe(expected.cellScore);
       expect(got!.position).toBe(expected.curriculumNodeId === lesson1Id ? 1 : 2);
     }
-    // Cảnh báo của view như đường tạo tay: tỉ lệ dạng câu khớp khuôn
-    // nên không cảnh báo; tỉ lệ mức lệch khuôn nên có cảnh báo mức.
+    // Cảnh báo của view như đường tạo tay: tỉ lệ dạng câu khớp khuôn nên không cảnh báo; tỉ lệ mức lệch khuôn nên có
+    // cảnh báo mức.
     expect(view.warnings.some((w) => w.includes('theo dạng câu'))).toBe(false);
     expect(view.warnings.some((w) => w.includes('theo mức'))).toBe(true);
 
@@ -270,8 +257,8 @@ describe('I-2: ghi nguyên tử khi nhập ma trận', () => {
   });
 
   it('file bị sửa tay sau xem trước: 422 kèm lỗi định vị, DB không còn dấu vết', async () => {
-    // Ô chứa chữ thay vì số: xem trước từng hợp lệ (bản chưa sửa),
-    // bản gửi ghi đã bị sửa → server chạy lại luật và từ chối.
+    // Ô chứa chữ thay vì số: xem trước từng hợp lệ (bản chưa sửa), bản gửi ghi đã bị sửa → server chạy lại luật và từ
+    // chối.
     const wb = await downloadTemplate(admin);
     fillValid(wb, 'Ma trận bị sửa tay');
     const clean = await postPreview(admin, await toBuffer(wb));
@@ -298,13 +285,10 @@ describe('I-2: ghi nguyên tử khi nhập ma trận', () => {
 
   it('người không đủ tư cách dùng luồng nhập: bị chặn 403 tại cổng bank của luồng và không ghi', async () => {
     const suffix = Date.now().toString(36);
-    // Diễn viên 1: vai tuỳ biến tại context hệ thống CHỈ có
-    // curriculum:view — đọc được môn/chương trình qua bề mặt công
-    // khai, nhưng không thuộc nhóm staff nên không có tư cách giữ
-    // bank ma trận cá nhân. Cổng của luồng nhập là cổng BANK (quyền
-    // phụ trách bank đích), không còn là cổng tại context của môn
-    // như trước đây: điểm chặn là bước tạo lười bank cá nhân ở bước
-    // parse của request ghi — 403 question.personal_bank_staff_only.
+    // Diễn viên 1: vai tuỳ biến tại context hệ thống CHỈ có curriculum:view — đọc được môn/chương trình qua bề mặt công
+    // khai, nhưng không thuộc nhóm staff nên không có tư cách giữ bank ma trận cá nhân. Cổng của luồng nhập là cổng
+    // BANK (quyền phụ trách bank đích), không còn là cổng tại context của môn như trước đây: điểm chặn là bước tạo lười
+    // bank cá nhân ở bước parse của request ghi — 403 question.personal_bank_staff_only.
     const viewer = await createUserViaApi(app, admin, { username: `hs_i2_${suffix}` });
     expect(viewer.username).toBe(`hs_i2_${suffix}`);
     const roleId = await createRoleViaApi(app, admin);
@@ -318,13 +302,10 @@ describe('I-2: ghi nguyên tử khi nhập ma trận', () => {
     expect(res.body.code).toBe('question.personal_bank_staff_only');
     expect(await countMatricesByName('Ma trận của người chỉ xem')).toBe(0);
 
-    // Diễn viên 2: người dùng không có quyền nào — cùng một cổng
-    // bank chặn 403 ngay ở bước parse. (Trước đây đường parse đọc
-    // môn qua đường công khai bị gác curriculum:view nên che môn
-    // thành "không tồn tại" và trả 422; hành vi đó là hệ quả của
-    // cổng sai bối cảnh, đã bỏ khi cổng chuyển về bank đích — môn
-    // không tồn tại THẬT vẫn trả quiz.matrix_import_subject_not_found
-    // trong payload preview cho người đã qua cổng bank.)
+    // Diễn viên 2: người dùng không có quyền nào — cùng một cổng bank chặn 403 ngay ở bước parse. (Trước đây đường
+    // parse đọc môn qua đường công khai bị gác curriculum:view nên che môn thành "không tồn tại" và trả 422; hành vi đó
+    // là hệ quả của cổng sai bối cảnh, đã bỏ khi cổng chuyển về bank đích — môn không tồn tại THẬT vẫn trả
+    // quiz.matrix_import_subject_not_found trong payload preview cho người đã qua cổng bank.)
     const nobody = await createUserViaApi(app, admin, { username: `nb_i2_${suffix}` });
     expect(nobody.username).toBe(`nb_i2_${suffix}`);
     const nobodyToken = (await login(app, `nb_i2_${suffix}`, STRONG_PASSWORD)).accessToken;
@@ -341,7 +322,6 @@ describe('I-2: ghi nguyên tử khi nhập ma trận', () => {
   });
 });
 
-/** Đọc thẳng cột chữ ký nội dung của một ma trận trong DB. */
 async function readMatrixSignature(matrixId: string): Promise<string | null> {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
@@ -355,21 +335,18 @@ async function readMatrixSignature(matrixId: string): Promise<string | null> {
 }
 
 /**
- * Lát D-1 của issue #233 — đóng cửa sổ đua của chống trùng bằng
- * schema: chữ ký nội dung được ghi xuống DB (cột `content_signature`)
- * và ràng buộc duy nhất theo cặp (bank đích, chữ ký) giữ cho hai
- * request ghi trùng ĐỒNG THỜI tuyệt đối cũng chỉ tạo một ma trận.
- * Các ca dưới đây kiểm ở cả ba tầng: hành vi API khi đua, ràng buộc
- * ở tầng DB, và tính nhất quán của cột chữ ký qua các đường tạo/sửa.
+ * Lát D-1 của issue #233 — đóng cửa sổ đua của chống trùng bằng schema: chữ ký nội dung được ghi xuống DB (cột
+ * `content_signature`) và ràng buộc duy nhất theo cặp (bank đích, chữ ký) giữ cho hai request ghi trùng ĐỒNG THỜI tuyệt
+ * đối cũng chỉ tạo một ma trận. Các ca dưới đây kiểm ở cả ba tầng: hành vi API khi đua, ràng buộc ở tầng DB, và tính
+ * nhất quán của cột chữ ký qua các đường tạo/sửa.
  */
 describe('D-1 (issue #233): chữ ký nội dung ở DB và cửa sổ đua', () => {
   it('hai request ghi trùng đồng thời tuyệt đối: chỉ tạo một ma trận, cả hai request nhận cùng một ma trận, không request nào nhận lỗi', async () => {
     const wb = await downloadTemplate(admin);
     fillValid(wb, 'Ma trận đua đồng thời');
     const buffer = await toBuffer(wb);
-    // Bắn hai request cùng lúc bằng Promise.all: tầng đối chiếu trong
-    // code có thể cùng đọc "chưa có" — điểm giữ cuối cùng là ràng
-    // buộc duy nhất ở DB và đường thua cuộc phải nhận về bản thắng.
+    // Bắn hai request cùng lúc bằng Promise.all: tầng đối chiếu trong code có thể cùng đọc "chưa có" — điểm giữ cuối
+    // cùng là ràng buộc duy nhất ở DB và đường thua cuộc phải nhận về bản thắng.
     const [r1, r2] = await Promise.all([postImport(admin, buffer), postImport(admin, buffer)]);
     expect(r1.status).toBe(201);
     expect(r2.status).toBe(201);
@@ -395,8 +372,8 @@ describe('D-1 (issue #233): chữ ký nội dung ở DB và cửa sổ đua', ()
       const signature = `d1-db-layer-${Date.now().toString(36)}`;
       const insertSql = `insert into exam_matrices (name, subject_id, curriculum_id, context_id, bank_id, content_signature)
         values ($1, $2, $3, $4, $5, $6) returning id`;
-      // context_id không có khoá ngoại (chỉ là neo ngữ cảnh của môn)
-      // nên một uuid bất kỳ là đủ cho ca kiểm ở tầng ràng buộc này.
+      // context_id không có khoá ngoại (chỉ là neo ngữ cảnh của môn) nên một uuid bất kỳ là đủ cho ca kiểm ở tầng ràng
+      // buộc này.
       const baseParams = ['Ma trận D-1 tầng DB', subjectId, curriculumId, randomUUID()];
       const first = await client.query(insertSql, [...baseParams, bankId, signature]);
       insertedIds.push(first.rows[0].id as string);
@@ -409,9 +386,8 @@ describe('D-1 (issue #233): chữ ký nội dung ở DB và cửa sổ đua', ()
       }
       expect(violation?.code).toBe('23505');
       expect(violation?.constraint ?? violation?.message).toContain('exam_matrices_bank_content_signature_unique');
-      // bank_id NULL: hai bản ghi cùng chữ ký cùng tồn tại được (mỗi
-      // NULL là phân biệt theo ngữ nghĩa PostgreSQL) — đường nhập
-      // luôn có bank đích nên phạm vi này chấp nhận được.
+      // bank_id NULL: hai bản ghi cùng chữ ký cùng tồn tại được (mỗi NULL là phân biệt theo ngữ nghĩa PostgreSQL) —
+      // đường nhập luôn có bank đích nên phạm vi này chấp nhận được.
       const nullBank1 = await client.query(insertSql, [...baseParams, null, signature]);
       const nullBank2 = await client.query(insertSql, [...baseParams, null, signature]);
       insertedIds.push(nullBank1.rows[0].id as string, nullBank2.rows[0].id as string);
@@ -424,8 +400,8 @@ describe('D-1 (issue #233): chữ ký nội dung ở DB và cửa sổ đua', ()
   });
 
   it('chữ ký được ghi ở đường tạo tay và tính lại khi nội dung đổi; sửa ngoài thành phần chữ ký thì chữ ký giữ nguyên', async () => {
-    // Tạo tay KHÔNG gắn bank: chữ ký vẫn được tính và ghi (việc ghi
-    // chữ ký không phụ thuộc bank; chỉ ràng buộc duy nhất mới theo bank).
+    // Tạo tay KHÔNG gắn bank: chữ ký vẫn được tính và ghi (việc ghi chữ ký không phụ thuộc bank; chỉ ràng buộc duy nhất
+    // mới theo bank).
     const created = await http(app).post('/api/v1/exam-matrices').set(auth(admin))
       .send({ name: 'Ma trận D-1 tạo tay', subjectId, curriculumId });
     expect(created.status).toBeLessThan(300);
@@ -465,19 +441,14 @@ describe('D-1 (issue #233): chữ ký nội dung ở DB và cửa sổ đua', ()
 });
 
 /**
- * Hồi quy điểm chặn D-3 (issue #233) — DIỄN VIÊN GIÁO VIÊN MÔ HÌNH
- * SEED: vai `editingteacher` tại context KHOÁ mình dạy, KHÔNG có bất
- * kỳ vai nào tại context hệ thống (đúng mô hình teacher1 trên
- * production; khuôn fixture của spec khung chương trình cho giáo
- * viên khoá). Môn/chương trình của spec neo tại context hệ thống như
- * chương trình GDPT thật. Trước lượt sửa phân quyền, giáo viên này
- * bị chặn ở cả ba đầu nhập (tải mẫu 403, preview báo "môn không tồn
- * tại", import 403) và ở đường tạo tay gắn bank, vì các luồng đó đòi
- * `curriculum:view`/`quiz:managematrix` tại context của môn — trong
- * khi thao tác ghi vốn chốt quyền tại bank đích. Các ca dưới đây
- * khoá hành vi đúng: giáo viên qua cổng bank của luồng thì dùng
- * được trọn vẹn; cổng đọc CÔNG KHAI của chương trình và nhánh tạo
- * tay không gắn bank (cổng tại context môn) giữ nguyên như cũ.
+ * Hồi quy điểm chặn D-3 (issue #233) — DIỄN VIÊN GIÁO VIÊN MÔ HÌNH SEED: vai `editingteacher` tại context KHOÁ mình
+ * dạy, KHÔNG có bất kỳ vai nào tại context hệ thống (đúng mô hình teacher1 trên production; khuôn fixture của spec
+ * khung chương trình cho giáo viên khoá). Môn/chương trình của spec neo tại context hệ thống như chương trình GDPT
+ * thật. Trước lượt sửa phân quyền, giáo viên này bị chặn ở cả ba đầu nhập (tải mẫu 403, preview báo "môn không tồn
+ * tại", import 403) và ở đường tạo tay gắn bank, vì các luồng đó đòi `curriculum:view`/`quiz:managematrix` tại context
+ * của môn — trong khi thao tác ghi vốn chốt quyền tại bank đích. Các ca dưới đây khoá hành vi đúng: giáo viên qua cổng
+ * bank của luồng thì dùng được trọn vẹn; cổng đọc CÔNG KHAI của chương trình và nhánh tạo tay không gắn bank (cổng tại
+ * context môn) giữ nguyên như cũ.
  */
 describe('I-2 với diễn viên giáo viên mô hình seed (hồi quy D-3, issue #233)', () => {
   let teacherA: { id: string; token: string };
@@ -581,14 +552,10 @@ describe('I-2 với diễn viên giáo viên mô hình seed (hồi quy D-3, issu
   });
 
   it('giáo viên mở và xuất bản đặc tả của ma trận trong bank cá nhân của mình: đạt (điều kiện Mục 7, issue #233)', async () => {
-    // Ma trận của giáo viên A trong bank cá nhân của chính mình, nhập
-    // trọn luồng bằng chính tài khoản giáo viên (đường nhập đã qua
-    // cổng bank và đọc tham chiếu nội bộ): bản đặc tả dựng từ ma
-    // trận này phải đi qua các đường đọc tham chiếu nội bộ
-    // (môn/chương trình/node/YCCĐ), không còn vấp `curriculum:view`
-    // tại context hệ thống của môn. Trước điều kiện Mục 7, chính
-    // bước mở đặc tả này 403 dù giáo viên đã qua cổng xem ma trận
-    // tại bank đích.
+    // Ma trận của giáo viên A trong bank cá nhân của chính mình, nhập trọn luồng bằng chính tài khoản giáo viên (đường
+    // nhập đã qua cổng bank và đọc tham chiếu nội bộ): bản đặc tả dựng từ ma trận này phải đi qua các đường đọc tham
+    // chiếu nội bộ (môn/chương trình/node/YCCĐ), không còn vấp `curriculum:view` tại context hệ thống của môn. Trước
+    // điều kiện Mục 7, chính bước mở đặc tả này 403 dù giáo viên đã qua cổng xem ma trận tại bank đích.
     const wb = await downloadTemplate(teacherA.token);
     fillValid(wb, 'Ma trận đặc tả của giáo viên seed');
     const buffer = await toBuffer(wb);
@@ -617,11 +584,9 @@ describe('I-2 với diễn viên giáo viên mô hình seed (hồi quy D-3, issu
   });
 
   it('giáo viên khác xem đặc tả ma trận trong bank cá nhân của người khác: bị chặn tại cổng xem ma trận của bank', async () => {
-    // Giáo viên B mở đặc tả của ma trận trong bank cá nhân của giáo
-    // viên A: cổng `requireMatrixCap` chặn ngay từ nhánh bank cá
-    // nhân của người khác — ma trận hiện như không tồn tại (404
-    // quiz.matrix_not_found) thay vì lộ nội dung, đúng hành vi ẩn
-    // bank cá nhân của người khác đã chốt cho các bề mặt đọc ma trận.
+    // Giáo viên B mở đặc tả của ma trận trong bank cá nhân của giáo viên A: cổng `requireMatrixCap` chặn ngay từ nhánh
+    // bank cá nhân của người khác — ma trận hiện như không tồn tại (404 quiz.matrix_not_found) thay vì lộ nội dung,
+    // đúng hành vi ẩn bank cá nhân của người khác đã chốt cho các bề mặt đọc ma trận.
     const created = await http(app).post('/api/v1/exam-matrices').set(auth(teacherA.token))
       .send({ name: 'Ma trận đặc tả riêng của giáo viên seed', subjectId, curriculumId, bankId: bankAId });
     expect(created.status, JSON.stringify(created.body)).toBe(201);

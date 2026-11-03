@@ -1,11 +1,9 @@
 import { isIP } from 'node:net';
 
 /**
- * Đối chiếu IP khách với danh sách subnet kiểu Moodle `quiz.subnet`:
- * các mục cách nhau bằng dấu phẩy, mỗi mục là một IP đơn hoặc một mạng
- * CIDR (IPv4 hoặc IPv6), ví dụ `10.0.0.0/8, 192.168.1.20, 2001:db8::/32`.
- * Địa chỉ IPv4-mapped IPv6 (::ffff:10.0.0.1) được chuẩn hoá về IPv4
- * trước khi so để một khách không lách qua dạng biểu diễn khác.
+ * Đối chiếu IP khách với danh sách subnet kiểu Moodle `quiz.subnet`: các mục cách nhau bằng dấu phẩy, mỗi mục là một IP
+ * đơn hoặc một mạng CIDR (IPv4 hoặc IPv6), ví dụ `10.0.0.0/8, 192.168.1.20, 2001:db8::/32`. Địa chỉ IPv4-mapped IPv6
+ * (::ffff:10.0.0.1) được chuẩn hoá về IPv4 trước khi so để một khách không lách qua dạng biểu diễn khác.
  */
 
 function ipToBytes(ip: string): number[] | null {
@@ -81,7 +79,6 @@ export function isValidSubnetList(subnet: string): boolean {
   return parts.every((p) => parseSubnetEntry(p) !== null);
 }
 
-/** IP khách có nằm trong ít nhất một mục của danh sách subnet không. */
 export function ipMatchesSubnetList(ip: string, subnet: string): boolean {
   const ipBytes = ipToBytes(ip);
   if (!ipBytes) return false;

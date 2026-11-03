@@ -3,12 +3,6 @@ export { MatrixNewPage as default } from './question-matrix';
 import { curriculumSubjectsQueryOptions, matrixBanksQueryOptions } from '../queries/matrix';
 import { queryClient } from '#lib/query-client';
 
-/**
- * clientLoader (F-01 đợt 1 + bổ sung clientLoader, rà soát #133):
- * prefetch bank ma trận + danh sách môn vào QueryClient singleton
- * (đúng khoá factory) trước khi component mount; component vẫn đọc
- * bằng useQuery cùng khoá và tự xử lý khi tải hỏng.
- */
 export async function clientLoader() {
   await Promise.all([
     queryClient.prefetchQuery(matrixBanksQueryOptions()),

@@ -3,21 +3,18 @@ import { BadgesService } from './badges.service';
 import { MessagingService, coursePreferenceName } from '../messaging/messaging.service';
 
 /**
- * Ghi nhận badge_awarded (lát #174-A, issue #174): thông báo huy hiệu
- * phải tuân luật ghi đè tắt tiếng theo khoá (NB-4) như mọi loại thông
- * báo gắn khoá khác. Call-site `issueBadge` trước lát này không truyền
- * `courseId` vào `notify()` nên huy hiệu thuộc khoá đã bị người nhận
- * tắt tiếng vẫn phát thông báo. Spec này dựng `BadgesService` với
- * `MessagingService` THẬT (fake repo/users theo đúng khuôn
- * `messaging-course-mute.spec.ts`) để khẳng định HÀNH VI quan sát
- * được ở tầng phân phối:
+ * Ghi nhận badge_awarded (lát #174-A, issue #174): thông báo huy hiệu phải tuân luật ghi đè tắt tiếng theo khoá (NB-4)
+ * như mọi loại thông báo gắn khoá khác. Call-site `issueBadge` trước lát này không truyền `courseId` vào `notify()` nên
+ * huy hiệu thuộc khoá đã bị người nhận tắt tiếng vẫn phát thông báo. Spec này dựng `BadgesService` với
+ * `MessagingService` THẬT (fake repo/users theo đúng khuôn `messaging-course-mute.spec.ts`) để khẳng định HÀNH VI quan
+ * sát được ở tầng phân phối:
  *
- * - Huy hiệu vẫn được CẤP (assertion ghi xong) kể cả khi thông báo bị
- *   mute chặn — tắt tiếng chỉ tắt thông báo, không tước huy hiệu.
- * - Khoá bị mute → không sinh dòng thông báo, không xếp job kênh
- *   ngoài, dispatch log ghi đúng một dòng `skipped-course-mute`.
- * - Khoá khác không bị ảnh hưởng; huy hiệu cấp site (không gắn khoá)
- *   vẫn phát bình thường dù người nhận đã mute một khoá bất kỳ.
+ * - Huy hiệu vẫn được CẤP (assertion ghi xong) kể cả khi thông báo bị mute chặn — tắt tiếng chỉ tắt thông báo, không
+ *   tước huy hiệu.
+ * - Khoá bị mute → không sinh dòng thông báo, không xếp job kênh ngoài, dispatch log ghi đúng một dòng
+ *   `skipped-course-mute`.
+ * - Khoá khác không bị ảnh hưởng; huy hiệu cấp site (không gắn khoá) vẫn phát bình thường dù người nhận đã mute một
+ *   khoá bất kỳ.
  */
 describe('BadgesService.issueBadge — thông báo badge_awarded tôn trọng tắt tiếng theo khoá (NB-4, #174-A)', () => {
   const MUTED_COURSE = 'course-muted';
@@ -42,9 +39,9 @@ describe('BadgesService.issueBadge — thông báo badge_awarded tôn trọng t�
     const notifyOutbox = { enqueueStandalone: vi.fn(async () => undefined) };
     const siteConfig = { getValue: vi.fn(async () => undefined) };
     const sendThrottle = { consume: vi.fn(async () => undefined) };
-    // Tham số thứ 11 là I18n (luật C-5, issue #219): spec này phát
-    // qua provider badge_awarded ('original-ok') nên không đi đường
-    // bản tóm tắt mặc định — stub rỗng là đủ.
+        // Tham số thứ 11 là I18n (luật C-5, issue #219): spec này phát qua provider badge_awarded ('original-ok') nên
+        // không
+    // đi đường bản tóm tắt mặc định — stub rỗng là đủ.
     const messaging = new MessagingService(
       messagingRepo as never, users as never, {} as never, {} as never, notifyOutbox as never,
       {} as never, unreadStream as never, dispatchQueue as never, siteConfig as never,
@@ -86,10 +83,8 @@ describe('BadgesService.issueBadge — thông báo badge_awarded tôn trọng t�
     const ctx = buildServices();
     ctx.setBadge(badgeOf(MUTED_COURSE));
     const issued = await ctx.badges.issueBadge('badge-1', 'user-1');
-    // Huy hiệu vẫn cấp: assertion được ghi và trả về cho người gọi.
     expect(issued.id).toBe('issued-1');
     expect(ctx.issuedRows).toHaveLength(1);
-    // Nhưng thông báo bị ghi đè theo khoá chặn ở mọi kênh.
     expect(ctx.insertedNotifications).toHaveLength(0);
     expect(ctx.externalJobs).toHaveLength(0);
     expect(ctx.dispatchLogs).toHaveLength(1);

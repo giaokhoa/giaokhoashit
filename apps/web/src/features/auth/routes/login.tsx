@@ -28,19 +28,16 @@ const OAUTH_ERROR_KEYS: Record<string, string> = {
   'auth.oauth_email_missing': 'oauthErrorEmailMissing',
 };
 
-/** Nhãn nút đăng nhập theo issuer — chỉ các issuer trong hợp đồng mới có nút. */
 const OAUTH_BUTTON_KEYS: Record<OAuthIssuer, string> = {
   google: 'signInWithGoogle',
   facebook: 'signInWithFacebook',
 };
 
 /**
- * Loader phía server (SSR, Giai đoạn 3 của issue #7): danh sách nhà
- * cung cấp OAuth đang bật là dữ liệu CÔNG KHAI (endpoint @Public) nên
- * lấy ngay trong loader qua API nội bộ và đưa vào HTML + cache truy
- * vấn khởi tạo — trang đăng nhập render đủ nút OAuth từ paint đầu
- * thay vì chờ fetch phía client. Lỗi phía API → trả null, trang vẫn
- * render và truy vấn phía client tự thử lại như trước.
+ * Loader phía server (SSR, Giai đoạn 3 của issue #7): danh sách nhà cung cấp OAuth đang bật là dữ liệu CÔNG KHAI
+ * (endpoint @Public) nên lấy ngay trong loader qua API nội bộ và đưa vào HTML + cache truy vấn khởi tạo — trang đăng
+ * nhập render đủ nút OAuth từ paint đầu thay vì chờ fetch phía client. Lỗi phía API → trả null, trang vẫn render và
+ * truy vấn phía client tự thử lại như trước.
  */
 export async function loader(): Promise<{ providers: OAuthProvidersResponse | null }> {
   const body = await fetchApiJson('/api/v1/auth/oauth/providers');
@@ -48,7 +45,6 @@ export async function loader(): Promise<{ providers: OAuthProvidersResponse | nu
   return { providers: parsed.success ? parsed.data : null };
 }
 
-/** Các bước của trang: form mật khẩu → bước hai MFA; hoặc luồng OTP email hai nhịp (xin mã → nhập mã). */
 type LoginStep = 'password' | 'mfa' | 'otp-email' | 'otp-code';
 
 export function LoginPage({ initialProviders }: { initialProviders?: OAuthProvidersResponse | null } = {}) {
@@ -56,10 +52,8 @@ export function LoginPage({ initialProviders }: { initialProviders?: OAuthProvid
   const { login, completeMfaLogin, requestEmailOtp, loginWithEmailOtp, loginWithSocial } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  // Callback social bị cổng MFA chặn đưa trình duyệt về đây kèm
-  // `twoFactorRedirect=true` (trang /oauth/callback chuyển tiếp
-  // sang): mở thẳng bước nhập mã — cookie chờ bước hai đã có trong
-  // trình duyệt, chỉ còn thiếu mã của người dùng.
+  // Callback social bị cổng MFA chặn đưa trình duyệt về đây kèm `twoFactorRedirect=true` (trang /oauth/callback chuyển
+  // tiếp sang): mở thẳng bước nhập mã — cookie chờ bước hai đã có trong trình duyệt, chỉ còn thiếu mã của người dùng.
   const [step, setStep] = useState<LoginStep>(() =>
     searchParams.get('twoFactorRedirect') === 'true' ? 'mfa' : 'password',
   );
@@ -67,31 +61,26 @@ export function LoginPage({ initialProviders }: { initialProviders?: OAuthProvid
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // Bước MFA: sign-in trả twoFactorRedirect (chưa có phiên nào) thì
-  // chuyển sang nhập mã TOTP/mã dự phòng để hoàn tất ở endpoint
-  // bước hai (kiểm mã vào nguồn trạng thái MFA duy nhất phía API).
+  // Bước MFA: sign-in trả twoFactorRedirect (chưa có phiên nào) thì chuyển sang nhập mã TOTP/mã dự phòng để hoàn tất ở
+  // endpoint bước hai (kiểm mã vào nguồn trạng thái MFA duy nhất phía API).
   const [mfaCode, setMfaCode] = useState('');
   const [mfaError, setMfaError] = useState<string | null>(null);
   const [mfaBusy, setMfaBusy] = useState(false);
-  // Luồng OTP email: giữ email đã xin mã để bước nhập mã dùng lại.
   const [otpEmail, setOtpEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [otpError, setOtpError] = useState<string | null>(null);
   const [otpBusy, setOtpBusy] = useState(false);
 
   /**
-   * Danh sách issuer đang bật lấy từ endpoint công khai: issuer chưa
-   * được quản trị cấu hình (enabled=false) thì KHÔNG hiện nút — đúng
-   * hành vi của Moodle với issuer chưa bật ở trang login. Từ GĐ2 nút
-   * này khởi động luồng social của Better Auth (client tự chuyển
-   * hướng tới nhà cung cấp sau khi API cấp URL authorize).
+   * Danh sách issuer đang bật lấy từ endpoint công khai: issuer chưa được quản trị cấu hình (enabled=false) thì KHÔNG
+   * hiện nút — đúng hành vi của Moodle với issuer chưa bật ở trang login. Từ GĐ2 nút này khởi động luồng social của
+   * Better Auth (client tự chuyển hướng tới nhà cung cấp sau khi API cấp URL authorize).
    */
   const providersQuery = useQuery({
     queryKey: queryKeys.oauthProviders,
     queryFn: async () => oauthProvidersResponseSchema.parse(await apiJson('/api/v1/auth/oauth/providers')),
-    // Dữ liệu loader phía server là cùng một đáp án: dùng làm giá trị
-    // khởi tạo để lần render đầu (cả server lẫn client) đã có đủ nút
-    // OAuth; nền truy vấn vẫn làm mới theo staleTime như mọi query.
+    // Dữ liệu loader phía server là cùng một đáp án: dùng làm giá trị khởi tạo để lần render đầu (cả server lẫn client)
+    // đã có đủ nút OAuth; nền truy vấn vẫn làm mới theo staleTime như mọi query.
     initialData: initialProviders ?? undefined,
   });
   const enabledIssuers = (providersQuery.data?.providers ?? []).filter((p) => p.enabled).map((p) => p.issuer);
@@ -141,7 +130,6 @@ export function LoginPage({ initialProviders }: { initialProviders?: OAuthProvid
     }
   }
 
-  /** Bước 1 của luồng OTP: xin hệ thống gửi mã 6 số tới email. */
   async function onOtpRequestSubmit(event: FormEvent) {
     event.preventDefault();
     setOtpBusy(true);
@@ -157,7 +145,6 @@ export function LoginPage({ initialProviders }: { initialProviders?: OAuthProvid
     }
   }
 
-  /** Bước 2 của luồng OTP: đăng nhập bằng mã vừa nhận qua email. */
   async function onOtpVerifySubmit(event: FormEvent) {
     event.preventDefault();
     setOtpBusy(true);
@@ -166,8 +153,7 @@ export function LoginPage({ initialProviders }: { initialProviders?: OAuthProvid
       await loginWithEmailOtp(otpEmail, otpCode);
       navigate('/profile');
     } catch (err) {
-      // Tài khoản có MFA: mã email đúng vẫn chưa có phiên — chuyển
-      // sang bước nhập mã TOTP như luồng mật khẩu.
+      // Tài khoản có MFA: mã email đúng vẫn chưa có phiên — chuyển sang bước nhập mã TOTP như luồng mật khẩu.
       if (err instanceof TwoFactorRedirectError) {
         setMfaCode('');
         setMfaError(null);
@@ -181,10 +167,9 @@ export function LoginPage({ initialProviders }: { initialProviders?: OAuthProvid
   }
 
   /**
-   * Bắt đầu luồng đăng nhập ngoài: client Better Auth xin URL
-   * authorize và tự chuyển hướng toàn trang tới nhà cung cấp; callback
-   * phía server đặt cookie phiên rồi đưa về `/oauth/callback`. Lỗi ở
-   * bước xin URL (provider chưa bật phía server) hiện tại trang này.
+   * Bắt đầu luồng đăng nhập ngoài: client Better Auth xin URL authorize và tự chuyển hướng toàn trang tới nhà cung cấp;
+   * callback phía server đặt cookie phiên rồi đưa về `/oauth/callback`. Lỗi ở bước xin URL (provider chưa bật phía
+   * server) hiện tại trang này.
    */
   async function startOAuth(issuer: OAuthIssuer) {
     setError(null);
@@ -395,10 +380,8 @@ export function LoginPage({ initialProviders }: { initialProviders?: OAuthProvid
 }
 
 /**
- * Export mặc định cho route module React Router framework mode (xem
- * src/routes.ts): bọc mỏng đọc dữ liệu loader rồi truyền xuống
- * LoginPage thuần — nhờ vậy test render trực tiếp LoginPage (không qua
- * loader) vẫn chạy như trước.
+ * Export mặc định cho route module React Router framework mode (xem src/routes.ts): bọc mỏng đọc dữ liệu loader rồi
+ * truyền xuống LoginPage thuần — nhờ vậy test render trực tiếp LoginPage (không qua loader) vẫn chạy như trước.
  */
 export default function LoginRoute() {
   const loaderData = useLoaderData<typeof loader>();

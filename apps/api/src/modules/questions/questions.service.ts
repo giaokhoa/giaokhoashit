@@ -15,7 +15,10 @@ import {
   type ShortanswerOptionsRow, type StepRow, type StimulusRow, type UsageRow, type VersionRow,
 } from '@lms/db/repositories/questions';
 
-/** Một đáp án trong payload cấu trúc theo qtype (đầu vào của API): cờ `correct` đúng/sai NHỊ PHÂN — tỉ trọng fraction đã bỏ hẳn (quyết 12:04 ngày 26/10/2026). */
+/**
+ * Một đáp án trong payload cấu trúc theo qtype (đầu vào của API): cờ `correct` đúng/sai NHỊ PHÂN — tỉ trọng fraction đã
+ * bỏ hẳn (quyết 12:04 ngày 26/10/2026).
+ */
 export interface QuestionAnswerInput {
   text: RichTextInput;
   correct?: boolean;
@@ -47,7 +50,10 @@ export interface QuestionOptionsInput {
 export interface QuestionContentInput {
   questionText?: RichTextInput;
   generalFeedback?: RichTextInput;
-  /** Hướng dẫn (guidance) — ghi vào bản ghi phía đáp án `question_answer_keys` của version, KHÔNG còn nằm trên dòng version (quyết 12:12 ngày 26/10/2026). */
+  /**
+   * Hướng dẫn (guidance) — ghi vào bản ghi phía đáp án `question_answer_keys` của version, KHÔNG còn nằm trên dòng
+   * version (quyết 12:12 ngày 26/10/2026).
+   */
   guidance?: RichTextInput;
   defaultMark?: number;
   penalty?: number;
@@ -55,9 +61,8 @@ export interface QuestionContentInput {
   answers?: QuestionAnswerInput[];
   options?: QuestionOptionsInput;
   /**
-   * Phía đáp án do người soạn gửi lên, ghi vào `question_answer_keys.solution`:
-   * essay gửi lời giải mẫu dạng `{answer}`; truefalse TF-A gửi đáp án từng
-   * mệnh đề dạng `{answers: [{statementId, value}]}`.
+   * Phía đáp án do người soạn gửi lên, ghi vào `question_answer_keys.solution`: essay gửi lời giải mẫu dạng `{answer}`;
+   * truefalse TF-A gửi đáp án từng mệnh đề dạng `{answers: [{statementId, value}]}`.
    */
   solution?: { answer: RichTextInput } | { answers: { statementId: string; value: boolean }[] };
 }
@@ -67,7 +72,10 @@ export interface QuestionView {
   entry: EntryRow;
   latestVersion: VersionRow;
   answers: AnswerRow[];
-  /** Bản ghi phía đáp án của version (guidance + solution); luôn có mặt ở view — version không có dòng `question_answer_keys` thì cả hai trường đều null. */
+  /**
+   * Bản ghi phía đáp án của version (guidance + solution); luôn có mặt ở view — version không có dòng
+   * `question_answer_keys` thì cả hai trường đều null.
+   */
   answerKey: { guidance: unknown; solution: unknown };
   options: Record<string, unknown> | null;
   stimulus: StimulusRow | null;
@@ -91,9 +99,8 @@ export const SUPPORTED_QTYPES = ['multichoice', 'truefalse', 'shortanswer', 'ess
 export type SupportedQtype = (typeof SUPPORTED_QTYPES)[number];
 
 /**
- * Hình dạng solution LƯU TRỮ ở `question_answer_keys.solution`: lời giải
- * mẫu của essay (`{answer}`) hoặc đáp án Đúng/Sai từng mệnh đề của
- * truefalse TF-A (`{answers}` bám theo statementId của thân câu).
+ * Hình dạng solution LƯU TRỮ ở `question_answer_keys.solution`: lời giải mẫu của essay (`{answer}`) hoặc đáp án
+ * Đúng/Sai từng mệnh đề của truefalse TF-A (`{answers}` bám theo statementId của thân câu).
  */
 type StoredSolution =
   | { answer: RichTextDocument }
@@ -105,7 +112,10 @@ interface NormalisedContent {
   multichoice?: { shuffleAnswers: boolean; answerNumbering: string; correctFeedback: RichTextDocument | null; incorrectFeedback: RichTextDocument | null; showStandardInstruction: boolean };
   shortanswer?: { useCase: boolean; numericAnswer: boolean; numericMaxLength: number | null; numericAllowSign: boolean; numericAllowDecimal: boolean };
   essay?: { responseFormat: string; responseRequired: boolean; responseFieldLines: number; minWordLimit: number | null; maxWordLimit: number | null; graderInfo: RichTextDocument | null; responseTemplate: RichTextDocument | null };
-  /** Nội dung phía đáp án ghi vào `question_answer_keys` cùng giao dịch với version: guidance (mọi qtype) + solution (essay: lời giải mẫu; truefalse TF-A: đáp án từng mệnh đề). Cả hai null thì không chèn dòng nào. */
+  /**
+   * Nội dung phía đáp án ghi vào `question_answer_keys` cùng giao dịch với version: guidance (mọi qtype) + solution
+   * (essay: lời giải mẫu; truefalse TF-A: đáp án từng mệnh đề). Cả hai null thì không chèn dòng nào.
+   */
   answerKey: { guidance: RichTextDocument | null; solution: StoredSolution | null };
 }
 
@@ -126,32 +136,25 @@ function badAnswerData(message: string): BadRequestException {
 /**
  * Facade của QuestionsModule (core_question của Moodle): BANK + ENGINE.
  *
- * Bất biến bank: sửa một câu hỏi KHÔNG BAO GIỜ thay đổi một version — nó tạo
- * version tiếp theo (với dòng answers/options riêng) và di chuyển con trỏ
- * latest của bank entry; usage tạo sau đó phân giải version mới,
- * attempt đã bắt đầu giữ version của chúng.
+ * Bất biến bank: sửa một câu hỏi KHÔNG BAO GIỜ thay đổi một version — nó tạo version tiếp theo (với dòng
+ * answers/options riêng) và di chuyển con trỏ latest của bank entry; usage tạo sau đó phân giải version mới, attempt đã
+ * bắt đầu giữ version của chúng.
  *
- * Lưu trữ nội dung theo mô hình giaokhoa (quyết 12:04 + 12:12 ngày
- * 26/10/2026): đáp án nằm ở question_answers (cờ `isCorrect` nhị phân +
- * feedback theo đáp án — KHÔNG còn tỉ trọng), options ở bảng riêng của
- * qtype, questionText/generalFeedback là tài liệu Tiptap trên dòng
- * version, còn guidance + solution nằm ở bản ghi phía đáp án
- * `question_answer_keys` (1-1 với version, cùng giao dịch ghi). Câu hỏi
- * KHÔNG có tên — nhãn hiển thị là trích đoạn nội dung. API nhận MỘT
- * payload cấu trúc theo qtype; service bung payload ra các bảng khi lưu.
+ * Lưu trữ nội dung theo mô hình giaokhoa (quyết 12:04 + 12:12 ngày 26/10/2026): đáp án nằm ở question_answers (cờ
+ * `isCorrect` nhị phân + feedback theo đáp án — KHÔNG còn tỉ trọng), options ở bảng riêng của qtype,
+ * questionText/generalFeedback là tài liệu Tiptap trên dòng version, còn guidance + solution nằm ở bản ghi phía đáp án
+ * `question_answer_keys` (1-1 với version, cùng giao dịch ghi). Câu hỏi KHÔNG có tên — nhãn hiển thị là trích đoạn nội
+ * dung. API nhận MỘT payload cấu trúc theo qtype; service bung payload ra các bảng khi lưu.
  *
- * Bất biến engine (questionusagebyactivity_test): một usage nhóm các attempt
- * theo (component, instanceId); bắt đầu một attempt PIN version latest hiện tại;
- * mọi chuyển đổi đều ghi một step (với step_data cho response);
- * deferredfeedback chấm khi kết thúc theo answers của version ĐÃ PIN
- * và options; trạng thái usage là tổng hợp của các attempt của nó.
+ * Bất biến engine (questionusagebyactivity_test): một usage nhóm các attempt theo (component, instanceId); bắt đầu một
+ * attempt PIN version latest hiện tại; mọi chuyển đổi đều ghi một step (với step_data cho response); deferredfeedback
+ * chấm khi kết thúc theo answers của version ĐÃ PIN và options; trạng thái usage là tổng hợp của các attempt của nó.
  */
 @Injectable()
 /**
- * Ngân hàng câu hỏi và vòng đời làm bài (question engine).
- * Đối chiếu Moodle: lib/questionlib.php và question/engine.
- * Bất biến version: sửa câu hỏi tạo version mới, không sửa tại chỗ; attempt đã bắt đầu giữ nguyên
- * version đã pin nên điểm cũ không đổi; chấm điểm do question-engine domain thực hiện theo qtype và behaviour.
+ * Ngân hàng câu hỏi và vòng đời làm bài (question engine). Đối chiếu Moodle: lib/questionlib.php và question/engine.
+ * Bất biến version: sửa câu hỏi tạo version mới, không sửa tại chỗ; attempt đã bắt đầu giữ nguyên version đã pin nên
+ * điểm cũ không đổi; chấm điểm do question-engine domain thực hiện theo qtype và behaviour.
  */
 export class QuestionsService {
   constructor(
@@ -163,31 +166,23 @@ export class QuestionsService {
   ) {}
 
   private async requireCap(actorId: string, capability: string, contextId: string): Promise<void> {
-    // Context câu hỏi trong lõi này là context khoá học/hệ thống; các archetype
-    // đã seed sống ở các cấp đó và evaluator đi dọc cây.
+    // Context câu hỏi trong lõi này là context khoá học/hệ thống; các archetype đã seed sống ở các cấp đó và evaluator
+    // đi dọc cây.
     await this.evaluator.requireCapability(actorId, capability, contextId);
   }
-  // --- bank: cổng đọc (issue #55) -------------------------------------------
-  // Đọc ngân hàng cũng là đọc NỘI DUNG THI (câu hỏi kèm đáp án): mọi đường
-  // đọc câu hỏi/danh mục/phiên bản/ngữ liệu phải qua cổng capability
-  // `question:useall` tại context của category chứa dữ liệu — cùng context
-  // mà các đường ghi (question:add / question:editall /
-  // question:managecategory) đã gác. Vai không có quyền nhận 404 mang mã
-  // của chính tài nguyên "không tồn tại" — không oracle phân biệt "có
-  // nhưng cấm" với "không có" (tiền lệ #44/#48). Các phương thức nội bộ
-  // (getQuestion, listVersions...) KHÔNG gác: quiz/engine gọi ở tầng
-  // service cho luồng làm bài của học sinh, luồng đó có cổng riêng của
-  // hoạt động; cổng ở đây chỉ áp cho các phương thức *ForViewer mà
-  // controller gọi.
+  // Đọc ngân hàng cũng là đọc NỘI DUNG THI (câu hỏi kèm đáp án): mọi đường đọc câu hỏi/danh mục/phiên bản/ngữ liệu phải
+  // qua cổng capability `question:useall` tại context của category chứa dữ liệu — cùng context mà các đường ghi
+  // (question:add / question:editall / question:managecategory) đã gác. Vai không có quyền nhận 404 mang mã của chính
+  // tài nguyên "không tồn tại" — không oracle phân biệt "có nhưng cấm" với "không có" (tiền lệ #44/#48). Các phương
+  // thức nội bộ (getQuestion, listVersions...) KHÔNG gác: quiz/engine gọi ở tầng service cho luồng làm bài của học
+  // sinh, luồng đó có cổng riêng của hoạt động; cổng ở đây chỉ áp cho các phương thức *ForViewer mà controller gọi.
 
   /** Actor có quyền dùng ngân hàng tại context này không (không ném). */
   private async canUseBank(actorId: string, contextId: string): Promise<boolean> {
-    // Riêng tư bank personal (issue #123): context là context của một
-    // bank personal thì chỉ chủ sở hữu (và site admin như bất biến hệ
-    // thống) đọc được nội dung trong đó — capability kế thừa từ context
-    // hệ thống của GV staff/manager KHÔNG mở bank riêng của đồng nghiệp.
-    // Đây là cổng chung của mọi đường *ForViewer nên REST và MCP
-    // (get_question dùng getQuestionForViewer) giữ parity tuyệt đối.
+    // Riêng tư bank personal (issue #123): context là context của một bank personal thì chỉ chủ sở hữu (và site admin
+    // như bất biến hệ thống) đọc được nội dung trong đó — capability kế thừa từ context hệ thống của GV staff/manager
+    // KHÔNG mở bank riêng của đồng nghiệp. Đây là cổng chung của mọi đường *ForViewer nên REST và MCP (get_question
+    // dùng getQuestionForViewer) giữ parity tuyệt đối.
     const bank = await this.repo.getBankByContextId(contextId).catch(() => undefined);
     if (bank && bank.scope === 'personal' && bank.ownerId !== actorId) {
       const isAdmin = await this.evaluator.isSiteAdmin(actorId).catch(() => false);
@@ -196,22 +191,15 @@ export class QuestionsService {
     return this.evaluator.hasCapability(actorId, 'question:useall', contextId).catch(() => false);
   }
 
-  // --- riêng tư bank personal: cổng GHI (issue #123, vòng 2) ----------------
-  // Sườn đọc đã gác bằng canUseBank/assert*Readable, nhưng các đường GHI
-  // trước đây chỉ gác capability tại context: GV archetype editingteacher
-  // kế thừa question:add/editall/managecategory từ context hệ thống xuống
-  // context bank personal của đồng nghiệp nên sửa/xoá/chen được nội dung
-  // trong bank riêng của người khác (phán quyết đánh giá PR #127
-  // 6392040333). Cổng ghi dùng chung dưới đây áp cùng quy tắc chủ sở hữu
-  // như tầng bank (isForeignPersonalBank ở QuestionBanksService): category
-  // thuộc bank personal của người khác → tài nguyên "không tồn tại" đối
-  // với actor (404 đúng mã not-found của chính tài nguyên đó, nhất quán
-  // sườn đọc); site admin giữ toàn quyền như bất biến hiện hành.
-  // Chỉ áp ở các method CÓ actorId mà controller gọi. Các đường nội bộ
-  // tầng service không qua actor (quiz/engine cho attempt của học sinh)
-  // không gọi các method này nên không đổi hành vi; MCP create_question
-  // luôn gọi với actor = chủ token vào bank của chính chủ nên qua cổng
-  // như thường.
+  // Sườn đọc đã gác bằng canUseBank/assert*Readable, nhưng các đường GHI trước đây chỉ gác capability tại context: GV
+  // archetype editingteacher kế thừa question:add/editall/managecategory từ context hệ thống xuống context bank
+  // personal của đồng nghiệp nên sửa/xoá/chen được nội dung trong bank riêng của người khác (phán quyết đánh giá PR
+  // #127 6392040333). Cổng ghi dùng chung dưới đây áp cùng quy tắc chủ sở hữu như tầng bank (isForeignPersonalBank ở
+  // QuestionBanksService): category thuộc bank personal của người khác → tài nguyên "không tồn tại" đối với actor (404
+  // đúng mã not-found của chính tài nguyên đó, nhất quán sườn đọc); site admin giữ toàn quyền như bất biến hiện hành.
+  // Chỉ áp ở các method CÓ actorId mà controller gọi. Các đường nội bộ tầng service không qua actor (quiz/engine cho
+  // attempt của học sinh) không gọi các method này nên không đổi hành vi; MCP create_question luôn gọi với actor = chủ
+  // token vào bank của chính chủ nên qua cổng như thường.
 
   /** Bank chứa category: bankId tường minh trước, rồi bank sở hữu context của category. */
   private async bankOfCategory(category: QCategoryRow): Promise<{ scope: string; ownerId: string | null } | undefined> {
@@ -264,14 +252,10 @@ export class QuestionsService {
     return category;
   }
 
-  // --- bank: categories ------------------------------------------------------
-
   /**
-   * Tạo category câu hỏi trong context. Context phải TỒN TẠI thật: trước
-   * đây context không hợp lệ bị nuốt lặng lẽ về context hệ thống rồi lỗi
-   * capability ở đó báo sai nguyên nhân (issue #55 mục 2) — nay trả 400
-   * nói đúng là context không tồn tại. Khi gắn bank (QB-1), context của
-   * category phải chính là context của bank — category sống trong bank
+   * Tạo category câu hỏi trong context. Context phải TỒN TẠI thật: trước đây context không hợp lệ bị nuốt lặng lẽ về
+   * context hệ thống rồi lỗi capability ở đó báo sai nguyên nhân (issue #55 mục 2) — nay trả 400 nói đúng là context
+   * không tồn tại. Khi gắn bank (QB-1), context của category phải chính là context của bank — category sống trong bank
    * thì quyền quản lý đọc tại context bank như mọi bề mặt bank khác.
    */
   async createCategory(actorId: string, input: { name: string; contextId: string; info?: string; parent?: string; bankId?: string }): Promise<QCategoryRow> {
@@ -287,9 +271,8 @@ export class QuestionsService {
       attachedBank = await this.repo.getBankById(input.bankId);
       if (!attachedBank) throw new NotFoundException({ message: `Question bank ${input.bankId} not found`, code: 'question.bank_not_found' });
     }
-    // Cổng ghi bank personal (issue #123 vòng 2): tạo category gắn vào
-    // bank personal của người khác — tường minh qua bankId hay ngầm qua
-    // context của bank đó — → 404 như bank không tồn tại.
+    // Cổng ghi bank personal (issue #123 vòng 2): tạo category gắn vào bank personal của người khác — tường minh qua
+    // bankId hay ngầm qua context của bank đó — → 404 như bank không tồn tại.
     for (const candidate of [attachedBank, await this.repo.getBankByContextId(ctx.id).catch(() => undefined)]) {
       if (candidate && candidate.scope === 'personal' && candidate.ownerId !== actorId
         && !(await this.evaluator.isSiteAdmin(actorId).catch(() => false))) {
@@ -322,10 +305,9 @@ export class QuestionsService {
   }
 
   /**
-   * Liệt kê category CHO MỘT NGƯỜI ĐỌC (cổng issue #55): có contextId thì
-   * phải có `question:useall` tại đúng context đó (không có → 404 như
-   * context không có category nào của mình); không có contextId thì chỉ
-   * trả các category nằm trong context người đọc dùng được.
+   * Liệt kê category CHO MỘT NGƯỜI ĐỌC (cổng issue #55): có contextId thì phải có `question:useall` tại đúng context đó
+   * (không có → 404 như context không có category nào của mình); không có contextId thì chỉ trả các category nằm trong
+   * context người đọc dùng được.
    */
   async listCategoriesForViewer(actorId: string, contextId?: string): Promise<QCategoryRow[]> {
     if (contextId !== undefined) {
@@ -352,12 +334,9 @@ export class QuestionsService {
     return this.listQuestions(categoryId);
   }
 
-  // --- bank: stimuli -----------------------------------------------------------
-
   /**
-   * Tạo ngữ liệu (stimulus) trong một category. Quyền theo context của
-   * category như câu hỏi: ai có quyền thêm câu hỏi ở category đó thì tạo
-   * được ngữ liệu ở đó.
+   * Tạo ngữ liệu (stimulus) trong một category. Quyền theo context của category như câu hỏi: ai có quyền thêm câu hỏi ở
+   * category đó thì tạo được ngữ liệu ở đó.
    */
   async createStimulus(actorId: string, input: { categoryId: string; content: RichTextInput }): Promise<StimulusRow> {
     const category = await this.getCategory(input.categoryId);
@@ -407,8 +386,7 @@ export class QuestionsService {
     }
   }
   /**
-   * Sửa nội dung ngữ liệu — bị cấm khi đã có version câu hỏi tham chiếu
-   * (stimulus bất biến từ thời điểm đó).
+   * Sửa nội dung ngữ liệu — bị cấm khi đã có version câu hỏi tham chiếu (stimulus bất biến từ thời điểm đó).
    */
   async updateStimulus(actorId: string, id: string, input: { content: RichTextInput }): Promise<StimulusRow> {
     const stimulus = await this.getStimulus(id);
@@ -433,8 +411,6 @@ export class QuestionsService {
     await this.outbox.enqueueStandalone({ aggregate: 'stimulus', type: 'stimulus_deleted', payload: { stimulusId: id } });
   }
 
-  // --- bank: questions -----------------------------------------------------------
-
   private assertSupportedQtype(qtype: string): asserts qtype is SupportedQtype {
     if (!(SUPPORTED_QTYPES as readonly string[]).includes(qtype)) {
       throw new BadRequestException({ message: `qtype ${qtype} is not one of the standard Moodle qtypes supported by the core (multichoice, truefalse, shortanswer, essay)`, code: 'question.qtype_not_supported' });
@@ -446,36 +422,24 @@ export class QuestionsService {
   }
 
   /**
-   * Chuẩn hoá phần đáp án/options của payload thành nội dung ghi xuống
-   * bảng, theo luật mô hình giaokhoa (quyết 12:04 + các điểm quyết D
-   * ngày 26/10/2026 — cùng luật mà `createQuestionSchema` của contracts
-   * kiểm ở cửa HTTP; service kiểm LẠI ở đây vì các đường nội bộ (MCP,
-   * nhân bản) không đi qua schema HTTP):
+   * Chuẩn hoá phần đáp án/options của payload thành nội dung ghi xuống bảng, theo luật mô hình giaokhoa (quyết 12:04 +
+   * các điểm quyết D ngày 26/10/2026 — cùng luật mà `createQuestionSchema` của contracts kiểm ở cửa HTTP; service kiểm
+   * LẠI ở đây vì các đường nội bộ (MCP, nhân bản) không đi qua schema HTTP):
    *  - multichoice: đúng 4 lựa chọn (D-3) và đúng MỘT đáp án đúng.
-   *  - truefalse (TF-A, điểm quyết D-1): KHÔNG có dòng answers. Thân
-   *    câu (`questionText`, hoặc thân câu đã lưu khi sửa mà không gửi
-   *    thân mới) phải là tài liệu chốt đuôi bằng đúng 4 mệnh đề; đáp
-   *    án từng mệnh đề đi qua `solution.answers` phủ đúng tập mệnh đề
-   *    đó và được sắp lại theo đúng thứ tự mệnh đề trong thân câu khi
-   *    ghi vào `question_answer_keys.solution`. Đường sửa chỉ gửi
-   *    thân câu mới mà không gửi `solution` thì phía đáp án kế thừa
-   *    của version trước do `updateQuestion` ghép sau bước này — NHƯNG
-   *    chỉ khi tập statementId của thân mới == tập solution cũ phủ,
-   *    khác thì `updateQuestion` từ chối 400 (bề mặt soạn luôn gửi kèm
-   *    đáp án cùng thân câu nên không đi qua đường kế thừa này).
-   *  - shortanswer: ít nhất 1 đáp án được chấp nhận; MỌI dòng liệt kê
-   *    đều là đáp án được chấp nhận (dòng `correct: false` bị từ chối —
-   *    đáp án sai không có chỗ trong danh sách này).
-   *  - essay: không có dòng đáp án; options mang cấu hình trả lời +
-   *    graderInfo + responseTemplate; giới hạn từ phải hợp lệ
-   *    (min ≤ max). Lời giải mẫu đi qua `solution.answer`.
-   * guidance đi vào `answerKey` (bản ghi phía đáp án) cho MỌI qtype.
+   *  - truefalse (TF-A, điểm quyết D-1): KHÔNG có dòng answers. Thân câu (`questionText`, hoặc thân câu đã lưu khi sửa
+   *    mà không gửi thân mới) phải là tài liệu chốt đuôi bằng đúng 4 mệnh đề; đáp án từng mệnh đề đi qua
+   *    `solution.answers` phủ đúng tập mệnh đề đó và được sắp lại theo đúng thứ tự mệnh đề trong thân câu khi ghi vào
+   *    `question_answer_keys.solution`. Đường sửa chỉ gửi thân câu mới mà không gửi `solution` thì phía đáp án kế thừa
+   *    của version trước do `updateQuestion` ghép sau bước này — NHƯNG chỉ khi tập statementId của thân mới == tập
+   *    solution cũ phủ, khác thì `updateQuestion` từ chối 400 (bề mặt soạn luôn gửi kèm đáp án cùng thân câu nên không
+   *    đi qua đường kế thừa này).
+   *  - shortanswer: ít nhất 1 đáp án được chấp nhận; MỌI dòng liệt kê đều là đáp án được chấp nhận (dòng `correct:
+   *    false` bị từ chối — đáp án sai không có chỗ trong danh sách này).
+   *  - essay: không có dòng đáp án; options mang cấu hình trả lời + graderInfo + responseTemplate; giới hạn từ phải hợp
+   *    lệ (min ≤ max). Lời giải mẫu đi qua `solution.answer`. guidance đi vào `answerKey` (bản ghi phía đáp án) cho MỌI
+   *    qtype.
    *
-   * @param qtype - dạng câu đã qua `assertSupportedQtype`.
-   * @param input - payload cấu trúc của người soạn.
-   * @returns Nội dung đã chuẩn hoá, sẵn sàng cho `writeVersionContent`.
-   * @throws BadRequestException `question.bad_answer_data` khi phần đáp
-   *   án/options vi phạm luật của qtype.
+   * @throws BadRequestException `question.bad_answer_data` khi phần đáp án/options vi phạm luật của qtype.
    */
   private normaliseContent(qtype: SupportedQtype, input: QuestionContentInput, existingQuestionText?: RichTextDocument | null): NormalisedContent {
     const options = input.options ?? {};
@@ -489,8 +453,8 @@ export class QuestionsService {
       if (input.answers && input.answers.length > 0) {
         throw badAnswerData('truefalse (TF-A) questions do not carry answer rows; per-statement answers go through solution.answers');
       }
-      // Thân câu hiệu lực: payload gửi thân mới thì dùng thân mới; đường
-      // sửa không gửi thân thì kiểm trên thân đã lưu của version trước.
+      // Thân câu hiệu lực: payload gửi thân mới thì dùng thân mới; đường sửa không gửi thân thì kiểm trên thân đã lưu
+      // của version trước.
       const doc = input.questionText !== undefined
         ? (typeof input.questionText === 'string' ? null : toRichTextDocument(input.questionText))
         : (existingQuestionText ?? null);
@@ -513,9 +477,8 @@ export class QuestionsService {
       }
       const solutionAnswers = input.solution !== undefined && 'answers' in input.solution ? input.solution.answers : null;
       if (!solutionAnswers) {
-        // Đường sửa không gửi solution: để null, updateQuestion kế thừa
-        // phía đáp án của version trước. Đường tạo mới (không có thân
-        // đã lưu) thì đáp án là bắt buộc — thiếu là payload lỗi.
+        // Đường sửa không gửi solution: để null, updateQuestion kế thừa phía đáp án của version trước. Đường tạo mới
+        // (không có thân đã lưu) thì đáp án là bắt buộc — thiếu là payload lỗi.
         if (existingQuestionText === undefined || existingQuestionText === null) {
           throw badAnswerData('truefalse requires solution.answers with a Đúng/Sai value for every statement');
         }
@@ -531,8 +494,8 @@ export class QuestionsService {
         answers: [],
         answerKey: {
           guidance: answerKey.guidance,
-          // Ghi theo đúng thứ tự mệnh đề trong thân câu: phía đọc/chấm
-          // bám statementId, thứ tự chỉ để trình bày nhất quán.
+          // Ghi theo đúng thứ tự mệnh đề trong thân câu: phía đọc/chấm bám statementId, thứ tự chỉ để trình bày nhất
+          // quán.
           solution: {
             answers: statements.map((s) => ({
               statementId: s.id,
@@ -586,7 +549,6 @@ export class QuestionsService {
         answerKey,
       };
     }
-    // multichoice
     if (answers.length !== 4) throw badAnswerData('multichoice requires exactly four choices');
     if (correctCount !== 1) throw badAnswerData('multichoice requires exactly one correct answer');
     return {
@@ -603,11 +565,9 @@ export class QuestionsService {
   }
 
   /**
-   * Ghi answers + options + bản ghi phía đáp án của một version trong
-   * cùng giao dịch tạo version. Bản ghi phía đáp án
-   * (`question_answer_keys`) chỉ được chèn khi có guidance hoặc
-   * solution — version không có dòng nào thì phía đọc quy về cả hai
-   * null (xem `answerKeyOf`).
+   * Ghi answers + options + bản ghi phía đáp án của một version trong cùng giao dịch tạo version. Bản ghi phía đáp án
+   * (`question_answer_keys`) chỉ được chèn khi có guidance hoặc solution — version không có dòng nào thì phía đọc quy
+   * về cả hai null (xem `answerKeyOf`).
    */
   private async writeVersionContent(tx: QuestionsTx, qtype: SupportedQtype, versionId: string, content: NormalisedContent): Promise<void> {
     const inserted: AnswerRow[] = [];
@@ -640,11 +600,9 @@ export class QuestionsService {
   }
 
   /**
-   * Nhân bản answers + options + bản ghi phía đáp án của một version
-   * sang version khác (khi sửa câu hỏi mà không đổi phần đáp án, và khi
-   * deep copy câu hỏi giữa các bank): nội dung phía đáp án (guidance +
-   * solution) đi cùng answers/options như một khối — bản copy thiếu
-   * guidance/solution của bản gốc là mất dữ liệu.
+   * Nhân bản answers + options + bản ghi phía đáp án của một version sang version khác (khi sửa câu hỏi mà không đổi
+   * phần đáp án, và khi deep copy câu hỏi giữa các bank): nội dung phía đáp án (guidance + solution) đi cùng
+   * answers/options như một khối — bản copy thiếu guidance/solution của bản gốc là mất dữ liệu.
    */
   private async cloneVersionContent(tx: QuestionsTx, qtype: SupportedQtype, fromVersionId: string, toVersionId: string, skipAnswerKey = false): Promise<void> {
     const answers = await this.repo.listAnswers(fromVersionId);
@@ -690,9 +648,8 @@ export class QuestionsService {
   }
 
   /**
-   * Nhân bản answers + options giữa hai version trong một giao dịch do
-   * caller quản lý — điểm dùng chung cho deep copy của lớp bank (QB-2/QB-4:
-   * copy câu hỏi và duyệt đóng góp tạo version mới từ nội dung version nguồn).
+   * Nhân bản answers + options giữa hai version trong một giao dịch do caller quản lý — điểm dùng chung cho deep copy
+   * của lớp bank (QB-2/QB-4: copy câu hỏi và duyệt đóng góp tạo version mới từ nội dung version nguồn).
    */
   async cloneVersionContentTx(tx: QuestionsTx, qtype: SupportedQtype, fromVersionId: string, toVersionId: string): Promise<void> {
     await this.cloneVersionContent(tx, qtype, fromVersionId, toVersionId);
@@ -707,10 +664,9 @@ export class QuestionsService {
   }
 
   /**
-   * Ánh xạ một dòng options đã nạp thành bản ghi phẳng của view theo
-   * qtype — phần thuần của optionsView, tách ra để loader theo lô
-   * (loadQuestionViews) dùng CHUNG đúng một ánh xạ với đường đọc đơn;
-   * version không có dòng options thì view mang `options: null`.
+   * Ánh xạ một dòng options đã nạp thành bản ghi phẳng của view theo qtype — phần thuần của optionsView, tách ra để
+   * loader theo lô (loadQuestionViews) dùng CHUNG đúng một ánh xạ với đường đọc đơn; version không có dòng options thì
+   * view mang `options: null`.
    */
   private optionsFromRow(
     qtype: string,
@@ -745,10 +701,9 @@ export class QuestionsService {
   }
 
   /**
-   * Bản ghi phía đáp án của một version dưới dạng view: version không
-   * có dòng `question_answer_keys` (không guidance, không solution)
-   * thì trả cả hai null — view LUÔN mang trường `answerKey` để bề mặt
-   * tiêu thụ không phải phân biệt "không có dòng" với "có dòng rỗng".
+   * Bản ghi phía đáp án của một version dưới dạng view: version không có dòng `question_answer_keys` (không guidance,
+   * không solution) thì trả cả hai null — view LUÔN mang trường `answerKey` để bề mặt tiêu thụ không phải phân biệt
+   * "không có dòng" với "có dòng rỗng".
    */
   async answerKeyOf(versionId: string): Promise<{ guidance: unknown; solution: unknown }> {
     const key: AnswerKeyRow | undefined = await this.repo.getAnswerKey(versionId);
@@ -765,20 +720,16 @@ export class QuestionsService {
   }
 
   /**
-   * Lắp view cho một TẬP câu hỏi bằng loader theo lô (issue #488):
-   * mọi thành phần của view — entry, version mới nhất, answers, bản
-   * ghi phía đáp án, options theo dạng, ngữ liệu — được nạp bằng số
-   * lượt truy vấn HẰNG SỐ theo số câu (mỗi bảng một lượt cho cả tập)
-   * rồi lắp trong bộ nhớ, thay cho vòng lặp gọi getQuestion từng câu.
-   * Bất biến giữ nguyên so với đường từng câu:
+   * Lắp view cho một TẬP câu hỏi bằng loader theo lô (issue #488): mọi thành phần của view — entry, version mới nhất,
+   * answers, bản ghi phía đáp án, options theo dạng, ngữ liệu — được nạp bằng số lượt truy vấn HẰNG SỐ theo số câu (mỗi
+   * bảng một lượt cho cả tập) rồi lắp trong bộ nhớ, thay cho vòng lặp gọi getQuestion từng câu. Bất biến giữ nguyên so
+   * với đường từng câu:
    * - Thứ tự view khớp đúng thứ tự dòng câu đầu vào.
-   * - Câu đầu tiên (theo thứ tự vào) thiếu entry hoặc thiếu version
-   *   mới nhất thì ném đúng NotFoundException cùng mã như getQuestion
-   *   (`question.entry_missing` / `question.version_missing`).
-   * - Hình dạng từng view do cùng các ánh xạ với assembleView dựng
-   *   (options qua optionsFromRow, answerKey mặc định cả hai null khi
-   *   version không có dòng phía đáp án, stimulus null khi version
-   *   không gắn hoặc không còn dòng ngữ liệu).
+   * - Câu đầu tiên (theo thứ tự vào) thiếu entry hoặc thiếu version mới nhất thì ném đúng NotFoundException cùng mã như
+   *   getQuestion (`question.entry_missing` / `question.version_missing`).
+   * - Hình dạng từng view do cùng các ánh xạ với assembleView dựng (options qua optionsFromRow, answerKey mặc định cả
+   *   hai null khi version không có dòng phía đáp án, stimulus null khi version không gắn hoặc không còn dòng ngữ
+   *   liệu).
    */
   private async loadQuestionViews(rows: QuestionRow[]): Promise<QuestionView[]> {
     if (!rows.length) return [];
@@ -847,13 +798,10 @@ export class QuestionsService {
   }
 
   /**
-   * Lõi ghi một câu hỏi TRONG một giao dịch đang mở: question + entry +
-   * version 1 + nội dung theo qtype. Tách ra để đường tạo đơn
-   * (createQuestion) và đường tạo nhóm nguyên tử
-   * (createStimulusWithQuestions) dùng CHUNG một đường ghi — không có
-   * biến thể nghiệp vụ thứ hai. Nội dung phải đã qua normaliseContent
-   * ở caller (chạy trước khi mở giao dịch để lỗi payload không giữ
-   * giao dịch mở).
+   * Lõi ghi một câu hỏi TRONG một giao dịch đang mở: question + entry + version 1 + nội dung theo qtype. Tách ra để
+   * đường tạo đơn (createQuestion) và đường tạo nhóm nguyên tử (createStimulusWithQuestions) dùng CHUNG một đường ghi —
+   * không có biến thể nghiệp vụ thứ hai. Nội dung phải đã qua normaliseContent ở caller (chạy trước khi mở giao dịch để
+   * lỗi payload không giữ giao dịch mở).
    */
   private async insertQuestionGraph(
     tx: QuestionsTx,
@@ -880,8 +828,8 @@ export class QuestionsService {
   }
 
   /**
-   * Tạo câu hỏi kèm version 1 và entry. Đáp án/options của payload được
-   * bung ra question_answers + bảng options của qtype trong cùng giao dịch.
+   * Tạo câu hỏi kèm version 1 và entry. Đáp án/options của payload được bung ra question_answers + bảng options của
+   * qtype trong cùng giao dịch.
    */
   async createQuestion(actorId: string, input: {
     categoryId: string; qtype: string;
@@ -903,15 +851,12 @@ export class QuestionsService {
   }
 
   /**
-   * Tạo MỘT ngữ liệu + NHÓM câu hỏi bám ngữ liệu đó trong đúng MỘT
-   * giao dịch (đường của tool MCP create_stimulus_with_questions, lát
-   * MCP-1 issue #163): hoặc cả nhóm tồn tại, hoặc không gì tồn tại —
-   * khác hẳn việc client gọi create_stimulus rồi create_question rời
-   * rạc (câu mồ côi khi rớt giữa chừng). Cổng quyền + chuẩn hoá nội
-   * dung của TỪNG câu chạy TRƯỚC khi mở giao dịch theo đúng đường của
-   * createQuestion/createStimulus; phần ghi dùng chung lõi
-   * insertQuestionGraph. Ngữ liệu mới thuộc cùng category nên không
-   * cần resolveStimulus — mọi câu trong nhóm bám thẳng stimulus vừa tạo.
+   * Tạo MỘT ngữ liệu + NHÓM câu hỏi bám ngữ liệu đó trong đúng MỘT giao dịch (đường của tool MCP
+   * create_stimulus_with_questions, lát MCP-1 issue #163): hoặc cả nhóm tồn tại, hoặc không gì tồn tại — khác hẳn việc
+   * client gọi create_stimulus rồi create_question rời rạc (câu mồ côi khi rớt giữa chừng). Cổng quyền + chuẩn hoá nội
+   * dung của TỪNG câu chạy TRƯỚC khi mở giao dịch theo đúng đường của createQuestion/createStimulus; phần ghi dùng
+   * chung lõi insertQuestionGraph. Ngữ liệu mới thuộc cùng category nên không cần resolveStimulus — mọi câu trong nhóm
+   * bám thẳng stimulus vừa tạo.
    */
   async createStimulusWithQuestions(
     actorId: string,
@@ -927,8 +872,8 @@ export class QuestionsService {
     const category = await this.getCategory(input.categoryId);
     await this.assertCategoryNotForeignPersonal(actorId, category, () => this.categoryNotFound(input.categoryId));
     await this.requireCap(actorId, 'question:add', category.contextId);
-    // Chuẩn hoá + kiểm qtype của cả nhóm TRƯỚC giao dịch: một câu lỗi
-    // là cả nhóm dừng tại đây, chưa có dòng nào được ghi.
+    // Chuẩn hoá + kiểm qtype của cả nhóm TRƯỚC giao dịch: một câu lỗi là cả nhóm dừng tại đây, chưa có dòng nào được
+    // ghi.
     const prepared = input.questions.map((question) => {
       this.assertSupportedQtype(question.qtype);
       return { question, content: this.normaliseContent(question.qtype, question) };
@@ -964,9 +909,8 @@ export class QuestionsService {
     return this.assembleView(q, entry, latest);
   }
   /**
-   * Câu hỏi trong category — view lắp theo lô bằng loadQuestionViews
-   * (issue #488); hình dạng và thứ tự giữ nguyên như đường lắp từng
-   * câu trước đây.
+   * Câu hỏi trong category — view lắp theo lô bằng loadQuestionViews (issue #488); hình dạng và thứ tự giữ nguyên như
+   * đường lắp từng câu trước đây.
    */
   async listQuestions(categoryId: string): Promise<QuestionView[]> {
     const rows = await this.repo.listQuestionsInCategory(categoryId);
@@ -989,10 +933,9 @@ export class QuestionsService {
   }
 
   /**
-   * Phát URL ký cho ảnh nhúng trong mọi tài liệu của một QuestionView (thân
-   * câu, phản hồi chung, đáp án + phản hồi của đáp án, ngữ liệu). Cổng đọc
-   * câu hỏi của bề mặt này (assertQuestionReadable) là cổng uỷ quyền cho các
-   * URL ký đó — xem FilesService.resolveQuestionImageUrls.
+   * Phát URL ký cho ảnh nhúng trong mọi tài liệu của một QuestionView (thân câu, phản hồi chung, đáp án + phản hồi của
+   * đáp án, ngữ liệu). Cổng đọc câu hỏi của bề mặt này (assertQuestionReadable) là cổng uỷ quyền cho các URL ký đó —
+   * xem FilesService.resolveQuestionImageUrls.
    */
   private async resolveQuestionImages(view: QuestionView): Promise<QuestionView> {
     const [questionText, generalFeedback, stimulusContent] = await Promise.all([
@@ -1005,11 +948,9 @@ export class QuestionsService {
       answer: await this.files.resolveQuestionImageUrls(a.answer),
       feedback: await this.files.resolveQuestionImageUrls(a.feedback),
     })));
-    // Guidance + lời giải mẫu của essay cũng là tài liệu rich text có
-    // thể nhúng ảnh — phát URL ký cùng cổng đọc với thân câu (guidance
-    // hiện cho học sinh lúc làm bài qua attempt view, cổng của nó nằm ở
-    // bề mặt quiz; ở đây mới chỉ là đường đọc ngân hàng có cổng
-    // question:useall).
+    // Guidance + lời giải mẫu của essay cũng là tài liệu rich text có thể nhúng ảnh — phát URL ký cùng cổng đọc với
+    // thân câu (guidance hiện cho học sinh lúc làm bài qua attempt view, cổng của nó nằm ở bề mặt quiz; ở đây mới chỉ
+    // là đường đọc ngân hàng có cổng question:useall).
     const guidance = await this.files.resolveQuestionImageUrls(view.answerKey.guidance as never);
     let solution: unknown = view.answerKey.solution;
     const solutionAnswer = (solution as { answer?: unknown } | null)?.answer;
@@ -1034,11 +975,9 @@ export class QuestionsService {
    * Nội dung một version cụ thể (answers + options) — dùng cho hiển thị và kiểm chứng theo version.
    */
   /**
-   * Nội dung một version CỤ THỂ (answers + options + bản ghi phía đáp
-   * án) — bề mặt quiz dựng attempt view từ version ĐÃ PIN bằng hàm
-   * này: guidance của bản ghi phía đáp án hiện kèm câu hỏi trong lúc
-   * làm (điểm quyết D-4), solution chỉ lộ theo cổng xem lại của lần
-   * ghim ở tầng quiz.
+   * Nội dung một version CỤ THỂ (answers + options + bản ghi phía đáp án) — bề mặt quiz dựng attempt view từ version ĐÃ
+   * PIN bằng hàm này: guidance của bản ghi phía đáp án hiện kèm câu hỏi trong lúc làm (điểm quyết D-4), solution chỉ lộ
+   * theo cổng xem lại của lần ghim ở tầng quiz.
    */
   async getVersionContent(questionId: string, versionId: string): Promise<{ version: VersionRow; answers: AnswerRow[]; answerKey: { guidance: unknown; solution: unknown }; options: Record<string, unknown> | null }> {
     const q = await this.repo.getQuestion(questionId);
@@ -1055,29 +994,17 @@ export class QuestionsService {
 
   /** Sửa tạo một version MỚI; version hiện có (và attempt pin vào chúng) không bị chạm. */
   /**
-   * Sửa câu hỏi = tạo version mới và nâng latestVersion của entry. Phần
-   * đáp án/options không được gửi lên thì nhân bản nguyên từ version trước
-   * sang version mới; stimulusId = null gỡ gắn ngữ liệu, không gửi thì giữ.
+   * Sửa câu hỏi = tạo version mới và nâng latestVersion của entry. Phần đáp án/options không được gửi lên thì nhân bản
+   * nguyên từ version trước sang version mới; stimulusId = null gỡ gắn ngữ liệu, không gửi thì giữ.
    */
   /**
-   * Sửa câu hỏi = tạo version mới và nâng latestVersion của entry. Phần
-   * đáp án/options không được gửi lên thì nhân bản nguyên từ version
-   * trước sang version mới; stimulusId = null gỡ gắn ngữ liệu, không
-   * gửi thì giữ. Guidance/solution (bản ghi phía đáp án) không được gửi
-   * lên thì KẾ THỪA từ version trước — cùng ngữ nghĩa kế thừa từng
-   * trường của thân câu; gửi lên thì thay bằng giá trị mới trong cùng
-   * giao dịch tạo version. Ngoại lệ TF-A: solution cũ chỉ kế thừa khi
-   * tập statementId của thân mới == tập statementId solution cũ phủ;
-   * thân mới đổi tập id mà không gửi solution thì từ chối 400
-   * (`question.bad_answer_data`) thay vì ghi version mang solution
-   * lệch tập — engine dựng danh sách ý từ solution nên lệch tập sẽ
-   * chấm sai âm thầm.
-   *
-   * @param actorId - người sửa; phải có `question:editall` tại context
-   *   của category chứa câu (và không phải bank personal của người khác).
-   * @param input - payload sửa theo `QuestionContentInput`; luật phía
-   *   đáp án kiểm theo qtype ĐÃ LƯU của câu qua `normaliseContent`.
-   * @returns View đầy đủ của version mới nhất sau khi sửa.
+   * Sửa câu hỏi = tạo version mới và nâng latestVersion của entry. Phần đáp án/options không được gửi lên thì nhân bản
+   * nguyên từ version trước sang version mới; stimulusId = null gỡ gắn ngữ liệu, không gửi thì giữ. Guidance/solution
+   * (bản ghi phía đáp án) không được gửi lên thì KẾ THỪA từ version trước — cùng ngữ nghĩa kế thừa từng trường của thân
+   * câu; gửi lên thì thay bằng giá trị mới trong cùng giao dịch tạo version. Ngoại lệ TF-A: solution cũ chỉ kế thừa khi
+   * tập statementId của thân mới == tập statementId solution cũ phủ; thân mới đổi tập id mà không gửi solution thì từ
+   * chối 400 (`question.bad_answer_data`) thay vì ghi version mang solution lệch tập — engine dựng danh sách ý từ
+   * solution nên lệch tập sẽ chấm sai âm thầm.
    */
   async updateQuestion(actorId: string, questionId: string, input: QuestionContentInput): Promise<QuestionView> {
     const { question: q, entry, latestVersion } = await this.getQuestion(questionId);
@@ -1085,27 +1012,23 @@ export class QuestionsService {
     await this.assertCategoryNotForeignPersonal(actorId, category, () => this.questionNotFound(questionId));
     await this.requireCap(actorId, 'question:editall', category.contextId);
     this.assertSupportedQtype(q.qtype);
-    // Câu truefalse TF-A không có answers/options: thân câu (nơi chứa
-    // mệnh đề) hoặc solution (đáp án từng mệnh đề) đổi là nội dung mới.
+    // Câu truefalse TF-A không có answers/options: thân câu (nơi chứa mệnh đề) hoặc solution (đáp án từng mệnh đề) đổi
+    // là nội dung mới.
     const hasNewContent = input.answers !== undefined || input.options !== undefined
       || (q.qtype === 'truefalse' && (input.questionText !== undefined || input.solution !== undefined));
     const content = hasNewContent ? this.normaliseContent(q.qtype, input, latestVersion.questionText as RichTextDocument) : null;
     const touchesAnswerKey = input.guidance !== undefined || input.solution !== undefined;
-    // Kế thừa phía đáp án của version trước cho các trường payload
-    // không nhắc tới (chỉ khi version mới có nội dung đáp án mới hoặc
-    // payload chủ động đổi phía đáp án).
+    // Kế thừa phía đáp án của version trước cho các trường payload không nhắc tới (chỉ khi version mới có nội dung đáp
+    // án mới hoặc payload chủ động đổi phía đáp án).
     const prevKey = (content || touchesAnswerKey) ? await this.answerKeyOf(latestVersion.id) : null;
     if (content) {
       if (input.guidance === undefined) content.answerKey.guidance = prevKey!.guidance as RichTextDocument | null;
       if (input.solution === undefined) {
-        // TF-A — chặn kế thừa solution lệch tập mệnh đề (khe S6):
-        // thân mới đổi tập statementId (xoá/thêm mệnh đề) mà giữ
-        // solution cũ thì engine dựng danh sách ý từ solution nên các
-        // ý mới không khớp, chấm sai âm thầm. Chỉ kế thừa khi tập id
-        // cũ == tập id mới; khác thì từ chối rõ ràng, bắt người sửa
-        // gửi kèm solution.answers phủ đúng tập mới. Thân không đổi
-        // thì tập id không đổi nên kế thừa an toàn (đường sửa chỉ đổi
-        // stem/guidance của read-gate vẫn đi qua đây).
+        // TF-A — chặn kế thừa solution lệch tập mệnh đề (khe S6): thân mới đổi tập statementId (xoá/thêm mệnh đề) mà
+        // giữ solution cũ thì engine dựng danh sách ý từ solution nên các ý mới không khớp, chấm sai âm thầm. Chỉ kế
+        // thừa khi tập id cũ == tập id mới; khác thì từ chối rõ ràng, bắt người sửa gửi kèm solution.answers phủ đúng
+        // tập mới. Thân không đổi thì tập id không đổi nên kế thừa an toàn (đường sửa chỉ đổi stem/guidance của
+        // read-gate vẫn đi qua đây).
         if (q.qtype === 'truefalse' && input.questionText !== undefined) {
           const newStatements = getTrueFalseStatements(toRichTextDocument(input.questionText));
           const prevAnswers = (prevKey!.solution as { answers?: { statementId: string }[] } | null)?.answers;
@@ -1138,9 +1061,8 @@ export class QuestionsService {
       if (content) {
         await this.writeVersionContent(tx, q.qtype as SupportedQtype, version.id, content);
       } else if (touchesAnswerKey) {
-        // Chỉ đổi phía đáp án: nhân bản answers/options, bỏ qua bản ghi
-        // phía đáp án cũ rồi ghi bản ghi mới (trường không gửi lên lấy
-        // lại từ bản ghi trước).
+        // Chỉ đổi phía đáp án: nhân bản answers/options, bỏ qua bản ghi phía đáp án cũ rồi ghi bản ghi mới (trường
+        // không gửi lên lấy lại từ bản ghi trước).
         await this.cloneVersionContent(tx, q.qtype as SupportedQtype, latestVersion.id, version.id, true);
         const guidance = input.guidance !== undefined ? this.docOrNull(input.guidance) : (prevKey!.guidance as RichTextDocument | null);
         const solution: StoredSolution | null = input.solution !== undefined
@@ -1156,11 +1078,9 @@ export class QuestionsService {
       } else {
         await this.cloneVersionContent(tx, q.qtype as SupportedQtype, latestVersion.id, version.id);
       }
-      // Câu nhập từ Ngân hàng hệ thống bị sửa ở trung tâm thì thành bản
-      // phái sinh (issue #585): đổi cờ trong CÙNG transaction với việc
-      // tạo version mới — phiên bản nguyên trạng vẫn đọc lại được theo
-      // số hiệu version đã nhập, chỉ kind đổi từ `pristine` sang
-      // `derived`. Điều kiện kind = 'pristine' giữ tính idempotent.
+      // Câu nhập từ Ngân hàng hệ thống bị sửa ở trung tâm thì thành bản phái sinh (issue #585): đổi cờ trong CÙNG
+      // transaction với việc tạo version mới — phiên bản nguyên trạng vẫn đọc lại được theo số hiệu version đã nhập,
+      // chỉ kind đổi từ `pristine` sang `derived`. Điều kiện kind = 'pristine' giữ tính idempotent.
       await this.repo.markSystemImportDerived(q.id, tx);
     });
     await this.repo.updateEntry(entry.id, { latestVersion: nextVersion });
@@ -1169,12 +1089,9 @@ export class QuestionsService {
     return this.getQuestion(q.id);
   }
 
-  // --- bank: curriculum links (issue #20 Chặng 2, mục A.6) ----------------------
-  // Gắn kết ở CẤP DANH TÍNH câu hỏi: sửa câu (version mới) không làm mất
-  // gắn kết. Quyền ghi = capability sửa câu hỏi (question:editall) tại
-  // context của category chứa câu — như mọi thao tác ghi câu hiện hành.
+  // Gắn kết ở CẤP DANH TÍNH câu hỏi: sửa câu (version mới) không làm mất gắn kết. Quyền ghi = capability sửa câu hỏi
+  // (question:editall) tại context của category chứa câu — như mọi thao tác ghi câu hiện hành.
 
-  /** Câu hỏi + kiểm tra quyền sửa câu tại context của category chứa nó. */
   private async questionForEdit(actorId: string, questionId: string): Promise<QuestionRow> {
     const q = await this.repo.getQuestion(questionId);
     if (!q) throw new NotFoundException({ message: `Question ${questionId} not found`, code: 'question.not_found' });
@@ -1190,7 +1107,6 @@ export class QuestionsService {
     return this.getCurriculumLinks(questionId);
   }
 
-  /** Đọc toàn bộ gắn kết chương trình của một câu hỏi. */
   async getCurriculumLinks(questionId: string): Promise<QuestionCurriculumLinksView> {
     const q = await this.repo.getQuestion(questionId);
     if (!q) throw new NotFoundException({ message: `Question ${questionId} not found`, code: 'question.not_found' });
@@ -1232,13 +1148,11 @@ export class QuestionsService {
   }
 
   /**
-   * Gắn câu hỏi vào một YCCĐ kèm mức độ nhận thức của cặp (mức nằm trên
-   * dòng nối — mục A.2). KHÔNG có quy tắc nhất quán môn ở cửa này (vòng
-   * sửa F1 của review độc lập Chặng 2): `question_subjects` chỉ là khai
-   * báo tường minh, và môn của câu khi lọc/đếm là hợp nhất khai báo
-   * tường minh với môn suy ngược từ các YCCĐ đã gắn (xem
-   * `filterQuestionsByCurriculumLinks`) — nên gắn YCCĐ thuộc bất kỳ môn
-   * nào cũng được, bất kể câu đã khai môn gì hay chưa.
+   * Gắn câu hỏi vào một YCCĐ kèm mức độ nhận thức của cặp (mức nằm trên dòng nối — mục A.2). KHÔNG có quy tắc nhất quán
+   * môn ở cửa này (vòng sửa F1 của review độc lập Chặng 2): `question_subjects` chỉ là khai báo tường minh, và môn của
+   * câu khi lọc/đếm là hợp nhất khai báo tường minh với môn suy ngược từ các YCCĐ đã gắn (xem
+   * `filterQuestionsByCurriculumLinks`) — nên gắn YCCĐ thuộc bất kỳ môn nào cũng được, bất kể câu đã khai môn gì hay
+   * chưa.
    */
   async attachOutcome(actorId: string, questionId: string, outcomeId: string, cognitiveLevel: string): Promise<QuestionCurriculumLinksView> {
     await this.questionForEdit(actorId, questionId);
@@ -1258,7 +1172,6 @@ export class QuestionsService {
     return this.getCurriculumLinks(questionId);
   }
 
-  /** Đổi mức độ nhận thức của một dòng nối câu–YCCĐ đã gắn. */
   async updateOutcomeLink(actorId: string, questionId: string, outcomeId: string, cognitiveLevel: string): Promise<QuestionCurriculumLinksView> {
     await this.questionForEdit(actorId, questionId);
     if (!(await this.repo.getQuestionOutcomeLink(questionId, outcomeId))) {
@@ -1292,9 +1205,8 @@ export class QuestionsService {
   }
 
   /**
-   * Lọc ngân hàng theo gắn kết chương trình + dạng + trạng thái (mục
-   * A.6) — phục vụ UI soạn câu và đếm ứng viên ma trận. Trả view đầy đủ
-   * như các endpoint liệt kê hiện hành của ngân hàng.
+   * Lọc ngân hàng theo gắn kết chương trình + dạng + trạng thái (mục A.6) — phục vụ UI soạn câu và đếm ứng viên ma
+   * trận. Trả view đầy đủ như các endpoint liệt kê hiện hành của ngân hàng.
    */
   async listQuestionsByCurriculumFilter(filter: {
     subjectId?: string; outcomeId?: string; nodeId?: string; cognitiveLevel?: string; qtype?: string; status?: string;
@@ -1305,11 +1217,9 @@ export class QuestionsService {
   }
 
   /**
-   * Số câu khớp bộ lọc chương trình, NHÓM THEO category của bank
-   * entry, đếm bằng `count()` tại SQL (issue #488) — cho các đường chỉ
-   * cần số đếm như đếm ứng viên ô ma trận: không nạp danh sách câu,
-   * không lắp view. Điều kiện lọc và cổng kiểm chứng bộ lọc giống hệt
-   * listQuestionsByCurriculumFilter.
+   * Số câu khớp bộ lọc chương trình, NHÓM THEO category của bank entry, đếm bằng `count()` tại SQL (issue #488) — cho
+   * các đường chỉ cần số đếm như đếm ứng viên ô ma trận: không nạp danh sách câu, không lắp view. Điều kiện lọc và cổng
+   * kiểm chứng bộ lọc giống hệt listQuestionsByCurriculumFilter.
    */
   async countQuestionsByCurriculumFilterByCategory(filter: {
     subjectId?: string; outcomeId?: string; nodeId?: string; cognitiveLevel?: string; qtype?: string; status?: string;
@@ -1319,10 +1229,9 @@ export class QuestionsService {
   }
 
   /**
-   * Bản có cổng đọc của bộ lọc chương trình (issue #55): chỉ trả các câu
-   * nằm trong category mà người đọc có `question:useall` tại context của
-   * category — câu ngoài quyền bị loại khỏi danh sách, không lộ cả sự
-   * tồn tại qua bộ lọc.
+   * Bản có cổng đọc của bộ lọc chương trình (issue #55): chỉ trả các câu nằm trong category mà người đọc có
+   * `question:useall` tại context của category — câu ngoài quyền bị loại khỏi danh sách, không lộ cả sự tồn tại qua bộ
+   * lọc.
    */
   async listQuestionsByCurriculumFilterForViewer(actorId: string, filter: {
     subjectId?: string; outcomeId?: string; nodeId?: string; cognitiveLevel?: string; qtype?: string; status?: string;
@@ -1342,8 +1251,6 @@ export class QuestionsService {
     }
     return this.loadQuestionViews(included);
   }
-
-  // --- engine ------------------------------------------------------------------
 
   /**
    * Tạo usage mới cho một component (vd quiz) với behaviour cho trước.
@@ -1365,10 +1272,9 @@ export class QuestionsService {
     for (const s of input.slots) {
       const view = await this.getQuestion(s.questionId);
       void view;
-      // Câu còn draft (nạp qua MCP chờ duyệt) không được rút vào đề ở
-      // MỌI cổng dùng câu — cổng usage này trước đây không kiểm trạng
-      // thái nên draft lọt vào đề thật (MCP-0, issue #110). Câu hidden
-      // vẫn cho qua theo ngữ nghĩa QB-3: đề đã ghim giữ nguyên phục vụ.
+      // Câu còn draft (nạp qua MCP chờ duyệt) không được rút vào đề ở MỌI cổng dùng câu — cổng usage này trước đây
+      // không kiểm trạng thái nên draft lọt vào đề thật (MCP-0, issue #110). Câu hidden vẫn cho qua theo ngữ nghĩa
+      // QB-3: đề đã ghim giữ nguyên phục vụ.
       const usageEntry = await this.repo.getEntryByQuestion(s.questionId);
       if (usageEntry?.status === 'draft') {
         throw new BadRequestException({ message: 'Draft questions cannot be used in a quiz until they are reviewed and published', code: 'question.usage_draft_question' });
@@ -1393,43 +1299,39 @@ export class QuestionsService {
   }
 
   /**
-   * Id các câu hỏi trong một category (dạng nhẹ cho hoạt động cần rút câu,
-   * vd slot ngẫu nhiên của quiz — không nạp nội dung từng câu).
+   * Id các câu hỏi trong một category (dạng nhẹ cho hoạt động cần rút câu, vd slot ngẫu nhiên của quiz — không nạp nội
+   * dung từng câu).
    */
   async listQuestionIdsInCategory(categoryId: string): Promise<string[]> {
     const rows = await this.repo.listQuestionsInCategory(categoryId);
     return rows.map((r) => r.id);
   }
   /**
-   * Id câu hỏi còn DÙNG ĐƯỢC trong category (loại câu đã rút — trạng thái
-   * hidden, QB-3): slot ngẫu nhiên của quiz chỉ rút trong tập này.
+   * Id câu hỏi còn DÙNG ĐƯỢC trong category (loại câu đã rút — trạng thái hidden, QB-3): slot ngẫu nhiên của quiz chỉ
+   * rút trong tập này.
    */
   async listUsableQuestionIdsInCategory(categoryId: string): Promise<string[]> {
     const rows = await this.repo.listQuestionsInCategory(categoryId);
     const out: string[] = [];
     for (const r of rows) {
       const entry = await this.repo.getEntryByQuestion(r.id);
-      // Chỉ câu `ready` mới được rút ngẫu nhiên vào đề: draft (câu nạp
-      // qua MCP chờ duyệt — MCP-0, issue #110) và hidden (đã rút) đều
-      // bị loại; trước đây điều kiện chỉ loại hidden nên draft lọt.
+      // Chỉ câu `ready` mới được rút ngẫu nhiên vào đề: draft (câu nạp qua MCP chờ duyệt — MCP-0, issue #110) và hidden
+      // (đã rút) đều bị loại; trước đây điều kiện chỉ loại hidden nên draft lọt.
       if (entry && entry.status === 'ready') out.push(r.id);
     }
     return out;
   }
   /**
-   * Xoá một usage cùng mọi attempt/step của nó (hoạt động sở hữu usage
-   * chịu trách nhiệm gọi khi instance bị xoá).
+   * Xoá một usage cùng mọi attempt/step của nó (hoạt động sở hữu usage chịu trách nhiệm gọi khi instance bị xoá).
    */
   async deleteUsage(usageId: string): Promise<void> {
     await this.repo.deleteUsage(usageId);
   }
 
   /**
-   * Cổng tạo usage qua HTTP (issue #55): usage thô trên câu ngân hàng là
-   * đường đọc nội dung câu kèm đáp án (làm thử → finish → đáp án đúng),
-   * nên người tạo phải có `question:useall` tại context của category của
-   * MỌI câu trong slot; thiếu một câu → 404 như câu không tồn tại. Chỉ
-   * áp ở controller: quiz tạo usage ở tầng service bằng actor là học
+   * Cổng tạo usage qua HTTP (issue #55): usage thô trên câu ngân hàng là đường đọc nội dung câu kèm đáp án (làm thử →
+   * finish → đáp án đúng), nên người tạo phải có `question:useall` tại context của category của MỌI câu trong slot;
+   * thiếu một câu → 404 như câu không tồn tại. Chỉ áp ở controller: quiz tạo usage ở tầng service bằng actor là học
    * sinh cho lượt làm thật, luồng đó do cổng của hoạt động quiz gác.
    */
   async assertCanCreateUsage(actorId: string, questionIds: string[]): Promise<void> {
@@ -1449,10 +1351,9 @@ export class QuestionsService {
   }
 
   /**
-   * Lấy usage CHO NGƯỜI ĐỌC (issue #55): usage chứa bài làm và — sau khi
-   * chốt — đáp án đúng của từng attempt, nên chỉ chủ sở hữu usage hoặc
-   * người có `question:useall` ở context hệ thống (đội ngân hàng) mới
-   * đọc được qua HTTP; người khác nhận 404 như usage không tồn tại.
+   * Lấy usage CHO NGƯỜI ĐỌC (issue #55): usage chứa bài làm và — sau khi chốt — đáp án đúng của từng attempt, nên chỉ
+   * chủ sở hữu usage hoặc người có `question:useall` ở context hệ thống (đội ngân hàng) mới đọc được qua HTTP; người
+   * khác nhận 404 như usage không tồn tại.
    */
   async getUsageForViewer(actorId: string, id: string): Promise<UsageView> {
     const usage = await this.repo.getUsage(id);
@@ -1475,13 +1376,10 @@ export class QuestionsService {
   }
 
   /**
-   * Lấy NHIỀU usage kèm attempt và step trong số truy vấn cố định
-   * (DL-03, issue #489): bốn lượt nạp theo lô (usage, attempt, step,
-   * dữ liệu step) rồi lắp view bằng đúng bộ dựng của đường đọc lẻ, nên
-   * hình dạng và thứ tự (attempt theo slot, step theo số thứ tự) của
-   * từng view khớp hệt `getUsage`. Usage không tồn tại thì vắng mặt
-   * trong map — caller cần lỗi "không thấy" thì tự kiểm như
-   * `getUsage` đang làm.
+   * Lấy NHIỀU usage kèm attempt và step trong số truy vấn cố định (DL-03, issue #489): bốn lượt nạp theo lô (usage,
+   * attempt, step, dữ liệu step) rồi lắp view bằng đúng bộ dựng của đường đọc lẻ, nên hình dạng và thứ tự (attempt theo
+   * slot, step theo số thứ tự) của từng view khớp hệt `getUsage`. Usage không tồn tại thì vắng mặt trong map — caller
+   * cần lỗi "không thấy" thì tự kiểm như `getUsage` đang làm.
    */
   async getUsages(ids: string[]): Promise<Map<string, UsageView>> {
     const uniqueIds = [...new Set(ids)];
@@ -1533,12 +1431,10 @@ export class QuestionsService {
   }
 
   /**
-   * Tổng điểm tối đa (tổng maxMark các attempt) của NHIỀU usage trong
-   * một truy vấn (DL-03, issue #489): các đường đọc điểm chỉ cần con
-   * số tổng này để quy điểm lượt về thang bài, không cần nạp cả cây
-   * usage — thay cho vòng lặp `getUsage` theo từng lượt trước đây.
-   * Usage không có attempt thì vắng mặt trong map (tổng coi như 0 ở
-   * phía caller, khớp `usageTotalMax` trên view rỗng).
+   * Tổng điểm tối đa (tổng maxMark các attempt) của NHIỀU usage trong một truy vấn (DL-03, issue #489): các đường đọc
+   * điểm chỉ cần con số tổng này để quy điểm lượt về thang bài, không cần nạp cả cây usage — thay cho vòng lặp
+   * `getUsage` theo từng lượt trước đây. Usage không có attempt thì vắng mặt trong map (tổng coi như 0 ở phía caller,
+   * khớp `usageTotalMax` trên view rỗng).
    */
   async usageTotalMaxes(usageIds: string[]): Promise<Map<string, number>> {
     const totals = new Map<string, number>();
@@ -1590,12 +1486,9 @@ export class QuestionsService {
   }
 
   /**
-   * Dựng dữ liệu chấm của một version đã pin: multichoice/shortanswer
-   * từ question_answers (cờ isCorrect) + options của qtype; truefalse
-   * TF-A từ đáp án từng mệnh đề ở `question_answer_keys.solution` của
-   * chính version đó, kèm thang Đ–S của lần ghim khi caller truyền vào
-   * (đường usage thường không gắn lần ghim thì engine dùng mặc định
-   * QĐ 764).
+   * Dựng dữ liệu chấm của một version đã pin: multichoice/shortanswer từ question_answers (cờ isCorrect) + options của
+   * qtype; truefalse TF-A từ đáp án từng mệnh đề ở `question_answer_keys.solution` của chính version đó, kèm thang Đ–S
+   * của lần ghim khi caller truyền vào (đường usage thường không gắn lần ghim thì engine dùng mặc định QĐ 764).
    */
   private async gradingDataFor(version: VersionRow, qtype: string, tfScale?: readonly number[] | null): Promise<GradingData> {
     const answers = await this.repo.listAnswers(version.id);
@@ -1627,16 +1520,12 @@ export class QuestionsService {
     return data;
   }
 
-  // --- cổng thao tác usage (issue #60) ---------------------------------------
-
   /**
-   * Cổng chủ sở hữu của các thao tác usage/attempt: chỉ chủ sở hữu
-   * (`question_usages.user_id`) mới được start/submit/finish qua bất kỳ
-   * kênh nào. Lệch chủ sở hữu ném 404 KHÔNG-oracle — cùng status, cùng mã
-   * và cùng câu chữ như khi tài nguyên không tồn tại. Caller nội bộ hợp
-   * lệ duy nhất (QuizService) luôn hành động với tư cách chủ sở hữu của
-   * lượt (bắt đầu/nộp/chốt lượt đều truyền id của chủ lượt) nên không bị
-   * ảnh hưởng; chấm tay đi qua `manualGradeAttempt` riêng, không qua đây.
+   * Cổng chủ sở hữu của các thao tác usage/attempt: chỉ chủ sở hữu (`question_usages.user_id`) mới được
+   * start/submit/finish qua bất kỳ kênh nào. Lệch chủ sở hữu ném 404 KHÔNG-oracle — cùng status, cùng mã và cùng câu
+   * chữ như khi tài nguyên không tồn tại. Caller nội bộ hợp lệ duy nhất (QuizService) luôn hành động với tư cách chủ sở
+   * hữu của lượt (bắt đầu/nộp/chốt lượt đều truyền id của chủ lượt) nên không bị ảnh hưởng; chấm tay đi qua
+   * `manualGradeAttempt` riêng, không qua đây.
    */
   private async requireOwnedUsage(userId: string, usageId: string): Promise<void> {
     const usage = await this.repo.getUsage(usageId);
@@ -1652,13 +1541,10 @@ export class QuestionsService {
   }
 
   /**
-   * Khoá kênh HTTP thô đối với usage gắn lượt quiz đang `inprogress`
-   * (chính sách kênh, chỉ controller gọi — KHÔNG áp dụng trong các hàm
-   * thao tác của service, vì chính luồng quiz chốt lượt bằng các hàm đó
-   * trong lúc `quiz_attempts` vẫn `inprogress`): thao tác phải đi qua
-   * luồng quiz để đáp án đúng/fraction chỉ lộ sau khi nộp qua quiz. Chỉ
-   * người đã qua cổng chủ sở hữu mới chạm được lỗi này nên không lộ thông
-   * tin cho người ngoài (người ngoài nhận 404 trước).
+   * Khoá kênh HTTP thô đối với usage gắn lượt quiz đang `inprogress` (chính sách kênh, chỉ controller gọi — KHÔNG áp
+   * dụng trong các hàm thao tác của service, vì chính luồng quiz chốt lượt bằng các hàm đó trong lúc `quiz_attempts`
+   * vẫn `inprogress`): thao tác phải đi qua luồng quiz để đáp án đúng/fraction chỉ lộ sau khi nộp qua quiz. Chỉ người
+   * đã qua cổng chủ sở hữu mới chạm được lỗi này nên không lộ thông tin cho người ngoài (người ngoài nhận 404 trước).
    */
   private async requireNotLockedByQuizAttempt(usageId: string): Promise<void> {
     const link = await this.repo.findQuizAttemptByUsageId(usageId);
@@ -1674,7 +1560,10 @@ export class QuestionsService {
     await this.requireOwnedUsage(actorId, usageId);
     await this.requireNotLockedByQuizAttempt(usageId);
   }
-  /** Cổng kênh HTTP cho route cấp attempt: attempt phải thuộc đúng usage trên đường dẫn, chủ sở hữu, không bị khoá bởi lượt quiz đang làm. */
+  /**
+   * Cổng kênh HTTP cho route cấp attempt: attempt phải thuộc đúng usage trên đường dẫn, chủ sở hữu, không bị khoá bởi
+   * lượt quiz đang làm.
+   */
   async assertAttemptManipulableViaHttp(actorId: string, usageId: string, attemptId: string): Promise<void> {
     const attempt = await this.repo.getAttempt(attemptId);
     if (!attempt || attempt.questionUsageId !== usageId) {
@@ -1695,12 +1584,10 @@ export class QuestionsService {
     const attempt = await this.getAttempt(attemptId);
     await this.requireOwnedAttempt(userId, attempt);
     await this.transition(attempt, 'todo');
-    // Kỷ luật version (QB-3): attempt đã mang version ghim cứng từ
-    // createUsage (slot pinned của quiz) thì tôn trọng tuyệt đối; ngược
-    // lại follow_latest — chỉ nhận version `ready` mới nhất (bỏ qua bản
-    // draft ở đầu); không có bản ready nào thì lùi về version mới nhất
-    // TRỪ KHI câu đang ở draft: câu draft (nạp qua MCP chờ duyệt —
-    // MCP-0, issue #110) không có version nào được phép phục vụ.
+    // Kỷ luật version (QB-3): attempt đã mang version ghim cứng từ createUsage (slot pinned của quiz) thì tôn trọng
+    // tuyệt đối; ngược lại follow_latest — chỉ nhận version `ready` mới nhất (bỏ qua bản draft ở đầu); không có bản
+    // ready nào thì lùi về version mới nhất TRỪ KHI câu đang ở draft: câu draft (nạp qua MCP chờ duyệt — MCP-0, issue
+    // #110) không có version nào được phép phục vụ.
     let pinnedVersionId = attempt.questionVersionId;
     if (!pinnedVersionId) {
       const { entry } = await this.getQuestion(attempt.questionId);
@@ -1737,8 +1624,8 @@ export class QuestionsService {
 
   /** Kết thúc một attempt: chấm theo version ĐÃ PIN (không bao giờ là latest). */
   /**
-   * Kết thúc một attempt: chấm theo answers/options của version ĐÃ PIN
-   * (essay về needsgrading với fraction null, chờ chấm tay).
+   * Kết thúc một attempt: chấm theo answers/options của version ĐÃ PIN (essay về needsgrading với fraction null, chờ
+   * chấm tay).
    */
   async finishAttempt(userId: string, attemptId: string, tfScale?: readonly number[] | null): Promise<AttemptView> {
     const attempt = await this.getAttempt(attemptId);
@@ -1792,11 +1679,10 @@ export class QuestionsService {
   }
 
   /**
-   * Chấm tay một attempt đang ở needsgrading (Moodle manual grading, dùng
-   * cho essay): người chấm cho ĐIỂM TUYỆT ĐỐI theo maxMark của attempt;
-   * fraction = mark / maxMark, trạng thái graded* suy từ fraction. Việc
-   * chấm được ghi thành một step mang theo mark (và comment nếu có) trong
-   * step data — đúng cách Moodle ghi bước chấm tay vào lịch sử attempt.
+   * Chấm tay một attempt đang ở needsgrading (Moodle manual grading, dùng cho essay): người chấm cho ĐIỂM TUYỆT ĐỐI
+   * theo maxMark của attempt; fraction = mark / maxMark, trạng thái graded* suy từ fraction. Việc chấm được ghi thành
+   * một step mang theo mark (và comment nếu có) trong step data — đúng cách Moodle ghi bước chấm tay vào lịch sử
+   * attempt.
    */
   async manualGradeAttempt(graderId: string, attemptId: string, mark: number, comment?: string): Promise<AttemptView> {
     const attempt = await this.getAttempt(attemptId);
@@ -1820,23 +1706,14 @@ export class QuestionsService {
   }
 
   /**
-   * Tính thử kết quả chấm lại của một question attempt theo dữ kiện chấm
-   * của một version ĐÍCH (issue #254 — đường chấm lại theo đáp án): chấm
-   * lại CHÍNH response đã lưu trong các step của attempt bằng
-   * `gradeAnswer` với dữ liệu chấm của version đích — KHÔNG ghi gì xuống
-   * DB. Dry-run ở tầng quiz và đường áp thật dùng chung đúng phép tính
-   * này (qua {@link regradeAttemptWithVersion}) nên điểm xem trước khớp
-   * tuyệt đối điểm sau khi áp.
+   * Tính thử kết quả chấm lại của một question attempt theo dữ kiện chấm của một version ĐÍCH (issue #254 — đường chấm
+   * lại theo đáp án): chấm lại CHÍNH response đã lưu trong các step của attempt bằng `gradeAnswer` với dữ liệu chấm của
+   * version đích — KHÔNG ghi gì xuống DB. Dry-run ở tầng quiz và đường áp thật dùng chung đúng phép tính này (qua
+   * {@link regradeAttemptWithVersion}) nên điểm xem trước khớp tuyệt đối điểm sau khi áp.
    *
-   * Điều kiện (ném BadRequestException): attempt phải ĐÃ được chấm tự
-   * động (trạng thái gradedright/gradedpartial/gradedwrong/gaveup —
-   * essay chờ chấm tay hoặc đã chấm tay không thuộc đường này), version
+   * Điều kiện (ném BadRequestException): attempt phải ĐÃ được chấm tự động (trạng thái
+   * gradedright/gradedpartial/gradedwrong/gaveup — essay chờ chấm tay hoặc đã chấm tay không thuộc đường này), version
    * đích phải thuộc đúng câu của attempt và đang ở trạng thái `ready`.
-   *
-   * @param attemptId - Question attempt cần tính thử.
-   * @param toVersionId - Version đích (bản đã sửa đáp án) để chấm lại theo.
-   * @param tfScale - Thang Đ–S của lần ghim (cấu hình của lần ghim, như lúc chốt usage).
-   * @returns Version đang ghim, version đích, fraction/trạng thái hiện tại và sau chấm lại.
    */
   async previewRegradeAttempt(attemptId: string, toVersionId: string, tfScale?: readonly number[] | null): Promise<{
     fromVersionId: string; toVersionId: string;
@@ -1856,22 +1733,12 @@ export class QuestionsService {
   }
 
   /**
-   * Chấm lại thật một question attempt theo version đích (issue #254):
-   * cùng phép tính với {@link previewRegradeAttempt}, sau đó GHI —
-   * fraction/trạng thái/rightAnswer mới và attempt CHUYỂN GHIM sang
-   * version đích (từ đây attempt đứng trên bản đã sửa đáp án). Việc
-   * chấm lại được ghi thành một step hiệu chỉnh mang step-data
-   * `regradedBy`/`fromVersionId`/`toVersionId` trong lịch sử attempt.
-   * Đây là bước HIỆU CHỈNH chứ không phải chuyển trạng thái vòng đời
-   * (đúng ngữ nghĩa regrade của Moodle: append step vào attempt đã
-   * graded) nên KHÔNG đi qua máy chuyển trạng thái `canTransition` —
-   * các trạng thái graded* vốn không có cạnh ra trong máy đó.
-   *
-   * @param graderId - Người thực hiện chấm lại (ghi vào step).
-   * @param attemptId - Question attempt cần chấm lại.
-   * @param toVersionId - Version đích (bản đã sửa đáp án, phải `ready`).
-   * @param tfScale - Thang Đ–S của lần ghim.
-   * @returns Attempt sau chấm lại kèm fraction trước/sau để tầng gọi đồng bộ điểm.
+   * Chấm lại thật một question attempt theo version đích (issue #254): cùng phép tính với {@link
+   * previewRegradeAttempt}, sau đó GHI — fraction/trạng thái/rightAnswer mới và attempt CHUYỂN GHIM sang version đích
+   * (từ đây attempt đứng trên bản đã sửa đáp án). Việc chấm lại được ghi thành một step hiệu chỉnh mang step-data
+   * `regradedBy`/`fromVersionId`/`toVersionId` trong lịch sử attempt. Đây là bước HIỆU CHỈNH chứ không phải chuyển
+   * trạng thái vòng đời (đúng ngữ nghĩa regrade của Moodle: append step vào attempt đã graded) nên KHÔNG đi qua máy
+   * chuyển trạng thái `canTransition` — các trạng thái graded* vốn không có cạnh ra trong máy đó.
    */
   async regradeAttemptWithVersion(graderId: string, attemptId: string, toVersionId: string, tfScale?: readonly number[] | null): Promise<{
     attempt: AttemptView; fromVersionId: string; oldFraction: number | null; newFraction: number | null;
@@ -1898,10 +1765,9 @@ export class QuestionsService {
   }
 
   /**
-   * Phép tính chấm lại dùng chung cho xem thử và áp thật: kiểm điều
-   * kiện của đường chấm lại theo đáp án rồi chấm response đã lưu theo
-   * dữ kiện chấm của version đích. Response trống (lượt bỏ trống câu)
-   * giữ ngữ nghĩa như lúc chốt usage: gaveup với fraction 0.
+   * Phép tính chấm lại dùng chung cho xem thử và áp thật: kiểm điều kiện của đường chấm lại theo đáp án rồi chấm
+   * response đã lưu theo dữ kiện chấm của version đích. Response trống (lượt bỏ trống câu) giữ ngữ nghĩa như lúc chốt
+   * usage: gaveup với fraction 0.
    */
   private async computeRegradeOutcome(attempt: AttemptRow, toVersionId: string, tfScale?: readonly number[] | null): Promise<{ outcome: GradeOutcome }> {
     if (!['gradedright', 'gradedpartial', 'gradedwrong', 'gaveup'].includes(attempt.state)) {
@@ -1934,16 +1800,12 @@ export class QuestionsService {
     if (rawResponse === null || rawResponse.trim() === '') {
       return { outcome: { fraction: 0, state: 'gaveup', rightAnswer: attempt.rightAnswer ?? '' } };
     }
-    // Dịch response sang version đích trước khi chấm: response của
-    // multichoice lưu ID DÒNG ĐÁP ÁN của version đã ghim, mà mỗi
-    // version sinh id dòng mới — chấm thẳng theo id sẽ không bao giờ
-    // khớp. Lựa chọn của học sinh được hiểu theo NỘI DUNG đáp án đã
-    // chọn: tra id cũ → text → id của dòng mang cùng text ở version
-    // đích (đáp án đã bị xoá/đổi chữ ở version đích thì lựa chọn đó
-    // không còn tương ứng — tính như chọn đáp án không đúng).
-    // shortanswer (văn bản thuần) và truefalse TF-A (bản đồ
-    // statementId → Đ/S, statementId nằm trong thân câu và được giữ
-    // qua các version) không cần dịch.
+    // Dịch response sang version đích trước khi chấm: response của multichoice lưu ID DÒNG ĐÁP ÁN của version đã ghim,
+    // mà mỗi version sinh id dòng mới — chấm thẳng theo id sẽ không bao giờ khớp. Lựa chọn của học sinh được hiểu theo
+    // NỘI DUNG đáp án đã chọn: tra id cũ → text → id của dòng mang cùng text ở version đích (đáp án đã bị xoá/đổi chữ ở
+    // version đích thì lựa chọn đó không còn tương ứng — tính như chọn đáp án không đúng). shortanswer (văn bản thuần)
+    // và truefalse TF-A (bản đồ statementId → Đ/S, statementId nằm trong thân câu và được giữ qua các version) không
+    // cần dịch.
     const response = q?.qtype === 'multichoice'
       ? await this.translateMultichoiceResponse(attempt.questionVersionId, version.id, rawResponse)
       : rawResponse;
@@ -1952,11 +1814,9 @@ export class QuestionsService {
   }
 
   /**
-   * Dịch response multichoice (danh sách id dòng đáp án đã chọn, ngăn
-   * bằng dấu phẩy) từ version nguồn sang version đích theo nội dung
-   * text của đáp án (chuẩn hoá NFC + cắt khoảng trắng hai đầu, cùng
-   * chuẩn so khớp nội dung của hệ). Id không tra được ở version nguồn
-   * hoặc text không còn ở version đích bị loại khỏi danh sách đã dịch.
+   * Dịch response multichoice (danh sách id dòng đáp án đã chọn, ngăn bằng dấu phẩy) từ version nguồn sang version đích
+   * theo nội dung text của đáp án (chuẩn hoá NFC + cắt khoảng trắng hai đầu, cùng chuẩn so khớp nội dung của hệ). Id
+   * không tra được ở version nguồn hoặc text không còn ở version đích bị loại khỏi danh sách đã dịch.
    */
   private async translateMultichoiceResponse(fromVersionId: string, toVersionId: string, response: string): Promise<string> {
     const [fromAnswers, toAnswers] = await Promise.all([
@@ -1993,6 +1853,5 @@ export class QuestionsService {
     return this.getUsage(usageId);
   }
 
-  /** Ném lỗi 403 chuẩn hoá của module (hàm hỗ trợ nội bộ). */
   forbidden(msg: string): never { throw new ForbiddenException({ message: msg, code: 'question.forbidden' }); }
 }

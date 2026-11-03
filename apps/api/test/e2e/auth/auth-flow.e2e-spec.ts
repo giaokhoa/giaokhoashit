@@ -4,15 +4,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWORD } from '../../support/identity-access-helpers';
 
 /**
- * Kiểm thử luồng Auth.
- * Oracle: lib/tests/authlib_test.php (MOODLE_503_STABLE) — test_lockout,
- * test_authenticate_user_login; xoay refresh + phát hiện tái sử dụng theo
- * báo cáo §3.7 (tự xây dựng, thực hành bảo mật OAuth tốt nhất).
- * Oracle MFA TOTP: blueprint §2#3 (MFA hook) + ngữ nghĩa factor_totp của Moodle tool_mfa
- *  — chỉ mật khẩu là chưa đủ khi một nhân tố TOTP đã được xác nhận.
+ * Kiểm thử luồng Auth. Oracle: lib/tests/authlib_test.php (MOODLE_503_STABLE) — test_lockout,
+ * test_authenticate_user_login; xoay refresh + phát hiện tái sử dụng theo báo cáo §3.7 (tự xây dựng, thực hành bảo mật
+ * OAuth tốt nhất). Oracle MFA TOTP: blueprint §2#3 (MFA hook) + ngữ nghĩa factor_totp của Moodle tool_mfa — chỉ mật
+ * khẩu là chưa đủ khi một nhân tố TOTP đã được xác nhận.
  */
 
-/** Mã TOTP hiện tại cho secret, sinh bằng chính thư viện otplib đã cài. */
 async function currentTotpCode(secret: string): Promise<string> {
   return generate({ secret });
 }
@@ -28,7 +25,6 @@ async function wrongTotpCode(secret: string): Promise<string> {
   throw new Error('no wrong-code candidate available');
 }
 
-/** Setup + confirm MFA cho một user qua API, trả secret để sinh mã trong test. */
 async function enableMfaViaApi(app: INestApplication, accessToken: string): Promise<string> {
   const setup = await http(app).post('/api/v1/auth/mfa/totp/setup').set('Authorization', `Bearer ${accessToken}`);
   expect(setup.status).toBe(201);
@@ -255,8 +251,8 @@ describe('Xác thực: đăng nhập, khoá tài khoản, xoay refresh, phiên, 
     const statusAfterNoCode = await http(app).get('/api/v1/auth/mfa/status').set(auth);
     expect(statusAfterNoCode.body).toEqual({ enabled: true });
 
-    // Setup lại với mã hiện tại sai ⇒ 401 mã không hợp lệ; MFA vẫn bật nguyên,
-    // và đăng nhập vẫn bị chặn ở bước MFA với authenticator hiện tại.
+    // Setup lại với mã hiện tại sai ⇒ 401 mã không hợp lệ; MFA vẫn bật nguyên, và đăng nhập vẫn bị chặn ở bước MFA với
+    // authenticator hiện tại.
     const wrong = await http(app).post('/api/v1/auth/mfa/totp/setup').set(auth)
       .send({ currentCode: await wrongTotpCode(activeSecret) });
     expect(wrong.status).toBe(401);
@@ -277,8 +273,8 @@ describe('Xác thực: đăng nhập, khoá tài khoản, xoay refresh, phiên, 
     const statusPending = await http(app).get('/api/v1/auth/mfa/status').set(auth);
     expect(statusPending.body).toEqual({ enabled: false });
 
-    // Confirm bằng secret mới ⇒ MFA bật lại; authenticator cũ hết giá trị,
-    // đăng nhập bị chặn và chỉ mở bằng mã của factor mới.
+    // Confirm bằng secret mới ⇒ MFA bật lại; authenticator cũ hết giá trị, đăng nhập bị chặn và chỉ mở bằng mã của
+    // factor mới.
     const confirm = await http(app).post('/api/v1/auth/mfa/totp/confirm').set(auth)
       .send({ code: await currentTotpCode(newSecret) });
     expect(confirm.status).toBe(201);

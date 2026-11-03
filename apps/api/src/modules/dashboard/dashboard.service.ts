@@ -14,17 +14,12 @@ import { DashboardRepository } from '@lms/db/repositories/dashboard';
 /** Giới hạn tổng số việc đến hạn trả về trong khối tổng hợp (chống phình ở khoá cũ nhiều hoạt động quá hạn). */
 const DUE_ITEMS_LIMIT = 100;
 
-/**
- * Dashboard việc cần làm (DASH1, issue #121): tổng hợp MỘT lần cho cả khối
- * đầu dashboard. Ba nguyên tắc cứng:
- * - Chỉ tính khoá người dùng thuộc về: ghi danh hiệu lực (học sinh) và khoá
- *   có `grade:viewall` tại context khoá (đội giảng dạy — cùng định nghĩa
- *   `teaching` mà web dùng ở MyAccessView).
- * - Điểm/phản hồi mới CHỈ từ dữ liệu đã công bố: trạng thái công bố lấy từ
- *   GradesService.publicationStatesForCourse (PH-0) — item manual chưa
- *   công bố bị loại khỏi payload hoàn toàn, không để lại dấu hiệu tồn tại.
- * - Mốc xem trước lưu phía server (user_dashboard_state), không suy từ
- *   trạng thái đã đọc của thông báo.
+/** Dashboard việc cần làm (DASH1, issue #121): tổng hợp MỘT lần cho cả khối đầu dashboard. Ba nguyên tắc cứng:
+ * - Chỉ tính khoá người dùng thuộc về: ghi danh hiệu lực (học sinh) và khoá có `grade:viewall` tại context khoá (đội
+ * giảng dạy — cùng định nghĩa `teaching` mà web dùng ở MyAccessView).
+ * - Điểm/phản hồi mới CHỈ từ dữ liệu đã công bố: trạng thái công bố lấy từ GradesService.publicationStatesForCourse
+ * (PH-0) — item manual chưa công bố bị loại khỏi payload hoàn toàn, không để lại dấu hiệu tồn tại.
+ * - Mốc xem trước lưu phía server (user_dashboard_state), không suy từ trạng thái đã đọc của thông báo.
  */
 @Injectable()
 export class DashboardService {
@@ -48,9 +43,8 @@ export class DashboardService {
   }
 
   /**
-   * Khoá một người dùng đang ghi danh hiệu lực kèm tên hiển thị — điểm vào
-   * dùng chung cho dashboard của chính chủ và bề mặt phụ huynh (PH-1 đọc
-   * dữ liệu của CON qua đúng tập khoá ghi danh này).
+   * Khoá một người dùng đang ghi danh hiệu lực kèm tên hiển thị — điểm vào dùng chung cho dashboard của chính chủ và bề
+   * mặt phụ huynh (PH-1 đọc dữ liệu của CON qua đúng tập khoá ghi danh này).
    */
   async enrolledCoursesFor(userId: string): Promise<{ courseIds: string[]; names: Map<string, string> }> {
     const courseIds = await this.repo.enrolledCourseIds(userId, new Date());
@@ -58,25 +52,21 @@ export class DashboardService {
     return { courseIds, names };
   }
 
-  /**
-   * Kết quả ĐÃ CÔNG BỐ mới của một học sinh kể từ mốc `since` — cùng cổng
-   * công bố PH-0 và cùng quy tắc thời điểm hiệu lực (max của lần sửa điểm
-   * và lần công bố) như khối "mới" của dashboard học sinh. Bề mặt phụ
-   * huynh (PH-1) dùng lại nguyên hàm này với mốc xem của phụ huynh để hai
-   * bề mặt không bao giờ lệch nhau về điều kiện hiển thị.
+  /** Kết quả ĐÃ CÔNG BỐ mới của một học sinh kể từ mốc `since` — cùng cổng công bố PH-0 và cùng quy tắc thời điểm hiệu
+   * lực (max của lần sửa điểm và lần công bố) như khối "mới" của dashboard học sinh. Bề mặt phụ huynh (PH-1) dùng lại
+   * nguyên hàm này với mốc xem của phụ huynh để hai bề mặt không bao giờ lệch nhau về điều kiện hiển thị.
    */
   async publishedNewResultsFor(userId: string, since: Date): Promise<DashboardNewResultView[]> {
     const { courseIds, names } = await this.enrolledCoursesFor(userId);
     return this.buildNewResults(userId, courseIds, names, since);
   }
 
-  /** Toàn bộ khối đầu dashboard cho người gọi. */
   async getOverview(userId: string, days: number): Promise<DashboardOverviewView> {
     const now = new Date();
     const state = await this.repo.getState(userId);
     const previousSeenAt = state?.lastSeenAt ?? null;
-    // Lần đầu chưa có mốc: không có gì tính là "mới" (since = now), tránh
-    // dội toàn bộ điểm cũ thành điểm mới ở lần mở dashboard đầu tiên.
+    // Lần đầu chưa có mốc: không có gì tính là "mới" (since = now), tránh dội toàn bộ điểm cũ thành điểm mới ở lần mở
+    // dashboard đầu tiên.
     const since = previousSeenAt ?? now;
 
     const enrolled = await this.repo.enrolledCourseIds(userId, now);
@@ -138,7 +128,7 @@ export class DashboardService {
 
     const assignRows = await this.repo.assignmentDueRows(enrolled, userId, until);
     for (const row of assignRows) {
-      if (row.submissionStatus === 'submitted') continue; // đã nộp → biến mất
+      if (row.submissionStatus === 'submitted') continue;
       items.push({
         courseId: row.courseId,
         courseName: names.get(row.courseId) ?? '',
@@ -161,7 +151,6 @@ export class DashboardService {
     return items.slice(0, DUE_ITEMS_LIMIT);
   }
 
-  /** Điểm/phản hồi mới + kết quả VN mới — chỉ dữ liệu ĐÃ CÔNG BỐ. */
   private async buildNewResults(
     userId: string,
     enrolled: string[],
@@ -170,14 +159,13 @@ export class DashboardService {
   ): Promise<DashboardNewResultView[]> {
     const results: DashboardNewResultView[] = [];
 
-    // Vết công bố theo item: vết mới nhất quyết định hiệu lực hiện tại và,
-    // với item manual, thời điểm điểm TRỞ NÊN hiển thị.
+    // Vết công bố theo item: vết mới nhất quyết định hiệu lực hiện tại và, với item manual, thời điểm điểm TRỞ NÊN hiển
+    // thị.
     const itemPubs = await this.repo.itemPublications(enrolled);
     const latestPubByItem = new Map<string, (typeof itemPubs)[number]>();
     for (const p of itemPubs) {
       if (p.itemId) latestPubByItem.set(p.itemId, p); // rows tăng dần theo createdAt → cuối là mới nhất
     }
-    // Ứng viên từ công bố: item có vết publish hiệu lực nằm sau mốc.
     const publishedAfterSince = new Set<string>();
     for (const [itemId, p] of latestPubByItem) {
       if (p.action === 'publish' && p.createdAt > since) publishedAfterSince.add(itemId);
@@ -204,9 +192,8 @@ export class DashboardService {
       for (const row of rows) {
         // Cổng công bố PH-0: chưa công bố thì loại hoàn toàn khỏi payload.
         if (!(states.get(row.itemId)?.published ?? true)) continue;
-        // Thời điểm hiệu lực: item manual lấy mốc công bố nếu công bố
-        // muộn hơn lần sửa điểm (điểm chấm trước, công bố sau vẫn là mới
-        // tại thời điểm công bố).
+        // Thời điểm hiệu lực: item manual lấy mốc công bố nếu công bố muộn hơn lần sửa điểm (điểm chấm trước, công bố
+        // sau vẫn là mới tại thời điểm công bố).
         const pub = latestPubByItem.get(row.itemId);
         const effectiveAt = pub && pub.action === 'publish' && pub.createdAt > row.updatedAt
           ? pub.createdAt
@@ -231,10 +218,9 @@ export class DashboardService {
   }
 
   /**
-   * Hàng đợi chấm gộp theo khoá cho giáo viên: bài C2 chưa trả bài cho
-   * attempt hiện tại + lượt quiz chờ chấm tay + phiếu giấy CAM-0 chờ xử
-   * lý (needs_review/needs_identity, issue #187). Ba loại đếm TÁCH BẠCH
-   * ở ba trường *Pending; pendingCount là tổng cả ba.
+   * Hàng đợi chấm gộp theo khoá cho giáo viên: bài C2 chưa trả bài cho attempt hiện tại + lượt quiz chờ chấm tay +
+   * phiếu giấy CAM-0 chờ xử lý (needs_review/needs_identity, issue #187). Ba loại đếm TÁCH BẠCH ở ba trường *Pending;
+   * pendingCount là tổng cả ba.
    */
   private async buildGradingQueue(
     teaching: string[],
@@ -301,7 +287,6 @@ export class DashboardService {
       .sort((a, b) => (a.oldestPendingAt ?? '').localeCompare(b.oldestPendingAt ?? ''));
   }
 
-  /** Pref thẻ khoá của chính người dùng. */
   async listCourseCards(userId: string): Promise<CourseCardPrefView[]> {
     const rows = await this.repo.listPrefs(userId);
     return rows.map((r) => ({
@@ -311,7 +296,6 @@ export class DashboardService {
     }));
   }
 
-  /** Đặt/xoá màu + biệt danh thẻ khoá của chính người dùng cho một khoá họ thuộc về. */
   async upsertCourseCard(
     userId: string,
     courseId: string,
@@ -332,7 +316,6 @@ export class DashboardService {
     };
   }
 
-  /** Người dùng chỉ đặt được pref cho khoá mình thuộc về (ghi danh hoặc đội giảng dạy). */
   private async assertBelongsToCourse(userId: string, courseId: string): Promise<void> {
     const now = new Date();
     const enrolled = await this.repo.enrolledCourseIds(userId, now);

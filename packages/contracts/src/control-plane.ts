@@ -2,23 +2,18 @@ import { z } from 'zod';
 import { uuidIdSchema } from './ids.js';
 
 /**
- * Hợp đồng API của CONTROL PLANE (issue #580, chương trình tenant #579):
- * sổ đăng ký không gian (trung tâm / Trang chính) mà platform dùng để
- * biết mỗi không gian đang sống ở kho dữ liệu nào, cộng registry phiên
- * bản schema của từng kho đã đăng ký.
+ * Hợp đồng API của CONTROL PLANE (issue #580, chương trình tenant #579): sổ đăng ký không gian (trung tâm / Trang
+ * chính) mà platform dùng để biết mỗi không gian đang sống ở kho dữ liệu nào, cộng registry phiên bản schema của từng
+ * kho đã đăng ký.
  *
  * Ranh giới nghiệp vụ của tầng này:
- * - Sổ chỉ giữ bản ghi định tuyến tối thiểu (định danh địa chỉ, kho
- *   đích, vòng đời, gói dịch vụ) — nhận diện riêng của trung tâm (logo,
- *   thương hiệu) thuộc về dữ liệu của chính trung tâm, không ở đây.
- * - `plan` chỉ là MÃ GÓI DỊCH VỤ được lưu lại; nghiệp vụ billing
- *   (hoá đơn, thu tiền) không thuộc hợp đồng này.
- * - Mọi trường bí mật chỉ là THAM CHIẾU (`secretRef`, ví dụ
- *   `env:CONTROL_PLANE_DATABASE_URL`) — giá trị bí mật không bao giờ
- *   đi qua API hay nằm trong database.
- * - Mọi thao tác ghi yêu cầu capability quản trị platform hiện hữu
- *   (`tenant:manage` tại context hệ thống) — tầng này không dựng mô
- *   hình tài khoản quản trị riêng.
+ * - Sổ chỉ giữ bản ghi định tuyến tối thiểu (định danh địa chỉ, kho đích, vòng đời, gói dịch vụ) — nhận diện riêng của
+ *   trung tâm (logo, thương hiệu) thuộc về dữ liệu của chính trung tâm, không ở đây.
+ * - `plan` chỉ là MÃ GÓI DỊCH VỤ được lưu lại; nghiệp vụ billing (hoá đơn, thu tiền) không thuộc hợp đồng này.
+ * - Mọi trường bí mật chỉ là THAM CHIẾU (`secretRef`, ví dụ `env:CONTROL_PLANE_DATABASE_URL`) — giá trị bí mật không
+ *   bao giờ đi qua API hay nằm trong database.
+ * - Mọi thao tác ghi yêu cầu capability quản trị platform hiện hữu (`tenant:manage` tại context hệ thống) — tầng này
+ *   không dựng mô hình tài khoản quản trị riêng.
  */
 export const SPACE_KINDS = ['center', 'platform'] as const;
 export const SPACE_STATUSES = ['provisioning', 'active', 'suspended', 'closed'] as const;
@@ -60,7 +55,10 @@ export const createSpaceRegistrationSchema = z.strictObject({
 });
 export type CreateSpaceRegistration = z.infer<typeof createSpaceRegistrationSchema>;
 
-/** Cập nhật dòng đăng ký: tên hiển thị trên sổ, kho đích, chế độ kho, tham chiếu kết nối/bí mật, phiên bản schema, gói. Slug và loại không gian là định danh — không sửa qua đường này. */
+/**
+ * Cập nhật dòng đăng ký: tên hiển thị trên sổ, kho đích, chế độ kho, tham chiếu kết nối/bí mật, phiên bản schema, gói.
+ * Slug và loại không gian là định danh — không sửa qua đường này.
+ */
 export const updateSpaceRegistrationSchema = z.strictObject({
   name: z.string().min(1).max(200).optional(),
   databaseName: z.string().min(1).max(120).optional(),
@@ -103,10 +101,9 @@ export const spaceSchemaRegistrySchema = z.object({
 export type SpaceSchemaRegistry = z.infer<typeof spaceSchemaRegistrySchema>;
 
 /**
- * Ghi trạng thái schema của một kho (khung trường): phiên bản hiện tại
- * và trạng thái sao lưu/khôi phục. Cơ chế tự động ghi bởi công cụ
- * fleet thuộc issue #586; ở đây dữ kiện được ghi qua API quản trị.
- * Mốc thời gian dùng `z.iso.datetime` theo chuẩn hợp đồng của repo.
+ * Ghi trạng thái schema của một kho (khung trường): phiên bản hiện tại và trạng thái sao lưu/khôi phục. Cơ chế tự động
+ * ghi bởi công cụ fleet thuộc issue #586; ở đây dữ kiện được ghi qua API quản trị. Mốc thời gian dùng `z.iso.datetime`
+ * theo chuẩn hợp đồng của repo.
  */
 export const updateSpaceSchemaRegistrySchema = z.strictObject({
   currentVersion: z.string().max(120).nullable().optional(),
@@ -117,14 +114,19 @@ export const updateSpaceSchemaRegistrySchema = z.strictObject({
 });
 export type UpdateSpaceSchemaRegistry = z.infer<typeof updateSpaceSchemaRegistrySchema>;
 
-/** Kết quả một bước của một lượt chạy migration — khung tối thiểu, công cụ ghi lượt (issue #586) được thêm trường riêng. */
+/**
+ * Kết quả một bước của một lượt chạy migration — khung tối thiểu, công cụ ghi lượt (issue #586) được thêm trường riêng.
+ */
 export const spaceSchemaMigrationStepSchema = z.looseObject({
   name: z.string(),
   status: z.string(),
   detail: z.string().optional(),
 });
 
-/** Ghi một lượt chạy migration trên kho của một không gian. Lượt `success` có `toVersion` sẽ nâng phiên bản hiện tại của kho lên `toVersion`. */
+/**
+ * Ghi một lượt chạy migration trên kho của một không gian. Lượt `success` có `toVersion` sẽ nâng phiên bản hiện tại của
+ * kho lên `toVersion`.
+ */
 export const recordSpaceSchemaMigrationRunSchema = z.strictObject({
   runId: z.string().min(1).max(120),
   fromVersion: z.string().max(120).nullable().optional(),

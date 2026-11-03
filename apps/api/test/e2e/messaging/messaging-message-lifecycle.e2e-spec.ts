@@ -8,23 +8,17 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
 import { addGroupMember, contextIdByLevelInstance, createGroupViaApi } from '../../support/engagement-helpers';
 
 /**
- * Vòng đời tin nhắn THEO VAI (issue #33, bổ sung cho PR #94) — ba lớp
- * thao tác tách bạch:
+ * Vòng đời tin nhắn THEO VAI (issue #33, bổ sung cho PR #94) — ba lớp thao tác tách bạch:
  *   (a) tác giả XOÁ-PHÍA-MÌNH mọi lúc (cờ cá nhân, phía kia không đổi);
- *   (b) tác giả THU HỒI cho mọi người chỉ trong cửa sổ site-config
- *       `core/messagingrecallwindowminutes` (mặc định 15 phút) — nội
- *       dung bị vô hiệu với thành viên thường, moderator_action
- *       'recall' được ghi, đường truy vết còn thấy nội dung gốc;
- *   (c) moderator có capability `moderation:manage` XOÁ CỨNG / GỠ
- *       HÀNG LOẠT không giới hạn thời gian, lý do bắt buộc, mọi lần
- *       ghi moderator_action — dòng tin biến mất khỏi mọi đường đọc.
- * Kèm: cổng chặn 1–1 vẫn nuốt cả thu hồi lẫn xoá-phía-mình như mọi
- * đường theo id khác. Phần SỰ KIỆN realtime của vòng đời (thu hồi
- * phát `message.deleted` + BẮT BUỘC `conversation.invalidate` ở phía
- * kia; xoá-phía-mình không phát tín hiệu nào sang phía kia) thuộc
- * về consumer phân phối phía worker từ issue #521 và được kiểm ở
- * spec tích hợp của worker:
- * apps/worker/test/integration/messaging/messaging-realtime-queue.int-spec.ts.
+ *   (b) tác giả THU HỒI cho mọi người chỉ trong cửa sổ site-config `core/messagingrecallwindowminutes` (mặc định 15
+ *       phút) — nội dung bị vô hiệu với thành viên thường, moderator_action 'recall' được ghi, đường truy vết còn thấy
+ *       nội dung gốc;
+ *   (c) moderator có capability `moderation:manage` XOÁ CỨNG / GỠ HÀNG LOẠT không giới hạn thời gian, lý do bắt buộc,
+ *       mọi lần ghi moderator_action — dòng tin biến mất khỏi mọi đường đọc.
+ * Kèm: cổng chặn 1–1 vẫn nuốt cả thu hồi lẫn xoá-phía-mình như mọi đường theo id khác. Phần SỰ KIỆN realtime của vòng
+ * đời (thu hồi phát `message.deleted` + BẮT BUỘC `conversation.invalidate` ở phía kia; xoá-phía-mình không phát tín
+ * hiệu nào sang phía kia) thuộc về consumer phân phối phía worker từ issue #521 và được kiểm ở spec tích hợp của
+ * worker: apps/worker/test/integration/messaging/messaging-realtime-queue.int-spec.ts.
  */
 
 interface Person { id: string; username: string; token: string }
@@ -100,14 +94,11 @@ describe('Messaging — vòng đời tin nhắn theo vai (issue #33, bổ sung P
     for (const p of [teacher, s1, s2]) await enrolUser(app, admin, course.id, instance.id, p.id);
     const courseCtx = await contextIdByLevelInstance(app, admin, 50, course.id);
     const editingTeacher = await roleIdByShortname(app, admin, 'editingteacher');
-    // Persona giáo viên ở đây vừa ghi danh trong khoá vừa giữ vai
-    // giảng dạy tại context khoá (giáo viên hiện diện trong khoá như
-    // một thành viên và giữ vai trò kiểm duyệt). Từ issue #425,
-    // trạng thái lẫn vai cùng khoá này không còn tạo được qua API —
-    // cả hai chiều ghi danh/gán vai đều bị chốt tách vai chặn — và
-    // chỉ còn tồn tại như dữ kiện có sẵn; các ca của spec này kiểm
-    // hành vi nhắn tin trên đúng dữ kiện đó, nên dòng gán vai được
-    // ghi thẳng vào DB trong lúc phần ghi danh vẫn đi qua API.
+    // Persona giáo viên ở đây vừa ghi danh trong khoá vừa giữ vai giảng dạy tại context khoá (giáo viên hiện diện trong
+    // khoá như một thành viên và giữ vai trò kiểm duyệt). Từ issue #425, trạng thái lẫn vai cùng khoá này không còn tạo
+    // được qua API — cả hai chiều ghi danh/gán vai đều bị chốt tách vai chặn — và chỉ còn tồn tại như dữ kiện có sẵn;
+    // các ca của spec này kiểm hành vi nhắn tin trên đúng dữ kiện đó, nên dòng gán vai được ghi thẳng vào DB trong lúc
+    // phần ghi danh vẫn đi qua API.
     await pg.query(
       `insert into role_assignments (role_id, user_id, context_id, component) values ($1, $2, $3, '')`,
       [editingTeacher, teacher.id, courseCtx],
@@ -126,8 +117,8 @@ describe('Messaging — vòng đời tin nhắn theo vai (issue #33, bổ sung P
       .set('Authorization', `Bearer ${s1.token}`).send({ groupId: group.id });
     expect(created.status).toBe(201);
     groupConvId = created.body.id as string;
-    // Timeout tường minh cho hook: dựng app + seed + hai khoá trên
-    // máy tải nặng vượt trần hook mặc định 30s của vitest config.
+    // Timeout tường minh cho hook: dựng app + seed + hai khoá trên máy tải nặng vượt trần hook mặc định 30s của vitest
+    // config.
   }, 180000);
 
   afterAll(async () => {
@@ -159,10 +150,9 @@ describe('Messaging — vòng đời tin nhắn theo vai (issue #33, bổ sung P
     expect(recalled.body.recalledBy).toBe(s1.id);
     expect(recalled.body.fullMessage).toBe('tin sẽ thu hồi trong cửa sổ');
 
-    // Phía kia (thành viên thường): tin VẪN CÒN trong khung nhưng nội
-    // dung đã bị vô hiệu — chỉ còn dấu vết thu hồi để hiện dòng
-    // "tin nhắn đã được thu hồi"; số chưa đọc rơi về 0 và xem trước
-    // trong danh sách cũng là bản đã vô hiệu nội dung.
+    // Phía kia (thành viên thường): tin VẪN CÒN trong khung nhưng nội dung đã bị vô hiệu — chỉ còn dấu vết thu hồi để
+    // hiện dòng "tin nhắn đã được thu hồi"; số chưa đọc rơi về 0 và xem trước trong danh sách cũng là bản đã vô hiệu
+    // nội dung.
     const s2View = await viewMessages(s2.token, groupConvId);
     const forS2 = s2View.messages.find((m) => m.id === msgId);
     expect(forS2).toBeDefined();
@@ -174,16 +164,15 @@ describe('Messaging — vòng đời tin nhắn theo vai (issue #33, bổ sung P
     expect(s2Entry.lastMessage?.id).toBe(msgId);
     expect(s2Entry.lastMessage?.fullMessage).toBe('');
 
-    // Đường truy vết (giáo viên phụ trách): nội dung gốc còn nguyên
-    // kèm dấu thu hồi — thu hồi không phải là xoá dấu vết.
+    // Đường truy vết (giáo viên phụ trách): nội dung gốc còn nguyên kèm dấu thu hồi — thu hồi không phải là xoá dấu
+    // vết.
     const teacherView = await viewMessages(teacher.token, groupConvId);
     expect(teacherView.canModerate).toBe(true);
     const traced = teacherView.messages.find((m) => m.id === msgId);
     expect(traced?.fullMessage).toBe('tin sẽ thu hồi trong cửa sổ');
     expect(traced?.recalledBy).toBe(s1.id);
 
-    // Dấu vết hành động: đúng một dòng 'recall', người thực hiện là
-    // tác giả, lý do trống (recall không có lý do).
+    // Dấu vết hành động: đúng một dòng 'recall', người thực hiện là tác giả, lý do trống (recall không có lý do).
     const actions = await actionsFor(msgId);
     expect(actions).toHaveLength(1);
     expect(actions[0]!.action).toBe('recall');
@@ -203,8 +192,8 @@ describe('Messaging — vòng đời tin nhắn theo vai (issue #33, bổ sung P
     const sent = await send(s1.token, groupConvId, 'tin cũ ngoài cửa sổ thu hồi');
     expect(sent.status).toBe(201);
     const msgId = sent.body.id as string;
-    // Đẩy mốc gửi về quá khứ 16 phút (cửa sổ mặc định 15) bằng SQL
-    // trực tiếp — đúng trạng thái của một tin đã gửi từ lâu.
+    // Đẩy mốc gửi về quá khứ 16 phút (cửa sổ mặc định 15) bằng SQL trực tiếp — đúng trạng thái của một tin đã gửi từ
+    // lâu.
     await pg.query("update message set created_at = now() - interval '16 minutes' where id = $1", [msgId]);
 
     const recall = await http(app).post(`/api/v1/messages/${msgId}/recall`)
@@ -265,8 +254,7 @@ describe('Messaging — vòng đời tin nhắn theo vai (issue #33, bổ sung P
       .set('Authorization', `Bearer ${teacher.token}`).send({ reason: '   ' });
     expect(noReason.status).toBe(400);
 
-    // Giáo viên phụ trách xoá cứng có lý do — KHÔNG giới hạn thời
-    // gian: đẩy tin về quá khứ xa vẫn xoá được.
+    // Giáo viên phụ trách xoá cứng có lý do — KHÔNG giới hạn thời gian: đẩy tin về quá khứ xa vẫn xoá được.
     await pg.query("update message set created_at = now() - interval '30 days' where id = $1", [msgId]);
     const hard = await http(app).post(`/api/v1/messages/${msgId}/hard-delete`)
       .set('Authorization', `Bearer ${teacher.token}`).send({ reason: 'Vi phạm nội quy lớp học' });
@@ -278,8 +266,7 @@ describe('Messaging — vòng đời tin nhắn theo vai (issue #33, bổ sung P
     expect(Number(count.rows[0]!.n)).toBe(0);
     const teacherView = await viewMessages(teacher.token, groupConvId);
     expect(teacherView.messages.map((m) => m.id)).not.toContain(msgId);
-    // Căn cứ duy nhất còn lại: dòng moderator_action kèm lý do và
-    // bản chụp tác giả/seq của tin đã mất.
+    // Căn cứ duy nhất còn lại: dòng moderator_action kèm lý do và bản chụp tác giả/seq của tin đã mất.
     const actions = await actionsFor(msgId);
     expect(actions).toHaveLength(1);
     expect(actions[0]!.action).toBe('hard_delete');

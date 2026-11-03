@@ -14,13 +14,11 @@ import { MessagingMembershipSyncService } from './messaging-membership-sync.serv
 import { MessagingNotificationsService } from './messaging-notifications.service';
 
 /**
- * Đếm ký tự NGƯỜI DÙNG THẤY (grapheme cluster) của một đoạn văn bản —
- * cách đếm của trần độ dài tin (lát M2, issue #212): một emoji đơn,
- * một emoji ghép ZWJ (vd biểu tượng gia đình) hay một chữ cái kèm dấu
- * tổ hợp đều tính là MỘT ký tự, tuyệt đối không đếm byte UTF-8 hay đơn
- * vị UTF-16 (hai cách đếm đó phạt oan tiếng Việt và emoji nhiều lần).
- * `Intl.Segmenter` là API chuẩn của Node ≥ 16; môi trường thiếu nó thì
- * lùi về đếm theo code point Unicode ([...text]) — vẫn đúng hơn byte.
+ * Đếm ký tự NGƯỜI DÙNG THẤY (grapheme cluster) của một đoạn văn bản — cách đếm của trần độ dài tin (lát M2, issue
+ * #212): một emoji đơn, một emoji ghép ZWJ (vd biểu tượng gia đình) hay một chữ cái kèm dấu tổ hợp đều tính là MỘT ký
+ * tự, tuyệt đối không đếm byte UTF-8 hay đơn vị UTF-16 (hai cách đếm đó phạt oan tiếng Việt và emoji nhiều lần).
+ * `Intl.Segmenter` là API chuẩn của Node ≥ 16; môi trường thiếu nó thì lùi về đếm theo code point Unicode ([...text]) —
+ * vẫn đúng hơn byte.
  */
 export function countUserVisibleCharacters(text: string): number {
   const SegmenterCtor = (Intl as unknown as {
@@ -49,11 +47,9 @@ function isUniqueViolation(err: unknown): boolean {
 }
 
 /**
- * Tin có còn nằm trong CỬA SỔ THU HỒI hay không (vòng đời tin nhắn
- * theo vai, issue #33): thuần hàm thời gian để kiểm chứng đơn vị
- * tách khỏi DB — `windowMinutes <= 0` nghĩa là thu hồi đã TẮT (không
- * tin nào thu hồi được, kể cả tin vừa gửi); mốc biên ĐÚNG bằng cửa
- * sổ vẫn được tính là trong cửa sổ.
+ * Tin có còn nằm trong CỬA SỔ THU HỒI hay không (vòng đời tin nhắn theo vai, issue #33): thuần hàm thời gian để kiểm
+ * chứng đơn vị tách khỏi DB — `windowMinutes <= 0` nghĩa là thu hồi đã TẮT (không tin nào thu hồi được, kể cả tin vừa
+ * gửi); mốc biên ĐÚNG bằng cửa sổ vẫn được tính là trong cửa sổ.
  */
 export function isWithinRecallWindow(createdAt: Date, now: Date, windowMinutes: number): boolean {
   if (windowMinutes <= 0) return false;
@@ -61,37 +57,25 @@ export function isWithinRecallWindow(createdAt: Date, now: Date, windowMinutes: 
 }
 
 /**
- * TIN NHẮN + KIỂM DUYỆT của MessagingModule (cụm ca sử dụng
- * "tin nhắn/kiểm duyệt").
+ * TIN NHẮN + KIỂM DUYỆT của MessagingModule (cụm ca sử dụng "tin nhắn/kiểm duyệt").
  *
- * Luồng nghiệp vụ: sau khi gửi, quyền sở hữu của một MESSAGE chuyển
- * cho hệ thống — không endpoint nào sửa nội dung tin; vòng đời tin
- * theo vai (issue #33) gồm ba lớp tách bạch: xoá-phía-mình (chỉ tác
- * giả, mọi lúc, chỉ ẩn khỏi tầm nhìn của chính người xoá), thu hồi
- * (chỉ tác giả, trong cửa sổ site-config, nội dung bị vô hiệu với
- * mọi thành viên thường nhưng còn truy vết kiểm duyệt) và xoá cứng/gỡ
- * hàng loạt (chỉ người có thẩm quyền kiểm duyệt trong phạm vi
- * conversation, lý do bắt buộc, luôn ghi moderator_action trước khi
- * xoá vật lý). Gửi tin qua cổng thành viên + cổng liên lạc (với hội
- * thoại 1-1) + trần độ dài đếm theo ký tự người dùng thấy + chống
- * spam theo người gửi (MessagingSendThrottleService); gửi trùng theo
- * clientMessageId là an toàn (idempotent). Báo cáo conversation vào
- * hàng đợi của giáo viên phụ trách khoá liên quan và quản trị viên,
- * kèm thông báo trong app ngay khi tạo.
+ * Luồng nghiệp vụ: sau khi gửi, quyền sở hữu của một MESSAGE chuyển cho hệ thống — không endpoint nào sửa nội dung tin;
+ * vòng đời tin theo vai (issue #33) gồm ba lớp tách bạch: xoá-phía-mình (chỉ tác giả, mọi lúc, chỉ ẩn khỏi tầm nhìn của
+ * chính người xoá), thu hồi (chỉ tác giả, trong cửa sổ site-config, nội dung bị vô hiệu với mọi thành viên thường nhưng
+ * còn truy vết kiểm duyệt) và xoá cứng/gỡ hàng loạt (chỉ người có thẩm quyền kiểm duyệt trong phạm vi conversation, lý
+ * do bắt buộc, luôn ghi moderator_action trước khi xoá vật lý). Gửi tin qua cổng thành viên + cổng liên lạc (với hội
+ * thoại 1-1) + trần độ dài đếm theo ký tự người dùng thấy + chống spam theo người gửi (MessagingSendThrottleService);
+ * gửi trùng theo clientMessageId là an toàn (idempotent). Báo cáo conversation vào hàng đợi của giáo viên phụ trách
+ * khoá liên quan và quản trị viên, kèm thông báo trong app ngay khi tạo.
  *
- * Các cổng thẩm quyền theo conversation (thành viên, kiểm duyệt,
- * quản lý, khoá/lớp liên quan) dùng lại của MessagingConversationsService
- * — cụm này không định nghĩa lại.
+ * Các cổng thẩm quyền theo conversation (thành viên, kiểm duyệt, quản lý, khoá/lớp liên quan) dùng lại của
+ * MessagingConversationsService — cụm này không định nghĩa lại.
  *
- * Cách lắp ráp (issue #295): service này là một CỤM của MessagingModule,
- * tách từ MessagingService cũ theo cụm ca sử dụng — tách cấu trúc thuần,
- * không đổi hành vi. MessagingService nay là facade giữ nguyên bề mặt
- * công khai và chữ ký constructor, tự lắp ráp các service cụm trong
- * constructor của nó (các test đơn vị hiện hữu khởi tạo trực tiếp
- * `new MessagingService(...)` với đúng các phụ thuộc hạ tầng cũ nên
- * facade là điểm lắp ráp để giữ nguyên hợp đồng khởi tạo đó); các
- * service cụm không đăng ký provider riêng trong module và module
- * wiring giữ nguyên như trước khi tách.
+ * Cách lắp ráp (issue #295): service này là một CỤM của MessagingModule, tách từ MessagingService cũ theo cụm ca sử
+ * dụng — tách cấu trúc thuần, không đổi hành vi. MessagingService nay là facade giữ nguyên bề mặt công khai và chữ ký
+ * constructor, tự lắp ráp các service cụm trong constructor của nó (các test đơn vị hiện hữu khởi tạo trực tiếp `new
+ * MessagingService(...)` với đúng các phụ thuộc hạ tầng cũ nên facade là điểm lắp ráp để giữ nguyên hợp đồng khởi tạo
+ * đó); các service cụm không đăng ký provider riêng trong module và module wiring giữ nguyên như trước khi tách.
  */
 export class MessagingMessagesService {
   constructor(
@@ -109,9 +93,8 @@ export class MessagingMessagesService {
   ) {}
 
   /**
-   * Một cửa sổ tin theo cursor seq của conversation (tải lịch sử cũ
-   * bằng beforeSeq, đồng bộ phần thiếu bằng afterSeq) — đầu REST cho
-   * phân trang/đồng bộ, cùng ngữ nghĩa cursor với kênh realtime.
+   * Một cửa sổ tin theo cursor seq của conversation (tải lịch sử cũ bằng beforeSeq, đồng bộ phần thiếu bằng afterSeq) —
+   * đầu REST cho phân trang/đồng bộ, cùng ngữ nghĩa cursor với kênh realtime.
    */
   async listConversationMessages(userId: string, conversationId: string, query: {
     beforeSeq?: number; afterSeq?: number; limit?: number;
@@ -121,19 +104,16 @@ export class MessagingMessagesService {
     await this.membershipSync.syncGroupConversationIfLinked(conversation);
     await this.conversations.assertConversationMember(userId, conversation);
     await this.conversations.assertDirectConversationVisible(userId, conversation);
-    // Cùng luật tầm nhìn với getConversation: chỉ người có thẩm quyền
-    // kiểm duyệt mới nhận được tin đã xoá mềm trong cửa sổ đồng bộ;
-    // người xem thường bị lọc tin đã xoá-phía-mình và nhận nội dung
-    // rỗng cho tin đã thu hồi.
+    // Cùng luật tầm nhìn với getConversation: chỉ người có thẩm quyền kiểm duyệt mới nhận được tin đã xoá mềm trong cửa
+    // sổ đồng bộ; người xem thường bị lọc tin đã xoá-phía-mình và nhận nội dung rỗng cho tin đã thu hồi.
     const canModerate = await this.conversations.canModerateConversation(userId, conversation);
     const rawMessages = await this.repo.listMessages(conversationId, {
       ...query,
       includeDeleted: canModerate,
       viewerId: canModerate ? undefined : userId,
     });
-    // Khối trích dẫn (lát M3): cùng luật dựng với getConversation —
-    // theo quyền của người xem trên tin gốc thô, độc lập với việc vô
-    // hiệu nội dung thu hồi của chính cửa sổ này.
+    // Khối trích dẫn (lát M3): cùng luật dựng với getConversation — theo quyền của người xem trên tin gốc thô, độc lập
+    // với việc vô hiệu nội dung thu hồi của chính cửa sổ này.
     const withQuotes = await this.repo.attachQuotes(rawMessages, {
       privileged: canModerate,
       viewerId: canModerate ? undefined : userId,
@@ -148,15 +128,11 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Tìm nội dung tin TRONG một conversation (lát M4, issue #237):
-   * cùng cổng với các đường đọc tin — chỉ thành viên, hội thoại 1–1
-   * đang bị chặn hành xử như không tồn tại, người có thẩm quyền kiểm
-   * duyệt tìm theo tầm nhìn truy vết. Kết quả mang excerpt quanh chỗ
-   * khớp + seq để client nhảy tới đúng tin; kết quả chỉ chứa tin còn
-   * hiển thị được với chính người tìm (luật chi tiết ở repository).
-   * Truy vấn rỗng sau khi cắt khoảng trắng → 400 xác định
-   * `messaging.search_query_empty` (schema route chỉ chặn chuỗi
-   * rỗng hẳn; truy vấn toàn khoảng trắng lọt tới đây).
+   * Tìm nội dung tin TRONG một conversation (lát M4, issue #237): cùng cổng với các đường đọc tin — chỉ thành viên, hội
+   * thoại 1–1 đang bị chặn hành xử như không tồn tại, người có thẩm quyền kiểm duyệt tìm theo tầm nhìn truy vết. Kết
+   * quả mang excerpt quanh chỗ khớp + seq để client nhảy tới đúng tin; kết quả chỉ chứa tin còn hiển thị được với chính
+   * người tìm (luật chi tiết ở repository). Truy vấn rỗng sau khi cắt khoảng trắng → 400 xác định
+   * `messaging.search_query_empty` (schema route chỉ chặn chuỗi rỗng hẳn; truy vấn toàn khoảng trắng lọt tới đây).
    */
   async searchConversationMessages(userId: string, conversationId: string, query: {
     q: string; limit?: number;
@@ -191,17 +167,14 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Gửi một message user-tới-user. Luật phân phối (report §2#12): mọi thành viên khác
-   * phải liên lạc được — không bị suspended, và không được đã chặn
-   * người gửi. Khi đã lưu, message bất biến qua API.
+   * Gửi một message user-tới-user. Luật phân phối (report §2#12): mọi thành viên khác phải liên lạc được — không bị
+   * suspended, và không được đã chặn người gửi. Khi đã lưu, message bất biến qua API.
    */
   /**
-   * Gửi tin nhắn: kiểm tra thành viên và quan hệ chặn. Nếu client kèm
-   * `clientMessageId` (gửi lạc quan/thử lại), lần gửi trùng khoá trả
-   * chính tin đã lưu — không tạo tin thứ hai, không phát sự kiện mới.
-   * Tin mới nhận seq đơn điệu của conversation trong cùng transaction
-   * với outbox `message_sent`; realtime đến client qua consumer của
-   * outbox, service KHÔNG tự phát socket.
+   * Gửi tin nhắn: kiểm tra thành viên và quan hệ chặn. Nếu client kèm `clientMessageId` (gửi lạc quan/thử lại), lần gửi
+   * trùng khoá trả chính tin đã lưu — không tạo tin thứ hai, không phát sự kiện mới. Tin mới nhận seq đơn điệu của
+   * conversation trong cùng transaction với outbox `message_sent`; realtime đến client qua consumer của outbox, service
+   * KHÔNG tự phát socket.
    */
   async sendMessage(actorId: string, conversationId: string, input: { text: string; subject?: string; clientMessageId?: string; replyToMessageId?: string }): Promise<MessageWithQuoteRow> {
     const systemCtx = await this.contexts.ensureSystemContext();
@@ -209,15 +182,13 @@ export class MessagingMessagesService {
     await this.evaluator.requireCapability(actorId, 'site:sendmessage', senderCtx?.id ?? systemCtx.id);
     const conversation = await this.repo.getConversation(conversationId);
     if (!conversation) throw new NotFoundException({ message: `Conversation ${conversationId} not found`, code: 'messaging.conversation_not_found' });
-    // Conversation gắn group: đồng bộ thành viên theo group trước khi kiểm
-    // tra tư cách thành viên (người mới vào group gửi được ngay, người rời
-    // group bị chặn ở kiểm tra ngay dưới đây).
+    // Conversation gắn group: đồng bộ thành viên theo group trước khi kiểm tra tư cách thành viên (người mới vào group
+    // gửi được ngay, người rời group bị chặn ở kiểm tra ngay dưới đây).
     await this.membershipSync.syncGroupConversationIfLinked(conversation);
     await this.conversations.assertConversationMember(actorId, conversation);
-    // Cột `enabled` phải được tôn trọng THẬT ở đường gửi (Lớp B):
-    // giáo viên tắt chat của nhóm lớp thì thành viên thường dừng gửi
-    // tại đây; người có thẩm quyền quản lý vẫn gửi được — đó là đường
-    // thông báo một chiều của giáo viên khi lớp đã tắt chat.
+    // Cột `enabled` phải được tôn trọng THẬT ở đường gửi (Lớp B): giáo viên tắt chat của nhóm lớp thì thành viên thường
+    // dừng gửi tại đây; người có thẩm quyền quản lý vẫn gửi được — đó là đường thông báo một chiều của giáo viên khi
+    // lớp đã tắt chat.
     if (!conversation.enabled && !(await this.conversations.canManageConversation(actorId, conversation))) {
       throw new ForbiddenException({
         message: 'Chat is disabled for this conversation',
@@ -235,39 +206,33 @@ export class MessagingMessagesService {
         throw new ForbiddenException({ message: `User ${memberId} has blocked you`, code: 'messaging.contact_blocked' });
       }
     }
-    // Cổng liên lạc chỉ áp cho conversation cá nhân (type 1): kiểm ở
-    // MỖI lần gửi — hội thoại riêng có từ trước khi hai người thành
-    // liên hệ (hoặc sau khi gỡ liên hệ) vẫn đọc được lịch sử nhưng gửi
-    // mới bị chặn tới khi quan hệ được (tái) lập; conversation nhóm
-    // thì thành viên gửi tự do. Kiểm sau luật suspended/blocked để
-    // giữ nguyên mã lỗi đã có của hai luật đó.
+    // Cổng liên lạc chỉ áp cho conversation cá nhân (type 1): kiểm ở MỖI lần gửi — hội thoại riêng có từ trước khi hai
+    // người thành liên hệ (hoặc sau khi gỡ liên hệ) vẫn đọc được lịch sử nhưng gửi mới bị chặn tới khi quan hệ được
+    // (tái) lập; conversation nhóm thì thành viên gửi tự do. Kiểm sau luật suspended/blocked để giữ nguyên mã lỗi đã có
+    // của hai luật đó.
     if (conversation.type === 1) {
       const other = members.find((id) => id !== actorId);
       if (other) {
-        // Chiều chặn còn lại: chính người gửi đã chặn người nhận thì
-        // cũng không gửi được (phải bỏ chặn trước) — vòng lặp phía
-        // trên mới chỉ bắt chiều người nhận chặn người gửi.
+        // Chiều chặn còn lại: chính người gửi đã chặn người nhận thì cũng không gửi được (phải bỏ chặn trước) — vòng
+        // lặp phía trên mới chỉ bắt chiều người nhận chặn người gửi.
         if (await this.repo.isBlocked(actorId, other)) {
           throw new ForbiddenException({ message: 'You have blocked this user', code: 'messaging.contact_blocked' });
         }
         await this.contacts.assertCanContact(actorId, other);
       }
     }
-    // Kết quả trả về luôn mang khối trích dẫn đã dựng cho chính
-    // người gửi (lát M3): client thay bản lạc quan bằng bản thật mà
-    // không phải tải lại cửa sổ.
+    // Kết quả trả về luôn mang khối trích dẫn đã dựng cho chính người gửi (lát M3): client thay bản lạc quan bằng bản
+    // thật mà không phải tải lại cửa sổ.
     const withQuote = async (row: MessageRow): Promise<MessageWithQuoteRow> =>
       (await this.repo.attachQuotes([row], { privileged: false, viewerId: actorId }))[0]!;
     if (input.clientMessageId) {
       const existing = await this.repo.getMessageByClientId(conversationId, actorId, input.clientMessageId);
       if (existing) return withQuote(existing);
     }
-    // Gác TRÍCH DẪN (lát M3, issue #229): tin gốc phải thuộc ĐÚNG
-    // conversation đang gửi. Tin không tồn tại và tin của conversation
-    // khác nhận CÙNG một 400 — không lộ tồn tại tin của hội thoại
-    // khác. Đặt trước cổng độ dài/throttle như mọi lỗi nội dung: yêu
-    // cầu sai không đốt quota gửi. Phần trích dẫn KHÔNG tính vào
-    // trần độ dài (chỉ `text` bị đếm ở assertMessageLengthAllowed).
+    // Gác TRÍCH DẪN (lát M3, issue #229): tin gốc phải thuộc ĐÚNG conversation đang gửi. Tin không tồn tại và tin của
+    // conversation khác nhận CÙNG một 400 — không lộ tồn tại tin của hội thoại khác. Đặt trước cổng độ dài/throttle như
+    // mọi lỗi nội dung: yêu cầu sai không đốt quota gửi. Phần trích dẫn KHÔNG tính vào trần độ dài (chỉ `text` bị đếm ở
+    // assertMessageLengthAllowed).
     if (input.replyToMessageId) {
       const original = await this.repo.getMessage(input.replyToMessageId);
       if (!original || original.conversationId !== conversationId) {
@@ -277,11 +242,9 @@ export class MessagingMessagesService {
         });
       }
     }
-    // Chặn lạm dụng đường gửi (lát M2, issue #212) — đặt SAU điểm trả
-    // trùng clientMessageId và sau mọi cổng tư cách/liên lạc: lượt gửi
-    // lại của tin đã nhận không tốn quota throttle, tin bị từ chối ở
-    // cổng trước cũng không; thứ tự hai cổng là độ dài TRƯỚC (400,
-    // lỗi nội dung không đốt quota) rồi mới throttle (429).
+    // Chặn lạm dụng đường gửi (lát M2, issue #212) — đặt SAU điểm trả trùng clientMessageId và sau mọi cổng tư
+    // cách/liên lạc: lượt gửi lại của tin đã nhận không tốn quota throttle, tin bị từ chối ở cổng trước cũng không; thứ
+    // tự hai cổng là độ dài TRƯỚC (400, lỗi nội dung không đốt quota) rồi mới throttle (429).
     await this.assertMessageLengthAllowed(input.text);
     await this.sendThrottle.consume(actorId);
     try {
@@ -293,9 +256,8 @@ export class MessagingMessagesService {
           seq, clientMessageId: input.clientMessageId ?? null,
           replyToMessageId: input.replyToMessageId ?? null,
         }, tx);
-        // Lát M5: tin mới làm hội thoại ĐÃ LƯU của các thành viên còn
-        // lại tự hiện lại (bỏ lưu trong cùng transaction — xem
-        // clearArchivedForIncomingMessage ở repository).
+        // Lát M5: tin mới làm hội thoại ĐÃ LƯU của các thành viên còn lại tự hiện lại (bỏ lưu trong cùng transaction —
+        // xem clearArchivedForIncomingMessage ở repository).
         await this.repo.clearArchivedForIncomingMessage(conversationId, actorId, tx);
         await this.outbox.enqueueKysely(tx, {
           aggregate: 'messaging', type: 'message_sent',
@@ -309,9 +271,8 @@ export class MessagingMessagesService {
       });
       return await withQuote(saved);
     } catch (err) {
-      // Hai lần gửi trùng khoá chạy đồng thời: một lần thắng ở ràng buộc
-      // duy nhất, lần còn lại nhận lỗi 23505 sau khi transaction đã huỷ —
-      // đọc lại tin thắng và trả như một lần gửi thành công.
+      // Hai lần gửi trùng khoá chạy đồng thời: một lần thắng ở ràng buộc duy nhất, lần còn lại nhận lỗi 23505 sau khi
+      // transaction đã huỷ — đọc lại tin thắng và trả như một lần gửi thành công.
       if (input.clientMessageId && isUniqueViolation(err)) {
         const existing = await this.repo.getMessageByClientId(conversationId, actorId, input.clientMessageId);
         if (existing) return withQuote(existing);
@@ -321,9 +282,8 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Sửa tin nhắn vẫn bị từ chối (chính sách đã chốt chỉ nới XOÁ, theo
-   * mô hình xoá mềm có truy vết — sửa nội dung tin đã gửi không nằm
-   * trong chính sách).
+   * Sửa tin nhắn vẫn bị từ chối (chính sách đã chốt chỉ nới XOÁ, theo mô hình xoá mềm có truy vết — sửa nội dung tin đã
+   * gửi không nằm trong chính sách).
    */
   /**
    * Sửa tin nhắn của chính mình.
@@ -335,38 +295,25 @@ export class MessagingMessagesService {
     });
   }
 
-  // --- vòng đời tin nhắn theo vai (issue #33, bổ sung PR #94) ---------------
-  //
-  // Ba lớp thao tác, tách bạch theo vai — thay mô hình xoá mềm toàn
-  // cục cũ (một lần DELETE là tin biến mất với mọi người):
-  //   (a) XOÁ-PHÍA-MÌNH (DELETE /messages/:id): chỉ TÁC GIẢ, mọi lúc
-  //       không điều kiện cửa sổ — đặt cờ cá nhân
-  //       `message_user_deletions`, tin chỉ ẩn khỏi tầm nhìn của
-  //       chính người xoá; phía kia và đường truy vết không đổi.
-  //   (b) THU HỒI (POST /messages/:id/recall): chỉ TÁC GIẢ, chỉ
-  //       trong cửa sổ site-config `core/messagingrecallwindowminutes`
-  //       (mặc định 15 phút từ lúc gửi) — nội dung bị vô hiệu với
-  //       mọi thành viên thường, ghi dấu moderator_action 'recall'.
-  //       Ngoài cửa sổ người thường không còn thao tác này.
-  //   (c) XOÁ CỨNG / GỠ HÀNG LOẠT (POST /messages/:id/hard-delete,
-  //       POST /messages/bulk-remove): chỉ người có capability
-  //       `moderation:manage` trong phạm vi conversation, không
-  //       giới hạn thời gian, lý do BẮT BUỘC và luôn ghi
+  // Ba lớp thao tác, tách bạch theo vai — thay mô hình xoá mềm toàn cục cũ (một lần DELETE là tin biến mất với mọi
+  // người):
+  //   (a) XOÁ-PHÍA-MÌNH (DELETE /messages/:id): chỉ TÁC GIẢ, mọi lúc không điều kiện cửa sổ — đặt cờ cá nhân
+  //       `message_user_deletions`, tin chỉ ẩn khỏi tầm nhìn của chính người xoá; phía kia và đường truy vết không đổi.
+  //   (b) THU HỒI (POST /messages/:id/recall): chỉ TÁC GIẢ, chỉ trong cửa sổ site-config
+  //       `core/messagingrecallwindowminutes` (mặc định 15 phút từ lúc gửi) — nội dung bị vô hiệu với mọi thành viên
+  //       thường, ghi dấu moderator_action 'recall'. Ngoài cửa sổ người thường không còn thao tác này.
+  //   (c) XOÁ CỨNG / GỠ HÀNG LOẠT (POST /messages/:id/hard-delete, POST /messages/bulk-remove): chỉ người có capability
+  //       `moderation:manage` trong phạm vi conversation, không giới hạn thời gian, lý do BẮT BUỘC và luôn ghi
   //       moderator_action trước khi dòng tin bị xoá vật lý.
-  // Cổng chặn hội thoại 1–1 (assertDirectConversationVisible) vẫn đặt
-  // TRƯỚC (a) và (b) như mọi đường theo id của người dùng thường;
-  // đường (c) là đường kiểm duyệt có thẩm quyền riêng — như đường
-  // xem báo cáo — nên KHÔNG qua cổng chặn: kiểm duyệt phải xử lý
-  // được cả nội dung trong hội thoại đang bị chặn.
+  // Cổng chặn hội thoại 1–1 (assertDirectConversationVisible) vẫn đặt TRƯỚC (a) và (b) như mọi đường theo id của người
+  // dùng thường; đường (c) là đường kiểm duyệt có thẩm quyền riêng — như đường xem báo cáo — nên KHÔNG qua cổng chặn:
+  // kiểm duyệt phải xử lý được cả nội dung trong hội thoại đang bị chặn.
 
   /**
-   * Cổng trần độ dài tin (lát M2, issue #212; chính sách P2 ở #33):
-   * trần đọc từ site-config `core/messagingmaxmessagelength` (mặc
-   * định 10.000 theo registry; 0 = tắt trần), đếm theo ký tự người
-   * dùng thấy qua {@link countUserVisibleCharacters}. Vượt trần →
-   * 400 `messaging.message_too_long`. Chỉ áp cho đường gửi tin của
-   * người dùng (`sendMessage`) — tin hệ thống qua `notify()` không
-   * qua cổng này.
+   * Cổng trần độ dài tin (lát M2, issue #212; chính sách P2 ở #33): trần đọc từ site-config
+   * `core/messagingmaxmessagelength` (mặc định 10.000 theo registry; 0 = tắt trần), đếm theo ký tự người dùng thấy qua
+   * {@link countUserVisibleCharacters}. Vượt trần → 400 `messaging.message_too_long`. Chỉ áp cho đường gửi tin của
+   * người dùng (`sendMessage`) — tin hệ thống qua `notify()` không qua cổng này.
    */
   private async assertMessageLengthAllowed(text: string): Promise<void> {
     const value = await this.siteConfig.getValue<number>('core', 'messagingmaxmessagelength');
@@ -390,13 +337,10 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Cổng thẩm quyền XOÁ CỨNG: phải có thẩm quyền kiểm duyệt TRÊN
-   * conversation (staff khoá/quản trị — canModerateConversation) VÀ
-   * capability `moderation:manage` tại context khoá của conversation.
-   * Conversation CẤP LỚP đi cùng khuôn tại context lớp (MSG-T2).
-   * Conversation không thuộc khoá/lớp nào thì chỉ quản trị viên toàn
-   * site qua được (canModerate đã là admin-only ở trường hợp đó và
-   * evaluator cho admin qua mọi kiểm tra capability).
+   * Cổng thẩm quyền XOÁ CỨNG: phải có thẩm quyền kiểm duyệt TRÊN conversation (staff khoá/quản trị —
+   * canModerateConversation) VÀ capability `moderation:manage` tại context khoá của conversation. Conversation CẤP LỚP
+   * đi cùng khuôn tại context lớp (MSG-T2). Conversation không thuộc khoá/lớp nào thì chỉ quản trị viên toàn site qua
+   * được (canModerate đã là admin-only ở trường hợp đó và evaluator cho admin qua mọi kiểm tra capability).
    */
   private async assertCanHardDelete(actorId: string, conversation: ConversationRow): Promise<void> {
     const forbidden = () => new ForbiddenException({
@@ -406,7 +350,6 @@ export class MessagingMessagesService {
     if (!(await this.conversations.canModerateConversation(actorId, conversation))) throw forbidden();
     const courseId = await this.conversations.resolveConversationCourseId(conversation);
     if (!courseId) {
-      // Conversation CẤP LỚP: cùng khuôn ở context lớp (lát MSG-T2).
       const classId = await this.conversations.resolveConversationClassId(conversation);
       if (classId) {
         const classCtx = await this.contexts.getByLevelInstance(45, classId);
@@ -427,12 +370,10 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Lớp (a) — XOÁ-PHÍA-MÌNH: tác giả ẩn tin của chính mình khỏi tầm
-   * nhìn của mình, mọi lúc. KHÔNG đổi dòng tin, KHÔNG ảnh hưởng phía
-   * kia; sự kiện `message_deleted_for_me` chỉ phân phối tới CHÍNH
-   * người xoá (đồng bộ các thiết bị của họ). Người không phải tác
-   * giả → 403 (kể cả moderator: gỡ cho mọi người là việc của lớp
-   * (c), không mượn đường này). Idempotent: xoá lại là no-op 200.
+   * Lớp (a) — XOÁ-PHÍA-MÌNH: tác giả ẩn tin của chính mình khỏi tầm nhìn của mình, mọi lúc. KHÔNG đổi dòng tin, KHÔNG
+   * ảnh hưởng phía kia; sự kiện `message_deleted_for_me` chỉ phân phối tới CHÍNH người xoá (đồng bộ các thiết bị của
+   * họ). Người không phải tác giả → 403 (kể cả moderator: gỡ cho mọi người là việc của lớp (c), không mượn đường này).
+   * Idempotent: xoá lại là no-op 200.
    */
   async deleteMessage(actorId: string, messageId: string): Promise<MessageRow> {
     const existing = await this.repo.getMessage(messageId);
@@ -440,10 +381,9 @@ export class MessagingMessagesService {
     const conversation = await this.repo.getConversation(existing.conversationId);
     if (!conversation) throw new NotFoundException({ message: `Conversation ${existing.conversationId} not found`, code: 'messaging.conversation_not_found' });
     await this.membershipSync.syncGroupConversationIfLinked(conversation);
-    // Cổng hiển thị khi chặn (việc nối tiếp #33, siết sau PR #94):
-    // hội thoại 1–1 đang chặn hành xử như KHÔNG TỒN TẠI ở mọi đường
-    // theo id — kể cả xoá-phía-mình. Đặt TRƯỚC kiểm tra tác giả để
-    // phía bị chặn nhận 404 thay vì 403 và không sự kiện nào phát ra.
+    // Cổng hiển thị khi chặn (việc nối tiếp #33, siết sau PR #94): hội thoại 1–1 đang chặn hành xử như KHÔNG TỒN TẠI ở
+    // mọi đường theo id — kể cả xoá-phía-mình. Đặt TRƯỚC kiểm tra tác giả để phía bị chặn nhận 404 thay vì 403 và không
+    // sự kiện nào phát ra.
     await this.conversations.assertDirectConversationVisible(actorId, conversation);
     if (existing.userIdFrom !== actorId) {
       throw new ForbiddenException({
@@ -451,8 +391,8 @@ export class MessagingMessagesService {
         code: 'messaging.message_delete_forbidden',
       });
     }
-    // Tin đã bị xoá mềm toàn cục (dữ liệu từ mô hình cũ): không còn
-    // hiển thị với ai — không còn gì để ẩn thêm, trả nguyên trạng.
+    // Tin đã bị xoá mềm toàn cục (dữ liệu từ mô hình cũ): không còn hiển thị với ai — không còn gì để ẩn thêm, trả
+    // nguyên trạng.
     if (existing.deletedAt) return existing;
     if (!(await this.repo.isDeletedForUser(messageId, actorId))) {
       await this.repo.markDeletedForUser(messageId, actorId);
@@ -469,13 +409,10 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Lớp (b) — THU HỒI cho mọi người: chỉ tác giả, chỉ trong cửa sổ
-   * cấu hình kể từ lúc gửi. Thu hồi thành công: set dấu
-   * `recalled_at`/`recalled_by`, ghi moderator_action 'recall'
-   * TRƯỚC khi đổi trạng thái, phát `message_recalled` (phía kia gỡ
-   * nội dung + vô hiệu cache danh sách). Ngoài cửa sổ → 403
-   * `messaging.recall_window_expired` — người thường chỉ còn lớp
-   * (a). Thu hồi lại tin đã thu hồi là idempotent (giữ dấu đầu).
+   * Lớp (b) — THU HỒI cho mọi người: chỉ tác giả, chỉ trong cửa sổ cấu hình kể từ lúc gửi. Thu hồi thành công: set dấu
+   * `recalled_at`/`recalled_by`, ghi moderator_action 'recall' TRƯỚC khi đổi trạng thái, phát `message_recalled` (phía
+   * kia gỡ nội dung + vô hiệu cache danh sách). Ngoài cửa sổ → 403 `messaging.recall_window_expired` — người thường chỉ
+   * còn lớp (a). Thu hồi lại tin đã thu hồi là idempotent (giữ dấu đầu).
    */
   async recallMessage(actorId: string, messageId: string): Promise<MessageRow> {
     const existing = await this.repo.getMessage(messageId);
@@ -483,8 +420,8 @@ export class MessagingMessagesService {
     const conversation = await this.repo.getConversation(existing.conversationId);
     if (!conversation) throw new NotFoundException({ message: `Conversation ${existing.conversationId} not found`, code: 'messaging.conversation_not_found' });
     await this.membershipSync.syncGroupConversationIfLinked(conversation);
-    // Cùng cổng chặn như lớp (a): đang chặn thì hội thoại như không
-    // tồn tại — không thu hồi được và không phát sự kiện nào.
+    // Cùng cổng chặn như lớp (a): đang chặn thì hội thoại như không tồn tại — không thu hồi được và không phát sự kiện
+    // nào.
     await this.conversations.assertDirectConversationVisible(actorId, conversation);
     if (existing.userIdFrom !== actorId) {
       throw new ForbiddenException({
@@ -523,11 +460,9 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Lớp (c) — XOÁ CỨNG một tin: chỉ moderator có `moderation:manage`
-   * trong phạm vi, lý do bắt buộc (chốt ở DTO), không giới hạn thời
-   * gian. Dấu vết moderator_action ghi TRƯỚC, dòng tin xoá vật lý
-   * SAU — sau thao tác này nội dung không còn ở bất kỳ đường đọc
-   * nào, kể cả truy vết; căn cứ duy nhất còn lại là dòng hành động.
+   * Lớp (c) — XOÁ CỨNG một tin: chỉ moderator có `moderation:manage` trong phạm vi, lý do bắt buộc (chốt ở DTO), không
+   * giới hạn thời gian. Dấu vết moderator_action ghi TRƯỚC, dòng tin xoá vật lý SAU — sau thao tác này nội dung không
+   * còn ở bất kỳ đường đọc nào, kể cả truy vết; căn cứ duy nhất còn lại là dòng hành động.
    */
   async hardDeleteMessage(actorId: string, messageId: string, input: { reason: string }): Promise<{ deleted: true; messageId: string; conversationId: string }> {
     const existing = await this.repo.getMessage(messageId);
@@ -553,12 +488,10 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Lớp (c) — GỠ HÀNG LOẠT: cùng cổng thẩm quyền và lý do bắt buộc
-   * như xoá cứng một tin. Toàn bộ danh sách được kiểm tra (tồn tại +
-   * thẩm quyền trên TỪNG conversation liên quan) TRƯỚC khi bất kỳ
-   * tin nào bị gỡ — một tin hỏng là cả yêu cầu bị từ chối, không gỡ
-   * một phần. Mỗi tin một dòng moderator_action 'bulk_hard_delete'
-   * và một sự kiện `message_removed` riêng.
+   * Lớp (c) — GỠ HÀNG LOẠT: cùng cổng thẩm quyền và lý do bắt buộc như xoá cứng một tin. Toàn bộ danh sách được kiểm
+   * tra (tồn tại + thẩm quyền trên TỪNG conversation liên quan) TRƯỚC khi bất kỳ tin nào bị gỡ — một tin hỏng là cả yêu
+   * cầu bị từ chối, không gỡ một phần. Mỗi tin một dòng moderator_action 'bulk_hard_delete' và một sự kiện
+   * `message_removed` riêng.
    */
   async bulkRemoveMessages(actorId: string, input: { messageIds: string[]; reason: string }): Promise<{ removed: number; messageIds: string[] }> {
     const uniqueIds = [...new Set(input.messageIds)];
@@ -600,15 +533,11 @@ export class MessagingMessagesService {
     return { removed: rows.length, messageIds: rows.map((row) => row.id) };
   }
 
-  // --- báo cáo conversation (Lớp B) -------------------------------------------
-
   /**
-   * Báo cáo một conversation: chỉ THÀNH VIÊN của conversation báo cáo
-   * được. Báo cáo vào hàng đợi của giáo viên phụ trách lớp/khoá liên
-   * quan + quản trị viên toàn site — hai tập này nhận notification
-   * trong ứng dụng ngay khi báo cáo được tạo (trừ chính người báo cáo
-   * nếu họ thuộc hai tập đó). Việc XEM lại nội dung đi đường riêng có
-   * ghi vết ({@link getReportConversation}).
+   * Báo cáo một conversation: chỉ THÀNH VIÊN của conversation báo cáo được. Báo cáo vào hàng đợi của giáo viên phụ
+   * trách lớp/khoá liên quan + quản trị viên toàn site — hai tập này nhận notification trong ứng dụng ngay khi báo cáo
+   * được tạo (trừ chính người báo cáo nếu họ thuộc hai tập đó). Việc XEM lại nội dung đi đường riêng có ghi vết ({@link
+   * getReportConversation}).
    */
   async reportConversation(actorId: string, conversationId: string, reason?: string): Promise<ReportRow> {
     const conversation = await this.repo.getConversation(conversationId);
@@ -633,9 +562,8 @@ export class MessagingMessagesService {
         subject: 'A conversation was reported',
         body: 'A conversation was reported and is waiting in the moderation queue. Open the reports list in Messages to review it.',
         fromUserId: actorId,
-        // Nguồn của thông báo là khoá của conversation bị báo cáo
-        // (NB-4): người nhận đã tắt tiếng khoá đó thì ghi đè theo
-        // khoá áp dụng như mọi thông báo gắn khoá khác.
+        // Nguồn của thông báo là khoá của conversation bị báo cáo (NB-4): người nhận đã tắt tiếng khoá đó thì ghi đè
+        // theo khoá áp dụng như mọi thông báo gắn khoá khác.
         courseId: courseId ?? undefined,
       }).catch(() => undefined);
     }
@@ -643,10 +571,9 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Hàng đợi báo cáo TRONG THẨM QUYỀN của người gọi: quản trị viên
-   * thấy tất cả; giáo viên chỉ thấy báo cáo của các conversation thuộc
-   * khoá mình phụ trách; người khác thấy danh sách rỗng. Quyền xem
-   * theo từng conversation được chốt tại đây (không tin client).
+   * Hàng đợi báo cáo TRONG THẨM QUYỀN của người gọi: quản trị viên thấy tất cả; giáo viên chỉ thấy báo cáo của các
+   * conversation thuộc khoá mình phụ trách; người khác thấy danh sách rỗng. Quyền xem theo từng conversation được chốt
+   * tại đây (không tin client).
    */
   async listReports(actorId: string): Promise<ReportRow[]> {
     const reports = await this.repo.listReports();
@@ -667,13 +594,10 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Xem lại nội dung của ĐÚNG conversation bị báo cáo — đường truy vết
-   * có thẩm quyền của Lớp B: chỉ quản trị viên hoặc giáo viên phụ trách
-   * khoá của conversation đó. Nội dung trả về GỒM cả tin đã xoá mềm
-   * (mục đích của việc xem lại là truy vết). MỌI lần xem đều ghi một
-   * sự kiện outbox `message_conversation_report_viewed` — relay của
-   * logstore (issue #22) phản chiếu nó vào event_log với actor là
-   * người xem, object là conversation, kèm id báo cáo làm căn cứ.
+   * Xem lại nội dung của ĐÚNG conversation bị báo cáo — đường truy vết có thẩm quyền của Lớp B: chỉ quản trị viên hoặc
+   * giáo viên phụ trách khoá của conversation đó. Nội dung trả về GỒM cả tin đã xoá mềm (mục đích của việc xem lại là
+   * truy vết). MỌI lần xem đều ghi một sự kiện outbox `message_conversation_report_viewed` — relay của logstore (issue
+   * #22) phản chiếu nó vào event_log với actor là người xem, object là conversation, kèm id báo cáo làm căn cứ.
    */
   async getReportConversation(actorId: string, reportId: string): Promise<{
     report: ReportRow;
@@ -706,8 +630,8 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Đổi trạng thái xử lý của một báo cáo (open/resolved/dismissed) —
-   * cùng phạm vi thẩm quyền với đường xem lại nội dung.
+   * Đổi trạng thái xử lý của một báo cáo (open/resolved/dismissed) — cùng phạm vi thẩm quyền với đường xem lại nội
+   * dung.
    */
   async updateReportStatus(actorId: string, reportId: string, status: string): Promise<ReportRow> {
     const report = await this.repo.getReport(reportId);
@@ -725,18 +649,15 @@ export class MessagingMessagesService {
   }
 
   /**
-   * Đánh dấu đã đọc conversation: chỉ nâng mốc đã đọc của CHÍNH user
-   * này (thành viên khác giữ nguyên số chưa đọc của họ). Mốc tăng thì
-   * ghi outbox `message_conversation_read` để consumer phân phối biên
-   * đã-đọc ("đã xem tới seq N") cho các thành viên còn lại.
+   * Đánh dấu đã đọc conversation: chỉ nâng mốc đã đọc của CHÍNH user này (thành viên khác giữ nguyên số chưa đọc của
+   * họ). Mốc tăng thì ghi outbox `message_conversation_read` để consumer phân phối biên đã-đọc ("đã xem tới seq N") cho
+   * các thành viên còn lại.
    */
   async markConversationRead(userId: string, conversationId: string): Promise<{ marked: number; lastReadSeq: number }> {
     const conversation = await this.repo.getConversation(conversationId);
     if (conversation) {
-      // Cổng thành viên (conversation cấp khoá → 404 với người ngoài)
-      // + cùng cổng chặn với đường đọc: hội thoại 1–1 đang chặn thì
-      // đánh dấu đã đọc cũng 404 như không tồn tại — không phát biên
-      // đã-đọc cho phía bên kia qua outbox.
+      // Cổng thành viên (conversation cấp khoá → 404 với người ngoài) + cùng cổng chặn với đường đọc: hội thoại 1–1
+      // đang chặn thì đánh dấu đã đọc cũng 404 như không tồn tại — không phát biên đã-đọc cho phía bên kia qua outbox.
       await this.conversations.assertConversationMember(userId, conversation);
       await this.conversations.assertDirectConversationVisible(userId, conversation);
     } else if (!(await this.repo.isMember(conversationId, userId))) {
@@ -759,8 +680,8 @@ export class MessagingMessagesService {
   async unreadCounts(userId: string): Promise<{ conversations: number; notifications: number }> {
     return {
       conversations: await this.repo.countUnreadConversations(userId),
-      // Phạm vi tenant của ngữ cảnh hiện hành truyền tường minh
-      // xuống repository (repository tại `@lms/db` không đọc ALS).
+      // Phạm vi tenant của ngữ cảnh hiện hành truyền tường minh xuống repository (repository tại `@lms/db` không đọc
+      // ALS).
       notifications: await this.repo.countUnreadNotifications(userId, tenantAls.getStore()?.tenantId),
     };
   }

@@ -9,21 +9,16 @@ import {
 import { EXPECTED_SNAPSHOTS } from '../../support/users-my-access-snapshot.fixture';
 
 /**
- * Tương đương phân giải của ảnh chụp quyền (`GET /users/me/capabilities`)
- * sau khi chuyển sang phân giải THEO LÔ (issue: tăng tốc endpoint này):
- *   1. Chụp đáp ứng: với bộ dữ kiện dựng cố định (cây context khoá/lớp,
- *      override PROHIBIT/PREVENT/ALLOW trên một vai tuỳ chỉnh, các gán
- *      vai mẫu), đáp ứng cho từng vai mẫu phải khớp TỪNG TRƯỜNG với mốc
- *      đã chụp từ cài đặt cũ (đường gọi `hasCapability` tuần tự) — xem
- *      `users-my-access-snapshot.fixture.ts`.
- *   2. Đối chiếu oracle: tại các context nhạy cảm (gồm cây tenant có
- *      cổng membership), tập capability trong ảnh chụp phải bằng đúng
- *      tập suy từ endpoint kiểm tra quyền hiện hành
- *      `GET /access/has-capability` (đường `PermissionEvaluator` gốc)
- *      cho TỪNG capability đã đăng ký.
- *   3. Cổng tenant: người ngoài tenant bị chặn tuyệt đối trong cây
- *      tenant; site admin ở trong cây tenant KHÔNG có lối tắt — chỉ
- *      được phân giải như người thường theo gán vai neo trong tenant.
+ * Tương đương phân giải của ảnh chụp quyền (`GET /users/me/capabilities`) sau khi chuyển sang phân giải THEO LÔ (issue:
+ * tăng tốc endpoint này):
+ *   1. Chụp đáp ứng: với bộ dữ kiện dựng cố định (cây context khoá/lớp, override PROHIBIT/PREVENT/ALLOW trên một vai
+ *      tuỳ chỉnh, các gán vai mẫu), đáp ứng cho từng vai mẫu phải khớp TỪNG TRƯỜNG với mốc đã chụp từ cài đặt cũ (đường
+ *      gọi `hasCapability` tuần tự) — xem `users-my-access-snapshot.fixture.ts`.
+ *   2. Đối chiếu oracle: tại các context nhạy cảm (gồm cây tenant có cổng membership), tập capability trong ảnh chụp
+ *      phải bằng đúng tập suy từ endpoint kiểm tra quyền hiện hành `GET /access/has-capability` (đường
+ *      `PermissionEvaluator` gốc) cho TỪNG capability đã đăng ký.
+ *   3. Cổng tenant: người ngoài tenant bị chặn tuyệt đối trong cây tenant; site admin ở trong cây tenant KHÔNG có lối
+ *      tắt — chỉ được phân giải như người thường theo gán vai neo trong tenant.
  */
 describe('Người dùng: tương đương phân giải batch my-access', () => {
   let app: INestApplication;
@@ -66,7 +61,9 @@ describe('Người dùng: tương đương phân giải batch my-access', () => 
     };
   }
 
-  /** Tập capability theo oracle hiện hành cho một (user, context): gọi has-capability cho TỪNG capability đã đăng ký. */
+  /**
+   * Tập capability theo oracle hiện hành cho một (user, context): gọi has-capability cho TỪNG capability đã đăng ký.
+   */
   async function oracleCapabilities(userId: string, contextId: string): Promise<string[]> {
     const granted: string[] = [];
     for (const def of CAPABILITY_DEFINITIONS) {
@@ -94,8 +91,8 @@ describe('Người dùng: tương đương phân giải batch my-access', () => 
     const customRole = await createRoleViaApi(app, admin);
     const rolesRes = await http(app).get('/api/v1/access/roles').set('Authorization', `Bearer ${admin}`);
     customRoleShortname = (rolesRes.body as { id: string; shortName: string }[]).find((r) => r.id === customRole)?.shortName ?? '';
-    // Bộ override phủ các nhánh ngữ nghĩa: ALLOW tại gốc, PREVENT tại tổ
-    // tiên giữa, ALLOW tại lá, PROHIBIT tại lá, ALLOW tại lớp.
+    // Bộ override phủ các nhánh ngữ nghĩa: ALLOW tại gốc, PREVENT tại tổ tiên giữa, ALLOW tại lá, PROHIBIT tại lá,
+    // ALLOW tại lớp.
     await setOverride(app, admin, customRole, 'question:add', systemId, 1);
     await setOverride(app, admin, customRole, 'question:add', coursecat.id, -1);
     await setOverride(app, admin, customRole, 'question:add', course.id, 1);
@@ -121,7 +118,7 @@ describe('Người dùng: tương đương phân giải batch my-access', () => 
 
     await addUser('plainUser');
 
-    // --- Dữ kiện cây tenant (cổng membership) dùng vai tuỳ chỉnh chung ---
+    // Dữ kiện cây tenant (cổng membership) dùng vai tuỳ chỉnh chung
     const slug = uniqueName('tenant').toLowerCase();
     const tenantRes = await http(app).post('/api/v1/tenants').set('Authorization', `Bearer ${admin}`)
       .send({ slug, name: `Trung tâm ${slug}`, kind: 'center' });
@@ -146,8 +143,8 @@ describe('Người dùng: tương đương phân giải batch my-access', () => 
     await assignRole(app, admin, outsider.id, customRole, tenantCourse.id);
 
     tokens.set('admin', admin);
-    // Site admin nhận một gán vai trong cây tenant nhưng (chưa) có
-    // membership — ca kiểm chứng cổng chặn + không lối tắt ở các test dưới.
+    // Site admin nhận một gán vai trong cây tenant nhưng (chưa) có membership — ca kiểm chứng cổng chặn + không lối tắt
+    // ở các test dưới.
     await assignRole(app, admin, adminId, customRole, tenantCourse.id);
     (globalThis as Record<string, unknown>).__perfTenant = { tenantId, tenantCourseId: tenantCourse.id, tenantCtxId: tenantCtx!.id, memberId: member.id, outsiderId: outsider.id };
   }, 300000);
@@ -200,9 +197,8 @@ describe('Người dùng: tương đương phân giải batch my-access', () => 
     // Site admin chưa có membership: cổng chặn cả admin trong cây tenant.
     const adminBefore = await snapshotOf('admin');
     expect(adminBefore.contexts.find((c) => c.contextId === t.tenantCourseId)?.capabilities).toEqual([]);
-    // Sau khi thành thành viên: vẫn KHÔNG có lối tắt admin — tập
-    // capability là phép phân giải thật theo gán vai, hẹp hơn trọn bộ
-    // 124 capability và bằng đúng oracle.
+    // Sau khi thành thành viên: vẫn KHÔNG có lối tắt admin — tập capability là phép phân giải thật theo gán vai, hẹp
+    // hơn trọn bộ 124 capability và bằng đúng oracle.
     const addRes = await http(app).post(`/api/v1/tenants/${t.tenantId}/members`).set('Authorization', `Bearer ${admin}`)
       .send({ userId: adminId });
     expect([200, 201]).toContain(addRes.status);

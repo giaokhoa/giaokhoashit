@@ -15,34 +15,23 @@ import { createCategory } from '../../support/course-enrolment-helpers';
 
 /**
  * CLASS-1 (issue #184) — bề mặt giáo viên trên nền CLASS-0:
- *  (1) GV tự tạo lớp (class:create qua vai editingteacher tại tenant) và
- *      tạo khoá trong lớp; nạp HS theo ĐỊNH DANH khớp email → outcome
- *      matched + ghi danh ACTIVE ở khoá của lớp;
- *  (2) định danh chưa có tài khoản → tạo mới kèm mật khẩu tạm ĐĂNG NHẬP
- *      ĐƯỢC; nạp lại cùng định danh → already_member; thiếu cả email lẫn
- *      SĐT → 400 class.roster_identity_missing;
- *  (3) import JSON rows: báo cáo từng dòng — dòng tốt vào lớp, dòng lỗi
- *      đứng riêng, dòng trùng tính already_member;
+ *  (1) GV tự tạo lớp (class:create qua vai editingteacher tại tenant) và tạo khoá trong lớp; nạp HS theo ĐỊNH DANH khớp
+ *      email → outcome matched + ghi danh ACTIVE ở khoá của lớp;
+ *  (2) định danh chưa có tài khoản → tạo mới kèm mật khẩu tạm ĐĂNG NHẬP ĐƯỢC; nạp lại cùng định danh → already_member;
+ *      thiếu cả email lẫn SĐT → 400 class.roster_identity_missing;
+ *  (3) import JSON rows: báo cáo từng dòng — dòng tốt vào lớp, dòng lỗi đứng riêng, dòng trùng tính already_member;
  *  (4) import-file multipart + tải file mẫu .xlsx;
- *  (5) phân quyền tại lớp theo EMAIL: gán classgrader → xem được lớp
- *      nhưng nạp roster 403; gán classrostermanager → nạp được; sửa vai
- *      của chủ lớp → 400 class.owner_roles_locked; email không có tài
- *      khoản → 404;
- *  (6) tự báo danh: lớp trống vào thẳng; lớp đã có HS → hàng chờ; duyệt
- *      → vào roster + ACTIVE ở khoá; từ chối → không vào và được xin
- *      lại; joinAutoApprove → vào thẳng; mã sai → 404;
- *  (7) đình chỉ qua roster → hiện ở danh sách đã đình chỉ; thêm lại →
- *      biến mất khỏi danh sách đó và ACTIVE lại ở khoá.
- *  (8) dashboard theo lớp (CLASS-2): gói overview theo quan hệ người
- *      gọi; học sinh chỉ thấy khoá đang ghi danh ACTIVE.
- *  (9) issue #381: đáp số GET /classes kèm bốn cờ quyền suy cho đúng
- *      người gọi (chủ lớp đủ cờ; học viên và đồng GV chấm bài không
- *      cờ quản trị nào) và học viên gọi thẳng POST/PATCH/archive/
- *      DELETE lớp đều 403 — cờ chỉ phục vụ hiển thị, gác thật ở API.
- *  (10) issue #381: roster thu hẹp trường liên hệ — chủ lớp và đồng
- *      GV quản roster nhận email/username đầy đủ; đồng GV chấm bài
- *      và học viên trong lớp chỉ nhận họ tên, hai trường liên hệ bị
- *      làm rỗng ở phía server.
+ *  (5) phân quyền tại lớp theo EMAIL: gán classgrader → xem được lớp nhưng nạp roster 403; gán classrostermanager → nạp
+ *      được; sửa vai của chủ lớp → 400 class.owner_roles_locked; email không có tài khoản → 404;
+ *  (6) tự báo danh: lớp trống vào thẳng; lớp đã có HS → hàng chờ; duyệt → vào roster + ACTIVE ở khoá; từ chối → không
+ *      vào và được xin lại; joinAutoApprove → vào thẳng; mã sai → 404;
+ *  (7) đình chỉ qua roster → hiện ở danh sách đã đình chỉ; thêm lại → biến mất khỏi danh sách đó và ACTIVE lại ở khoá.
+ *  (8) dashboard theo lớp (CLASS-2): gói overview theo quan hệ người gọi; học sinh chỉ thấy khoá đang ghi danh ACTIVE.
+ *  (9) issue #381: đáp số GET /classes kèm bốn cờ quyền suy cho đúng người gọi (chủ lớp đủ cờ; học viên và đồng GV chấm
+ *      bài không cờ quản trị nào) và học viên gọi thẳng POST/PATCH/archive/ DELETE lớp đều 403 — cờ chỉ phục vụ hiển
+ *      thị, gác thật ở API.
+ *  (10) issue #381: roster thu hẹp trường liên hệ — chủ lớp và đồng GV quản roster nhận email/username đầy đủ; đồng GV
+ *       chấm bài và học viên trong lớp chỉ nhận họ tên, hai trường liên hệ bị làm rỗng ở phía server.
  */
 describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
   let app: INestApplication;
@@ -117,8 +106,8 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     for (const userId of [teacherId, coTeacherId, rosterMgrId, knownStudentId, joinerAId, joinerBId, joinerCId]) {
       await http(app).post(`/api/v1/tenants/${current.id}/members`).set(auth(admin)).send({ userId });
     }
-    // GV tạo được lớp của mình: vai editingteacher tại context tenant
-    // mang archetype có class:create (đúng đường GV thật trên seed).
+    // GV tạo được lớp của mình: vai editingteacher tại context tenant mang archetype có class:create (đúng đường GV
+    // thật trên seed).
     const tenantCtx = await pg.query<{ id: string }>('select id from context where context_level = 20 and instance_id = $1', [current.id]);
     const editingTeacherRoleId = await roleIdByShortname(app, admin, 'editingteacher');
     await must(
@@ -370,8 +359,7 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
       courses: { id: string }[];
     };
 
-    // Chủ lớp: vai owner, đủ cờ quản trị, thấy mọi khoá trong lớp và
-    // tổng số học sinh đúng bằng roster thật.
+    // Chủ lớp: vai owner, đủ cờ quản trị, thấy mọi khoá trong lớp và tổng số học sinh đúng bằng roster thật.
     const ownerView = await must(
       await http(app).get(`/api/v1/classes/${classId}/overview`).set(auth(teacher)),
       'owner overview',
@@ -387,8 +375,7 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(ownerView.rosterCount).toBe(rosterNow.length);
     expect(Object.keys(ownerView).sort()).toEqual(['canManageRoster', 'canShare', 'class', 'courses', 'rosterCount', 'viewerRole']);
 
-    // Đồng GV được gán vai chấm bài ở ca (5): vai staff, không quản
-    // roster, vẫn thấy mọi khoá của lớp để điều hướng.
+    // Đồng GV được gán vai chấm bài ở ca (5): vai staff, không quản roster, vẫn thấy mọi khoá của lớp để điều hướng.
     const staffView = await must(
       await http(app).get(`/api/v1/classes/${classId}/overview`).set(auth(coTeacher)),
       'co-teacher overview',
@@ -398,8 +385,8 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(staffView.canShare).toBe(false);
     expect(staffView.courses.map((c) => c.id)).toContain(courseId);
 
-    // Học sinh trong roster: vai member, không cờ quản trị nào, mã
-    // vào lớp bị ẩn, và chỉ thấy đúng khoá mình đang ghi danh ACTIVE.
+    // Học sinh trong roster: vai member, không cờ quản trị nào, mã vào lớp bị ẩn, và chỉ thấy đúng khoá mình đang ghi
+    // danh ACTIVE.
     const memberView = await must(
       await http(app).get(`/api/v1/classes/${classId}/overview`).set(auth(knownStudent)),
       'student overview',
@@ -410,22 +397,18 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(memberView.class.joinCode).toBeNull();
     expect(memberView.courses.map((c) => c.id)).toEqual([courseId]);
 
-    // Đình chỉ học sinh ở CHÍNH khoá đó (qua phương thức cohort) →
-    // khoá biến mất khỏi gói của học sinh dù em vẫn còn trong roster;
-    // kích hoạt lại thì khoá trở lại. Đây là bất biến "chỉ khoá đang
-    // học" của dashboard phía học sinh.
+    // Đình chỉ học sinh ở CHÍNH khoá đó (qua phương thức cohort) → khoá biến mất khỏi gói của học sinh dù em vẫn còn
+    // trong roster; kích hoạt lại thì khoá trở lại. Đây là bất biến "chỉ khoá đang học" của dashboard phía học sinh.
     const instances = await must(
       await http(app).get(`/api/v1/courses/${courseId}/enrol/instances`).set(auth(teacher)),
       'list enrol instances',
     ) as { id: string; enrol: string }[];
     const cohortInstance = instances.find((i) => i.enrol === 'cohort');
     expect(cohortInstance).toBeDefined();
-    // Trạng thái ghi danh lan truyền bất đồng bộ (consumer quét
-    // outbox đồng bộ cohort) nên đọc overview ngay sau lời gọi đình
-    // chỉ/kích hoạt có thể gặp trạng thái chưa lan truyền — ca này
-    // từng đỏ ngẫu nhiên đúng ở hai khẳng định phía dưới. Chờ có điều
-    // kiện trên chính bề mặt overview tới khi khớp trạng thái kỳ
-    // vọng, rồi chạy các khẳng định gốc nguyên văn trên kết quả đó.
+    // Trạng thái ghi danh lan truyền bất đồng bộ (consumer quét outbox đồng bộ cohort) nên đọc overview ngay sau lời
+    // gọi đình chỉ/kích hoạt có thể gặp trạng thái chưa lan truyền — ca này từng đỏ ngẫu nhiên đúng ở hai khẳng định
+    // phía dưới. Chờ có điều kiện trên chính bề mặt overview tới khi khớp trạng thái kỳ vọng, rồi chạy các khẳng định
+    // gốc nguyên văn trên kết quả đó.
     async function overviewWhen(want: (view: Overview) => boolean, label: string): Promise<Overview> {
       const deadline = Date.now() + 20000;
       for (;;) {
@@ -456,9 +439,8 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     );
     expect(restoredView.courses.map((c) => c.id)).toEqual([courseId]);
 
-    // Người ngoài lớp (tài khoản mới, chưa từng có quan hệ gì với
-    // lớp này): 404 như mọi đường đọc của lớp, không lộ sự tồn tại
-    // của lớp.
+    // Người ngoài lớp (tài khoản mới, chưa từng có quan hệ gì với lớp này): 404 như mọi đường đọc của lớp, không lộ sự
+    // tồn tại của lớp.
     const outsiderUser = await createUserViaApi(app, admin);
     const outsiderToken = (await login(app, outsiderUser.username, STRONG_PASSWORD)).accessToken;
     const outsider = await http(app).get(`/api/v1/classes/${classId}/overview`).set(auth(outsiderToken));
@@ -476,8 +458,7 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(ownerItem).toBeTruthy();
     expect(ownerItem).toMatchObject({ canCreate: true, canUpdate: true, canDelete: true, canManageRoster: true });
 
-    // Học sinh trong roster: thấy lớp của mình nhưng mọi cờ quản trị
-    // (kể cả khả năng tạo lớp ở cấp tenant) đều false.
+    // Học sinh trong roster: thấy lớp của mình nhưng mọi cờ quản trị (kể cả khả năng tạo lớp ở cấp tenant) đều false.
     const memberList = await must(await http(app).get('/api/v1/classes').set(auth(knownStudent)), 'member class list') as ListItem[];
     const memberItem = memberList.find((c) => c.id === classId);
     expect(memberItem).toBeTruthy();
@@ -489,8 +470,7 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(graderItem).toBeTruthy();
     expect(graderItem).toMatchObject({ canCreate: false, canUpdate: false, canDelete: false, canManageRoster: false });
 
-    // Cờ chỉ là hiển thị — gác thật ở API không đổi: học viên gọi
-    // thẳng cả bốn mutation của lớp đều bị chặn 403.
+    // Cờ chỉ là hiển thị — gác thật ở API không đổi: học viên gọi thẳng cả bốn mutation của lớp đều bị chặn 403.
     const create = await http(app).post('/api/v1/classes').set(auth(knownStudent)).send({ name: uniqueName('Lớp của học viên') });
     expect(create.status).toBe(403);
     const patch = await http(app).patch(`/api/v1/classes/${classId}`).set(auth(knownStudent)).send({ name: 'Đổi tên lén' });
@@ -515,8 +495,8 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     const mgrRoster = await must(await http(app).get(`/api/v1/classes/${classId}/roster`).set(auth(rosterMgr)), 'roster manager roster') as RosterEntry[];
     expect(mgrRoster.find((m) => m.userId === knownStudentId)?.email).toBe(knownStudentEmail);
 
-    // Đồng GV chỉ có vai chấm bài (không quản roster): đọc được danh
-    // sách theo tên nhưng email/username của mọi dòng đều bị làm rỗng.
+    // Đồng GV chỉ có vai chấm bài (không quản roster): đọc được danh sách theo tên nhưng email/username của mọi dòng
+    // đều bị làm rỗng.
     const graderRoster = await must(await http(app).get(`/api/v1/classes/${classId}/roster`).set(auth(coTeacher)), 'grader roster') as RosterEntry[];
     expect(graderRoster.length).toBeGreaterThan(0);
     for (const entry of graderRoster) {
@@ -527,8 +507,7 @@ describe('Bề mặt giáo viên lớp (CLASS-1, #184)', () => {
     expect(graderEntry).toBeTruthy();
     expect(`${graderEntry!.lastName} ${graderEntry!.firstName}`).toBe('Đã Biết');
 
-    // Học sinh trong lớp: vẫn đọc được danh sách bạn học theo tên,
-    // không dòng nào kèm trường liên hệ.
+    // Học sinh trong lớp: vẫn đọc được danh sách bạn học theo tên, không dòng nào kèm trường liên hệ.
     const memberRoster = await must(await http(app).get(`/api/v1/classes/${classId}/roster`).set(auth(knownStudent)), 'member roster') as RosterEntry[];
     expect(memberRoster.map((m) => m.userId)).toContain(knownStudentId);
     for (const entry of memberRoster) {

@@ -7,14 +7,11 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
 import { contextIdByLevelInstance } from '../../support/engagement-helpers';
 
 /**
- * Ngoại lệ nhắn riêng GV–HS (quyết định bổ sung ngày 25/10/2026 trên
- * issue #33, comment 6394872043): cặp GIÁO VIÊN của khoá (gán vai
- * archetype staff tại context khoá) ↔ HỌC SINH đang ghi danh chính
- * khoá đó nhắn riêng TRỰC TIẾP không cần kết bạn — cả mở hội thoại
- * mới lẫn gửi vào hội thoại sẵn có, cả hai chiều. Ngoài cặp này
- * cổng liên hệ cũ giữ nguyên tuyệt đối: HS↔HS cùng khoá vẫn phải
- * kết bạn; cặp đã chặn vẫn bị chặn; hết ghi danh/hết vai dạy thì
- * gửi bị chặn lại, lịch sử cũ vẫn đọc được.
+ * Ngoại lệ nhắn riêng GV–HS (quyết định bổ sung ngày 25/10/2026 trên issue #33, comment 6394872043): cặp GIÁO VIÊN của
+ * khoá (gán vai archetype staff tại context khoá) ↔ HỌC SINH đang ghi danh chính khoá đó nhắn riêng TRỰC TIẾP không cần
+ * kết bạn — cả mở hội thoại mới lẫn gửi vào hội thoại sẵn có, cả hai chiều. Ngoài cặp này cổng liên hệ cũ giữ nguyên
+ * tuyệt đối: HS↔HS cùng khoá vẫn phải kết bạn; cặp đã chặn vẫn bị chặn; hết ghi danh/hết vai dạy thì gửi bị chặn lại,
+ * lịch sử cũ vẫn đọc được.
  */
 
 interface Person { id: string; username: string; token: string }
@@ -129,8 +126,7 @@ describe('Messaging — GV nhắn riêng học sinh trong khoá không cần k�
   afterAll(async () => { await app.close(); });
 
   it('1. GV mở hội thoại mới và gửi thẳng cho học sinh đang ghi danh, không cần kết bạn; roster gắn cờ canDirectMessage đúng phía người xem', async () => {
-    // Roster theo mắt GV: học sinh ghi danh được gắn cờ nhắn thẳng;
-    // đồng nghiệp chỉ-gán-vai (không ghi danh) thì không.
+    // Roster theo mắt GV: học sinh ghi danh được gắn cờ nhắn thẳng; đồng nghiệp chỉ-gán-vai (không ghi danh) thì không.
     const asTeacher = await roster(teacherA.token, courseA);
     expect(asTeacher.status).toBe(200);
     const byId = new Map((asTeacher.body.members as RosterMember[]).map((m) => [m.userId, m]));
@@ -227,10 +223,9 @@ describe('Messaging — GV nhắn riêng học sinh trong khoá không cần k�
     expect((await send(teacherD, convId, 'Tin khi còn ghi danh')).status).toBe(201);
     expect((await send(sD1, convId, 'Em trả lời khi còn ghi danh')).status).toBe(201);
 
-    // Huỷ ghi danh: cổng đóng lại ngay cho cả hai chiều gửi.
-    // (Tin nhắn không phải dữ liệu liên quan của enrol nên hàng ghi
-    // danh bị xoá hẳn — withdrawn=false theo đúng hợp đồng của
-    // enrol, xem enrol-groups-flow; điều spec khoá là cổng đóng.)
+    // Huỷ ghi danh: cổng đóng lại ngay cho cả hai chiều gửi. (Tin nhắn không phải dữ liệu liên quan của enrol nên hàng
+    // ghi danh bị xoá hẳn — withdrawn=false theo đúng hợp đồng của enrol, xem enrol-groups-flow; điều spec khoá là cổng
+    // đóng.)
     const del = await http(app).delete(`/api/v1/courses/${courseD}/enrol/instances/${instanceD}/users/${sD1.id}`)
       .set('Authorization', `Bearer ${admin}`);
     expect(del.status).toBe(200);

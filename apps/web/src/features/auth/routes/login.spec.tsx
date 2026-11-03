@@ -9,18 +9,6 @@ import { baSessionBody } from '#test/ba-session';
 import { LoginPage } from './login';
 import { ProfilePage } from '#features/profile/routes/profile';
 
-/**
- * Bộ test luồng đăng nhập sau cutover phiên cookie (issue #7, GĐ2):
- * mọi lời gọi đi qua fetch thật bị stub ở biên, theo ĐÚNG hợp đồng
- * REST của Better Auth — client BA dựng URL tuyệt đối từ origin
- * (`http://localhost:3000` của jsdom) với basePath `/api/v1/auth`.
- * Phiên sống trong cookie do trình duyệt giữ — web KHÔNG còn token
- * nào ở localStorage, các assertion kiểm đúng điều đó. Stub
- * `get-session` là stateful: trước đăng nhập trả null, sau khi một
- * đường đăng nhập thành công thì trả phiên, mô phỏng cookie đã được
- * server đặt.
- */
-
 const PROFILE = {
   id: '01900000-0000-7000-8000-000000000007',
   username: 'learner',
@@ -36,9 +24,8 @@ const PROFILE = {
   customFields: [{ shortName: 'department', name: 'Department', type: 'select', value: 'Sales' }],
 };
 
-// Thân phiên lấy từ fixture dùng chung `baSessionBody`: mốc hết hạn
-// tính tương đối theo thời điểm chạy nên không hết hạn theo lịch
-// (bản tự khai trước đây ghim ngày cứng và suýt nổ cả bộ spec).
+// Thân phiên lấy từ fixture dùng chung `baSessionBody`: mốc hết hạn tính tương đối theo thời điểm chạy nên không hết
+// hạn theo lịch (bản tự khai trước đây ghim ngày cứng và suýt nổ cả bộ spec).
 const SESSION_BODY = baSessionBody({
   id: PROFILE.id,
   username: 'learner',
@@ -50,7 +37,6 @@ function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
-/** Phân loại URL mà các stub dùng chung quan tâm; URL của client BA là tuyệt đối, URL của apiFetch là tương đối. */
 function urlOf(input: unknown): string {
   return String(input);
 }
@@ -163,7 +149,6 @@ describe('Luồng đăng nhập (hợp đồng cookie Better Auth, fetch mock t�
         }
         if (url === '/api/v1/auth/oauth/providers') return jsonResponse({ providers: [] });
         if (url.endsWith('/api/v1/auth/sign-in/username')) {
-          // Chưa có phiên nào: đáp ứng chỉ mang cờ chuyển bước hai lớp.
           return jsonResponse({ twoFactorRedirect: true });
         }
         if (url.endsWith('/api/v1/auth/two-factor/verify-totp')) {
@@ -179,13 +164,11 @@ describe('Luồng đăng nhập (hợp đồng cookie Better Auth, fetch mock t�
     await userEvent.type(screen.getByLabelText('Tên đăng nhập'), 'learner');
     await userEvent.type(screen.getByLabelText('Mật khẩu'), 'Passw0rd!');
     await userEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
-    // Bước hai: form nhập mã hiện ra và vẫn chưa có phiên/token nào.
     await waitFor(() => expect(screen.getByLabelText('Mã xác thực')).toBeInTheDocument());
     expect(localStorage.getItem('lms.accessToken')).toBeNull();
     await userEvent.type(screen.getByLabelText('Mã xác thực'), '123456');
     await userEvent.click(screen.getByRole('button', { name: 'Xác thực' }));
     await waitFor(() => expect(screen.getByText(/Hồ sơ — learner/)).toBeInTheDocument());
-    // Hợp đồng BA: verify chỉ gửi mã — không còn challengeToken tự chế.
     expect(verifyBodies).toEqual([{ code: '123456' }]);
   });
 

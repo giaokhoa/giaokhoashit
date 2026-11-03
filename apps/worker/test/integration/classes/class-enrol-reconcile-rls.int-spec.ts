@@ -7,35 +7,27 @@ import { adminDatabaseUrl, ensureOrdinaryRole, ordinaryRoleUrl } from '../../sup
 import { createCentreKysely, sql, type CentreDb } from '@lms/db';
 
 /**
- * Hồi quy issue #292 — job đối soát ghi danh lớp chạy bằng role DB
- * KHÔNG có BYPASSRLS (hình dạng kết nối production).
+ * Hồi quy issue #292 — job đối soát ghi danh lớp chạy bằng role DB KHÔNG có BYPASSRLS (hình dạng kết nối production).
  *
- * Lớp lỗi: `ClassEnrolReconcileProcessor` là processor duy nhất không
- * bọc ngữ cảnh tenant/platform. `TenantAwarePool` ngoài ngữ cảnh gắn
- * `app.tenant_id = ''`, `app.platform = 'off'` → RLS fail-closed trên
- * bảng `classes` → lượt quét đọc 0 lớp, job vẫn báo "thành công" với
- * `classesChecked = 0` và lệch ghi danh không bao giờ được sửa. Spec
- * cũ (`class-enrol-reconcile.spec.ts`) chạy bằng superuser nên mù với
- * lớp lỗi này — spec này dựng lại đúng hình dạng production:
+ * Lớp lỗi: `ClassEnrolReconcileProcessor` là processor duy nhất không bọc ngữ cảnh tenant/platform. `TenantAwarePool`
+ * ngoài ngữ cảnh gắn `app.tenant_id = ''`, `app.platform = 'off'` → RLS fail-closed trên bảng `classes` → lượt quét đọc
+ * 0 lớp, job vẫn báo "thành công" với `classesChecked = 0` và lệch ghi danh không bao giờ được sửa. Spec cũ
+ * (`class-enrol-reconcile.spec.ts`) chạy bằng superuser nên mù với lớp lỗi này — spec này dựng lại đúng hình dạng
+ * production:
  *
- *  - fixture được nạp bằng kết nối quản trị (superuser) như đường seed;
- *  - processor chạy bằng MỘT pool `TenantAwarePool` đăng nhập bằng
- *    role `NOSUPERUSER NOBYPASSRLS` chỉ có quyền trên schema public;
- *  - ca kiểm chứng gồm cả chiều âm (ngoài ngữ cảnh, role thường không
- *    thấy lớp nào — chứng minh harness thật sự chịu RLS) và chiều
- *    dương (job thấy lớp, sửa đúng lệch: thành viên roster thiếu ghi
- *    danh được ghi danh + gán vai; ghi danh thừa ngoài roster bị đình
- *    chỉ; chạy lại không sửa thêm).
+ * - fixture được nạp bằng kết nối quản trị (superuser) như đường seed;
+ * - processor chạy bằng MỘT pool `TenantAwarePool` đăng nhập bằng role `NOSUPERUSER NOBYPASSRLS` chỉ có quyền trên
+ *   schema public;
+ * - ca kiểm chứng gồm cả chiều âm (ngoài ngữ cảnh, role thường không thấy lớp nào — chứng minh harness thật sự chịu
+ *   RLS) và chiều dương (job thấy lớp, sửa đúng lệch: thành viên roster thiếu ghi danh được ghi danh + gán vai; ghi
+ *   danh thừa ngoài roster bị đình chỉ; chạy lại không sửa thêm).
  *
- * Trên code TRƯỚC fix, ca dương FAIL vì `classesChecked = 0`; sau fix
- * phải PASS. Đây là test luồng nghiệp vụ đối soát, không kiểm chi
- * tiết triển khai của processor.
+ * Trên code TRƯỚC fix, ca dương FAIL vì `classesChecked = 0`; sau fix phải PASS. Đây là test luồng nghiệp vụ đối soát,
+ * không kiểm chi tiết triển khai của processor.
  *
- * Từ lát PR-294.1 (issue #294), việc dựng role + cấp quyền của spec
- * này đi qua harness dùng chung `test/ordinary-role.ts` thay vì dựng
- * inline trong `beforeAll` như bản đầu — khẳng định nghiệp vụ của
- * spec không đổi, đây là ca mẫu cho các spec RLS/tenant còn lại của
- * suite worker chuyển sang harness ở các lát tiếp theo của #294.
+ * Từ lát PR-294.1 (issue #294), việc dựng role + cấp quyền của spec này đi qua harness dùng chung
+ * `test/ordinary-role.ts` thay vì dựng inline trong `beforeAll` như bản đầu — khẳng định nghiệp vụ của spec không đổi,
+ * đây là ca mẫu cho các spec RLS/tenant còn lại của suite worker chuyển sang harness ở các lát tiếp theo của #294.
  */
 describe('Worker class enrol reconcile dưới RLS (hồi quy #292)', () => {
   const suffix = `${Date.now() % 100000000}`;
@@ -135,18 +127,13 @@ describe('Worker class enrol reconcile dưới RLS (hồi quy #292)', () => {
     rlsPool = new TenantAwarePool({ connectionString: ordinaryRoleUrl(adminUrl) });
     rlsDb = createCentreKysely(rlsPool);
     processor = new ClassEnrolReconcileProcessor(
-      // Processor chạy trên handle Kysely định tuyến
-      // (`SpaceDatabaseService.routedKysely`): cấp một khung định
-      // tuyến tối thiểu mà `routedKysely` trỏ vào đúng pool role
-      // thường của ca này, để mọi đường đọc/ghi của processor
-      // giữ nguyên hình dạng kết nối production (role không
-      // BYPASSRLS) như trước.
+      // Processor chạy trên handle Kysely định tuyến (`SpaceDatabaseService.routedKysely`): cấp một khung định tuyến
+      // tối thiểu mà `routedKysely` trỏ vào đúng pool role thường của ca này, để mọi đường đọc/ghi của processor giữ
+      // nguyên hình dạng kết nối production (role không BYPASSRLS) như trước.
       { routedKysely: createCentreKysely(rlsPool) } as never,
-      // TaskLogService chạy trên handle Kysely định tuyến: cấp một
-      // khung định tuyến tối thiểu mà `routedKysely` trỏ vào đúng
-      // pool role thường của ca này, để đường ghi task_log giữ
-      // nguyên hình dạng kết nối production (role không BYPASSRLS)
-      // như trước.
+      // TaskLogService chạy trên handle Kysely định tuyến: cấp một khung định tuyến tối thiểu mà `routedKysely` trỏ vào
+      // đúng pool role thường của ca này, để đường ghi task_log giữ nguyên hình dạng kết nối production (role không
+      // BYPASSRLS) như trước.
       new TaskLogService({ routedKysely: createCentreKysely(rlsPool) } as never),
     );
   });

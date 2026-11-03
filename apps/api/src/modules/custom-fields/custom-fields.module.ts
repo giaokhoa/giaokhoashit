@@ -9,8 +9,7 @@ import { CustomFieldsService } from './custom-fields.service';
   imports: [SpaceRoutingModule],
   controllers: [CustomFieldsController],
   providers: [
-    // Repository của package @lms/db chạy trên handle Kysely đã định
-    // tuyến theo không gian (issue #648).
+    // Repository của package @lms/db chạy trên handle Kysely đã định tuyến theo không gian (issue #648).
     {
       provide: CustomFieldsRepository,
       useFactory: (spaceDatabase: SpaceDatabaseService) => new CustomFieldsRepository(spaceDatabase.routedKysely),
@@ -20,5 +19,4 @@ import { CustomFieldsService } from './custom-fields.service';
   ],
   exports: [CustomFieldsService],
 })
-/** Module trường tuỳ biến. */
 export class CustomFieldsModule {}

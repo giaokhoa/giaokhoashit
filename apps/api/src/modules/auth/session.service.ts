@@ -13,38 +13,31 @@ export interface WebSession extends WebSessionClientInfo {
   lastActivityAt: string;
   loginAs?: { byUserId: string };
   /**
-   * Slug kho riêng của địa chỉ đã tạo phiên (issue #584); vắng mặt
-   * với phiên tạo ở địa chỉ gốc hoặc phiên tạo trước khi có trường
-   * này. `AuthService.sessionUser` đối chiếu với địa chỉ của
-   * request hiện tại để từ chối phiên bị mang sang không gian khác.
+   * Slug kho riêng của địa chỉ đã tạo phiên (issue #584); vắng mặt với phiên tạo ở địa chỉ gốc hoặc phiên tạo trước khi
+   * có trường này. `AuthService.sessionUser` đối chiếu với địa chỉ của request hiện tại để từ chối phiên bị mang sang
+   * không gian khác.
    */
   spaceSlug?: string;
 }
 
-/** Một phiên web đang sống kèm định danh của nó, dùng cho trang quản lý phiên của chính user. */
 export interface ListedWebSession { id: string; session: WebSession }
 
 /** Ngưỡng tiết kiệm ghi khi chạm hoạt động: lần truy cập cuối chỉ cần chính xác tới phút. */
 const TOUCH_INTERVAL_MS = 60_000;
 
 /**
- * SessionModule (nằm trong AuthModule theo report §3.7): phiên web phía server
- * trong namespace cache *session* của Redis. Cookie chỉ mang id;
- * đăng nhập sẽ xoay vòng id (chống fixation) và phiên của người dùng bị đình chỉ/đã xoá
- * sẽ ngừng hợp lệ vì AuthService kiểm tra lại trạng thái tài khoản ở
- * mỗi lần đọc phiên.
+ * SessionModule (nằm trong AuthModule theo report §3.7): phiên web phía server trong namespace cache *session* của
+ * Redis. Cookie chỉ mang id; đăng nhập sẽ xoay vòng id (chống fixation) và phiên của người dùng bị đình chỉ/đã xoá sẽ
+ * ngừng hợp lệ vì AuthService kiểm tra lại trạng thái tài khoản ở mỗi lần đọc phiên.
  *
- * Ngoài bản ghi phiên, service duy trì một chỉ mục nhẹ theo user
- * (`webindex:<userId>` → danh sách session id) để trang "Phiên đăng nhập"
- * (mẫu report_usersessions của Moodle) liệt kê và thu hồi được các phiên
- * web của chính user; chỉ mục được dọn lười khi liệt kê (id nào không còn
- * bản ghi thì bị loại).
+ * Ngoài bản ghi phiên, service duy trì một chỉ mục nhẹ theo user (`webindex:<userId>` → danh sách session id) để trang
+ * "Phiên đăng nhập" (mẫu report_usersessions của Moodle) liệt kê và thu hồi được các phiên web của chính user; chỉ mục
+ * được dọn lười khi liệt kê (id nào không còn bản ghi thì bị loại).
  */
 @Injectable()
 /**
- * Phiên đăng nhập phía server (kho phiên trong Redis): tạo, đọc, huỷ, xoay
- * id phiên và liệt kê/thu hồi theo user phục vụ quản lý phiên cá nhân.
- * Session id là giá trị ngẫu nhiên khó đoán, chỉ lưu phía server.
+ * Phiên đăng nhập phía server (kho phiên trong Redis): tạo, đọc, huỷ, xoay id phiên và liệt kê/thu hồi theo user phục
+ * vụ quản lý phiên cá nhân. Session id là giá trị ngẫu nhiên khó đoán, chỉ lưu phía server.
  */
 export class SessionService {
   constructor(private readonly store: SessionCacheService) {}
@@ -66,9 +59,6 @@ export class SessionService {
     else await this.store.set(this.indexKey(userId), next);
   }
 
-  /**
-   * Tạo phiên mới cho user và trả session id thô.
-   */
   async create(data: Omit<WebSession, 'createdAt' | 'lastActivityAt'>): Promise<string> {
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -76,14 +66,10 @@ export class SessionService {
     await this.indexAdd(data.userId, id);
     return id;
   }
-  /**
-   * Lấy phiên theo session id thô.
-   */
   async get(id: string): Promise<WebSession | undefined> { return this.store.get<WebSession>(`web:${id}`); }
   /**
-   * Chạm hoạt động: cập nhật `lastActivityAt` nếu lần chạm trước đã quá
-   * ngưỡng tiết kiệm; việc ghi lại bản ghi cũng làm mới TTL của kho phiên
-   * (phiên trượt theo hoạt động, gần với timeout phiên của Moodle).
+   * Chạm hoạt động: cập nhật `lastActivityAt` nếu lần chạm trước đã quá ngưỡng tiết kiệm; việc ghi lại bản ghi cũng làm
+   * mới TTL của kho phiên (phiên trượt theo hoạt động, gần với timeout phiên của Moodle).
    */
   async touch(id: string): Promise<void> {
     const session = await this.get(id);
@@ -91,18 +77,12 @@ export class SessionService {
     if (Date.now() - new Date(session.lastActivityAt).getTime() < TOUCH_INTERVAL_MS) return;
     await this.store.set(`web:${id}`, { ...session, lastActivityAt: new Date().toISOString() });
   }
-  /**
-   * Huỷ phiên (đăng xuất hoặc thu hồi từ trang quản lý phiên).
-   */
   async destroy(id: string): Promise<void> {
     const session = await this.get(id);
     await this.store.delete(`web:${id}`);
     if (session) await this.indexRemove(session.userId, id);
   }
   /** Xoay vòng: huỷ id cũ (nếu có) và cấp một id mới cho cùng một danh tính. */
-  /**
-   * Xoay session id (sau đăng nhập/leo quyền) để chống fixation; phiên cũ bị huỷ.
-   */
   async rotate(oldId: string | undefined, data: Omit<WebSession, 'createdAt' | 'lastActivityAt'>): Promise<string> {
     if (oldId) await this.destroy(oldId);
     return this.create(data);

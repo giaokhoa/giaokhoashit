@@ -14,10 +14,8 @@ import { ContentBankService } from './content-bank.service';
  * điểm cắm "Thêm từ kho" (tạo course module + sao file vào context của
  * module).
  *
- * Từ issue #646, ContentBankRepository sống ở `@lms/db` (lớp
- * thuần, không phụ thuộc Nest) nên module lắp nó bằng factory
- * provider với handle Kysely định tuyến của kho trung tâm
- * (`SpaceDatabaseService.routedKysely`).
+ * Từ issue #646, ContentBankRepository sống ở `@lms/db` (lớp thuần, không phụ thuộc Nest) nên module lắp nó bằng
+ * factory provider với handle Kysely định tuyến của kho trung tâm (`SpaceDatabaseService.routedKysely`).
  */
 @Module({
   imports: [AccessModule, FilesModule, SearchModule, CoursesModule, SpaceRoutingModule],

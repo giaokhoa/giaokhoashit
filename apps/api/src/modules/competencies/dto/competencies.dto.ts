@@ -29,10 +29,6 @@ import {
   type SetCompetencyRule,
 } from '@lms/contracts';
 
-/**
- * Validation của Competencies dùng Zod qua Standard Schema — schema nền ở
- * `@lms/contracts` là nguồn sự thật duy nhất.
- */
 export {
   addCompetencyEvidenceSchema,
   addTemplateCohortSchema,

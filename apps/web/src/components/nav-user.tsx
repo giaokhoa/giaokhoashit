@@ -17,7 +17,6 @@ import { useAuth } from '#lib/auth';
 import { TenantSwitcherMenu } from '#components/tenant-switcher';
 import '#config/i18n';
 
-/** Chữ viết tắt từ họ tên để làm avatar khi người dùng chưa có ảnh đại diện. */
 function initialsOf(name: string): string {
   return name
     .split(/\s+/)
@@ -28,13 +27,10 @@ function initialsOf(name: string): string {
 }
 
 /**
- * Khối người dùng ở chân sidebar (khung từ block dashboard-01): hiển thị
- * người đang đăng nhập thật từ AuthContext, menu gồm hồ sơ, cài đặt và
- * đăng xuất — chỉ những thao tác người dùng nào cũng thực hiện được với
- * chính mình. Từ issue #288 "Hồ sơ" và "Cài đặt" là HAI lối vào tách
- * bạch như các site lớn: Hồ sơ (`/profile`) chỉ còn thông tin user,
- * Cài đặt (`/settings`) là khu riêng có menu trái (bảo mật, liên kết,
- * thông báo).
+ * Khối người dùng ở chân sidebar (khung từ block dashboard-01): hiển thị người đang đăng nhập thật từ AuthContext,
+ * menu gồm hồ sơ, cài đặt và đăng xuất — chỉ những thao tác người dùng nào cũng thực hiện được với chính mình. Từ
+ * issue #288 "Hồ sơ" và "Cài đặt" là HAI lối vào tách bạch như các site lớn: Hồ sơ (`/profile`) chỉ còn thông tin
+ * user, Cài đặt (`/settings`) là khu riêng có menu trái (bảo mật, liên kết, thông báo).
  */
 export function NavUser() {
   const { user, logout } = useAuth();
@@ -70,9 +66,8 @@ export function NavUser() {
             align="end"
             sideOffset={4}
           >
-            {/* Base UI bắt buộc nhãn nhóm phải nằm trong DropdownMenuGroup
-                (Menu.GroupLabel cần MenuGroupContext); thiếu lớp bọc này
-                menu ném lỗi ngay khi mở. Bản Radix trước đây không đòi. */}
+            {/* Base UI bắt buộc nhãn nhóm phải nằm trong DropdownMenuGroup (Menu.GroupLabel cần MenuGroupContext);
+                thiếu lớp bọc này menu ném lỗi ngay khi mở. Bản Radix trước đây không đòi. */}
             <DropdownMenuGroup>
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">

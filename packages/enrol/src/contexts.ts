@@ -5,49 +5,27 @@ import { CONTEXT_COLUMNS, type ContextRow, type EnrolDatabase } from './types';
 /**
  * Thao tác trên cây context phân quyền ở tầng dữ liệu dùng chung.
  *
- * Cây context (hệ thống → tenant → danh mục/lớp → khoá học → module
- * → block → user) là nền của mọi phép kiểm quyền: gán vai nằm trên
- * context và được kế thừa xuống dưới theo `path` vật chất hoá. Các
- * hàm ở đây là phần THUẦN DỮ LIỆU của quản lý context mà các lõi
- * dùng chung cần (tra context, đảm bảo context hệ thống/tenant, đánh
- * dấu dirty để vô hiệu hoá cache quyền) — trích từ tầng Access của
- * API để cả API lẫn worker cùng thao tác trên một định nghĩa duy
- * nhất. Phần quản trị context còn lại (tạo cây cho nghiệp vụ, di
- * chuyển cây, xoá context) vẫn thuộc bề mặt của API.
+ * Cây context (hệ thống → tenant → danh mục/lớp → khoá học → module → block → user) là nền của mọi phép kiểm quyền: gán
+ * vai nằm trên context và được kế thừa xuống dưới theo `path` vật chất hoá. Các hàm ở đây là phần THUẦN DỮ LIỆU của
+ * quản lý context mà các lõi dùng chung cần (tra context, đảm bảo context hệ thống/tenant, đánh dấu dirty để vô hiệu
+ * hoá cache quyền) — trích từ tầng Access của API để cả API lẫn worker cùng thao tác trên một định nghĩa duy nhất. Phần
+ * quản trị context còn lại (tạo cây cho nghiệp vụ, di chuyển cây, xoá context) vẫn thuộc bề mặt của API.
  *
- * Bất biến của cây: `path` là danh sách id tổ tiên vật chất hoá, luôn
- * kết thúc bằng id của chính context; mọi thay đổi về gán vai tại
- * một context đều phải bump `version` của context đó và mọi context
- * con cháu (đánh dấu dirty) để các cache đánh giá quyền không dùng
- * kết quả cũ.
+ * Bất biến của cây: `path` là danh sách id tổ tiên vật chất hoá, luôn kết thúc bằng id của chính context; mọi thay đổi
+ * về gán vai tại một context đều phải bump `version` của context đó và mọi context con cháu (đánh dấu dirty) để các
+ * cache đánh giá quyền không dùng kết quả cũ.
  */
 
 /**
- * Cấp của các loại context (giá trị lưu trong cột `context_level`
- * của bảng `context`, bám thang cấp context của Moodle). Giá trị là
- * dữ kiện đã lưu trong cơ sở dữ liệu nên mọi phía thao tác cây
- * context phải dùng đúng các số này.
+ * Cấp của các loại context (giá trị lưu trong cột `context_level` của bảng `context`, bám thang cấp context của
+ * Moodle). Giá trị là dữ kiện đã lưu trong cơ sở dữ liệu nên mọi phía thao tác cây context phải dùng đúng các số này.
  */
 export const CONTEXT_LEVELS = { SYSTEM: 10, TENANT: 20, USER: 30, COURSECAT: 40, CLASS: 45, COURSE: 50, MODULE: 70, BLOCK: 80 } as const;
 
-/**
- * Lấy context theo id; undefined nếu không tồn tại.
- *
- * @param db - tay cầm Kysely của host.
- * @param id - id của context.
- */
 export async function getContextById(db: EnrolDatabase, id: string): Promise<ContextRow | undefined> {
   return db.selectFrom('context').select(CONTEXT_COLUMNS).where('id', '=', id).executeTakeFirst();
 }
 
-/**
- * Lấy context theo cặp (contextLevel, instanceId) — khoá tự nhiên
- * của cây context; undefined nếu chưa được tạo.
- *
- * @param db - tay cầm Kysely của host.
- * @param contextLevel - cấp context (xem {@link CONTEXT_LEVELS}).
- * @param instanceId - id của đối tượng mà context đại diện; null cho context hệ thống.
- */
 export async function getContextByLevelInstance(
   db: EnrolDatabase,
   contextLevel: number,
@@ -64,14 +42,9 @@ export async function getContextByLevelInstance(
 }
 
 /**
- * Lấy context theo id; ném lỗi `access.context_not_found` khi vắng.
- * Id không phải UUID thì chắc chắn không tồn tại context nào mang
- * nó (khoá chính là uuid) — trả lỗi không tìm thấy thay vì để cơ sở
- * dữ liệu ném lỗi cú pháp uuid: các guard của host chạy trước pipe
- * validate nên id thô trên URL tới được đây.
- *
- * @param db - tay cầm Kysely của host.
- * @param id - id của context.
+ * Lấy context theo id; ném lỗi `access.context_not_found` khi vắng. Id không phải UUID thì chắc chắn không tồn tại
+ * context nào mang nó (khoá chính là uuid) — trả lỗi không tìm thấy thay vì để cơ sở dữ liệu ném lỗi cú pháp uuid: các
+ * guard của host chạy trước pipe validate nên id thô trên URL tới được đây.
  * @throws SharedDomainError mã `access.context_not_found`.
  */
 export async function getContextOrThrow(db: EnrolDatabase, id: string): Promise<ContextRow> {
@@ -181,11 +154,9 @@ export async function ensureSystemContext(db: EnrolDatabase): Promise<ContextRow
 }
 
 /**
- * Đảm bảo context TENANT (level 20) của một tenant tồn tại — mỗi
- * tenant đúng MỘT context tenant, instance_id = tenants.id, cha là
- * context hệ thống. Mọi context thuộc tenant neo dưới context này
- * nên cây của tenant tách hẳn khỏi cây của tenant khác; phép đánh
- * giá quyền dùng nó làm neo cổng membership.
+ * Đảm bảo context TENANT (level 20) của một tenant tồn tại — mỗi tenant đúng MỘT context tenant, instance_id =
+ * tenants.id, cha là context hệ thống. Mọi context thuộc tenant neo dưới context này nên cây của tenant tách hẳn khỏi
+ * cây của tenant khác; phép đánh giá quyền dùng nó làm neo cổng membership.
  *
  * @param db - tay cầm Kysely của host.
  * @param tenantId - id của tenant.

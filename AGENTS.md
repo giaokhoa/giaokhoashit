@@ -81,6 +81,27 @@ hoặc trong issue đặc tả của chính việc đó trên GitHub:
   lượt thay đổi; comment lệch code thật là lỗi phải sửa trong cùng
   lượt, không để tồn đọng.
 
+### Quy định comment trong code
+
+- **Chỉ comment ở chỗ code thật sự khó hiểu:** comment chỉ được
+  viết để diễn giải Ý NGHĨA và LÝ DO của đoạn code — vì sao phải
+  làm vậy: ràng buộc nghiệp vụ, bất biến, bẫy của thư viện hay hạ
+  tầng, thứ tự bắt buộc. Trọng tâm là ở service và repository.
+- **Cấm comment vô nghĩa:** comment diễn đạt lại điều code hiển
+  nhiên đang làm, comment nhắc lại tên hàm/biến, comment phân mục
+  trang trí, code bị comment-out để đó, và JSDoc lặp lại nguyên
+  chữ ký hàm. Tiêu chí áp dụng: nếu xoá comment mà người đọc vẫn
+  hiểu code như cũ thì comment đó không được tồn tại.
+- **Được giữ:** comment giải thích vì sao (theo điểm đầu của mục
+  này) và JSDoc mô tả hợp đồng API công khai mà chữ ký không tự
+  nói hết.
+- **Chiều dài comment theo printWidth 120:** comment được giữ
+  phải viết đúng chiều dài theo chuẩn Prettier của repo
+  (printWidth 120, theo `apps/web/prettier.config.mjs`): ghép
+  các dòng comment ngắn cụt bị gói tay thành dòng đầy tới độ
+  rộng chuẩn rồi mới xuống dòng, áp dụng cho cả comment `//`
+  nhiều dòng, comment khối và JSDoc.
+
 ## Quy trình tạo Issue và PR
 
 Chương này là chuẩn GitHub đầy đủ và duy nhất của repo: flow

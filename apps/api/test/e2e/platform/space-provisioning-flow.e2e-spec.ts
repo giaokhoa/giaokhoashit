@@ -12,48 +12,32 @@ import { manageCentreInvite, runSpaceProvision } from '../../../src/modules/tena
 import { STRONG_PASSWORD, createTestApp, http } from '../../support/identity-access-helpers';
 
 /**
- * Ca đầu-cuối của CẤP PHÁT TRUNG TÂM + NHẬN DIỆN (issue #583):
- * hai trung tâm được cấp phát THẬT bằng pipeline cấp phát (sổ đăng
- * ký riêng, database + role riêng, baseline hiện hành, gói chương
- * trình, quản trị đầu tiên + lời mời), rồi ứng dụng thật chạy trên
- * chính hai kho đó qua tên miền con mang slug. Database test dùng
- * chung (`lms_test_api`) phải đã migrate từ trống trước khi chạy
- * spec này — đúng tiền điều kiện của mọi spec e2e khác (bước
- * Migrate trong CI).
+ * Ca đầu-cuối của CẤP PHÁT TRUNG TÂM + NHẬN DIỆN (issue #583): hai trung tâm được cấp phát THẬT bằng pipeline cấp phát
+ * (sổ đăng ký riêng, database + role riêng, baseline hiện hành, gói chương trình, quản trị đầu tiên + lời mời), rồi ứng
+ * dụng thật chạy trên chính hai kho đó qua tên miền con mang slug. Database test dùng chung (`lms_test_api`) phải đã
+ * migrate từ trống trước khi chạy spec này — đúng tiền điều kiện của mọi spec e2e khác (bước Migrate trong CI).
  *
  * Các ca khoá các tiêu chí nghiệm thu của issue ở phía HTTP:
- * (1) một lệnh cấp phát cho ra trung tâm dùng được: quản trị đầu
- *     tiên kích hoạt bằng lời mời rồi đăng nhập tại địa chỉ trung
- *     tâm, nhận diện công khai đọc được ở cả địa chỉ trung tâm lẫn
- *     địa chỉ gốc;
- * (2) token lời mời của trung tâm này không kích hoạt được ở trung
- *     tâm khác (kho của trung tâm kia không có lời mời đó);
- * (3) mật khẩu yếu làm cháy lời mời (đốt trước, đặt mật khẩu sau),
- *     phát hành lại bằng CLI rồi kích hoạt thành công;
- * (4) quản trị trung tâm sửa được nhận diện của mình, người dùng
- *     thường của cùng trung tâm bị từ chối, nhận diện của trung tâm
- *     khác không đổi;
- * (5) đình chỉ chặn traffic nghiệp vụ nhưng nhận diện công khai
- *     vẫn đọc được, dữ kiện còn nguyên, mở lại thì traffic trở lại;
- * (6) sau khi đã định tuyến, tắt control plane đi thì bề mặt trung
- *     tâm vẫn hiển thị đúng nhận diện đã nạp (nhận diện đọc từ kho
- *     của trung tâm, không đọc từ control plane).
+ * (1) một lệnh cấp phát cho ra trung tâm dùng được: quản trị đầu tiên kích hoạt bằng lời mời rồi đăng nhập tại địa chỉ
+ *     trung tâm, nhận diện công khai đọc được ở cả địa chỉ trung tâm lẫn địa chỉ gốc;
+ * (2) token lời mời của trung tâm này không kích hoạt được ở trung tâm khác (kho của trung tâm kia không có lời mời
+ *     đó);
+ * (3) mật khẩu yếu làm cháy lời mời (đốt trước, đặt mật khẩu sau), phát hành lại bằng CLI rồi kích hoạt thành công;
+ * (4) quản trị trung tâm sửa được nhận diện của mình, người dùng thường của cùng trung tâm bị từ chối, nhận diện của
+ *     trung tâm khác không đổi;
+ * (5) đình chỉ chặn traffic nghiệp vụ nhưng nhận diện công khai vẫn đọc được, dữ kiện còn nguyên, mở lại thì traffic
+ *     trở lại;
+ * (6) sau khi đã định tuyến, tắt control plane đi thì bề mặt trung tâm vẫn hiển thị đúng nhận diện đã nạp (nhận diện
+ *     đọc từ kho của trung tâm, không đọc từ control plane).
  *
- * MẪU MIRROR CHO PHIÊN TRUNG TÂM (theo pattern của e2e #582):
- * luồng cấp token hiện tại tra tenant trong kho chung dưới ngữ
- * cảnh platform, nên một quản trị chỉ tồn tại trong kho riêng
- * chưa nhận được claim `centre_id` — đó là cổng #587 (thứ tự
- * phân giải danh tính), không thuộc phạm vi issue #583. Để các
- * ca đình chỉ/chặn được kiểm chứng ở tầng guard (chứ không kẹt
- * ở lỗi gắn phiên), spec này mirror dòng tenant + membership của
- * các tài khoản trung tâm vào kho chung. Mirror chỉ phục vụ việc
- * gắn phiên trong ca test; mọi quyết định phân quyền dưới test
- * (ai sửa được nhận diện, đình chỉ chặn gì) vẫn đọc từ kho riêng
- * của trung tâm. Tương tự, endpoint tạo user qua API chạy dưới
- * ngữ cảnh platform trên kho chung nên không tạo được user của
- * trung tâm kho riêng — hành vi thế giới kho chung từ trước,
- * thuộc phạm vi issue #584; ca (4) vì vậy tạo người dùng thường
- * trực tiếp trong kho trung tâm thay vì qua endpoint đó.
+ * MẪU MIRROR CHO PHIÊN TRUNG TÂM (theo pattern của e2e #582): luồng cấp token hiện tại tra tenant trong kho chung dưới
+ * ngữ cảnh platform, nên một quản trị chỉ tồn tại trong kho riêng chưa nhận được claim `centre_id` — đó là cổng #587
+ * (thứ tự phân giải danh tính), không thuộc phạm vi issue #583. Để các ca đình chỉ/chặn được kiểm chứng ở tầng guard
+ * (chứ không kẹt ở lỗi gắn phiên), spec này mirror dòng tenant + membership của các tài khoản trung tâm vào kho chung.
+ * Mirror chỉ phục vụ việc gắn phiên trong ca test; mọi quyết định phân quyền dưới test (ai sửa được nhận diện, đình chỉ
+ * chặn gì) vẫn đọc từ kho riêng của trung tâm. Tương tự, endpoint tạo user qua API chạy dưới ngữ cảnh platform trên kho
+ * chung nên không tạo được user của trung tâm kho riêng — hành vi thế giới kho chung từ trước, thuộc phạm vi issue
+ * #584; ca (4) vì vậy tạo người dùng thường trực tiếp trong kho trung tâm thay vì qua endpoint đó.
  */
 const RUN_SUFFIX = Math.random().toString(36).slice(2, 8);
 const CP_DATABASE = `lms_test_cp_583e_${RUN_SUFFIX}`;
@@ -72,7 +56,6 @@ const ACTOR_ID = '22222222-2222-4222-8222-222222222222';
 
 const UUIDV7_SHIM = `CREATE OR REPLACE FUNCTION uuidv7() RETURNS uuid AS $$ DECLARE ts_ms bigint := (extract(epoch from clock_timestamp()) * 1000)::bigint; b bytea; BEGIN b := decode(lpad(to_hex(ts_ms), 12, '0'), 'hex') || gen_random_bytes(10); b := set_byte(b, 6, (get_byte(b, 6) & 15) | 112); b := set_byte(b, 8, (get_byte(b, 8) & 63) | 128); RETURN encode(b, 'hex')::uuid; END; $$ LANGUAGE plpgsql VOLATILE`;
 
-/** Dựng URL kết nối tới một database trên cùng cụm với database test. */
 function clusterUrl(database: string, username?: string, secret?: string): string {
   const base = new URL(process.env.DATABASE_URL!);
   base.pathname = `/${database}`;
@@ -81,7 +64,6 @@ function clusterUrl(database: string, username?: string, secret?: string): strin
   return base.toString();
 }
 
-/** Bọc một định danh Postgres trong dấu nháy kép cho các câu lệnh quản trị của ca test. */
 function quoted(identifier: string): string {
   return `"${identifier.replace(/"/g, '""')}"`;
 }
@@ -102,7 +84,6 @@ async function withClient<T>(connectionString: string, fn: (client: Client) => P
   }
 }
 
-/** Áp một file migration SQL (tách theo dấu phân đoạn statement-breakpoint) lên một database qua kết nối cho trước. */
 async function applySqlFile(connectionString: string, filePath: string): Promise<void> {
   await withClient(connectionString, async (client) => {
     const version = await client.query<{ server_version_num: string }>('SHOW server_version_num');
@@ -118,7 +99,6 @@ async function applySqlFile(connectionString: string, filePath: string): Promise
   });
 }
 
-/** Áp bộ migration riêng của control plane từ rỗng (đọc chính các file SQL đã sinh trong repo). */
 async function applyControlPlaneMigrations(connectionString: string): Promise<void> {
   const outDir = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'control-plane');
   const folders = readdirSync(outDir, { withFileTypes: true })
@@ -151,8 +131,8 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
   let adminAToken = '';
   let adminBToken = '';
   let teacherId = '';
-  // Writer đã đóng trong ca tắt control plane (xem ca cuối) thì
-  // afterAll không đóng lại nữa: pg-pool ném lỗi khi end() lần 2.
+  // Writer đã đóng trong ca tắt control plane (xem ca cuối) thì afterAll không đóng lại nữa: pg-pool ném lỗi khi end()
+  // lần 2.
   let writerClosed = false;
 
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -173,9 +153,8 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
     });
     writer = new FleetRegistryWriter(env);
 
-    // Mirror tenant + membership của quản trị A vào kho chung để
-    // luồng cấp token (tra tenant dưới ngữ cảnh platform) gắn được
-    // claim `centre_id` cho phiên trung tâm — xem chú thích đầu file.
+    // Mirror tenant + membership của quản trị A vào kho chung để luồng cấp token (tra tenant dưới ngữ cảnh platform)
+    // gắn được claim `centre_id` cho phiên trung tâm — xem chú thích đầu file.
     await withClient(process.env.DATABASE_URL!, async (shared) => {
       await shared.query(`SELECT set_config('app.platform', 'on', false)`);
       await shared.query('INSERT INTO users (id, username, email) VALUES ($1, $2, $3)', [centreA.adminUserId, ADMIN_A_USERNAME, ADMIN_A_EMAIL]);
@@ -183,8 +162,7 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
       await shared.query('INSERT INTO tenant_memberships (tenant_id, user_id, status) VALUES ($1, $2, $3)', [centreA.tenantId, centreA.adminUserId, 'active']);
     });
 
-    // Ứng dụng phải thấy control plane và hai bí mật kho riêng ngay
-    // từ lúc khởi động.
+    // Ứng dụng phải thấy control plane và hai bí mật kho riêng ngay từ lúc khởi động.
     process.env.CONTROL_PLANE_DATABASE_URL = clusterUrl(CP_DATABASE);
     process.env[centreA.secretEnvVar] = clusterUrl(centreA.databaseName, centreA.connectionRole, DB_PASSWORD);
     process.env[centreB.secretEnvVar] = clusterUrl(centreB.databaseName, centreB.connectionRole, DB_PASSWORD);
@@ -240,8 +218,7 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
       .send({ slug: SLUG_B, token: centreB.inviteToken, password: STRONG_PASSWORD });
     expect(retry.status).toBe(409);
     expect((retry.body as { code?: string }).code).toBe('centre.invite_consumed');
-    // Phát hành lại: lời mời cũ đang chờ (không còn — đã cháy) và
-    // token mới kích hoạt được.
+    // Phát hành lại: lời mời cũ đang chờ (không còn — đã cháy) và token mới kích hoạt được.
     const reissued = await manageCentreInvite({
       slug: SLUG_B,
       email: ADMIN_B_EMAIL,
@@ -294,10 +271,9 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
   });
 
   it('quản trị trung tâm sửa được nhận diện của mình, người dùng thường bị từ chối, trung tâm khác không đổi', async () => {
-    // Tạo người dùng thường TRỰC TIẾP trong kho của trung tâm A
-    // (kèm mirror vào kho chung để gắn phiên — xem chú thích đầu
-    // file). Băm mật khẩu bằng đúng thuật toán của PasswordService
-    // (argon2id) để đường đăng nhập thật kiểm chứng được.
+    // Tạo người dùng thường TRỰC TIẾP trong kho của trung tâm A (kèm mirror vào kho chung để gắn phiên — xem chú thích
+    // đầu file). Băm mật khẩu bằng đúng thuật toán của PasswordService (argon2id) để đường đăng nhập thật kiểm chứng
+    // được.
     teacherId = randomUUID();
     const teacherUsername = `gv583${RUN_SUFFIX}`;
     const teacherEmail = `gv-583-${RUN_SUFFIX}@example.com`;
@@ -366,19 +342,13 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
   });
 
   it('tắt control plane sau khi đã định tuyến thì bề mặt trung tâm vẫn hiển thị đúng nhận diện đã nạp', async () => {
-    // Ca cuối cùng của file: xoá hẳn database control plane của ca
-    // test (database dùng một lần của riêng spec này). Từ đây mọi
-    // đường cần sổ đăng ký đều hỏng — chứng minh bằng một request
-    // nghiệp vụ bị từ chối 401 fail-closed: sổ đăng ký không đọc
-    // được nên khung định tuyến ném not_configured, chiến lược JWT
-    // tra tài khoản ở kho chung không thấy tài khoản chỉ sống ở kho
-    // riêng nên từ chối, không phục vụ dữ kiện nào — nhưng đọc
-    // nhận diện đi đường handle đã-chuẩn-bị nên vẫn trả đúng tên
-    // đã đổi ở ca trước.
-    // Đóng sạch hai pool control plane TRƯỚC khi DROP: DROP WITH
-    // (FORCE) trong khi pool còn backend mở sẽ giết các backend đó
-    // (lỗi 57P01), pg báo thành uncaught exception và vitest trả
-    // exit 1 dù mọi ca đều xanh — đã kiểm chứng ở lần chạy trước.
+    // Ca cuối cùng của file: xoá hẳn database control plane của ca test (database dùng một lần của riêng spec này). Từ
+    // đây mọi đường cần sổ đăng ký đều hỏng — chứng minh bằng một request nghiệp vụ bị từ chối 401 fail-closed: sổ đăng
+    // ký không đọc được nên khung định tuyến ném not_configured, chiến lược JWT tra tài khoản ở kho chung không thấy
+    // tài khoản chỉ sống ở kho riêng nên từ chối, không phục vụ dữ kiện nào — nhưng đọc nhận diện đi đường handle
+    // đã-chuẩn-bị nên vẫn trả đúng tên đã đổi ở ca trước. Đóng sạch hai pool control plane TRƯỚC khi DROP: DROP WITH
+    // (FORCE) trong khi pool còn backend mở sẽ giết các backend đó (lỗi 57P01), pg báo thành uncaught exception và
+    // vitest trả exit 1 dù mọi ca đều xanh — đã kiểm chứng ở lần chạy trước.
     await writer.close();
     writerClosed = true;
     const cpConnection = app.get(ControlPlaneConnection);
@@ -386,9 +356,8 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
     await withClient(clusterUrl('postgres'), async (admin) => {
       await admin.query(`DROP DATABASE ${quoted(CP_DATABASE)} WITH (FORCE)`);
     });
-    // Chờ quá TTL cache của khung định tuyến (5 giây) để request
-    // nghiệp vụ kế tiếp bắt buộc phải đọc sổ đã chết, thay vì ăn
-    // dòng đăng ký còn cache.
+    // Chờ quá TTL cache của khung định tuyến (5 giây) để request nghiệp vụ kế tiếp bắt buộc phải đọc sổ đã chết, thay
+    // vì ăn dòng đăng ký còn cache.
     await new Promise((resolve) => setTimeout(resolve, 6000));
     const business = await http(app).get('/api/v1/users/me').set('Host', HOST_A).set(auth(adminAToken));
     expect(business.status).toBe(401);

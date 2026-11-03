@@ -7,20 +7,16 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Ngân hàng ma trận MB-1 (issue #111) — phủ 4 tiêu chí nghiệm thu ở
- * tầng API (tiêu chí 5 kiểm chứng trình duyệt đổi vai do đội trình
- * duyệt riêng chạy trên bản live):
- *  1. Tổ trưởng đưa mẫu lên bank tổ; thành viên thấy mẫu, copy về bank
- *     cá nhân (deep copy ô + derived_from), sửa ô trên bản copy và xem
- *     availability đúng theo pool câu gắn YCCĐ.
- *  2. GV ngoài tổ KHÔNG thấy bank tổ — cả ở danh sách bank lẫn API
- *     danh sách ma trận trực tiếp (403), dù có vai giáo viên ở hệ thống.
- *  3. Bất biến version: sửa ô trên mẫu ready → version của MẪU tăng;
- *     bản copy đã lấy trước đó không đổi (nội dung + version).
- *  4. Đóng góp → duyệt vào bank tổ có truy vết (proposer trên hàng
- *     chờ, derived_from trên bản vào bank, bản vào bank tổ là mẫu);
- *     từ chối có lý do hiện lại cho người gửi; người không có quyền
- *     duyệt thì duyệt → 403.
+ * Ngân hàng ma trận MB-1 (issue #111) — phủ 4 tiêu chí nghiệm thu ở tầng API (tiêu chí 5 kiểm chứng trình duyệt đổi vai
+ * do đội trình duyệt riêng chạy trên bản live):
+ *  1. Tổ trưởng đưa mẫu lên bank tổ; thành viên thấy mẫu, copy về bank cá nhân (deep copy ô + derived_from), sửa ô trên
+ *     bản copy và xem availability đúng theo pool câu gắn YCCĐ.
+ *  2. GV ngoài tổ KHÔNG thấy bank tổ — cả ở danh sách bank lẫn API danh sách ma trận trực tiếp (403), dù có vai giáo
+ *     viên ở hệ thống.
+ *  3. Bất biến version: sửa ô trên mẫu ready → version của MẪU tăng; bản copy đã lấy trước đó không đổi (nội dung +
+ *     version).
+ *  4. Đóng góp → duyệt vào bank tổ có truy vết (proposer trên hàng chờ, derived_from trên bản vào bank, bản vào bank tổ
+ *     là mẫu); từ chối có lý do hiện lại cho người gửi; người không có quyền duyệt thì duyệt → 403.
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -193,7 +189,8 @@ describe('Ngân hàng ma trận MB-1 (issue #111)', () => {
     expect(listed).toBeTruthy();
     expect(listed!.isTemplate).toBe(true);
 
-    // Copy về bank cá nhân (đích mặc định): danh tính mới, derived_from = mẫu, ready (quy tắc hoàn thiện: sao chép vào bank hạ cánh ready), không phải mẫu, đủ 2 ô.
+    // Copy về bank cá nhân (đích mặc định): danh tính mới, derived_from = mẫu, ready (quy tắc hoàn thiện: sao chép vào
+    // bank hạ cánh ready), không phải mẫu, đủ 2 ô.
     const copyRes = await http(app).post(`/api/v1/exam-matrices/${tpl.id}/copy`).set(bearer(team.member.token)).send({});
     expect(copyRes.status, JSON.stringify(copyRes.body)).toBe(201);
     const copy = copyRes.body as MatrixBody;
@@ -206,9 +203,8 @@ describe('Ngân hàng ma trận MB-1 (issue #111)', () => {
     expect(copy.version).toBe(1);
     expect(copy.cells).toHaveLength(2);
 
-    // Sửa ô trên bản copy: ô Biết 2 → 3 câu. Bản copy đã ready nên
-    // sửa ô fork sang version 2 (bất biến version) — ô thuộc version
-    // mới mang danh tính mới, lấy lại từ đáp án PATCH.
+    // Sửa ô trên bản copy: ô Biết 2 → 3 câu. Bản copy đã ready nên sửa ô fork sang version 2 (bất biến version) — ô
+    // thuộc version mới mang danh tính mới, lấy lại từ đáp án PATCH.
     const bietCell = copy.cells.find((c) => c.cognitiveLevel === 'biet')!;
     const patchRes = await http(app).patch(`/api/v1/exam-matrices/${copy.id}/cells/${bietCell.id}`)
       .set(bearer(team.member.token)).send({ questionCount: 3 });

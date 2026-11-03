@@ -6,15 +6,10 @@ import Redis from 'ioredis';
 import { redisTlsFromUrl } from '../../config/env';
 import { SpaceDatabaseService } from '../../db/routing/space-database.service';
 
-/**
- * Các kiểm tra runtime có cấu trúc theo tinh thần Check API của Moodle:
- * mỗi phụ thuộc báo up/down độc lập; payload được kiểm chứng
- * đối chiếu với contract dùng chung trước khi rời khỏi tiến trình.
+/** Các kiểm tra runtime có cấu trúc theo tinh thần Check API của Moodle: mỗi phụ thuộc báo up/down độc lập; payload
+ * được kiểm chứng đối chiếu với contract dùng chung trước khi rời khỏi tiến trình.
  */
 @Injectable()
-/**
- * Kiểm tra sức khoẻ hệ thống: SELECT 1 tới PostgreSQL và PING Redis, trả trạng thái tổng hợp cho /health.
- */
 export class HealthService implements OnModuleDestroy {
   private readonly redis: Redis;
 
@@ -38,9 +33,6 @@ export class HealthService implements OnModuleDestroy {
     }
   }
 
-  /**
-   * Thực thi kiểm tra DB + Redis và dựng kết quả health.
-   */
   async check(): Promise<HealthStatus> {
     const database = await this.probe(async () => {
       await sql`select 1`.execute(this.spaceDb.routedKysely);
@@ -54,9 +46,6 @@ export class HealthService implements OnModuleDestroy {
     });
   }
 
-  /**
-   * Đóng kết nối Redis khi module bị huỷ.
-   */
   async onModuleDestroy(): Promise<void> {
     this.redis.disconnect();
   }

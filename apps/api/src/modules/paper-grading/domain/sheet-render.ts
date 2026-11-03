@@ -1,10 +1,8 @@
 /**
- * Dựng ảnh phiếu dạng raster ở không gian template (CAM-0, issue #112):
- * dùng cho BỘ ẢNH KIỂM CHỨNG MÔ PHỎNG — in "ảo" một phiếu (fiducial, QR,
- * lưới mã, bong bóng đã tô theo kịch bản), rồi mô phỏng ảnh chụp (lệch
- * phối cảnh, xoay nhẹ, nhiễu, mờ, gradient sáng) và đưa qua đúng engine
- * OMR của hệ thống để đo các tiêu chí nghiệm thu Phần 4.2. Phía PDF sản
- * xuất dùng cùng hình học template (sheet-layout) nhưng vẽ vector.
+ * Dựng ảnh phiếu dạng raster ở không gian template (CAM-0, issue #112): dùng cho BỘ ẢNH KIỂM CHỨNG MÔ PHỎNG — in "ảo"
+ * một phiếu (fiducial, QR, lưới mã, bong bóng đã tô theo kịch bản), rồi mô phỏng ảnh chụp (lệch phối cảnh, xoay nhẹ,
+ * nhiễu, mờ, gradient sáng) và đưa qua đúng engine OMR của hệ thống để đo các tiêu chí nghiệm thu Phần 4.2. Phía PDF
+ * sản xuất dùng cùng hình học template (sheet-layout) nhưng vẽ vector.
  */
 import QRCode from 'qrcode';
 import { PNG } from 'pngjs';
@@ -86,21 +84,18 @@ export interface RenderSheetInput {
   fills: ReadonlyMap<number, SlotFill>;
 }
 
-/** Dựng một phiếu hoàn chỉnh ở không gian template (chưa biến dạng chụp). */
 export function renderSheetRgba(input: RenderSheetInput): RgbaImage {
   const img = blankImage(TEMPLATE_WIDTH, TEMPLATE_HEIGHT, 252);
   const { geometry } = input;
-  // Fiducial.
   for (const c of FIDUCIAL_CENTERS) {
     fillRect(img, c.x - FIDUCIAL_SIZE / 2, c.y - FIDUCIAL_SIZE / 2, FIDUCIAL_SIZE, FIDUCIAL_SIZE, 10);
   }
-  // Đầu phiếu: các thanh xám tượng trưng dòng chữ (OMR không đọc chữ; PDF thật có chữ tiếng Việt).
-  // Thanh trên bắt đầu ở x=150 để không chạm fiducial góc trái (chiếm x 48..88, y 48..88).
+  // Đầu phiếu: các thanh xám tượng trưng dòng chữ (OMR không đọc chữ; PDF thật có chữ tiếng Việt). Thanh trên bắt đầu ở
+  // x=150 để không chạm fiducial góc trái (chiếm x 48..88, y 48..88).
   fillRect(img, 150, 62, 520, 26, 90);
   fillRect(img, 150, 104, 420, 18, 120);
   fillRect(img, 64, 150, 460, 18, 120);
   fillRect(img, 64, 250, 300, 16, 140);
-  // QR hoặc khung trống.
   if (input.qrText) {
     const qr = QRCode.create(input.qrText, { errorCorrectionLevel: 'M' });
     const size = qr.modules.size;
@@ -115,23 +110,19 @@ export function renderSheetRgba(input: RenderSheetInput): RgbaImage {
     }
   } else {
     ringCircle(img, QR_RECT.x + QR_RECT.size / 2, QR_RECT.y + QR_RECT.size / 2, 4, 160);
-    // Viền đứt tượng trưng vùng QR trống.
     for (let x = QR_RECT.x; x < QR_RECT.x + QR_RECT.size; x += 12) {
       fillRect(img, x, QR_RECT.y, 6, 2, 150);
       fillRect(img, x, QR_RECT.y + QR_RECT.size - 2, 6, 2, 150);
     }
   }
-  // Lưới mã học sinh: vòng tròn cho mọi ô; tô theo bubbleCode.
   for (const cell of geometry.codeCells) {
     ringCircle(img, cell.x, cell.y, CODE_BUBBLE_R, 40);
     if (input.bubbleCode && Number(input.bubbleCode[cell.digitIndex]) === cell.value) {
       fillCircle(img, cell.x, cell.y, CODE_BUBBLE_R - 2, 15);
     }
   }
-  // Lưới mã đề + hàng ô ghi chữ số phía trên (khung tượng trưng): vòng
-  // tròn cho mọi ô; tô theo variantCode (một cột có thể tô nhạt để
-  // dựng ca mơ hồ). Phiếu dựng không truyền variantCode → lưới để
-  // trống như phiếu cá nhân hoá.
+  // Lưới mã đề + hàng ô ghi chữ số phía trên (khung tượng trưng): vòng tròn cho mọi ô; tô theo variantCode (một cột có
+  // thể tô nhạt để dựng ca mơ hồ). Phiếu dựng không truyền variantCode → lưới để trống như phiếu cá nhân hoá.
   if (input.variantCode !== undefined) {
     const colXs = new Map<number, number>();
     for (const cell of geometry.variantCodeCells) colXs.set(cell.digitIndex, cell.x);
@@ -154,7 +145,6 @@ export function renderSheetRgba(input: RenderSheetInput): RgbaImage {
       }
     }
   }
-  // Lưới đáp án.
   for (const row of geometry.rows) {
     fillRect(img, row.labelX, row.labelY - 6, 30, 12, 110);
     row.centers.forEach((center, k) => {
@@ -202,9 +192,8 @@ export function seededRandom(seed: number): () => number {
 }
 
 /**
- * Mô phỏng một ảnh chụp điện thoại: phiếu đặt trên nền bàn tối, 4 góc bị
- * lệch phối cảnh ngẫu nhiên, cộng gradient sáng + nhiễu + tuỳ chọn mờ.
- * Trả về PNG bytes để đưa thẳng vào engine như ảnh thật.
+ * Mô phỏng một ảnh chụp điện thoại: phiếu đặt trên nền bàn tối, 4 góc bị lệch phối cảnh ngẫu nhiên, cộng gradient
+ * sáng + nhiễu + tuỳ chọn mờ. Trả về PNG bytes để đưa thẳng vào engine như ảnh thật.
  */
 export function simulatePhoto(sheet: RgbaImage, opts: PhotoSimOptions = {}): Buffer {
   const rand = seededRandom(opts.seed ?? 42);
@@ -223,7 +212,6 @@ export function simulatePhoto(sheet: RgbaImage, opts: PhotoSimOptions = {}): Buf
     { x: 0, y: 0 }, { x: TEMPLATE_WIDTH, y: 0 }, { x: 0, y: TEMPLATE_HEIGHT }, { x: TEMPLATE_WIDTH, y: TEMPLATE_HEIGHT },
   ];
   const fwd = computeHomography(templateCorners, corners);
-  // Đảo để ánh xạ điểm ảnh chụp → template.
   const [a, b, c, d, e, f, g, h, i] = fwd as [number, number, number, number, number, number, number, number, number];
   const det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
   const inv = [

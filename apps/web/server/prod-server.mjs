@@ -2,34 +2,23 @@
  * Tiến trình SSR của apps/web (Giai đoạn 3 của issue #7, topology C).
  *
  * Một tiến trình Node thuần (không framework ngoài) giữ ba vai:
- *   1. Mặt tiền HTTP duy nhất: bind cổng PUBLIC_PORT (mặc định $PORT
- *      do môi trường triển khai cấp).
- *   2. Proxy các đường của API (xem `proxy-paths.mjs`: `/api/*`,
- *      `/socket.io/*`, `/mcp`, `/.well-known/oauth-protected-resource`)
- *      về API ở địa chỉ nội bộ
- *      (LMS_API_INTERNAL_URL, mặc định http://127.0.0.1:3000): chuyển
- *      nguyên header (Cookie đi lên, Set-Cookie — kể cả nhiều header —
- *      đi xuống; Host GIỮ NGUYÊN của request gốc vì tầng ứng dụng
- *      phân giải trung tâm theo Host, xem proxy-headers.mjs), nối
- *      tiếp chuỗi X-Forwarded-For của chặng trước, và
- *      STREAM không đệm để SSE sống qua proxy; trình duyệt đóng kết
- *      nối thì hủy luôn request phía API. WebSocket (socket.io) đi qua
- *      đường hầm TCP ở sự kiện `upgrade` — đầu request upgrade cũng
- *      giữ nguyên Host gốc (xem `proxy-headers.mjs`), vì socket auth
- *      phân giải trung tâm theo Host của chính request bắt tay đó.
- *   3. Phục vụ asset tĩnh của bản build client (tên file có hash →
- *      cache immutable; asset text được nén brotli/gzip theo
- *      Accept-Encoding — xem `compression.mjs`, CHỈ ở đường tĩnh này)
- *      và giao mọi request còn lại cho server build
- *      của React Router (SSR) qua createRequestListener. Mọi tài
- *      liệu HTML ở cả hai đường (tĩnh lẫn SSR) đều mang header bảo
- *      mật Content-Security-Policy — xem `security-headers.mjs`.
+ *   1. Mặt tiền HTTP duy nhất: bind cổng PUBLIC_PORT (mặc định $PORT do môi trường triển khai cấp).
+ *   2. Proxy các đường của API (xem `proxy-paths.mjs`: `/api/*`, `/socket.io/*`, `/mcp`,
+ *      `/.well-known/oauth-protected-resource`) về API ở địa chỉ nội bộ (LMS_API_INTERNAL_URL, mặc định
+ *      http://127.0.0.1:3000): chuyển nguyên header (Cookie đi lên, Set-Cookie — kể cả nhiều header — đi xuống; Host
+ *      GIỮ NGUYÊN của request gốc vì tầng ứng dụng phân giải trung tâm theo Host, xem proxy-headers.mjs), nối tiếp
+ *      chuỗi X-Forwarded-For của chặng trước, và STREAM không đệm để SSE sống qua proxy; trình duyệt đóng kết nối thì
+ *      hủy luôn request phía API. WebSocket (socket.io) đi qua đường hầm TCP ở sự kiện `upgrade` — đầu request upgrade
+ *      cũng giữ nguyên Host gốc (xem `proxy-headers.mjs`), vì socket auth phân giải trung tâm theo Host của chính
+ *      request bắt tay đó.
+ *   3. Phục vụ asset tĩnh của bản build client (tên file có hash → cache immutable; asset text được nén brotli/gzip
+ *      theo Accept-Encoding — xem `compression.mjs`, CHỈ ở đường tĩnh này) và giao mọi request còn lại cho server build
+ *      của React Router (SSR) qua createRequestListener. Mọi tài liệu HTML ở cả hai đường (tĩnh lẫn SSR) đều mang
+ *      header bảo mật Content-Security-Policy — xem `security-headers.mjs`.
  *
- * Chạy độc lập: `node server/prod-server.mjs` (cần `react-router
- * build` trước) — đây cũng là cách target `web` của Dockerfile ở gốc
- * repo chạy tiến trình này trong stack Docker Compose. Chạy cả
- * topology ở local thì khởi động thêm tiến trình API riêng
- * (`apps/api/dist/main.js`) và trỏ `LMS_API_INTERNAL_URL` về API đó.
+ * Chạy độc lập: `node server/prod-server.mjs` (cần `react-router build` trước) — đây cũng là cách target `web` của
+ * Dockerfile ở gốc repo chạy tiến trình này trong stack Docker Compose. Chạy cả topology ở local thì khởi động thêm
+ * tiến trình API riêng (`apps/api/dist/main.js`) và trỏ `LMS_API_INTERNAL_URL` về API đó.
  */
 import { createServer, request as httpRequest } from 'node:http';
 import { connect as netConnect } from 'node:net';
@@ -71,13 +60,10 @@ const MIME = {
   '.map': 'application/json; charset=utf-8',
 };
 
-/** Proxy HTTP stream hai chiều, không đệm (SSE sống), hủy theo kết nối của trình duyệt. */
 function proxyHttp(req, res) {
-  // Header dựng ở proxy-headers.mjs: Host GIỮ NGUYÊN của request
-  // gốc — tầng ứng dụng phân giải trung tâm theo Host (issue #582),
-  // ghi đè bằng origin nội bộ là địa chỉ trung tâm biến mất trước
-  // khi tới API (tiền điều kiện TĐ5 của issue #587). Đích kết nối
-  // vẫn là origin nội bộ qua hostname/port dưới đây.
+  // Header dựng ở proxy-headers.mjs: Host GIỮ NGUYÊN của request gốc — tầng ứng dụng phân giải trung tâm theo Host
+  // (issue #582), ghi đè bằng origin nội bộ là địa chỉ trung tâm biến mất trước khi tới API (tiền điều kiện TĐ5 của
+  // issue #587). Đích kết nối vẫn là origin nội bộ qua hostname/port dưới đây.
   const headers = buildProxyHeaders(req.headers, req.socket.remoteAddress, apiOrigin.host);
   const upstream = httpRequest(
     {
@@ -104,20 +90,16 @@ function proxyHttp(req, res) {
   req.pipe(upstream);
 }
 
-/** Đường hầm TCP cho WebSocket upgrade của socket.io. */
 function proxyUpgrade(req, socket, head) {
   if (!req.url?.startsWith('/socket.io/')) {
     socket.destroy();
     return;
   }
   const upstream = netConnect(Number(apiOrigin.port), apiOrigin.hostname, () => {
-    // Đầu request upgrade dựng ở proxy-headers.mjs: Host GIỮ NGUYÊN
-    // của request gốc — client của hệ mở transport websocket ngay
-    // từ request đầu tiên và socket auth ở API phân giải trung tâm
-    // theo Host của chính request bắt tay này (điểm B1 của PR
-    // #634); ghi đè bằng origin nội bộ thì địa chỉ trung tâm biến
-    // mất như đã từng xảy ra ở đường HTTP. Đích của đường hầm vẫn
-    // là origin nội bộ qua hostname/port của netConnect ở trên.
+    // Đầu request upgrade dựng ở proxy-headers.mjs: Host GIỮ NGUYÊN của request gốc — client của hệ mở transport
+    // websocket ngay từ request đầu tiên và socket auth ở API phân giải trung tâm theo Host của chính request bắt tay
+    // này (điểm B1 của PR #634); ghi đè bằng origin nội bộ thì địa chỉ trung tâm biến mất như đã từng xảy ra ở đường
+    // HTTP. Đích của đường hầm vẫn là origin nội bộ qua hostname/port của netConnect ở trên.
     const lines = buildUpgradeRequestLines({
       method: req.method,
       url: req.url,
@@ -137,10 +119,9 @@ function proxyUpgrade(req, socket, head) {
 }
 
 /**
- * Tài liệu đã prerender lúc build (khai ở `prerender` trong
- * react-router.config.ts, lát SL-1 của #7): đường dẫn tài liệu → file
- * HTML tĩnh trong build/client (React Router sinh `<path>/index.html`).
- * Chỉ hai mặt công khai `/` và `/login` — xem luật phục vụ ở tryStatic.
+ * Tài liệu đã prerender lúc build (khai ở `prerender` trong react-router.config.ts, lát SL-1 của #7): đường dẫn tài
+ * liệu → file HTML tĩnh trong build/client (React Router sinh `<path>/index.html`). Chỉ hai mặt công khai `/` và
+ * `/login` — xem luật phục vụ ở tryStatic.
  */
 const PRERENDERED_DOCUMENTS = new Map([
   ['/', 'index.html'],
@@ -150,16 +131,13 @@ const PRERENDERED_DOCUMENTS = new Map([
 /** Mẫu nhận diện cookie phiên Better Auth — cùng mẫu với loader gốc phía app (bản https có tiền tố `__Secure-`). */
 const SESSION_COOKIE_PATTERN = /(?:^|;\s*)(?:__Secure-)?better-auth\.session_token=/;
 
-/** Phục vụ file tĩnh từ build/client; trả true nếu đã xử lý. */
 async function tryStatic(req, res) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return false;
   const urlPath = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
-  // Tài liệu prerender: ánh xạ đường dẫn về file HTML đã sinh lúc
-  // build (đường dẫn thường không trỏ thẳng tới file). Luật phiên là
-  // bất biến an toàn của lát SL-1: request mang cookie phiên Better
-  // Auth thì KHÔNG BAO GIỜ nhận bản tĩnh — trả false để rơi xuống
-  // SSR động theo đúng phiên (mặt đã đăng nhập của `/` được cá nhân
-  // hoá bởi loader gốc); chỉ request ẩn danh mới nhận bản prerender.
+  // Tài liệu prerender: ánh xạ đường dẫn về file HTML đã sinh lúc build (đường dẫn thường không trỏ thẳng tới file).
+  // Luật phiên là bất biến an toàn của lát SL-1: request mang cookie phiên Better Auth thì KHÔNG BAO GIỜ nhận bản tĩnh
+  // — trả false để rơi xuống SSR động theo đúng phiên (mặt đã đăng nhập của `/` được cá nhân hoá bởi loader gốc); chỉ
+  // request ẩn danh mới nhận bản prerender.
   const documentPath = urlPath.length > 1 ? urlPath.replace(/\/+$/, '') : urlPath;
   const prerenderedFile = PRERENDERED_DOCUMENTS.get(documentPath);
   if (prerenderedFile && SESSION_COOKIE_PATTERN.test(req.headers.cookie ?? '')) return false;
@@ -169,10 +147,8 @@ async function tryStatic(req, res) {
     const info = await stat(filePath);
     if (!info.isFile()) return false;
     const type = MIME[extname(filePath).toLowerCase()] ?? 'application/octet-stream';
-    // Tài liệu prerender vẫn là TÀI LIỆU (không phải asset): giữ
-    // chính sách không cache công khai như headers() của root phía
-    // app — giá trị của prerender là bỏ chi phí render SSR, không
-    // phải cache ở tầng trung gian/trình duyệt.
+    // Tài liệu prerender vẫn là TÀI LIỆU (không phải asset): giữ chính sách không cache công khai như headers() của
+    // root phía app — giá trị của prerender là bỏ chi phí render SSR, không phải cache ở tầng trung gian/trình duyệt.
     const cache = prerenderedFile
       ? 'private, no-cache'
       : urlPath.startsWith('/assets/')
@@ -180,18 +156,15 @@ async function tryStatic(req, res) {
         : 'public, max-age=3600';
     const body = await readFile(filePath);
     const headers = { 'Content-Type': type, 'Cache-Control': cache };
-    // Tài liệu HTML tĩnh (gồm bản prerender) mang cùng header bảo
-    // mật như tài liệu SSR — xem security-headers.mjs. Đặt qua
-    // object header của writeHead vì đường tĩnh không đi qua
-    // ServerResponse.setHeader như đường SSR.
+    // Tài liệu HTML tĩnh (gồm bản prerender) mang cùng header bảo mật như tài liệu SSR — xem security-headers.mjs. Đặt
+    // qua object header của writeHead vì đường tĩnh không đi qua ServerResponse.setHeader như đường SSR.
     if (type.startsWith('text/html')) {
       const docRes = { setHeader: (name, value) => { headers[name] = value; } };
       applyDocumentSecurityHeaders(docRes);
     }
     let payload = body;
-    // Nén CHỈ ở đường tĩnh này (F-12 của #133): SSR streaming và proxy
-    // không đi qua đây. File text đủ lớn + client chấp nhận thì nén,
-    // kèm Vary để cache trung gian tách đúng biến thể theo Accept-Encoding.
+    // Nén CHỈ ở đường tĩnh này (F-12 của #133): SSR streaming và proxy không đi qua đây. File text đủ lớn + client chấp
+    // nhận thì nén, kèm Vary để cache trung gian tách đúng biến thể theo Accept-Encoding.
     if (isCompressibleType(type)) {
       headers.Vary = 'Accept-Encoding';
       const encoding = info.size >= MIN_COMPRESS_BYTES ? pickEncoding(req.headers['accept-encoding']) : null;
@@ -214,11 +187,9 @@ const server = createServer(async (req, res) => {
   try {
     if (req.url && isProxyPath(req.url)) return proxyHttp(req, res);
     if (await tryStatic(req, res)) return;
-    // Mọi đáp ứng còn lại là tài liệu SSR của React Router (kèm các
-    // đáp ứng dữ kiện điều hướng của nó): gắn header bảo mật tài
-    // liệu TRƯỚC khi giao cho listener — header đặt bằng setHeader
-    // được giữ nguyên khi listener gọi writeHead với bộ header của
-    // riêng nó (không có CSP) — xem security-headers.mjs.
+    // Mọi đáp ứng còn lại là tài liệu SSR của React Router (kèm các đáp ứng dữ kiện điều hướng của nó): gắn header bảo
+    // mật tài liệu TRƯỚC khi giao cho listener — header đặt bằng setHeader được giữ nguyên khi listener gọi writeHead
+    // với bộ header của riêng nó (không có CSP) — xem security-headers.mjs.
     applyDocumentSecurityHeaders(res);
     return ssrListener(req, res);
   } catch (error) {

@@ -10,18 +10,13 @@ import { createCategory } from '../../support/course-enrolment-helpers';
 import { contextIdByLevelInstance } from '../../support/engagement-helpers';
 
 /**
- * K0a (issue #66) — nạp khung chương trình vào khoá (bản sao có neo).
- * Oracle độc lập: dataset Toán đã kiểm chứng vendor trong repo — YCCĐ
- * kỳ vọng của một đơn vị khung được tính thẳng từ dataset (các bản ghi
- * thuộc đường tổ tiên của đơn vị, theo thứ tự file), không qua code nạp.
- * Tiêu chí của issue: giáo viên tạo khoá Toán một khối từ khung, section
- * mang đúng YCCĐ của chủ đề; sửa cây chương trình sau đó KHÔNG đổi cấu
- * trúc khoá đã nạp — spec kiểm cả hai, và khôi phục nguyên trạng cây
- * sau khi sửa thử để không làm bẩn dữ liệu cho spec khác.
- * Mô hình gán vai của người dùng thử: `coursecreator` tại CONTEXT DANH
- * MỤC (đúng cách gán thật — không gán tại context hệ thống, vì gán ở hệ
- * thống còn kéo theo curriculum:view tại hệ thống và đã che điểm chặn
- * review #66: giáo viên cấp khoá bị 403 khi nạp khung).
+ * K0a (issue #66) — nạp khung chương trình vào khoá (bản sao có neo). Oracle độc lập: dataset Toán đã kiểm chứng vendor
+ * trong repo — YCCĐ kỳ vọng của một đơn vị khung được tính thẳng từ dataset (các bản ghi thuộc đường tổ tiên của đơn
+ * vị, theo thứ tự file), không qua code nạp. Tiêu chí của issue: giáo viên tạo khoá Toán một khối từ khung, section
+ * mang đúng YCCĐ của chủ đề; sửa cây chương trình sau đó KHÔNG đổi cấu trúc khoá đã nạp — spec kiểm cả hai, và khôi
+ * phục nguyên trạng cây sau khi sửa thử để không làm bẩn dữ liệu cho spec khác. Mô hình gán vai của người dùng thử:
+ * `coursecreator` tại CONTEXT DANH MỤC (đúng cách gán thật — không gán tại context hệ thống, vì gán ở hệ thống còn kéo
+ * theo curriculum:view tại hệ thống và đã che điểm chặn review #66: giáo viên cấp khoá bị 403 khi nạp khung).
  */
 
 /** Node của một YCCĐ dạng Tiptap doc trong dataset (doc/paragraph/text + bulletList/listItem cho ý con). */
@@ -44,13 +39,11 @@ const toan = JSON.parse(
 ) as { records: ProgramRecord[] };
 
 /**
- * Text của một YCCĐ dạng doc — ORACLE trích độc lập trong spec (không
- * dùng code nạp, giữ tính độc lập của oracle): mỗi paragraph là một
- * dòng, listItem cho dòng của paragraph của nó rồi tới các dòng của
- * bulletList lồng bên trong (đệ quy); các dòng nối bằng '\n', cắt
- * khoảng trắng hai đầu — đúng semantics text canonical mà hệ lưu vào
- * `learning_outcomes.content` nay là cột jsonb lưu trực tiếp tài liệu
- * này; text canonical trích từ tài liệu bằng đúng semantics này.
+ * Text của một YCCĐ dạng doc — ORACLE trích độc lập trong spec (không dùng code nạp, giữ tính độc lập của oracle): mỗi
+ * paragraph là một dòng, listItem cho dòng của paragraph của nó rồi tới các dòng của bulletList lồng bên trong (đệ
+ * quy); các dòng nối bằng '\n', cắt khoảng trắng hai đầu — đúng semantics text canonical mà hệ lưu vào
+ * `learning_outcomes.content` nay là cột jsonb lưu trực tiếp tài liệu này; text canonical trích từ tài liệu bằng đúng
+ * semantics này.
  */
 function docOutcomeText(doc: OutcomeDoc): string {
   const lines: string[] = [];
@@ -65,7 +58,6 @@ function docOutcomeText(doc: OutcomeDoc): string {
   return lines.join('\n').trim();
 }
 
-/** Các dòng YCCĐ kỳ vọng của một bản ghi (phần tử dạng doc trích text bằng docOutcomeText). */
 function outcomeTexts(r: ProgramRecord): string[] {
   if (r.outcomes.length > 0) {
     return r.outcomes.map((o) => (typeof o === 'string' ? o : docOutcomeText(o)));
@@ -121,21 +113,18 @@ describe('Áp khung chương trình K0a (chương trình → section khoá học
     const imp = await http(app).post('/api/v1/curriculum/program-import').set(bearer(admin)).send({ datasetKey: 'toan' });
     expect(imp.status).toBe(201);
 
-    // Danh mục riêng của spec + giáo viên coursecreator TẠI CONTEXT DANH
-    // MỤC (không tại hệ thống — xem ghi chú đầu file). Id môn/chương
-    // trình/cây lấy bằng admin: đó là dữ liệu mồi, không phải hành vi
-    // cần kiểm; hành vi của giáo viên được kiểm ở các test dưới.
+    // Danh mục riêng của spec + giáo viên coursecreator TẠI CONTEXT DANH MỤC (không tại hệ thống — xem ghi chú đầu
+    // file). Id môn/chương trình/cây lấy bằng admin: đó là dữ liệu mồi, không phải hành vi cần kiểm; hành vi của giáo
+    // viên được kiểm ở các test dưới.
     const category = await createCategory(app, admin);
     categoryId = category.id;
     const categoryCtxId = await contextIdByLevelInstance(app, admin, 40, categoryId);
     const teacher = await createUserViaApi(app, admin);
     await assignRole(app, admin, teacher.id, await roleIdByShortname(app, admin, 'coursecreator'), categoryCtxId);
     teacherToken = (await login(app, teacher.username, STRONG_PASSWORD)).accessToken;
-    // CLASS-0 (đóng gói PR #200): khoá dạy thật phải thuộc một lớp. GV
-    // coursecreator tại context danh mục không có class:create tại
-    // context tenant nên lớp do admin tạo, chủ lớp là chính GV này —
-    // chủ lớp có editingteacher tại context lớp nên tạo/sửa khoá trong
-    // lớp được như đường sản phẩm.
+    // CLASS-0 (đóng gói PR #200): khoá dạy thật phải thuộc một lớp. GV coursecreator tại context danh mục không có
+    // class:create tại context tenant nên lớp do admin tạo, chủ lớp là chính GV này — chủ lớp có editingteacher tại
+    // context lớp nên tạo/sửa khoá trong lớp được như đường sản phẩm.
     const cls = await http(app).post('/api/v1/classes').set(bearer(admin)).send({ name: uniqueName('cls'), ownerId: teacher.id });
     expect(cls.status).toBe(201);
     classId = cls.body.id as string;
@@ -171,9 +160,8 @@ describe('Áp khung chương trình K0a (chương trình → section khoá học
   });
 
   it('giáo viên đọc bộ chọn khung cho chính khoá của họ qua forCourseId, nhưng không đọc cây thuần', async () => {
-    // Bề mặt chọn khung trong quản trị khoá: kèm forCourseId = khoá mình
-    // có course:update thì đọc được cả 3 GET; không kèm thì vẫn 403 vì
-    // giáo viên này không có curriculum:view tại context hệ thống.
+    // Bề mặt chọn khung trong quản trị khoá: kèm forCourseId = khoá mình có course:update thì đọc được cả 3 GET; không
+    // kèm thì vẫn 403 vì giáo viên này không có curriculum:view tại context hệ thống.
     const subjects = await http(app).get(`/api/v1/curriculum/subjects?contextId=${systemCtxId}&forCourseId=${courseId}`).set(bearer(teacherToken));
     expect(subjects.status).toBe(200);
     const curricula = await http(app).get(`/api/v1/curriculum/curricula?subjectId=${subjectId}&forCourseId=${courseId}`).set(bearer(teacherToken));
