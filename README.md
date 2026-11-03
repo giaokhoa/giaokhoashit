@@ -9,6 +9,7 @@ liệu, định dạng file hay giao thức của Moodle — xem báo cáo nghi�
 ```
 apps/
   api/      REST API NestJS 12 (TypeScript 6), Kysely, BullMQ, cache Redis
+  server/   Backend Spring Boot 4.1 (Java 25): resource server kiểm chứng JWT của Keycloak — hướng thay thế api
   worker/   Tiến trình nền NestJS 12: các processor BullMQ, outbox relay, các job chạy theo lịch
   web/      SPA React + Vite + React Router (TypeScript 7), shadcn/ui + Tailwind
 packages/
