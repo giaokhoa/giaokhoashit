@@ -1,0 +1,71 @@
+name: Kiểm chứng mẫu realm Keycloak
+
+# Workflow riêng cho thư mục keycloak/: dựng Keycloak 26.8.1 sạch
+# bằng stack kiểm chứng (keycloak/verify/compose.verify.yaml) rồi
+# chạy bộ kiểm chứng keycloak/verify/verify.mjs — cấp phát hai
+# realm tenant + realm giaokhoa từ môi trường trống, chạy lại để
+# chứng minh không trùng và không mất bí mật, và đối chiếu token,
+# MFA, brute force, refresh rotation, đổi khoá ký trên bản
+# Keycloak thật. Workflow này không thay job verify/verify-stack
+# của cổng merge vào main; nó là kiểm chứng chuyên biệt cho mẫu
+# realm và chỉ chạy khi thư mục keycloak/ thay đổi hoặc khi được
+# gọi tay.
+
+on:
+  pull_request:
+    paths:
+      - "keycloak/**"
+      - ".github/workflows/keycloak-verify.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  keycloak-verify:
+    runs-on: ubuntu-latest
+    env:
+      # Giá trị chỉ dành cho môi trường kiểm chứng dùng một lần
+      # trên runner: khớp với stack trong compose.verify.yaml,
+      # không phải bí mật của môi trường thật.
+      KC_BASE_URL: http://localhost:8180
+      KC_ADMIN_USERNAME: localadmin
+      KC_ADMIN_PASSWORD: verify-admin-password
+      PROVISION_CONFIG: keycloak/verify/provision.config.verify.json
+      LMS_WEB_SECRET__TENANT_A: verify-web-secret-a
+      LMS_WEB_SECRET__TENANT_B: verify-web-secret-b
+      PLATFORM_WEB_SECRET: verify-platform-secret
+      GOOGLE_CLIENT_ID: verify-google-client-id
+      GOOGLE_CLIENT_SECRET: verify-google-client-secret
+      FACEBOOK_CLIENT_ID: verify-facebook-client-id
+      FACEBOOK_CLIENT_SECRET: verify-facebook-client-secret
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Dựng stack Keycloak kiểm chứng
+        run: docker compose -f keycloak/verify/compose.verify.yaml up -d
+
+      - name: Chờ Keycloak sẵn sàng
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8180/realms/master > /dev/null; then
+              echo "Keycloak đã sẵn sàng"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Keycloak không sẵn sàng sau 5 phút"
+          docker compose -f keycloak/verify/compose.verify.yaml logs
+          exit 1
+
+      - name: Chạy bộ kiểm chứng mẫu realm
+        run: node keycloak/verify/verify.mjs
+
+      - name: Dọn stack kiểm chứng
+        if: always()
+        run: docker compose -f keycloak/verify/compose.verify.yaml down -v
