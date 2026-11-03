@@ -275,12 +275,9 @@ trình hiện tại trong tài liệu này.
    đầu, hai lớp chấm song song và độc lập trên chính mã của
    PR; không bên nào được đọc phán quyết hay comment review
    của bên kia trước khi nộp phán quyết lượt đầu của mình.
-   Phán quyết lượt đầu của mỗi lớp được điều phối giữ lại và
-   chỉ đăng lên PR sau khi cả hai lớp đã nộp xong phán quyết
-   lượt đầu của chúng, mỗi phán quyết ghi kèm head SHA của PR
-   mà nó chấm. Sau khi cả hai phán quyết lượt đầu đã được
-   đăng, hai lớp đọc comment của nhau trên PR và đánh giá qua
-   lại tới đồng thuận. Lượt review qua ChatGPT luôn dùng
+   Mỗi lớp tự đăng phán quyết lượt đầu của mình lên PR ngay
+   khi chấm xong, mỗi phán quyết ghi kèm head SHA của PR mà
+   nó chấm. Lượt review qua ChatGPT luôn dùng
    mức reasoning High; sau khi gửi yêu cầu review phải kiểm
    tra lại mức reasoning đang hiệu lực trong chính cuộc trò
    chuyện đó, vì ChatGPT đặt mặc định Medium ở mỗi cuộc trò
@@ -291,18 +288,23 @@ trình hiện tại trong tài liệu này.
    ngay trên chính cuộc trò chuyện đó (chỉnh mức reasoning rồi
    yêu cầu làm lại review tại đó), không mở cuộc trò chuyện
    mới để hỏi lại. Phán quyết đạt ở điểm 2 của mục này là sự
-   đồng thuận đạt của cả hai lớp trên đúng head SHA cuối của
-   PR, thể hiện trên PR: chỉ khi cả hai lớp cùng đồng thuận
-   đạt trên head đó, PR mới chuyển sang trạng thái `chờ merge`
-   và merge theo điểm 2. Mỗi commit mới đẩy lên PR làm cả hai
-   phán quyết hết hiệu lực, hai lớp phải chấm lại phần thay
-   đổi. Mọi finding chặn (mức nghiêm trọng cao) phải về một
+   đồng thuận đạt của cả hai lớp thể hiện trên PR: lớp đã yêu
+   cầu sửa đạt sau khi chấm lại tại head cuối, lớp còn lại
+   giữ nguyên phán quyết đạt của mình; chỉ khi không còn lớp
+   nào giữ phán quyết chưa đạt, PR mới chuyển sang trạng thái
+   `chờ merge` và merge theo điểm 2. Commit sửa đẩy lên PR sau
+   phán quyết không làm phán quyết đạt của lớp còn lại hết
+   hiệu lực; chỉ
+   lớp đã yêu cầu sửa mới chấm lại phần thay đổi. Mọi finding
+   chặn (mức nghiêm trọng cao) phải về một
    trạng thái cuối: đã sửa và được bên nêu kiểm chứng lại;
    hoặc bên nêu tự rút kèm bằng chứng; hoặc chủ repo phân xử
    bằng văn bản trên PR — im lặng không tính là đồng thuận.
    Nếu có điểm chưa đạt từ bất kỳ lớp nào, điều phối cử đội
-   thi công sửa theo các điểm đã nêu trên PR và cả hai lớp
-   chấm lại sau khi sửa. Khi việc của một PR kết thúc, cuộc
+   thi công sửa theo các điểm đã nêu trên PR; sửa xong, chỉ
+   lớp đã nêu điểm chưa đạt đó mới chấm lại phần thay đổi để
+   kiểm chứng finding của chính mình, rồi tự đăng phán quyết
+   chấm lại lên PR. Khi việc của một PR kết thúc, cuộc
    trò chuyện ChatGPT dùng để review PR đó phải được xoá. Lớp
    ChatGPT là review độc lập bên ngoài, không thay thế kiểm
    chứng tại nguồn của đội review nội bộ.
