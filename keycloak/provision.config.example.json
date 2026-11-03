@@ -1,1 +1,1 @@
-{"authBaseUrl":"https://auth.fuckr.net","platform":{"host":"admin.example.edu.vn","realm":"giaokhoa"},"tenants":[{"host":"demo.example.edu.vn","mcpRedirectUris":["http://127.0.0.1:8765/callback"],"mcpResourceUrl":"https://demo.example.edu.vn/mcp","realm":"tenant-demo"}]}
+{"authBaseUrl":"https://auth.fuckr.net","realm":{"host":"giaokhoa.fuckr.net","mcpRedirectUris":["http://127.0.0.1:8765/callback"],"mcpResourceUrl":"https://giaokhoa.fuckr.net/mcp","name":"giaokhoa","organizations":[{"alias":"trung-tam-mau","name":"Trung tâm mẫu"}]}}
