@@ -3,7 +3,9 @@ import * as argon2 from 'argon2';
 import { randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Client } from 'pg';
+import { Client, Pool } from 'pg';
+import { createControlPlaneKysely } from '@lms/db/control-plane';
+import { seedVerifiedSpaceDomain } from '../../support/verified-space-domain';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { emitSpaceRegistryChanged } from '../../../src/db/routing/space-routing-events';
 import { FleetRegistryWriter } from '../../../src/modules/fleet/fleet-registry-writer';
@@ -149,7 +151,6 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
   let centreA: Awaited<ReturnType<typeof runSpaceProvision>>;
   let centreB: Awaited<ReturnType<typeof runSpaceProvision>>;
   let adminAToken = '';
-  let adminBToken = '';
   let teacherId = '';
   // Writer đã đóng trong ca tắt control plane (xem ca cuối) thì
   // afterAll không đóng lại nữa: pg-pool ném lỗi khi end() lần 2.
@@ -172,6 +173,20 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
       databasePassword: DB_PASSWORD, actorId: ACTOR_ID, migrationsDir: MIGRATIONS_DIR, env, log: () => undefined,
     });
     writer = new FleetRegistryWriter(env);
+    const domainPool = new Pool({ connectionString: clusterUrl(CP_DATABASE) });
+    const domainDb = createControlPlaneKysely(domainPool);
+    try {
+      const spaces = await domainDb
+        .selectFrom('space_registry')
+        .select(['id', 'slug'])
+        .where('slug', 'in', [SLUG_A, SLUG_B])
+        .execute();
+      for (const space of spaces) {
+        await seedVerifiedSpaceDomain(domainDb, space.id, space.slug === SLUG_A ? HOST_A : HOST_B);
+      }
+    } finally {
+      await domainDb.destroy();
+    }
 
     // Mirror tenant + membership của quản trị A vào kho chung để
     // luồng cấp token (tra tenant dưới ngữ cảnh platform) gắn được
@@ -275,7 +290,8 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
       .set('Host', HOST_B)
       .send({ username: ADMIN_B_USERNAME, password: STRONG_PASSWORD });
     expect(loginB.status).toBe(201);
-    adminBToken = loginB.body.accessToken;
+    const spaceB = await writer.findSpaceBySlug(SLUG_B);
+    expect(decodeJwtPayload(loginB.body.accessToken).centre_id).toBe(spaceB!.id);
 
     // Token của phiên trung tâm mang claim `centre_id` bằng định danh đăng ký của trung tâm.
     const spaceA = await writer.findSpaceBySlug(SLUG_A);
@@ -367,7 +383,7 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
 
   it('tắt control plane sau khi đã định tuyến thì bề mặt trung tâm vẫn hiển thị đúng nhận diện đã nạp', async () => {
     // Ca cuối cùng của file: xoá hẳn database control plane của ca
-    // test (database dùng một lần của riêng spec này). Từ đây mọi
+    // spec (database dùng một lần của riêng ca này). Từ đây mọi
     // đường cần sổ đăng ký đều hỏng — chứng minh bằng một request
     // nghiệp vụ bị từ chối 401 fail-closed: sổ đăng ký không đọc
     // được nên khung định tuyến ném not_configured, chiến lược JWT

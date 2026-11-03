@@ -52,6 +52,7 @@ interface FakeRequest {
   user?: AuthenticatedUser;
   tenantId?: string;
   spaceSlug?: string;
+  hostname?: string;
   headers: Record<string, string | undefined>;
   [AUTHENTICATED_VIA_BETTER_AUTH]?: boolean;
 }
@@ -59,14 +60,30 @@ interface FakeRequest {
 function makeGuard(options?: {
   target?: ResolvedSpaceConnection;
   resolveError?: Error;
+  lookupError?: Error;
+  listError?: Error;
   platformTenantId?: string;
   isSiteAdmin?: boolean;
   tenantById?: Record<string, { slug: string } | undefined>;
-  /** Dòng domain đã xác minh mà sổ control plane trả cho Host của ca kiểm chứng (undefined = Host không phải domain đã xác minh). */
+  /** Dòng domain đã xác minh thay thế mặc định; có thể đặt tường minh undefined để mô phỏng Host lạ. */
   verifiedDomainRow?: Record<string, unknown> | undefined;
-  /** Danh sách domain đã xác minh của không gian đích (đặt để bật chốt chặn domain của guard). */
+  /** Danh sách domain đã xác minh của không gian đích. */
   verifiedDomainNames?: string[];
 }) {
+  const defaultDomain = {
+    domainId: 'domain-a',
+    domain: HOST_A,
+    domainKind: 'primary',
+    spaceId: DEDICATED_TARGET.spaceId,
+    slug: DEDICATED_TARGET.slug,
+    spaceKind: 'center',
+    spaceStatus: 'active',
+    storageMode: 'dedicated',
+    issuerUrl: 'https://keycloak.example.test/realms/trung-tam-a',
+  };
+  const hasDomainOverride = options !== undefined
+    && Object.prototype.hasOwnProperty.call(options, 'verifiedDomainRow');
+  const domainRow = hasDomainOverride ? options.verifiedDomainRow : defaultDomain;
   const spaceDb = {
     resolveTarget: vi.fn(async () => {
       if (options?.resolveError) throw options.resolveError;
@@ -86,13 +103,17 @@ function makeGuard(options?: {
   const evaluator = {
     isSiteAdmin: vi.fn(async () => options?.isSiteAdmin ?? false),
   };
-  const controlPlane =
-    options?.verifiedDomainRow !== undefined || options?.verifiedDomainNames !== undefined
-      ? {
-          findVerifiedDomainByName: vi.fn(async () => options?.verifiedDomainRow),
-          listVerifiedDomainNamesForSpace: vi.fn(async () => options?.verifiedDomainNames ?? []),
-        }
-      : undefined;
+  const controlPlane = {
+    findVerifiedDomainByName: vi.fn(async (domain: string) => {
+      if (options?.lookupError) throw options.lookupError;
+      return domainRow && domainRow.domain === domain ? domainRow : undefined;
+    }),
+    listVerifiedDomainNamesForSpace: vi.fn(async (spaceId: string) => {
+      if (options?.listError) throw options.listError;
+      if (options?.verifiedDomainNames) return options.verifiedDomainNames;
+      return domainRow && domainRow.spaceId === spaceId ? [String(domainRow.domain)] : [];
+    }),
+  };
   const guard = new SpaceContextGuard(
     spaceDb as unknown as SpaceDatabaseService,
     repo as unknown as TenantsRepository,
@@ -100,10 +121,11 @@ function makeGuard(options?: {
     new Reflector(),
     controlPlane as never,
   );
-  return { guard, spaceDb, repo, evaluator };
+  return { guard, spaceDb, repo, evaluator, controlPlane };
 }
 
 function httpContext(request: FakeRequest): ExecutionContext {
+  request.hostname ??= request.headers.host;
   return {
     getType: () => 'http',
     getHandler: () => httpContextHandler,
@@ -133,27 +155,27 @@ describe('Guard gắn ngữ cảnh trung tâm theo địa chỉ', () => {
 
   it('địa chỉ không mang tên miền con của trung tâm thì cho qua và không phân giải gì', async () => {
     const { guard, spaceDb } = makeGuard();
-    const request: FakeRequest = { headers: { host: 'he-thong.example' } };
+    const request: FakeRequest = { headers: { host: 'localhost' } };
     await expect(guard.canActivate(httpContext(request))).resolves.toBe(true);
     expect(spaceDb.resolveTarget).not.toHaveBeenCalled();
     expect(request.spaceSlug).toBeUndefined();
   });
 
-  it('slug ở địa chỉ chưa có dòng đăng ký thì cho qua như địa chỉ thường, không chuẩn bị kho', async () => {
-    const { guard, spaceDb } = makeGuard({
-      resolveError: new SpaceRoutingError('space_routing.space_not_found', 'not registered'),
-    });
+  it('Host có nhãn slug nhưng không có domain verified bị từ chối, không suy slug để mở kho', async () => {
+    const { guard, spaceDb } = makeGuard({ verifiedDomainRow: undefined });
     const request: FakeRequest = { headers: { host: 'slug-la.he-thong.example' } };
-    await expect(guard.canActivate(httpContext(request))).resolves.toBe(true);
+    const error = await guard.canActivate(httpContext(request)).catch((cause: unknown) => cause);
+    expect(error).toBeInstanceOf(UnauthorizedException);
+    expect((error as UnauthorizedException).getResponse()).toMatchObject({ code: 'space.domain_not_verified' });
+    expect(spaceDb.resolveTarget).not.toHaveBeenCalled();
     expect(spaceDb.getKyselyForSpace).not.toHaveBeenCalled();
   });
 
-  it('tầng định tuyến chưa cấu hình control plane thì cho qua như địa chỉ thường', async () => {
-    const { guard, spaceDb } = makeGuard({
-      resolveError: new SpaceRoutingError('space_routing.not_configured', 'not configured'),
-    });
+  it('domain đã verified nhưng khung định tuyến chưa cấu hình thì lỗi được ném ra, không fallback', async () => {
+    const failure = new SpaceRoutingError('space_routing.not_configured', 'not configured');
+    const { guard, spaceDb } = makeGuard({ resolveError: failure });
     const request: FakeRequest = { headers: { host: HOST_A } };
-    await expect(guard.canActivate(httpContext(request))).resolves.toBe(true);
+    await expect(guard.canActivate(httpContext(request))).rejects.toBe(failure);
     expect(spaceDb.getKyselyForSpace).not.toHaveBeenCalled();
   });
 
@@ -286,8 +308,21 @@ describe('Guard gắn ngữ cảnh trung tâm theo địa chỉ', () => {
     expect(request.spaceSlug).toBe('trung-tam-a');
   });
 
-  it('trung tâm ở kho chung đang hoạt động thì chuẩn bị theo đường kho chung và ghim slug như thường', async () => {
-    const { guard, spaceDb } = makeGuard({ target: SHARED_TARGET });
+  it('domain verified của trung tâm kho chung chọn đúng không gian và chuẩn bị theo đường kho chung', async () => {
+    const { guard, spaceDb } = makeGuard({
+      target: SHARED_TARGET,
+      verifiedDomainRow: {
+        domainId: 'domain-shared',
+        domain: 'truong-mac-dinh.he-thong.example',
+        domainKind: 'primary',
+        spaceId: SHARED_TARGET.spaceId,
+        slug: SHARED_TARGET.slug,
+        spaceKind: 'center',
+        spaceStatus: 'active',
+        storageMode: 'shared',
+        issuerUrl: 'https://keycloak.example.test/realms/truong-mac-dinh',
+      },
+    });
     const request: FakeRequest = {
       headers: { host: 'truong-mac-dinh.he-thong.example' },
       tenantId: 'tenant-truong',
@@ -308,6 +343,77 @@ describe('Guard gắn ngữ cảnh trung tâm theo địa chỉ', () => {
     expect((err as UnauthorizedException).getResponse()).toMatchObject({ code: 'space.domain_not_verified' });
     expect(spaceDb.getKyselyForSpace).not.toHaveBeenCalled();
     expect(request.spaceSlug).toBeUndefined();
+  });
+
+  it('domain verified thắng Host giả ở header thô khi Express trả Host hiệu lực từ proxy tin cậy', async () => {
+    const { guard, spaceDb, controlPlane } = makeGuard({
+      verifiedDomainRow: {
+        domainId: 'domain-proxy',
+        domain: 'truong-a.vn',
+        domainKind: 'primary',
+        spaceId: DEDICATED_TARGET.spaceId,
+        slug: DEDICATED_TARGET.slug,
+        spaceKind: 'center',
+        spaceStatus: 'active',
+        storageMode: 'dedicated',
+        issuerUrl: 'https://keycloak.example.test/realms/trung-tam-a',
+      },
+      verifiedDomainNames: ['truong-a.vn'],
+    });
+    const request: FakeRequest = {
+      hostname: 'truong-a.vn',
+      headers: { host: 'trung-tam-a..attacker.example' },
+    };
+    await expect(guard.canActivate(httpContext(request))).resolves.toBe(true);
+    expect(controlPlane.findVerifiedDomainByName).toHaveBeenCalledWith('truong-a.vn');
+    expect(controlPlane.findVerifiedDomainByName).not.toHaveBeenCalledWith('trung-tam-a..attacker.example');
+    expect(spaceDb.getKyselyForSpace).toHaveBeenCalledWith('trung-tam-a');
+  });
+
+  it('Host sai chuẩn có nhãn slug giả bị từ chối thay vì mở kho theo slug', async () => {
+    const { guard, spaceDb } = makeGuard({ verifiedDomainRow: undefined });
+    const request: FakeRequest = { headers: { host: 'trung-tam-a..attacker.example' } };
+    const error = await guard.canActivate(httpContext(request)).catch((cause: unknown) => cause);
+    expect(error).toBeInstanceOf(UnauthorizedException);
+    expect((error as UnauthorizedException).getResponse()).toMatchObject({ code: 'space.domain_not_verified' });
+    expect(spaceDb.resolveTarget).not.toHaveBeenCalled();
+  });
+
+  it('lỗi truy vấn domain trong control plane làm guard thất bại thay vì coi Host là chưa đăng ký', async () => {
+    const failure = new Error('control plane lookup failed');
+    const { guard, spaceDb } = makeGuard({ lookupError: failure });
+    const request: FakeRequest = { headers: { host: HOST_A } };
+    await expect(guard.canActivate(httpContext(request))).rejects.toBe(failure);
+    expect(spaceDb.resolveTarget).not.toHaveBeenCalled();
+  });
+
+  it('domain verified có issuerUrl null bị từ chối theo kết quả issuer-not-provisioned', async () => {
+    const { guard, spaceDb } = makeGuard({
+      verifiedDomainRow: {
+        domainId: 'domain-pending-issuer',
+        domain: 'realm-chua-cap.vn',
+        domainKind: 'primary',
+        spaceId: DEDICATED_TARGET.spaceId,
+        slug: DEDICATED_TARGET.slug,
+        spaceKind: 'center',
+        spaceStatus: 'active',
+        storageMode: 'dedicated',
+        issuerUrl: null,
+      },
+    });
+    const request: FakeRequest = { headers: { host: 'realm-chua-cap.vn' } };
+    const error = await guard.canActivate(httpContext(request)).catch((cause: unknown) => cause);
+    expect(error).toBeInstanceOf(UnauthorizedException);
+    expect((error as UnauthorizedException).getResponse()).toMatchObject({ code: 'space.issuer_not_provisioned' });
+    expect(spaceDb.resolveTarget).not.toHaveBeenCalled();
+  });
+
+  it('lỗi liệt kê domain verified của không gian cũng làm guard thất bại', async () => {
+    const failure = new Error('verified-domain listing failed');
+    const { guard, spaceDb } = makeGuard({ listError: failure });
+    const request: FakeRequest = { headers: { host: HOST_A } };
+    await expect(guard.canActivate(httpContext(request))).rejects.toBe(failure);
+    expect(spaceDb.resolveTarget).not.toHaveBeenCalled();
   });
 
   it('domain đã xác minh thắng nhãn đầu của Host: domain tuỳ chọn không chứa slug vẫn chọn đúng trung tâm và chuẩn bị kho của nó', async () => {

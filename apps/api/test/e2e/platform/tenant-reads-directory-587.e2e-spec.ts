@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { Client, Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createControlPlaneKysely, type ControlPlaneDb } from '@lms/db/control-plane';
+import { seedVerifiedSpaceDomain } from '../../support/verified-space-domain';
 import { emitSpaceRegistryChanged } from '../../../src/db/routing/space-routing-events';
 import { SpaceDatabaseService } from '../../../src/db/routing/space-database.service';
 import { CAP_ALLOW } from '../../../src/modules/access/domain/permission';
@@ -258,7 +259,7 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
     // Dòng đăng ký kho riêng trong sổ, ghi trước khi ứng dụng
     // khởi động như spec Phần A.
     await withCpDb(async (cpDb) => {
-      await cpDb.insertInto('space_registry').values([
+      const [space] = await cpDb.insertInto('space_registry').values([
         {
           slug: CENTRE_SLUG,
           name: 'Trung tâm TĐ3',
@@ -270,7 +271,8 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
           secret_ref: 'env:SPACE_TEST_TD3_URL',
           schema_version: 'v1',
         },
-      ]).execute();
+      ]).returning('id').execute();
+      await seedVerifiedSpaceDomain(cpDb, space!.id, HOST);
     });
 
     app = await createTestApp();

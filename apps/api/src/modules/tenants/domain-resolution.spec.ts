@@ -4,6 +4,7 @@ import {
   effectiveRequestHost,
   findVerifiedSpaceForHost,
   isHostVerifiedForSpace,
+  isLocalDevelopmentHost,
   normalizeRequestHost,
   resolveSpaceByVerifiedDomain,
   type VerifiedDomainEntry,
@@ -94,6 +95,18 @@ describe('Chuẩn hoá Host của request', () => {
     expect(normalizeRequestHost(null)).toBeNull();
     expect(normalizeRequestHost('')).toBeNull();
     expect(normalizeRequestHost('   ')).toBeNull();
+  });
+});
+
+describe('Host phát triển cục bộ', () => {
+  it('chỉ loopback chính xác được miễn tra cứu domain; suffix localhost giả bị từ chối', () => {
+    expect(isLocalDevelopmentHost('localhost')).toBe(true);
+    expect(isLocalDevelopmentHost('127.0.0.1')).toBe(true);
+    expect(isLocalDevelopmentHost('::1')).toBe(true);
+    expect(isLocalDevelopmentHost('[::1]')).toBe(true);
+    expect(isLocalDevelopmentHost('trung-tam-a.localhost')).toBe(false);
+    expect(isLocalDevelopmentHost('trung-tam-a..localhost')).toBe(false);
+    expect(isLocalDevelopmentHost('localhost.attacker.example')).toBe(false);
   });
 });
 
@@ -263,11 +276,19 @@ describe('Chốt chặn domain đã xác minh cho guard', () => {
     await expect(isHostVerifiedForSpace('a.giaokhoa.vn', 'space-a', guardLookup)).resolves.toBe(true);
   });
 
-  it('trung tâm chưa có domain xác minh nào thì chốt chặn cho qua đường slug chuyển tiếp', async () => {
+  it('không gian chưa có domain verified thì Host slug không được chấp nhận làm đường chuyển tiếp', async () => {
     const guardLookup = {
       findVerifiedDomain: fakeLookup(CENTRE_DOMAINS),
       listVerifiedDomainNamesForSpace: async () => [],
     };
-    await expect(isHostVerifiedForSpace('trung-tam-a.test.local', 'space-a', guardLookup)).resolves.toBe(true);
+    await expect(isHostVerifiedForSpace('trung-tam-a.test.local', 'space-a', guardLookup)).resolves.toBe(false);
+  });
+
+  it('Host không chuẩn hoá được luôn bị từ chối dù không gian có domain verified', async () => {
+    const guardLookup = {
+      findVerifiedDomain: fakeLookup(CENTRE_DOMAINS),
+      listVerifiedDomainNamesForSpace: async () => ['trung-tam-a.giaokhoa.vn'],
+    };
+    await expect(isHostVerifiedForSpace('trung-tam-a..attacker.example', 'space-a', guardLookup)).resolves.toBe(false);
   });
 });

@@ -26,12 +26,10 @@ import type { ControlPlaneRepository } from '@lms/db/repositories/control-plane'
  *    không gian platform.
  *
  * @remarks
- * Module này là thành phần phân giải thuần: chuỗi xác thực của
- * issue #7 sẽ gọi nó ở đầu request đã xác thực. Đường định tuyến
- * theo slug hiện hành (`space-resolution.ts`) vẫn là đường sống
- * cho tới khi chuỗi đó được nối — hai bộ phân giải phục vụ hai
- * việc khác nhau (định tuyến kho và chọn realm/issuer), không thay
- * thế nhau trong issue này.
+ * Hai guard của request gọi resolver này trước khi chọn tenant hoặc
+ * chuẩn bị kho. `space-resolution.ts` chỉ còn cung cấp hàm nhận diện
+ * hình dạng subdomain để từ chối Host giả; không còn là nguồn chọn
+ * slug hay đường fallback khi domain chưa verified.
  */
 
 /**
@@ -151,6 +149,24 @@ export function effectiveRequestHost(req: Pick<{ hostname?: string }, 'hostname'
 }
 
 /**
+ * Nhận diện các Host loopback chỉ phục vụ chạy ứng dụng cục bộ.
+ * Chúng không chọn không gian theo domain và giữ đường phát triển
+ * mặc định; mọi Host DNS thông thường vẫn phải có dòng verified
+ * trong control plane trước khi được chọn tenant/platform.
+ *
+ * @param host - Host hiệu lực lấy từ Express.
+ * @returns `true` chỉ cho localhost và loopback IPv4/IPv6.
+ */
+export function isLocalDevelopmentHost(host: string | undefined | null): boolean {
+  if (!host) return false;
+  const candidate = host.trim().toLowerCase();
+  return candidate === 'localhost'
+    || candidate === '127.0.0.1'
+    || candidate === '::1'
+    || candidate === '[::1]';
+}
+
+/**
  * Phân giải một Host thành không gian + issuer cố định, hoặc từ
  * chối có lý do. Phép tra cứu là khớp tuyệt đối trên domain
  * canonical: một Host như `tenant.example.com.evil.com` hay
@@ -171,8 +187,8 @@ export async function resolveSpaceByVerifiedDomain(
   if (!domain) return { kind: 'rejected', reason: 'invalid-host' };
   const entry = await lookup(domain);
   if (!entry) return { kind: 'rejected', reason: 'unknown-host' };
-  if (entry.spaceStatus !== 'active') return { kind: 'rejected', reason: 'space-not-active' };
   if (!entry.issuerUrl) return { kind: 'rejected', reason: 'issuer-not-provisioned' };
+  if (entry.spaceStatus !== 'active') return { kind: 'rejected', reason: 'space-not-active' };
   return {
     kind: 'resolved',
     domain: entry.domain,
@@ -185,32 +201,17 @@ export async function resolveSpaceByVerifiedDomain(
 }
 
 /**
- * Chốt chặn domain đã xác minh cho hai guard (vòng sửa PR #25):
- * đường lựa chọn tenant/space thực tế không được chỉ suy slug từ
- * nhãn đầu của Host rồi rơi về kho chung/platform khi slug không
- * khớp — Host lạ mượn nhãn slug (ví dụ `trung-tam-a.evil.com`
- * mượn slug `trung-tam-a`) phải bị từ chối thay vì được chọn vào
- * không gian đó.
+ * Resolver domain là nguồn sự thật duy nhất để guard chọn không gian.
+ * Guard không dùng slug trích từ Host để chọn tenant: nhãn đầu chỉ
+ * được dùng để nhận diện Host có hình dạng subdomain cần từ chối
+ * khi không khớp sổ. Host sai hình dạng, Host lạ, suffix giả, không
+ * gian chưa có domain verified và không gian chưa cấp issuer đều
+ * không được rơi về slug, tenant-zero hay kho chung.
  *
- * Luật áp cho guard, gồm hai bước nối tiếp nhau:
- * 1. Host khớp tuyệt đối một domain đã xác minh → không gian của
- *    domain đó thắng đường slug cũ: slug dùng cho các bước sau là
- *    slug của không gian đã xác minh (domain tuỳ chọn không chứa
- *    slug vẫn chọn đúng không gian).
- * 2. Host không khớp domain nào nhưng không gian đích (phân giải
- *    theo slug cũ) ĐÃ có ít nhất một domain xác minh → Host bị từ
- *    chối, vì trung tâm đó đã hoàn tất đăng ký domain và mọi địa
- *    chỉ hợp lệ của nó đều nằm trong sổ. Không gian chưa có domain
- *    xác minh nào thì giữ đường slug chuyển tiếp — đó là cửa sổ di
- *    trú của các trung tâm chưa đăng ký domain, và các suite hiện
- *    hành (địa chỉ `<slug>.test.local`) vẫn chạy trên cửa sổ này.
- *    Trong mọi trường hợp, Host bị từ chối ở đây đều không rơi về
- *    platform hay kho chung: guard ném lỗi ra thay vì cho qua.
- *
- * @remarks Cổng tra cứu control plane có thể chưa cấu hình (lỗi
- *   ném ra khi gọi): tầng gọi coi đó là "không có dữ liệu xác
- *   minh" và giữ đường slug cũ như trước, giống hợp đồng "chưa cấu
- *   hình thì app chạy như trước" của khung định tuyến.
+ * Resolver phải được gọi trước khi mở kho. Chỉ kết quả `resolved`
+ * mới cung cấp slug và spaceId; mọi kết quả `rejected` là quyết định
+ * từ chối có lý do. Lỗi đọc control plane được ném nguyên trạng để
+ * guard fail-closed, tuyệt đối không chuyển thành "không có dữ liệu".
  */
 
 /** Cổng tra cứu domain đã xác minh mà hai guard dùng, kèm danh sách domain của một không gian. */
@@ -239,14 +240,15 @@ export async function findVerifiedSpaceForHost(
 }
 
 /**
- * Chốt chặn bước 2 cho guard: sau khi không gian đích đã phân giải
- * xong, Host tại địa chỉ của nó phải là một domain đã xác minh của
- * chính không gian đó nếu không gian đã có domain xác minh.
+ * Chốt kiểm tra Host cuối cho guard: Host phải chuẩn hoá được và
+ * phải nằm trong danh sách domain verified của chính không gian.
+ * Danh sách rỗng không phải cửa sổ fallback — không gian chưa đăng
+ * ký domain verified không được chọn bằng slug.
  *
  * @param host - Host thô của request.
  * @param spaceId - Định danh đăng ký của không gian đích.
  * @param lookup - Cổng tra cứu của guard.
- * @returns `true` khi Host qua được chốt chặn; `false` khi Host phải bị từ chối (trung tâm đã có domain xác minh mà Host không nằm trong số đó).
+ * @returns `true` chỉ khi Host chuẩn hoá được và nằm trong danh sách domain verified; `false` cho Host sai hình dạng hoặc không gian chưa có domain verified.
  */
 export async function isHostVerifiedForSpace(
   host: string | string[] | undefined | null,
@@ -255,9 +257,8 @@ export async function isHostVerifiedForSpace(
 ): Promise<boolean> {
   const header = Array.isArray(host) ? host[0] : host;
   const domain = normalizeRequestHost(header);
-  if (!domain) return true;
+  if (!domain) return false;
   const verifiedDomains = await lookup.listVerifiedDomainNamesForSpace(spaceId);
-  if (verifiedDomains.length === 0) return true;
   return verifiedDomains.includes(domain);
 }
 

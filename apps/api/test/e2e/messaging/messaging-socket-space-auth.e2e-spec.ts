@@ -9,6 +9,7 @@ import { Client, Pool } from 'pg';
 import { io, type Socket } from 'socket.io-client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createControlPlaneKysely } from '@lms/db/control-plane';
+import { seedVerifiedSpaceDomain } from '../../support/verified-space-domain';
 
 /**
  * Better Auth phải bật ngay từ lúc AppModule được import (khuôn của
@@ -362,7 +363,7 @@ describe('Socket realtime tại địa chỉ trung tâm ở kho riêng (đầu-c
     const cpPool = new Pool({ connectionString: clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD) });
     const cpDb = createControlPlaneKysely(cpPool);
     try {
-      await cpDb.insertInto('space_registry').values([
+      const [space] = await cpDb.insertInto('space_registry').values([
         {
           slug: CENTRE_SLUG,
           name: 'Trung tâm socket 587',
@@ -374,7 +375,8 @@ describe('Socket realtime tại địa chỉ trung tâm ở kho riêng (đầu-c
           secret_ref: 'env:SPACE_TEST_SOCK587_URL',
           schema_version: 'v1',
         },
-      ]).execute();
+      ]).returning('id').execute();
+      await seedVerifiedSpaceDomain(cpDb, space!.id, HOST);
     } finally {
       await cpDb.destroy();
     }
@@ -440,12 +442,12 @@ describe('Socket realtime tại địa chỉ trung tâm ở kho riêng (đầu-c
     const conv = await helpers.http(app).post('/api/v1/messages/conversations')
       .set(auth(adminToken))
       .send({ type: 2, memberIds: [memberAId, memberBId], name: 'Nhóm kho riêng 587' });
-    expect(conv.status).toBe(201);
+    if (conv.status !== 201) throw new Error(`Create conversation failed: ${conv.status}`);
     convId = (conv.body as { id: string }).id;
     const sent = await helpers.http(app).post(`/api/v1/messages/conversations/${convId}/messages`)
       .set(auth(tokenWithClaim))
       .send({ text: MESSAGE_TEXT });
-    expect(sent.status).toBe(201);
+    if (sent.status !== 201) throw new Error(`Send conversation message failed: ${sent.status}`);
     // Hội thoại do quản trị tạo nên mang tenant của trang chính;
     // kho đích phải có dòng tenant mà dữ kiện của nó tham chiếu
     // (FK duy nhất của bảng hội thoại) trước khi sao hội thoại.
@@ -561,6 +563,7 @@ describe('Socket realtime tại địa chỉ trung tâm ở kho riêng (đầu-c
   it('phiên chỉ tồn tại ở kho chung mang tới địa chỉ trung tâm kho riêng bị ngắt kết nối', async () => {
     const socket = centreSocket({ cookieToken: sessionTokenSharedOnly });
     await awaitRejected(socket);
+    expect(socket.connected).toBe(false);
     socket.disconnect();
   });
 
@@ -571,12 +574,14 @@ describe('Socket realtime tại địa chỉ trung tâm ở kho riêng (đầu-c
     );
     await awaitConnected(socket);
     await snapshot;
+    expect(socket.connected).toBe(true);
     socket.disconnect();
   });
 
   it('token cũ không mang claim của tài khoản chỉ ở kho riêng bị ngắt tại địa chỉ trung tâm (cổng 1a)', async () => {
     const socket = centreSocket({ token: tokenWithoutClaim });
     await awaitRejected(socket);
+    expect(socket.connected).toBe(false);
     socket.disconnect();
   });
 });

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { Client, Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createControlPlaneKysely } from '@lms/db/control-plane';
+import { seedVerifiedSpaceDomain } from '../../support/verified-space-domain';
 import { emitSpaceRegistryChanged } from '../../../src/db/routing/space-routing-events';
 import {
   STRONG_PASSWORD,
@@ -295,6 +296,14 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
         .returning(['id', 'slug'])
         .execute();
       registryAId = inserted.find((row) => row.slug === CENTRE_A_SLUG)!.id;
+      await seedVerifiedSpaceDomain(cpDb, registryAId, HOST_A);
+      await seedVerifiedSpaceDomain(cpDb, inserted.find((row) => row.slug === CENTRE_B_SLUG)!.id, HOST_B);
+      const shared = await cpDb
+        .selectFrom('space_registry')
+        .select('id')
+        .where('slug', '=', SHARED_SLUG)
+        .executeTakeFirstOrThrow();
+      await seedVerifiedSpaceDomain(cpDb, shared.id, HOST_SHARED);
     } finally {
       await cpDb.destroy();
     }
@@ -433,6 +442,43 @@ describe('Định tuyến theo trung tâm ở tầng API (đầu-cuối)', () =>
     // không có kết nối nào — request bị từ chối không chạm được
     // vào kho của trung tâm tại địa chỉ.
     expect(await countConnections(CENTRE_B_DATABASE, CENTRE_B_ROLE)).toBe(0);
+  });
+
+  it('Host suffix sai hình dạng hoặc domain chưa đăng ký không thể chọn trung tâm bằng slug', async () => {
+    const malformed = await http(app)
+      .get('/api/v1/users/me')
+      .set('Host', `${CENTRE_A_SLUG}..attacker.example`)
+      .set(auth(teacherTokenA));
+    expect(malformed.status).toBe(401);
+    expect((malformed.body as { code?: string }).code).toBe('space.domain_not_verified');
+
+    const unknown = await http(app)
+      .get('/api/v1/users/me')
+      .set('Host', `${CENTRE_A_SLUG}.test.local.attacker.example`)
+      .set(auth(teacherTokenA));
+    expect(unknown.status).toBe(401);
+    expect((unknown.body as { code?: string }).code).toBe('space.domain_not_verified');
+  });
+
+  it('domain verified có issuer_url null bị từ chối theo issuer-not-provisioned, không fallback tenant-zero', async () => {
+    let issuerUrl: string | null = null;
+    await withClient(clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD), async (client) => {
+      const row = await client.query<{ issuer_url: string | null }>(
+        'SELECT issuer_url FROM space_registry WHERE slug = $1',
+        [CENTRE_A_SLUG],
+      );
+      issuerUrl = row.rows[0]!.issuer_url;
+      await client.query('UPDATE space_registry SET issuer_url = NULL WHERE slug = $1', [CENTRE_A_SLUG]);
+    });
+    try {
+      const blocked = await http(app).get('/api/v1/users/me').set('Host', HOST_A).set(auth(teacherTokenA));
+      expect(blocked.status).toBe(401);
+      expect((blocked.body as { code?: string }).code).toBe('space.issuer_not_provisioned');
+    } finally {
+      await withClient(clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD), async (client) => {
+        await client.query('UPDATE space_registry SET issuer_url = $1 WHERE slug = $2', [issuerUrl, CENTRE_A_SLUG]);
+      });
+    }
   });
 
   it('đăng nhập tại địa chỉ của trung tâm A tạo family refresh trong kho A chứ không ở kho chung, và hồ sơ đọc tại địa chỉ A mang dữ kiện của kho A', async () => {

@@ -183,8 +183,8 @@ async function countPublic(dbUrl: string, kind: 'tables' | 'policies' | 'indexes
       );
       return result.rows[0].n as number;
     }
-    // Cùng cơ số đo với hậu kiểm của package (mốc 417): chỉ index
-    // không đỡ ràng buộc PK/UNIQUE.
+    // Cùng cơ số đo với hậu kiểm: chỉ index không đỡ ràng buộc
+    // PK/UNIQUE (mốc centre 417, control-plane 10).
     const result = await client.query(
       `SELECT count(*)::int AS n FROM pg_index i
        JOIN pg_class ic ON ic.oid = i.indexrelid
@@ -316,6 +316,8 @@ describe('bộ máy migration của package cho ba kho', () => {
       expect(await registryCreatedAtDefault(prodUrl)).toContain('clock_timestamp()');
       const verified = await verifyStore(db, 'control-plane');
       expect(verified.ok).toBe(true);
+      expect(verified.indexes).toBe(10);
+      expect(await countPublic(prodUrl, 'indexes')).toBe(10);
 
       // Chạy lại toàn trình trên database đã áp đủ: no-op sạch.
       const again = await migrator.migrateToLatest();

@@ -14,14 +14,16 @@ import { SpaceRoutingError, type ResolvedSpaceConnection } from '../../db/routin
 import { SpaceDatabaseService } from '../../db/routing/space-database.service';
 import { PermissionEvaluator } from '../access/permission-evaluator.service';
 import { SKIP_SPACE_CONTEXT_KEY } from './skip-space-context.decorator';
-import { extractSpaceSlugFromHost } from './space-resolution';
 import { tenantAls } from './tenant-als';
 import { TenantsRepository } from '@lms/db/repositories/tenants';
 import { ControlPlaneRepository } from '@lms/db/repositories/control-plane';
 import {
   createVerifiedDomainLookup,
+  effectiveRequestHost,
   findVerifiedSpaceForHost,
   isHostVerifiedForSpace,
+  isLocalDevelopmentHost,
+  resolveSpaceByVerifiedDomain,
   type VerifiedDomainGuardLookup,
 } from './domain-resolution';
 
@@ -31,24 +33,15 @@ import {
  * được kiểm chứng và ghim ở `request.tenantId`) và trước
  * `CapabilityGuard`, theo chuỗi bước sau:
  *
- * 1. Trích slug ứng viên từ địa chỉ (`Host`) của request theo quy
- *    ước tên miền con (xem `space-resolution.ts`). Địa chỉ không
- *    mang trung tâm → request đi đúng đường hiện tại, guard không
- *    chạm gì thêm.
- * 2. Phân giải ứng viên qua khung định tuyến (bộ đệm của khung đọc
- *    sổ đăng ký control plane). Slug chưa đăng ký → địa chỉ không
- *    thuộc trung tâm nào trong sổ: request vẫn đi đường hiện tại.
- *    Tầng định tuyến chưa được cấu hình (không có control plane)
- *    thì cho qua như địa chỉ thường KHI phiên không mang claim
- *    `centre_id` — giữ hợp đồng "chưa cấu hình thì app chạy như
- *    trước" của đợt khung; NHƯNG phiên mang claim `centre_id` là
- *    bằng chứng traffic thuộc trung tâm kho riêng, nên ở trường
- *    hợp đó tầng chưa cấu hình là lỗi vận hành ở deployment đang
- *    phục vụ kho riêng và guard fail-closed (ném lỗi ra) thay vì
- *    cho qua lặng lẽ. Mọi lỗi phân giải còn lại (bí mật/role của
- *    kho riêng lệch sổ) là lỗi cấu hình vận hành: ném ra nguyên
- *    trạng, fail-closed, thay vì im lặng phục vụ request bằng kho
- *    chung.
+ * 1. Lấy Host hiệu lực từ `req.hostname` qua
+ *    `effectiveRequestHost`; Express chỉ dùng forwarded host khi
+ *    proxy tương ứng được cấu hình tin cậy.
+ * 2. Phân giải khớp tuyệt đối qua sổ control plane bằng
+ *    `resolveSpaceByVerifiedDomain`. Chỉ kết quả `resolved` mới
+ *    cung cấp slug/spaceId; Host lạ, Host sai hình dạng, domain chưa
+ *    verified, không gian chưa active hoặc chưa cấp issuer đều bị
+ *    từ chối. Không suy slug để chọn tenant và không fallback sang
+ *    tenant-zero/kho chung khi resolver hoặc control plane lỗi.
  * 3. Đường vận hành platform tường minh được miễn toàn bộ các bước
  *    sau: request mà tenant hiệu lực là tenant platform
  *    (tenant-zero) và người dùng là quản trị viên của site chính
@@ -100,12 +93,10 @@ export class SpaceContextGuard implements CanActivate {
     private readonly repo: TenantsRepository,
     private readonly evaluator: PermissionEvaluator,
     private readonly reflector: Reflector,
-    // Sổ domain đã xác minh (vòng sửa PR #25): tham số tuỳ chọn để
-    // các test đơn vị cũ dựng guard không cần control plane vẫn chạy
-    // đường slug cũ; khi có sổ, guard phải qua chốt chặn domain
-    // trước khi ghim trung tâm (xem `domain-resolution.ts`).
-    // TenantsModule đã import ControlPlaneModule nên runtime Nest
-    // luôn cấp được provider này.
+    // Sổ domain đã xác minh là nguồn sự thật để chọn không gian.
+    // TenantsModule import ControlPlaneModule nên runtime Nest luôn
+    // cấp provider; nếu provider vắng mặt, Host có hình dạng
+    // subdomain vẫn bị từ chối thay vì quay lại suy slug.
     @Optional()
     @Inject(ControlPlaneRepository)
     private readonly controlPlane?: Pick<
@@ -115,17 +106,19 @@ export class SpaceContextGuard implements CanActivate {
   ) {}
 
   /**
-   * Cổng tra cứu domain đã xác minh của guard, hoặc `undefined` khi
-   * control plane chưa được cấp/cấu hình — khi đó guard giữ đường
-   * slug cũ như trước. Lỗi tra cứu ở đây được nuốt về `undefined` ở
-   * điểm gọi, không ném ra ngoài.
+   * Dựng cổng tra cứu domain đã xác minh từ repository control plane.
+   * Không bắt lỗi tại adapter: lỗi kết nối/SQL phải đi tới guard và
+   * làm request thất bại, không được biến thành Host chưa đăng ký.
+   *
+   * @returns Cổng tra cứu, hoặc `undefined` khi provider không được cấp.
    */
   private verifiedDomainLookup(): VerifiedDomainGuardLookup | undefined {
-    if (!this.controlPlane) return undefined;
+    const controlPlane = this.controlPlane;
+    if (!controlPlane) return undefined;
     return {
-      findVerifiedDomain: createVerifiedDomainLookup(this.controlPlane),
+      findVerifiedDomain: createVerifiedDomainLookup(controlPlane),
       listVerifiedDomainNamesForSpace: (spaceId: string) =>
-        this.controlPlane!.listVerifiedDomainNamesForSpace(spaceId),
+        controlPlane.listVerifiedDomainNamesForSpace(spaceId),
     };
   }
 
@@ -146,94 +139,93 @@ export class SpaceContextGuard implements CanActivate {
       user?: AuthenticatedUser;
       tenantId?: string;
       spaceSlug?: string;
+      hostname?: string;
       headers: Record<string, string | string[] | undefined>;
       [AUTHENTICATED_VIA_BETTER_AUTH]?: boolean;
     }>();
-    const hostHeader = request.headers?.host;
-    // Chốt chặn domain đã xác minh (vòng sửa PR #25, xem
-    // `domain-resolution.ts`): Host khớp domain đã xác minh thì slug
-    // của không gian đó thắng nhãn đầu của Host; Host còn lại đi
-    // đường slug cũ, nhưng chốt chặn ở dưới (sau khi phân giải đích)
-    // sẽ từ chối Host mượn nhãn slug của trung tâm đã có domain xác
-    // minh — không cho qua lặng lẽ như địa chỉ thường.
+    const host = effectiveRequestHost(request);
     const verifiedLookup = this.verifiedDomainLookup();
-    let verifiedSpace: Awaited<ReturnType<typeof findVerifiedSpaceForHost>> | undefined;
-    if (verifiedLookup) {
-      try {
-        verifiedSpace = await findVerifiedSpaceForHost(hostHeader, verifiedLookup.findVerifiedDomain);
-      } catch {
-        verifiedSpace = undefined;
-      }
+    if (!verifiedLookup) {
+      if (isLocalDevelopmentHost(host)) return true;
+      throw new UnauthorizedException({
+        message: 'The verified-domain registry is required to select a space',
+        code: 'space.domain_registry_unavailable',
+      });
     }
-    const slug = verifiedSpace?.slug
-      ?? extractSpaceSlugFromHost(Array.isArray(hostHeader) ? hostHeader[0] : hostHeader);
-    if (!slug) return true;
+
+    const isPlatformExempt = async (): Promise<boolean> =>
+      tenantAls.run({ platform: true }, async () => {
+        const user = request.user;
+        if (!user || !request.tenantId) return false;
+        const platformTenant = await this.repo.getPlatformTenant();
+        if (!platformTenant || request.tenantId !== platformTenant.id) return false;
+        return this.evaluator.isSiteAdmin(user.id);
+      });
+
+    // Resolver là cổng chọn không gian duy nhất. Lỗi truy vấn không
+    // được bắt ở đây: lỗi DB/control plane phải làm request thất bại.
+    const resolution = await resolveSpaceByVerifiedDomain(host, verifiedLookup.findVerifiedDomain);
+    if (resolution.kind === 'rejected') {
+      if (resolution.reason === 'issuer-not-provisioned') {
+        throw new UnauthorizedException({
+          message: 'The verified space has no provisioned issuer',
+          code: 'space.issuer_not_provisioned',
+        });
+      }
+      if (resolution.reason === 'space-not-active') {
+        // Platform operator vẫn phải xử lý được trung tâm bị đình
+        // chỉ, nhưng chỉ trên domain đã xác minh và issuer đã cấp.
+        const entry = await findVerifiedSpaceForHost(host, verifiedLookup.findVerifiedDomain);
+        if (!entry || !(await isHostVerifiedForSpace(host, entry.spaceId, verifiedLookup))) {
+          throw new UnauthorizedException({
+            message: 'Host is not a verified domain of the space selected by the registry',
+            code: 'space.domain_not_verified',
+          });
+        }
+        if (await isPlatformExempt()) return true;
+        throw new ForbiddenException({
+          message: 'The verified space is not active',
+          code: 'space.not_active',
+        });
+      }
+      // Chỉ loopback phục vụ phát triển cục bộ được đi đường mặc
+      // định. Mọi Host DNS chưa khớp tuyệt đối đều bị từ chối, kể cả
+      // Host gốc không mang nhãn subdomain.
+      if (resolution.reason === 'invalid-host' && isLocalDevelopmentHost(host)) return true;
+      throw new UnauthorizedException({
+        message: 'Host is not a verified domain of any space',
+        code: 'space.domain_not_verified',
+      });
+    }
+
+    const slug = resolution.slug;
+    if (!(await isHostVerifiedForSpace(host, resolution.spaceId, verifiedLookup))) {
+      throw new UnauthorizedException({
+        message: 'Host is not a verified domain of the space selected by the registry',
+        code: 'space.domain_not_verified',
+      });
+    }
 
     let target: ResolvedSpaceConnection;
     try {
       target = await this.spaceDb.resolveTarget(slug);
     } catch (err) {
       if (err instanceof SpaceRoutingError && err.code === 'space_routing.space_not_found') {
-        // Domain đã xác minh thì sổ đăng ký phải có dòng không gian
-        // tương ứng (khoá ngoại): không tìm thấy đích là trạng thái
-        // lệch sổ, phải fail-closed thay vì cho qua như địa chỉ
-        // thường của đường slug cũ.
-        if (verifiedSpace) {
-          throw new UnauthorizedException({
-            message: 'Verified domain has no registered space',
-            code: 'space.not_found',
-          });
-        }
-        return true;
-      }
-      if (err instanceof SpaceRoutingError && err.code === 'space_routing.not_configured') {
-        // Phiên mang claim `centre_id` là bằng chứng traffic thuộc
-        // trung tâm kho riêng: tầng định tuyến chưa cấu hình ở
-        // deployment đang phục vụ kho riêng là lỗi vận hành, phải
-        // fail-closed thay vì cho qua lặng lẽ sang kho chung.
-        // Phiên không mang claim giữ hợp đồng "chưa cấu hình thì
-        // app chạy như trước" của đợt khung.
-        if (request.user?.centreId !== undefined) {
-          throw err;
-        }
-        return true;
+        throw new UnauthorizedException({
+          message: 'Verified domain has no registered space',
+          code: 'space.not_found',
+        });
       }
       throw err;
     }
-
-    // Chốt chặn domain (bước 2, trước cả miễn trừ vận hành
-    // platform): trung tâm đã có domain xác minh mà Host không nằm
-    // trong số đó thì bị từ chối ngay — miễn trừ platform chỉ miễn
-    // trạng thái trung tâm và đối chiếu token, không miễn tính xác
-    // thực của địa chỉ. Không gian chưa có domain xác minh nào thì
-    // chốt chặn cho qua đường slug chuyển tiếp như cũ.
-    if (verifiedLookup) {
-      let verified = true;
-      try {
-        verified = await isHostVerifiedForSpace(hostHeader, target.spaceId, verifiedLookup);
-      } catch {
-        verified = true;
-      }
-      if (!verified) {
-        throw new UnauthorizedException({
-          message: 'Host is not a verified domain of the centre at this address',
-          code: 'space.domain_not_verified',
-        });
-      }
+    if (target.spaceId !== resolution.spaceId) {
+      throw new UnauthorizedException({
+        message: 'The verified domain and routing registry identify different spaces',
+        code: 'space.registry_mismatch',
+      });
     }
 
-    // Các tra cứu phục vụ quyết định miễn trừ chạy trong ngữ cảnh
-    // platform tường minh như chính TenantGuard: ngoài ngữ cảnh
-    // platform, RLS fail-closed giấu các dòng tenant/membership
-    // của trung tâm khác.
-    const platformExempt = await tenantAls.run({ platform: true }, async () => {
-      const user = request.user;
-      if (!user || !request.tenantId) return false;
-      const platformTenant = await this.repo.getPlatformTenant();
-      if (!platformTenant || request.tenantId !== platformTenant.id) return false;
-      return this.evaluator.isSiteAdmin(user.id);
-    });
-    if (platformExempt) return true;
+    if (await isPlatformExempt()) return true;
 
     if (target.status !== 'active') {
       throw new ForbiddenException({

@@ -14,9 +14,9 @@
  * hàng hệ thống 10 bảng). Migration native của issue #5 cộng một
  * bảng cho kho trung tâm (`identity_links`, kèm một policy RLS và
  * một index tường minh dẫn đầu bằng FK `tenant_id`) và một bảng
- * cho control plane (`space_domains`), nên mốc hiện hành là:
- * trung tâm 203 bảng + 22 policy RLS + 417 index + 2 dòng nhật ký,
- * control plane 7 bảng + 4 dòng nhật ký.
+ * cho control plane (`space_domains`). Index được hậu kiểm theo
+ * từng kho: trung tâm 203 bảng + 22 policy RLS + 417 index + 2 dòng
+ * nhật ký; control plane 7 bảng + 10 index + 4 dòng nhật ký.
  */
 import { sql, type Kysely } from 'kysely';
 
@@ -79,7 +79,7 @@ export const MIGRATION_STORES: Record<MigrationStoreKey, MigrationStore> = {
   'control-plane': {
     migrationsDirName: 'control-plane',
     carrierNames: ['20261030132145_zippy_impossible_man', '20261101061412_melodic_jubilee'],
-    expected: { tables: 7, journalRows: 4 },
+    expected: { tables: 7, indexes: 10, journalRows: 4 },
     connectionEnvVars: ['CONTROL_PLANE_DATABASE_URL'],
   },
   'system-bank': {

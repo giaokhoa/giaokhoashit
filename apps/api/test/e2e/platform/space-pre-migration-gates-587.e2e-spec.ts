@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { Client, Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createControlPlaneKysely } from '@lms/db/control-plane';
+import { seedVerifiedSpaceDomain } from '../../support/verified-space-domain';
 
 /**
  * Better Auth phải bật ngay từ lúc AppModule được import (ConfigModule
@@ -369,6 +370,7 @@ describe('Các cổng tiền di trú ở kho riêng (đầu-cuối, issue #587)'
         .returning('id')
         .execute();
       registryAId = inserted[0]!.id;
+      await seedVerifiedSpaceDomain(cpDb, registryAId, HOST_A);
     } finally {
       await cpDb.destroy();
     }

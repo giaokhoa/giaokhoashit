@@ -11,16 +11,14 @@
  *   không phải bảng nghiệp vụ, và không có mặt trong số đếm của
  *   đường cũ trước chuyển đổi nên phải loại ra thì đối chiếu mới khớp.
  * - Policy RLS: đếm trong schema `public`, cũng loại đối tượng
- *   thuộc hai bảng nhật ký; chỉ kiểm khi kho có kỳ vọng (kho
- *   trung tâm — hai kho còn lại nghiệm thu chỉ cần số bảng và số
- *   dòng nhật ký).
- * - Index: đếm trên CÙNG cơ số đo với mốc kỳ vọng của phương án —
- *   chỉ các index KHÔNG đỡ ràng buộc (không phải index sinh tự
- *   động cho PRIMARY KEY/UNIQUE): mốc 417 của kho trung tâm đo
- *   trên cơ số này (tổng index trong `pg_indexes` là 733 vì cộng
- *   316 index đỡ ràng buộc; các index đỡ ràng buộc sinh tất định
- *   theo bảng/ràng buộc nên được kiểm gián tiếp qua số bảng và đối
- *   chiếu schema, đếm tách ở đây chỉ làm nhiễu cổng).
+ *   thuộc hai bảng nhật ký; chỉ kiểm khi kho có kỳ vọng (kho trung
+ *   tâm).
+ * - Index: đếm trên cùng cơ số ở mọi kho có kỳ vọng — chỉ các index
+ *   KHÔNG đỡ ràng buộc (không phải index sinh tự động cho
+ *   PRIMARY KEY/UNIQUE). Mốc trung tâm là 417; mốc control plane là
+ *   10 sau khi thêm index dẫn đầu FK `space_domains.space_id`.
+ *   Index đỡ ràng buộc sinh tất định theo bảng/ràng buộc nên được
+ *   kiểm gián tiếp qua số bảng và đối chiếu schema.
  * - Dòng nhật ký: số dòng trong `kysely_migration` — bằng TỔNG số
  *   migration của kho (carrier đóng băng + migration native) sau
  *   một lượt migrate trọn. Đây là khái niệm khác diện carrier mà
@@ -38,7 +36,7 @@ export interface VerifyResult {
   tables: number;
   /** Số policy RLS đếm được (chỉ kho trung tâm mới đếm; kho khác là `null`). */
   policies: number | null;
-  /** Số index đếm được (chỉ kho trung tâm mới đếm; kho khác là `null`). */
+  /** Số index không đỡ ràng buộc đếm được (kho trung tâm và control plane). */
   indexes: number | null;
   /** Số dòng trong `kysely_migration`. */
   journalRows: number;

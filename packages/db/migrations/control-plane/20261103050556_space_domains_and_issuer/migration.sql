@@ -51,3 +51,5 @@ CREATE TABLE "space_domains" (
 ALTER TABLE "space_domains" ADD CONSTRAINT "space_domains_space_id_space_registry_id_fkey" FOREIGN KEY ("space_id") REFERENCES "space_registry"("id") ON DELETE RESTRICT;
 --> statement-breakpoint
 CREATE UNIQUE INDEX "space_domains_one_primary_per_space" ON "space_domains" ("space_id") WHERE "kind" = 'primary';
+--> statement-breakpoint
+CREATE INDEX "space_domains_space_id_status_idx" ON "space_domains" ("space_id", "status");

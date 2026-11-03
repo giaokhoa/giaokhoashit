@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { Client, Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createControlPlaneKysely } from '@lms/db/control-plane';
+import { seedVerifiedSpaceDomain } from '../../support/verified-space-domain';
 import { SpaceDatabaseService } from '../../../src/db/routing/space-database.service';
 import { PermissionEvaluator } from '../../../src/modules/access/permission-evaluator.service';
 import { tenantAls } from '../../../src/modules/tenants/tenant-als';
@@ -258,7 +259,7 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
     const cpPool = new Pool({ connectionString: cpUrl() });
     const cpDb = createControlPlaneKysely(cpPool);
     try {
-      await cpDb.insertInto('space_registry').values([
+      const [space] = await cpDb.insertInto('space_registry').values([
         {
           slug: CENTRE_SLUG,
           name: 'Trung tâm TĐ6',
@@ -270,7 +271,8 @@ describe('Tạo người dùng cho trung tâm cấp phát mới chỉ có ở kh
           secret_ref: 'env:SPACE_TEST_TD6_URL',
           schema_version: 'v1',
         },
-      ]).execute();
+      ]).returning('id').execute();
+      await seedVerifiedSpaceDomain(cpDb, space!.id, HOST);
     } finally {
       await cpDb.destroy();
     }

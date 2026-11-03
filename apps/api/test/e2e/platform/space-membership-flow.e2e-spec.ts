@@ -6,6 +6,7 @@ import { generate } from 'otplib';
 import { Client, Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createControlPlaneKysely } from '@lms/db/control-plane';
+import { seedVerifiedSpaceDomain } from '../../support/verified-space-domain';
 import { emitSpaceRegistryChanged } from '../../../src/db/routing/space-routing-events';
 import { SpaceDatabaseService } from '../../../src/db/routing/space-database.service';
 import { CAP_ALLOW } from '../../../src/modules/access/domain/permission';
@@ -324,6 +325,8 @@ describe('Hồ sơ thành viên theo trung tâm và tách site chính (đầu-cu
         .returning(['id', 'slug'])
         .execute();
       registryAId = inserted.find((row) => row.slug === CENTRE_A_SLUG)!.id;
+      await seedVerifiedSpaceDomain(cpDb, registryAId, HOST_A);
+      await seedVerifiedSpaceDomain(cpDb, inserted.find((row) => row.slug === CENTRE_B_SLUG)!.id, HOST_B);
     } finally {
       await cpDb.destroy();
     }
@@ -338,6 +341,19 @@ describe('Hồ sơ thành viên theo trung tâm và tách site chính (đầu-cu
       );
       registryMainId = (main.rows[0] as { id: string }).id;
     });
+    const domainPool = new Pool({ connectionString: clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD) });
+    const domainDb = createControlPlaneKysely(domainPool);
+    try {
+      await seedVerifiedSpaceDomain(domainDb, registryMainId, HOST_MAIN);
+      const shared = await domainDb
+        .selectFrom('space_registry')
+        .select('id')
+        .where('slug', '=', SHARED_SLUG)
+        .executeTakeFirstOrThrow();
+      await seedVerifiedSpaceDomain(domainDb, shared.id, HOST_SHARED);
+    } finally {
+      await domainDb.destroy();
+    }
     emitSpaceRegistryChanged(MAIN_SLUG);
 
     adminToken = (await login(app, 'admin', 'Admin123!')).accessToken;
@@ -790,12 +806,22 @@ describe('Hồ sơ thành viên theo trung tâm và tách site chính (đầu-cu
         'create tenant C',
       )) as { id: string };
       await withClient(clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD), async (client) => {
-        await client.query(
+        const registry = await client.query<{ id: string }>(
           `INSERT INTO space_registry (slug, name, kind, status, database_name, storage_mode, connection_role_ref, secret_ref, schema_version)
            VALUES ($1, 'Trung tâm C (spec 584)', 'center', 'active', $2, 'dedicated', $3, 'env:SPACE_TEST_C_584_URL', 'v1')
            ON CONFLICT (slug) DO UPDATE SET status = 'active', database_name = EXCLUDED.database_name,
-             storage_mode = 'dedicated', connection_role_ref = EXCLUDED.connection_role_ref, secret_ref = EXCLUDED.secret_ref`,
+             storage_mode = 'dedicated', connection_role_ref = EXCLUDED.connection_role_ref, secret_ref = EXCLUDED.secret_ref
+           RETURNING id`,
           [centreCSlug, centreCDatabase, centreCRole],
+        );
+        await client.query('UPDATE space_registry SET issuer_url = $1 WHERE id = $2', [
+          `https://issuer.test.local/realms/${hostC}`,
+          registry.rows[0]!.id,
+        ]);
+        await client.query(
+          `INSERT INTO space_domains (space_id, domain, kind, status, verified_at)
+           VALUES ($1, $2, 'primary', 'verified', now())`,
+          [registry.rows[0]!.id, hostC],
         );
       });
       emitSpaceRegistryChanged(centreCSlug);
@@ -833,6 +859,11 @@ describe('Hồ sơ thành viên theo trung tâm và tách site chính (đầu-cu
       // đang sống và sinh lỗi 57P01 ngoài ý muốn.
       delete process.env.SPACE_TEST_C_584_URL;
       await withClient(clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD), async (client) => {
+        await client.query(
+          `DELETE FROM space_domains
+           WHERE space_id = (SELECT id FROM space_registry WHERE slug = $1)`,
+          [centreCSlug],
+        );
         await client.query(`DELETE FROM space_registry WHERE slug = $1`, [centreCSlug]);
       }).catch(() => undefined);
       emitSpaceRegistryChanged(centreCSlug);
