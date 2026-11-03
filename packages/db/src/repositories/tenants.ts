@@ -164,6 +164,49 @@ const TENANT_MEMBERSHIP_COLUMNS = [
   'ended_at as endedAt',
 ] as const;
 
+/**
+ * Danh sách cột membership ở schema baseline — trước migration cộng
+ * `primary_role`/`version` của issue #5. Ứng dụng phải phục vụ được
+ * kho đang ở baseline trong cửa sổ triển khai (fleet áp migration
+ * sau khi mã mới đã chạy — xem spec tiền di trú issue #587): mọi
+ * đường đọc/ghi membership dưới đây thử danh sách đầy đủ trước, và
+ * chỉ khi database báo thiếu cột mới rơi về danh sách này. Dòng đọc
+ * về từ baseline được chuẩn hoá thành hình dạng đầy đủ (vai chính
+ * `null`, phiên bản `1`) để phía tiêu thụ không phân biệt hai
+ * schema; sau khi migration chạy, các dòng đó được lấp vai ở chính
+ * migration (active) hoặc ở lần kích hoạt lại (chưa active).
+ */
+const BASELINE_TENANT_MEMBERSHIP_COLUMNS = [
+  'id',
+  'tenant_id as tenantId',
+  'user_id as userId',
+  'status',
+  'joined_at as joinedAt',
+  'ended_at as endedAt',
+] as const;
+
+/** Lỗi có phải "cột chưa tồn tại" của Postgres (mã 42703) hay không — dấu hiệu kho đang ở schema baseline. */
+function isMissingColumnError(err: unknown): boolean {
+  const code = (err as { code?: unknown } | null)?.code;
+  if (code === '42703') return true;
+  const message = err instanceof Error ? err.message : '';
+  return /column "(primary_role|version)" does not exist/.test(message);
+}
+
+/** Chuẩn hoá một dòng membership đọc từ kho baseline thành hình dạng đầy đủ của repository. */
+function normalizeMembershipRow(row: Record<string, unknown>): TenantMembershipRow {
+  return {
+    id: row.id as string,
+    tenantId: row.tenantId as string,
+    userId: row.userId as string,
+    status: row.status as string,
+    primaryRole: (row.primaryRole as string | null | undefined) ?? null,
+    version: (row.version as number | undefined) ?? 1,
+    joinedAt: row.joinedAt as Date,
+    endedAt: (row.endedAt as Date | null | undefined) ?? null,
+  };
+}
+
 /** Danh sách cột tường minh có bí danh camelCase cho bảng cấu hình tenant. */
 const TENANT_CONFIG_COLUMNS = [
   'id',
@@ -326,47 +369,114 @@ export class TenantsRepository {
   }
 
   async insertMembership(v: NewTenantMembership): Promise<TenantMembershipRow> {
-    const rows = await this.handle
-      .insertInto('tenant_memberships')
-      .values(membershipInsertValues(v))
-      .returning(TENANT_MEMBERSHIP_COLUMNS)
-      .execute();
-    return rows[0]!;
+    try {
+      const rows = await this.handle
+        .insertInto('tenant_memberships')
+        .values(membershipInsertValues(v))
+        .returning(TENANT_MEMBERSHIP_COLUMNS)
+        .execute();
+      return rows[0]!;
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+      // Kho baseline chưa có cột vai chính/phiên bản: ghi không kèm
+      // hai cột đó, vai chính sẽ được lấp ở lần migration/kích hoạt
+      // lại — không được để đường ghi chết chỉ vì kho chưa migrate.
+      const values = membershipInsertValues(v);
+      const { primary_role: _ignored, ...baselineValues } = values as Record<string, unknown>;
+      void _ignored;
+      const rows = await this.handle
+        .insertInto('tenant_memberships')
+        .values(baselineValues as Insertable<CentreDB['tenant_memberships']>)
+        .returning(BASELINE_TENANT_MEMBERSHIP_COLUMNS)
+        .execute();
+      return normalizeMembershipRow(rows[0]! as unknown as Record<string, unknown>);
+    }
   }
 
   async getMembership(tenantId: string, userId: string): Promise<TenantMembershipRow | undefined> {
-    return this.handle
-      .selectFrom('tenant_memberships')
-      .select(TENANT_MEMBERSHIP_COLUMNS)
-      .where('tenant_id', '=', tenantId)
-      .where('user_id', '=', userId)
-      .executeTakeFirst();
+    try {
+      return await this.handle
+        .selectFrom('tenant_memberships')
+        .select(TENANT_MEMBERSHIP_COLUMNS)
+        .where('tenant_id', '=', tenantId)
+        .where('user_id', '=', userId)
+        .executeTakeFirst();
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+      const row = await this.handle
+        .selectFrom('tenant_memberships')
+        .select(BASELINE_TENANT_MEMBERSHIP_COLUMNS)
+        .where('tenant_id', '=', tenantId)
+        .where('user_id', '=', userId)
+        .executeTakeFirst();
+      return row ? normalizeMembershipRow(row as unknown as Record<string, unknown>) : undefined;
+    }
   }
 
   async listMembershipsForUser(userId: string): Promise<TenantMembershipRow[]> {
-    return this.handle
-      .selectFrom('tenant_memberships')
-      .select(TENANT_MEMBERSHIP_COLUMNS)
-      .where('user_id', '=', userId)
-      .orderBy('joined_at', 'asc')
-      .execute();
+    try {
+      return await this.handle
+        .selectFrom('tenant_memberships')
+        .select(TENANT_MEMBERSHIP_COLUMNS)
+        .where('user_id', '=', userId)
+        .orderBy('joined_at', 'asc')
+        .execute();
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+      const rows = await this.handle
+        .selectFrom('tenant_memberships')
+        .select(BASELINE_TENANT_MEMBERSHIP_COLUMNS)
+        .where('user_id', '=', userId)
+        .orderBy('joined_at', 'asc')
+        .execute();
+      return rows.map((row) => normalizeMembershipRow(row as unknown as Record<string, unknown>));
+    }
   }
 
   async listMembershipsForTenant(tenantId: string): Promise<TenantMembershipRow[]> {
-    return this.handle
-      .selectFrom('tenant_memberships')
-      .select(TENANT_MEMBERSHIP_COLUMNS)
-      .where('tenant_id', '=', tenantId)
-      .orderBy('joined_at', 'asc')
-      .execute();
+    try {
+      return await this.handle
+        .selectFrom('tenant_memberships')
+        .select(TENANT_MEMBERSHIP_COLUMNS)
+        .where('tenant_id', '=', tenantId)
+        .orderBy('joined_at', 'asc')
+        .execute();
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+      const rows = await this.handle
+        .selectFrom('tenant_memberships')
+        .select(BASELINE_TENANT_MEMBERSHIP_COLUMNS)
+        .where('tenant_id', '=', tenantId)
+        .orderBy('joined_at', 'asc')
+        .execute();
+      return rows.map((row) => normalizeMembershipRow(row as unknown as Record<string, unknown>));
+    }
   }
 
   async updateMembership(id: string, patch: Partial<TenantMembershipRow>): Promise<void> {
-    await this.handle
-      .updateTable('tenant_memberships')
-      .set(membershipUpdateSet(patch))
-      .where('id', '=', id)
-      .execute();
+    try {
+      await this.handle
+        .updateTable('tenant_memberships')
+        .set(membershipUpdateSet(patch))
+        .where('id', '=', id)
+        .execute();
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+      // Kho baseline: bỏ hai trường mới khỏi lệnh cập nhật; nếu patch
+      // chỉ gồm hai trường đó thì không còn gì để ghi — đó đúng là
+      // ngữ nghĩa của cửa sổ tiền di trú (vai/phiên bản chưa có nơi
+      // chứa, sẽ được lấp sau khi migration chạy).
+      const set = membershipUpdateSet(patch);
+      const { primary_role: _role, version: _version, ...baselineSet } = set as Record<string, unknown>;
+      void _role;
+      void _version;
+      if (Object.keys(baselineSet).length === 0) return;
+      await this.handle
+        .updateTable('tenant_memberships')
+        .set(baselineSet as Updateable<CentreDB['tenant_memberships']>)
+        .where('id', '=', id)
+        .execute();
+    }
   }
 
   async getConfigValue(tenantId: string, key: string): Promise<TenantConfigRow | undefined> {

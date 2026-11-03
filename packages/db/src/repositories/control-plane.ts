@@ -293,6 +293,14 @@ export function isSpacePrimaryDomainConflict(err: unknown): boolean {
   return isSpaceDomainConstraintConflict(err, SPACE_DOMAIN_PRIMARY_UNIQUE_INDEX);
 }
 
+/** Tên chỉ số duy nhất riêng phần chốt một issuer chỉ thuộc một không gian (issue #5). */
+export const SPACE_REGISTRY_ISSUER_URL_UNIQUE_INDEX = 'space_registry_issuer_url_unique';
+
+/** Lỗi có phải va chạm trùng issuer giữa các không gian hay không (chỉ số riêng phần trên `issuer_url` khác NULL). */
+export function isSpaceIssuerUrlConflict(err: unknown): boolean {
+  return isSpaceDomainConstraintConflict(err, SPACE_REGISTRY_ISSUER_URL_UNIQUE_INDEX);
+}
+
 /**
  * Lỗi ném ra khi repository bị gọi mà chưa có handle (control plane
  * chưa được cấu hình). Package không phụ thuộc tầng ứng dụng nên
@@ -624,6 +632,44 @@ export class ControlPlaneRepository {
   /** Tra cứu định tuyến theo slug — đường đọc chính của tầng ứng dụng. */
   async findSpaceBySlug(slug: string, db: CpDb = this.db()): Promise<SpaceRegistryRow | undefined> {
     return db.selectFrom('space_registry').select(SPACE_REGISTRY_COLUMNS).where('slug', '=', slug).limit(1).executeTakeFirst();
+  }
+
+  /**
+   * Tra cứu dòng đăng ký theo issuer cố định — đường kiểm tra trùng
+   * của cấp phát: một issuer khác NULL chỉ thuộc về đúng một không
+   * gian (chỉ số duy nhất riêng phần là chốt chặn cho cuộc đua, kiểm
+   * tra ở đây là lớp chính để trả lỗi xung đột rõ ràng). Issuer
+   * `null` (realm chưa cấp phát) không tra qua đây — nhiều dòng cùng
+   * mang NULL là hợp lệ.
+   */
+  async findSpaceByIssuerUrl(issuerUrl: string, db: CpDb = this.db()): Promise<SpaceRegistryRow | undefined> {
+    return db
+      .selectFrom('space_registry')
+      .select(SPACE_REGISTRY_COLUMNS)
+      .where('issuer_url', '=', issuerUrl)
+      .limit(1)
+      .executeTakeFirst();
+  }
+
+  /**
+   * Tra cứu dòng đăng ký KHÁC theo issuer cố định — đường kiểm tra
+   * trùng của cập nhật: dòng đang sửa phải bị loại trừ NGAY TRONG
+   * TRUY VẤN như {@link findOtherSpaceByDatabaseName}, vì `LIMIT 1`
+   * không loại trừ có thể trả về chính dòng đang sửa và bỏ qua dòng
+   * còn lại cùng issuer.
+   */
+  async findOtherSpaceByIssuerUrl(
+    issuerUrl: string,
+    excludeId: string,
+    db: CpDb = this.db(),
+  ): Promise<SpaceRegistryRow | undefined> {
+    return db
+      .selectFrom('space_registry')
+      .select(SPACE_REGISTRY_COLUMNS)
+      .where('issuer_url', '=', issuerUrl)
+      .where('id', '<>', excludeId)
+      .limit(1)
+      .executeTakeFirst();
   }
 
   /**
@@ -1031,5 +1077,25 @@ export class ControlPlaneRepository {
       .where('space_domains.status', '=', 'verified')
       .limit(1)
       .executeTakeFirst();
+  }
+
+  /**
+   * Tên các domain đã xác minh của một không gian — đầu vào cho chốt
+   * chặn domain ở hai guard (vòng sửa PR #25): một trung tâm đã có
+   * domain xác minh thì Host tại địa chỉ của nó phải là một trong
+   * các domain này; Host khác (kể cả Host mượn nhãn đầu của slug)
+   * bị từ chối thay vì rơi về đường slug cũ hay kho chung. Không
+   * gian chưa có domain xác minh nào thì danh sách rỗng và guard giữ
+   * đường slug chuyển tiếp cho tới khi domain được đăng ký.
+   */
+  async listVerifiedDomainNamesForSpace(spaceId: string, db: CpDb = this.db()): Promise<string[]> {
+    const rows = await db
+      .selectFrom('space_domains')
+      .select(['domain'])
+      .where('space_id', '=', spaceId)
+      .where('status', '=', 'verified')
+      .orderBy('domain', 'asc')
+      .execute();
+    return rows.map((row) => row.domain);
   }
 }

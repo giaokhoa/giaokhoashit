@@ -6,6 +6,7 @@ import { buildTestDatabase, dropTestDatabase, withDatabase } from '../test-suppo
 import {
   ControlPlaneRepository,
   isSpaceDomainConflict,
+  isSpaceIssuerUrlConflict,
   isSpacePrimaryDomainConflict,
   type NewSpaceRegistration,
 } from './control-plane';
@@ -175,5 +176,25 @@ describe('sổ domain đã xác minh và issuer cố định', () => {
     expect(await repo.findVerifiedDomainByName('a.example.vn')).toBeUndefined();
     // Domain chính không bị ảnh hưởng bởi việc tắt alias.
     expect((await repo.findVerifiedDomainByName('trung-tam-a.example.vn'))?.spaceId).toBe(spaceAId);
+  });
+
+  it('issuer chỉ thuộc về đúng một không gian: tạo và cập nhật sang issuer đã có đều bị chặn và nhận diện tách bạch', async () => {
+    const createClash = await captureError(
+      repo.insertSpaceIfAbsent(registration('issue5-trung-tam-c', { issuerUrl: ISSUER_A })),
+    );
+    expect(isSpaceIssuerUrlConflict(createClash)).toBe(true);
+    expect(isSpaceDomainConflict(createClash)).toBe(false);
+    const updateClash = await captureError(repo.updateSpace(spaceBId, { issuerUrl: ISSUER_A }));
+    expect(isSpaceIssuerUrlConflict(updateClash)).toBe(true);
+    // Issuer của chính không gian vẫn thuộc về nó sau mọi lần thử chiếm.
+    expect((await repo.findSpaceBySlug('issue5-trung-tam-a'))?.issuerUrl).toBe(ISSUER_A);
+    expect(await repo.findSpaceByIssuerUrl(ISSUER_A)).toMatchObject({ id: spaceAId });
+  });
+
+  it('chốt chặn guard đọc được đúng danh sách domain đã xác minh của không gian', async () => {
+    // Alias đã bị tắt ở ca trước nên không còn trong danh sách xác minh;
+    // domain chính vẫn xác minh nên vẫn nằm trong danh sách.
+    expect(await repo.listVerifiedDomainNamesForSpace(spaceAId)).toEqual(['trung-tam-a.example.vn']);
+    expect(await repo.listVerifiedDomainNamesForSpace(spaceBId)).toEqual([]);
   });
 });

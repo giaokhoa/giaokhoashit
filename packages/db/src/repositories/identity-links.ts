@@ -144,7 +144,11 @@ export class IdentityLinksRepository {
    * Tạo một liên kết danh tính mới. Trùng (issuer, subject) hoặc
    * trùng (user, issuer) thì lỗi vi phạm duy nhất của Postgres ném
    * thẳng ra (tầng gọi nhận diện bằng {@link isIdentityLinkConflict}).
-   * Thao tác này CHỈ ghi bảng liên kết — không tạo membership nào.
+   * `tenant_id` phải là tenant đã tồn tại trong kho (khoá ngoại tới
+   * `tenants.id`): liên kết trỏ tới tenant không tồn tại bị chặn ở
+   * database, và liên kết của principal platform vẫn chỉ là một dòng
+   * liên kết — thao tác này CHỈ ghi bảng liên kết, không tạo
+   * membership nào.
    */
   async createLink(values: NewIdentityLink): Promise<IdentityLinkRow> {
     const rows = await this.handle

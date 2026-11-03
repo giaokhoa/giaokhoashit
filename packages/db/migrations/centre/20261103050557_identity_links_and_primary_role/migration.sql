@@ -22,10 +22,17 @@
 --    admin | teacher | member (ánh xạ 1-1 sang realm role
 --    tenant-admin | tenant-teacher | tenant-member). Một cột đơn nên
 --    "hơn một vai chính" là không thể biểu diễn; ràng buộc CHECK chốt
---    tập giá trị. Cột để NULL cho các dòng lịch sử có trước thay đổi
---    này — mọi đường ghi được hỗ trợ từ nay đều bắt buộc ghi vai
---    chính khi tạo/kích hoạt membership. Cột `version` phục vụ việc
---    thu hồi và đồng bộ về sau như ở bảng liên kết.
+--    tập giá trị VÀ cấm membership `active` thiếu vai (NULL chỉ còn
+--    được ở membership chưa active). Các membership active lịch sử
+--    thiếu vai được lấp `member` trong chính migration này trước khi
+--    ràng buộc có hiệu lực; mọi đường ghi được hỗ trợ từ nay đều bắt
+--    buộc ghi vai chính khi tạo/kích hoạt membership. Cột `version`
+--    phục vụ việc thu hồi và đồng bộ về sau như ở bảng liên kết.
+--    Bảng `identity_links` còn mang khoá ngoại `tenant_id` tới
+--    `tenants.id` (bên cạnh khoá ngoại `user_id`): liên kết không
+--    được trỏ tới tenant không tồn tại, và xoá tenant cuốn theo
+--    liên kết của nó — nhưng tạo liên kết vẫn không sinh membership
+--    nào (principal platform có liên kết mà không là thành viên).
 CREATE TABLE "identity_links" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7(),
 	"tenant_id" uuid NOT NULL,
@@ -43,6 +50,8 @@ CREATE TABLE "identity_links" (
 --> statement-breakpoint
 ALTER TABLE "identity_links" ADD CONSTRAINT "identity_links_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
 --> statement-breakpoint
+ALTER TABLE "identity_links" ADD CONSTRAINT "identity_links_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE;
+--> statement-breakpoint
 ALTER TABLE "identity_links" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 ALTER TABLE "identity_links" FORCE ROW LEVEL SECURITY;
@@ -51,6 +60,16 @@ CREATE POLICY "tenant_isolation" ON "identity_links" USING (current_setting('app
 --> statement-breakpoint
 ALTER TABLE "tenant_memberships" ADD COLUMN "primary_role" text;
 --> statement-breakpoint
-ALTER TABLE "tenant_memberships" ADD CONSTRAINT "tenant_memberships_primary_role_check" CHECK ("primary_role" IN ('admin', 'teacher', 'member'));
+-- Lấp vai chính cho các membership đang `active` mà lịch sử để trống
+-- (phán quyết vòng sửa PR #25): ràng buộc dưới đây cấm membership
+-- active thiếu vai, nên các dòng lịch sử này phải được lấp TRƯỚC khi
+-- ràng buộc có hiệu lực. Giá trị lấp là `member` — mặc định của đường
+-- ghi danh trong `@lms/enrol`; quản trị/giáo viên bị lấp nhầm vẫn sửa
+-- lại được qua bề mặt thêm/kích hoạt thành viên với vai tường minh.
+-- Membership đã kết thúc/đình chỉ giữ NULL cho tới khi được kích hoạt
+-- lại, lúc đó đường ghi bắt buộc lấp vai.
+UPDATE "tenant_memberships" SET "primary_role" = 'member' WHERE "status" = 'active' AND "primary_role" IS NULL;
+--> statement-breakpoint
+ALTER TABLE "tenant_memberships" ADD CONSTRAINT "tenant_memberships_primary_role_check" CHECK ("status" <> 'active' OR ("primary_role" IS NOT NULL AND "primary_role" IN ('admin', 'teacher', 'member')));
 --> statement-breakpoint
 ALTER TABLE "tenant_memberships" ADD COLUMN "version" integer DEFAULT 1 NOT NULL;

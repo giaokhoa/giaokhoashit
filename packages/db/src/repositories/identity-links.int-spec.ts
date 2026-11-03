@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Client } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { CentreDb } from '../client';
@@ -205,6 +206,19 @@ describe('liên kết danh tính theo cặp (issuer, sub)', () => {
     expect(isIdentityLinkConflict(err)).toBe(false);
   });
 
+  it('liên kết trỏ tới tenant không tồn tại bị khoá ngoại tenant chặn, không nhận diện nhầm là xung đột liên kết', async () => {
+    const missingTenantId = randomUUID();
+    const err = await captureError(runInTestTenantContext(missingTenantId, () =>
+      links.createLink({
+        tenantId: missingTenantId,
+        userId: userAId,
+        issuer: 'https://keycloak.example.test/realms/khong-ton-tai',
+        subject: 'sub-cua-tenant-khong-ton-tai',
+      })));
+    expect((err as { code?: string }).code).toBe('23503');
+    expect(isIdentityLinkConflict(err)).toBe(false);
+  });
+
   it('tạo liên kết cho principal platform không sinh membership và không gán tenant mặc định nào', async () => {
     const link = await runInTestPlatformContext(() =>
       links.createLink({ tenantId: platformTenantId, userId: platformUserId, issuer: ISSUER_PLATFORM, subject: 'sub-platform-admin' }));
@@ -259,5 +273,30 @@ describe('vai chính của membership ở tầng dữ liệu', () => {
         .execute();
     }));
     expect((err as { code?: string }).code).toBe('23514');
+  });
+
+  it('membership active thiếu vai chính bị ràng buộc CHECK chặn, còn membership chưa active thiếu vai vẫn ghi được để chờ lấp ở lần kích hoạt lại', async () => {
+    const activeErr = await captureError(runInTestPlatformContext(async () => {
+      await db
+        .insertInto('tenant_memberships')
+        .values({ tenant_id: tenantBId, user_id: userBId, status: 'active', primary_role: null })
+        .execute();
+    }));
+    expect((activeErr as { code?: string }).code).toBe('23514');
+    const suspended = await runInTestPlatformContext(async () => {
+      const rows = await db
+        .insertInto('tenant_memberships')
+        .values({ tenant_id: tenantAId, user_id: platformUserId, status: 'suspended', primary_role: null })
+        .returning(['id'])
+        .execute();
+      return rows[0]!;
+    });
+    expect(suspended.id).toBeDefined();
+    const reread = await runInTestPlatformContext(() => tenantsRepo.getMembership(tenantAId, platformUserId));
+    expect(reread?.status).toBe('suspended');
+    expect(reread?.primaryRole).toBeNull();
+    await runInTestPlatformContext(async () => {
+      await db.deleteFrom('tenant_memberships').where('id', '=', suspended.id).execute();
+    });
   });
 });
