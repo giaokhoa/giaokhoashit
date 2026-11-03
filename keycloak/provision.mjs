@@ -344,7 +344,7 @@ async function reconcileRealmRoles(rep) {
       continue;
     }
     if (data.composite) {
-      // Vai chính không được là composite lồng nhau (hợp đồng mục 2):
+      // Vai chính không được là composite lồng nhau (hợp đồng mục 4):
       // gỡ mọi composite con thay vì xoá role (giữ nguyên gán vai cho
       // người dùng hiện có).
       const comp = await api("GET", `/admin/realms/${realm}/roles/${role.name}/composites`);
