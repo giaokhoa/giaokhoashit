@@ -251,6 +251,18 @@ body {
     height: 19px;
 }
 
+.gk-password-toggle [data-gk-eye-hide] {
+    display: none;
+}
+
+.gk-password-toggle.is-password-visible [data-gk-eye-show] {
+    display: none;
+}
+
+.gk-password-toggle.is-password-visible [data-gk-eye-hide] {
+    display: block;
+}
+
 .gk-options {
     display: flex;
     align-items: center;

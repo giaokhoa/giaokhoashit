@@ -38,18 +38,10 @@ function initPasswordToggle() {
         return;
     }
 
-    const eyeShow = button.querySelector("[data-gk-eye-show]");
-    const eyeHide = button.querySelector("[data-gk-eye-hide]");
-
     button.addEventListener("click", () => {
         const show = input.type === "password";
         input.type = show ? "text" : "password";
+        button.classList.toggle("is-password-visible", show);
         button.setAttribute("aria-label", show ? button.dataset.labelHide : button.dataset.labelShow);
-        if (eyeShow) {
-            eyeShow.hidden = show;
-        }
-        if (eyeHide) {
-            eyeHide.hidden = !show;
-        }
     });
 }
