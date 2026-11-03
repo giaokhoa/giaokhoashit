@@ -23,8 +23,9 @@ import type { UserRow } from '@lms/db/repositories/users';
  *
  * TENANT-0 (#168): bootstrap cũng gieo tenant-zero (Trang chính) + tenant
  * trường mặc định, gắn membership cho admin khởi tạo ở cả hai, và — khi
- * PLATFORM_ADMIN_* được đặt — tạo tài khoản VẬN HÀNH PLATFORM riêng (chỉ
- * thuộc tenant-zero, là siteadmin) tách bạch khỏi admin mẫu của tenant-1.
+ * PLATFORM_ADMIN_* được đặt — tạo tài khoản VẬN HÀNH PLATFORM riêng (là
+ * siteadmin, không mang membership tenant nào) tách bạch khỏi admin mẫu
+ * của tenant-1.
  */
 export class SeedService implements OnApplicationBootstrap {
   private readonly logger = new Logger(SeedService.name);
@@ -94,7 +95,7 @@ export class SeedService implements OnApplicationBootstrap {
         await this.assignRoleIfMissing(admin.id, manager.id, (await this.contexts.ensureTenantContext(school.id)).id);
       }
     }
-    await this.ensurePlatformOperator(zero.id);
+    await this.ensurePlatformOperator();
     await this.seedControlPlaneRegistry(zero, school);
   }
 
@@ -108,10 +109,20 @@ export class SeedService implements OnApplicationBootstrap {
   /**
    * Tài khoản vận hành platform RIÊNG từ biến môi trường PLATFORM_ADMIN_*:
    * chỉ được tạo khi biến được đặt; là siteadmin (quyền vận hành tầng
-   * platform) và chỉ thuộc tenant-zero — KHÔNG phải admin mẫu của
-   * tenant-1, giữ hai vai tách bạch như đặc tả #168 mục 6.3 yêu cầu.
+   * platform) và KHÔNG phải admin mẫu của tenant-1, giữ hai vai tách
+   * bạch như đặc tả #168 mục 6.3 yêu cầu.
+   *
+   * Ranh giới platform (vòng sửa PR #25, theo
+   * `docs/keycloak-auth-contract.md`): tài khoản platform KHÔNG thuộc
+   * trung tâm nào và KHÔNG có membership ở tenant-zero — quyền vận
+   * hành của nó đến từ trạng thái siteadmin tường minh (dòng trên),
+   * không phải từ một membership tenant-zero mang vai `admin`.
+   * Phiên của operator vì vậy đứng ở ngữ cảnh platform (tenant-zero
+   * chỉ là không gian vận hành/công cộng mà `resolveDefaultTenant`
+   * trả về tường minh, không phải một membership), và các cổng
+   * membership không bao giờ thấy operator là thành viên tenant nào.
    */
-  private async ensurePlatformOperator(platformTenantId: string): Promise<void> {
+  private async ensurePlatformOperator(): Promise<void> {
     const username = this.config.get<string>('PLATFORM_ADMIN_USERNAME');
     if (!username) return;
     const bootstrapUsername = this.config.get<string>('ADMIN_USERNAME') ?? 'admin';
@@ -130,9 +141,8 @@ export class SeedService implements OnApplicationBootstrap {
     if (!admins.includes(operator.id)) {
       await this.evaluator.setSiteAdmins([...admins, operator.id]);
     }
-    // Operator của platform là quản trị ở tenant platform — vai
-    // chính `admin` (issue #5).
-    await this.tenants.ensureActiveMembership(platformTenantId, operator.id, 'admin');
+    // CỐ Ý không tạo membership tenant-zero ở đây: xem ghi chú
+    // ranh giới platform ngay trên hàm này.
   }
 
   private async currentSiteAdmins(): Promise<string[]> {

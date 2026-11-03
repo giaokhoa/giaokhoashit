@@ -185,6 +185,83 @@ export async function resolveSpaceByVerifiedDomain(
 }
 
 /**
+ * Chốt chặn domain đã xác minh cho hai guard (vòng sửa PR #25):
+ * đường lựa chọn tenant/space thực tế không được chỉ suy slug từ
+ * nhãn đầu của Host rồi rơi về kho chung/platform khi slug không
+ * khớp — Host lạ mượn nhãn slug (ví dụ `trung-tam-a.evil.com`
+ * mượn slug `trung-tam-a`) phải bị từ chối thay vì được chọn vào
+ * không gian đó.
+ *
+ * Luật áp cho guard, gồm hai bước nối tiếp nhau:
+ * 1. Host khớp tuyệt đối một domain đã xác minh → không gian của
+ *    domain đó thắng đường slug cũ: slug dùng cho các bước sau là
+ *    slug của không gian đã xác minh (domain tuỳ chọn không chứa
+ *    slug vẫn chọn đúng không gian).
+ * 2. Host không khớp domain nào nhưng không gian đích (phân giải
+ *    theo slug cũ) ĐÃ có ít nhất một domain xác minh → Host bị từ
+ *    chối, vì trung tâm đó đã hoàn tất đăng ký domain và mọi địa
+ *    chỉ hợp lệ của nó đều nằm trong sổ. Không gian chưa có domain
+ *    xác minh nào thì giữ đường slug chuyển tiếp — đó là cửa sổ di
+ *    trú của các trung tâm chưa đăng ký domain, và các suite hiện
+ *    hành (địa chỉ `<slug>.test.local`) vẫn chạy trên cửa sổ này.
+ *    Trong mọi trường hợp, Host bị từ chối ở đây đều không rơi về
+ *    platform hay kho chung: guard ném lỗi ra thay vì cho qua.
+ *
+ * @remarks Cổng tra cứu control plane có thể chưa cấu hình (lỗi
+ *   ném ra khi gọi): tầng gọi coi đó là "không có dữ liệu xác
+ *   minh" và giữ đường slug cũ như trước, giống hợp đồng "chưa cấu
+ *   hình thì app chạy như trước" của khung định tuyến.
+ */
+
+/** Cổng tra cứu domain đã xác minh mà hai guard dùng, kèm danh sách domain của một không gian. */
+export interface VerifiedDomainGuardLookup {
+  /** Tra domain đã xác minh theo Host canonical (chỉ `verified` mới có kết quả). */
+  findVerifiedDomain: VerifiedDomainLookup;
+  /** Tên các domain đã xác minh của một không gian (rỗng khi chưa đăng ký domain nào). */
+  listVerifiedDomainNamesForSpace: (spaceId: string) => Promise<string[]>;
+}
+
+/**
+ * Tra không gian của một Host qua sổ domain đã xác minh.
+ *
+ * @param host - Host thô của request (kèm cổng cũng được — hàm tự chuẩn hoá).
+ * @param lookup - Cổng tra cứu domain đã xác minh.
+ * @returns Dòng domain đã xác minh kèm không gian sở hữu, hoặc `undefined` khi Host không phải domain đã xác minh.
+ */
+export async function findVerifiedSpaceForHost(
+  host: string | string[] | undefined | null,
+  lookup: VerifiedDomainLookup,
+): Promise<VerifiedDomainEntry | undefined> {
+  const header = Array.isArray(host) ? host[0] : host;
+  const domain = normalizeRequestHost(header);
+  if (!domain) return undefined;
+  return lookup(domain);
+}
+
+/**
+ * Chốt chặn bước 2 cho guard: sau khi không gian đích đã phân giải
+ * xong, Host tại địa chỉ của nó phải là một domain đã xác minh của
+ * chính không gian đó nếu không gian đã có domain xác minh.
+ *
+ * @param host - Host thô của request.
+ * @param spaceId - Định danh đăng ký của không gian đích.
+ * @param lookup - Cổng tra cứu của guard.
+ * @returns `true` khi Host qua được chốt chặn; `false` khi Host phải bị từ chối (trung tâm đã có domain xác minh mà Host không nằm trong số đó).
+ */
+export async function isHostVerifiedForSpace(
+  host: string | string[] | undefined | null,
+  spaceId: string,
+  lookup: VerifiedDomainGuardLookup,
+): Promise<boolean> {
+  const header = Array.isArray(host) ? host[0] : host;
+  const domain = normalizeRequestHost(header);
+  if (!domain) return true;
+  const verifiedDomains = await lookup.listVerifiedDomainNamesForSpace(spaceId);
+  if (verifiedDomains.length === 0) return true;
+  return verifiedDomains.includes(domain);
+}
+
+/**
  * Dựng cổng tra cứu thật từ repository của sổ control plane:
  * repository chỉ trả domain ở trạng thái `verified` kèm dòng đăng
  * ký của không gian, adapter này chỉ đổi hình dạng sang

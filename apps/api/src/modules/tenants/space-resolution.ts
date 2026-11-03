@@ -87,6 +87,24 @@ export async function resolveDedicatedSpace(
   const header = Array.isArray(host) ? host[0] : host;
   const slug = extractSpaceSlugFromHost(header);
   if (!slug) return null;
+  return resolveDedicatedSpaceBySlug(spaceDb, slug);
+}
+
+/**
+ * Phân giải một không gian ở KHO RIÊNG theo slug đã xác định sẵn —
+ * biến thể của {@link resolveDedicatedSpace} cho trường hợp tầng gọi
+ * đã chọn slug bằng một nguồn khác đường nhãn đầu của Host (vòng sửa
+ * PR #25: slug của domain đã xác minh thắng nhãn đầu của Host).
+ * Cùng ngữ nghĩa trả `null` như hàm gốc cho các trường hợp đường kho
+ * chung giữ nguyên hành vi.
+ *
+ * @param spaceDb - Khung định tuyến (chỉ cần `resolveTarget`).
+ * @param slug - Slug đã xác định của không gian.
+ */
+export async function resolveDedicatedSpaceBySlug(
+  spaceDb: Pick<SpaceDatabaseService, 'resolveTarget'>,
+  slug: string,
+): Promise<DedicatedSpace | null> {
   let target: ResolvedSpaceConnection;
   try {
     target = await spaceDb.resolveTarget(slug);

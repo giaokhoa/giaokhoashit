@@ -711,9 +711,19 @@ export class TenantsService {
         }
       }
     }
+    // Kích hoạt lại (vòng sửa PR #25): membership về `active` thì
+    // KHÔNG được giữ trạng thái thiếu vai chính — dòng lịch sử thiếu
+    // vai được lấp bằng vai mặc định `member` của đường ghi danh
+    // (quản trị/giáo viên bị lấp nhầm vẫn sửa lại được qua bề mặt
+    // thêm thành viên với vai tường minh). Các chuyển trạng thái
+    // khác giữ nguyên vai như cũ; trên kho baseline chưa có cột vai
+    // thì repository tự bỏ trường mới khỏi lệnh cập nhật.
+    const effectivePrimaryRole =
+      status === 'active' && existing.primaryRole === null ? 'member' : existing.primaryRole;
     await this.repo.updateMembership(existing.id, {
       status,
       endedAt: status === 'ended' ? new Date() : null,
+      ...(effectivePrimaryRole !== existing.primaryRole ? { primaryRole: effectivePrimaryRole } : {}),
     });
     const tenantCtx = await this.contexts.ensureTenantContext(tenantId);
     await this.contexts.markContextDirty(tenantCtx.id);
@@ -723,7 +733,12 @@ export class TenantsService {
       payload: { tenantId, userId, status, actorId },
       tenantId,
     });
-    return toMembershipDto({ ...existing, status, endedAt: status === 'ended' ? new Date() : null });
+    return toMembershipDto({
+      ...existing,
+      status,
+      endedAt: status === 'ended' ? new Date() : null,
+      primaryRole: effectivePrimaryRole,
+    });
   }
 
   async listMembers(actorId: string, tenantId: string): Promise<TenantMembershipDto[]> {
@@ -963,6 +978,21 @@ export class TenantsService {
    * school/center gia nhập sớm nhất; không có membership nào →
    * tenant-zero (không gian công cộng của Trang chính). KHÔNG BAO GIỜ
    * đoán một tenant khách hàng cho người không phải thành viên.
+   *
+   * Ranh giới platform (vòng sửa PR #25, theo
+   * `docs/keycloak-auth-contract.md`): tenant-zero trả về ở đây
+   * KHÔNG phải là một membership — platform principal (tài khoản
+   * quản trị platform) không có dòng membership nào ở tenant-zero
+   * (seed không còn tạo membership đó), và tư cách thành viên của
+   * một user chỉ được kết luận từ các dòng membership active ở
+   * trên. Tenant-zero ở nhánh này là ngữ cảnh platform tường minh:
+   * không gian vận hành/công cộng mà phiên platform đứng vào, được
+   * cấp bởi trạng thái site admin (nhánh nhiều membership) hoặc bởi
+   * tính chất công cộng của Trang chính (nhánh không membership) —
+   * không phải do một membership tenant-zero tự suy ra. Các cổng
+   * membership (TenantGuard với tenant kind khác platform,
+   * `listMyTenants`) vẫn chỉ nhìn dòng membership, nên platform
+   * principal không bao giờ hiện thành thành viên của tenant nào.
    */
   async resolveDefaultTenant(userId: string): Promise<TenantRow> {
     // Đường tiền-đăng-nhập: phân giải tenant mặc định phải thấy membership
@@ -980,10 +1010,17 @@ export class TenantsService {
     }
     if (tenants.length === 1) return tenants[0]!;
     if (tenants.length > 1) {
+      // Site admin có nhiều membership: về không gian vận hành
+      // platform tường minh, không phải vì họ là thành viên của
+      // tenant-zero (họ có thể không có membership đó).
       if (await this.evaluator.isSiteAdmin(userId)) return zero;
       const nonPlatform = tenants.find((t) => t.kind !== 'platform');
       if (nonPlatform) return nonPlatform;
     }
+    // Không có membership active nào: không tự suy ra tenant khách
+    // hàng nào — chỉ còn không gian công cộng của Trang chính. Đây
+    // là ngữ cảnh platform/công cộng tường minh, không phải một
+    // membership được gán ngầm cho principal platform.
     return zero;
   }
 

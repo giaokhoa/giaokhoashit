@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createVerifiedDomainLookup,
   effectiveRequestHost,
+  findVerifiedSpaceForHost,
+  isHostVerifiedForSpace,
   normalizeRequestHost,
   resolveSpaceByVerifiedDomain,
   type VerifiedDomainEntry,
@@ -240,5 +242,32 @@ describe('Adapter tra cứu từ repository control plane', () => {
     const repo = { findVerifiedDomainByName: vi.fn(async () => undefined) };
     const lookup = createVerifiedDomainLookup(repo);
     await expect(lookup('la.giaokhoa.vn')).resolves.toBeUndefined();
+  });
+});
+
+describe('Chốt chặn domain đã xác minh cho guard', () => {
+  it('Host là domain đã xác minh thì trả đúng không gian của domain đó, kể cả khi nhãn đầu không phải slug', async () => {
+    const lookup = fakeLookup(CENTRE_DOMAINS);
+    const found = await findVerifiedSpaceForHost('a.giaokhoa.vn', lookup);
+    expect(found?.slug).toBe('trung-tam-a');
+    expect(found?.spaceId).toBe('space-a');
+    await expect(findVerifiedSpaceForHost('trung-tam-a.evil.com', lookup)).resolves.toBeUndefined();
+  });
+
+  it('trung tâm đã có domain xác minh mà Host không nằm trong số đó thì chốt chặn trả false', async () => {
+    const guardLookup = {
+      findVerifiedDomain: fakeLookup(CENTRE_DOMAINS),
+      listVerifiedDomainNamesForSpace: async () => ['trung-tam-a.giaokhoa.vn', 'a.giaokhoa.vn'],
+    };
+    await expect(isHostVerifiedForSpace('trung-tam-a.evil.com', 'space-a', guardLookup)).resolves.toBe(false);
+    await expect(isHostVerifiedForSpace('a.giaokhoa.vn', 'space-a', guardLookup)).resolves.toBe(true);
+  });
+
+  it('trung tâm chưa có domain xác minh nào thì chốt chặn cho qua đường slug chuyển tiếp', async () => {
+    const guardLookup = {
+      findVerifiedDomain: fakeLookup(CENTRE_DOMAINS),
+      listVerifiedDomainNamesForSpace: async () => [],
+    };
+    await expect(isHostVerifiedForSpace('trung-tam-a.test.local', 'space-a', guardLookup)).resolves.toBe(true);
   });
 });

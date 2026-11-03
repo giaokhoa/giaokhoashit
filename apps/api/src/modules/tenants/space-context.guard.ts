@@ -2,7 +2,9 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Inject,
   Injectable,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -15,6 +17,13 @@ import { SKIP_SPACE_CONTEXT_KEY } from './skip-space-context.decorator';
 import { extractSpaceSlugFromHost } from './space-resolution';
 import { tenantAls } from './tenant-als';
 import { TenantsRepository } from '@lms/db/repositories/tenants';
+import { ControlPlaneRepository } from '@lms/db/repositories/control-plane';
+import {
+  createVerifiedDomainLookup,
+  findVerifiedSpaceForHost,
+  isHostVerifiedForSpace,
+  type VerifiedDomainGuardLookup,
+} from './domain-resolution';
 
 /**
  * SpaceContextGuard (issue #582): gắn ngữ cảnh trung tâm vào
@@ -91,7 +100,34 @@ export class SpaceContextGuard implements CanActivate {
     private readonly repo: TenantsRepository,
     private readonly evaluator: PermissionEvaluator,
     private readonly reflector: Reflector,
+    // Sổ domain đã xác minh (vòng sửa PR #25): tham số tuỳ chọn để
+    // các test đơn vị cũ dựng guard không cần control plane vẫn chạy
+    // đường slug cũ; khi có sổ, guard phải qua chốt chặn domain
+    // trước khi ghim trung tâm (xem `domain-resolution.ts`).
+    // TenantsModule đã import ControlPlaneModule nên runtime Nest
+    // luôn cấp được provider này.
+    @Optional()
+    @Inject(ControlPlaneRepository)
+    private readonly controlPlane?: Pick<
+      ControlPlaneRepository,
+      'findVerifiedDomainByName' | 'listVerifiedDomainNamesForSpace'
+    >,
   ) {}
+
+  /**
+   * Cổng tra cứu domain đã xác minh của guard, hoặc `undefined` khi
+   * control plane chưa được cấp/cấu hình — khi đó guard giữ đường
+   * slug cũ như trước. Lỗi tra cứu ở đây được nuốt về `undefined` ở
+   * điểm gọi, không ném ra ngoài.
+   */
+  private verifiedDomainLookup(): VerifiedDomainGuardLookup | undefined {
+    if (!this.controlPlane) return undefined;
+    return {
+      findVerifiedDomain: createVerifiedDomainLookup(this.controlPlane),
+      listVerifiedDomainNamesForSpace: (spaceId: string) =>
+        this.controlPlane!.listVerifiedDomainNamesForSpace(spaceId),
+    };
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (context.getType() !== 'http') return true;
@@ -114,7 +150,23 @@ export class SpaceContextGuard implements CanActivate {
       [AUTHENTICATED_VIA_BETTER_AUTH]?: boolean;
     }>();
     const hostHeader = request.headers?.host;
-    const slug = extractSpaceSlugFromHost(Array.isArray(hostHeader) ? hostHeader[0] : hostHeader);
+    // Chốt chặn domain đã xác minh (vòng sửa PR #25, xem
+    // `domain-resolution.ts`): Host khớp domain đã xác minh thì slug
+    // của không gian đó thắng nhãn đầu của Host; Host còn lại đi
+    // đường slug cũ, nhưng chốt chặn ở dưới (sau khi phân giải đích)
+    // sẽ từ chối Host mượn nhãn slug của trung tâm đã có domain xác
+    // minh — không cho qua lặng lẽ như địa chỉ thường.
+    const verifiedLookup = this.verifiedDomainLookup();
+    let verifiedSpace: Awaited<ReturnType<typeof findVerifiedSpaceForHost>> | undefined;
+    if (verifiedLookup) {
+      try {
+        verifiedSpace = await findVerifiedSpaceForHost(hostHeader, verifiedLookup.findVerifiedDomain);
+      } catch {
+        verifiedSpace = undefined;
+      }
+    }
+    const slug = verifiedSpace?.slug
+      ?? extractSpaceSlugFromHost(Array.isArray(hostHeader) ? hostHeader[0] : hostHeader);
     if (!slug) return true;
 
     let target: ResolvedSpaceConnection;
@@ -122,6 +174,16 @@ export class SpaceContextGuard implements CanActivate {
       target = await this.spaceDb.resolveTarget(slug);
     } catch (err) {
       if (err instanceof SpaceRoutingError && err.code === 'space_routing.space_not_found') {
+        // Domain đã xác minh thì sổ đăng ký phải có dòng không gian
+        // tương ứng (khoá ngoại): không tìm thấy đích là trạng thái
+        // lệch sổ, phải fail-closed thay vì cho qua như địa chỉ
+        // thường của đường slug cũ.
+        if (verifiedSpace) {
+          throw new UnauthorizedException({
+            message: 'Verified domain has no registered space',
+            code: 'space.not_found',
+          });
+        }
         return true;
       }
       if (err instanceof SpaceRoutingError && err.code === 'space_routing.not_configured') {
@@ -137,6 +199,27 @@ export class SpaceContextGuard implements CanActivate {
         return true;
       }
       throw err;
+    }
+
+    // Chốt chặn domain (bước 2, trước cả miễn trừ vận hành
+    // platform): trung tâm đã có domain xác minh mà Host không nằm
+    // trong số đó thì bị từ chối ngay — miễn trừ platform chỉ miễn
+    // trạng thái trung tâm và đối chiếu token, không miễn tính xác
+    // thực của địa chỉ. Không gian chưa có domain xác minh nào thì
+    // chốt chặn cho qua đường slug chuyển tiếp như cũ.
+    if (verifiedLookup) {
+      let verified = true;
+      try {
+        verified = await isHostVerifiedForSpace(hostHeader, target.spaceId, verifiedLookup);
+      } catch {
+        verified = true;
+      }
+      if (!verified) {
+        throw new UnauthorizedException({
+          message: 'Host is not a verified domain of the centre at this address',
+          code: 'space.domain_not_verified',
+        });
+      }
     }
 
     // Các tra cứu phục vụ quyết định miễn trừ chạy trong ngữ cảnh

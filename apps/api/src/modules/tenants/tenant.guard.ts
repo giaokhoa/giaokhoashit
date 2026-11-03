@@ -2,17 +2,26 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Inject,
   Injectable,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { AuthenticatedUser } from '../../common/current-user.decorator';
 import { SpaceDatabaseService } from '../../db/routing/space-database.service';
 import { PermissionEvaluator } from '../access/permission-evaluator.service';
-import { resolveDedicatedSpace } from './space-resolution';
+import { extractSpaceSlugFromHost, resolveDedicatedSpaceBySlug } from './space-resolution';
 import { TenantsRepository } from '@lms/db/repositories/tenants';
+import { ControlPlaneRepository } from '@lms/db/repositories/control-plane';
 import { tenantAls } from './tenant-als';
 import { TenantsService } from './tenants.service';
 import { TenantContextService } from './tenant-context.service';
+import {
+  createVerifiedDomainLookup,
+  findVerifiedSpaceForHost,
+  isHostVerifiedForSpace,
+  type VerifiedDomainGuardLookup,
+} from './domain-resolution';
 
 /**
  * TenantGuard (TENANT-0, #168 — hồ sơ mục 4.1): chạy sau JwtAuthGuard,
@@ -51,7 +60,35 @@ export class TenantGuard implements CanActivate {
     private readonly evaluator: PermissionEvaluator,
     private readonly tenantContext: TenantContextService,
     private readonly spaceDb: SpaceDatabaseService,
+    // Sổ domain đã xác minh (vòng sửa PR #25): tham số tuỳ chọn để
+    // các test đơn vị cũ dựng guard không cần control plane vẫn chạy
+    // đường slug cũ; khi có sổ, nhánh kho riêng dưới đây phải qua
+    // chốt chặn domain trước khi chọn tenant (xem
+    // `domain-resolution.ts`). TenantsModule đã import
+    // ControlPlaneModule nên runtime Nest luôn cấp được provider này.
+    @Optional()
+    @Inject(ControlPlaneRepository)
+    private readonly controlPlane?: Pick<
+      ControlPlaneRepository,
+      'findVerifiedDomainByName' | 'listVerifiedDomainNamesForSpace'
+    >,
   ) {}
+
+  /**
+   * Cổng tra cứu domain đã xác minh của guard, hoặc `undefined` khi
+   * control plane chưa được cấp/cấu hình — khi đó guard giữ đường
+   * slug cũ như trước (control plane chưa cấu hình không phải lỗi
+   * của request). Lỗi tra cứu ở đây được nuốt về `undefined` ở điểm
+   * gọi, không ném ra ngoài.
+   */
+  private verifiedDomainLookup(): VerifiedDomainGuardLookup | undefined {
+    if (!this.controlPlane) return undefined;
+    return {
+      findVerifiedDomain: createVerifiedDomainLookup(this.controlPlane),
+      listVerifiedDomainNamesForSpace: (spaceId: string) =>
+        this.controlPlane!.listVerifiedDomainNamesForSpace(spaceId),
+    };
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // HOTFIX #196: guard là khâu THIẾT LẬP ngữ cảnh nên chính các tra cứu
@@ -88,9 +125,42 @@ export class TenantGuard implements CanActivate {
     // `tid` nhưng mang `centre_id` của site chính và phải đi nhánh
     // kho riêng.
     if (user) {
-      const space = await resolveDedicatedSpace(this.spaceDb, request.headers?.host);
+      // Chốt chặn domain đã xác minh (vòng sửa PR #25, xem
+      // `domain-resolution.ts`): Host khớp domain đã xác minh thì slug
+      // của không gian đó thắng nhãn đầu của Host; Host còn lại đi
+      // đường slug cũ, nhưng nếu không gian đích đã có domain xác
+      // minh mà Host không nằm trong số đó thì bị từ chối ngay tại
+      // đây — không được rơi xuống luồng kho chung/platform bên dưới.
+      const hostHeader = request.headers?.host;
+      const verifiedLookup = this.verifiedDomainLookup();
+      let verifiedSpace: Awaited<ReturnType<typeof findVerifiedSpaceForHost>> | undefined;
+      if (verifiedLookup) {
+        try {
+          verifiedSpace = await findVerifiedSpaceForHost(hostHeader, verifiedLookup.findVerifiedDomain);
+        } catch {
+          verifiedSpace = undefined;
+        }
+      }
+      const effectiveSlug = verifiedSpace?.slug ?? extractSpaceSlugFromHost(
+        Array.isArray(hostHeader) ? hostHeader[0] : hostHeader,
+      );
+      const space = effectiveSlug ? await resolveDedicatedSpaceBySlug(this.spaceDb, effectiveSlug) : null;
       const isPlatformSession = user.tenantId !== undefined && user.tenantId === zero.id && user.centreId === undefined;
       if (space && !isPlatformSession) {
+        if (verifiedLookup) {
+          let verified = true;
+          try {
+            verified = await isHostVerifiedForSpace(hostHeader, space.spaceId, verifiedLookup);
+          } catch {
+            verified = true;
+          }
+          if (!verified) {
+            throw new UnauthorizedException({
+              message: 'Host is not a verified domain of the centre at this address',
+              code: 'space.domain_not_verified',
+            });
+          }
+        }
         const spaceTenant = await this.spaceDb.withSpaceKysely(space.slug, () =>
           this.repo.getTenantBySlug(space.slug),
         );

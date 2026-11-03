@@ -18,6 +18,7 @@ import type {
 import {
   ControlPlaneRepository,
   isDedicatedDatabaseNameConflict,
+  isSpaceIssuerUrlConflict,
   type SpaceRegistryRow,
 } from '@lms/db/repositories/control-plane';
 import { emitSpaceRegistryChanged } from '../../db/routing/space-routing-events';
@@ -145,6 +146,14 @@ export class ControlPlaneRegistryService {
     if (await this.repo.findSpaceByDatabaseName(dto.databaseName)) {
       throw new ConflictException({ message: `Database name ${dto.databaseName} is already registered`, code: 'control_plane.database_name_taken' });
     }
+    // Bất biến issuer duy nhất (issue #5, vòng sửa PR #25): một
+    // issuer khác NULL chỉ thuộc về đúng một không gian, vì issuer
+    // là định danh của đúng một realm. Kiểm tra trước để trả 409 rõ
+    // ràng; chỉ số duy nhất riêng phần ở database là chốt chặn cho
+    // cuộc đua ghi đồng thời (ánh xạ ở khối catch dưới đây).
+    if (dto.issuerUrl && await this.repo.findSpaceByIssuerUrl(dto.issuerUrl)) {
+      throw new ConflictException({ message: `Issuer URL ${dto.issuerUrl} is already registered`, code: 'control_plane.issuer_url_taken' });
+    }
     let created: SpaceRegistryRow;
     try {
       created = await this.repo.transaction(async (tx) => {
@@ -181,6 +190,12 @@ export class ControlPlaneRegistryService {
       // vi cũ qua nhánh ConflictException bên trong transaction.
       if (isDedicatedDatabaseNameConflict(error)) {
         throw new ConflictException({ message: `Database name ${dto.databaseName} is already registered`, code: 'control_plane.database_name_taken' });
+      }
+      // Cuộc đua issuer: lượt tạo sau vấp chỉ số duy nhất riêng phần
+      // của issuer trong transaction — ánh xạ thành 409 cùng mã với
+      // kiểm tra ngoài transaction thay vì để lỗi 500 rò ra ngoài.
+      if (isSpaceIssuerUrlConflict(error)) {
+        throw new ConflictException({ message: `Issuer URL ${dto.issuerUrl} is already registered`, code: 'control_plane.issuer_url_taken' });
       }
       throw error;
     }
@@ -248,6 +263,16 @@ export class ControlPlaneRegistryService {
             throw new ConflictException({ message: `Database name ${effectiveDatabaseName} is already registered`, code: 'control_plane.database_name_taken' });
           }
         }
+        // Bất biến issuer duy nhất (issue #5) áp cho cả cập nhật:
+        // đổi issuer sang giá trị đã thuộc về dòng khác thì bị từ
+        // chối 409 ngay trong transaction, trước khi ghi; giữ nguyên
+        // issuer hiện tại hoặc về NULL thì không tính là trùng.
+        if (dto.issuerUrl !== undefined && dto.issuerUrl !== null && dto.issuerUrl !== existing.issuerUrl) {
+          const clash = await this.repo.findOtherSpaceByIssuerUrl(dto.issuerUrl, id, tx);
+          if (clash) {
+            throw new ConflictException({ message: `Issuer URL ${dto.issuerUrl} is already registered`, code: 'control_plane.issuer_url_taken' });
+          }
+        }
         const row = await this.repo.updateSpace(id, { ...dto }, tx);
         await this.repo.insertHistory(
           { spaceId: id, actorId, action: 'update', before: this.snapshot(existing), after: this.snapshot(row) },
@@ -258,6 +283,9 @@ export class ControlPlaneRegistryService {
     } catch (error) {
       if (isDedicatedDatabaseNameConflict(error)) {
         throw new ConflictException({ message: `Database name ${dto.databaseName} is already registered`, code: 'control_plane.database_name_taken' });
+      }
+      if (isSpaceIssuerUrlConflict(error)) {
+        throw new ConflictException({ message: `Issuer URL ${dto.issuerUrl} is already registered`, code: 'control_plane.issuer_url_taken' });
       }
       throw error;
     }
