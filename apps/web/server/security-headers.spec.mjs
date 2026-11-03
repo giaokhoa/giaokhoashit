@@ -21,7 +21,7 @@ describe('CONTENT_SECURITY_POLICY', () => {
     expect(CONTENT_SECURITY_POLICY).not.toContain('*');
   });
 
-  it("script chỉ từ chính origin + nội tuyến hydration của React Router (điểm nới đã ghi lý do), không có nguồn ngoài", () => {
+  it('script chỉ từ chính origin + nội tuyến hydration của React Router (điểm nới đã ghi lý do), không có nguồn ngoài', () => {
     const scriptSrc = CONTENT_SECURITY_POLICY.split('; ').find((d) => d.startsWith('script-src'));
     expect(scriptSrc).toBe("script-src 'self' 'unsafe-inline'");
   });
@@ -45,11 +45,36 @@ describe('CONTENT_SECURITY_POLICY', () => {
 });
 
 describe('applyDocumentSecurityHeaders', () => {
-  it('đặt đúng header CSP và nosniff lên response', () => {
+  /** Dựng response giả thu lại header theo tên đã hạ chữ thường. */
+  function fakeResponse() {
     const headers = new Map();
-    const res = { setHeader: (name, value) => headers.set(name.toLowerCase(), value) };
+    return { headers, res: { setHeader: (name, value) => headers.set(name.toLowerCase(), value) } };
+  }
+
+  it('đặt đúng header CSP và nosniff lên response', () => {
+    const { headers, res } = fakeResponse();
     applyDocumentSecurityHeaders(res);
     expect(headers.get('content-security-policy')).toBe(CONTENT_SECURITY_POLICY);
     expect(headers.get('x-content-type-options')).toBe('nosniff');
+  });
+
+  it('biến thể tenant chỉ cộng đúng origin Keycloak vào connect-src/frame-src và vẫn cấm bị nhúng', () => {
+    const { headers, res } = fakeResponse();
+    applyDocumentSecurityHeaders(res, { keycloakTenant: true });
+    const policy = headers.get('content-security-policy');
+    expect(policy).toContain("connect-src 'self' https://auth.fuckr.net ws: wss:");
+    const frameSrc = policy.split('; ').find((d) => d.startsWith('frame-src'));
+    expect(frameSrc).toContain('https://auth.fuckr.net');
+    expect(frameSrc.split(' ')).not.toContain('https:');
+    expect(policy).toContain("frame-ancestors 'none'");
+  });
+
+  it('biến thể silent check-sso chỉ đổi frame-ancestors thành self cho trang đó', () => {
+    const { headers, res } = fakeResponse();
+    applyDocumentSecurityHeaders(res, { silentCheckSso: true });
+    const policy = headers.get('content-security-policy');
+    expect(policy).toContain("frame-ancestors 'self'");
+    expect(policy).not.toContain('https://auth.fuckr.net');
+    expect(policy).toContain("connect-src 'self' ws: wss:");
   });
 });

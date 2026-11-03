@@ -153,6 +153,30 @@ services:
       retries: 12
       start_period: 30s
 
+  # Backend Spring Boot mới (apps/server): phục vụ endpoint danh tính
+  # /api/me cho trang tenant của web (issue #38) — trang gọi endpoint
+  # này từ trình duyệt kèm access token của adapter Keycloak. Service
+  # không publish cổng ra host trong stack này.
+  # Server chỉ kiểm chứng JWT theo issuer khai ở đây — khớp địa chỉ
+  # công khai của Keycloak (KC_HOSTNAME của service keycloak ở dưới);
+  # khoá ký được server tự lấy từ issuer, không ghim trong cấu hình.
+  server:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      OIDC_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-https://auth.fuckr.net/realms/giaokhoa}
+      SERVER_PORT: 8081
+    healthcheck:
+      # Image JRE không có curl: thăm health bằng Bash /dev/tcp như
+      # healthcheck của service keycloak ở dưới.
+      test: ["CMD", "bash", "-c", 'exec 3<>/dev/tcp/127.0.0.1/8081 || exit 1; printf "GET /actuator/health HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n" >&3; IFS= read -r status <&3; case "$$status" in *" 200 "*) exit 0 ;; *) exit 1 ;; esac']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
   worker:
     build:
       context: .
@@ -200,6 +224,9 @@ services:
       NODE_ENV: production
       PORT: 8080
       LMS_API_INTERNAL_URL: http://api:3100
+      # Upstream riêng của đúng đường /api/me (endpoint danh tính của
+      # apps/server) trong proxy của web — xem apps/web/server/proxy-paths.mjs.
+      LMS_SERVER_INTERNAL_URL: http://server:8081
     ports:
       # Cổng của ứng dụng được publish ra host. Khi gắn Cloudflare
       # Tunnel, tunnel trỏ vào đúng cổng này của máy host. (Keycloak
@@ -207,6 +234,8 @@ services:
       - "${WEB_PORT:-8080}:8080"
     depends_on:
       api:
+        condition: service_healthy
+      server:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8080/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))\""]
