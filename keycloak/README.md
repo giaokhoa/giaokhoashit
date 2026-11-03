@@ -25,6 +25,7 @@ trị viên realm.
 | `verify/verify.mjs` | Bộ kiểm chứng trên Keycloak thật: cấp phát từ môi trường trống, đối chiếu token/flow/phiên/khoá ký theo từng tiêu chí nghiệm thu của issue. |
 | `verify/compose.verify.yaml` | Stack Docker độc lập (PostgreSQL + Keycloak 26.8.1) chỉ phục vụ kiểm chứng; thông tin đăng nhập trong file là giá trị dùng một lần cho môi trường kiểm chứng. |
 | `verify/provision.config.verify.json` | Cấu hình cấp phát cho stack kiểm chứng: hai tenant `tenant-a`, `tenant-b` và realm `giaokhoa`. |
+| `themes/giaokhoa/` | Login theme riêng tên `giaokhoa`: thẻ đăng nhập giữa nền trắng theo mẫu login-v1, hai nút chọn vai trò giáo viên/học sinh chỉ đổi nhãn và gợi ý của trường tài khoản, gói thông điệp tiếng Việt. Theme được gắn vào container qua volume `./keycloak/themes` → `/opt/keycloak/themes` (chỉ đọc) trong `compose.yaml`; việc chọn theme cho realm thực hiện ở mục Themes của Admin Console, không khoá vào code của ứng dụng. |
 
 ## Cách chạy bộ cấp phát
 

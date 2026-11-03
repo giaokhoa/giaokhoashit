@@ -499,6 +499,8 @@ services:
       start_period: 60s
     networks:
       - keycloak-net
+    volumes:
+      - ./keycloak/themes:/opt/keycloak/themes:ro
 
 volumes:
   pgdata:
