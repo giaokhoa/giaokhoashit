@@ -3,9 +3,12 @@
  * (issue #38).
  *
  * File này giữ phần THUẦN, dùng được cả phía server (loader) lẫn phía
- * client (component): ánh xạ hostname → tenant, hình dạng danh tính mà
- * endpoint `GET /api/me` của `apps/server` trả về, và phép đánh giá tư
- * cách của người đăng nhập đối với tenant của trang đang mở.
+ * client (component): hình dạng danh tính mà endpoint `GET /api/me`
+ * của `apps/server` trả về, và phép đánh giá tư cách của người đăng
+ * nhập đối với tenant của trang đang mở. Riêng ánh xạ hostname →
+ * tenant nằm ở tầng dùng chung (`#lib/kc-tenant-hosts`) vì feature
+ * dashboard cũng cần nó ở loader trang gốc; file này xuất lại hàm đó
+ * để các module của feature auth dùng một chỗ.
  *
  * Mô hình danh tính (theo chương Organizations của Keycloak): một realm
  * duy nhất, trung tâm là Organization trong realm; hostname CHỈ cho biết
@@ -17,15 +20,7 @@
  * không thuộc và không có quyền tại tenant của trang.
  */
 
-/**
- * Hai hostname tenant nghiệm thu → alias Organization tương ứng trong
- * realm `giaokhoa`. Hostname ngoài bảng này không phải trang tenant:
- * trang gốc giữ hành vi hiện tại của app.
- */
-const TENANT_ALIAS_BY_HOSTNAME: Readonly<Record<string, string>> = {
-  'trung-tam-1.fuckr.net': 'trung-tam-1',
-  'trung-tam-2.fuckr.net': 'trung-tam-2',
-};
+export { tenantAliasForHostname } from '#lib/kc-tenant-hosts';
 
 /**
  * Danh tính người đăng nhập do `apps/server` trả về từ `GET /api/me`:
@@ -41,17 +36,6 @@ export interface TenantIdentity {
   email: string | null;
   realmRoles: string[];
   organizations: string[];
-}
-
-/**
- * Phân giải tenant của trang từ hostname của request.
- *
- * @param hostname - Hostname đã tách cổng (ví dụ `trung-tam-1.fuckr.net`).
- * @returns Alias của tenant khi hostname thuộc hai tenant nghiệm thu;
- *   `null` với mọi hostname khác.
- */
-export function tenantAliasForHostname(hostname: string): string | null {
-  return TENANT_ALIAS_BY_HOSTNAME[hostname.toLowerCase()] ?? null;
 }
 
 /**

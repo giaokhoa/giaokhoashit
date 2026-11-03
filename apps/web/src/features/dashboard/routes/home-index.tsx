@@ -11,7 +11,7 @@ import type {
 } from '@lms/contracts';
 import { redirect } from 'react-router';
 import { useAuth } from '#lib/auth';
-import { tenantAliasForHostname } from '#features/auth/kc-tenant';
+import { tenantAliasForHostname } from '#lib/kc-tenant-hosts';
 import { HomePage } from '../components/home';
 import { DashboardSkeleton } from '../components/dashboard-skeleton';
 import { queryKeys } from '#lib/query-keys';

@@ -135,14 +135,21 @@ function IdentitySection({ tenantAlias, identity }: { tenantAlias: string; ident
         </div>
       </dl>
       {member ? (
-        <p className="text-sm">
-          Vai trò tại {tenantDisplayName(tenantAlias)}: <strong>{roles.length > 0 ? roles.join(', ') : '—'}</strong>
-        </p>
+        <>
+          <p className="text-sm">
+            Bạn là <strong>thành viên của {tenantDisplayName(tenantAlias)}</strong>.
+          </p>
+          <p className="text-sm">
+            Vai trò tại {tenantDisplayName(tenantAlias)}: <strong>{roles.length > 0 ? roles.join(', ') : '—'}</strong>
+          </p>
+        </>
       ) : (
         <p className="text-sm font-medium">
           Tài khoản thuộc{' '}
-          {identity.organizations.length > 0 ? identity.organizations.join(', ') : 'không thuộc trung tâm nào'} — không
-          thuộc {tenantAlias} và không có quyền tại {tenantAlias}.
+          {identity.organizations.length > 0
+            ? identity.organizations.map(tenantDisplayName).join(', ')
+            : 'không thuộc trung tâm nào'}{' '}
+          — không thuộc {tenantDisplayName(tenantAlias)} và không có quyền tại {tenantDisplayName(tenantAlias)}.
         </p>
       )}
     </div>
