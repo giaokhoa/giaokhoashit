@@ -19,28 +19,20 @@ import {
 /**
  * Spec tích hợp của PILOT Kysely kho control plane (issue #640).
  *
- * Database control plane được dựng từ rỗng bằng chính cầu nối
- * migration của package (carrier đóng băng) trên cụm PostgreSQL
- * thật của môi trường test (biến `LMS_DB_TEST_ADMIN_URL` ghi đè
- * cụm khi cần, mặc định suy từ `DATABASE_URL` của package). Mọi ca
- * chạy qua repository production ở `control-plane.ts` — không mô
- * phỏng handle.
+ * Database control plane được dựng từ rỗng bằng chính cầu nối migration của package (carrier đóng băng) trên cụm
+ * PostgreSQL thật của môi trường test (biến `LMS_DB_TEST_ADMIN_URL` ghi đè cụm khi cần, mặc định suy từ `DATABASE_URL`
+ * của package). Mọi ca chạy qua repository production ở `control-plane.ts` — không mô phỏng handle.
  *
- * Ngoài đối chiếu hành vi của repository, spec này là nơi CHỐT bốn
- * thử nghiệm được phân bổ cho pilot (kết quả văn bản ghi trong
- * playbook ở `AGENTS.md` của package):
- * - T-4: ngữ nghĩa `undefined` trong values/set/where của Kysely
- *   (đo cả SQL biên dịch lẫn kết quả chạy thật).
- * - T-7 (phần control plane): contract kiểu runtime trên cùng
- *   database — cùng một dòng đọc qua oracle độc lập (Kysely thô
- *   ngoài repository) và qua repository cho kiểu runtime từng
- *   cột đại diện (jsonb snapshot, timestamptz, uuid, text).
- * - T-10: hình dạng lỗi `pg` cho ca trùng `database_name`
- *   dedicated và ca trùng slug.
- * - U5: insert không truyền id nhận id khớp regex UUIDv7 qua
- *   `returning`; insert có id tường minh giữ nguyên id.
- * Và đo T-1 (registry ~20 instance) + kiểm chứng bộ máy migration
- * trên kho control plane ở cả hai đường (từ rỗng / đã áp đủ no-op).
+ * Ngoài đối chiếu hành vi của repository, spec này là nơi CHỐT bốn thử nghiệm được phân bổ cho pilot (kết quả văn bản
+ * ghi trong playbook ở `AGENTS.md` của package):
+ * - T-4: ngữ nghĩa `undefined` trong values/set/where của Kysely (đo cả SQL biên dịch lẫn kết quả chạy thật).
+ * - T-7 (phần control plane): contract kiểu runtime trên cùng database — cùng một dòng đọc qua oracle độc lập (Kysely
+ *   thô ngoài repository) và qua repository cho kiểu runtime từng cột đại diện (jsonb snapshot, timestamptz, uuid,
+ *   text).
+ * - T-10: hình dạng lỗi `pg` cho ca trùng `database_name` dedicated và ca trùng slug.
+ * - U5: insert không truyền id nhận id khớp regex UUIDv7 qua `returning`; insert có id tường minh giữ nguyên id. Và đo
+ *   T-1 (registry ~20 instance) + kiểm chứng bộ máy migration trên kho control plane ở cả hai đường (từ rỗng / đã áp đủ
+ *   no-op).
  */
 const adminUrl =
   process.env.LMS_DB_TEST_ADMIN_URL ??
@@ -57,7 +49,6 @@ let pool: Pool;
 let db: ControlPlaneDb;
 let repo: ControlPlaneRepository;
 
-/** Dữ kiện đăng ký mẫu; slug truyền vào để các ca không giẫm nhau. */
 function registration(slug: string, patch: Partial<NewSpaceRegistration> = {}): NewSpaceRegistration {
   return {
     slug,
@@ -74,7 +65,6 @@ function registration(slug: string, patch: Partial<NewSpaceRegistration> = {}): 
   };
 }
 
-/** Ảnh chụp sổ đăng ký theo đúng hình dạng service ghi vào lịch sử. */
 function snapshotOf(row: { id: string; slug: string; name: string; kind: string; status: string; databaseName: string; storageMode: string; connectionRoleRef: string; secretRef: string | null; schemaVersion: string | null; plan: string | null }): SpaceRegistrySnapshot {
   return {
     id: row.id,
@@ -142,8 +132,8 @@ describe('repository control plane trên Kysely — đối chiếu hành vi', ()
     expect((await repo.findSpaceById(a!.id))!.slug).toBe('pilot-find-a');
     expect((await repo.findSpaceBySlug('pilot-find-b'))!.id).toBe(b!.id);
     expect((await repo.findSpaceByDatabaseName('db_pilot_find_a'))!.id).toBe(a!.id);
-    // Loại trừ trong truy vấn: hỏi tên của A mà loại trừ B thì thấy A;
-    // loại trừ chính A thì không thấy dòng nào khác mang tên đó.
+    // Loại trừ trong truy vấn: hỏi tên của A mà loại trừ B thì thấy A; loại trừ chính A thì không thấy dòng nào khác
+    // mang tên đó.
     expect((await repo.findOtherSpaceByDatabaseName('db_pilot_find_a', b!.id))!.id).toBe(a!.id);
     expect(await repo.findOtherSpaceByDatabaseName('db_pilot_find_a', a!.id)).toBeUndefined();
     expect(await repo.findSpaceBySlug('khong-ton-tai')).toBeUndefined();
@@ -160,8 +150,8 @@ describe('repository control plane trên Kysely — đối chiếu hành vi', ()
     expect(updated.plan).toBe('basic');
     expect(updated.status).toBe('active');
     expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(created!.updatedAt.getTime());
-    // Patch mang undefined tường minh (kiểu Partial cho phép) cũng bị
-    // loại như trường vắng mặt — không được ghi thành NULL (T-4).
+    // Patch mang undefined tường minh (kiểu Partial cho phép) cũng bị loại như trường vắng mặt — không được ghi thành
+    // NULL (T-4).
     const after = await repo.updateSpace(created!.id, { plan: undefined, status: undefined });
     expect(after.plan).toBe('basic');
     expect(after.status).toBe('active');
@@ -194,9 +184,8 @@ describe('repository control plane trên Kysely — đối chiếu hành vi', ()
       .selectFrom('space_registry_history')
       .select((eb) => eb.fn.countAll().as('n'))
       .executeTakeFirst();
-    // Chỉ đúng một dòng lịch sử của ca commit ở trên trong toàn DB
-    // tính tới thời điểm này của ca nguyên tử (các ca trước ghi vào
-    // pilot-dup-anchor 1 dòng → tổng kỳ vọng là 2).
+    // Chỉ đúng một dòng lịch sử của ca commit ở trên trong toàn DB tính tới thời điểm này của ca nguyên tử (các ca
+    // trước ghi vào pilot-dup-anchor 1 dòng → tổng kỳ vọng là 2).
     expect(Number(orphan!.n)).toBe(2);
   });
 
@@ -250,9 +239,8 @@ describe('repository control plane trên Kysely — đối chiếu hành vi', ()
 
     const [listed] = await repo.listHistory(created!.id);
     expect(listed!.after).toEqual(snapshot);
-    // Khớp từng byte ở tầng lưu trữ: văn bản jsonb đã lưu của dòng
-    // ghi qua repository phải parse lại đúng snapshot (xem thêm ca
-    // contract kiểu runtime ở mục T-7).
+    // Khớp từng byte ở tầng lưu trữ: văn bản jsonb đã lưu của dòng ghi qua repository phải parse lại đúng snapshot (xem
+    // thêm ca contract kiểu runtime ở mục T-7).
     const raw = await db
       .selectFrom('space_registry_history')
       .select(sql<string>`after::text`.as('stored'))
@@ -379,8 +367,8 @@ describe('T-4 — ngữ nghĩa undefined trong values/set/where của Kysely (đ
     expect(compiled.sql).not.toContain('"secret_ref"');
     expect(compiled.parameters).not.toContain(undefined);
     const [row] = await query.execute();
-    // status nhận default 'provisioning' của database — bằng chứng
-    // cột bị bỏ qua chứ không bị ghi NULL hay chuỗi 'undefined'.
+    // status nhận default 'provisioning' của database — bằng chứng cột bị bỏ qua chứ không bị ghi NULL hay chuỗi
+    // 'undefined'.
     expect(row!.status).toBe('provisioning');
     expect(row!.secret_ref).toBeNull();
   });
@@ -489,9 +477,8 @@ describe('T-7 (phần control plane) + T-10 — contract kiểu runtime và hìn
     expect(oracleReadBack.before).toEqual(snapshot);
     expect(oracleReadBack.after).toEqual(snapshot);
 
-    // Khớp từng byte ở tầng lưu trữ: cùng một snapshot ghi qua hai
-    // đường (oracle thô và repository) cho văn bản jsonb đã lưu
-    // giống hệt nhau.
+    // Khớp từng byte ở tầng lưu trữ: cùng một snapshot ghi qua hai đường (oracle thô và repository) cho văn bản jsonb
+    // đã lưu giống hệt nhau.
     const storedTexts = await db
       .selectFrom('space_registry_history')
       .select(sql<string>`after::text`.as('stored'))
@@ -555,9 +542,8 @@ describe('T-7 (phần control plane) + T-10 — contract kiểu runtime và hìn
     expect(ke.cause).toBeUndefined();
     expect(isDedicatedDatabaseNameConflict(kyselyError)).toBe(true);
 
-    // Đường repository (insert có onConflict theo slug): va chạm
-    // database_name vẫn ném và được nhận diện — đây là ca service
-    // ánh xạ thành 409.
+    // Đường repository (insert có onConflict theo slug): va chạm database_name vẫn ném và được nhận diện — đây là ca
+    // service ánh xạ thành 409.
     let repoError: unknown;
     try {
       await repo.insertSpaceIfAbsent(registration('t10-fourth', { databaseName: 'db_t10_first' }));
@@ -600,10 +586,8 @@ describe('bộ máy migration trên kho control plane — hai đường', () => 
   });
 
   it('đường đã có nhật ký đầy đủ: migrateToLatest là no-op, dữ kiện còn nguyên', async () => {
-    // Nhật ký của database này có đủ carrier đóng băng (2 tên) lẫn
-    // tên migration native đã áp — hậu kiểm sự có mặt của carrier
-    // chỉ đòi các carrier thật phải có mặt, tên native là phần
-    // thừa được phép.
+    // Nhật ký của database này có đủ carrier đóng băng (2 tên) lẫn tên migration native đã áp — hậu kiểm sự có mặt của
+    // carrier chỉ đòi các carrier thật phải có mặt, tên native là phần thừa được phép.
     const carrierNames = MIGRATION_STORES['control-plane'].carrierNames;
     expect(carrierNames).toHaveLength(2);
     const migrator = new Migrator({ db, provider: new FrozenSqlProvider(join(process.cwd(), 'migrations', 'control-plane')) });
@@ -636,17 +620,15 @@ describe('T-1 — registry nhiều instance trên cụm thật (20 slug mô ph�
       pools.push(p);
       instances.push(createControlPlaneKysely(p));
     }
-    // Truy vấn đầu của instance đầu tiên: độ trễ tạo instance + mở
-    // connection + chạy truy vấn được đo trọn ở đây.
+    // Truy vấn đầu của instance đầu tiên: độ trễ tạo instance + mở connection + chạy truy vấn được đo trọn ở đây.
     await sql`SELECT 1`.execute(instances[0]!);
     const firstLatencyMs = performance.now() - startedAt;
     for (const instance of instances.slice(1)) {
       await sql`SELECT 1`.execute(instance);
     }
     const during = await countConnections();
-    // Mỗi pool đã chạy truy vấn giữ ít nhất 1 connection; tổng không
-    // vượt tổng trần 20 pool × max 2 (+ connection của chính ca đo
-    // không thuộc database này).
+    // Mỗi pool đã chạy truy vấn giữ ít nhất 1 connection; tổng không vượt tổng trần 20 pool × max 2 (+ connection của
+    // chính ca đo không thuộc database này).
     expect(during - baseline).toBeGreaterThanOrEqual(20);
     expect(during - baseline).toBeLessThanOrEqual(40);
     expect(firstLatencyMs).toBeLessThan(5_000);

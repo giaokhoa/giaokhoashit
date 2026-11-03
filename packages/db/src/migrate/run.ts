@@ -1,33 +1,22 @@
 /**
- * CLI mỏng chạy migration cho một kho (`run.js <kho>` sau khi build
- * package — chuỗi service `migrate` của compose và script `db:*`
- * của apps/api gọi đúng điểm vào này).
+ * CLI mỏng chạy migration cho một kho (`run.js <kho>` sau khi build package — chuỗi service `migrate` của compose và
+ * script `db:*` của apps/api gọi đúng điểm vào này).
  *
  * Một lượt migrate làm đúng 3 việc, theo thứ tự:
- * 1. Phân giải thư mục migration qua điểm vào chính của package
- *    (`require.resolve('@lms/db')` — đường dẫn TUYỆT ĐỐI, diệt lớp
- *    lỗi "sai thư mục làm việc báo thành công giả": runner không
- *    bao giờ suy thư mục từ cwd).
- * 2. Áp migration qua trình tự dùng chung `applyStoreMigrations`
- *    (xem `apply.ts`): bước tiền-migration shim `uuidv7()` cho cụm
- *    dưới PostgreSQL 18 (ngoài nội dung carrier, không ghi nhật
- *    ký), rồi `migrateToLatest()` — hàm dùng chung tự kiểm kết quả
- *    `{ error, results }` mà Kysely trả (Kysely không ném lỗi từ
- *    `migrateToLatest()`) và ném lỗi khi có migration hỏng.
- * 3. Hậu kiểm số đếm (`verify.ts`) trên database đích; lệch thì
- *    thoát 1 dù migrate báo thành công.
+ * 1. Phân giải thư mục migration qua điểm vào chính của package (`require.resolve('@lms/db')` — đường dẫn TUYỆT ĐỐI,
+ *    diệt lớp lỗi "sai thư mục làm việc báo thành công giả": runner không bao giờ suy thư mục từ cwd).
+ * 2. Áp migration qua trình tự dùng chung `applyStoreMigrations` (xem `apply.ts`): bước tiền-migration shim `uuidv7()`
+ *    cho cụm dưới PostgreSQL 18 (ngoài nội dung carrier, không ghi nhật ký), rồi `migrateToLatest()` — hàm dùng chung
+ *    tự kiểm kết quả `{ error, results }` mà Kysely trả (Kysely không ném lỗi từ `migrateToLatest()`) và ném lỗi khi có
+ *    migration hỏng.
+ * 3. Hậu kiểm số đếm (`verify.ts`) trên database đích; lệch thì thoát 1 dù migrate báo thành công.
  *
- * Cờ `--verify-only`: chỉ làm việc 3 (đọc số đếm, không áp
- * migration) — đường kiểm chứng sau deploy mà runbook dùng.
+ * Cờ `--verify-only`: chỉ làm việc 3 (đọc số đếm, không áp migration) — đường kiểm chứng sau deploy mà runbook dùng.
  *
- * URL kết nối theo kho (mỗi kho một biến, khớp cấu hình bộ máy cũ
- * mà chuỗi migrate đang dùng): kho trung tâm ưu tiên
- * `MIGRATION_DATABASE_URL` rồi `DATABASE_URL`; control plane dùng
- * `CONTROL_PLANE_DATABASE_URL`; ngân hàng hệ thống dùng
- * `SYSTEM_BANK_DATABASE_URL`. Khi `DATABASE_SSL=true`, kết nối đi
- * qua TLS với `rejectUnauthorized: false` (đúng cách đường chạy của
- * API xử lý URL khi nhà cung cấp bắt TLS) thay vì gắn `sslmode`
- * vào chuỗi kết nối.
+ * URL kết nối theo kho (mỗi kho một biến, khớp cấu hình bộ máy cũ mà chuỗi migrate đang dùng): kho trung tâm ưu tiên
+ * `MIGRATION_DATABASE_URL` rồi `DATABASE_URL`; control plane dùng `CONTROL_PLANE_DATABASE_URL`; ngân hàng hệ thống dùng
+ * `SYSTEM_BANK_DATABASE_URL`. Khi `DATABASE_SSL=true`, kết nối đi qua TLS với `rejectUnauthorized: false` (đúng cách
+ * đường chạy của API xử lý URL khi nhà cung cấp bắt TLS) thay vì gắn `sslmode` vào chuỗi kết nối.
  */
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -45,26 +34,21 @@ import { applyStoreMigrations } from './apply';
 import { isMigrationStoreKey, MIGRATION_STORES, type MigrationStoreKey } from './stores';
 import { verifyStore } from './verify';
 
-/** Gốc package `@lms/db`: phân giải qua chính package (không qua cwd). */
 function packageRoot(): string {
   try {
     const require = createRequire(__filename);
-    // Phân giải qua điểm vào chính của package (`exports["."]` →
-    // `dist/index.js`) rồi đi lên một cấp: `exports` map của package
-    // không khai `./package.json` nên phân giải thẳng
-    // `@lms/db/package.json` bị Node từ chối
-    // (ERR_PACKAGE_PATH_NOT_EXPORTED — đã kiểm chứng tại thời điểm
-    // thi công); điểm vào chính cho cùng kết quả tuyệt đối.
+    // Phân giải qua điểm vào chính của package (`exports["."]` → `dist/index.js`) rồi đi lên một cấp: `exports` map của
+    // package không khai `./package.json` nên phân giải thẳng `@lms/db/package.json` bị Node từ chối
+    // (ERR_PACKAGE_PATH_NOT_EXPORTED — đã kiểm chứng tại thời điểm thi công); điểm vào chính cho cùng kết quả tuyệt
+    // đối.
     return join(dirname(require.resolve('@lms/db')), '..');
   } catch {
-    // Dự phòng khi chạy từ source chưa qua workspace link: vị trí
-    // file này sâu đúng hai cấp dưới gốc package ở cả `src/` và
-    // `dist/` (cùng độ sâu), nên suy từ `__dirname` vẫn đúng.
+    // Dự phòng khi chạy từ source chưa qua workspace link: vị trí file này sâu đúng hai cấp dưới gốc package ở cả
+    // `src/` và `dist/` (cùng độ sâu), nên suy từ `__dirname` vẫn đúng.
     return join(__dirname, '..', '..');
   }
 }
 
-/** Cấu hình pool cho một kho từ biến môi trường (lỗi rõ khi thiếu biến). */
 function poolConfigFor(store: MigrationStoreKey): PoolConfig {
   const envVars = MIGRATION_STORES[store].connectionEnvVars;
   const url = envVars.map((name) => process.env[name]).find((value) => value) ?? '';
@@ -74,8 +58,8 @@ function poolConfigFor(store: MigrationStoreKey): PoolConfig {
     );
   }
   if (process.env.DATABASE_SSL === 'true') {
-    // Bỏ tham số sslmode trong URL (pg không hiểu `no-verify`) rồi
-    // bật TLS ở cấp Pool — khớp cách API xử lý khi DATABASE_SSL=true.
+    // Bỏ tham số sslmode trong URL (pg không hiểu `no-verify`) rồi bật TLS ở cấp Pool — khớp cách API xử lý khi
+    // DATABASE_SSL=true.
     const parsed = new URL(url);
     parsed.searchParams.delete('sslmode');
     return { connectionString: parsed.toString(), ssl: { rejectUnauthorized: false } };
@@ -83,7 +67,6 @@ function poolConfigFor(store: MigrationStoreKey): PoolConfig {
   return { connectionString: url };
 }
 
-/** Dựng handle Kysely của kho trên pool đã cấp (đúng factory của package). */
 function createStoreKysely(store: MigrationStoreKey, pool: Pool): Kysely<any> {
   switch (store) {
     case 'centre':
@@ -95,7 +78,6 @@ function createStoreKysely(store: MigrationStoreKey, pool: Pool): Kysely<any> {
   }
 }
 
-/** In hướng dẫn dùng rồi trả mã thoát cho lỗi tham số (không ném stack dài cho lỗi gõ lệnh). */
 function usage(): number {
   console.error(
     `Cách dùng: node dist/migrate/run.js <kho> [--verify-only]\nKho: centre | control-plane | system-bank\n--verify-only: chỉ hậu kiểm số đếm, không áp migration.`,
@@ -128,10 +110,8 @@ async function main(argv: string[]): Promise<number> {
       }
       return 0;
     }
-    // Trình tự áp dùng chung của cả ba đường ghi migration (xem
-    // `apply.ts`): shim tiền-migration + `migrateToLatest()` + tự
-    // kiểm lỗi — lỗi áp được hàm dùng chung ném ra và rơi vào khối
-    // bắt lỗi của điểm vào CLI (thoát 1).
+    // Trình tự áp dùng chung của cả ba đường ghi migration (xem `apply.ts`): shim tiền-migration + `migrateToLatest()`
+    // + tự kiểm lỗi — lỗi áp được hàm dùng chung ném ra và rơi vào khối bắt lỗi của điểm vào CLI (thoát 1).
     const { shim, results } = await applyStoreMigrations(db, store, migrationsDir);
     console.log(`tiền-migration ${store}: shim uuidv7 ${shim === 'installed' ? 'đã cài (cụm dưới PG18)' : 'bỏ qua (cụm PG18+)'}`);
     for (const result of results) {
@@ -147,16 +127,14 @@ async function main(argv: string[]): Promise<number> {
     }
     return 0;
   } finally {
-    // `destroy()` của Kysely đóng luôn pool đã truyền vào (hành vi
-    // của PostgresDialect) nên chỉ cần huỷ instance, không đóng
-    // pool riêng thêm lần nữa.
+    // `destroy()` của Kysely đóng luôn pool đã truyền vào (hành vi của PostgresDialect) nên chỉ cần huỷ instance, không
+    // đóng pool riêng thêm lần nữa.
     await db.destroy().catch(() => undefined);
   }
 }
 
-// Điểm vào CLI: chỉ chạy khi file được gọi trực tiếp (không chạy
-// khi module bị import từ spec — spec import các hàm qua module
-// khác, không import file này).
+// Điểm vào CLI: chỉ chạy khi file được gọi trực tiếp (không chạy khi module bị import từ spec — spec import các hàm qua
+// module khác, không import file này).
 if (require.main === module) {
   main(process.argv.slice(2))
     .then((code) => {

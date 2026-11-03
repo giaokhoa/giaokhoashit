@@ -3,36 +3,25 @@ import type { PaperQuality, PaperReading, PaperRosterEntry, PaperSlotLayout } fr
 import type { CentreDb } from '../client';
 
 /**
- * Kho dữ liệu của chấm bài giấy trên Kysely (CAM-0, issue #112;
- * chuyển Kysely tại issue #644, nhóm G4 của chiến dịch): lô phiếu
- * in (layout + roster đã chụp) và từng phiếu đã quét kèm vòng đời
- * hàng chờ. Mọi truy vấn nghiệp vụ nằm ở PaperGradingService; kho
- * này chỉ làm CRUD mỏng trên hai bảng `exam_batches`/`exam_scans`.
+ * Kho dữ liệu của chấm bài giấy trên Kysely (CAM-0, issue #112; chuyển Kysely tại issue #644, nhóm G4 của chiến dịch):
+ * lô phiếu in (layout + roster đã chụp) và từng phiếu đã quét kèm vòng đời hàng chờ. Mọi truy vấn nghiệp vụ nằm ở
+ * PaperGradingService; kho này chỉ làm CRUD mỏng trên hai bảng `exam_batches`/`exam_scans`.
  *
  * Khuôn truy vấn theo đúng pilot kho control plane (issue #640):
- * - Cột đọc khai tường minh kèm bí danh camelCase
- *   (`'exam_pin_id as examPinId'`) dùng chung cho select và
- *   returning — KHÔNG bật CamelCasePlugin (một nguồn sự thật là
- *   database thật).
- * - Ghi qua hàm ánh xạ Insert/Update loại `undefined` tường minh
- *   từng trường (thử nghiệm T-4): `undefined` = không ghi/không
- *   đổi, `null` = ghi NULL.
- * - Mọi ghi jsonb (`layout`, `roster` của lô; `quality`,
- *   `readings` của phiếu) đi qua `jsonbValue` (xâu hoá tường minh
- *   + `::jsonb`, theo mục `JSONColumnType` của tài liệu Kysely và
- *   thử nghiệm T-6); `null` của cột jsonb nullable (`quality`)
- *   giữ nguyên là SQL NULL, không bị xâu hoá thành JSON `null`.
- *   `readings` có DEFAULT `[]` ở database: insert không truyền
- *   thì nhận mặc định, không tự điền ở tầng này.
- * - Khoá chính `uuidv7()` do database sinh (phụ lục U của kế
- *   hoạch): insert bỏ qua `id` và lấy dòng qua `returning`.
- * - Repository cũ KHÔNG có bề mặt giao dịch (mọi phương thức chạy
- *   trên handle gốc, không tham số tx) — bản Kysely giữ đúng như
- *   vậy, không thêm tham số handle (rủi ro R-G4-3 của hồ sơ chuẩn
- *   bị: thêm tx vào sẽ chế bề mặt không có trong hợp đồng cũ).
+ * - Cột đọc khai tường minh kèm bí danh camelCase (`'exam_pin_id as examPinId'`) dùng chung cho select và returning —
+ *   KHÔNG bật CamelCasePlugin (một nguồn sự thật là database thật).
+ * - Ghi qua hàm ánh xạ Insert/Update loại `undefined` tường minh từng trường (thử nghiệm T-4): `undefined` = không
+ *   ghi/không đổi, `null` = ghi NULL.
+ * - Mọi ghi jsonb (`layout`, `roster` của lô; `quality`, `readings` của phiếu) đi qua `jsonbValue` (xâu hoá tường minh
+ *   + `::jsonb`, theo mục `JSONColumnType` của tài liệu Kysely và thử nghiệm T-6); `null` của cột jsonb nullable
+ *   (`quality`) giữ nguyên là SQL NULL, không bị xâu hoá thành JSON `null`. `readings` có DEFAULT `[]` ở database:
+ *   insert không truyền thì nhận mặc định, không tự điền ở tầng này.
+ * - Khoá chính `uuidv7()` do database sinh (phụ lục U của kế hoạch): insert bỏ qua `id` và lấy dòng qua `returning`.
+ * - Repository cũ KHÔNG có bề mặt giao dịch (mọi phương thức chạy trên handle gốc, không tham số tx) — bản Kysely giữ
+ *   đúng như vậy, không thêm tham số handle (rủi ro R-G4-3 của hồ sơ chuẩn bị: thêm tx vào sẽ chế bề mặt không có trong
+ *   hợp đồng cũ).
  */
 
-/** Dòng `exam_batches`. */
 export interface PaperBatchRow {
   id: string;
   examPinId: string;
@@ -46,7 +35,6 @@ export interface PaperBatchRow {
   updatedAt: Date;
 }
 
-/** Dòng `exam_scans`. */
 export interface PaperScanRow {
   id: string;
   examPinId: string;
@@ -68,11 +56,6 @@ export interface PaperScanRow {
   updatedAt: Date;
 }
 
-// ---------------------------------------------------------------------------
-// Giá trị ghi (hợp đồng công khai — khớp `$inferInsert` của repository cũ)
-// ---------------------------------------------------------------------------
-
-/** Giá trị chèn `exam_batches`. */
 export interface NewPaperBatch {
   id?: string;
   examPinId: string;
@@ -86,7 +69,6 @@ export interface NewPaperBatch {
   updatedAt?: Date;
 }
 
-/** Giá trị chèn `exam_scans` (cũng là hình dạng patch của `updateScan`). */
 export interface NewPaperScan {
   id?: string;
   examPinId: string;
@@ -108,10 +90,8 @@ export interface NewPaperScan {
   updatedAt?: Date;
 }
 
-// ---------------------------------------------------------------------------
-// Danh sách cột đọc: tên cột thật kèm bí danh camelCase, dùng chung cho
-// select và returning của từng bảng (khuôn pilot — không CamelCasePlugin).
-// ---------------------------------------------------------------------------
+// Danh sách cột đọc: tên cột thật kèm bí danh camelCase, dùng chung cho select và returning của từng bảng (khuôn pilot
+// — không CamelCasePlugin).
 
 const BATCH_COLUMNS = [
   'id', 'exam_pin_id as examPinId', 'variant_code as variantCode',
@@ -131,16 +111,12 @@ const SCAN_COLUMNS = [
   'updated_at as updatedAt',
 ] as const;
 
-// ---------------------------------------------------------------------------
-// Ánh xạ ghi: loại `undefined` tường minh từng trường (T-4); cột jsonb
-// nullable phân biệt ba trạng thái — `undefined` bỏ qua, `null` ghi SQL
-// NULL, giá trị thì xâu hoá qua `jsonbValue`.
-// ---------------------------------------------------------------------------
+// Ánh xạ ghi: loại `undefined` tường minh từng trường (T-4); cột jsonb nullable phân biệt ba trạng thái — `undefined`
+// bỏ qua, `null` ghi SQL NULL, giá trị thì xâu hoá qua `jsonbValue`.
 
 /**
- * Biểu thức tham số jsonb cho một giá trị ghi: xâu hoá tường minh
- * rồi ép `::jsonb` — pg không suy được kiểu tham số khi ghi jsonb,
- * ghi thẳng object sẽ lỗi.
+ * Biểu thức tham số jsonb cho một giá trị ghi: xâu hoá tường minh rồi ép `::jsonb` — pg không suy được kiểu tham số khi
+ * ghi jsonb, ghi thẳng object sẽ lỗi.
  */
 function jsonbValue<T>(value: T): RawBuilder<T> {
   return sql<T>`${JSON.stringify(value)}::jsonb`;
@@ -184,7 +160,6 @@ function scanInsertValues(v: NewPaperScan) {
   };
 }
 
-/** Ánh xạ patch của `exam_scans`: trải patch như bản cũ, `updated_at` luôn làm mới ở cuối. */
 function scanUpdateSet(patch: Partial<NewPaperScan>) {
   return {
     ...(patch.id !== undefined ? { id: patch.id } : {}),
@@ -208,11 +183,9 @@ function scanUpdateSet(patch: Partial<NewPaperScan>) {
   };
 }
 
-/** Kho dữ liệu của chấm bài giấy: lô in + phiếu quét (xem đầu file). */
 export class PaperGradingRepository {
   constructor(private readonly handle: CentreDb) {}
 
-  /** Chèn lô phiếu in mới. */
   async insertBatch(v: NewPaperBatch): Promise<PaperBatchRow> {
     return this.handle
       .insertInto('exam_batches')
@@ -221,7 +194,6 @@ export class PaperGradingRepository {
       .executeTakeFirstOrThrow();
   }
 
-  /** Lô theo id. */
   async getBatch(id: string): Promise<PaperBatchRow | undefined> {
     return this.handle
       .selectFrom('exam_batches')
@@ -230,7 +202,6 @@ export class PaperGradingRepository {
       .executeTakeFirst();
   }
 
-  /** Mọi lô của một lần ghim, theo thứ tự tạo. */
   async listBatchesForPin(pinId: string): Promise<PaperBatchRow[]> {
     return this.handle
       .selectFrom('exam_batches')
@@ -240,7 +211,6 @@ export class PaperGradingRepository {
       .execute();
   }
 
-  /** Chèn phiếu đã quét. */
   async insertScan(v: NewPaperScan): Promise<PaperScanRow> {
     return this.handle
       .insertInto('exam_scans')
@@ -249,7 +219,6 @@ export class PaperGradingRepository {
       .executeTakeFirstOrThrow();
   }
 
-  /** Phiếu theo id. */
   async getScan(id: string): Promise<PaperScanRow | undefined> {
     return this.handle
       .selectFrom('exam_scans')
@@ -258,7 +227,6 @@ export class PaperGradingRepository {
       .executeTakeFirst();
   }
 
-  /** Mọi phiếu của một lần ghim, lọc tuỳ chọn theo trạng thái hàng chờ. */
   async listScansForPin(pinId: string, status?: string): Promise<PaperScanRow[]> {
     let query = this.handle
       .selectFrom('exam_scans')
@@ -270,7 +238,6 @@ export class PaperGradingRepository {
       .execute();
   }
 
-  /** Cập nhật phiếu (gán lô/định danh, xác nhận ca mơ hồ) — trả dòng sau cập nhật. */
   async updateScan(id: string, patch: Partial<NewPaperScan>): Promise<PaperScanRow> {
     return this.handle
       .updateTable('exam_scans')
@@ -280,7 +247,6 @@ export class PaperGradingRepository {
       .executeTakeFirstOrThrow();
   }
 
-  /** Xoá phiếu. */
   async deleteScan(id: string): Promise<void> {
     await this.handle
       .deleteFrom('exam_scans')
@@ -288,7 +254,6 @@ export class PaperGradingRepository {
       .execute();
   }
 
-  /** Phiếu mới nhất của quiz (dùng cho kiểm tra nhanh ở tầng service khi cần). */
   async latestScanForQuiz(pinId: string): Promise<PaperScanRow | undefined> {
     return this.handle
       .selectFrom('exam_scans')
