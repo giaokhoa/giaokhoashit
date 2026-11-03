@@ -137,10 +137,8 @@ export interface MultipleChoiceEditorProps {
   /** Nhãn truy cập (aria-label) đặt trên vùng nhập liệu. */
   ariaLabel?: string;
   /**
-   * Đường chèn ảnh do bề mặt chứa cung cấp — cùng giao ước với
-   * {@link RichTextEditor}: editor gọi kèm tệp khi dán/kéo-thả ảnh,
-   * không kèm tệp khi bấm nút ảnh; bề mặt chứa trả định danh bền để
-   * chèn hoặc `null` để huỷ.
+   * Đường chèn ảnh do bề mặt chứa cung cấp — cùng giao ước với {@link RichTextEditor}: editor gọi kèm tệp khi
+   * dán/kéo-thả ảnh, không kèm tệp khi bấm nút ảnh; bề mặt chứa trả định danh bền để chèn hoặc `null` để huỷ.
    */
   onRequestImage?: (
     file?: File,
@@ -180,11 +178,9 @@ export function MultipleChoiceEditor({
 
   return (
     <RichTextEditor
-      // Tài liệu thống nhất KHÔNG phải tài liệu hợp đồng (mang node
-      // choice/choiceList chỉ sống phía soạn) — ép kiểu tại biên này
-      // là có chủ đích và được module multiple-choice.ts mô tả: vỏ
-      // editor chỉ vận hành trên JSON, hình dạng hợp đồng được khôi
-      // phục bằng splitMultipleChoiceDocument trước khi lưu.
+      // Tài liệu thống nhất KHÔNG phải tài liệu hợp đồng (mang node choice/choiceList chỉ sống phía soạn) — ép kiểu tại
+      // biên này là có chủ đích và được module multiple-choice.ts mô tả: vỏ editor chỉ vận hành trên JSON, hình dạng
+      // hợp đồng được khôi phục bằng splitMultipleChoiceDocument trước khi lưu.
       value={value as unknown as RichTextDocument}
       onChange={(document) => onChange(document as unknown as MultipleChoiceDocumentJson)}
       extensions={extensions}

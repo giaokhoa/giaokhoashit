@@ -59,23 +59,16 @@ export class RoleAssignmentCore {
   }
 
   /**
-   * Gán role cho user tại context; trùng gán hiện hữu (cùng role +
-   * cùng NGUỒN) thì bỏ qua. `source` khai truy vết nguồn của dòng
-   * gán: ghi danh truyền `{ component: 'enrol', itemId: <enrol
-   * instance id> }`; không truyền = gán tay/hệ thống (component
-   * rỗng, itemId null). Cùng một role/user/context có thể có nhiều
-   * dòng gán khác nguồn (vd vừa được enrol cấp vừa được quản trị
-   * gán tay) — mỗi nguồn một dòng riêng, gỡ nguồn nào chỉ mất dòng
-   * của nguồn đó.
+   * Gán role cho user tại context; trùng gán hiện hữu (cùng role + cùng NGUỒN) thì bỏ qua. `source` khai truy vết nguồn
+   * của dòng gán: ghi danh truyền `{ component: 'enrol', itemId: <enrol instance id> }`; không truyền = gán tay/hệ
+   * thống (component rỗng, itemId null). Cùng một role/user/context có thể có nhiều dòng gán khác nguồn (vd vừa được
+   * enrol cấp vừa được quản trị gán tay) — mỗi nguồn một dòng riêng, gỡ nguồn nào chỉ mất dòng của nguồn đó.
    *
-   * Flow: đọc role và context (không thấy thì lỗi tương ứng) → nếu
-   * role là vai giảng dạy: điểm chặn slot gói trung tâm (tenant của
-   * context + dữ kiện đếm slot của user), rồi chốt tách vai chiều
-   * ngược khi gán không do ghi danh cấp → kiểm dòng gán cùng nguồn
-   * đã có chưa → chèn dòng gán (trùng khoá duy nhất theo nguồn thì
-   * lấy lại dòng hiện hữu của ĐÚNG nguồn đó) → đánh dấu dirty
-   * context → phát `role_assigned` chỉ khi gán thật sự mới (gán
-   * trùng là no-op, không phát sự kiện).
+   * Flow: đọc role và context (không thấy thì lỗi tương ứng) → nếu role là vai giảng dạy: điểm chặn slot gói trung tâm
+   * (tenant của context + dữ kiện đếm slot của user), rồi chốt tách vai chiều ngược khi gán không do ghi danh cấp →
+   * kiểm dòng gán cùng nguồn đã có chưa → chèn dòng gán (trùng khoá duy nhất theo nguồn thì lấy lại dòng hiện hữu của
+   * ĐÚNG nguồn đó) → đánh dấu dirty context → phát `role_assigned` chỉ khi gán thật sự mới (gán trùng là no-op, không
+   * phát sự kiện).
    *
    * @param userId - người dùng nhận gán vai.
    * @param roleId - vai được gán.
@@ -96,17 +89,12 @@ export class RoleAssignmentCore {
   ): Promise<RoleAssignmentRow> {
     const roleRow = await this.getRoleOrThrow(roleId);
     await getContextOrThrow(this.db, contextId);
-    // Điểm chặn SLOT GÓI TRUNG TÂM (đặc tả slot đã duyệt): gán một
-    // vai trò GIẢNG DẠY tại bất kỳ context nào trong cây của một
-    // tenant khách hàng cho một thành viên đang hoạt động mà tài
-    // khoản đang hoạt động và CHƯA được đếm là hành động làm tăng số
-    // slot của tenant đó — mọi nguồn gán đều qua điểm này (gán tay
-    // qua API quản trị, ghi danh cấp vai trò giảng dạy, gán chủ
-    // lớp/chủ khoá của các module nghiệp vụ). Đã chạm hạn mức hiệu
-    // lực thì chặn TRƯỚC khi chèn dòng gán, không dòng gán nào được
-    // tạo. Người đã được đếm, vai trò không phải giảng dạy, và
-    // context ngoài cây tenant khách hàng (tenant platform, context
-    // hệ thống) đều không bị chặn.
+    // Điểm chặn SLOT GÓI TRUNG TÂM (đặc tả slot đã duyệt): gán một vai trò GIẢNG DẠY tại bất kỳ context nào trong cây
+    // của một tenant khách hàng cho một thành viên đang hoạt động mà tài khoản đang hoạt động và CHƯA được đếm là hành
+    // động làm tăng số slot của tenant đó — mọi nguồn gán đều qua điểm này (gán tay qua API quản trị, ghi danh cấp vai
+    // trò giảng dạy, gán chủ lớp/chủ khoá của các module nghiệp vụ). Đã chạm hạn mức hiệu lực thì chặn TRƯỚC khi chèn
+    // dòng gán, không dòng gán nào được tạo. Người đã được đếm, vai trò không phải giảng dạy, và context ngoài cây
+    // tenant khách hàng (tenant platform, context hệ thống) đều không bị chặn.
     if ((TEACHING_ROLE_ARCHETYPES as readonly string[]).includes(roleRow.archetype ?? '')) {
       const tenantId = await this.planLimits.tenantIdForContext(contextId);
       if (tenantId) {
@@ -118,15 +106,11 @@ export class RoleAssignmentCore {
     }
     const component = source?.component ?? '';
     const itemId = source?.itemId ?? null;
-    // Chốt TÁCH VAI chiều ngược (RoleSeparationCore giữ định nghĩa
-    // dùng chung): gán một vai GIẢNG DẠY không do ghi danh cấp tại
-    // context khoá/lớp cho người đang là HỌC VIÊN ĐANG HOẠT ĐỘNG
-    // trong khoá bị context đó bao phủ sẽ tạo lẫn vai cùng khoá —
-    // từ chối TRƯỚC khi chèn dòng gán, cùng mã lỗi với các chốt ở ba
-    // funnel ghi danh. Gán do ghi danh cấp (component = 'enrol')
-    // không qua chốt này: đó là hệ quả máy móc của một ghi danh đã
-    // được chốt ở funnel ghi danh, và instance cấp vai giảng dạy là
-    // đường cấp vai của quản trị nằm ngoài quyết định tách vai.
+    // Chốt TÁCH VAI chiều ngược (RoleSeparationCore giữ định nghĩa dùng chung): gán một vai GIẢNG DẠY không do ghi danh
+    // cấp tại context khoá/lớp cho người đang là HỌC VIÊN ĐANG HOẠT ĐỘNG trong khoá bị context đó bao phủ sẽ tạo lẫn
+    // vai cùng khoá — từ chối TRƯỚC khi chèn dòng gán, cùng mã lỗi với các chốt ở ba funnel ghi danh. Gán do ghi danh
+    // cấp (component = 'enrol') không qua chốt này: đó là hệ quả máy móc của một ghi danh đã được chốt ở funnel ghi
+    // danh, và instance cấp vai giảng dạy là đường cấp vai của quản trị nằm ngoài quyết định tách vai.
     if (
       (TEACHING_ROLE_ARCHETYPES as readonly string[]).includes(roleRow.archetype ?? '')
       && !isEnrolManagedAssignment({ component })
@@ -151,20 +135,14 @@ export class RoleAssignmentCore {
   /**
    * Gỡ gán role của user tại context.
    *
-   * Chốt toàn vẹn ghi danh: dòng gán do GHI DANH cấp
-   * (component='enrol') thuộc quyền quản lý của enrol — đường gỡ mặc
-   * định (API quản trị gỡ gán) KHÔNG được xoá, vì xoá sẽ để lại một
-   * ghi danh còn hiệu lực mà không còn vai ở khoá. Chỉ đường nội bộ
-   * của chính enrol (unenrol/đổi vai instance) mới gỡ được, qua cờ
-   * tường minh `allowEnrolManaged`.
+   * Chốt toàn vẹn ghi danh: dòng gán do GHI DANH cấp (component='enrol') thuộc quyền quản lý của enrol — đường gỡ mặc
+   * định (API quản trị gỡ gán) KHÔNG được xoá, vì xoá sẽ để lại một ghi danh còn hiệu lực mà không còn vai ở khoá. Chỉ
+   * đường nội bộ của chính enrol (unenrol/đổi vai instance) mới gỡ được, qua cờ tường minh `allowEnrolManaged`.
    *
-   * Sau khi xoá dòng gán phải bump version của context của dòng gán
-   * (nguyên tắc vô hiệu hoá cache quyền — xem lời dẫn của class):
-   * mọi đường gỡ gán trong sản phẩm đều chảy qua hàm này (API quản
-   * trị, rút ghi danh, đồng bộ danh sách lớp, thu hồi chia sẻ ngân
-   * hàng câu hỏi), nên bump tại đây thì thao tác thu hồi quyền có
-   * hiệu lực tức thì ở mọi đường, thay vì chờ kết quả đã cache hết
-   * hạn.
+   * Sau khi xoá dòng gán phải bump version của context của dòng gán (nguyên tắc vô hiệu hoá cache quyền — xem lời dẫn
+   * của class): mọi đường gỡ gán trong sản phẩm đều chảy qua hàm này (API quản trị, rút ghi danh, đồng bộ danh sách
+   * lớp, thu hồi chia sẻ ngân hàng câu hỏi), nên bump tại đây thì thao tác thu hồi quyền có hiệu lực tức thì ở mọi
+   * đường, thay vì chờ kết quả đã cache hết hạn.
    *
    * @param assignmentId - id của dòng gán cần gỡ.
    * @param modifierId - người thực hiện gỡ (làm actor của sự kiện).
@@ -192,10 +170,8 @@ export class RoleAssignmentCore {
   }
 
   /**
-   * Chèn một dòng gán vai; trùng khoá duy nhất (role, user, context,
-   * component, itemId) thì trả lại dòng hiện hữu của ĐÚNG nguồn đó —
-   * nếu không, gán của enrol có thể trả về nhầm dòng gán tay (hoặc
-   * ngược lại) cùng role/user/context.
+   * Chèn một dòng gán vai; trùng khoá duy nhất (role, user, context, component, itemId) thì trả lại dòng hiện hữu của
+   * ĐÚNG nguồn đó — nếu không, gán của enrol có thể trả về nhầm dòng gán tay (hoặc ngược lại) cùng role/user/context.
    *
    * @param values - dữ kiện chèn của dòng gán.
    */
@@ -263,10 +239,9 @@ export class RoleAssignmentCore {
         const conds = [];
         if (filter.userId !== undefined) conds.push(eb('role_assignments.user_id', '=', filter.userId));
         if (filter.contextId !== undefined) conds.push(eb('role_assignments.context_id', '=', filter.contextId));
-        // Điều kiện động (thử nghiệm T-13): `eb.and` với danh sách
-        // rỗng biên dịch thành `where 1 = 1` — đúng ngữ nghĩa "không
-        // lọc" của đường cũ trước chuyển đổi; cấm port nguyên văn
-        // `where(undefined)` vì Kysely gắn NULL và lặng lẽ trả 0 dòng.
+        // Điều kiện động (thử nghiệm T-13): `eb.and` với danh sách rỗng biên dịch thành `where 1 = 1` — đúng ngữ nghĩa
+        // "không lọc" của đường cũ trước chuyển đổi; cấm port nguyên văn `where(undefined)` vì Kysely gắn NULL và lặng
+        // lẽ trả 0 dòng.
         return eb.and(conds);
       })
       .execute();

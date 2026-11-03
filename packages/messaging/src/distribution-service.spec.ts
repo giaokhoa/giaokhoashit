@@ -9,10 +9,9 @@ import { conversationRoom, userRoom } from './realtime-rooms.js';
 /**
  * Cổng chặn cặp hội thoại 1–1 ở tầng phân phối realtime — kỷ luật FAIL-CLOSED khi không xác minh được quan hệ chặn:
  *
- * - Tra danh sách chặn LỖI (cơ sở dữ liệu lỗi đúng lúc phân phối)
- *   thì toàn bộ lượt phân phối bị NÉN: không một sự kiện nào
- *   (message.new, conversation.updated) được phát cho cặp 1–1, vì
- *   không xác minh được quan hệ chặn thì không được phát.
+ * - Tra danh sách chặn LỖI (cơ sở dữ liệu lỗi đúng lúc phân phối) thì toàn bộ lượt phân phối bị NÉN: không một sự kiện
+ *   nào (message.new, conversation.updated) được phát cho cặp 1–1, vì không xác minh được quan hệ chặn thì không được
+ *   phát.
  * - Tra cứu THÀNH CÔNG giữ nguyên hành vi cũ: cặp đang chặn thì
  *   không phát; cặp không chặn thì phát bình thường.
  *

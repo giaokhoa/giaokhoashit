@@ -11,20 +11,19 @@
  *  - Chia cho 0 cho kết quả null (không có điểm) thay vì lỗi/Infinity — khớp yêu cầu nghiệp vụ.
  *  - Điểm trống (null) truyền qua phép toán hai ngôi thành null; riêng các hàm
  *    sum/average/min/max BỎ QUA đối số trống, và chỉ cho null khi mọi đối số đều trống.
- *  - power/mod/round truyền null như phép toán hai ngôi: một đối số trống là cả hàm cho null.
- *    mod có mẫu số 0 cho null (cùng luật chia cho 0); mod giữ phần dư theo dấu của số bị chia
- *    (ngữ nghĩa fmod — giữ phần thập phân, ví dụ mod(10.5, 3) = 1.5). power cho kết quả NaN
- *    (cơ số âm, số mũ phân số) thì cho null thay vì lan truyền NaN.
+ *  - power/mod/round truyền null như phép toán hai ngôi: một đối số trống là cả hàm cho null. mod có mẫu số 0 cho null
+ *    (cùng luật chia cho 0); mod giữ phần dư theo dấu của số bị chia (ngữ nghĩa fmod — giữ phần thập phân, ví dụ
+ *    mod(10.5, 3) = 1.5). power cho kết quả NaN (cơ số âm, số mũ phân số) thì cho null thay vì lan truyền NaN.
  *  - round dùng ngữ nghĩa PHP của Moodle: làm tròn nửa ra xa số 0 (round(2.5) = 3,
  *    round(-2.5) = -3), tham số thứ hai là số chữ số thập phân (mặc định 0).
  *  - if(điều kiện, đúng, sai) đánh giá LƯỜI: điều kiện trống → null; điều kiện khác 0 → nhánh
  *    thứ hai, bằng 0 → nhánh thứ ba; nhánh không được chọn không được đánh giá.
- *  - Toán tử so sánh (>, <, >=, <=, ==, !=) cho 1/0, là tầng ưu tiên thấp nhất và không
- *    chuỗi được (a > b > c là lỗi cú pháp); một vế trống → null. Đây là cách viết điều kiện
- *    chuẩn cho if theo ví dụ của MoodleDocs: `=if([[midtermexam]]>=5, [[midtermexam]]+[[lab]], 0)`.
- *  - Các hàm Moodle ngoài tập lõi của sổ điểm (sin/cos/sqrt/ceil/floor/ln/log/exp… theo
- *    MoodleDocs là "many other mathematical functions" của engine tính toán dùng chung)
- *    vẫn bị từ chối ngay lúc phân tích cú pháp bằng lỗi rõ ràng — không âm thầm tính sai.
+ *  - Toán tử so sánh (>, <, >=, <=, ==, !=) cho 1/0, là tầng ưu tiên thấp nhất và không chuỗi được (a > b > c là lỗi cú
+ *    pháp); một vế trống → null. Đây là cách viết điều kiện chuẩn cho if theo ví dụ của MoodleDocs:
+ *    `=if([[midtermexam]]>=5, [[midtermexam]]+[[lab]], 0)`.
+ *  - Các hàm Moodle ngoài tập lõi của sổ điểm (sin/cos/sqrt/ceil/floor/ln/log/exp… theo MoodleDocs là "many other
+ *    mathematical functions" của engine tính toán dùng chung) vẫn bị từ chối ngay lúc phân tích cú pháp bằng lỗi rõ
+ *    ràng — không âm thầm tính sai.
  */
 
 /** Lỗi công thức: `reason` phân biệt cú pháp sai, hàm lạ và tham chiếu vòng để tầng service ánh xạ sang mã lỗi i18n. */
@@ -243,9 +242,8 @@ export function formulaReferences(node: FormulaNode): string[] {
 }
 
 /**
- * Làm tròn theo ngữ nghĩa PHP (nửa ra xa số 0) như Moodle: round(2.5) = 3, round(-2.5) = -3.
- * toPrecision(15) khử nhiễu nhị phân kiểu 2.675 * 100 = 267.49999… trước khi làm tròn,
- * giống cách PHP tự sửa ở độ chính xác hiển thị của nó.
+ * Làm tròn theo ngữ nghĩa PHP (nửa ra xa số 0) như Moodle: round(2.5) = 3, round(-2.5) = -3. toPrecision(15) khử nhiễu
+ * nhị phân kiểu 2.675 * 100 = 267.49999… trước khi làm tròn, giống cách PHP tự sửa ở độ chính xác hiển thị của nó.
  */
 function roundHalfAwayFromZero(value: number, digits: number): number {
   const factor = 10 ** digits;
@@ -254,9 +252,8 @@ function roundHalfAwayFromZero(value: number, digits: number): number {
 }
 
 /**
- * Đánh giá cây cú pháp với hàm tra điểm theo idNumber (null = chưa có điểm).
- * Chia cho 0 → null; phép toán hai ngôi/so sánh có toán hạng null → null;
- * hàm tổng hợp bỏ qua đối số null; power/mod/round truyền null; if đánh giá lười.
+ * Đánh giá cây cú pháp với hàm tra điểm theo idNumber (null = chưa có điểm). Chia cho 0 → null; phép toán hai ngôi/so
+ * sánh có toán hạng null → null; hàm tổng hợp bỏ qua đối số null; power/mod/round truyền null; if đánh giá lười.
  */
 export function evaluateGradeFormula(node: FormulaNode, resolve: (idNumber: string) => number | null): number | null {
   switch (node.kind) {

@@ -189,10 +189,8 @@ export type QuestionAnswerKeyView = z.infer<typeof questionAnswerKeyViewSchema>;
  * hai biến thể theo qtype, tầng nghiệp vụ đều ghi vào
  * `question_answer_keys.solution`:
  * - essay: `answer` là tài liệu lời giải mẫu.
- * - truefalse (TF-A, lát P5): `answers` là đáp án đúng/sai của TỪNG
- *   mệnh đề trong thân câu, bám theo `statementId` của node statement
- *   trong `questionText` — câu đúng/sai chùm KHÔNG có dòng answers
- *   Đúng/Sai như mô hình hai phía cũ.
+ * - truefalse (TF-A, lát P5): `answers` là đáp án đúng/sai của TỪNG mệnh đề trong thân câu, bám theo `statementId` của
+ *   node statement trong `questionText` — câu đúng/sai chùm KHÔNG có dòng answers Đúng/Sai như mô hình hai phía cũ.
  * Multichoice/shortanswer KHÔNG gửi solution: đáp án đúng đi qua cờ
  * `correct` của từng dòng answers.
  */
@@ -399,7 +397,10 @@ export const exportGradesVneduSchema = z.strictObject({
 });
 export type ExportGradesVnedu = z.infer<typeof exportGradesVneduSchema>;
 
-/** Nhà cung cấp đích của một lần xuất điểm: hiện chỉ có `vnedu`; danh sách đóng này là nơi duy nhất khai thêm nhà cung cấp xuất mới. */
+/**
+ * Nhà cung cấp đích của một lần xuất điểm: hiện chỉ có `vnedu`; danh sách đóng này là nơi duy nhất khai thêm nhà cung
+ * cấp xuất mới.
+ */
 export const gradeExportProviderSchema = z.enum(['vnedu']);
 export type GradeExportProvider = z.infer<typeof gradeExportProviderSchema>;
 
@@ -482,19 +483,17 @@ export type QuestionOptionsInput = z.infer<typeof questionOptionsInputSchema>;
  * 1" của mô hình cũ):
  * - multichoice: đúng 4 lựa chọn (điểm quyết D-3) và đúng MỘT đáp án
  *   đúng;
- * - truefalse (TF-A, điểm quyết D-1 — lát P5): KHÔNG có dòng answers;
- *   `questionText` phải là tài liệu chốt đuôi bằng một danh sách đúng
- *   4 mệnh đề (node `statementList`), phần thân phía trước và từng
- *   mệnh đề đều có nội dung, id mệnh đề duy nhất; `solution.answers`
- *   phải phủ đúng tập mệnh đề đó, mỗi mệnh đề một giá trị Đúng/Sai;
- * - shortanswer: ít nhất 1 đáp án được chấp nhận; mọi đáp án liệt kê
- *   đều được chấp nhận (không đánh dấu `correct: false`) và việc chấm
- *   là khớp CHÍNH XÁC sau chuẩn hoá — KHÔNG còn ký tự đại diện
- *   wildcard `*` (điểm quyết D-2);
+ * - truefalse (TF-A, điểm quyết D-1 — lát P5): KHÔNG có dòng answers; `questionText` phải là tài liệu chốt đuôi bằng
+ *   một danh sách đúng 4 mệnh đề (node `statementList`), phần thân phía trước và từng mệnh đề đều có nội dung, id mệnh
+ *   đề duy nhất; `solution.answers` phải phủ đúng tập mệnh đề đó, mỗi mệnh đề một giá trị Đúng/Sai;
+ * - shortanswer: ít nhất 1 đáp án được chấp nhận; mọi đáp án liệt kê đều được chấp nhận (không đánh dấu `correct:
+ *   false`) và việc chấm là khớp CHÍNH XÁC sau chuẩn hoá — KHÔNG còn ký tự đại diện wildcard `*` (điểm quyết D-2);
  * - essay: không có dòng đáp án (chấm tay; lời giải mẫu qua
  *   `solution`).
  */
-/** Nguồn gốc ngoài hệ thống của câu hỏi (truy vết nội bộ — không hiển thị cho học viên, quy tắc bản quyền 24/10/2026). */
+/**
+ * Nguồn gốc ngoài hệ thống của câu hỏi (truy vết nội bộ — không hiển thị cho học viên, quy tắc bản quyền 24/10/2026).
+ */
 export const QUESTION_SOURCE_KINDS = ['book', 'exam', 'manual', 'import', 'ai'] as const;
 export const createQuestionSchema = z
   .strictObject({
@@ -637,12 +636,10 @@ export const createQuestionSchema = z
 export type CreateQuestion = z.infer<typeof createQuestionSchema>;
 
 /**
- * Payload sửa câu hỏi (tạo phiên bản mới ở tầng nghiệp vụ; mọi trường
- * đều tuỳ chọn, ngữ nghĩa từng trường như payload tạo). `stimulusId`
- * nhận `null` để gỡ gắn ngữ liệu khỏi phiên bản mới. Payload sửa
- * KHÔNG mang `qtype` (qtype của câu đã cố định) nên luật phía đáp án
- * theo qtype (đúng một đáp án đúng…) do tầng nghiệp vụ kiểm theo qtype
- * đã lưu của câu — cùng luật với payload tạo.
+ * Payload sửa câu hỏi (tạo phiên bản mới ở tầng nghiệp vụ; mọi trường đều tuỳ chọn, ngữ nghĩa từng trường như payload
+ * tạo). `stimulusId` nhận `null` để gỡ gắn ngữ liệu khỏi phiên bản mới. Payload sửa KHÔNG mang `qtype` (qtype của câu
+ * đã cố định) nên luật phía đáp án theo qtype (đúng một đáp án đúng…) do tầng nghiệp vụ kiểm theo qtype đã lưu của câu
+ * — cùng luật với payload tạo.
  */
 export const updateQuestionSchema = z.strictObject({
   questionText: richTextInputSchema.optional(),
@@ -658,24 +655,29 @@ export const updateQuestionSchema = z.strictObject({
 export type UpdateQuestion = z.infer<typeof updateQuestionSchema>;
 
 /**
- * Payload chuyển trạng thái phát hành của một câu hỏi giữa `draft`
- * (bản nháp — chưa dùng được trong đề) và `ready` (sẵn sàng dùng).
- * Trạng thái `hidden` (đã rút) không đi qua payload này: hoàn rút dùng
- * đường restore riêng. Đổi trạng thái KHÔNG tạo phiên bản mới.
+ * Payload chuyển trạng thái phát hành của một câu hỏi giữa `draft` (bản nháp — chưa dùng được trong đề) và `ready` (sẵn
+ * sàng dùng). Trạng thái `hidden` (đã rút) không đi qua payload này: hoàn rút dùng đường restore riêng. Đổi trạng thái
+ * KHÔNG tạo phiên bản mới.
  */
 export const setQuestionStatusSchema = z.strictObject({
   status: z.enum(['draft', 'ready']),
 });
 export type SetQuestionStatus = z.infer<typeof setQuestionStatusSchema>;
 
-/** Payload tạo ngữ liệu dùng chung (stimulus) gắn với một question category; `content` nhận chuỗi thuần hoặc tài liệu Tiptap. */
+/**
+ * Payload tạo ngữ liệu dùng chung (stimulus) gắn với một question category; `content` nhận chuỗi thuần hoặc tài liệu
+ * Tiptap.
+ */
 export const createStimulusSchema = z.strictObject({
   categoryId: uuidIdSchema,
   content: richTextInputSchema,
 });
 export type CreateStimulus = z.infer<typeof createStimulusSchema>;
 
-/** Payload sửa ngữ liệu dùng chung; chỉ nội dung được sửa (stimulus đã có câu hỏi tham chiếu là bất biến ở tầng nghiệp vụ). */
+/**
+ * Payload sửa ngữ liệu dùng chung; chỉ nội dung được sửa (stimulus đã có câu hỏi tham chiếu là bất biến ở tầng nghiệp
+ * vụ).
+ */
 export const updateStimulusSchema = z.strictObject({
   content: richTextInputSchema,
 });
@@ -714,19 +716,19 @@ export type QuizGradeMethod = (typeof QUIZ_GRADE_METHODS)[number];
 export const QUIZ_ATTEMPT_STATES = ['inprogress', 'needsgrading', 'finished'] as const;
 export type QuizAttemptState = (typeof QUIZ_ATTEMPT_STATES)[number];
 
-/** Thang chấm câu đúng/sai chùm (TF-A): đúng 5 tỉ lệ % cho 0..4 ý đúng, đơn điệu không giảm, phần tử cuối = 100 (tầng nghiệp vụ kiểm tra tính đơn điệu). Thang là CẤU HÌNH của lần ghim, không nằm trong câu hỏi. */
+/**
+ * Thang chấm câu đúng/sai chùm (TF-A): đúng 5 tỉ lệ % cho 0..4 ý đúng, đơn điệu không giảm, phần tử cuối = 100 (tầng
+ * nghiệp vụ kiểm tra tính đơn điệu). Thang là CẤU HÌNH của lần ghim, không nằm trong câu hỏi.
+ */
 export const tfScaleSchema = z.array(z.number().min(0).max(100)).length(5);
 export type TfScale = z.infer<typeof tfScaleSchema>;
 
 /**
- * Một slot trong đề quiz (Moodle `quiz_slots`): hoặc câu cố định
- * (`questionId`), hoặc slot ngẫu nhiên rút từ một category (`categoryId`),
- * hoặc nguồn ô ma trận (`matrixCellId` — Chặng 3; đề cố định sinh từ ma
- * trận mang cả `questionId` lẫn `matrixCellId`). `maxMark` là điểm của
- * slot TRONG ĐỀ NÀY — nguồn điểm thật duy nhất; `default_mark` của câu
- * trong ngân hàng chỉ là gợi ý lúc thêm slot. Câu đúng/sai là MỘT slot
- * nguyên vẹn (TF-A): 4 mệnh đề nằm trong chính câu, không còn cơ chế
- * chùm gom nhiều slot.
+ * Một slot trong đề quiz (Moodle `quiz_slots`): hoặc câu cố định (`questionId`), hoặc slot ngẫu nhiên rút từ một
+ * category (`categoryId`), hoặc nguồn ô ma trận (`matrixCellId` — Chặng 3; đề cố định sinh từ ma trận mang cả
+ * `questionId` lẫn `matrixCellId`). `maxMark` là điểm của slot TRONG ĐỀ NÀY — nguồn điểm thật duy nhất; `default_mark`
+ * của câu trong ngân hàng chỉ là gợi ý lúc thêm slot. Câu đúng/sai là MỘT slot nguyên vẹn (TF-A): 4 mệnh đề nằm trong
+ * chính câu, không còn cơ chế chùm gom nhiều slot.
  */
 export const quizSlotViewSchema = z.object({
   id: uuidIdSchema,
@@ -776,7 +778,9 @@ export const quizViewSchema = z.object({
   hasPassword: z.boolean(),
   /** Danh sách IP/CIDR được phép (định dạng Moodle `quiz.subnet`), null = không giới hạn. */
   subnet: z.string().nullable(),
-  /** Bảy bitmask tuỳ chọn xem lại kiểu Moodle (cửa sổ: trong lúc làm / ngay sau nộp / sau đó khi đề mở / sau khi đóng). */
+  /**
+   * Bảy bitmask tuỳ chọn xem lại kiểu Moodle (cửa sổ: trong lúc làm / ngay sau nộp / sau đó khi đề mở / sau khi đóng).
+   */
   reviewAttempt: z.number().int(),
   reviewCorrectness: z.number().int(),
   reviewMarks: z.number().int(),
@@ -795,22 +799,23 @@ export const quizViewSchema = z.object({
   /** Số version mới nhất của đề (mọi trạng thái); so với examVersionNumber để biết pin có đang trỏ bản cũ hay không. */
   latestExamVersionNumber: z.number().int(),
   /**
-   * Huy hiệu "có bản ready mới" ở cấp pin (issue #254): true khi đề đang ở
-   * trạng thái ready VÀ bản mới nhất của đề mới hơn bản đang ghim — lúc đó
-   * thao tác cập nhật tường minh (xem trước diff rồi áp) mới có đích.
+   * Huy hiệu "có bản ready mới" ở cấp pin (issue #254): true khi đề đang ở trạng thái ready VÀ bản mới nhất của đề mới
+   * hơn bản đang ghim — lúc đó thao tác cập nhật tường minh (xem trước diff rồi áp) mới có đích.
    */
   hasNewerExamVersion: z.boolean(),
   /**
-   * Chế độ tham chiếu version của câu hỏi cho các lượt làm MỚI (issue #254):
-   * `pinned` = dùng đúng version câu đã chụp trong exam version đã ghim;
-   * `float_latest_ready` = lúc bắt đầu lượt, mỗi câu phân giải bản ready mới
-   * nhất. Float chỉ hợp lệ với pin luyện tập (preset `regular`) — API chặn
-   * ở tầng nghiệp vụ bằng lỗi `exam.version_mode_not_allowed`.
+   * Chế độ tham chiếu version của câu hỏi cho các lượt làm MỚI (issue #254): `pinned` = dùng đúng version câu đã chụp
+   * trong exam version đã ghim; `float_latest_ready` = lúc bắt đầu lượt, mỗi câu phân giải bản ready mới nhất. Float
+   * chỉ hợp lệ với pin luyện tập (preset `regular`) — API chặn ở tầng nghiệp vụ bằng lỗi
+   * `exam.version_mode_not_allowed`.
    */
   versionMode: z.enum(['pinned', 'float_latest_ready']),
   /** Thang Đ–S của câu đúng/sai chùm (TF-A) hiệu lực của đề; null = mặc định QĐ 764 [0, 10, 25, 50, 100]. */
   tfScale: tfScaleSchema.nullable(),
-  /** Hình thức kiểm tra TT 22 đã chọn preset: regular (thường xuyên) | periodic (định kỳ) | mock (thi thử); null = không theo preset. */
+  /**
+   * Hình thức kiểm tra TT 22 đã chọn preset: regular (thường xuyên) | periodic (định kỳ) | mock (thi thử); null = không
+   * theo preset.
+   */
   preset: z.enum(['regular', 'periodic', 'mock']).nullable(),
   /** Phút vào thi muộn tối đa từ mốc mở hiệu lực (preset thi thử = 15, Điều 21 TT 24/2024); null = không áp. */
   lateEntryMinutes: z.number().int().nullable(),
@@ -839,7 +844,9 @@ export const quizAttemptSummarySchema = z.object({
   grade: z.number().nullable(),
   /** Nhãn kiểm tra bù (TT 22 Điều 7 k.4–5): lượt bắt đầu trong cửa sổ chỉ có nhờ override mở riêng. */
   makeup: z.boolean(),
-  /** Snapshot quy tắc hiệu lực đã áp lúc bắt đầu lượt (giá trị + override nguồn + thứ tự câu đã rút); null với lượt cũ. */
+  /**
+   * Snapshot quy tắc hiệu lực đã áp lúc bắt đầu lượt (giá trị + override nguồn + thứ tự câu đã rút); null với lượt cũ.
+   */
   appliedSettings: z.record(z.string(), z.unknown()).nullable(),
 });
 export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;
@@ -850,20 +857,14 @@ export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;
  * theo mô hình giaokhoa (đợt port #248, lát P3):
  * - `guidance` (hướng dẫn) hiện KÈM câu hỏi ngay trong lúc làm — điểm
  *   quyết D-4 — nên KHÔNG qua cổng xem lại nào;
- * - `solution` (lời giải/đáp án đúng dạng cấu trúc, xem
- *   `questionSolutionSchema`) chỉ có mặt khi cổng `reviewRightAnswer`
- *   của lần ghim cho phép tại cửa sổ xem lại hiện tại; cổng đóng thì
- *   trường này là `null` và dữ liệu đáp án đúng không rời server. Các
- *   khía cạnh xem lại còn lại giữ cổng riêng như cũ: `rightAnswer`
- *   dạng chữ cùng cổng với `solution`, `feedback` theo cổng
- *   reviewSpecificFeedback, `generalFeedback` theo cổng
- *   reviewGeneralFeedback — khối "Lời giải" ở bề mặt học sinh là hợp
- *   của generalFeedback + feedback của đáp án đã chọn + solution.
- * Câu hỏi không có tên: `questionExcerpt` là trích đoạn nội dung thân
- * câu cho các bề mặt cần nhãn hiển thị.
- * Schema view này (như mọi view schema khác của contracts) KHÔNG
- * strict: nó mô tả hình dạng API TRẢ VỀ do chính service dựng, trường
- * lạ bị loại khi parse thay vì báo lỗi.
+ * - `solution` (lời giải/đáp án đúng dạng cấu trúc, xem `questionSolutionSchema`) chỉ có mặt khi cổng
+ *   `reviewRightAnswer` của lần ghim cho phép tại cửa sổ xem lại hiện tại; cổng đóng thì trường này là `null` và dữ
+ *   liệu đáp án đúng không rời server. Các khía cạnh xem lại còn lại giữ cổng riêng như cũ: `rightAnswer` dạng chữ cùng
+ *   cổng với `solution`, `feedback` theo cổng reviewSpecificFeedback, `generalFeedback` theo cổng reviewGeneralFeedback
+ *   — khối "Lời giải" ở bề mặt học sinh là hợp của generalFeedback + feedback của đáp án đã chọn + solution.
+ * Câu hỏi không có tên: `questionExcerpt` là trích đoạn nội dung thân câu cho các bề mặt cần nhãn hiển thị. Schema view
+ * này (như mọi view schema khác của contracts) KHÔNG strict: nó mô tả hình dạng API TRẢ VỀ do chính service dựng,
+ * trường lạ bị loại khi parse thay vì báo lỗi.
  */
 export const quizAttemptQuestionViewSchema = z.object({
   slot: z.number().int(),
@@ -890,7 +891,10 @@ export const quizAttemptQuestionViewSchema = z.object({
 });
 export type QuizAttemptQuestionView = z.infer<typeof quizAttemptQuestionViewSchema>;
 
-/** View đầy đủ của một lượt làm quiz: tóm tắt lượt + cấu hình lần ghim + từng câu (đã nhóm theo trang qua trường `page`). */
+/**
+ * View đầy đủ của một lượt làm quiz: tóm tắt lượt + cấu hình lần ghim + từng câu (đã nhóm theo trang qua trường
+ * `page`).
+ */
 export const quizAttemptViewSchema = z.object({
   attempt: quizAttemptSummarySchema,
   quiz: quizViewSchema,
@@ -902,12 +906,18 @@ export const quizAttemptViewSchema = z.object({
 });
 export type QuizAttemptView = z.infer<typeof quizAttemptViewSchema>;
 
-/** Các trường quy tắc thi dùng chung cho tạo/sửa quiz (Chặng 2): mật khẩu dạng rõ ở biên API, tầng nghiệp vụ băm trước khi lưu. */
+/**
+ * Các trường quy tắc thi dùng chung cho tạo/sửa quiz (Chặng 2): mật khẩu dạng rõ ở biên API, tầng nghiệp vụ băm trước
+ * khi lưu.
+ */
 const pinAccessRuleFields = {
   /** Mật khẩu vào thi; `null` = gỡ mật khẩu (khi sửa) / không đặt (khi tạo). */
   password: z.string().min(1).nullable().optional(),
   subnet: z.string().min(1).nullable().optional(),
-  /** Hình thức kiểm tra: khi tạo, chọn preset điền sẵn quy tắc theo bảng preset (trường gửi kèm thắng preset); khi sửa chỉ đổi nhãn. */
+  /**
+   * Hình thức kiểm tra: khi tạo, chọn preset điền sẵn quy tắc theo bảng preset (trường gửi kèm thắng preset); khi sửa
+   * chỉ đổi nhãn.
+   */
   preset: z.enum(['regular', 'periodic', 'mock']).nullable().optional(),
   lateEntryMinutes: z.number().int().min(0).nullable().optional(),
   monitorEvents: z.boolean().optional(),
@@ -918,7 +928,10 @@ const pinAccessRuleFields = {
   reviewGeneralFeedback: z.number().int().min(0).optional(),
   reviewRightAnswer: z.number().int().min(0).optional(),
   reviewOverallFeedback: z.number().int().min(0).optional(),
-  /** Nhóm đích của lần ghim: null/bỏ trống = toàn khoá; có giá trị = chỉ thành viên nhóm đó thấy/làm được (nhóm phải thuộc đúng khoá của lần ghim). */
+  /**
+   * Nhóm đích của lần ghim: null/bỏ trống = toàn khoá; có giá trị = chỉ thành viên nhóm đó thấy/làm được (nhóm phải
+   * thuộc đúng khoá của lần ghim).
+   */
   targetGroupId: uuidIdSchema.nullable().optional(),
 };
 
@@ -926,7 +939,10 @@ const pinAccessRuleFields = {
 
 
 
-/** Một ghi đè cài đặt thi (Moodle `quiz_overrides`): đúng một đích — nhóm (`groupId`) hoặc người dùng (`userId`); trường null = kế thừa. */
+/**
+ * Một ghi đè cài đặt thi (Moodle `quiz_overrides`): đúng một đích — nhóm (`groupId`) hoặc người dùng (`userId`); trường
+ * null = kế thừa.
+ */
 export const examPinOverrideViewSchema = z.object({
   id: uuidIdSchema,
   pinId: uuidIdSchema,
@@ -996,7 +1012,9 @@ export const recordQuizAttemptEventSchema = z.strictObject({
 });
 export type RecordQuizAttemptEvent = z.infer<typeof recordQuizAttemptEventSchema>;
 
-/** Payload chấm tay THEO CÂU cho nhiều lượt cùng lúc (grade-by-question): một câu, một danh sách (lượt, điểm, nhận xét). */
+/**
+ * Payload chấm tay THEO CÂU cho nhiều lượt cùng lúc (grade-by-question): một câu, một danh sách (lượt, điểm, nhận xét).
+ */
 export const gradeQuizQuestionSchema = z.strictObject({
   questionId: uuidIdSchema,
   grades: z.array(z.strictObject({
@@ -1011,10 +1029,16 @@ export type GradeQuizQuestion = z.infer<typeof gradeQuizQuestionSchema>;
 /** Bộ mức nhận thức trên cặp câu×YCCĐ (Curriculum Chặng 2): Biết / Hiểu / Vận dụng / Vận dụng cao. */
 export const COGNITIVE_LEVELS = ['biet', 'hieu', 'van_dung', 'van_dung_cao'] as const;
 
-/** Khuôn ma trận DUY NHẤT: đặc tả theo CV 7991 (chốt 26/10 — bỏ hẳn cơ chế chọn preset; preset_kind ở tầng dữ liệu chỉ còn một giá trị này). */
+/**
+ * Khuôn ma trận DUY NHẤT: đặc tả theo CV 7991 (chốt 26/10 — bỏ hẳn cơ chế chọn preset; preset_kind ở tầng dữ liệu chỉ
+ * còn một giá trị này).
+ */
 export const MATRIX_PRESET_KINDS = ['cv7991_periodic'] as const;
 
-/** Một ô ma trận = ĐƠN VỊ KIẾN THỨC × mức × dạng câu (CV 7991 Phụ lục 1, issue #249 — ma trận KHÔNG gắn YCCĐ; YCCĐ chỉ có ở bản đặc tả suy ra. Mọi qtype, kể cả truefalse chùm TF-A, `questionCount` đều đếm theo CÂU). */
+/**
+ * Một ô ma trận = ĐƠN VỊ KIẾN THỨC × mức × dạng câu (CV 7991 Phụ lục 1, issue #249 — ma trận KHÔNG gắn YCCĐ; YCCĐ chỉ
+ * có ở bản đặc tả suy ra. Mọi qtype, kể cả truefalse chùm TF-A, `questionCount` đều đếm theo CÂU).
+ */
 export const examMatrixCellViewSchema = z.object({
   id: uuidIdSchema,
   matrixId: uuidIdSchema,
@@ -1044,16 +1068,25 @@ export const examMatrixViewSchema = z.object({
   scopeNodeIds: z.array(uuidIdSchema).nullable(),
   totalScore: z.number(),
   createdBy: uuidIdSchema.nullable(),
-  /** Các trường ngân hàng (MB-0): bank chứa ma trận (null = chưa vào bank), vòng đời trong bank, cờ mẫu, truy vết copy, phiên bản. */
+  /**
+   * Các trường ngân hàng (MB-0): bank chứa ma trận (null = chưa vào bank), vòng đời trong bank, cờ mẫu, truy vết copy,
+   * phiên bản.
+   */
   bankId: uuidIdSchema.nullable(),
   status: z.enum(['draft', 'ready', 'hidden']),
   isTemplate: z.boolean(),
   derivedFromMatrixId: uuidIdSchema.nullable(),
-  /** Truy vết copy theo khuôn câu hỏi: bank nguồn tại thời điểm copy, tác giả gốc (giữ nguyên qua các đời copy) và số lượt đã được copy đi. */
+  /**
+   * Truy vết copy theo khuôn câu hỏi: bank nguồn tại thời điểm copy, tác giả gốc (giữ nguyên qua các đời copy) và số
+   * lượt đã được copy đi.
+   */
   derivedFromBankId: uuidIdSchema.nullable(),
   originalAuthorId: uuidIdSchema.nullable(),
   copyCount: z.number().int(),
-  /** Truy vết lần rút khỏi ngân hàng gần nhất (ngang hàng câu hỏi và đề): lý do + người rút + thời điểm; cả ba null khi ma trận chưa bị rút hoặc đã khôi phục. */
+  /**
+   * Truy vết lần rút khỏi ngân hàng gần nhất (ngang hàng câu hỏi và đề): lý do + người rút + thời điểm; cả ba null khi
+   * ma trận chưa bị rút hoặc đã khôi phục.
+   */
   withdrawnReason: z.string().nullable(),
   withdrawnBy: uuidIdSchema.nullable(),
   withdrawnAt: z.string().nullable(),
@@ -1063,7 +1096,10 @@ export const examMatrixViewSchema = z.object({
 });
 export type ExamMatrixView = z.infer<typeof examMatrixViewSchema>;
 
-/** Payload tạo ma trận; tỉ lệ mục tiêu không gửi thì chụp từ hằng tỉ lệ tham chiếu CV 7991. Giáo viên KHÔNG chọn preset (đã bỏ hẳn). */
+/**
+ * Payload tạo ma trận; tỉ lệ mục tiêu không gửi thì chụp từ hằng tỉ lệ tham chiếu CV 7991. Giáo viên KHÔNG chọn preset
+ * (đã bỏ hẳn).
+ */
 export const createExamMatrixSchema = z.strictObject({
   name: z.string().min(1),
   subjectId: uuidIdSchema,
@@ -1148,7 +1184,10 @@ export const rejectMatrixContributionSchema = z.strictObject({
 });
 export type RejectMatrixContribution = z.infer<typeof rejectMatrixContributionSchema>;
 
-/** Một dòng hàng chờ đóng góp ma trận (MB-1): truy vết người đóng góp + kết quả duyệt + vết chống trùng (hash nội dung ma trận nguồn tại lúc đề xuất và ma trận trùng nội dung trong bank đích nếu có). */
+/**
+ * Một dòng hàng chờ đóng góp ma trận (MB-1): truy vết người đóng góp + kết quả duyệt + vết chống trùng (hash nội dung
+ * ma trận nguồn tại lúc đề xuất và ma trận trùng nội dung trong bank đích nếu có).
+ */
 export const examMatrixContributionViewSchema = z.object({
   id: uuidIdSchema,
   matrixId: uuidIdSchema,
@@ -1157,7 +1196,10 @@ export const examMatrixContributionViewSchema = z.object({
   proposerId: uuidIdSchema,
   proposerName: z.string().nullable(),
   note: z.string(),
-  /** Hash nội dung (cấu hình + toàn bộ ô đã sắp) của ma trận nguồn tại lúc đề xuất — căn cứ chống trùng trong bank đích, ngang hàng đề và câu hỏi. */
+  /**
+   * Hash nội dung (cấu hình + toàn bộ ô đã sắp) của ma trận nguồn tại lúc đề xuất — căn cứ chống trùng trong bank đích,
+   * ngang hàng đề và câu hỏi.
+   */
   contentHash: z.string(),
   /** Ma trận trong bank đích có cùng contentHash tại lúc đề xuất (gợi ý trùng cho người duyệt); null khi không có. */
   nearDuplicateOf: uuidIdSchema.nullable(),
@@ -1170,7 +1212,10 @@ export const examMatrixContributionViewSchema = z.object({
 });
 export type ExamMatrixContributionView = z.infer<typeof examMatrixContributionViewSchema>;
 
-/** Khả dụng ngân hàng cho một ô: cần bao nhiêu, có bao nhiêu (mọi qtype đếm theo CÂU — câu truefalse TF-A tự nó đã là một chùm 4 ý), thiếu bao nhiêu. */
+/**
+ * Khả dụng ngân hàng cho một ô: cần bao nhiêu, có bao nhiêu (mọi qtype đếm theo CÂU — câu truefalse TF-A tự nó đã là
+ * một chùm 4 ý), thiếu bao nhiêu.
+ */
 export const matrixCellAvailabilitySchema = z.object({
   cellId: uuidIdSchema,
   required: z.number().int(),
@@ -1183,7 +1228,10 @@ export type MatrixCellAvailability = z.infer<typeof matrixCellAvailabilitySchema
 export const MATRIX_QTYPES = ['multichoice', 'truefalse', 'shortanswer', 'essay'] as const;
 export type MatrixQtype = (typeof MATRIX_QTYPES)[number];
 
-/** Một lỗi cứng khi nhập ma trận từ file (lát I-1, issue #233): định vị theo sheet/dòng/cột để giáo viên sửa file; `row`/`column` null khi lỗi thuộc toàn file hoặc khối thông tin chung không định vị được một ô. */
+/**
+ * Một lỗi cứng khi nhập ma trận từ file (lát I-1, issue #233): định vị theo sheet/dòng/cột để giáo viên sửa file;
+ * `row`/`column` null khi lỗi thuộc toàn file hoặc khối thông tin chung không định vị được một ô.
+ */
 export const matrixImportIssueSchema = z.object({
   sheet: z.string().nullable(),
   row: z.number().int().nullable(),
@@ -1193,7 +1241,10 @@ export const matrixImportIssueSchema = z.object({
 });
 export type MatrixImportIssue = z.infer<typeof matrixImportIssueSchema>;
 
-/** Một ô dự thảo trong kết quả xem trước nhập ma trận: neo ĐƠN VỊ KIẾN THỨC × mức × dạng (ma trận KHÔNG gắn YCCĐ — issue #249); với truefalse, `questionCount` là số CHÙM 4 ý. */
+/**
+ * Một ô dự thảo trong kết quả xem trước nhập ma trận: neo ĐƠN VỊ KIẾN THỨC × mức × dạng (ma trận KHÔNG gắn YCCĐ — issue
+ * #249); với truefalse, `questionCount` là số CHÙM 4 ý.
+ */
 export const matrixImportPreviewCellSchema = z.object({
   curriculumNodeId: uuidIdSchema,
   cognitiveLevel: z.enum(COGNITIVE_LEVELS),
@@ -1203,7 +1254,9 @@ export const matrixImportPreviewCellSchema = z.object({
 });
 export type MatrixImportPreviewCell = z.infer<typeof matrixImportPreviewCellSchema>;
 
-/** Khả dụng ngân hàng cho một ô dự thảo nhập (chưa có cellId vì chưa ghi DB): cần / có / thiếu, truefalse đếm theo chùm. */
+/**
+ * Khả dụng ngân hàng cho một ô dự thảo nhập (chưa có cellId vì chưa ghi DB): cần / có / thiếu, truefalse đếm theo chùm.
+ */
 export const matrixImportCellAvailabilitySchema = z.object({
   curriculumNodeId: uuidIdSchema,
   cognitiveLevel: z.enum(COGNITIVE_LEVELS),
@@ -1214,7 +1267,10 @@ export const matrixImportCellAvailabilitySchema = z.object({
 });
 export type MatrixImportCellAvailability = z.infer<typeof matrixImportCellAvailabilitySchema>;
 
-/** Một hàng ĐVK trong kết quả xem trước nhập ma trận, kèm các YCCĐ thuộc ĐVK để đối chiếu (YCCĐ chỉ để xem — ô không neo YCCĐ). */
+/**
+ * Một hàng ĐVK trong kết quả xem trước nhập ma trận, kèm các YCCĐ thuộc ĐVK để đối chiếu (YCCĐ chỉ để xem — ô không neo
+ * YCCĐ).
+ */
 export const matrixImportPreviewRowSchema = z.object({
   nodeId: uuidIdSchema,
   topicTitle: z.string(),
@@ -1225,11 +1281,9 @@ export const matrixImportPreviewRowSchema = z.object({
 export type MatrixImportPreviewRow = z.infer<typeof matrixImportPreviewRowSchema>;
 
 /**
- * Kết quả XEM TRƯỚC nhập ma trận từ file (lát I-1, issue #233): hệ parse
- * + kiểm lỗi hai tầng, KHÔNG ghi DB (ghi nguyên tử là lát I-2).
- * `valid=false` kèm `errors` định vị từng lỗi cứng; các trường dự thảo
- * (name/cells/totals/…) chỉ có ý nghĩa khi đọc được file — vẫn trả kèm
- * phần đọc được để giáo viên đối chiếu, nhưng web phải khoá nút lưu khi
+ * Kết quả XEM TRƯỚC nhập ma trận từ file (lát I-1, issue #233): hệ parse + kiểm lỗi hai tầng, KHÔNG ghi DB (ghi nguyên
+ * tử là lát I-2). `valid=false` kèm `errors` định vị từng lỗi cứng; các trường dự thảo (name/cells/totals/…) chỉ có ý
+ * nghĩa khi đọc được file — vẫn trả kèm phần đọc được để giáo viên đối chiếu, nhưng web phải khoá nút lưu khi
  * `valid=false`.
  */
 export const matrixImportPreviewSchema = z.object({
@@ -1271,7 +1325,10 @@ export type GenerateFromMatrix = z.infer<typeof generateFromMatrixSchema>;
 
 
 
-/** Payload bắt đầu lượt làm quiz; `preview` dành cho giáo viên xem trước đề (không tính lượt, không ghi điểm); `password` là mật khẩu vào thi khi đề/override yêu cầu. */
+/**
+ * Payload bắt đầu lượt làm quiz; `preview` dành cho giáo viên xem trước đề (không tính lượt, không ghi điểm);
+ * `password` là mật khẩu vào thi khi đề/override yêu cầu.
+ */
 export const startQuizAttemptSchema = z.strictObject({
   preview: z.boolean().optional(),
   password: z.string().optional(),
@@ -1353,10 +1410,9 @@ export const assignSubmissionFileViewSchema = z.object({
 export type AssignSubmissionFileView = z.infer<typeof assignSubmissionFileViewSchema>;
 
 /**
- * Gói chấm của giáo viên cho bài nộp: điểm/mức + lời phê cấu trúc 3 ô
- * theo TT 22 Điều 5 (tiến bộ / ưu điểm nổi bật / hạn chế chủ yếu) + ô
- * nhận xét chung. status 'draft' = bản nháp chấm (chỉ giáo viên thấy);
- * 'released' = đã trả bài (học sinh thấy, điểm đã vào sổ điểm).
+ * Gói chấm của giáo viên cho bài nộp: điểm/mức + lời phê cấu trúc 3 ô theo TT 22 Điều 5 (tiến bộ / ưu điểm nổi bật /
+ * hạn chế chủ yếu) + ô nhận xét chung. status 'draft' = bản nháp chấm (chỉ giáo viên thấy); 'released' = đã trả bài
+ * (học sinh thấy, điểm đã vào sổ điểm).
  */
 export const assignGradeViewSchema = z.object({
   grade: z.number().nullable(),
@@ -1374,9 +1430,8 @@ export const assignGradeViewSchema = z.object({
 export type AssignGradeView = z.infer<typeof assignGradeViewSchema>;
 
 /**
- * Một dấu chấm VECTOR trên bề mặt bài nộp: neo theo (tệp, trang, toạ độ
- * % so với khổ trang); 'draw' mang points là dãy điểm % của nét vẽ.
- * Ảnh gốc không bị đốt dấu — client render lớp dấu đè lên ảnh khi xem.
+ * Một dấu chấm VECTOR trên bề mặt bài nộp: neo theo (tệp, trang, toạ độ % so với khổ trang); 'draw' mang points là dãy
+ * điểm % của nét vẽ. Ảnh gốc không bị đốt dấu — client render lớp dấu đè lên ảnh khi xem.
  */
 export const assignAnnotationViewSchema = z.object({
   id: uuidIdSchema,
@@ -1404,10 +1459,9 @@ export const assignRubricLevelViewSchema = z.object({
 export type AssignRubricLevelView = z.infer<typeof assignRubricLevelViewSchema>;
 
 /**
- * Một tiêu chí của bảng chấm: chế độ 'levels' (chọn mức rubric) hoặc
- * 'score' (marking guide — nhập điểm trong [0, maxScore]); neo YCCĐ qua
- * outcomeId + outcomeText (bản chụp nguyên văn). descriptionForGrader
- * chỉ hiện với người có quyền chấm/quản lý.
+ * Một tiêu chí của bảng chấm: chế độ 'levels' (chọn mức rubric) hoặc 'score' (marking guide — nhập điểm trong [0,
+ * maxScore]); neo YCCĐ qua outcomeId + outcomeText (bản chụp nguyên văn). descriptionForGrader chỉ hiện với người có
+ * quyền chấm/quản lý.
  */
 export const assignRubricCriterionViewSchema = z.object({
   id: uuidIdSchema,
@@ -1481,7 +1535,10 @@ export const assignOwnSubmissionViewSchema = z.object({
 });
 export type AssignOwnSubmissionView = z.infer<typeof assignOwnSubmissionViewSchema>;
 
-/** View bài tập cho một người xem: cấu hình + bài nộp của chính mình + bảng chấm công khai + các cờ quyền đã phân giải tại context của module. */
+/**
+ * View bài tập cho một người xem: cấu hình + bài nộp của chính mình + bảng chấm công khai + các cờ quyền đã phân giải
+ * tại context của module.
+ */
 export const assignmentForUserViewSchema = z.object({
   assignment: assignmentViewSchema,
   mySubmission: assignOwnSubmissionViewSchema,
@@ -1511,7 +1568,10 @@ export const assignSubmissionSummarySchema = z.object({
 });
 export type AssignSubmissionSummary = z.infer<typeof assignSubmissionSummarySchema>;
 
-/** Chi tiết một bài nộp cho giáo viên chấm: tệp kèm URL đã ký + gói chấm (kể cả nháp) + annotation + rubric + vết sửa sau trả + hội thoại. */
+/**
+ * Chi tiết một bài nộp cho giáo viên chấm: tệp kèm URL đã ký + gói chấm (kể cả nháp) + annotation + rubric + vết sửa
+ * sau trả + hội thoại.
+ */
 export const assignSubmissionDetailSchema = z.object({
   userId: uuidIdSchema,
   status: z.enum(ASSIGN_SUBMISSION_STATUSES),
@@ -1562,12 +1622,10 @@ export const assignRubricEvaluationInputSchema = z.strictObject({
 export type AssignRubricEvaluationInput = z.infer<typeof assignRubricEvaluationInputSchema>;
 
 /**
- * Payload LƯU gói chấm (bản nháp — chưa công bố): điểm (theo thang bài)
- * hoặc mức (chế độ chỉ-nhận-xét), lời phê cấu trúc 3 ô + nhận xét chung,
- * kết quả theo tiêu chí rubric. Mọi trường tuỳ chọn: nháp được phép dở
- * dang; tính đầy đủ theo chế độ kết quả chỉ bắt buộc tại thời điểm TRẢ
- * BÀI. Nếu có evaluations mà không gửi grade, điểm được suy từ rubric
- * (tổng điểm tiêu chí quy về thang bài) — giáo viên vẫn ghi đè được.
+ * Payload LƯU gói chấm (bản nháp — chưa công bố): điểm (theo thang bài) hoặc mức (chế độ chỉ-nhận-xét), lời phê cấu
+ * trúc 3 ô + nhận xét chung, kết quả theo tiêu chí rubric. Mọi trường tuỳ chọn: nháp được phép dở dang; tính đầy đủ
+ * theo chế độ kết quả chỉ bắt buộc tại thời điểm TRẢ BÀI. Nếu có evaluations mà không gửi grade, điểm được suy từ
+ * rubric (tổng điểm tiêu chí quy về thang bài) — giáo viên vẫn ghi đè được.
  */
 export const gradeAssignmentSubmissionSchema = z.strictObject({
   grade: z.number().min(0).optional(),
@@ -1662,11 +1720,20 @@ export const createTeacherCommentBankEntrySchema = z.strictObject({
 });
 export type CreateTeacherCommentBankEntry = z.infer<typeof createTeacherCommentBankEntrySchema>;
 
-/** Năm scope của một bank câu hỏi: cá nhân / tổ chuyên môn / trường / khoá / platform (Ngân hàng hệ thống — TENANT-0, #168; bank platform chỉ platform tạo, tenant_id = NULL). */
+/**
+ * Năm scope của một bank câu hỏi: cá nhân / tổ chuyên môn / trường / khoá / platform (Ngân hàng hệ thống — TENANT-0,
+ * #168; bank platform chỉ platform tạo, tenant_id = NULL).
+ */
 export const QUESTION_BANK_SCOPES = ['personal', 'team', 'school', 'course', 'platform'] as const;
 
-/** Payload tạo bank: `scopeRefId` là cohort (team) hoặc course (course); `leaderId` là tổ trưởng của bank tổ (mặc định người tạo). */
-/** Loại món của bank đa loại (bank_kind): question là mặc định của feat Ngân hàng câu hỏi chung; exam/matrix dùng chung khuôn bank. */
+/**
+ * Payload tạo bank: `scopeRefId` là cohort (team) hoặc course (course); `leaderId` là tổ trưởng của bank tổ (mặc định
+ * người tạo).
+ */
+/**
+ * Loại món của bank đa loại (bank_kind): question là mặc định của feat Ngân hàng câu hỏi chung; exam/matrix dùng chung
+ * khuôn bank.
+ */
 export const QUESTION_BANK_KINDS = ['question', 'exam', 'matrix'] as const;
 export const createQuestionBankSchema = z.strictObject({
   name: z.string().min(1),
@@ -1677,7 +1744,11 @@ export const createQuestionBankSchema = z.strictObject({
 });
 export type CreateQuestionBank = z.infer<typeof createQuestionBankSchema>;
 
-/** Payload copy một câu: đích mặc định là ngân hàng cá nhân của người copy ("Copy về ngân hàng của tôi"). Câu hỏi không có trường tên (quyết 11:28 ngày 26/10/2026) nên payload copy không mang tên — bản copy giữ nguyên nội dung nguồn, nhãn hiển thị là trích đoạn nội dung. */
+/**
+ * Payload copy một câu: đích mặc định là ngân hàng cá nhân của người copy ("Copy về ngân hàng của tôi"). Câu hỏi không
+ * có trường tên (quyết 11:28 ngày 26/10/2026) nên payload copy không mang tên — bản copy giữ nguyên nội dung nguồn,
+ * nhãn hiển thị là trích đoạn nội dung.
+ */
 export const copyQuestionSchema = z.strictObject({
   targetBankId: uuidIdSchema.optional(),
   targetCategoryId: uuidIdSchema.optional(),
@@ -1702,9 +1773,8 @@ export type WithdrawQuestion = z.infer<typeof withdrawQuestionSchema>;
 export const QUIZ_SLOT_VERSION_MODES = ['pinned', 'follow_latest'] as const;
 
 /**
- * Payload đề xuất đóng góp câu vào bank đích (QB-4): `mode` = 'new' (câu
- * mới vào bank đích) hoặc 'update' (bản mới cho câu đã có ở bank đích —
- * bắt buộc `targetQuestionId` và câu nguồn phải là bản copy suy từ câu đích).
+ * Payload đề xuất đóng góp câu vào bank đích (QB-4): `mode` = 'new' (câu mới vào bank đích) hoặc 'update' (bản mới cho
+ * câu đã có ở bank đích — bắt buộc `targetQuestionId` và câu nguồn phải là bản copy suy từ câu đích).
  */
 export const createContributionSchema = z.strictObject({
   questionId: uuidIdSchema,
@@ -1714,7 +1784,9 @@ export const createContributionSchema = z.strictObject({
 });
 export type CreateContribution = z.infer<typeof createContributionSchema>;
 
-/** Payload duyệt một đề xuất đóng góp: có thể chỉ định category đích trong bank (mặc định category mặc định của bank). */
+/**
+ * Payload duyệt một đề xuất đóng góp: có thể chỉ định category đích trong bank (mặc định category mặc định của bank).
+ */
 export const approveContributionSchema = z.strictObject({
   targetCategoryId: uuidIdSchema.optional(),
 });
@@ -1727,27 +1799,28 @@ export const rejectContributionSchema = z.strictObject({
 export type RejectContribution = z.infer<typeof rejectContributionSchema>;
 
 /**
- * Payload đặt chính sách công bố (posting policy) cho một grade item —
- * PH-0, issue #116, theo Canvas Grade Posting Policy: `auto` = điểm/lời phê
- * hiện phía học sinh ngay khi chấm (mặc định, giữ hành vi hiện hữu);
- * `manual` = ẩn hoàn toàn cho tới khi giáo viên bấm công bố cho item.
+ * Payload đặt chính sách công bố (posting policy) cho một grade item — PH-0, issue #116, theo Canvas Grade Posting
+ * Policy: `auto` = điểm/lời phê hiện phía học sinh ngay khi chấm (mặc định, giữ hành vi hiện hữu); `manual` = ẩn hoàn
+ * toàn cho tới khi giáo viên bấm công bố cho item.
  */
 export const setGradePostingPolicySchema = z.strictObject({
   policy: z.enum(['auto', 'manual']),
 });
 export type SetGradePostingPolicy = z.infer<typeof setGradePostingPolicySchema>;
 
-/** Payload công bố / rút công bố (theo item, theo kết quả kì/năm của một học sinh): ghi chú tuỳ chọn lưu vào vết công bố. */
+/**
+ * Payload công bố / rút công bố (theo item, theo kết quả kì/năm của một học sinh): ghi chú tuỳ chọn lưu vào vết công
+ * bố.
+ */
 export const gradePublicationActionSchema = z.strictObject({
   note: z.string().max(500).optional(),
 });
 export type GradePublicationAction = z.infer<typeof gradePublicationActionSchema>;
 
 /**
- * Payload tạo liên kết giám hộ PH–HS (PH-0, issue #116): liên kết do
- * GV/admin xác lập theo hồ sơ giám hộ đã xác minh (TT 22 Đ.20.6, NĐ
- * 13/2023 Đ.20) — `relationship` là quan hệ với học sinh (cha/mẹ/người
- * giám hộ...); `note` ghi nguồn xác minh khi cần truy vết.
+ * Payload tạo liên kết giám hộ PH–HS (PH-0, issue #116): liên kết do GV/admin xác lập theo hồ sơ giám hộ đã xác minh
+ * (TT 22 Đ.20.6, NĐ 13/2023 Đ.20) — `relationship` là quan hệ với học sinh (cha/mẹ/người giám hộ...); `note` ghi nguồn
+ * xác minh khi cần truy vết.
  */
 export const createGuardianLinkSchema = z.strictObject({
   guardianUserId: uuidIdSchema,
@@ -1757,7 +1830,10 @@ export const createGuardianLinkSchema = z.strictObject({
 });
 export type CreateGuardianLink = z.infer<typeof createGuardianLinkSchema>;
 
-/** Dạng tồn tại DUY NHẤT của một đề: snapshot — bản chụp câu cụ thể, ghim version (dạng recipe/công thức đã bỏ hẳn, chốt 26/10). */
+/**
+ * Dạng tồn tại DUY NHẤT của một đề: snapshot — bản chụp câu cụ thể, ghim version (dạng recipe/công thức đã bỏ hẳn, chốt
+ * 26/10).
+ */
 export const EXAM_PAPER_KINDS = ['snapshot'] as const;
 
 /** Loại kiểm tra của đề theo nghiệp vụ VN: thường xuyên / giữa kỳ / cuối kỳ / thi thử / ôn tập. */
@@ -1767,11 +1843,9 @@ export const EXAM_PAPER_EXAM_KINDS = ['regular', 'midterm', 'final', 'mock', 'pr
 export const EXAM_PAPER_STATUSES = ['draft', 'ready', 'hidden'] as const;
 
 /**
- * Một slot trong payload soạn đề: câu được chọn từ ngân hàng câu hỏi;
- * version ghim được server phân giải tại thời điểm lưu (mặc định version
- * ready mới nhất — kỷ luật QB-3). `section` là tên phần (Phần I/II…)
- * để chia phần trong đề. Câu đúng/sai là một slot nguyên vẹn (TF-A mang
- * 4 mệnh đề trong chính câu) — không còn gom chùm nhiều slot.
+ * Một slot trong payload soạn đề: câu được chọn từ ngân hàng câu hỏi; version ghim được server phân giải tại thời điểm
+ * lưu (mặc định version ready mới nhất — kỷ luật QB-3). `section` là tên phần (Phần I/II…) để chia phần trong đề. Câu
+ * đúng/sai là một slot nguyên vẹn (TF-A mang 4 mệnh đề trong chính câu) — không còn gom chùm nhiều slot.
  */
 export const examSlotInputSchema = z.strictObject({
   questionId: uuidIdSchema,
@@ -1780,7 +1854,9 @@ export const examSlotInputSchema = z.strictObject({
 });
 export type ExamSlotInput = z.infer<typeof examSlotInputSchema>;
 
-/** Payload tạo đề snapshot trong một bank đề (bankKind='exam'): metadata + danh sách slot tuỳ chọn (rỗng = đề trắng). */
+/**
+ * Payload tạo đề snapshot trong một bank đề (bankKind='exam'): metadata + danh sách slot tuỳ chọn (rỗng = đề trắng).
+ */
 export const createExamSchema = z.strictObject({
   name: z.string().min(1),
   subjectId: uuidIdSchema.nullable().optional(),
@@ -1794,7 +1870,10 @@ export const createExamSchema = z.strictObject({
 });
 export type CreateExam = z.infer<typeof createExamSchema>;
 
-/** Payload sửa metadata của đề — mỗi lần sửa tạo một paper version mới (slots giữ nguyên từ version hiện tại nếu không gửi kèm). */
+/**
+ * Payload sửa metadata của đề — mỗi lần sửa tạo một paper version mới (slots giữ nguyên từ version hiện tại nếu không
+ * gửi kèm).
+ */
 export const updateExamSchema = z.strictObject({
   name: z.string().min(1).optional(),
   subjectId: uuidIdSchema.nullable().optional(),
@@ -1819,7 +1898,10 @@ export const setExamStatusSchema = z.strictObject({
 });
 export type SetExamStatus = z.infer<typeof setExamStatusSchema>;
 
-/** Payload copy một đề sang bank đích (mặc định ngân hàng đề cá nhân của người copy): deep copy slots, question + pinned version giữ nguyên. */
+/**
+ * Payload copy một đề sang bank đích (mặc định ngân hàng đề cá nhân của người copy): deep copy slots, question + pinned
+ * version giữ nguyên.
+ */
 export const copyExamSchema = z.strictObject({
   targetBankId: uuidIdSchema.optional(),
   name: z.string().min(1).optional(),
@@ -1832,18 +1914,14 @@ export type CopyExam = z.infer<typeof copyExamSchema>;
  *
  * - `mode` = 'new' (mặc định khi không gửi): duyệt đạt thì deep copy
  *   đề vào bank đích (danh tính mới, derived_from trỏ về đề nguồn).
- * - `mode` = 'update': BẮT BUỘC `targetExamId` — đề đã có trong bank
- *   đích mà đề nguồn là bản sao suy từ nó (tầng service kiểm liên
- *   kết derived_from, phá luật trả 400 `exam.contribution_not_derived`;
- *   thiếu targetExamId trả 400 `exam.contribution_target_required`);
- *   duyệt đạt thì tạo VERSION MỚI trên chính danh tính đề đích.
- * - `withDossier` = true: đóng góp mang theo BỘ HỒ SƠ đã ghim tại lúc
- *   đề xuất (version đề + version ma trận + bản đặc tả) — thành phần
- *   hấp thụ từ đường hồ sơ cũ; đề phải có ma trận kèm version hiện
- *   tại, không có trả 400 `exam.contribution_dossier_requires_matrix`.
- *   Đóng góp có bộ hồ sơ + tenant của bank đích bật cấu hình
- *   `exam/requireboardapproval` thì duyệt cấp 1 chỉ đưa đóng góp
- *   sang trạng thái `pending_board` chờ cấp duyệt 2 (ban giám hiệu).
+ * - `mode` = 'update': BẮT BUỘC `targetExamId` — đề đã có trong bank đích mà đề nguồn là bản sao suy từ nó (tầng
+ *   service kiểm liên kết derived_from, phá luật trả 400 `exam.contribution_not_derived`; thiếu targetExamId trả 400
+ *   `exam.contribution_target_required`); duyệt đạt thì tạo VERSION MỚI trên chính danh tính đề đích.
+ * - `withDossier` = true: đóng góp mang theo BỘ HỒ SƠ đã ghim tại lúc đề xuất (version đề + version ma trận + bản đặc
+ *   tả) — thành phần hấp thụ từ đường hồ sơ cũ; đề phải có ma trận kèm version hiện tại, không có trả 400
+ *   `exam.contribution_dossier_requires_matrix`. Đóng góp có bộ hồ sơ + tenant của bank đích bật cấu hình
+ *   `exam/requireboardapproval` thì duyệt cấp 1 chỉ đưa đóng góp sang trạng thái `pending_board` chờ cấp duyệt 2 (ban
+ *   giám hiệu).
  */
 export const createExamContributionSchema = z.strictObject({
   examId: uuidIdSchema,
@@ -1854,13 +1932,19 @@ export const createExamContributionSchema = z.strictObject({
 });
 export type CreateExamContribution = z.infer<typeof createExamContributionSchema>;
 
-/** Payload rút một đề khỏi ngân hàng: lý do BẮT BUỘC (chuỗi toàn khoảng trắng không tính là lý do) — ngang hàng payload rút câu hỏi của QB-3. */
+/**
+ * Payload rút một đề khỏi ngân hàng: lý do BẮT BUỘC (chuỗi toàn khoảng trắng không tính là lý do) — ngang hàng payload
+ * rút câu hỏi của QB-3.
+ */
 export const withdrawExamSchema = z.strictObject({
   reason: z.string().trim().min(1),
 });
 export type WithdrawExam = z.infer<typeof withdrawExamSchema>;
 
-/** Payload rút một ma trận khỏi ngân hàng: lý do BẮT BUỘC (chuỗi toàn khoảng trắng không tính là lý do) — ngang hàng payload rút câu hỏi của QB-3. */
+/**
+ * Payload rút một ma trận khỏi ngân hàng: lý do BẮT BUỘC (chuỗi toàn khoảng trắng không tính là lý do) — ngang hàng
+ * payload rút câu hỏi của QB-3.
+ */
 export const withdrawExamMatrixSchema = z.strictObject({
   reason: z.string().trim().min(1),
 });
@@ -1877,13 +1961,10 @@ export const rejectExamContributionSchema = z.strictObject({
 export type RejectExamContribution = z.infer<typeof rejectExamContributionSchema>;
 
 /**
- * Payload GHIM một đề vào khoá (thực thể hợp nhất thay quiz +
- * deployment): đúng một nguồn đề — `examId` (+ `examVersionId` tuỳ
- * chọn, bỏ trống = version hiện tại) của một đề ready trong bank,
- * hoặc `newExam` để TẠO ĐỀ MỚI trong bank đề cá nhân của giáo viên
- * rồi ghim ngay trong cùng một thao tác. Cấu hình lần tổ chức (giờ
- * mở/đóng, thời lượng, số lượt, mật khẩu, luật xem lại, mã đề)
- * thuộc về PIN — không thuộc đề.
+ * Payload GHIM một đề vào khoá (thực thể hợp nhất thay quiz + deployment): đúng một nguồn đề — `examId` (+
+ * `examVersionId` tuỳ chọn, bỏ trống = version hiện tại) của một đề ready trong bank, hoặc `newExam` để TẠO ĐỀ MỚI
+ * trong bank đề cá nhân của giáo viên rồi ghim ngay trong cùng một thao tác. Cấu hình lần tổ chức (giờ mở/đóng, thời
+ * lượng, số lượt, mật khẩu, luật xem lại, mã đề) thuộc về PIN — không thuộc đề.
  */
 export const createExamPinSchema = z.strictObject({
   sectionId: uuidIdSchema,
@@ -1902,10 +1983,9 @@ export const createExamPinSchema = z.strictObject({
   /** Số mã đề sinh cho lần ghim này (mỗi mã 001, 002… kèm seed hoán vị để in/chấm khớp); bỏ trống = 1. */
   variantCount: z.number().int().min(1).max(50).optional(),
   /**
-   * Chế độ tham chiếu version của câu hỏi (issue #254); bỏ trống = `pinned`.
-   * `float_latest_ready` chỉ hợp lệ khi preset là `regular` (luyện tập) —
-   * preset kiểm tra chính thức (`periodic`/`mock`) hoặc không preset bị API
-   * chặn bằng lỗi `exam.version_mode_not_allowed`.
+   * Chế độ tham chiếu version của câu hỏi (issue #254); bỏ trống = `pinned`. `float_latest_ready` chỉ hợp lệ khi preset
+   * là `regular` (luyện tập) — preset kiểm tra chính thức (`periodic`/`mock`) hoặc không preset bị API chặn bằng lỗi
+   * `exam.version_mode_not_allowed`.
    */
   versionMode: z.enum(['pinned', 'float_latest_ready']).optional(),
   ...pinAccessRuleFields,
@@ -1913,10 +1993,8 @@ export const createExamPinSchema = z.strictObject({
 export type CreateExamPin = z.infer<typeof createExamPinSchema>;
 
 /**
- * Payload sửa cấu hình tổ chức của một pin (mọi trường tuỳ chọn;
- * `timeOpen`/`timeClose`/`timeLimitSeconds` nhận `null` để gỡ). Đổi
- * `examVersionId` bị khoá khi pin đã có lượt làm thật
- * (`exam.pin_locked`); đổi số mã đề cũng vậy.
+ * Payload sửa cấu hình tổ chức của một pin (mọi trường tuỳ chọn; `timeOpen`/`timeClose`/`timeLimitSeconds` nhận `null`
+ * để gỡ). Đổi `examVersionId` bị khoá khi pin đã có lượt làm thật (`exam.pin_locked`); đổi số mã đề cũng vậy.
  */
 export const updateExamPinSchema = z.strictObject({
   name: z.string().min(1).optional(),
@@ -1930,10 +2008,9 @@ export const updateExamPinSchema = z.strictObject({
   examVersionId: uuidIdSchema.optional(),
   variantCount: z.number().int().min(1).max(50).optional(),
   /**
-   * Đổi chế độ tham chiếu version của câu hỏi (issue #254): bật
-   * `float_latest_ready` chỉ khi preset hiệu lực của pin là `regular`;
-   * đổi preset rời `regular` trong lúc pin đang float cũng bị chặn — cả
-   * hai vi phạm đều nhận lỗi `exam.version_mode_not_allowed` ở API.
+   * Đổi chế độ tham chiếu version của câu hỏi (issue #254): bật `float_latest_ready` chỉ khi preset hiệu lực của pin là
+   * `regular`; đổi preset rời `regular` trong lúc pin đang float cũng bị chặn — cả hai vi phạm đều nhận lỗi
+   * `exam.version_mode_not_allowed` ở API.
    */
   versionMode: z.enum(['pinned', 'float_latest_ready']).optional(),
   ...pinAccessRuleFields,
@@ -1941,12 +2018,10 @@ export const updateExamPinSchema = z.strictObject({
 export type UpdateExamPin = z.infer<typeof updateExamPinSchema>;
 
 /**
- * Một dòng diff giữa exam version đang ghim và exam version đích, so theo
- * VỊ TRÍ slot (issue #254 — xem trước khi áp cập nhật pin): `added`/`removed`
- * là slot chỉ có ở một phía; `question_changed` là cùng vị trí nhưng khác
- * câu; `question_version_changed` là cùng câu nhưng version câu đã ghim
- * khác; `mark_changed` là chỉ khác điểm của slot; `unchanged` là giống hệt.
- * Phía vắng mặt (slot thêm/bớt) mang các trường tương ứng là null.
+ * Một dòng diff giữa exam version đang ghim và exam version đích, so theo VỊ TRÍ slot (issue #254 — xem trước khi áp
+ * cập nhật pin): `added`/`removed` là slot chỉ có ở một phía; `question_changed` là cùng vị trí nhưng khác câu;
+ * `question_version_changed` là cùng câu nhưng version câu đã ghim khác; `mark_changed` là chỉ khác điểm của slot;
+ * `unchanged` là giống hệt. Phía vắng mặt (slot thêm/bớt) mang các trường tương ứng là null.
  */
 export const pinVersionUpdateSlotDiffSchema = z.object({
   position: z.number().int(),
@@ -1961,12 +2036,10 @@ export const pinVersionUpdateSlotDiffSchema = z.object({
 export type PinVersionUpdateSlotDiff = z.infer<typeof pinVersionUpdateSlotDiffSchema>;
 
 /**
- * Xem trước thao tác "Cập nhật đề lên bản ready mới nhất" của một pin
- * (issue #254): đích cập nhật là exam version mới nhất của đề — chỉ tồn tại
- * khi đề đang ở trạng thái `ready` và bản mới nhất mới hơn bản đang ghim
- * (`available`). `blockedByAttempts` cho UI cảnh báo trước: pin đã có lượt
- * làm thật thì thao tác ÁP sẽ bị API chặn bằng `exam.pin_locked` — sửa hệ
- * quả điểm của các lượt đã làm chỉ đi qua đường chấm lại theo đáp án.
+ * Xem trước thao tác "Cập nhật đề lên bản ready mới nhất" của một pin (issue #254): đích cập nhật là exam version mới
+ * nhất của đề — chỉ tồn tại khi đề đang ở trạng thái `ready` và bản mới nhất mới hơn bản đang ghim (`available`).
+ * `blockedByAttempts` cho UI cảnh báo trước: pin đã có lượt làm thật thì thao tác ÁP sẽ bị API chặn bằng
+ * `exam.pin_locked` — sửa hệ quả điểm của các lượt đã làm chỉ đi qua đường chấm lại theo đáp án.
  */
 export const pinVersionUpdatePreviewSchema = z.object({
   pinId: uuidIdSchema,
@@ -1975,7 +2048,10 @@ export const pinVersionUpdatePreviewSchema = z.object({
   /** Exam version đích (bản mới nhất của đề); null khi không có đích cập nhật. */
   toExamVersionId: uuidIdSchema.nullable(),
   toVersionNumber: z.number().int().nullable(),
-  /** Trạng thái hiện tại của đề (draft | ready | hidden) — giải thích vì sao chưa có bản ready mới khi `available` là false. */
+  /**
+   * Trạng thái hiện tại của đề (draft | ready | hidden) — giải thích vì sao chưa có bản ready mới khi `available` là
+   * false.
+   */
   examStatus: z.string(),
   available: z.boolean(),
   blockedByAttempts: z.boolean(),
@@ -1990,10 +2066,9 @@ export const applyPinVersionUpdateSchema = z.strictObject({
 export type ApplyPinVersionUpdate = z.infer<typeof applyPinVersionUpdateSchema>;
 
 /**
- * Yêu cầu chấm lại theo đáp án cho một câu trong một pin (issue #254):
- * `toVersionId` là version ĐÚNG của câu mà giáo viên đã sửa đáp án;
- * `dryRun` = true chỉ tính và trả điểm đổi, không ghi gì — kết quả dry-run
- * và kết quả áp thật dùng cùng một hàm tính nên khớp nhau tuyệt đối.
+ * Yêu cầu chấm lại theo đáp án cho một câu trong một pin (issue #254): `toVersionId` là version ĐÚNG của câu mà giáo
+ * viên đã sửa đáp án; `dryRun` = true chỉ tính và trả điểm đổi, không ghi gì — kết quả dry-run và kết quả áp thật dùng
+ * cùng một hàm tính nên khớp nhau tuyệt đối.
  */
 export const regradePinQuestionSchema = z.strictObject({
   questionId: uuidIdSchema,
@@ -2003,10 +2078,9 @@ export const regradePinQuestionSchema = z.strictObject({
 export type RegradePinQuestion = z.infer<typeof regradePinQuestionSchema>;
 
 /**
- * Điểm đổi của MỘT lượt trong một lần chấm lại theo đáp án (issue #254):
- * fraction của câu được chấm lại và tổng điểm của lượt (thang điểm slot)
- * trước/sau. `changed` = fraction hoặc tổng điểm thật sự khác — chỉ các
- * lượt `changed` mới được ghi khi áp thật.
+ * Điểm đổi của MỘT lượt trong một lần chấm lại theo đáp án (issue #254): fraction của câu được chấm lại và tổng điểm
+ * của lượt (thang điểm slot) trước/sau. `changed` = fraction hoặc tổng điểm thật sự khác — chỉ các lượt `changed` mới
+ * được ghi khi áp thật.
  */
 export const pinRegradeChangeSchema = z.object({
   examAttemptId: uuidIdSchema,
@@ -2046,11 +2120,9 @@ export const pinRegradeLogItemSchema = z.object({
 export type PinRegradeLogItem = z.infer<typeof pinRegradeLogItemSchema>;
 
 /**
- * Một dòng nhật ký chấm lại theo đáp án của một pin (issue #254): ai chấm
- * lại, khi nào, câu nào, từ version nào lên version nào, và điểm đổi của
- * từng lượt bị ảnh hưởng. Giáo viên xem toàn bộ nhật ký của pin; học sinh
- * chỉ xem các dòng có mục của chính mình và chỉ sau khi pin đã công bố
- * kết quả (cùng cổng công bố điểm như mọi đường đọc điểm khác).
+ * Một dòng nhật ký chấm lại theo đáp án của một pin (issue #254): ai chấm lại, khi nào, câu nào, từ version nào lên
+ * version nào, và điểm đổi của từng lượt bị ảnh hưởng. Giáo viên xem toàn bộ nhật ký của pin; học sinh chỉ xem các dòng
+ * có mục của chính mình và chỉ sau khi pin đã công bố kết quả (cùng cổng công bố điểm như mọi đường đọc điểm khác).
  */
 export const pinRegradeLogEntrySchema = z.object({
   id: uuidIdSchema,
@@ -2067,11 +2139,9 @@ export type PinRegradeLogEntry = z.infer<typeof pinRegradeLogEntrySchema>;
 
 
 /**
- * Payload đổi câu của một slot snapshot BẰNG SWAP-CÙNG-Ô (EB-2, điểm
- * D.3): slot đích (theo `position`) phải mang ô ma trận nguồn; câu thay
- * phải thuộc pool của chính ô đó (cùng YCCĐ + mức + dạng). Điểm của
- * slot giữ nguyên nên tỉ lệ ô chỉ lệch khi cấu trúc bị sửa bằng đường
- * khác — báo cáo lệch tỉ lệ đi kèm chi tiết đề.
+ * Payload đổi câu của một slot snapshot BẰNG SWAP-CÙNG-Ô (EB-2, điểm D.3): slot đích (theo `position`) phải mang ô ma
+ * trận nguồn; câu thay phải thuộc pool của chính ô đó (cùng YCCĐ + mức + dạng). Điểm của slot giữ nguyên nên tỉ lệ ô
+ * chỉ lệch khi cấu trúc bị sửa bằng đường khác — báo cáo lệch tỉ lệ đi kèm chi tiết đề.
  */
 export const swapExamSlotSchema = z.strictObject({
   position: z.number().int().positive(),
@@ -2081,21 +2151,18 @@ export type SwapExamSlot = z.infer<typeof swapExamSlotSchema>;
 
 
 /**
- * Trạng thái vòng đời của một BỘ HỒ SƠ duyệt đề: `draft` (giáo viên
- * đang lập, chưa nộp) → `pending` (chờ cấp duyệt 1 — tổ trưởng/người
- * có exam:moderate tại bank đích) → `pending_board` (chỉ khi cấu hình
- * trường bật cấp duyệt 2: đã qua cấp 1, chờ ban giám hiệu) →
- * `approved` (bộ đã hiệu lực, đề đã vào bank đích) / `rejected` (bị
- * từ chối ở một cấp, kèm lý do bắt buộc).
+ * Trạng thái vòng đời của một BỘ HỒ SƠ duyệt đề: `draft` (giáo viên đang lập, chưa nộp) → `pending` (chờ cấp duyệt 1 —
+ * tổ trưởng/người có exam:moderate tại bank đích) → `pending_board` (chỉ khi cấu hình trường bật cấp duyệt 2: đã qua
+ * cấp 1, chờ ban giám hiệu) → `approved` (bộ đã hiệu lực, đề đã vào bank đích) / `rejected` (bị từ chối ở một cấp, kèm
+ * lý do bắt buộc).
  */
 export const EXAM_DOSSIER_STATUSES = ['draft', 'pending', 'pending_board', 'approved', 'rejected'] as const;
 export type ExamDossierStatus = (typeof EXAM_DOSSIER_STATUSES)[number];
 
 /**
- * Payload lập bộ hồ sơ cho một đề: đích là một bank đề dùng chung
- * (tổ/trường/khoá). Bộ hồ sơ chỉ ở trạng thái nháp sau bước này —
- * version của đề + ma trận được GHIM tại lúc nộp (submit), không phải
- * lúc lập, để giáo viên chốt bản cuối mới nộp.
+ * Payload lập bộ hồ sơ cho một đề: đích là một bank đề dùng chung (tổ/trường/khoá). Bộ hồ sơ chỉ ở trạng thái nháp sau
+ * bước này — version của đề + ma trận được GHIM tại lúc nộp (submit), không phải lúc lập, để giáo viên chốt bản cuối
+ * mới nộp.
  */
 export const createExamDossierSchema = z.strictObject({
   targetBankId: uuidIdSchema,
@@ -2107,13 +2174,19 @@ export type CreateExamDossier = z.infer<typeof createExamDossierSchema>;
 export const approveExamDossierSchema = z.strictObject({});
 export type ApproveExamDossier = z.infer<typeof approveExamDossierSchema>;
 
-/** Payload từ chối bộ hồ sơ ở một cấp duyệt: lý do BẮT BUỘC để người đóng góp sửa và nộp lại (chuỗi toàn khoảng trắng không tính là lý do). */
+/**
+ * Payload từ chối bộ hồ sơ ở một cấp duyệt: lý do BẮT BUỘC để người đóng góp sửa và nộp lại (chuỗi toàn khoảng trắng
+ * không tính là lý do).
+ */
 export const rejectExamDossierSchema = z.strictObject({
   reason: z.string().trim().min(1),
 });
 export type RejectExamDossier = z.infer<typeof rejectExamDossierSchema>;
 
-/** Một mốc duyệt trong vết của bộ hồ sơ: mỗi cấp duyệt là một bản ghi độc lập (người duyệt, quyết định, lý do, thời điểm). */
+/**
+ * Một mốc duyệt trong vết của bộ hồ sơ: mỗi cấp duyệt là một bản ghi độc lập (người duyệt, quyết định, lý do, thời
+ * điểm).
+ */
 export const examDossierReviewViewSchema = z.object({
   id: z.string(),
   dossierId: z.string(),
@@ -2127,10 +2200,8 @@ export const examDossierReviewViewSchema = z.object({
 export type ExamDossierReviewView = z.infer<typeof examDossierReviewViewSchema>;
 
 /**
- * View bộ hồ sơ như API trả về: bộ ba đã ghim (phiên bản đề + phiên
- * bản ma trận + bản đặc tả chụp tại lúc nộp — đặc tả đọc qua endpoint
- * riêng), truy vết hai đầu (người đóng góp, đề kết quả trong bank
- * đích) và toàn bộ vết duyệt theo cấp.
+ * View bộ hồ sơ như API trả về: bộ ba đã ghim (phiên bản đề + phiên bản ma trận + bản đặc tả chụp tại lúc nộp — đặc tả
+ * đọc qua endpoint riêng), truy vết hai đầu (người đóng góp, đề kết quả trong bank đích) và toàn bộ vết duyệt theo cấp.
  */
 export const examDossierViewSchema = z.object({
   id: z.string(),
@@ -2147,9 +2218,15 @@ export const examDossierViewSchema = z.object({
   matrixId: z.string().nullable(),
   matrixName: z.string().nullable(),
   matrixVersion: z.number().nullable(),
-  /** Id của hàng version bất biến của ma trận đã neo tại lúc nộp (căn cứ lịch sử của bộ hồ sơ); null khi bộ chưa nộp hoặc ma trận chưa có version bất biến tại thời điểm nộp. */
+  /**
+   * Id của hàng version bất biến của ma trận đã neo tại lúc nộp (căn cứ lịch sử của bộ hồ sơ); null khi bộ chưa nộp
+   * hoặc ma trận chưa có version bất biến tại thời điểm nộp.
+   */
   matrixVersionId: z.string().nullable(),
-  /** Cấu hình cấp duyệt 2 (BGH) hiệu lực tại lúc đọc — khi true và bộ đang `pending`, duyệt cấp 1 chỉ đưa bộ sang `pending_board`. */
+  /**
+   * Cấu hình cấp duyệt 2 (BGH) hiệu lực tại lúc đọc — khi true và bộ đang `pending`, duyệt cấp 1 chỉ đưa bộ sang
+   * `pending_board`.
+   */
   boardApprovalRequired: z.boolean(),
   resultExamId: z.string().nullable(),
   reviews: z.array(examDossierReviewViewSchema),
@@ -2157,11 +2234,9 @@ export const examDossierViewSchema = z.object({
   updatedAt: z.string(),
 });
 export type ExamDossierView = z.infer<typeof examDossierViewSchema>;
-// Chấm bài giấy bằng camera (CAM-0, issue #112): phiếu trả lời in từ quiz,
-// OMR xác định phía server, hai hàng chờ (gán định danh / xác nhận ca mơ hồ)
-// và attempt "thi giấy" chảy vào Quiz. OMR chỉ trả "ô nào được tô" — việc
-// chấm (kể cả thang Đ–S của câu đúng/sai chùm TF-A) là của engine Quiz như
-// attempt online.
+// Chấm bài giấy bằng camera (CAM-0, issue #112): phiếu trả lời in từ quiz, OMR xác định phía server, hai hàng chờ (gán
+// định danh / xác nhận ca mơ hồ) và attempt "thi giấy" chảy vào Quiz. OMR chỉ trả "ô nào được tô" — việc chấm (kể cả
+// thang Đ–S của câu đúng/sai chùm TF-A) là của engine Quiz như attempt online.
 
 /** Trạng thái một phiếu đã quét: chờ gán định danh → chờ xác nhận mơ hồ → sẵn sàng ghi → đã ghi thành attempt. */
 export const PAPER_SCAN_STATUSES = ['needs_identity', 'needs_review', 'ready', 'recorded'] as const;
@@ -2171,7 +2246,9 @@ export type PaperScanStatus = (typeof PAPER_SCAN_STATUSES)[number];
 export const PAPER_IDENTITY_SOURCES = ['qr', 'bubbles', 'manual'] as const;
 export type PaperIdentitySource = (typeof PAPER_IDENTITY_SOURCES)[number];
 
-/** Một dòng của đề đã ghim tại thời điểm sinh phiếu: version câu + đáp án của version đó theo đúng thứ tự in trên phiếu. */
+/**
+ * Một dòng của đề đã ghim tại thời điểm sinh phiếu: version câu + đáp án của version đó theo đúng thứ tự in trên phiếu.
+ */
 export const paperSlotLayoutSchema = z.object({
   slot: z.number().int(),
   questionId: uuidIdSchema,
@@ -2179,7 +2256,10 @@ export const paperSlotLayoutSchema = z.object({
   qtype: z.string(),
   /** Số bong bóng in cho câu này (= số đáp án của version đã ghim; câu đúng/sai chùm TF-A = 8: 4 ý × 2 ô Đ/S). */
   optionCount: z.number().int(),
-  /** Đáp án của version đã ghim theo thứ tự in — chỉ phía giáo viên (chấm giấy) mới nhận trường này. Rỗng với câu đúng/sai chùm (đáp án nằm ở từng mệnh đề). */
+  /**
+   * Đáp án của version đã ghim theo thứ tự in — chỉ phía giáo viên (chấm giấy) mới nhận trường này. Rỗng với câu
+   * đúng/sai chùm (đáp án nằm ở từng mệnh đề).
+   */
   answerIds: z.array(uuidIdSchema),
   /** Định danh các mệnh đề của câu đúng/sai chùm (TF-A) theo đúng thứ tự in 4 ý trên phiếu; rỗng với các qtype khác. */
   statementIds: z.array(z.string()),
@@ -2188,7 +2268,10 @@ export const paperSlotLayoutSchema = z.object({
 });
 export type PaperSlotLayout = z.infer<typeof paperSlotLayoutSchema>;
 
-/** Một học sinh trong roster chụp tại lúc sinh lô phiếu: mã tô cho phiếu dùng chung (4 số tại lớp — 3 số thứ tự + 1 số kiểm tra; hoặc 8 số thi thử — 7 số thứ tự + 1 số kiểm tra, đúng độ dài SBD của Bộ). */
+/**
+ * Một học sinh trong roster chụp tại lúc sinh lô phiếu: mã tô cho phiếu dùng chung (4 số tại lớp — 3 số thứ tự + 1 số
+ * kiểm tra; hoặc 8 số thi thử — 7 số thứ tự + 1 số kiểm tra, đúng độ dài SBD của Bộ).
+ */
 export const paperRosterEntrySchema = z.object({
   code: z.string(),
   userId: uuidIdSchema,
@@ -2196,12 +2279,18 @@ export const paperRosterEntrySchema = z.object({
 });
 export type PaperRosterEntry = z.infer<typeof paperRosterEntrySchema>;
 
-/** Một lô IN phiếu (một mã đề) của một quiz: layout đã ghim + roster tại thời điểm sinh. Lô in khác lô chụp: một buổi chụp gồm nhiều lô in (mỗi mã đề một lô), phiếu được định tuyến về lô in theo mã đề đọc từ phiếu. */
+/**
+ * Một lô IN phiếu (một mã đề) của một quiz: layout đã ghim + roster tại thời điểm sinh. Lô in khác lô chụp: một buổi
+ * chụp gồm nhiều lô in (mỗi mã đề một lô), phiếu được định tuyến về lô in theo mã đề đọc từ phiếu.
+ */
 export const paperBatchSchema = z.object({
   id: uuidIdSchema,
   pinId: uuidIdSchema,
   variantCode: z.string(),
-  /** Mã đề 4 số giống Bộ của variant này (giao diện khớp variant_code của tầng triển khai đề); học sinh ghi + tô mã này lên phiếu dùng chung. Null với các lô sinh trước khi có mã đề số. */
+  /**
+   * Mã đề 4 số giống Bộ của variant này (giao diện khớp variant_code của tầng triển khai đề); học sinh ghi + tô mã này
+   * lên phiếu dùng chung. Null với các lô sinh trước khi có mã đề số.
+   */
   examCode: z.string().nullable(),
   /** Số cột của lưới mã học sinh trên phiếu của lô: 4 (tại lớp) hoặc 8 (thi thử theo phòng, định dạng SBD). */
   codeDigits: z.number().int(),
@@ -2212,7 +2301,11 @@ export const paperBatchSchema = z.object({
 });
 export type PaperBatch = z.infer<typeof paperBatchSchema>;
 
-/** Payload sinh lô phiếu: mã đề chữ tuỳ chọn (mặc định hệ thống tự đánh A, B, C… theo thứ tự lô của quiz); mã đề số 4 số tuỳ chọn (mặc định hệ thống tự cấp dãy từ 1001); số cột lưới mã học sinh tuỳ chọn (mặc định 4 = tại lớp; 8 = thi thử SBD). */
+/**
+ * Payload sinh lô phiếu: mã đề chữ tuỳ chọn (mặc định hệ thống tự đánh A, B, C… theo thứ tự lô của quiz); mã đề số 4 số
+ * tuỳ chọn (mặc định hệ thống tự cấp dãy từ 1001); số cột lưới mã học sinh tuỳ chọn (mặc định 4 = tại lớp; 8 = thi thử
+ * SBD).
+ */
 export const createPaperBatchSchema = z.strictObject({
   variantCode: z.string().min(1).max(8).optional(),
   examCode: z.string().regex(/^\d{4}$/).optional(),
@@ -2231,10 +2324,9 @@ export const paperReadingSchema = z.object({
   /** Ai đã quyết ô chọn cuối: OMR tự quyết hay giáo viên xác nhận trong hàng chờ. */
   resolvedBy: z.enum(['omr', 'teacher']).nullable(),
   /**
-   * Chỉ slot đúng/sai chùm (TF-A): lựa chọn theo TỪNG CẶP ô Đ/S của 4 ý —
-   * phần tử k là 0 (tô ô Đ) / 1 (tô ô S) / null (cặp trống hoặc còn mơ hồ)
-   * của ý k theo thứ tự in. Slot TF-A luôn có trường này và `chosen` của
-   * chúng luôn null; slot thường không mang trường này.
+   * Chỉ slot đúng/sai chùm (TF-A): lựa chọn theo TỪNG CẶP ô Đ/S của 4 ý — phần tử k là 0 (tô ô Đ) / 1 (tô ô S) / null
+   * (cặp trống hoặc còn mơ hồ) của ý k theo thứ tự in. Slot TF-A luôn có trường này và `chosen` của chúng luôn null;
+   * slot thường không mang trường này.
    */
   pairChoices: z.array(z.number().int().nullable()).optional(),
 });
@@ -2248,7 +2340,10 @@ export const paperQualitySchema = z.object({
 });
 export type PaperQuality = z.infer<typeof paperQualitySchema>;
 
-/** Một phiếu đã quét như API trả cho giáo viên: ảnh gốc + ảnh đã nắn phẳng (file trong module files), kết quả đọc và trạng thái hàng chờ. */
+/**
+ * Một phiếu đã quét như API trả cho giáo viên: ảnh gốc + ảnh đã nắn phẳng (file trong module files), kết quả đọc và
+ * trạng thái hàng chờ.
+ */
 export const paperRowGeometrySchema = z.object({
   slot: z.number().int().positive(),
   /** Tâm bong bóng trong không gian template 1240×1754 của ảnh đã nắn (warpedFileId). */
@@ -2256,7 +2351,10 @@ export const paperRowGeometrySchema = z.object({
 });
 export type PaperRowGeometry = z.infer<typeof paperRowGeometrySchema>;
 
-/** Một vùng cắt trên ảnh đã nắn phẳng (không gian template 1240×1754) — web cắt vùng này để giáo viên đối chiếu khi xử lý hàng chờ. */
+/**
+ * Một vùng cắt trên ảnh đã nắn phẳng (không gian template 1240×1754) — web cắt vùng này để giáo viên đối chiếu khi xử
+ * lý hàng chờ.
+ */
 export const paperRegionSchema = z.object({
   x: z.number(), y: z.number(), w: z.number(), h: z.number(),
 });
@@ -2273,7 +2371,10 @@ export type PaperScanRegions = z.infer<typeof paperScanRegionsSchema>;
 export const paperScanSchema = z.object({
   id: uuidIdSchema,
   pinId: uuidIdSchema,
-  /** Lô in mà phiếu thuộc về (theo mã đề đọc được / QR / giáo viên gán); null khi phiếu chưa định tuyến được về lô in nào — phiếu nằm ở hàng chờ gán lô. */
+  /**
+   * Lô in mà phiếu thuộc về (theo mã đề đọc được / QR / giáo viên gán); null khi phiếu chưa định tuyến được về lô in
+   * nào — phiếu nằm ở hàng chờ gán lô.
+   */
   batchId: uuidIdSchema.nullable(),
   /** Lô chụp (một lượt tải ảnh của một buổi) chứa phiếu này; mọi phiếu trong cùng lượt tải mang cùng mã. */
   sessionId: uuidIdSchema.nullable(),
@@ -2282,13 +2383,22 @@ export const paperScanSchema = z.object({
   studentName: z.string().nullable(),
   identitySource: z.enum(PAPER_IDENTITY_SOURCES).nullable(),
   identityCode: z.string().nullable(),
-  /** Mã đề 4 số hiệu lực của phiếu: đọc chắc chắn từ lưới tô mã đề, hoặc giáo viên xác nhận khi gán lô (bản đọc gốc của máy được giữ trong event log). Null khi không tô/không chắc chắn và chưa được xác nhận — hệ thống không đoán mã đề. */
+  /**
+   * Mã đề 4 số hiệu lực của phiếu: đọc chắc chắn từ lưới tô mã đề, hoặc giáo viên xác nhận khi gán lô (bản đọc gốc của
+   * máy được giữ trong event log). Null khi không tô/không chắc chắn và chưa được xác nhận — hệ thống không đoán mã đề.
+   */
   variantCodeRead: z.string().nullable(),
   fileId: uuidIdSchema,
   warpedFileId: uuidIdSchema.nullable(),
-  /** Hình học lưới của lô (theo layout lúc sinh phiếu) để web cắt vùng từng câu trên ảnh đã nắn; rỗng khi phiếu chưa gắn lô in. */
+  /**
+   * Hình học lưới của lô (theo layout lúc sinh phiếu) để web cắt vùng từng câu trên ảnh đã nắn; rỗng khi phiếu chưa gắn
+   * lô in.
+   */
   rows: z.array(paperRowGeometrySchema),
-  /** Ứng viên gợi ý cho hàng chờ định danh: học sinh trong roster của lô in CHƯA khớp phiếu nào, theo đúng thứ tự roster (kiêm gợi ý theo thứ tự thu bài). */
+  /**
+   * Ứng viên gợi ý cho hàng chờ định danh: học sinh trong roster của lô in CHƯA khớp phiếu nào, theo đúng thứ tự roster
+   * (kiêm gợi ý theo thứ tự thu bài).
+   */
   identityCandidates: z.array(paperRosterEntrySchema),
   /** Vùng cắt vùng mã + vùng tên trên ảnh đã nắn, cho giáo viên đối chiếu khi gán định danh. */
   regions: paperScanRegionsSchema,
@@ -2307,17 +2417,18 @@ export const assignPaperIdentitySchema = z.strictObject({
 });
 export type AssignPaperIdentity = z.infer<typeof assignPaperIdentitySchema>;
 
-/** Payload gán lô in trong hàng chờ: giáo viên gắn phiếu chưa định tuyến được (hoặc sửa mã đề sai) về đúng lô in của quiz — hệ thống đọc lại phiếu theo layout của lô đó. */
+/**
+ * Payload gán lô in trong hàng chờ: giáo viên gắn phiếu chưa định tuyến được (hoặc sửa mã đề sai) về đúng lô in của
+ * quiz — hệ thống đọc lại phiếu theo layout của lô đó.
+ */
 export const assignPaperBatchSchema = z.strictObject({
   batchId: uuidIdSchema,
 });
 export type AssignPaperBatch = z.infer<typeof assignPaperBatchSchema>;
 
 /**
- * Payload xác nhận ca mơ hồ: giáo viên quyết ô chọn cho từng câu mơ hồ
- * (chosen null = để trống). Slot đúng/sai chùm (TF-A) quyết theo TỪNG Ý
- * qua `pairChoices` (mỗi ý 0 = Đ / 1 = S / null = để trống) thay cho
- * `chosen`.
+ * Payload xác nhận ca mơ hồ: giáo viên quyết ô chọn cho từng câu mơ hồ (chosen null = để trống). Slot đúng/sai chùm
+ * (TF-A) quyết theo TỪNG Ý qua `pairChoices` (mỗi ý 0 = Đ / 1 = S / null = để trống) thay cho `chosen`.
  */
 export const resolvePaperReadingsSchema = z.strictObject({
   readings: z.array(z.strictObject({

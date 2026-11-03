@@ -63,32 +63,23 @@ function isUniqueViolation(err: unknown): boolean {
  *
  * Bề mặt gồm ba tầng hành vi, giữ nguyên từng bất biến của đường đồng bộ cohort hiện hành:
  *
- * 1. Funnel ghi danh lõi (`enrolUserInternal`): mọi đường ghi danh
- *    (tay, tự ghi danh, kích hoạt sau thanh toán, đồng bộ cohort)
- *    hội tụ về đây. Chốt tách vai áp trước khi bất kỳ bản ghi nào
- *    được tạo; dòng ghi danh mới và sự kiện `user_enrolled` ghi
- *    trong cùng một transaction; membership tenant của khoá được
- *    đảm bảo active; vai của instance được cấp tại context khoá với
- *    truy vết nguồn của chính instance; nhóm "cả lớp" của instance
- *    (nếu có) nhận thêm thành viên.
- * 2. Đường gỡ ghi danh lõi (`unenrolInternal`): còn dữ liệu liên
- *    quan (hoàn thành/điểm — truy vấn dữ liệu dùng chung ở
- *    `related-data.ts`) thì giữ dòng dạng WITHDRAWN, không còn thì
- *    xoá cứng; sự kiện `user_unenrolled` ghi cùng transaction; chỉ
- *    gỡ đúng dòng gán vai do chính instance này cấp; và sự kiện
- *    `course_completion_reaggregation_requested` được phát trong
- *    cùng transaction để phía API tái tổng hợp hoàn thành khoá cho
- *    người dùng (tiêu chí 'unenrol' của Moodle: rời khoá tự nó có
- *    thể làm hoàn thành khoá đó) — thay cho hook đồng bộ trong
- *    tiến trình trước đây, vì hook đó chỉ tồn tại trong tiến trình
- *    API và không mang theo được sang tiến trình khác.
+ * 1. Funnel ghi danh lõi (`enrolUserInternal`): mọi đường ghi danh (tay, tự ghi danh, kích hoạt sau thanh toán, đồng bộ
+ *    cohort) hội tụ về đây. Chốt tách vai áp trước khi bất kỳ bản ghi nào được tạo; dòng ghi danh mới và sự kiện
+ *    `user_enrolled` ghi trong cùng một transaction; membership tenant của khoá được đảm bảo active; vai của instance
+ *    được cấp tại context khoá với truy vết nguồn của chính instance; nhóm "cả lớp" của instance (nếu có) nhận thêm
+ *    thành viên.
+ * 2. Đường gỡ ghi danh lõi (`unenrolInternal`): còn dữ liệu liên quan (hoàn thành/điểm — truy vấn dữ liệu dùng chung ở
+ *    `related-data.ts`) thì giữ dòng dạng WITHDRAWN, không còn thì xoá cứng; sự kiện `user_unenrolled` ghi cùng
+ *    transaction; chỉ gỡ đúng dòng gán vai do chính instance này cấp; và sự kiện
+ *    `course_completion_reaggregation_requested` được phát trong cùng transaction để phía API tái tổng hợp hoàn thành
+ *    khoá cho người dùng (tiêu chí 'unenrol' của Moodle: rời khoá tự nó có thể làm hoàn thành khoá đó) — thay cho hook
+ *    đồng bộ trong tiến trình trước đây, vì hook đó chỉ tồn tại trong tiến trình API và không mang theo được sang tiến
+ *    trình khác.
  * 3. Hai điểm vào vật chất hoá theo sự kiện thành viên cohort
- *    (`materializeCohortMemberAdded`/`materializeCohortMemberRemoved`):
- *    cả hai đều neo vào TRẠNG THÁI HIỆN TẠI của `cohort_members`
- *    (sự kiện phát lại muộn không được ghi danh cho người đã rời,
- *    cũng không được đình chỉ người đã vào lại), và việc thêm thành
- *    viên bỏ qua riêng lẻ thành viên vi phạm chốt tách vai thay vì
- *    làm hỏng cả vòng lặp đồng bộ.
+ *    (`materializeCohortMemberAdded`/`materializeCohortMemberRemoved`): cả hai đều neo vào TRẠNG THÁI HIỆN TẠI của
+ *    `cohort_members` (sự kiện phát lại muộn không được ghi danh cho người đã rời, cũng không được đình chỉ người đã
+ *    vào lại), và việc thêm thành viên bỏ qua riêng lẻ thành viên vi phạm chốt tách vai thay vì làm hỏng cả vòng lặp
+ *    đồng bộ.
  *
  * Mọi điểm chặn mà funnel đi qua (tách vai, slot gói, toàn vẹn gán do ghi danh cấp) đều là các lõi dùng chung của
  * package này — bề mặt không định nghĩa lại bất kỳ kiểm nào.

@@ -17,7 +17,10 @@ export interface RoleConflictAuditEntry {
   userId: string;
   username: string;
   email: string;
-  /** Các khoá tài khoản vừa có cấp quyền giảng dạy bao phủ vừa có ghi danh học viên đang hoạt động — chỉ nhóm cùng khoá mới có trường này khác rỗng. */
+  /**
+   * Các khoá tài khoản vừa có cấp quyền giảng dạy bao phủ vừa có ghi danh học viên đang hoạt động — chỉ nhóm cùng khoá
+   * mới có trường này khác rỗng.
+   */
   conflictingCourseIds: string[];
   teachingOnlyCourseCount: number;
   learnerOnlyCourseCount: number;
@@ -44,24 +47,16 @@ export interface RoleConflictAuditReport {
  * Hai kiểm nền (định nghĩa duy nhất — mọi chốt chặn trong hệ thống phải gọi về đây, không định nghĩa lại tại module
  * nghiệp vụ):
  *
- * - Kiểm (a) — cấp quyền giảng dạy bao phủ một khoá: tồn tại một gán
- *   vai archetype `editingteacher`/`teacher` KHÔNG do ghi danh cấp
- *   (loại trừ dòng gán có nguồn ghi danh, `component = 'enrol'`) tại
- *   một context bao phủ khoá theo cây context: context của chính
- *   khoá, context của lớp chứa khoá, context của danh mục chứa khoá
- *   và các context tổ tiên của chúng trên đường (path) của context
- *   khoá. Cấp quyền ở mức HỆ THỐNG (context hệ thống, quản trị toàn
- *   site) KHÔNG tính vào kiểm (a): quản trị toàn site vốn bao phủ
- *   mọi khoá theo thiết kế, nên nếu tính thì quản trị viên sẽ không
- *   bao giờ ghi danh học ở bất kỳ khoá nào — sai với nguyên tắc vai
- *   theo ngữ cảnh.
- * - Kiểm (b) — ghi danh học viên đang hoạt động trong một khoá: tồn
- *   tại một bản ghi `user_enrolments` có trạng thái đang hoạt động
- *   (status = 0) qua một enrol instance của khoá mà vai cấp kèm của
- *   instance (nếu có) không thuộc archetype giảng dạy. Instance được
- *   quản trị cấu hình để cấp vai giảng dạy là đường cấp vai quản trị,
- *   nằm ngoài quyết định này; vì vậy cả hai kiểm đều neo vào
- *   archetype của vai mà instance cấp, mặc định là học viên.
+ * - Kiểm (a) — cấp quyền giảng dạy bao phủ một khoá: tồn tại một gán vai archetype `editingteacher`/`teacher` KHÔNG do
+ *   ghi danh cấp (loại trừ dòng gán có nguồn ghi danh, `component = 'enrol'`) tại một context bao phủ khoá theo cây
+ *   context: context của chính khoá, context của lớp chứa khoá, context của danh mục chứa khoá và các context tổ tiên
+ *   của chúng trên đường (path) của context khoá. Cấp quyền ở mức HỆ THỐNG (context hệ thống, quản trị toàn site) KHÔNG
+ *   tính vào kiểm (a): quản trị toàn site vốn bao phủ mọi khoá theo thiết kế, nên nếu tính thì quản trị viên sẽ không
+ *   bao giờ ghi danh học ở bất kỳ khoá nào — sai với nguyên tắc vai theo ngữ cảnh.
+ * - Kiểm (b) — ghi danh học viên đang hoạt động trong một khoá: tồn tại một bản ghi `user_enrolments` có trạng thái
+ *   đang hoạt động (status = 0) qua một enrol instance của khoá mà vai cấp kèm của instance (nếu có) không thuộc
+ *   archetype giảng dạy. Instance được quản trị cấu hình để cấp vai giảng dạy là đường cấp vai quản trị, nằm ngoài
+ *   quyết định này; vì vậy cả hai kiểm đều neo vào archetype của vai mà instance cấp, mặc định là học viên.
  *
  * Các điểm chốt gọi về lõi này: funnel ghi danh lõi (bề mặt vật chất hoá cohort của package này), hai điểm vào thêm
  * thành viên cohort ở tầng nghiệp vụ của host, contributor `enrol` khi khôi phục backup (bỏ qua từng ghi danh vi phạm

@@ -6,10 +6,8 @@
  * - Phía API (các callback của Better Auth qua cổng ghi outbox) chỉ
  *   GHI dòng sự kiện mang payload theo hợp đồng ở file này — không
  *   gửi mail trong request.
- * - Phía worker (relay outbox duy nhất phát job theo loại sự kiện,
- *   processor trên hàng đợi của loại này xử lý job) ĐỌC payload,
- *   dựng nội dung mail bằng {@link renderAuthMail} rồi gọi transport
- *   Resend của phía worker.
+ * - Phía worker (relay outbox duy nhất phát job theo loại sự kiện, processor trên hàng đợi của loại này xử lý job) ĐỌC
+ *   payload, dựng nội dung mail bằng {@link renderAuthMail} rồi gọi transport Resend của phía worker.
  *
  * Template và hợp đồng payload chỉ có ĐÚNG MỘT bản cài đặt ở đây để hai phía không lệch nhau: cấm sao chép logic dựng
  * mail vào từng app. Nội dung mail (tiêu đề, câu chữ, hạn hiệu lực công bố với người dùng) là một phần của hợp đồng này

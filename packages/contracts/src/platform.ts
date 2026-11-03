@@ -341,10 +341,11 @@ export const uploadContentBankFileSchema = z.strictObject({
 });
 export type UploadContentBankFile = z.infer<typeof uploadContentBankFileSchema>;
 
-/** Payload tạo tài khoản thanh toán. `config` giữ cấu hình gateway (với SePay:
- * bankBin/bankCode, bankAccountNumber, sepayApiKey, sepayBankAccountXid…) —
- * giá trị nhạy cảm trong config KHÔNG bao giờ được trả nguyên qua API đọc
- * (che ở tầng service, tiêu chí 6.4.5 của issue #189). */
+/**
+ * Payload tạo tài khoản thanh toán. `config` giữ cấu hình gateway (với SePay: bankBin/bankCode, bankAccountNumber,
+ * sepayApiKey, sepayBankAccountXid…) — giá trị nhạy cảm trong config KHÔNG bao giờ được trả nguyên qua API đọc (che ở
+ * tầng service, tiêu chí 6.4.5 của issue #189).
+ */
 export const createPaymentAccountSchema = z.strictObject({
   name: z.string().min(1),
   gateway: z.string().optional(),
@@ -371,24 +372,22 @@ export const paymentWebhookSchema = z.strictObject({
 });
 export type PaymentWebhook = z.infer<typeof paymentWebhookSchema>;
 
-/** Trạng thái vòng đời của một dòng hoàn (lát 3, issue #189):
- * `requested` (đã tạo, chờ duyệt cấp 2) → `approved` (đã duyệt, chờ
- * xác nhận chi) → `settled` (lệnh chi đã xác nhận); `requested` hoặc
- * `approved` → `rejected` (từ chối). Đảo quyền lợi của khoản thu gốc
- * chỉ xảy ra tại mốc `settled` khi cộng dồn đã `settled` đạt 100%. */
+/**
+ * Trạng thái vòng đời của một dòng hoàn (lát 3, issue #189): `requested` (đã tạo, chờ duyệt cấp 2) → `approved` (đã
+ * duyệt, chờ xác nhận chi) → `settled` (lệnh chi đã xác nhận); `requested` hoặc `approved` → `rejected` (từ chối). Đảo
+ * quyền lợi của khoản thu gốc chỉ xảy ra tại mốc `settled` khi cộng dồn đã `settled` đạt 100%.
+ */
 export const paymentRefundStatusSchema = z.enum(['requested', 'approved', 'settled', 'rejected']);
 export type PaymentRefundStatus = z.infer<typeof paymentRefundStatusSchema>;
 
-/** Payload tạo YÊU CẦU hoàn tiền (lát 3, issue #189 — thay hình thức
- * hoàn một bước trước đây): tạo một dòng hoàn ở đầu vòng đời của nó,
- * payment gốc không đổi trạng thái cho tới khi dòng hoàn được xác
- * nhận chi và cộng dồn đạt 100%. `reason` là BẮT BUỘC (vết kiểm toán
- * của khoản chi). `externalTransactionId` là mã lệnh chi DỰ KIẾN mà
- * chủ tiền sẽ dùng khi chuyển khoản ra — đây là khoá để hệ thống tự
- * đối khớp sự kiện `debit` của SePay về sau; có thể bổ sung ở bước
- * xác nhận chi nếu lúc tạo chưa biết. Cấp duyệt (một cấp hay hai cấp)
- * do hệ thống quyết từ số tiền + ngưỡng cấu hình + luật hoàn đủ,
- * client không chọn. */
+/**
+ * Payload tạo YÊU CẦU hoàn tiền (lát 3, issue #189 — thay hình thức hoàn một bước trước đây): tạo một dòng hoàn ở đầu
+ * vòng đời của nó, payment gốc không đổi trạng thái cho tới khi dòng hoàn được xác nhận chi và cộng dồn đạt 100%.
+ * `reason` là BẮT BUỘC (vết kiểm toán của khoản chi). `externalTransactionId` là mã lệnh chi DỰ KIẾN mà chủ tiền sẽ
+ * dùng khi chuyển khoản ra — đây là khoá để hệ thống tự đối khớp sự kiện `debit` của SePay về sau; có thể bổ sung ở
+ * bước xác nhận chi nếu lúc tạo chưa biết. Cấp duyệt (một cấp hay hai cấp) do hệ thống quyết từ số tiền + ngưỡng cấu
+ * hình + luật hoàn đủ, client không chọn.
+ */
 export const createRefundSchema = z.strictObject({
   amount: z.number().int().min(1),
   reason: z.string().trim().min(1).max(500),
@@ -404,23 +403,22 @@ export const rejectRefundSchema = z.strictObject({
 });
 export type RejectRefund = z.infer<typeof rejectRefundSchema>;
 
-/** Payload xác nhận chi cho một dòng hoàn đã duyệt: gắn mã lệnh chi
- * thực tế của lệnh chuyển khoản ra. Nếu dòng hoàn đã ghi mã lệnh chi
- * dự kiến lúc tạo thì payload có thể vắng — khi cả hai cùng có, hai mã
- * phải trùng nhau. Xác nhận chi là mốc `settled`: nếu lần xác nhận này
- * làm cộng dồn đã chi đạt 100% khoản thu, quyền lợi bị đảo tại đây. */
+/**
+ * Payload xác nhận chi cho một dòng hoàn đã duyệt: gắn mã lệnh chi thực tế của lệnh chuyển khoản ra. Nếu dòng hoàn đã
+ * ghi mã lệnh chi dự kiến lúc tạo thì payload có thể vắng — khi cả hai cùng có, hai mã phải trùng nhau. Xác nhận chi là
+ * mốc `settled`: nếu lần xác nhận này làm cộng dồn đã chi đạt 100% khoản thu, quyền lợi bị đảo tại đây.
+ */
 export const settleRefundSchema = z.strictObject({
   externalTransactionId: z.string().trim().min(1).max(128).optional(),
 });
 export type SettleRefund = z.infer<typeof settleRefundSchema>;
 
-/** Một dòng hoàn ở dạng API: trọn vết kiểm toán của vòng đời — người
- * tạo + lý do, cấp duyệt áp dụng + ngưỡng hiệu lực tại thời điểm tạo,
- * người duyệt/từ chối kèm mốc thời gian, và xác nhận chi (người xác
- * nhận tay hoặc sự kiện `debit` đã khớp). Mốc thời gian là chuỗi ISO;
- * trường null nghĩa là mốc đó chưa xảy ra. `entitlementReversed` cho
- * biết dòng hoàn này có phải là dòng làm cộng dồn đạt 100% và đã đảo
- * quyền lợi hay không (null khi chưa tới mốc `settled`). */
+/**
+ * Một dòng hoàn ở dạng API: trọn vết kiểm toán của vòng đời — người tạo + lý do, cấp duyệt áp dụng + ngưỡng hiệu lực
+ * tại thời điểm tạo, người duyệt/từ chối kèm mốc thời gian, và xác nhận chi (người xác nhận tay hoặc sự kiện `debit` đã
+ * khớp). Mốc thời gian là chuỗi ISO; trường null nghĩa là mốc đó chưa xảy ra. `entitlementReversed` cho biết dòng hoàn
+ * này có phải là dòng làm cộng dồn đạt 100% và đã đảo quyền lợi hay không (null khi chưa tới mốc `settled`).
+ */
 export const paymentRefundSchema = z.object({
   id: uuidIdSchema,
   paymentId: uuidIdSchema,
@@ -446,11 +444,11 @@ export const paymentRefundSchema = z.object({
 });
 export type PaymentRefund = z.infer<typeof paymentRefundSchema>;
 
-/** Quyết định xử lý tay một khoản chờ trong hàng đợi `needs_review`:
- * `matched` = khớp tay về `succeeded` (kích hoạt quyền lợi trực tiếp
- * trước nhịp lật trạng thái và phát cùng outbox `payment_succeeded`
- * như đường khớp tự động); `rejected` = bác bỏ, khoản thu chuyển
- * `failed`. */
+/**
+ * Quyết định xử lý tay một khoản chờ trong hàng đợi `needs_review`: `matched` = khớp tay về `succeeded` (kích hoạt
+ * quyền lợi trực tiếp trước nhịp lật trạng thái và phát cùng outbox `payment_succeeded` như đường khớp tự động);
+ * `rejected` = bác bỏ, khoản thu chuyển `failed`.
+ */
 export const paymentReviewDecisionSchema = z.enum(['matched', 'rejected']);
 export type PaymentReviewDecision = z.infer<typeof paymentReviewDecisionSchema>;
 
@@ -463,23 +461,23 @@ export const resolvePaymentReviewSchema = z.strictObject({
 });
 export type ResolvePaymentReview = z.infer<typeof resolvePaymentReviewSchema>;
 
-/** Mã điều kiện lệch của một khoản chờ trong hàng đợi `needs_review`,
- * suy từ đối chiếu sự kiện provider với khoản thu tại thời điểm xem:
- * `amount_mismatch` (sai số tiền), `account_mismatch` (sai tài khoản
- * nhận), `expired` (tiền về sau hạn thanh toán), `unknown_code` (sự
- * kiện tiền vào không gắn được với khoản thu nào), `unmatched_debit`
- * (sự kiện tiền ra không khớp được dòng hoàn chờ xác nhận nào). */
+/**
+ * Mã điều kiện lệch của một khoản chờ trong hàng đợi `needs_review`, suy từ đối chiếu sự kiện provider với khoản thu
+ * tại thời điểm xem: `amount_mismatch` (sai số tiền), `account_mismatch` (sai tài khoản nhận), `expired` (tiền về sau
+ * hạn thanh toán), `unknown_code` (sự kiện tiền vào không gắn được với khoản thu nào), `unmatched_debit` (sự kiện tiền
+ * ra không khớp được dòng hoàn chờ xác nhận nào).
+ */
 export const paymentReviewMismatchSchema = z.enum([
   'amount_mismatch', 'account_mismatch', 'expired', 'unknown_code', 'unmatched_debit',
 ]);
 export type PaymentReviewMismatch = z.infer<typeof paymentReviewMismatchSchema>;
 
-/** Một mục của hàng đợi `needs_review`: hoặc một KHOẢN THU đang chờ
- * (kèm sự kiện provider liên quan gần nhất làm ngữ cảnh đối soát),
- * hoặc một SỰ KIỆN provider mồ côi không gắn được với khoản thu nào.
- * `ageHours` là tuổi của khoản chờ; `overdue` đánh dấu quá hạn theo
- * khoá cấu hình `payments/reviewtargethours` của tenant chủ tiền —
- * chỉ để cảnh báo, hệ thống không tự xử lý khoản quá hạn. */
+/**
+ * Một mục của hàng đợi `needs_review`: hoặc một KHOẢN THU đang chờ (kèm sự kiện provider liên quan gần nhất làm ngữ
+ * cảnh đối soát), hoặc một SỰ KIỆN provider mồ côi không gắn được với khoản thu nào. `ageHours` là tuổi của khoản chờ;
+ * `overdue` đánh dấu quá hạn theo khoá cấu hình `payments/reviewtargethours` của tenant chủ tiền — chỉ để cảnh báo, hệ
+ * thống không tự xử lý khoản quá hạn.
+ */
 export const paymentReviewQueueItemSchema = z.object({
   kind: z.enum(['payment', 'event']),
   tenantId: uuidIdSchema,
@@ -507,21 +505,21 @@ export const paymentReviewQueueItemSchema = z.object({
 });
 export type PaymentReviewQueueItem = z.infer<typeof paymentReviewQueueItemSchema>;
 
-/** Loại gói bán qua pipeline thanh toán (lát 2, issue #189): gói trung
- * tâm (`tenant_plan` — bên hưởng là một tenant) và gói giáo viên
- * (`teacher_plan` — bên hưởng là một người dùng giáo viên). Giá của mỗi
- * gói KHÔNG nằm trong code: giá hiệu lực đọc từ cấu hình hệ thống
- * (component `payments`, khoá `tenantplanprice` / `teacherplanprice`)
- * tại thời điểm tạo khoản thu. */
+/**
+ * Loại gói bán qua pipeline thanh toán (lát 2, issue #189): gói trung tâm (`tenant_plan` — bên hưởng là một tenant) và
+ * gói giáo viên (`teacher_plan` — bên hưởng là một người dùng giáo viên). Giá của mỗi gói KHÔNG nằm trong code: giá
+ * hiệu lực đọc từ cấu hình hệ thống (component `payments`, khoá `tenantplanprice` / `teacherplanprice`) tại thời điểm
+ * tạo khoản thu.
+ */
 export const planComponentSchema = z.enum(['tenant_plan', 'teacher_plan']);
 export type PlanComponent = z.infer<typeof planComponentSchema>;
 
-/** Payload mua/nâng gói: bên gọi chỉ chọn LOẠI gói — số tiền luôn do
- * hệ thống quyết từ cấu hình giá tại thời điểm giao dịch, không nhận
- * amount từ client. `couponCode` là trường tuỳ chọn: mã coupon giảm
- * giá do quản trị platform tạo (xem `createCouponSchema`); khi có mã,
- * hệ thống kiểm tra coupon và trừ mức giảm vào giá cấu hình TRƯỚC khi
- * tạo khoản thu — client vẫn không gửi được bất kỳ con số nào. */
+/**
+ * Payload mua/nâng gói: bên gọi chỉ chọn LOẠI gói — số tiền luôn do hệ thống quyết từ cấu hình giá tại thời điểm giao
+ * dịch, không nhận amount từ client. `couponCode` là trường tuỳ chọn: mã coupon giảm giá do quản trị platform tạo (xem
+ * `createCouponSchema`); khi có mã, hệ thống kiểm tra coupon và trừ mức giảm vào giá cấu hình TRƯỚC khi tạo khoản thu —
+ * client vẫn không gửi được bất kỳ con số nào.
+ */
 export const purchasePlanSchema = z.strictObject({
   component: planComponentSchema,
   couponCode: z.string().trim().min(1).max(64).optional(),
@@ -538,15 +536,13 @@ export type CouponDiscountType = z.infer<typeof couponDiscountTypeSchema>;
 export const couponAppliesToSchema = z.enum(['tenant_plan', 'teacher_plan', 'all']);
 export type CouponAppliesTo = z.infer<typeof couponAppliesToSchema>;
 
-/** Payload tạo coupon (bề mặt quản trị platform): mọi mức giảm là dữ
- * liệu do quản trị tạo qua payload này — không có mã hay mức giảm nào
- * ghim trong code. Ràng buộc hình dạng bám đặc tả coupon của issue
- * #189: phần trăm hợp lệ 1–99 (kiểm tra chéo theo `discountType` bằng
- * superRefine dưới đây); số tiền cố định là số nguyên dương; cửa sổ
- * hiệu lực và giới hạn lượt dùng cho phép vắng (không giới hạn phía
- * đó / không giới hạn lượt). Tầng service kiểm tra lại các ràng buộc
- * này trên trạng thái gộp cuối cùng khi cập nhật (payload cập nhật
- * cho phép thiếu trường). */
+/**
+ * Payload tạo coupon (bề mặt quản trị platform): mọi mức giảm là dữ liệu do quản trị tạo qua payload này — không có mã
+ * hay mức giảm nào ghim trong code. Ràng buộc hình dạng bám đặc tả coupon của issue #189: phần trăm hợp lệ 1–99 (kiểm
+ * tra chéo theo `discountType` bằng superRefine dưới đây); số tiền cố định là số nguyên dương; cửa sổ hiệu lực và giới
+ * hạn lượt dùng cho phép vắng (không giới hạn phía đó / không giới hạn lượt). Tầng service kiểm tra lại các ràng buộc
+ * này trên trạng thái gộp cuối cùng khi cập nhật (payload cập nhật cho phép thiếu trường).
+ */
 export const createCouponSchema = z.strictObject({
   code: z.string().trim().min(1).max(64),
   discountType: couponDiscountTypeSchema,
@@ -574,10 +570,10 @@ export const createCouponSchema = z.strictObject({
 });
 export type CreateCoupon = z.infer<typeof createCouponSchema>;
 
-/** Payload cập nhật coupon: mọi trường đều tuỳ chọn; ngừng sử dụng
- * coupon bằng cách đặt `isActive` thành false (không xoá cứng). Mã
- * coupon là định danh tra cứu khi áp dụng nên không sửa được qua
- * payload này. */
+/**
+ * Payload cập nhật coupon: mọi trường đều tuỳ chọn; ngừng sử dụng coupon bằng cách đặt `isActive` thành false (không
+ * xoá cứng). Mã coupon là định danh tra cứu khi áp dụng nên không sửa được qua payload này.
+ */
 export const updateCouponSchema = z.strictObject({
   discountType: couponDiscountTypeSchema.optional(),
   discountValue: z.number().int().min(1).max(99_999_999).optional(),
@@ -608,10 +604,11 @@ export const couponSchema = z.object({
 });
 export type Coupon = z.infer<typeof couponSchema>;
 
-/** Quyền lợi gói đã kích hoạt: cửa sổ hiệu lực [startsAt, expiresAt)
- * sinh từ một payment gói thành công; `userId` chỉ có ở `teacher_plan`
- * (gói trung tâm hưởng theo `tenantId`, userId = null). Hoàn đủ tiền
- * của payment sinh ra nó thì trạng thái chuyển `suspended`. */
+/**
+ * Quyền lợi gói đã kích hoạt: cửa sổ hiệu lực [startsAt, expiresAt) sinh từ một payment gói thành công; `userId` chỉ có
+ * ở `teacher_plan` (gói trung tâm hưởng theo `tenantId`, userId = null). Hoàn đủ tiền của payment sinh ra nó thì trạng
+ * thái chuyển `suspended`.
+ */
 export const planEntitlementSchema = z.object({
   id: uuidIdSchema,
   tenantId: uuidIdSchema,

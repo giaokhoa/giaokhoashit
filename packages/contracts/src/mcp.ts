@@ -27,7 +27,10 @@ export const mcpAnswerInputSchema = z.strictObject({
 });
 export type McpAnswerInput = z.infer<typeof mcpAnswerInputSchema>;
 
-/** Options theo qtype ở biên MCP: các trường rich text của hợp đồng gốc thu về chuỗi thuần. Đã bỏ `single`/`showNumCorrect`/`partiallyCorrectFeedback` cùng hợp đồng gốc (điểm quyết D-5). */
+/**
+ * Options theo qtype ở biên MCP: các trường rich text của hợp đồng gốc thu về chuỗi thuần. Đã bỏ
+ * `single`/`showNumCorrect`/`partiallyCorrectFeedback` cùng hợp đồng gốc (điểm quyết D-5).
+ */
 export const mcpQuestionOptionsInputSchema = z.strictObject({
   shuffleAnswers: z.boolean().optional(),
   answerNumbering: z.string().max(50).optional(),
@@ -212,11 +215,9 @@ export const mcpSubmitContributionOutputSchema = z.object({
 export type McpSubmitContributionOutput = z.infer<typeof mcpSubmitContributionOutputSchema>;
 
 /**
- * ── Lát MCP-1 (issue #163) ──────────────────────────────────────────
- * Các tool dưới đây dùng cùng một bộ nguyên tắc biên như MCP-0: strict
- * object, chuỗi/mảng có trần, idempotencyKey bắt buộc ở mọi tool ghi,
- * kết quả ghi theo TỪNG ITEM (một item lỗi không kéo cả lô xuống, trừ
- * tool nhóm ngữ liệu nguyên tử ghi rõ ở mô tả của nó).
+ * ── Lát MCP-1 (issue #163) ────────────────────────────────────────── Các tool dưới đây dùng cùng một bộ nguyên tắc
+ * biên như MCP-0: strict object, chuỗi/mảng có trần, idempotencyKey bắt buộc ở mọi tool ghi, kết quả ghi theo TỪNG ITEM
+ * (một item lỗi không kéo cả lô xuống, trừ tool nhóm ngữ liệu nguyên tử ghi rõ ở mô tả của nó).
  */
 
 /**
@@ -298,7 +299,10 @@ export const mcpCreateQuestionsBatchOutputSchema = z.object({
 });
 export type McpCreateQuestionsBatchOutput = z.infer<typeof mcpCreateQuestionsBatchOutputSchema>;
 
-/** Một câu trong nhóm của `create_stimulus_with_questions`: hình của create_question trừ bank/category/key; stimulus là ngữ liệu của chính tool này nên không có stimulusId/Ref. */
+/**
+ * Một câu trong nhóm của `create_stimulus_with_questions`: hình của create_question trừ bank/category/key; stimulus là
+ * ngữ liệu của chính tool này nên không có stimulusId/Ref.
+ */
 export const mcpStimulusQuestionItemSchema = z.strictObject({
   qtype: z.enum(['multichoice', 'truefalse', 'shortanswer', 'essay']),
   questionText: z.string().min(1).max(20000),

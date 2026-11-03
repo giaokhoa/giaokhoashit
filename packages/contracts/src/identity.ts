@@ -27,7 +27,10 @@ export const customFieldValueSchema = z.object({
 });
 export type CustomFieldValue = z.infer<typeof customFieldValueSchema>;
 
-/** View hồ sơ: `email` là trường danh tính — vắng mặt trừ khi người xem nắm giữ site:viewuseridentity (hoặc là chủ sở hữu/admin). */
+/**
+ * View hồ sơ: `email` là trường danh tính — vắng mặt trừ khi người xem nắm giữ site:viewuseridentity (hoặc là chủ sở
+ * hữu/admin).
+ */
 export const userProfileSchema = z.object({
   id: uuidIdSchema,
   username: z.string(),
@@ -111,7 +114,10 @@ export const overrideCapabilitySchema = z.strictObject({
 });
 export type OverrideCapability = z.infer<typeof overrideCapabilitySchema>;
 
-/** Query kiểm tra quyền: người dùng có capability trong context hay không (dạng nền — phía server ép kiểu từ query string). */
+/**
+ * Query kiểm tra quyền: người dùng có capability trong context hay không (dạng nền — phía server ép kiểu từ query
+ * string).
+ */
 export const hasCapabilityQuerySchema = z.strictObject({
   userId: uuidIdSchema,
   capability: z.string(),
@@ -139,9 +145,9 @@ export type RoleListItem = z.infer<typeof roleListItemSchema>;
  * Payload lưu ma trận quyền thay toàn bộ cho một vai tại đúng một context: sau khi áp dụng thành công, tập ghi đè của
  * vai tại context đó bằng đúng tập gửi lên — phần tử vắng mặt trong tập trở về kế thừa, và phần tử mang giá trị INHERIT
  * (0) tường minh cũng tương đương không có ghi đè. Giá trị quyền thuộc bốn trạng thái đã chốt (ALLOW = 1, INHERIT = 0,
- * PREVENT = −1, PROHIBIT = −1000); việc từ chối giá trị ngoài bốn trạng thái và tên năng lực ngoài danh mục nằm ở tầng
- * service của API với mã lỗi riêng, cùng khuôn với thao tác đặt một ghi đè hiện hành. Thao tác là nguyên tử: lỗi kiểm
- * chứng thì không thay đổi gì.
+ *     PREVENT = −1, PROHIBIT = −1000); việc từ chối giá trị ngoài bốn trạng thái và tên năng lực ngoài danh mục nằm ở
+ *     tầng service của API với mã lỗi riêng, cùng khuôn với thao tác đặt một ghi đè hiện hành. Thao tác là nguyên tử:
+ *     lỗi kiểm chứng thì không thay đổi gì.
  */
 export const replaceRoleCapabilitiesSchema = z.strictObject({
   contextId: uuidIdSchema,
@@ -153,16 +159,12 @@ export const replaceRoleCapabilitiesSchema = z.strictObject({
 export type ReplaceRoleCapabilities = z.infer<typeof replaceRoleCapabilitiesSchema>;
 
 /**
- * Query đọc ma trận quyền của mọi vai tại đúng một context (bề mặt
- * trang Permissions toàn trang dựng bảng chuyển vị resource × vai từ
- * một lần gọi này, thay vì gọi ma trận riêng cho từng vai): đầu vào
- * chỉ gồm `contextId` của context cần đọc. `contextId` phải là UUID —
- * giá trị sai khuôn bị tầng kiểm chứng hợp đồng chặn ở đầu vào bằng
- * lỗi 400 ProblemDetails mang mã `http.validation_failed` (mã thật
- * của cơ chế kiểm chứng dùng chung của hệ, không có mã riêng theo
- * schema). `contextId` đúng khuôn nhưng không tồn tại được tầng API
- * xử lý như các đường đọc hiện hành của module phân quyền: 404
- * `access.context_not_found`.
+ * Query đọc ma trận quyền của mọi vai tại đúng một context (bề mặt trang Permissions toàn trang dựng bảng chuyển vị
+ * resource × vai từ một lần gọi này, thay vì gọi ma trận riêng cho từng vai): đầu vào chỉ gồm `contextId` của context
+ * cần đọc. `contextId` phải là UUID — giá trị sai khuôn bị tầng kiểm chứng hợp đồng chặn ở đầu vào bằng lỗi 400
+ * ProblemDetails mang mã `http.validation_failed` (mã thật của cơ chế kiểm chứng dùng chung của hệ, không có mã riêng
+ * theo schema). `contextId` đúng khuôn nhưng không tồn tại được tầng API xử lý như các đường đọc hiện hành của module
+ * phân quyền: 404 `access.context_not_found`.
  */
 export const capabilityMatrixQuerySchema = z.strictObject({
   contextId: uuidIdSchema,
@@ -295,34 +297,25 @@ export const listUsersQuerySchema = z.strictObject({
 export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 
 /**
- * Truy vấn danh sách người dùng kèm gán vai (`GET /access/users-with-assignments`)
- * — nguồn dữ kiện cho bảng người dùng của trang vai trò, nơi mỗi người dùng
- * chiếm đúng MỘT dòng kèm toàn bộ dòng gán của họ.
+ * Truy vấn danh sách người dùng kèm gán vai (`GET /access/users-with-assignments`) — nguồn dữ kiện cho bảng người dùng
+ * của trang vai trò, nơi mỗi người dùng chiếm đúng MỘT dòng kèm toàn bộ dòng gán của họ.
  *
- * Đơn vị phân trang ở đây là NGƯỜI DÙNG, khác `GET /access/assignments` phân
- * trang theo từng dòng gán: một người giữ nhiều vai ở nhiều context vẫn chỉ
- * chiếm một dòng, nên `page`/`pageSize` cắt trên tập người dùng đã lọc và
- * `total` ở schema phản hồi đếm người dùng khớp lọc, không đếm dòng gán.
- * Ba bộ lọc áp đồng thời phía server:
+ * Đơn vị phân trang ở đây là NGƯỜI DÙNG, khác `GET /access/assignments` phân trang theo từng dòng gán: một người giữ
+ * nhiều vai ở nhiều context vẫn chỉ chiếm một dòng, nên `page`/`pageSize` cắt trên tập người dùng đã lọc và `total` ở
+ * schema phản hồi đếm người dùng khớp lọc, không đếm dòng gán. Ba bộ lọc áp đồng thời phía server:
  * - `search`: khớp một phần, không phân biệt hoa thường, trên firstName,
  *   lastName, email, username và họ tên đầy đủ — cùng tập trường với tìm
  *   kiếm của danh sách người dùng và của bảng gán vai hiện hành.
- * - `roleId`: chỉ giữ người dùng có ÍT NHẤT MỘT dòng gán với vai này ở bất
- *   kỳ context nào. Đây thuần là điều kiện lọc người; mảng `assignments`
- *   trong kết quả vẫn mang TOÀN BỘ dòng gán của người đó, không bị cắt theo
- *   vai đang lọc, để giao diện thấy đủ vai trò thật của từng người.
- * - `status`: dùng chung tập đóng và ngữ nghĩa với
- *   `listUsersQuerySchema.status` — không truyền thì chỉ lấy tài khoản chưa
- *   xoá (gồm cả tài khoản đang bị đình chỉ); `active` là chưa xoá và không
- *   bị đình chỉ; `suspended` là chưa xoá đang bị đình chỉ; `deleted` chỉ
- *   lấy tài khoản đã xoá mềm.
- * `pageSize` trần 100 như các danh sách quản trị khác của module. Thứ tự
- * kết quả ổn định theo id người dùng tăng dần (không có tham số sắp xếp
- * riêng) để các trang không chồng lấp hay bỏ sót người.
- * Khi client phá ràng buộc đóng ở đây (status ngoài tập, pageSize vượt
- * trần…), tầng api chặn bằng lỗi `http.validation_failed` — mã lỗi thật
- * của cơ chế validation ProblemDetails toàn cục, không có mã riêng cho
- * endpoint này.
+ * - `roleId`: chỉ giữ người dùng có ÍT NHẤT MỘT dòng gán với vai này ở bất kỳ context nào. Đây thuần là điều kiện lọc
+ *   người; mảng `assignments` trong kết quả vẫn mang TOÀN BỘ dòng gán của người đó, không bị cắt theo vai đang lọc, để
+ *   giao diện thấy đủ vai trò thật của từng người.
+ * - `status`: dùng chung tập đóng và ngữ nghĩa với `listUsersQuerySchema.status` — không truyền thì chỉ lấy tài khoản
+ *   chưa xoá (gồm cả tài khoản đang bị đình chỉ); `active` là chưa xoá và không bị đình chỉ; `suspended` là chưa xoá
+ *   đang bị đình chỉ; `deleted` chỉ lấy tài khoản đã xoá mềm.
+ * `pageSize` trần 100 như các danh sách quản trị khác của module. Thứ tự kết quả ổn định theo id người dùng tăng dần
+ * (không có tham số sắp xếp riêng) để các trang không chồng lấp hay bỏ sót người. Khi client phá ràng buộc đóng ở đây
+ * (status ngoài tập, pageSize vượt trần…), tầng api chặn bằng lỗi `http.validation_failed` — mã lỗi thật của cơ chế
+ * validation ProblemDetails toàn cục, không có mã riêng cho endpoint này.
  */
 export const listUsersWithAssignmentsQuerySchema = z.strictObject({
   search: z.string().optional(),
@@ -406,7 +399,10 @@ export const changePasswordSchema = z.strictObject({
 });
 export type ChangePassword = z.infer<typeof changePasswordSchema>;
 
-/** Payload đăng nhập thay (login-as) — chỉ quản trị viên có quyền mới dùng được. Từ TENANT-1 (#196): `reason` là BẮT BUỘC — platform vào danh tính trong tenant phải có lý do và để lại vết audit đầy đủ. */
+/**
+ * Payload đăng nhập thay (login-as) — chỉ quản trị viên có quyền mới dùng được. Từ TENANT-1 (#196): `reason` là BẮT
+ * BUỘC — platform vào danh tính trong tenant phải có lý do và để lại vết audit đầy đủ.
+ */
 export const loginAsSchema = z.strictObject({
   userId: uuidIdSchema,
   reason: z.string().trim().min(1).max(500),
@@ -459,7 +455,10 @@ export type MfaStatusResponse = z.infer<typeof mfaStatusResponseSchema>;
 export const oauthIssuerSchema = z.enum(['google', 'facebook']);
 export type OAuthIssuer = z.infer<typeof oauthIssuerSchema>;
 
-/** Một issuer trong đáp ứng cấu hình công khai: `enabled=false` nghĩa là quản trị chưa cấu hình client id/secret nên giao diện không hiện nút đăng nhập (đúng hành vi Moodle — issuer chưa bật thì không xuất hiện ở trang login). */
+/**
+ * Một issuer trong đáp ứng cấu hình công khai: `enabled=false` nghĩa là quản trị chưa cấu hình client id/secret nên
+ * giao diện không hiện nút đăng nhập (đúng hành vi Moodle — issuer chưa bật thì không xuất hiện ở trang login).
+ */
 export const oauthProviderSchema = z.object({
   issuer: oauthIssuerSchema,
   enabled: z.boolean(),
@@ -492,14 +491,20 @@ export const oauthLinkSchema = z.object({
 });
 export type OAuthLink = z.infer<typeof oauthLinkSchema>;
 
-/** Đáp ứng GET /auth/oauth/links: danh sách liên kết + `hasPassword` để giao diện giải thích được ràng buộc không gỡ liên kết cuối cùng khi user chưa có mật khẩu. */
+/**
+ * Đáp ứng GET /auth/oauth/links: danh sách liên kết + `hasPassword` để giao diện giải thích được ràng buộc không gỡ
+ * liên kết cuối cùng khi user chưa có mật khẩu.
+ */
 export const oauthLinksResponseSchema = z.object({
   links: z.array(oauthLinkSchema),
   hasPassword: z.boolean(),
 });
 export type OAuthLinksResponse = z.infer<typeof oauthLinksResponseSchema>;
 
-/** Đáp ứng đăng nhập phiên cookie thành công (session id cũng được đặt qua cookie HttpOnly; body mang theo để client không phụ thuộc cookie đọc được). */
+/**
+ * Đáp ứng đăng nhập phiên cookie thành công (session id cũng được đặt qua cookie HttpOnly; body mang theo để client
+ * không phụ thuộc cookie đọc được).
+ */
 export const sessionLoginResponseSchema = z.object({
   user: z.object({
     id: uuidIdSchema,
@@ -510,7 +515,10 @@ export const sessionLoginResponseSchema = z.object({
 });
 export type SessionLoginResponse = z.infer<typeof sessionLoginResponseSchema>;
 
-/** Một phiên đang hoạt động của chính user trong trang quản lý phiên (report_usersessions của Moodle): `web` là phiên cookie phía server, `api` là một họ refresh token. */
+/**
+ * Một phiên đang hoạt động của chính user trong trang quản lý phiên (report_usersessions của Moodle): `web` là phiên
+ * cookie phía server, `api` là một họ refresh token.
+ */
 export const mySessionSchema = z.object({
   id: uuidIdSchema,
   kind: z.enum(['web', 'api']),
@@ -553,7 +561,10 @@ export const myRoleAssignmentSchema = z.object({
 });
 export type MyRoleAssignment = z.infer<typeof myRoleAssignmentSchema>;
 
-/** Capability đã phân giải tại một context liên quan (context có gán vai trò hoặc tổ tiên của nó, luôn gồm context hệ thống). */
+/**
+ * Capability đã phân giải tại một context liên quan (context có gán vai trò hoặc tổ tiên của nó, luôn gồm context hệ
+ * thống).
+ */
 export const myContextCapabilitiesSchema = z.object({
   contextId: uuidIdSchema,
   contextLevel: z.number().int(),

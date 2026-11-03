@@ -95,10 +95,8 @@ export class SepayMatchingService {
     const referenceCode = String(raw.reference_code ?? raw.referenceCode ?? event.externalTransactionId);
     const payment = event.extractedCode ? await this.repo.getPaymentByCode(event.extractedCode) : undefined;
 
-    // Hoàn tất idempotent: payment đã succeeded bởi chính giao dịch này
-    // (nhịp trước chết sau khi lật trạng thái, trước khi chốt sự kiện —
-    // quyền lợi chắc chắn đã kích hoạt vì khâu kích hoạt chạy TRƯỚC
-    // nhịp lật trạng thái).
+    // Hoàn tất idempotent: payment đã succeeded bởi chính giao dịch này (nhịp trước chết sau khi lật trạng thái, trước
+    // khi chốt sự kiện — quyền lợi chắc chắn đã kích hoạt vì khâu kích hoạt chạy TRƯỚC nhịp lật trạng thái).
     if (payment && payment.status === 'succeeded' && payment.externalTransactionId === referenceCode) {
       await this.repo.updateProviderEvent(event.id, { matchStatus: 'matched', matchedPaymentId: payment.id });
       return;
@@ -109,29 +107,22 @@ export class SepayMatchingService {
     const stillPending = !!payment && payment.status === 'pending';
     const notExpired = !!payment && !(payment.expiresAt && payment.expiresAt.getTime() <= Date.now());
 
-    // Đối chiếu phòng thủ chiều sâu (issue #419): khớp đủ các điều
-    // kiện trên mới chứng minh tiền về đúng payment, chưa chứng minh
-    // payment khớp GIÁ + TENANT phía server của đối tượng đích —
-    // một payment tự đặt số tiền thấp hơn giá thật cũng khớp với
-    // chính nó ở cả ba điều kiện. Trước khi kích hoạt phải đối
-    // chiếu payment với đối tượng phía server; lệch thì rơi xuống
-    // nhánh `needs_review` ở dưới như mọi ca thiếu điều kiện khác,
-    // TUYỆT ĐỐI không kích hoạt.
+    // Đối chiếu phòng thủ chiều sâu (issue #419): khớp đủ các điều kiện trên mới chứng minh tiền về đúng payment, chưa
+    // chứng minh payment khớp GIÁ + TENANT phía server của đối tượng đích — một payment tự đặt số tiền thấp hơn giá
+    // thật cũng khớp với chính nó ở cả ba điều kiện. Trước khi kích hoạt phải đối chiếu payment với đối tượng phía
+    // server; lệch thì rơi xuống nhánh `needs_review` ở dưới như mọi ca thiếu điều kiện khác, TUYỆT ĐỐI không kích
+    // hoạt.
     const targetVerified = payment && accountMatches && amountMatches && stillPending && notExpired
       ? await this.payments.verifyPaymentAgainstServerTarget(payment)
       : false;
 
     if (payment && accountMatches && amountMatches && stillPending && notExpired && targetVerified) {
-      // Kích hoạt MỌI quyền lợi TRƯỚC nhịp lật trạng thái (bất biến
-      // đồng bộ của nhịp chốt, xem docblock đầu file): chừng nào
-      // payment còn `pending` thì chưa bên nào được coi giao dịch đã
-      // thành công; kích hoạt xong mới lật `succeeded`. Cả ba khâu
-      // kích hoạt đều idempotent — nhịp chết giữa chừng được nhận lại
-      // theo cửa sổ stale của claim và chạy lại an toàn. Hai cổng
-      // kích hoạt nhận thêm `tenantId` của payment để tiến trình chủ
-      // phân giải không gian của trung tâm sở hữu payment và chạy
-      // kích hoạt tại đúng kho của trung tâm đó; luật khớp ở đây
-      // không đổi.
+      // Kích hoạt MỌI quyền lợi TRƯỚC nhịp lật trạng thái (bất biến đồng bộ của nhịp chốt, xem docblock đầu file):
+      // chừng nào payment còn `pending` thì chưa bên nào được coi giao dịch đã thành công; kích hoạt xong mới lật
+      // `succeeded`. Cả ba khâu kích hoạt đều idempotent — nhịp chết giữa chừng được nhận lại theo cửa sổ stale của
+      // claim và chạy lại an toàn. Hai cổng kích hoạt nhận thêm `tenantId` của payment để tiến trình chủ phân giải
+      // không gian của trung tâm sở hữu payment và chạy kích hoạt tại đúng kho của trung tâm đó; luật khớp ở đây không
+      // đổi.
       if (payment.component === 'enrol_fee' && payment.itemId) {
         await this.enrol.activatePaidEnrol(payment.itemId, payment.userId, payment.tenantId);
       }

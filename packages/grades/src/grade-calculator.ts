@@ -2,28 +2,23 @@
  * GradeCalculator — domain THUẦN (không Nest, không DB), report §2.1/§3.11(2b).
  *
  * Ngữ nghĩa được port từ gradebook của Moodle (Grade aggregation, MoodleDocs):
- *  - CHUẨN HOÁ TRƯỚC: mọi điểm đều được chuyển thành một phân số theo khoảng
- *    [gradeMin, gradeMax] của item của nó TRƯỚC khi tổng hợp; kết quả của category là
- *    phân số đó được chiếu lên khoảng của chính category.
- *  - Natural (mặc định): trọng số tỉ lệ theo max của item. Max của category
- *    là TỔNG của (max-min) của các item con không phải extra-credit của nó. Khi
- *    giáo viên ghi đè một trọng số, phần trăm còn lại được phân phối lại
- *    cho các item không bị ghi đè theo tỉ lệ (max-min) của chúng, để
- *    trọng số hiệu lực luôn cộng đủ 100%.
+ *  - CHUẨN HOÁ TRƯỚC: mọi điểm đều được chuyển thành một phân số theo khoảng [gradeMin, gradeMax] của item của nó TRƯỚC
+ *    khi tổng hợp; kết quả của category là phân số đó được chiếu lên khoảng của chính category.
+ *  - Natural (mặc định): trọng số tỉ lệ theo max của item. Max của category là TỔNG của (max-min) của các item con
+ *    không phải extra-credit của nó. Khi giáo viên ghi đè một trọng số, phần trăm còn lại được phân phối lại cho các
+ *    item không bị ghi đè theo tỉ lệ (max-min) của chúng, để trọng số hiệu lực luôn cộng đủ 100%.
  *  - Extra credit (chỉ Natural): điểm của item được tính vào tử số
  *    nhưng max của nó KHÔNG được tính vào mẫu số; kết quả bị chặn trên tại
  *    max của category.
- *  - Điểm trống ≠ 0: với aggregateOnlyGraded ("exclude empty grades") một
- *    item chưa có điểm rời khỏi CẢ tử số và mẫu số; không có nó, một
- *    điểm trống được tính là gradeMin ở tử số và giữ max của nó ở
- *    mẫu số.
+ *  - Điểm trống ≠ 0: với aggregateOnlyGraded ("exclude empty grades") một item chưa có điểm rời khỏi CẢ tử số và mẫu
+ *    số; không có nó, một điểm trống được tính là gradeMin ở tử số và giữ max của nó ở mẫu số.
  *  - drop-the-lowest / keep-the-highest áp dụng cho các điểm đã chuẩn hoá của
  *    các item không phải extra-credit.
  *  - multiplicator/offset điều chỉnh một điểm thô TRƯỚC khi chuẩn hoá
  *    (adjusted = raw * multiplicator + offset, được clamp vào khoảng của item).
- *  - FREEZE (đóng băng): một điểm đã bị đóng băng mang frozenFinalGrade của nó; bộ
- *    tính dùng nguyên văn giá trị đó và bỏ qua multiplicator/offset — một thay đổi
- *    công thức về sau không bao giờ viết lại được lịch sử (nhóm lỗi MDL-89497).
+ *  - FREEZE (đóng băng): một điểm đã bị đóng băng mang frozenFinalGrade của nó; bộ tính dùng nguyên văn giá trị đó và
+ *    bỏ qua multiplicator/offset — một thay đổi công thức về sau không bao giờ viết lại được lịch sử (nhóm lỗi
+ *    MDL-89497).
  *  - điểm excluded không bao giờ tham gia; điểm hidden VẪN tham gia
  *    (ẩn là một quy tắc hiển thị trong Moodle, không phải quy tắc tổng hợp).
  *  - xử lý overridden/locked nằm ở tầng service: một finalGrade đã bị ghi đè

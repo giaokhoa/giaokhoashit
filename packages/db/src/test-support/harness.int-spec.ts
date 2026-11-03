@@ -3,11 +3,11 @@
  * trên database trung tâm dựng từ rỗng bằng đúng SQL mang dữ liệu hiện hành:
  *
  * (i) GUC/RLS đi qua pool gắn ngữ cảnh tenant giữ nguyên khi truy vấn chạy bằng Kysely: trong ngữ cảnh một tenant chỉ
- * thấy dòng của tenant đó, ngữ cảnh platform thấy mọi dòng, ngoài ngữ cảnh thì fail-closed (không thấy dòng nào). (ii)
- * Handle giao dịch (`CentreTx`) truyền vào một repository mẫu hoạt động đúng: giao dịch ném lỗi thì rollback sạch, giao
- * dịch hoàn tất thì dữ liệu được ghi. (iii) Hai pool khác nhau sinh hai handle Kysely độc lập: huỷ một handle (đóng
- * pool của nó) không ảnh hưởng handle còn lại — tiền đề để tầng định tuyến cấp một instance/pool riêng cho mỗi trung
- * tâm.
+ *     thấy dòng của tenant đó, ngữ cảnh platform thấy mọi dòng, ngoài ngữ cảnh thì fail-closed (không thấy dòng nào).
+ *     (ii) Handle giao dịch (`CentreTx`) truyền vào một repository mẫu hoạt động đúng: giao dịch ném lỗi thì rollback
+ *     sạch, giao dịch hoàn tất thì dữ liệu được ghi. (iii) Hai pool khác nhau sinh hai handle Kysely độc lập: huỷ một
+ *     handle (đóng pool của nó) không ảnh hưởng handle còn lại — tiền đề để tầng định tuyến cấp một instance/pool riêng
+ *     cho mỗi trung tâm.
  *
  * Môi trường: cần một cụm PostgreSQL truy cập được bằng quyền quản trị — lấy từ `LMS_DB_TEST_ADMIN_URL`, hoặc suy từ
  * `DATABASE_URL` (thay tên database thành `postgres`) như môi trường CI. Database test (tên cố định dưới đây) bị xoá và

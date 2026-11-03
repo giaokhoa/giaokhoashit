@@ -152,21 +152,15 @@ export async function listDeletedForUserIds(db: MessagingDatabase, messageIds: s
 }
 
 /**
- * Gắn khối trích dẫn (lát M3, issue #229) cho một lô tin: tra lô
- * các tin gốc một lần (không N+1), dựng quote theo quyền của người
- * nhận bằng {@link messageQuoteOf}. Tin gốc tra không thấy (chỉ
- * còn xảy ra khi khoá ngoại chưa kịp set null sau xoá cứng) hoặc
- * thuộc conversation khác (dữ liệu không thể sinh qua đường gửi —
- * gác ở service) thì `replyTo = null`: hiển thị như tin thường,
- * không dựng khối trích dẫn rỗng.
+ * Gắn khối trích dẫn (lát M3, issue #229) cho một lô tin: tra lô các tin gốc một lần (không N+1), dựng quote theo quyền
+ * của người nhận bằng {@link messageQuoteOf}. Tin gốc tra không thấy (chỉ còn xảy ra khi khoá ngoại chưa kịp set null
+ * sau xoá cứng) hoặc thuộc conversation khác (dữ liệu không thể sinh qua đường gửi — gác ở service) thì `replyTo =
+ * null`: hiển thị như tin thường, không dựng khối trích dẫn rỗng.
  *
- * `viewerId` chỉ áp khi KHÔNG privileged: tin gốc bị chính người
- * xem xoá-phía-mình thì quote thành unavailable như đã xoá. Đường
- * realtime phân phối theo room dùng privileged=false và KHÔNG
- * truyền viewerId (khối trích dẫn là dữ kiện chung của room; việc
- * cá nhân hoá xoá-phía-mình chốt ở các đường đọc REST/sync vốn có
- * viewerId — người đã ẩn tin gốc vốn đã thấy nó khi còn là thành
- * viên nên đây không phải kênh lộ nội dung mới).
+ * `viewerId` chỉ áp khi KHÔNG privileged: tin gốc bị chính người xem xoá-phía-mình thì quote thành unavailable như đã
+ * xoá. Đường realtime phân phối theo room dùng privileged=false và KHÔNG truyền viewerId (khối trích dẫn là dữ kiện
+ * chung của room; việc cá nhân hoá xoá-phía-mình chốt ở các đường đọc REST/sync vốn có viewerId — người đã ẩn tin gốc
+ * vốn đã thấy nó khi còn là thành viên nên đây không phải kênh lộ nội dung mới).
  */
 export async function attachQuotesToRows(
   db: MessagingDatabase,
@@ -210,12 +204,9 @@ export async function getMemberLastReadSeq(db: MessagingDatabase, conversationId
  * count(*) theo mốc đã đọc của chính user — consumer realtime dùng
  * để gửi kèm sự kiện cập nhật cho từng người nhận).
  *
- * Vũ trụ đếm chuẩn (issue #592): hội thoại đã TẮT TIẾNG không đóng
- * góp số chưa đọc cho bất kỳ bề mặt nào — kể cả số kèm sự kiện
- * realtime — nên hàm trả 0 ngay khi dòng thành viên mang cờ tắt
- * tiếng, dù tin chưa đọc vẫn còn trong hộp thư. Tin vẫn tới và mốc
- * đã đọc vẫn cập nhật bình thường; chỉ số đếm hiển thị là 0 cho
- * tới khi bật tiếng lại.
+ * Vũ trụ đếm chuẩn (issue #592): hội thoại đã TẮT TIẾNG không đóng góp số chưa đọc cho bất kỳ bề mặt nào — kể cả số kèm
+ * sự kiện realtime — nên hàm trả 0 ngay khi dòng thành viên mang cờ tắt tiếng, dù tin chưa đọc vẫn còn trong hộp thư.
+ * Tin vẫn tới và mốc đã đọc vẫn cập nhật bình thường; chỉ số đếm hiển thị là 0 cho tới khi bật tiếng lại.
  */
 export async function countUnreadForConversation(db: MessagingDatabase, conversationId: string, userId: string): Promise<number> {
   const member = await db
@@ -278,11 +269,9 @@ export async function listBlockedCounterpartIds(db: MessagingDatabase, userId: s
 }
 
 /**
- * Dựng cài đặt của cổng store dùng chung {@link MessagingStorePort}
- * (khai tại `@lms/db/repositories/messaging`) trên một handle
- * Kysely của app gọi: phía API gắn cài đặt này vào
- * `MessagingRepository` — repository uỷ quyền mọi phép đọc dùng
- * chung qua cổng này thay vì import trực tiếp các hàm ở đây.
+ * Dựng cài đặt của cổng store dùng chung {@link MessagingStorePort} (khai tại `@lms/db/repositories/messaging`) trên
+ * một handle Kysely của app gọi: phía API gắn cài đặt này vào `MessagingRepository` — repository uỷ quyền mọi phép đọc
+ * dùng chung qua cổng này thay vì import trực tiếp các hàm ở đây.
  */
 export function createMessagingStore(db: MessagingDatabase): MessagingStorePort {
   return {

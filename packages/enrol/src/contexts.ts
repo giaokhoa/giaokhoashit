@@ -154,11 +154,9 @@ export async function ensureSystemContext(db: EnrolDatabase): Promise<ContextRow
 }
 
 /**
- * Đảm bảo context TENANT (level 20) của một tenant tồn tại — mỗi
- * tenant đúng MỘT context tenant, instance_id = tenants.id, cha là
- * context hệ thống. Mọi context thuộc tenant neo dưới context này
- * nên cây của tenant tách hẳn khỏi cây của tenant khác; phép đánh
- * giá quyền dùng nó làm neo cổng membership.
+ * Đảm bảo context TENANT (level 20) của một tenant tồn tại — mỗi tenant đúng MỘT context tenant, instance_id =
+ * tenants.id, cha là context hệ thống. Mọi context thuộc tenant neo dưới context này nên cây của tenant tách hẳn khỏi
+ * cây của tenant khác; phép đánh giá quyền dùng nó làm neo cổng membership.
  *
  * @param db - tay cầm Kysely của host.
  * @param tenantId - id của tenant.

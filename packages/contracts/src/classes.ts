@@ -13,7 +13,10 @@ import { uuidIdSchema } from './ids.js';
 export const CLASS_ON_LEAVE_MODES = ['suspend', 'unenrol'] as const;
 export const CLASS_STATUSES = ['active', 'archived'] as const;
 
-/** Hình dạng một lớp ở bề mặt API. `joinCode` là bí mật: chỉ chủ lớp / người có quyền quản roster mới nhận giá trị thật, còn lại nhận `null`. */
+/**
+ * Hình dạng một lớp ở bề mặt API. `joinCode` là bí mật: chỉ chủ lớp / người có quyền quản roster mới nhận giá trị thật,
+ * còn lại nhận `null`.
+ */
 export const classSchema = z.object({
   id: uuidIdSchema,
   tenantId: uuidIdSchema,
@@ -24,7 +27,10 @@ export const classSchema = z.object({
   cohortId: uuidIdSchema,
   allowSelfReport: z.boolean(),
   joinCode: z.string().nullable(),
-  /** Tự duyệt tự báo danh: true = học sinh xin vào qua mã là vào thẳng roster kể cả khi lớp đã có học sinh (mặc định false — xem luật tự báo danh ở hợp đồng join bên dưới). */
+  /**
+   * Tự duyệt tự báo danh: true = học sinh xin vào qua mã là vào thẳng roster kể cả khi lớp đã có học sinh (mặc định
+   * false — xem luật tự báo danh ở hợp đồng join bên dưới).
+   */
   joinAutoApprove: z.boolean(),
   onLeave: z.enum(CLASS_ON_LEAVE_MODES),
   status: z.enum(CLASS_STATUSES),
@@ -49,24 +55,19 @@ export const classSchema = z.object({
 export type ClassView = z.infer<typeof classSchema>;
 
 /**
- * Một dòng của đáp số danh sách lớp (`GET /classes`): toàn bộ trường
- * của `ClassView` cộng bốn cờ khả năng do server suy cho ĐÚNG người
- * gọi, để trang danh sách lớp vẽ hành động theo vai (cùng khuôn gói
- * tổng quan đã có `canManageRoster`/`canShare` và gói công khai đã
- * có `isMember`/`canPurchase`). Các cờ chỉ là dữ kiện hiển thị —
- * gác quyền thật vẫn nằm ở từng endpoint (tạo/sửa/lưu trữ/xoá đều
- * kiểm capability tại context tương ứng và trả 403 với người không
- * có quyền, bất kể cờ ở đây nói gì):
+ * Một dòng của đáp số danh sách lớp (`GET /classes`): toàn bộ trường của `ClassView` cộng bốn cờ khả năng do server suy
+ * cho ĐÚNG người gọi, để trang danh sách lớp vẽ hành động theo vai (cùng khuôn gói tổng quan đã có
+ * `canManageRoster`/`canShare` và gói công khai đã có `isMember`/`canPurchase`). Các cờ chỉ là dữ kiện hiển thị — gác
+ * quyền thật vẫn nằm ở từng endpoint (tạo/sửa/lưu trữ/xoá đều kiểm capability tại context tương ứng và trả 403 với
+ * người không có quyền, bất kể cờ ở đây nói gì):
  *  - `canCreate`: người gọi có `class:create` tại context tenant —
  *    phục vụ nút "Tạo lớp"; giá trị giống nhau ở mọi dòng của cùng
  *    một đáp số vì khả năng này neo tại tenant, không neo tại lớp.
  *  - `canUpdate`: người gọi có `class:update` tại context của chính
  *    lớp này (chủ lớp luôn có) — phục vụ hành động Sửa và Lưu trữ.
- *  - `canDelete`: người gọi qua được cổng xoá của lớp này
- *    (`class:delete` tại context lớp và, khi không phải chủ lớp,
- *    thêm `tenant:manage` tại context tenant) — phục vụ hành động
- *    Xoá. Lớp còn khoá học vẫn bị chặn ở tầng nghiệp vụ khi xoá
- *    thật; cờ này chỉ phản ánh phần quyền.
+ *  - `canDelete`: người gọi qua được cổng xoá của lớp này (`class:delete` tại context lớp và, khi không phải chủ lớp,
+ *    thêm `tenant:manage` tại context tenant) — phục vụ hành động Xoá. Lớp còn khoá học vẫn bị chặn ở tầng nghiệp vụ
+ *    khi xoá thật; cờ này chỉ phản ánh phần quyền.
  *  - `canManageRoster`: người gọi có `class:manageroster` tại
  *    context của chính lớp này (chủ lớp luôn có) — cùng ngữ nghĩa
  *    với cờ tương ứng trong gói tổng quan.
@@ -170,13 +171,18 @@ export const addRosterStudentResultSchema = z.object({
 });
 export type AddRosterStudentResult = z.infer<typeof addRosterStudentResultSchema>;
 
-/** Import roster từ Excel (web đọc file rồi gửi các dòng đã chuẩn hoá; API cũng nhận cùng khuôn này cho đường multipart). */
+/**
+ * Import roster từ Excel (web đọc file rồi gửi các dòng đã chuẩn hoá; API cũng nhận cùng khuôn này cho đường
+ * multipart).
+ */
 export const importClassRosterSchema = z.strictObject({
   rows: z.array(rosterStudentIdentitySchema).min(1).max(500),
 });
 export type ImportClassRoster = z.infer<typeof importClassRosterSchema>;
 
-/** Báo cáo import theo TỪNG dòng: dòng lỗi không chặn các dòng khác; GV sửa đúng dòng báo lỗi rồi nạp lại riêng dòng đó. */
+/**
+ * Báo cáo import theo TỪNG dòng: dòng lỗi không chặn các dòng khác; GV sửa đúng dòng báo lỗi rồi nạp lại riêng dòng đó.
+ */
 export const classRosterImportReportSchema = z.object({
   total: z.number().int(),
   added: z.number().int(),
@@ -223,7 +229,11 @@ export const classStaffViewSchema = z.object({
 });
 export type ClassStaffView = z.infer<typeof classStaffViewSchema>;
 
-/** Đặt lại bộ vai lớp của một đồng GV (mảng rỗng = thu hồi cả 3 vai). Chỉ người có `class:share` mới gọi được; chủ lớp không bị sửa qua đường này. Đồng GV được định danh bằng userId hoặc bằng EMAIL tài khoản (GV không biết userId của đồng nghiệp). */
+/**
+ * Đặt lại bộ vai lớp của một đồng GV (mảng rỗng = thu hồi cả 3 vai). Chỉ người có `class:share` mới gọi được; chủ lớp
+ * không bị sửa qua đường này. Đồng GV được định danh bằng userId hoặc bằng EMAIL tài khoản (GV không biết userId của
+ * đồng nghiệp).
+ */
 export const setClassStaffRolesSchema = z.strictObject({
   userId: uuidIdSchema.optional(),
   email: z.string().min(3).max(200).optional(),
@@ -241,7 +251,10 @@ export const joinClassByCodeSchema = z.strictObject({
 });
 export type JoinClassByCode = z.infer<typeof joinClassByCodeSchema>;
 
-/** Thông tin tối thiểu để học sinh xác nhận đúng lớp trước khi xin vào — mã tham gia chính là bí mật, người giữ mã được xem tên lớp. */
+/**
+ * Thông tin tối thiểu để học sinh xác nhận đúng lớp trước khi xin vào — mã tham gia chính là bí mật, người giữ mã được
+ * xem tên lớp.
+ */
 export const classJoinPreviewSchema = z.object({
   classId: uuidIdSchema,
   name: z.string(),
@@ -324,18 +337,14 @@ export const classOverviewSchema = z.object({
 export type ClassOverview = z.infer<typeof classOverviewSchema>;
 
 /**
- * Gói công khai của một lớp (`GET /classes/:id/public`) — bề mặt cho
- * người dùng đã đăng nhập trong tenant nhưng CHƯA thuộc lớp: xem thông
- * tin lớp + gói học phí để quyết định mua. Khác `classSchema` ở chỗ
- * gói này KHÔNG mang dữ kiện nội bộ (cohort, mã tham gia, tài khoản
- * nhận tiền) — chỉ những gì người mua cần biết, cộng hai cờ do server
- * suy cho đúng người gọi:
+ * Gói công khai của một lớp (`GET /classes/:id/public`) — bề mặt cho người dùng đã đăng nhập trong tenant nhưng CHƯA
+ * thuộc lớp: xem thông tin lớp + gói học phí để quyết định mua. Khác `classSchema` ở chỗ gói này KHÔNG mang dữ kiện nội
+ * bộ (cohort, mã tham gia, tài khoản nhận tiền) — chỉ những gì người mua cần biết, cộng hai cờ do server suy cho đúng
+ * người gọi:
  *  - `isMember`: người gọi đã thuộc roster (đang ACTIVE ở lớp);
- *  - `canPurchase`: được bắt đầu thanh toán NGAY — lớp đang hoạt động,
- *    có bật thu học phí (`feeEnabled`) và người gọi chưa là thành viên.
- *    Người đã ghi danh ACTIVE không bị mời mua lại: `canPurchase`
- *    luôn false với họ và bề mặt web hiện trạng thái đã ghi danh thay
- *    cho nút mua.
+ *  - `canPurchase`: được bắt đầu thanh toán NGAY — lớp đang hoạt động, có bật thu học phí (`feeEnabled`) và người gọi
+ *    chưa là thành viên. Người đã ghi danh ACTIVE không bị mời mua lại: `canPurchase` luôn false với họ và bề mặt web
+ *    hiện trạng thái đã ghi danh thay cho nút mua.
  * `feeEnabled` suy từ `feeCost` (null/0 = không thu qua hệ) để web
  * không tự diễn giải lại công tắc học phí.
  */

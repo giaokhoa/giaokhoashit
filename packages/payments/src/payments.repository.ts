@@ -40,7 +40,6 @@ export interface AccountRow {
   createdAt: Date;
 }
 
-/** Dòng khoản thu (đọc từ `payments`). */
 export interface PaymentRow {
   id: string;
   accountId: string;
@@ -67,12 +66,9 @@ export interface PaymentRow {
 /**
  * Dòng hoàn tiền (đọc từ `payment_refunds`).
  *
- * Nullability theo đúng kiểu sinh codegen của kho trung tâm (nguồn
- * thật là DB): `created_by`, `approval_level`,
- * `approval_threshold` đều nullable trong DB — khác với khai báo
- * `.notNull()` cũ của schema bộ máy cũ; contract `@lms/contracts`
- * cũng đã khai nullable cho đúng ba trường này nên phía gọi không
- * đổi gì.
+ * Nullability theo đúng kiểu sinh codegen của kho trung tâm (nguồn thật là DB): `created_by`, `approval_level`,
+ * `approval_threshold` đều nullable trong DB — khác với khai báo `.notNull()` cũ của schema bộ máy cũ; contract
+ * `@lms/contracts` cũng đã khai nullable cho đúng ba trường này nên phía gọi không đổi gì.
  */
 export interface RefundRow {
   id: string;
@@ -132,10 +128,9 @@ export interface CouponRow {
 /**
  * Dòng sự kiện thô của cổng (đọc từ `payment_provider_events`).
  *
- * Bảng này KHÔNG có `created_at`/`updated_at` (theo codegen) — chỉ
- * có `received_at` làm mốc thời gian. `tenant_id` nullable trong
- * DB (sự kiện chưa định tuyến được account nào vẫn ghi sổ với
- * tenant null); `amount` và `content` bắt buộc có.
+ * Bảng này KHÔNG có `created_at`/`updated_at` (theo codegen) — chỉ có `received_at` làm mốc thời gian. `tenant_id`
+ * nullable trong DB (sự kiện chưa định tuyến được account nào vẫn ghi sổ với tenant null); `amount` và `content` bắt
+ * buộc có.
  */
 export interface ProviderEventRow {
   id: string;
@@ -269,10 +264,8 @@ export interface ProviderEventInsert {
 }
 
 /**
- * Danh sách cột đọc của từng bảng, bí danh về tên camelCase của
- * interface dòng tương ứng. Mọi SELECT/RETURNING của repository đều
- * dùng đúng danh sách này — không đọc `*`, không để kiểu dòng suy
- * từ cột snake_case rồi ép kiểu ở biên.
+ * Danh sách cột đọc của từng bảng, bí danh về tên camelCase của interface dòng tương ứng. Mọi SELECT/RETURNING của
+ * repository đều dùng đúng danh sách này — không đọc `*`, không để kiểu dòng suy từ cột snake_case rồi ép kiểu ở biên.
  */
 const ACCOUNT_COLUMNS = [
   'id',
@@ -499,12 +492,10 @@ function mapProviderEventInsert(input: ProviderEventInsert) {
 /**
  * Kho dữ liệu payment_accounts / payments / payment_refunds.
  *
- * Repository này là tầng truy cập dữ liệu thanh toán của package
- * dùng chung `@lms/payments` (issue #538): nó chỉ thao tác dữ liệu
- * qua Kysely trên kho trung tâm của `@lms/db`, không chứa luật
- * nghiệp vụ và không phụ thuộc module nào của tiến trình chủ — mọi
- * phía (facade thanh toán phía apps/api, luồng matching dùng chung)
- * dùng đúng repository này, không có bản sao thứ hai.
+ * Repository này là tầng truy cập dữ liệu thanh toán của package dùng chung `@lms/payments` (issue #538): nó chỉ thao
+ * tác dữ liệu qua Kysely trên kho trung tâm của `@lms/db`, không chứa luật nghiệp vụ và không phụ thuộc module nào của
+ * tiến trình chủ — mọi phía (facade thanh toán phía apps/api, luồng matching dùng chung) dùng đúng repository này,
+ * không có bản sao thứ hai.
  *
  * Các method ghi của vòng đời hoàn tiền (lát 3, issue #189) nhận
  * transaction tuỳ chọn để cổng cộng dồn chạy trong MỘT transaction
@@ -520,11 +511,9 @@ export class PaymentsRepository {
   }
 
   /**
-   * Mở một transaction Kysely trên handle đã tiêm và chạy `fn` trong
-   * đó. Tiến trình chủ dùng phương thức này cho các luồng cần nguyên
-   * tử (settle/refund) rồi truyền `tx` nhận được vào các repository
-   * và service cùng tham gia — mọi lần ghi của luồng đó đi trên một
-   * kết nối duy nhất, commit hoặc rollback cùng nhau.
+   * Mở một transaction Kysely trên handle đã tiêm và chạy `fn` trong đó. Tiến trình chủ dùng phương thức này cho các
+   * luồng cần nguyên tử (settle/refund) rồi truyền `tx` nhận được vào các repository và service cùng tham gia — mọi lần
+   * ghi của luồng đó đi trên một kết nối duy nhất, commit hoặc rollback cùng nhau.
    */
   async transaction<T>(fn: (tx: CentreTx) => Promise<T>): Promise<T> {
     return this.db.transaction().execute(fn);
@@ -572,11 +561,9 @@ export class PaymentsRepository {
   }
 
   /**
-   * Ba con số đối soát tối giản, đếm ngay ở SQL bằng tổng có điều
-   * kiện (`count(*) filter (...)`) trong MỘT truy vấn — khâu đối soát
-   * không nạp toàn bộ bảng `payments` về tầng ứng dụng để đếm ở JS.
-   * Điều kiện "chưa có mã giao dịch ngoài" giữ đúng ngữ nghĩa đếm cũ
-   * ở tầng ứng dụng (giá trị falsy): `NULL` hoặc chuỗi rỗng đều tính.
+   * Ba con số đối soát tối giản, đếm ngay ở SQL bằng tổng có điều kiện (`count(*) filter (...)`) trong MỘT truy vấn —
+   * khâu đối soát không nạp toàn bộ bảng `payments` về tầng ứng dụng để đếm ở JS. Điều kiện "chưa có mã giao dịch
+   * ngoài" giữ đúng ngữ nghĩa đếm cũ ở tầng ứng dụng (giá trị falsy): `NULL` hoặc chuỗi rỗng đều tính.
    */
   async countPaymentsForReconcile(): Promise<{ total: number; succeeded: number; pendingWithoutExternalTx: number }> {
     const row = await this.db
@@ -657,17 +644,13 @@ export class PaymentsRepository {
   }
 
   /**
-   * Cập nhật một dòng hoàn CHỈ KHI trạng thái hiện tại của nó còn thuộc
-   * `fromStatuses` — điều kiện trạng thái nằm ngay trong `WHERE` của
-   * câu cập nhật nên hai lượt chuyển trạng thái song song không thể
-   * cùng thắng: lượt sau khớp 0 dòng và nhận `undefined` (theo khuôn
-   * kiểm-tra-rồi-ghi an toàn ở Read Committed — đọc trạng thái ở tầng
-   * ứng dụng rồi cập nhật vô điều kiện theo `id` là dạng đua mà hai
-   * người duyệt song song cùng qua cổng, người ghi sau thắng lặng lẽ).
-   * Tầng service dịch `undefined` thành đúng mã lỗi trạng thái của
-   * đường gọi đó. Dùng cho các khâu duyệt/từ chối (không có khoá dòng
-   * bao ngoài); khâu xác nhận chi không dùng hàm này vì nó đã đọc lại
-   * và quyết định dưới khoá `FOR UPDATE` của dòng khoản thu.
+   * Cập nhật một dòng hoàn CHỈ KHI trạng thái hiện tại của nó còn thuộc `fromStatuses` — điều kiện trạng thái nằm ngay
+   * trong `WHERE` của câu cập nhật nên hai lượt chuyển trạng thái song song không thể cùng thắng: lượt sau khớp 0 dòng
+   * và nhận `undefined` (theo khuôn kiểm-tra-rồi-ghi an toàn ở Read Committed — đọc trạng thái ở tầng ứng dụng rồi cập
+   * nhật vô điều kiện theo `id` là dạng đua mà hai người duyệt song song cùng qua cổng, người ghi sau thắng lặng lẽ).
+   * Tầng service dịch `undefined` thành đúng mã lỗi trạng thái của đường gọi đó. Dùng cho các khâu duyệt/từ chối (không
+   * có khoá dòng bao ngoài); khâu xác nhận chi không dùng hàm này vì nó đã đọc lại và quyết định dưới khoá `FOR UPDATE`
+   * của dòng khoản thu.
    */
   async updateRefundFromStatuses(
     id: string,
@@ -686,13 +669,10 @@ export class PaymentsRepository {
   }
 
   /**
-   * Tổng cộng dồn của các dòng hoàn thuộc một TẬP TRẠNG THÁI cho trước.
-   * Cổng cộng dồn dùng tập {requested, approved, settled} (mọi dòng
-   * chưa bị từ chối đều giữ chỗ ngân sách hoàn); mốc đảo quyền lợi dùng
-   * tập {settled} (chỉ tiền đã xác nhận chi mới tính tiền đã ra). Dòng
-   * `rejected` không thuộc tập nào cả nên ngân sách được giải phóng.
-   * Chạy trong transaction có khoá dòng `payments` khi gọi từ cổng tạo
-   * yêu cầu hoàn / khâu xác nhận chi (truyền `tx`).
+   * Tổng cộng dồn của các dòng hoàn thuộc một TẬP TRẠNG THÁI cho trước. Cổng cộng dồn dùng tập {requested, approved,
+   * settled} (mọi dòng chưa bị từ chối đều giữ chỗ ngân sách hoàn); mốc đảo quyền lợi dùng tập {settled} (chỉ tiền đã
+   * xác nhận chi mới tính tiền đã ra). Dòng `rejected` không thuộc tập nào cả nên ngân sách được giải phóng. Chạy trong
+   * transaction có khoá dòng `payments` khi gọi từ cổng tạo yêu cầu hoàn / khâu xác nhận chi (truyền `tx`).
    */
   async sumRefundsByStatuses(paymentId: string, statuses: string[], tx?: DbTx): Promise<number> {
     const db = tx ?? this.db;
@@ -706,11 +686,9 @@ export class PaymentsRepository {
   }
 
   /**
-   * Dòng hoàn ứng viên cho một sự kiện `debit`: đang `approved` (chờ xác
-   * nhận chi), tài khoản của khoản thu gốc trùng tài khoản nhận sự
-   * kiện, số tiền bằng nhau, và mã lệnh chi ghi trên dòng hoàn (mã dự
-   * kiến lúc tạo) trùng mã giao dịch ngoài HOẶC mã tham chiếu của sự
-   * kiện. Lấy dòng cũ nhất trước khi có nhiều dòng hoàn cùng chờ.
+   * Dòng hoàn ứng viên cho một sự kiện `debit`: đang `approved` (chờ xác nhận chi), tài khoản của khoản thu gốc trùng
+   * tài khoản nhận sự kiện, số tiền bằng nhau, và mã lệnh chi ghi trên dòng hoàn (mã dự kiến lúc tạo) trùng mã giao
+   * dịch ngoài HOẶC mã tham chiếu của sự kiện. Lấy dòng cũ nhất trước khi có nhiều dòng hoàn cùng chờ.
    */
   async findRefundCandidateForDebit(input: {
     accountId: string;
@@ -844,11 +822,9 @@ export class PaymentsRepository {
   }
 
   /**
-   * Mọi sự kiện provider đang `needs_review` MÀ KHÔNG gắn khoản thu nào
-   * (matched_payment_id rỗng) thuộc các tenant cho trước — đây là các
-   * sự kiện "mồ côi" (mã lạ, debit không khớp dòng hoàn) cần xuất hiện
-   * như mục độc lập trong hàng đợi. Sự kiện đã gắn khoản thu được trình
-   * bày như ngữ cảnh của chính khoản thu đó, không thành mục riêng.
+   * Mọi sự kiện provider đang `needs_review` MÀ KHÔNG gắn khoản thu nào (matched_payment_id rỗng) thuộc các tenant cho
+   * trước — đây là các sự kiện "mồ côi" (mã lạ, debit không khớp dòng hoàn) cần xuất hiện như mục độc lập trong hàng
+   * đợi. Sự kiện đã gắn khoản thu được trình bày như ngữ cảnh của chính khoản thu đó, không thành mục riêng.
    */
   async listNeedsReviewEvents(tenantIds: string[]): Promise<ProviderEventRow[]> {
     if (tenantIds.length === 0) return [];
@@ -863,10 +839,9 @@ export class PaymentsRepository {
   }
 
   /**
-   * Sự kiện provider liên quan gần nhất của một khoản thu: sự kiện đã
-   * được gắn vào khoản thu (matched_payment_id) hoặc sự kiện mang mã
-   * trích xuất trùng mã thanh toán của khoản thu — dùng làm ngữ cảnh
-   * đối soát khi trình bày khoản chờ trong hàng đợi.
+   * Sự kiện provider liên quan gần nhất của một khoản thu: sự kiện đã được gắn vào khoản thu (matched_payment_id) hoặc
+   * sự kiện mang mã trích xuất trùng mã thanh toán của khoản thu — dùng làm ngữ cảnh đối soát khi trình bày khoản chờ
+   * trong hàng đợi.
    */
   async getLatestEventForPayment(payment: PaymentRow): Promise<ProviderEventRow | undefined> {
     return this.db
@@ -970,10 +945,8 @@ export class PaymentsRepository {
   }
 
   /**
-   * Nhận việc một sự kiện: đổi trạng thái khớp sang `processing` khi
-   * sự kiện còn ở `received` hoặc đã ở `processing` (nhận lại
-   * idempotent của cùng nhịp quét); trả false chỉ khi sự kiện đã
-   * sang trạng thái khớp khác.
+   * Nhận việc một sự kiện: đổi trạng thái khớp sang `processing` khi sự kiện còn ở `received` hoặc đã ở `processing`
+   * (nhận lại idempotent của cùng nhịp quét); trả false chỉ khi sự kiện đã sang trạng thái khớp khác.
    */
   async claimProviderEvent(id: string): Promise<boolean> {
     const result = await this.db
@@ -1012,10 +985,9 @@ export class PaymentsRepository {
   }
 
   /**
-   * Mốc hết hạn muộn nhất trong các quyền lợi đang `active` của cùng một
-   * bên hưởng + cùng loại gói — căn cứ nối tiếp cửa sổ khi mua tiếp.
-   * Bên hưởng của `tenant_plan` xác định bằng (tenant_id, user_id NULL);
-   * của `teacher_plan` bằng user_id.
+   * Mốc hết hạn muộn nhất trong các quyền lợi đang `active` của cùng một bên hưởng + cùng loại gói — căn cứ nối tiếp
+   * cửa sổ khi mua tiếp. Bên hưởng của `tenant_plan` xác định bằng (tenant_id, user_id NULL); của `teacher_plan` bằng
+   * user_id.
    */
   async maxActiveEntitlementExpiry(
     component: string,
@@ -1098,10 +1070,9 @@ export class PaymentsRepository {
   }
 
   /**
-   * Số lượt dùng đã tiêu thụ của một coupon: số payment gói mang
-   * coupon này trong ảnh chụp `data.plan` và đang ở trạng thái
-   * `pending` hoặc `succeeded` — payment `failed` không tính (lượt
-   * dùng được hoàn lại), đúng đặc tả coupon của issue.
+   * Số lượt dùng đã tiêu thụ của một coupon: số payment gói mang coupon này trong ảnh chụp `data.plan` và đang ở trạng
+   * thái `pending` hoặc `succeeded` — payment `failed` không tính (lượt dùng được hoàn lại), đúng đặc tả coupon của
+   * issue.
    */
   async countCouponRedemptions(couponId: string): Promise<number> {
     const row = await this.db

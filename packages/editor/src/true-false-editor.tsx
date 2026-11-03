@@ -29,7 +29,9 @@ import {
  * nhất mà không phải dựng lại extension khi prop đổi.
  */
 interface StatementAnswerControl {
-  /** Tiền tố tên nhóm radio (duy nhất cho mỗi instance editor trên trang); tên nhóm đầy đủ gắn thêm id của từng mệnh đề. */
+  /**
+   * Tiền tố tên nhóm radio (duy nhất cho mỗi instance editor trên trang); tên nhóm đầy đủ gắn thêm id của từng mệnh đề.
+   */
   groupPrefix: string;
   /** Bản đồ đáp án hiện tại theo id mệnh đề; mệnh đề chưa chọn thì vắng mặt trong bản đồ. */
   answers: Readonly<Record<string, boolean | undefined>>;

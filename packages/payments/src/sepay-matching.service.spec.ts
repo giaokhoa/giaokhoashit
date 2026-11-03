@@ -20,10 +20,9 @@ import type {
  *   cộng payment còn `pending` và chưa hết hạn, cộng phép đối chiếu
  *   đích phía server (issue #419) TRƯỚC khi kích hoạt bất cứ quyền
  *   lợi nào.
- * - Bất biến đồng bộ của nhịp chốt: kích hoạt MỌI quyền lợi TRƯỚC
- *   nhịp lật payment sang `succeeded`, rồi mới phát đúng outbox
- *   `payment_succeeded` và chốt sự kiện `matched` — thứ tự này được
- *   ghim bằng nhật ký thứ tự gọi chung của các bản giả.
+ * - Bất biến đồng bộ của nhịp chốt: kích hoạt MỌI quyền lợi TRƯỚC nhịp lật payment sang `succeeded`, rồi mới phát đúng
+ *   outbox `payment_succeeded` và chốt sự kiện `matched` — thứ tự này được ghim bằng nhật ký thứ tự gọi chung của các
+ *   bản giả.
  * - Thiếu bất kỳ điều kiện nào: payment còn `pending` chuyển
  *   `needs_review`, sự kiện chuyển `needs_review`, KHÔNG kích hoạt
  *   gì và KHÔNG phát outbox.

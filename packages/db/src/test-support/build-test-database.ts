@@ -8,9 +8,9 @@
  * ra, kể cả bảng nhật ký `kysely_migration` mà Migrator ghi.
  *
  * 1. Xoá (nếu có) và tạo mới database theo tên được chỉ định qua kết nối quản trị. 2. Cụm PostgreSQL dưới 18: cài shim
- * `uuidv7()` viết tay TRƯỚC carrier (PG18 có hàm tích hợp). Shim nằm ngoài carrier — nội dung carrier giữ nguyên từng
- * byte. 3. Áp toàn bộ migration của kho bằng đúng trình tự dùng chung của package (`applyStoreMigrations` — cùng trình
- * tự runner production chạy).
+ *    `uuidv7()` viết tay TRƯỚC carrier (PG18 có hàm tích hợp). Shim nằm ngoài carrier — nội dung carrier giữ nguyên
+ *    từng byte. 3. Áp toàn bộ migration của kho bằng đúng trình tự dùng chung của package (`applyStoreMigrations` —
+ *    cùng trình tự runner production chạy).
  *
  * Đường dẫn carrier trỏ vào `packages/db/migrations/<kho>` — vị trí của bộ SQL sau khi dời khỏi các file cấu hình cũ ở
  * `apps/api` ở hạng mục nền thứ hai.

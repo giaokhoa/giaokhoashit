@@ -330,7 +330,8 @@ export const issuedBadgeSchema = z.object({
 });
 export type IssuedBadge = z.infer<typeof issuedBadgeSchema>;
 
-export const PLAN_STATUSES = [0, 1, 2, 3, 4] as const; // các trạng thái: draft, active, waitingforreview, inreview, complete
+// các trạng thái: draft, active, waitingforreview, inreview, complete
+export const PLAN_STATUSES = [0, 1, 2, 3, 4] as const;
 export const learningPlanSchema = z.object({
   id: uuidIdSchema,
   name: z.string(),
@@ -836,19 +837,17 @@ export type SetBadgeStatus = z.infer<typeof setBadgeStatusSchema>;
 /**
  * Tham số của từng loại lá tiêu chí cấp huy hiệu (discriminated theo
  * `criteriaType` ở schema lá bên dưới):
- * - `coursecompletion`: `{ courseId, byDate? }` — hoàn thành khoá học; khi có
- *   `byDate` (ISO datetime) thì thời điểm hoàn thành phải ≤ ngày đó mới tính
- *   (Moodle: tham số by-date của tiêu chí hoàn thành khoá học).
+ * - `coursecompletion`: `{ courseId, byDate? }` — hoàn thành khoá học; khi có `byDate` (ISO datetime) thì thời điểm
+ *   hoàn thành phải ≤ ngày đó mới tính (Moodle: tham số by-date của tiêu chí hoàn thành khoá học).
  * - `activitycompletion`: `{ cmId }` — hoàn thành hoạt động.
  * - `competency`: `{ competencyId }` — đạt proficiency của năng lực.
  * - `badge`: `{ badgeId }` — đã được cấp huy hiệu khác.
  * - `manual`: `{ roleId? }` — cấp tay bởi người giữ vai trò (tuỳ chọn).
  * - `cohort`: `{ cohortId }` hoặc `{ cohortIds }` — thuộc cohort chỉ định
  *   (dạng mảng: phải thuộc TẤT CẢ cohort liệt kê).
- * - `profile`: `{ field, value? }` — trường hồ sơ chuẩn (firstName, lastName,
- *   email, username…) hoặc custom field theo shortName đạt điều kiện: có
- *   `value` thì giá trị phải bằng đúng; không có `value` thì trường phải
- *   được điền (khác rỗng).
+ * - `profile`: `{ field, value? }` — trường hồ sơ chuẩn (firstName, lastName, email, username…) hoặc custom field theo
+ *   shortName đạt điều kiện: có `value` thì giá trị phải bằng đúng; không có `value` thì trường phải được điền (khác
+ *   rỗng).
  */
 export const badgeCriteriaParamsSchema = z.union([
   z.strictObject({ courseId: uuidIdSchema, byDate: z.iso.datetime({ offset: true }).optional() }),
@@ -988,7 +987,9 @@ export type NumericValue = z.infer<typeof numericValueSchema>;
 export const competencyRuleOutcomeSchema = z.enum(['complete', 'attach-evidence', 'nothing']);
 export type CompetencyRuleOutcome = z.infer<typeof competencyRuleOutcomeSchema>;
 
-/** Một dòng điểm của rule points: competency con đóng góp `points` điểm khi đạt proficiency; `required` = bắt buộc đạt. */
+/**
+ * Một dòng điểm của rule points: competency con đóng góp `points` điểm khi đạt proficiency; `required` = bắt buộc đạt.
+ */
 export const competencyRulePointsEntrySchema = z.strictObject({
   competencyId: uuidIdSchema,
   points: z.number().int().min(0),
@@ -1023,7 +1024,10 @@ export const frameworkExportRuleSchema = z.strictObject({
 });
 export type FrameworkExportRule = z.infer<typeof frameworkExportRuleSchema>;
 
-/** Một competency trong tài liệu export framework: `key` là khóa nội bộ của file (id nguồn), KHÔNG phải id sẽ dùng khi import. */
+/**
+ * Một competency trong tài liệu export framework: `key` là khóa nội bộ của file (id nguồn), KHÔNG phải id sẽ dùng khi
+ * import.
+ */
 export const frameworkExportCompetencySchema = z.strictObject({
   key: z.string().min(1),
   shortName: z.string().min(1),

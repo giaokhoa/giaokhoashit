@@ -9,24 +9,18 @@ import { plainTextExtensions } from './extensions.js';
  *
  * Flow tổng thể của module này:
  *
- * 1. Giáo viên soạn thân câu và cả bốn lựa chọn trong MỘT tài liệu
- *    Tiptap duy nhất: các block nội dung của thân câu, chốt đuôi bằng
- *    đúng một node `choiceList` chứa đúng {@link MULTIPLE_CHOICE_COUNT}
- *    node `choice` (mỗi `choice` mang `attrs.id` ổn định trong vòng
- *    soạn). Đáp án đúng KHÔNG nằm trong tài liệu: nó là metadata có cấu
- *    trúc ở ngoài — id của choice đúng (`correctChoiceId`), do
- *    `MultipleChoiceEditor` giữ qua radio widget cạnh từng choice.
+ * 1. Giáo viên soạn thân câu và cả bốn lựa chọn trong MỘT tài liệu Tiptap duy nhất: các block nội dung của thân câu,
+ *    chốt đuôi bằng đúng một node `choiceList` chứa đúng {@link MULTIPLE_CHOICE_COUNT} node `choice` (mỗi `choice` mang
+ *    `attrs.id` ổn định trong vòng soạn). Đáp án đúng KHÔNG nằm trong tài liệu: nó là metadata có cấu trúc ở ngoài — id
+ *    của choice đúng (`correctChoiceId`), do `MultipleChoiceEditor` giữ qua radio widget cạnh từng choice.
  * 2. Khi nạp một câu có sẵn, {@link composeMultipleChoiceDocument} lắp
  *    view của API (thân câu + các dòng answers) thành tài liệu thống
  *    nhất (id của choice = id của dòng answers tương ứng).
- * 3. Khi lưu, {@link splitMultipleChoiceDocument} tách tài liệu thống
- *    nhất về đúng hình dạng hợp đồng: phần thân câu (tài liệu rich
- *    text KHÔNG còn node choice) đem vào `questionText`, từng choice
- *    theo đúng thứ tự trong tài liệu thành một dòng answers
- *    (`text` = tài liệu của choice, `correct` = id khớp
- *    `correctChoiceId`). Guidance/lời giải KHÔNG đi qua module này —
- *    chúng là trường soạn riêng ở form và payload gắn ở tầng trang
- *    vào `answer_key` theo hợp đồng.
+ * 3. Khi lưu, {@link splitMultipleChoiceDocument} tách tài liệu thống nhất về đúng hình dạng hợp đồng: phần thân câu
+ *    (tài liệu rich text KHÔNG còn node choice) đem vào `questionText`, từng choice theo đúng thứ tự trong tài liệu
+ *    thành một dòng answers (`text` = tài liệu của choice, `correct` = id khớp `correctChoiceId`). Guidance/lời giải
+ *    KHÔNG đi qua module này — chúng là trường soạn riêng ở form và payload gắn ở tầng trang vào `answer_key` theo hợp
+ *    đồng.
  *
  * Bất biến quan trọng: tài liệu thống nhất CHỈ sống phía soạn. Node `choice`/`choiceList` không bao giờ xuất hiện trong
  * nội dung đã lưu (thân câu lưu trữ luôn là tài liệu hợp đồng thuần), nên phía xem tĩnh (`RichTextView`) không cần — và
@@ -83,10 +77,9 @@ export function newChoiceId(): string {
 const emptyParagraph = (): JSONContent => ({ type: 'paragraph' });
 
 /**
- * Node gốc của tài liệu thống nhất: thay node `doc` mặc định của
- * Tiptap bằng biến thể bắt buộc tài liệu kết thúc bằng đúng một
- * `choiceList` (`block+ choiceList`) — lựa chọn không thể bị xoá khỏi
- * tài liệu hay chèn nội dung sau danh sách lựa chọn.
+ * Node gốc của tài liệu thống nhất: thay node `doc` mặc định của Tiptap bằng biến thể bắt buộc tài liệu kết thúc bằng
+ * đúng một `choiceList` (`block+ choiceList`) — lựa chọn không thể bị xoá khỏi tài liệu hay chèn nội dung sau danh sách
+ * lựa chọn.
  */
 export const MultipleChoiceDocument = Node.create({
   name: 'doc',
@@ -108,13 +101,10 @@ export const ChoiceList = Node.create({
 });
 
 /**
- * Node một lựa chọn: nội dung là các block rich text (`block+`),
- * `defining` để định dạng không rò qua biên lựa chọn. `draggable` bật
- * kéo-thả đổi thứ tự bằng cơ chế kéo node của ProseMirror: người soạn
- * kéo một lựa chọn đang được chọn (node selection) tới vị trí mới
- * trong cùng danh sách; thứ tự trong tài liệu sau khi thả là thứ tự
- * đáp án khi tách lúc lưu. Thuộc tính `id` do {@link ChoiceUniqueId}
- * bảo đảm luôn có.
+ * Node một lựa chọn: nội dung là các block rich text (`block+`), `defining` để định dạng không rò qua biên lựa chọn.
+ * `draggable` bật kéo-thả đổi thứ tự bằng cơ chế kéo node của ProseMirror: người soạn kéo một lựa chọn đang được chọn
+ * (node selection) tới vị trí mới trong cùng danh sách; thứ tự trong tài liệu sau khi thả là thứ tự đáp án khi tách lúc
+ * lưu. Thuộc tính `id` do {@link ChoiceUniqueId} bảo đảm luôn có.
  */
 export const Choice = Node.create({
   name: CHOICE_NODE_TYPE,
@@ -135,17 +125,14 @@ export const Choice = Node.create({
 });
 
 /**
- * Plugin bảo đảm mọi node `choice` trong tài liệu luôn có `attrs.id`:
- * sau mỗi transaction, choice nào thiếu id (vừa được tạo khi người
- * soạn tách/gộp đoạn, hoặc tài liệu nạp vào chưa có) được gán một id
- * mới bằng `setNodeMarkup` trong một transaction nối tiếp.
+ * Plugin bảo đảm mọi node `choice` trong tài liệu luôn có `attrs.id`: sau mỗi transaction, choice nào thiếu id (vừa
+ * được tạo khi người soạn tách/gộp đoạn, hoặc tài liệu nạp vào chưa có) được gán một id mới bằng `setNodeMarkup` trong
+ * một transaction nối tiếp.
  *
- * Đây là bản thay thế gọn cho `@tiptap/extension-unique-id` của
- * giaokhoa — package đó không có trong workspace của hệ mình, và nhu
- * cầu ở đây hẹp hơn (chỉ node `choice`). Id phải nằm TRONG tài liệu
- * (không giữ ở state ngoài) vì kéo-thả đổi thứ tự và tách/gộp đoạn
- * đều đi qua tài liệu: đáp án đúng (`correctChoiceId`) trỏ theo id
- * này nên lựa chọn đúng đi theo nội dung của nó qua mọi thao tác.
+ * Đây là bản thay thế gọn cho `@tiptap/extension-unique-id` của giaokhoa — package đó không có trong workspace của hệ
+ * mình, và nhu cầu ở đây hẹp hơn (chỉ node `choice`). Id phải nằm TRONG tài liệu (không giữ ở state ngoài) vì kéo-thả
+ * đổi thứ tự và tách/gộp đoạn đều đi qua tài liệu: đáp án đúng (`correctChoiceId`) trỏ theo id này nên lựa chọn đúng đi
+ * theo nội dung của nó qua mọi thao tác.
  */
 export const ChoiceUniqueId = Extension.create({
   name: 'choiceUniqueId',
@@ -183,11 +170,9 @@ export const ChoiceUniqueId = Extension.create({
 });
 
 /**
- * Bộ extension của editor trắc nghiệm thống nhất: toàn bộ lát soạn
- * của hợp đồng ({@link plainTextExtensions} — mark, danh sách, công
- * thức, ảnh, hoàn tác) TRỪ node `doc` mặc định, cộng node `doc` bắt
- * buộc chốt đuôi bằng danh sách lựa chọn, hai node lựa chọn và plugin
- * định danh choice.
+ * Bộ extension của editor trắc nghiệm thống nhất: toàn bộ lát soạn của hợp đồng ({@link plainTextExtensions} — mark,
+ * danh sách, công thức, ảnh, hoàn tác) TRỪ node `doc` mặc định, cộng node `doc` bắt buộc chốt đuôi bằng danh sách lựa
+ * chọn, hai node lựa chọn và plugin định danh choice.
  */
 export const multipleChoiceExtensions = [
   ...plainTextExtensions.filter((extension) => extension.name !== 'doc'),
@@ -266,17 +251,13 @@ export function createEmptyMultipleChoiceDocument(): MultipleChoiceDocumentJson 
 }
 
 /**
- * Lắp view của một câu trắc nghiệm có sẵn thành tài liệu thống nhất
- * phía soạn (chiều ngược của {@link splitMultipleChoiceDocument}):
- * thân câu giữ nguyên tài liệu, từng dòng answers theo `sortOrder`
- * thành một choice mang `attrs.id` = id của dòng answers đó (định
- * danh xuyên vòng soạn: phản hồi theo lựa chọn và đáp án đúng đều bám
- * theo id này).
+ * Lắp view của một câu trắc nghiệm có sẵn thành tài liệu thống nhất phía soạn (chiều ngược của {@link
+ * splitMultipleChoiceDocument}): thân câu giữ nguyên tài liệu, từng dòng answers theo `sortOrder` thành một choice mang
+ * `attrs.id` = id của dòng answers đó (định danh xuyên vòng soạn: phản hồi theo lựa chọn và đáp án đúng đều bám theo id
+ * này).
  *
- * Luật chuẩn hoá số lựa chọn về đúng {@link MULTIPLE_CHOICE_COUNT}
- * (hợp đồng phía API đã khoá đúng 4 nên đây chỉ là lưới an toàn cho
- * dữ liệu lạ): thiếu thì đệm lựa chọn rỗng có id mới; thừa thì giữ
- * các lựa chọn đầu theo thứ tự.
+ * Luật chuẩn hoá số lựa chọn về đúng {@link MULTIPLE_CHOICE_COUNT} (hợp đồng phía API đã khoá đúng 4 nên đây chỉ là
+ * lưới an toàn cho dữ liệu lạ): thiếu thì đệm lựa chọn rỗng có id mới; thừa thì giữ các lựa chọn đầu theo thứ tự.
  *
  * @param questionText - Tài liệu thân câu của phiên bản (rỗng/`null`
  *   thì đệm một paragraph rỗng).
@@ -306,12 +287,10 @@ export function composeMultipleChoiceDocument(
 }
 
 /**
- * Một tài liệu thống nhất đã sẵn sàng để lưu hay chưa, theo đúng
- * luật hợp đồng phía API: thân câu có nội dung, đủ
- * {@link MULTIPLE_CHOICE_COUNT} lựa chọn đều có nội dung, và đã chọn
- * đúng một đáp án đúng thuộc danh sách lựa chọn. Dùng để bề mặt chứa
- * quyết định trạng thái nút lưu/cảnh báo tại chỗ; cổng cứng vẫn là
- * kiểm tra ở contracts + tầng nghiệp vụ phía API.
+ * Một tài liệu thống nhất đã sẵn sàng để lưu hay chưa, theo đúng luật hợp đồng phía API: thân câu có nội dung, đủ
+ * {@link MULTIPLE_CHOICE_COUNT} lựa chọn đều có nội dung, và đã chọn đúng một đáp án đúng thuộc danh sách lựa chọn.
+ * Dùng để bề mặt chứa quyết định trạng thái nút lưu/cảnh báo tại chỗ; cổng cứng vẫn là kiểm tra ở contracts + tầng
+ * nghiệp vụ phía API.
  *
  * @param content - Tài liệu thống nhất cần kiểm.
  * @param correctChoiceId - Id của lựa chọn đúng đã chọn (chưa chọn

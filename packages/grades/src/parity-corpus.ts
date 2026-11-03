@@ -92,9 +92,8 @@ export function runGradeFormulaCorpus(): { name: string; outcome: GradeFormulaCo
 }
 
 /**
- * Ca thăm dò parity cho grade-calculator: hai item 80/100 và 60/100, cộng item
- * calculated = average của chúng (70/100), tổng hợp natural → gradeMax cấu trúc
- * 300, finalGrade 210. Worker (grade-regrade) và api phải ra đúng số này.
+ * Ca thăm dò parity cho grade-calculator: hai item 80/100 và 60/100, cộng item calculated = average của chúng (70/100),
+ * tổng hợp natural → gradeMax cấu trúc 300, finalGrade 210. Worker (grade-regrade) và api phải ra đúng số này.
  */
 export function runGradeCalculatorParityProbe(): number | null {
   const calcValue = calculateFromFormula('=average([[a]],[[b]])', (id) => (id === 'a' ? 80 : id === 'b' ? 60 : null))!;

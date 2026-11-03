@@ -6,11 +6,11 @@
  * `apps/*` (xem luật package trong `AGENTS.md` của package). Bản này tái lập trung thực hợp đồng của bản thật:
  *
  * - Một AsyncLocalStorage mang `{ tenantId?, platform? }` — cùng hình dạng store mà `tenantAls` phía app dùng. - Mỗi
- * client được checkout được bọc `query`: câu truy vấn đầu tiên trên client đó chạy trước một `select
- * set_config('app.tenant_id', $1, false), set_config('app.platform', $2, false)` với ánh xạ: ngữ cảnh platform tường
- * minh → `('', 'on')`; ngữ cảnh tenant → `(<tenantId>, 'off')`; ngoài ngữ cảnh → `('', 'off')` (fail-closed). - Client
- * trả về pool rồi checkout lại thì gắn lại từ đầu theo ngữ cảnh mới — GUC của ngữ cảnh trước không rò sang ngữ cảnh
- * sau.
+ *   client được checkout được bọc `query`: câu truy vấn đầu tiên trên client đó chạy trước một `select
+ *   set_config('app.tenant_id', $1, false), set_config('app.platform', $2, false)` với ánh xạ: ngữ cảnh platform tường
+ *   minh → `('', 'on')`; ngữ cảnh tenant → `(<tenantId>, 'off')`; ngoài ngữ cảnh → `('', 'off')` (fail-closed). -
+ *   Client trả về pool rồi checkout lại thì gắn lại từ đầu theo ngữ cảnh mới — GUC của ngữ cảnh trước không rò sang ngữ
+ *   cảnh sau.
  *
  * Bằng chứng với `TenantAwarePool` THẬT nằm ở spec tích hợp phía `apps/api`
  * (`test/integration/db/kysely-foundation.int-spec.ts`), nơi app được phép import cả hai phía; file này chỉ lo phần

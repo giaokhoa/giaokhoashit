@@ -282,7 +282,10 @@ export function richTextBlocksContainStatementList(blocks: readonly RichTextBloc
   });
 }
 
-/** Số mệnh đề của một câu đúng/sai chùm (TF-A) — khoá cứng theo nguyên bản giaokhoa và đề thi đúng/sai chuẩn Việt Nam (4 ý a–d). */
+/**
+ * Số mệnh đề của một câu đúng/sai chùm (TF-A) — khoá cứng theo nguyên bản giaokhoa và đề thi đúng/sai chuẩn Việt Nam (4
+ * ý a–d).
+ */
 export const TRUE_FALSE_STATEMENT_COUNT = 4;
 
 export interface TrueFalseStatementContent {

@@ -20,7 +20,10 @@ export const importBookDatasetSchema = z.strictObject({
 });
 export type ImportBookDataset = z.infer<typeof importBookDatasetSchema>;
 
-/** Trạng thái nạp của một dataset SGK: đã nạp bao nhiêu trên tổng số bản ghi bài đã kiểm chứng, bao nhiêu bản ghi có ánh xạ. */
+/**
+ * Trạng thái nạp của một dataset SGK: đã nạp bao nhiêu trên tổng số bản ghi bài đã kiểm chứng, bao nhiêu bản ghi có ánh
+ * xạ.
+ */
 export const bookDatasetStatusSchema = z.object({
   datasetKey: z.string(),
   subjectName: z.string(),
@@ -36,7 +39,9 @@ export const bookDatasetStatusSchema = z.object({
 });
 export type BookDatasetStatus = z.infer<typeof bookDatasetStatusSchema>;
 
-/** Kết quả một lượt nạp dataset SGK: tạo mới / cập nhật (dataset đính chính) / bỏ qua (đã khớp) + số dòng ánh xạ đã ghi. */
+/**
+ * Kết quả một lượt nạp dataset SGK: tạo mới / cập nhật (dataset đính chính) / bỏ qua (đã khớp) + số dòng ánh xạ đã ghi.
+ */
 export const bookImportResultSchema = z.object({
   datasetKey: z.string(),
   bookId: uuidIdSchema,

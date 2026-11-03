@@ -263,10 +263,9 @@ export class PlanLimitsCore {
   }
 
   /**
-   * Số slot gói trung tâm đang dùng của một tenant: số người dùng
-   * phân biệt đồng thời có membership `active`, tài khoản đang hoạt
-   * động và giữ vai trò giảng dạy trong cây context của tenant.
-   * Học viên (archetype `student`) không bao giờ được đếm.
+   * Số slot gói trung tâm đang dùng của một tenant: số người dùng phân biệt đồng thời có membership `active`, tài khoản
+   * đang hoạt động và giữ vai trò giảng dạy trong cây context của tenant. Học viên (archetype `student`) không bao giờ
+   * được đếm.
    */
   async countTenantTeachingSlots(tenantId: string): Promise<number> {
     return this.runInPlatformScope(async () => {
@@ -297,17 +296,12 @@ export class PlanLimitsCore {
   }
 
   /**
-   * Điểm chặn gói trung tâm: chặn khi hành động đang thực hiện SẼ
-   * làm `userId` trở thành một slot mới của tenant (bên gọi bảo đảm
-   * điều đó — ví dụ gán vai trò giảng dạy cho thành viên đang hoạt
-   * động, kích hoạt membership của người đã có vai trò giảng dạy,
-   * hoặc bỏ đình chỉ tài khoản của họ) mà số slot đang dùng đã bằng
-   * hạn mức hiệu lực. Tenant platform không phải khách hàng mua gói
-   * trung tâm nên luôn được miễn. Người dùng đã được đếm rồi thì mọi
-   * hành động lặp lại đều là no-op. Lỗi chặn:
-   * `plan.tenant_slot_limit_reached` (HTTP 400 ở bề mặt API), nêu
-   * hạn mức và số đang dùng; hành động bị chặn không đổi dữ kiện
-   * nào đang có.
+   * Điểm chặn gói trung tâm: chặn khi hành động đang thực hiện SẼ làm `userId` trở thành một slot mới của tenant (bên
+   * gọi bảo đảm điều đó — ví dụ gán vai trò giảng dạy cho thành viên đang hoạt động, kích hoạt membership của người đã
+   * có vai trò giảng dạy, hoặc bỏ đình chỉ tài khoản của họ) mà số slot đang dùng đã bằng hạn mức hiệu lực. Tenant
+   * platform không phải khách hàng mua gói trung tâm nên luôn được miễn. Người dùng đã được đếm rồi thì mọi hành động
+   * lặp lại đều là no-op. Lỗi chặn: `plan.tenant_slot_limit_reached` (HTTP 400 ở bề mặt API), nêu hạn mức và số đang
+   * dùng; hành động bị chặn không đổi dữ kiện nào đang có.
    */
   async assertTenantSlotForNewTeacher(tenantId: string, userId: string): Promise<void> {
     const kind = await this.tenantKind(tenantId);
@@ -327,22 +321,17 @@ export class PlanLimitsCore {
   }
 
   /**
-   * Bỏ đình chỉ tài khoản (điểm chặn ở tầng người dùng): sau khi bỏ
-   * đình chỉ, tài khoản được đếm trở lại ở MỌI tenant khách hàng mà
-   * người dùng là thành viên `active` có vai trò giảng dạy — tenant
-   * nào trong số đó đã chạm hạn mức thì toàn bộ hành động bị chặn
-   * tại tenant đó (đúng hành động "kích hoạt lại tài khoản giáo viên
-   * đang đình chỉ" trong đặc tả đã duyệt).
+   * Bỏ đình chỉ tài khoản (điểm chặn ở tầng người dùng): sau khi bỏ đình chỉ, tài khoản được đếm trở lại ở MỌI tenant
+   * khách hàng mà người dùng là thành viên `active` có vai trò giảng dạy — tenant nào trong số đó đã chạm hạn mức thì
+   * toàn bộ hành động bị chặn tại tenant đó (đúng hành động "kích hoạt lại tài khoản giáo viên đang đình chỉ" trong đặc
+   * tả đã duyệt).
    */
   async assertUserReactivationWithinSlotLimits(userId: string): Promise<void> {
-    // Callback PHẢI gọi `.execute()` (hoặc await truy vấn) BÊN TRONG
-    // nó (Phần A, issue #587 — A4): `.execute()` phát hành truy vấn
-    // ngay khi gọi, nên gọi trong cổng thì truy vấn chạy dưới ngữ
-    // cảnh platform; trả builder ra ngoài rồi mới execute thì truy
-    // vấn chạy dưới ngữ cảnh của bên gọi, lượt đọc dòng thành viên
-    // chạy sai tầm nhìn RLS (che mất membership ở tenant khác và làm
-    // lọt chốt chặn). Hai điểm gọi còn lại trong file này đã dùng
-    // callback async await bên trong theo đúng khuôn này.
+    // Callback PHẢI gọi `.execute()` (hoặc await truy vấn) BÊN TRONG nó (Phần A, issue #587 — A4): `.execute()` phát
+    // hành truy vấn ngay khi gọi, nên gọi trong cổng thì truy vấn chạy dưới ngữ cảnh platform; trả builder ra ngoài rồi
+    // mới execute thì truy vấn chạy dưới ngữ cảnh của bên gọi, lượt đọc dòng thành viên chạy sai tầm nhìn RLS (che mất
+    // membership ở tenant khác và làm lọt chốt chặn). Hai điểm gọi còn lại trong file này đã dùng callback async await
+    // bên trong theo đúng khuôn này.
     const memberships = await this.runInPlatformScope(async () => {
       const rows = await this.db
         .selectFrom('tenant_memberships')
@@ -363,10 +352,8 @@ export class PlanLimitsCore {
   }
 
   /**
-   * Người dùng có phải quản trị platform hay không: giữ một vai trò
-   * archetype `manager` tại context hệ thống. Quản trị platform
-   * không phải khách hàng của gói giáo viên nên được miễn giới hạn
-   * slot gói giáo viên.
+   * Người dùng có phải quản trị platform hay không: giữ một vai trò archetype `manager` tại context hệ thống. Quản trị
+   * platform không phải khách hàng của gói giáo viên nên được miễn giới hạn slot gói giáo viên.
    */
   async isSiteAdmin(userId: string): Promise<boolean> {
     const row = await this.db
@@ -385,12 +372,10 @@ export class PlanLimitsCore {
   }
 
   /**
-   * Số khoá học một giáo viên đang LÀM CHỦ tại tenant platform (slot
-   * của gói giáo viên): khoá không phải khoá mẫu, thuộc tenant
-   * platform, và giáo viên hoặc là chủ của lớp chứa khoá, hoặc giữ
-   * dòng gán vai trò giảng dạy TRỰC TIẾP tại context của khoá với
-   * nguồn không phải ghi danh (`component` khác `enrol` — vai trò
-   * nhận qua ghi danh là dạy chung, không tính slot theo đặc tả).
+   * Số khoá học một giáo viên đang LÀM CHỦ tại tenant platform (slot của gói giáo viên): khoá không phải khoá mẫu,
+   * thuộc tenant platform, và giáo viên hoặc là chủ của lớp chứa khoá, hoặc giữ dòng gán vai trò giảng dạy TRỰC TIẾP
+   * tại context của khoá với nguồn không phải ghi danh (`component` khác `enrol` — vai trò nhận qua ghi danh là dạy
+   * chung, không tính slot theo đặc tả).
    */
   async countTeacherOwnedCourses(userId: string): Promise<number> {
     const platformTenantId = await this.platformTenantId();
@@ -427,14 +412,11 @@ export class PlanLimitsCore {
   }
 
   /**
-   * Điểm chặn gói giáo viên tại thời điểm TẠO KHOÁ: chỉ áp dụng khi
-   * khoá thuộc tenant platform (khoá trong tenant khách hàng chịu sự
-   * điều tiết của gói trung tâm theo số giáo viên, không theo số
-   * khoá) và chủ khoá tương lai là chủ của lớp chứa khoá. Chủ khoá
-   * là quản trị platform thì được miễn. Đã chạm hạn mức hiệu lực
-   * (gồm mức nền và ân hạn như gói trung tâm) thì chặn bằng lỗi
-   * `plan.teacher_course_limit_reached` (HTTP 400 ở bề mặt API); các
-   * khoá đang có của giáo viên không bị đụng tới.
+   * Điểm chặn gói giáo viên tại thời điểm TẠO KHOÁ: chỉ áp dụng khi khoá thuộc tenant platform (khoá trong tenant khách
+   * hàng chịu sự điều tiết của gói trung tâm theo số giáo viên, không theo số khoá) và chủ khoá tương lai là chủ của
+   * lớp chứa khoá. Chủ khoá là quản trị platform thì được miễn. Đã chạm hạn mức hiệu lực (gồm mức nền và ân hạn như gói
+   * trung tâm) thì chặn bằng lỗi `plan.teacher_course_limit_reached` (HTTP 400 ở bề mặt API); các khoá đang có của giáo
+   * viên không bị đụng tới.
    */
   async assertTeacherCourseSlotForNewCourse(tenantId: string, classId: string): Promise<void> {
     if ((await this.tenantKind(tenantId)) !== 'platform') return;

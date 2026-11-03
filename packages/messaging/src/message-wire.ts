@@ -40,13 +40,10 @@ export function quoteExcerptOf(text: string): string {
 /**
  * Dựng khối trích dẫn của một tin gốc cho một người nhận.
  *
- * Luật lộ nội dung (cùng họ với blankRecalledContent): người xem
- * THƯỜNG không bao giờ nhận nội dung của tin gốc đã xoá mềm/đã thu
- * hồi, cũng không nhận nội dung của tin chính họ đã xoá-phía-mình —
- * cả ba trường hợp đều thành `unavailable = true` + excerpt rỗng để
- * client hiện "tin gốc đã bị xoá". Người có thẩm quyền kiểm duyệt
- * (privileged — cửa sổ truy vết) thấy excerpt thật, vì họ vốn đọc
- * được chính tin gốc ở đường truy vết.
+ * Luật lộ nội dung (cùng họ với blankRecalledContent): người xem THƯỜNG không bao giờ nhận nội dung của tin gốc đã xoá
+ * mềm/đã thu hồi, cũng không nhận nội dung của tin chính họ đã xoá-phía-mình — cả ba trường hợp đều thành `unavailable
+ * = true` + excerpt rỗng để client hiện "tin gốc đã bị xoá". Người có thẩm quyền kiểm duyệt (privileged — cửa sổ truy
+ * vết) thấy excerpt thật, vì họ vốn đọc được chính tin gốc ở đường truy vết.
  */
 export function messageQuoteOf(original: MessageRow, opts: { privileged: boolean; deletedForViewer?: boolean }): MessageQuoteView {
   const unavailable = !opts.privileged
@@ -61,9 +58,8 @@ export function messageQuoteOf(original: MessageRow, opts: { privileged: boolean
 }
 
 /**
- * Dạng wire của một tin nhắn (khớp `messageSchema` của contracts; createdAt là chuỗi ISO).
- * Khối trích dẫn (lát M3) do tầng gọi dựng sẵn qua `attachQuotes` của
- * bề mặt đọc rồi truyền vào — hàm này thuần ánh xạ, không tự tra DB.
+ * Dạng wire của một tin nhắn (khớp `messageSchema` của contracts; createdAt là chuỗi ISO). Khối trích dẫn (lát M3) do
+ * tầng gọi dựng sẵn qua `attachQuotes` của bề mặt đọc rồi truyền vào — hàm này thuần ánh xạ, không tự tra DB.
  */
 export function toWireMessage(row: MessageRow, quote: MessageQuoteView | null = null): LmsMessage {
   return {
@@ -88,18 +84,14 @@ export function toWireMessage(row: MessageRow, quote: MessageQuoteView | null = 
 export const SEARCH_EXCERPT_MAX_CHARS = QUOTE_EXCERPT_MAX_CHARS;
 
 /**
- * Rút gọn nội dung quanh CHỖ KHỚP cho một kết quả tìm tin (lát M4,
- * issue #237): cửa sổ tối đa {@link SEARCH_EXCERPT_MAX_CHARS} ký tự
- * (theo code point) đặt chỗ khớp gần giữa, thêm … ở phía bị cắt.
- * Khớp theo chuỗi con không phân biệt hoa thường — cùng ngữ nghĩa
- * với truy vấn ILIKE ở repository. Không tìm thấy chỗ khớp (không
- * xảy ra với hàng lấy từ truy vấn khớp) thì lùi về rút gọn từ đầu
- * như excerpt trích dẫn.
+ * Rút gọn nội dung quanh CHỖ KHỚP cho một kết quả tìm tin (lát M4, issue #237): cửa sổ tối đa {@link
+ * SEARCH_EXCERPT_MAX_CHARS} ký tự (theo code point) đặt chỗ khớp gần giữa, thêm … ở phía bị cắt. Khớp theo chuỗi con
+ * không phân biệt hoa thường — cùng ngữ nghĩa với truy vấn ILIKE ở repository. Không tìm thấy chỗ khớp (không xảy ra
+ * với hàng lấy từ truy vấn khớp) thì lùi về rút gọn từ đầu như excerpt trích dẫn.
  *
- * Hàm này trước đây sống trong file repository phía API; nó là
- * logic hình dạng wire thuần chuỗi (cùng họ với {@link quoteExcerptOf})
- * nên chuyển về đây khi repository dời sang `@lms/db` — `@lms/db`
- * giữ thuần truy cập dữ liệu (issue #658).
+ * Hàm này trước đây sống trong file repository phía API; nó là logic hình dạng wire thuần chuỗi (cùng họ với {@link
+ * quoteExcerptOf}) nên chuyển về đây khi repository dời sang `@lms/db` — `@lms/db` giữ thuần truy cập dữ liệu (issue
+ * #658).
  */
 export function searchExcerptOf(text: string, query: string): string {
   const chars = Array.from(text);

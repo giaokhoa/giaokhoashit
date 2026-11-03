@@ -7,12 +7,10 @@ import type { PaymentRow, ProviderEventRow } from './payments.repository';
  * không import trực tiếp service của bất kỳ module nghiệp vụ nào khác, để cùng một bản logic matching chạy được ở mọi
  * tiến trình. Cài đặt cổng là phần thuộc về tiến trình chủ:
  *
- * - Phía apps/api (hiện hành): cài đặt là chính các service hiện
- *   hành — `EnrolService` cho cổng ghi danh, `ClassesService` cho
- *   cổng ghi danh cấp lớp, `PaymentsService` cho cổng đối chiếu
- *   đích và xác nhận chi — nối bằng `useExisting` trong
- *   `PaymentsModule`. Luật nghiệp vụ của ba hiệu ứng vì vậy chỉ tồn
- *   tại đúng một bản, ở chính các service đó.
+ * - Phía apps/api (hiện hành): cài đặt là chính các service hiện hành — `EnrolService` cho cổng ghi danh,
+ *   `ClassesService` cho cổng ghi danh cấp lớp, `PaymentsService` cho cổng đối chiếu đích và xác nhận chi — nối bằng
+ *   `useExisting` trong `PaymentsModule`. Luật nghiệp vụ của ba hiệu ứng vì vậy chỉ tồn tại đúng một bản, ở chính các
+ *   service đó.
  * - Phía apps/worker (issue con tiếp theo của #522): cài đặt dựa
  *   trên bề mặt phễu ghi danh/cohort dùng chung mà issue #527 trích
  *   xuất — không thuộc phạm vi của issue này.

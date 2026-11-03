@@ -14,25 +14,17 @@ import { plainTextExtensions } from './extensions.js';
  *
  * Flow tổng thể của module này:
  *
- * 1. Giáo viên soạn thân câu và cả bốn mệnh đề trong MỘT tài liệu
- *    Tiptap duy nhất: các block nội dung của thân câu (stem), chốt
- *    đuôi bằng đúng một node `statementList` chứa đúng
- *    {@link TRUE_FALSE_STATEMENT_COUNT} node `statement` (mỗi
- *    `statement` mang `attrs.id` ổn định trong vòng đời version).
- *    Khác với trắc nghiệm (lựa chọn phải TÁCH khỏi tài liệu khi lưu),
- *    ở đây tài liệu soạn THỐNG NHẤT với tài liệu lưu trữ: danh sách
- *    mệnh đề là một phần của thân câu theo hợp đồng (node
- *    `statementList` của `packages/contracts`), nên lúc lưu toàn bộ
- *    tài liệu đi thẳng vào `questionText`.
- * 2. Đáp án đúng/sai của từng mệnh đề KHÔNG nằm trong tài liệu: nó là
- *    metadata có cấu trúc ở ngoài — bản đồ `statementId → boolean` do
- *    `TrueFalseEditor` giữ qua cặp radio Đ/S vẽ cạnh từng statement;
- *    khi lưu, bản đồ này thành `solution.answers` của payload (tầng
- *    nghiệp vụ ghi vào `question_answer_keys.solution`).
- * 3. Khi nạp một câu có sẵn, {@link composeTrueFalseDocument} chuẩn
- *    hoá tài liệu thân câu đã lưu về đúng khuôn soạn (chốt đuôi bằng
- *    statementList đúng 4 mệnh đề); đáp án nạp riêng từ phía đáp án
- *    của version (`answerKey.solution`).
+ * 1. Giáo viên soạn thân câu và cả bốn mệnh đề trong MỘT tài liệu Tiptap duy nhất: các block nội dung của thân câu
+ *    (stem), chốt đuôi bằng đúng một node `statementList` chứa đúng {@link TRUE_FALSE_STATEMENT_COUNT} node `statement`
+ *    (mỗi `statement` mang `attrs.id` ổn định trong vòng đời version). Khác với trắc nghiệm (lựa chọn phải TÁCH khỏi
+ *    tài liệu khi lưu), ở đây tài liệu soạn THỐNG NHẤT với tài liệu lưu trữ: danh sách mệnh đề là một phần của thân câu
+ *    theo hợp đồng (node `statementList` của `packages/contracts`), nên lúc lưu toàn bộ tài liệu đi thẳng vào
+ *    `questionText`.
+ * 2. Đáp án đúng/sai của từng mệnh đề KHÔNG nằm trong tài liệu: nó là metadata có cấu trúc ở ngoài — bản đồ
+ *    `statementId → boolean` do `TrueFalseEditor` giữ qua cặp radio Đ/S vẽ cạnh từng statement; khi lưu, bản đồ này
+ *    thành `solution.answers` của payload (tầng nghiệp vụ ghi vào `question_answer_keys.solution`).
+ * 3. Khi nạp một câu có sẵn, {@link composeTrueFalseDocument} chuẩn hoá tài liệu thân câu đã lưu về đúng khuôn soạn
+ *    (chốt đuôi bằng statementList đúng 4 mệnh đề); đáp án nạp riêng từ phía đáp án của version (`answerKey.solution`).
  *
  * Bất biến quan trọng: id của statement là neo của đáp án — sửa nội dung một mệnh đề không đổi id của nó, nên đáp án
  * Đ/S và đáp án học sinh chọn luôn bám đúng mệnh đề qua mọi lần sửa nội dung; mệnh đề mới sinh id mới và chưa có đáp án
@@ -84,10 +76,9 @@ export function newStatementId(): string {
 const emptyParagraph = (): JSONContent => ({ type: 'paragraph' });
 
 /**
- * Node gốc của tài liệu đúng/sai: thay node `doc` mặc định của Tiptap
- * bằng biến thể bắt buộc tài liệu kết thúc bằng đúng một
- * `statementList` (`block+ statementList`) — mệnh đề không thể bị xoá
- * khỏi tài liệu hay chèn nội dung sau danh sách mệnh đề.
+ * Node gốc của tài liệu đúng/sai: thay node `doc` mặc định của Tiptap bằng biến thể bắt buộc tài liệu kết thúc bằng
+ * đúng một `statementList` (`block+ statementList`) — mệnh đề không thể bị xoá khỏi tài liệu hay chèn nội dung sau danh
+ * sách mệnh đề.
  */
 export const TrueFalseDocument = Node.create({
   name: 'doc',
@@ -109,10 +100,8 @@ export const StatementList = Node.create({
 });
 
 /**
- * Node một mệnh đề: nội dung là các block rich text (`block+`),
- * `defining` để định dạng không rò qua biên mệnh đề. Thuộc tính `id`
- * do {@link StatementUniqueId} bảo đảm luôn có — đáp án Đ/S bám theo
- * id này.
+ * Node một mệnh đề: nội dung là các block rich text (`block+`), `defining` để định dạng không rò qua biên mệnh đề.
+ * Thuộc tính `id` do {@link StatementUniqueId} bảo đảm luôn có — đáp án Đ/S bám theo id này.
  */
 export const Statement = Node.create({
   name: STATEMENT_NODE_TYPE,
@@ -132,12 +121,10 @@ export const Statement = Node.create({
 });
 
 /**
- * Plugin bảo đảm mọi node `statement` trong tài liệu luôn có
- * `attrs.id`: sau mỗi transaction, statement nào thiếu id (vừa được
- * tạo khi người soạn tách/gộp đoạn, hoặc tài liệu nạp vào chưa có)
- * được gán một id mới bằng `setNodeMarkup` trong một transaction nối
- * tiếp. Cùng cơ chế với `ChoiceUniqueId` của trắc nghiệm: id phải nằm
- * TRONG tài liệu vì đáp án bám theo nó qua mọi thao tác soạn.
+ * Plugin bảo đảm mọi node `statement` trong tài liệu luôn có `attrs.id`: sau mỗi transaction, statement nào thiếu id
+ * (vừa được tạo khi người soạn tách/gộp đoạn, hoặc tài liệu nạp vào chưa có) được gán một id mới bằng `setNodeMarkup`
+ * trong một transaction nối tiếp. Cùng cơ chế với `ChoiceUniqueId` của trắc nghiệm: id phải nằm TRONG tài liệu vì đáp
+ * án bám theo nó qua mọi thao tác soạn.
  */
 export const StatementUniqueId = Extension.create({
   name: 'statementUniqueId',
@@ -173,10 +160,8 @@ export const StatementUniqueId = Extension.create({
 });
 
 /**
- * Bộ extension của editor đúng/sai chùm: toàn bộ lát soạn của hợp
- * đồng ({@link plainTextExtensions}) TRỪ node `doc` mặc định, cộng
- * node `doc` bắt buộc chốt đuôi bằng danh sách mệnh đề, hai node
- * mệnh đề và plugin định danh statement.
+ * Bộ extension của editor đúng/sai chùm: toàn bộ lát soạn của hợp đồng ({@link plainTextExtensions}) TRỪ node `doc` mặc
+ * định, cộng node `doc` bắt buộc chốt đuôi bằng danh sách mệnh đề, hai node mệnh đề và plugin định danh statement.
  */
 export const trueFalseExtensions = [
   ...plainTextExtensions.filter((extension) => extension.name !== 'doc'),
@@ -187,11 +172,9 @@ export const trueFalseExtensions = [
 ];
 
 /**
- * Tách tài liệu đúng/sai thành phần thân câu (stem) và danh sách mệnh
- * đề (mẫu `splitTrueFalseDocument` của giaokhoa). Phần stem là tài
- * liệu thuần KHÔNG còn node `statementList`; phần mệnh đề là các node
- * statement theo đúng thứ tự trong tài liệu — thứ tự này là thứ tự
- * trình bày mệnh đề (a, b, c, d) ở mọi bề mặt.
+ * Tách tài liệu đúng/sai thành phần thân câu (stem) và danh sách mệnh đề (mẫu `splitTrueFalseDocument` của giaokhoa).
+ * Phần stem là tài liệu thuần KHÔNG còn node `statementList`; phần mệnh đề là các node statement theo đúng thứ tự trong
+ * tài liệu — thứ tự này là thứ tự trình bày mệnh đề (a, b, c, d) ở mọi bề mặt.
  *
  * @param content - Tài liệu đúng/sai (soạn hoặc đã lưu).
  * @returns `stem` là tài liệu thân câu và `statements` là các mệnh
@@ -265,13 +248,10 @@ export function createEmptyTrueFalseDocument(): TrueFalseDocumentJson {
 }
 
 /**
- * Chuẩn hoá một thân câu đúng/sai ĐÃ LƯU thành tài liệu phía soạn
- * (chiều nạp lên editor): tài liệu hợp đồng vốn đã mang sẵn danh sách
- * mệnh đề — hàm này chỉ là lưới an toàn cho dữ liệu lạ/thiếu: tài
- * liệu chưa chốt đuôi bằng `statementList` thì gắn một danh sách
- * mệnh đề rỗng; danh sách thiếu mệnh đề thì đệm mệnh đề rỗng có id
- * mới; thừa thì giữ {@link TRUE_FALSE_STATEMENT_COUNT} mệnh đề đầu
- * theo thứ tự. Mệnh đề đã có giữ nguyên id và nội dung.
+ * Chuẩn hoá một thân câu đúng/sai ĐÃ LƯU thành tài liệu phía soạn (chiều nạp lên editor): tài liệu hợp đồng vốn đã mang
+ * sẵn danh sách mệnh đề — hàm này chỉ là lưới an toàn cho dữ liệu lạ/thiếu: tài liệu chưa chốt đuôi bằng
+ * `statementList` thì gắn một danh sách mệnh đề rỗng; danh sách thiếu mệnh đề thì đệm mệnh đề rỗng có id mới; thừa thì
+ * giữ {@link TRUE_FALSE_STATEMENT_COUNT} mệnh đề đầu theo thứ tự. Mệnh đề đã có giữ nguyên id và nội dung.
  *
  * @param questionText - Tài liệu thân câu của phiên bản (rỗng/`null`
  *   thì đệm một paragraph rỗng + danh sách mệnh đề rỗng).
@@ -299,12 +279,10 @@ export function composeTrueFalseDocument(
 }
 
 /**
- * Một tài liệu đúng/sai đã sẵn sàng để lưu hay chưa, theo đúng luật
- * hợp đồng phía API: thân câu có nội dung, đủ
- * {@link TRUE_FALSE_STATEMENT_COUNT} mệnh đề đều có nội dung, và MỌI
- * mệnh đề đều đã có đáp án Đúng/Sai trong bản đồ đáp án. Dùng để bề
- * mặt chứa quyết định trạng thái nút lưu/cảnh báo tại chỗ; cổng cứng
- * vẫn là kiểm tra ở contracts + tầng nghiệp vụ phía API.
+ * Một tài liệu đúng/sai đã sẵn sàng để lưu hay chưa, theo đúng luật hợp đồng phía API: thân câu có nội dung, đủ {@link
+ * TRUE_FALSE_STATEMENT_COUNT} mệnh đề đều có nội dung, và MỌI mệnh đề đều đã có đáp án Đúng/Sai trong bản đồ đáp án.
+ * Dùng để bề mặt chứa quyết định trạng thái nút lưu/cảnh báo tại chỗ; cổng cứng vẫn là kiểm tra ở contracts + tầng
+ * nghiệp vụ phía API.
  *
  * @param content - Tài liệu đúng/sai cần kiểm.
  * @param answers - Bản đồ đáp án theo id mệnh đề (`true` = Đúng,

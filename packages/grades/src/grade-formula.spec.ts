@@ -82,7 +82,8 @@ describe('GradeFormula — bộ phân tích/đánh giá chuẩn (tính toán đi
       expect(e).toBeInstanceOf(GradeFormulaError);
       expect((e as GradeFormulaError).reason).toBe('unknown_function');
     }
-    expect(() => parseGradeFormula('=[[a]]; process.exit(1)')).toThrow(GradeFormulaError); // không eval: ký tự lạ bị token hoá từ chối
+    // không eval: ký tự lạ bị token hoá từ chối
+    expect(() => parseGradeFormula('=[[a]]; process.exit(1)')).toThrow(GradeFormulaError);
   });
 
   it('power: =power([[a]],2) = 6400; =power(2,10) = 1024; đối số trống → null; cơ số âm mũ phân số (NaN) → null', () => {

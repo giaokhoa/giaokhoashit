@@ -61,7 +61,10 @@ export interface DashboardNewResultView {
 export interface DashboardGradingQueueView {
   courseId: string;
   courseName: string;
-  /** Tổng việc chờ của khoá = bài nộp + lượt quiz chờ chấm tay + phiếu giấy chờ (ba trường *Pending tách bạch từng loại). */
+  /**
+   * Tổng việc chờ của khoá = bài nộp + lượt quiz chờ chấm tay + phiếu giấy chờ (ba trường *Pending tách bạch từng
+   * loại).
+   */
   pendingCount: number;
   assignmentPending: number;
   quizPending: number;

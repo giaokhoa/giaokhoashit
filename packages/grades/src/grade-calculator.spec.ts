@@ -18,10 +18,9 @@ import { calculateCategory, letterForGrade, type CalcItemInput } from './grade-c
  *    mode(0.7, 0.7, 0.25, 1.0, 0.7) = 0.7 --> 70/100"
  *  - Ví dụ tính sẵn của Weighted mean (tài liệu giảng dạy suy ra từ MoodleDocs):
  *    các điểm 90%, 70%, 85%, 89% với các trọng số 1,2,1,2 ⇒ 493/6 = 82.167%.
- * Các ca weight-redistribution, drop-lowest, exclude-empty và freeze
- * cài đặt các quy tắc nêu trong report §2.1 (phân phối lại đủ 100%, điểm trống
- * ≠ 0 làm thay đổi mẫu số, freeze sau penalty/multiplicator) với
- * số học được tính từ chính các quy tắc đó.
+ * Các ca weight-redistribution, drop-lowest, exclude-empty và freeze cài đặt các quy tắc nêu trong report §2.1 (phân
+ * phối lại đủ 100%, điểm trống ≠ 0 làm thay đổi mẫu số, freeze sau penalty/multiplicator) với số học được tính từ chính
+ * các quy tắc đó.
  */
 
 let nextId = 1;

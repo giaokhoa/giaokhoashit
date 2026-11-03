@@ -59,7 +59,10 @@ export const createSpaceRegistrationSchema = z.strictObject({
 });
 export type CreateSpaceRegistration = z.infer<typeof createSpaceRegistrationSchema>;
 
-/** Cập nhật dòng đăng ký: tên hiển thị trên sổ, kho đích, chế độ kho, tham chiếu kết nối/bí mật, phiên bản schema, gói. Slug và loại không gian là định danh — không sửa qua đường này. */
+/**
+ * Cập nhật dòng đăng ký: tên hiển thị trên sổ, kho đích, chế độ kho, tham chiếu kết nối/bí mật, phiên bản schema, gói.
+ * Slug và loại không gian là định danh — không sửa qua đường này.
+ */
 export const updateSpaceRegistrationSchema = z.strictObject({
   name: z.string().min(1).max(200).optional(),
   databaseName: z.string().min(1).max(120).optional(),
@@ -115,14 +118,19 @@ export const updateSpaceSchemaRegistrySchema = z.strictObject({
 });
 export type UpdateSpaceSchemaRegistry = z.infer<typeof updateSpaceSchemaRegistrySchema>;
 
-/** Kết quả một bước của một lượt chạy migration — khung tối thiểu, công cụ ghi lượt (issue #586) được thêm trường riêng. */
+/**
+ * Kết quả một bước của một lượt chạy migration — khung tối thiểu, công cụ ghi lượt (issue #586) được thêm trường riêng.
+ */
 export const spaceSchemaMigrationStepSchema = z.looseObject({
   name: z.string(),
   status: z.string(),
   detail: z.string().optional(),
 });
 
-/** Ghi một lượt chạy migration trên kho của một không gian. Lượt `success` có `toVersion` sẽ nâng phiên bản hiện tại của kho lên `toVersion`. */
+/**
+ * Ghi một lượt chạy migration trên kho của một không gian. Lượt `success` có `toVersion` sẽ nâng phiên bản hiện tại của
+ * kho lên `toVersion`.
+ */
 export const recordSpaceSchemaMigrationRunSchema = z.strictObject({
   runId: z.string().min(1).max(120),
   fromVersion: z.string().max(120).nullable().optional(),
