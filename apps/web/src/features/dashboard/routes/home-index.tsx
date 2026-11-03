@@ -9,7 +9,9 @@ import type {
   Role,
   UserListResponse,
 } from '@lms/contracts';
+import { redirect } from 'react-router';
 import { useAuth } from '#lib/auth';
+import { tenantAliasForHostname } from '#features/auth/kc-tenant';
 import { HomePage } from '../components/home';
 import { DashboardSkeleton } from '../components/dashboard-skeleton';
 import { queryKeys } from '#lib/query-keys';
@@ -55,6 +57,12 @@ import { MyBadgeView } from '#features/badges/types/badges';
  * @returns Dehydrated state cho HydrationBoundary ở root.
  */
 export async function loader({ request }: { request: Request }): Promise<SsrLoaderData> {
+  // Hai hostname tenant nghiệm thu Keycloak (issue #38): trang gốc
+  // của các host này là trang tenant, không phải mặt công khai/tổng
+  // quan của app — chuyển thẳng sang route tenant trước mọi prefetch.
+  if (tenantAliasForHostname(new URL(request.url).hostname)) {
+    throw redirect('/tenant');
+  }
   return buildSsrLoaderData(request, async (queryClient, req) => {
     const range = upcomingDaysRangeIso(30);
     await Promise.all([

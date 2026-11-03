@@ -20,4 +20,13 @@ export default [
 export const standaloneRoutes = [
   route('mcp-login', 'routes/mcp-login.tsx'),
   route('mcp-consent', 'routes/mcp-consent.tsx'),
+  // Nhóm route tenant Keycloak (issue #38): cũng nằm ngoài shell —
+  // trang tenant là mặt nghiệm thu độc lập với phiên Better Auth của
+  // app (phiên ở đây là phiên phía web của luồng OIDC với Keycloak);
+  // ba route login/callback/logout xử lý toàn bộ ở loader và luôn kết
+  // thúc bằng chuyển hướng (component chỉ là mặt dự phòng).
+  route('tenant', 'routes/tenant.tsx'),
+  route('tenant/login', 'routes/tenant-login.tsx'),
+  route('tenant/callback', 'routes/tenant-callback.tsx'),
+  route('tenant/logout', 'routes/tenant-logout.tsx'),
 ] satisfies RouteConfig;

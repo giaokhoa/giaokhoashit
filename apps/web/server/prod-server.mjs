@@ -150,6 +150,15 @@ const PRERENDERED_DOCUMENTS = new Map([
 /** Mẫu nhận diện cookie phiên Better Auth — cùng mẫu với loader gốc phía app (bản https có tiền tố `__Secure-`). */
 const SESSION_COOKIE_PATTERN = /(?:^|;\s*)(?:__Secure-)?better-auth\.session_token=/;
 
+/**
+ * Hai hostname tenant nghiệm thu Keycloak (issue #38): trang gốc `/`
+ * của các host này do SSR quyết định (loader trang gốc chuyển sang
+ * trang tenant theo Host), nên bản prerender của `/` — vốn dựng cho
+ * mặt công khai của host chính — không bao giờ được phục vụ cho
+ * chúng, kể cả với request ẩn danh.
+ */
+const TENANT_HOSTNAMES = new Set(['trung-tam-1.fuckr.net', 'trung-tam-2.fuckr.net']);
+
 /** Phục vụ file tĩnh từ build/client; trả true nếu đã xử lý. */
 async function tryStatic(req, res) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return false;
@@ -163,6 +172,15 @@ async function tryStatic(req, res) {
   const documentPath = urlPath.length > 1 ? urlPath.replace(/\/+$/, '') : urlPath;
   const prerenderedFile = PRERENDERED_DOCUMENTS.get(documentPath);
   if (prerenderedFile && SESSION_COOKIE_PATTERN.test(req.headers.cookie ?? '')) return false;
+  // Host tenant nghiệm thu: `/` phải xuống SSR để loader phân giải
+  // theo Host — cùng luật bất biến với luật phiên ở trên.
+  if (
+    prerenderedFile &&
+    documentPath === '/' &&
+    TENANT_HOSTNAMES.has((req.headers.host ?? '').split(':')[0].toLowerCase())
+  ) {
+    return false;
+  }
   const filePath = normalize(join(clientDir, prerenderedFile ?? urlPath));
   if (!filePath.startsWith(normalize(clientDir))) return false;
   try {
