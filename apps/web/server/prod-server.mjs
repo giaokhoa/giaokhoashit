@@ -131,6 +131,20 @@ const PRERENDERED_DOCUMENTS = new Map([
 /** Mẫu nhận diện cookie phiên Better Auth — cùng mẫu với loader gốc phía app (bản https có tiền tố `__Secure-`). */
 const SESSION_COOKIE_PATTERN = /(?:^|;\s*)(?:__Secure-)?better-auth\.session_token=/;
 
+/**
+ * Hai hostname tenant nghiệm thu Keycloak (issue #38): trang gốc `/`
+ * của các host này do SSR quyết định (loader trang gốc chuyển sang
+ * trang tenant theo Host), nên bản prerender của `/` — vốn dựng cho
+ * mặt công khai của host chính — không bao giờ được phục vụ cho
+ * chúng, kể cả với request ẩn danh.
+ */
+const TENANT_HOSTNAMES = new Set(['trung-tam-1.fuckr.net', 'trung-tam-2.fuckr.net']);
+
+/** Request có thuộc một hostname tenant nghiệm thu hay không (Host đã bỏ cổng, không phân biệt hoa thường). */
+function isTenantRequest(req) {
+  return TENANT_HOSTNAMES.has((req.headers.host ?? '').split(':')[0].toLowerCase());
+}
+
 async function tryStatic(req, res) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return false;
   const urlPath = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
@@ -141,6 +155,11 @@ async function tryStatic(req, res) {
   const documentPath = urlPath.length > 1 ? urlPath.replace(/\/+$/, '') : urlPath;
   const prerenderedFile = PRERENDERED_DOCUMENTS.get(documentPath);
   if (prerenderedFile && SESSION_COOKIE_PATTERN.test(req.headers.cookie ?? '')) return false;
+  // Host tenant nghiệm thu: `/` phải xuống SSR để loader phân giải
+  // theo Host — cùng luật bất biến với luật phiên ở trên.
+  if (prerenderedFile && documentPath === '/' && isTenantRequest(req)) {
+    return false;
+  }
   const filePath = normalize(join(clientDir, prerenderedFile ?? urlPath));
   if (!filePath.startsWith(normalize(clientDir))) return false;
   try {
@@ -159,8 +178,17 @@ async function tryStatic(req, res) {
     // Tài liệu HTML tĩnh (gồm bản prerender) mang cùng header bảo mật như tài liệu SSR — xem security-headers.mjs. Đặt
     // qua object header của writeHead vì đường tĩnh không đi qua ServerResponse.setHeader như đường SSR.
     if (type.startsWith('text/html')) {
-      const docRes = { setHeader: (name, value) => { headers[name] = value; } };
-      applyDocumentSecurityHeaders(docRes);
+      const docRes = {
+        setHeader: (name, value) => {
+          headers[name] = value;
+        },
+      };
+      // Tài liệu trên hostname tenant dùng biến thể CSP cho adapter Keycloak; trang silent check-sso (tài liệu
+      // tĩnh duy nhất phải sống trong iframe ẩn của chính app) dùng biến thể cho phép nhúng cùng origin.
+      applyDocumentSecurityHeaders(docRes, {
+        keycloakTenant: isTenantRequest(req),
+        silentCheckSso: urlPath === '/silent-check-sso.html',
+      });
     }
     let payload = body;
     // Nén CHỈ ở đường tĩnh này (F-12 của #133): SSR streaming và proxy không đi qua đây. File text đủ lớn + client chấp
@@ -189,8 +217,9 @@ const server = createServer(async (req, res) => {
     if (await tryStatic(req, res)) return;
     // Mọi đáp ứng còn lại là tài liệu SSR của React Router (kèm các đáp ứng dữ kiện điều hướng của nó): gắn header bảo
     // mật tài liệu TRƯỚC khi giao cho listener — header đặt bằng setHeader được giữ nguyên khi listener gọi writeHead
-    // với bộ header của riêng nó (không có CSP) — xem security-headers.mjs.
-    applyDocumentSecurityHeaders(res);
+    // với bộ header của riêng nó (không có CSP) — xem security-headers.mjs. Tài liệu trên hostname tenant mang biến
+    // thể CSP cho adapter Keycloak.
+    applyDocumentSecurityHeaders(res, { keycloakTenant: isTenantRequest(req) });
     return ssrListener(req, res);
   } catch (error) {
     console.error('[ssr] request error', error);

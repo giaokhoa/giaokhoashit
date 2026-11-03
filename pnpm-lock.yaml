@@ -471,6 +471,9 @@ importers:
       katex:
         specifier: ^0.18.10
         version: 0.18.10
+      keycloak-js:
+        specifier: 26.2.5
+        version: 26.2.5
       lucide-react:
         specifier: ^1.61.0
         version: 1.61.0(@types/react@19.3.0)(react@19.3.1)
@@ -4377,6 +4380,9 @@ packages:
   katex@0.18.10:
     resolution: {integrity: sha512-/B6p9eY9DX7aHBfpkHdpirDTZ5QH9xTwL9y837PWuzuv41O5jFdqNQwVQEQsimY0/iVNkwBY4+4hMfhQ7d4Dbw==}
     hasBin: true
+
+  keycloak-js@26.2.5:
+    resolution: {integrity: sha512-iTR3hmYXlGZbBTskgr2PrGIfIzLrts8nwja2+D1gW6Q/S83C487rhM+WvPV9dxqXv81N0QwNG9BJAM60eDQ1Yw==}
 
   keyv@5.6.0:
     resolution: {integrity: sha512-CYDD3SOtsHtyXeEORYRx2qBtpDJFjRTGXUtmNEMGyzYOKj1TE3tycdlho7kA1Ufx9OYWZzg52QFBGALTirzDSw==}
@@ -9817,6 +9823,8 @@ snapshots:
   katex@0.18.10:
     dependencies:
       commander: 15.0.0
+
+  keycloak-js@26.2.5: {}
 
   keyv@5.6.0:
     dependencies:
