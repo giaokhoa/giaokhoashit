@@ -12,17 +12,15 @@ import {
 } from './types';
 
 /**
- * Truy vết nguồn của một dòng gán vai (Moodle: cột `component`/`itemid`
- * của `role_assignments` — enrol plugin ghi component là tên plugin và
- * itemid là id của enrol instance). Gán tay qua API quản trị và các gán
- * hệ thống khác để component rỗng + itemId null.
+ * Truy vết nguồn của một dòng gán vai (Moodle: cột `component`/`itemid` của `role_assignments` — enrol plugin ghi
+ * component là tên plugin và itemid là id của enrol instance). Gán tay qua API quản trị và các gán hệ thống khác để
+ * component rỗng + itemId null.
  */
 export interface AssignmentSource {
   component: string;
   itemId?: string | null;
 }
 
-/** Component đánh dấu dòng gán vai do một ghi danh (enrol instance) cấp. */
 export const ENROL_ASSIGNMENT_COMPONENT = 'enrol';
 
 /** Dòng gán vai này có do ghi danh cấp hay không (quyết định chốt gỡ ở `unassignRole`). */
@@ -31,30 +29,18 @@ export function isEnrolManagedAssignment(assignment: { component?: string | null
 }
 
 /**
- * Lõi gán/gỡ vai dùng chung (trích từ tầng Access của API): gán một
- * vai cho một người dùng tại một context, với đủ hai điểm chặn vốn
- * gác đường gán — điểm chặn SLOT gói trung tâm (gán vai giảng dạy
- * làm tăng slot của tenant thì chặn khi đã chạm hạn mức) và chốt
- * TÁCH VAI chiều ngược (gán vai giảng dạy không do ghi danh cấp cho
- * người đang là học viên đang hoạt động trong khoá bị context bao
- * phủ thì chặn) — cùng nguyên tắc vô hiệu hoá cache quyền: MỌI thay
- * đổi về gán vai đều bump dấu version của context liên quan qua
- * {@link markContextDirty}, vì phép đánh giá quyền của host cache
- * kết quả theo khoá nhúng dấu version của path; thiếu lần bump này,
- * quyền vừa gán/vừa gỡ vẫn qua cổng từ cache cho tới khi mục cache
- * hết hạn.
+ * Lõi gán/gỡ vai dùng chung (trích từ tầng Access của API): gán một vai cho một người dùng tại một context, với đủ hai
+ * điểm chặn vốn gác đường gán — điểm chặn SLOT gói trung tâm (gán vai giảng dạy làm tăng slot của tenant thì chặn khi
+ * đã chạm hạn mức) và chốt TÁCH VAI chiều ngược (gán vai giảng dạy không do ghi danh cấp cho người đang là học viên
+ * đang hoạt động trong khoá bị context bao phủ thì chặn) — cùng nguyên tắc vô hiệu hoá cache quyền: MỌI thay đổi về gán
+ * vai đều bump dấu version của context liên quan qua {@link markContextDirty}, vì phép đánh giá quyền của host cache
+ * kết quả theo khoá nhúng dấu version của path; thiếu lần bump này, quyền vừa gán/vừa gỡ vẫn qua cổng từ cache cho tới
+ * khi mục cache hết hạn.
  *
- * Sự kiện `role_assigned`/`role_unassigned` cho logstore được phát
- * qua cổng outbox của host, trong transaction ngắn riêng như bề mặt
- * API hiện hành.
+ * Sự kiện `role_assigned`/`role_unassigned` cho logstore được phát qua cổng outbox của host, trong transaction ngắn
+ * riêng như bề mặt API hiện hành.
  */
 export class RoleAssignmentCore {
-  /**
-   * @param db - tay cầm Kysely của host.
-   * @param outbox - cổng ghi outbox của host.
-   * @param planLimits - lõi giới hạn slot dùng chung.
-   * @param roleSeparation - lõi tách vai dùng chung.
-   */
   constructor(
     private readonly db: EnrolDatabase,
     private readonly outbox: SharedOutboxPort,
@@ -64,8 +50,6 @@ export class RoleAssignmentCore {
 
   /**
    * Lấy role theo id; ném lỗi `access.role_not_found` khi vắng.
-   *
-   * @param roleId - id của role.
    * @throws SharedDomainError mã `access.role_not_found`.
    */
   async getRoleOrThrow(roleId: string): Promise<RoleRow> {

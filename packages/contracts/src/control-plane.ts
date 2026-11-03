@@ -2,10 +2,9 @@ import { z } from 'zod';
 import { uuidIdSchema } from './ids.js';
 
 /**
- * Hợp đồng API của CONTROL PLANE (issue #580, chương trình tenant #579):
- * sổ đăng ký không gian (trung tâm / Trang chính) mà platform dùng để
- * biết mỗi không gian đang sống ở kho dữ liệu nào, cộng registry phiên
- * bản schema của từng kho đã đăng ký.
+ * Hợp đồng API của CONTROL PLANE (issue #580, chương trình tenant #579): sổ đăng ký không gian (trung tâm / Trang
+ * chính) mà platform dùng để biết mỗi không gian đang sống ở kho dữ liệu nào, cộng registry phiên bản schema của từng
+ * kho đã đăng ký.
  *
  * Ranh giới nghiệp vụ của tầng này:
  * - Sổ chỉ giữ bản ghi định tuyến tối thiểu (định danh địa chỉ, kho
@@ -103,10 +102,9 @@ export const spaceSchemaRegistrySchema = z.object({
 export type SpaceSchemaRegistry = z.infer<typeof spaceSchemaRegistrySchema>;
 
 /**
- * Ghi trạng thái schema của một kho (khung trường): phiên bản hiện tại
- * và trạng thái sao lưu/khôi phục. Cơ chế tự động ghi bởi công cụ
- * fleet thuộc issue #586; ở đây dữ kiện được ghi qua API quản trị.
- * Mốc thời gian dùng `z.iso.datetime` theo chuẩn hợp đồng của repo.
+ * Ghi trạng thái schema của một kho (khung trường): phiên bản hiện tại và trạng thái sao lưu/khôi phục. Cơ chế tự động
+ * ghi bởi công cụ fleet thuộc issue #586; ở đây dữ kiện được ghi qua API quản trị. Mốc thời gian dùng `z.iso.datetime`
+ * theo chuẩn hợp đồng của repo.
  */
 export const updateSpaceSchemaRegistrySchema = z.strictObject({
   currentVersion: z.string().max(120).nullable().optional(),

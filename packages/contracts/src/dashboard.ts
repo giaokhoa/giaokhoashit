@@ -2,11 +2,9 @@ import { z } from 'zod';
 import { uuidIdSchema } from './ids.js';
 
 /**
- * Contracts của Dashboard việc cần làm (DASH1, issue #121 — Đợt 6):
- * endpoint tổng hợp cho khối đầu dashboard + tuỳ chọn thẻ khoá cá nhân.
- * Mọi mốc thời gian trong schema route đều là chuỗi ISO (`z.iso.datetime`)
- * — không dùng `z.date()`/`z.coerce.date()` (sẽ làm Swagger createDocument
- * chết lúc boot production).
+ * Contracts của Dashboard việc cần làm (DASH1, issue #121 — Đợt 6): endpoint tổng hợp cho khối đầu dashboard + tuỳ chọn
+ * thẻ khoá cá nhân. Mọi mốc thời gian trong schema route đều là chuỗi ISO (`z.iso.datetime`) — không dùng
+ * `z.date()`/`z.coerce.date()` (sẽ làm Swagger createDocument chết lúc boot production).
  */
 
 /** Bảng màu cố định cho thẻ khoá — token màu, không nhận CSS tự do. */
@@ -19,7 +17,6 @@ export type CourseCardColor = (typeof COURSE_CARD_COLORS)[number];
 /** Cửa sổ hạn nộp mặc định của khối việc cần làm (ngày). */
 export const DASHBOARD_DUE_WINDOW_DAYS = 7;
 
-/** Query của GET /dashboard/overview — cửa sổ hạn nộp là tham số rõ ràng. */
 export const dashboardOverviewQuerySchema = z.strictObject({
   days: z.coerce.number().int().min(1).max(30).default(DASHBOARD_DUE_WINDOW_DAYS),
 });
@@ -39,10 +36,8 @@ export interface DashboardDueItemView {
   cmId: string;
   /** Id của instance hoạt động (quiz id / assignment id) — đích của liên kết "làm ngay" (ĐX-5). */
   activityId: string;
-  /** quiz | assignment. */
   kind: 'quiz' | 'assignment';
   name: string;
-  /** Hạn nộp (ISO). */
   dueAt: string;
   status: 'not_started' | 'in_progress' | 'overdue';
 }
@@ -59,7 +54,6 @@ export interface DashboardNewResultView {
   finalGrade: number | null;
   gradeMax: number | null;
   feedback: string | null;
-  /** Mốc thay đổi/công bố (ISO). */
   changedAt: string;
 }
 
@@ -72,15 +66,13 @@ export interface DashboardGradingQueueView {
   assignmentPending: number;
   quizPending: number;
   /**
-   * Phiếu giấy CAM-0 đang chờ xử lý của khoá (trạng thái needs_review +
-   * needs_identity) — đếm tách bạch với bài nộp/lượt quiz, KHÔNG gộp vào
-   * assignmentPending/quizPending (nối DASH1 ← CAM-0, issue #187).
+   * Phiếu giấy CAM-0 đang chờ xử lý của khoá (trạng thái needs_review + needs_identity) — đếm tách bạch với bài
+   * nộp/lượt quiz, KHÔNG gộp vào assignmentPending/quizPending (nối DASH1 ← CAM-0, issue #187).
    */
   paperPending: number;
   /**
-   * Quiz có phiếu giấy chờ LÂU NHẤT của khoá — đích deep-link tới bề mặt
-   * rà soát CAM (/courses/:courseId/exams/:paperPinId/paper);
-   * null khi paperPending = 0.
+   * Quiz có phiếu giấy chờ LÂU NHẤT của khoá — đích deep-link tới bề mặt rà soát CAM
+   * (/courses/:courseId/exams/:paperPinId/paper); null khi paperPending = 0.
    */
   paperPinId: string | null;
   /** Bài chờ lâu nhất (ISO, tính cả phiếu giấy); null khi hàng đợi rỗng. */
@@ -98,7 +90,6 @@ export interface DashboardOverviewView {
   gradingQueue: DashboardGradingQueueView[];
 }
 
-/** Tuỳ chọn thẻ khoá của chính người dùng cho một khoá. */
 export interface CourseCardPrefView {
   courseId: string;
   color: CourseCardColor | null;

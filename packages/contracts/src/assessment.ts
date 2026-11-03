@@ -12,10 +12,9 @@ import {
 /** Contract đánh giá — nguồn shape duy nhất giữa api và web cho điểm & câu hỏi. */
 
 /**
- * Mục điểm — ĐIỂM THEO TỪNG BÀI (issue #224): mỗi mục là điểm của đúng
- * một hoạt động (itemType 'mod', itemInstance = course module) hoặc một
- * mục nhập tay ('manual'). Không còn category/letters/scales/outcomes,
- * không còn điểm tổng khoá.
+ * Mục điểm — ĐIỂM THEO TỪNG BÀI (issue #224): mỗi mục là điểm của đúng một hoạt động (itemType 'mod', itemInstance =
+ * course module) hoặc một mục nhập tay ('manual'). Không còn category/letters/scales/outcomes, không còn điểm tổng
+ * khoá.
  */
 export const gradeItemSchema = z.object({
   id: uuidIdSchema,
@@ -78,8 +77,8 @@ export const myActivityGradesSchema = z.object({
 export type MyActivityGrades = z.infer<typeof myActivityGradesSchema>;
 
 /**
- * Lưới CHỈ-ĐỌC học sinh × các bài cho giáo viên (issue #224): mỗi ô là
- * điểm của đúng bài đó; KHÔNG điểm tổng, KHÔNG trọng số, KHÔNG chốt.
+ * Lưới CHỈ-ĐỌC học sinh × các bài cho giáo viên (issue #224): mỗi ô là điểm của đúng bài đó; KHÔNG điểm tổng, KHÔNG
+ * trọng số, KHÔNG chốt.
  */
 export const courseActivityGridSchema = z.object({
   courseId: uuidIdSchema,
@@ -93,8 +92,6 @@ export const courseActivityGridSchema = z.object({
 });
 export type CourseActivityGrid = z.infer<typeof courseActivityGridSchema>;
 
-// --- Questions ---------------------------------------------------------------
-
 export const questionCategorySchema = z.object({
   id: uuidIdSchema,
   name: z.string(),
@@ -105,14 +102,11 @@ export const questionCategorySchema = z.object({
 export type QuestionCategory = z.infer<typeof questionCategorySchema>;
 
 /**
- * Một phiên bản nội dung câu hỏi như API trả về: `questionText` và
- * `generalFeedback` luôn là tài liệu Tiptap (đầu vào dạng chuỗi đã được
- * chuẩn hoá ở tầng nghiệp vụ). `guidance` KHÔNG còn nằm ở phiên bản:
- * hướng dẫn đã chuyển sang phía đáp án (`questionAnswerKeyViewSchema`)
- * theo quyết 12:12 ngày 26/10/2026. `stimulusId` trỏ tới ngữ liệu dùng
- * chung mà phiên bản tham chiếu (`null` khi câu hỏi không gắn ngữ
- * liệu); đáp án và options KHÔNG nằm ở đây mà tách ra ở cấp view (xem
- * `questionViewSchema`).
+ * Một phiên bản nội dung câu hỏi như API trả về: `questionText` và `generalFeedback` luôn là tài liệu Tiptap (đầu vào
+ * dạng chuỗi đã được chuẩn hoá ở tầng nghiệp vụ). `guidance` KHÔNG còn nằm ở phiên bản: hướng dẫn đã chuyển sang phía
+ * đáp án (`questionAnswerKeyViewSchema`) theo quyết 12:12 ngày 26/10/2026. `stimulusId` trỏ tới ngữ liệu dùng chung mà
+ * phiên bản tham chiếu (`null` khi câu hỏi không gắn ngữ liệu); đáp án và options KHÔNG nằm ở đây mà tách ra ở cấp view
+ * (xem `questionViewSchema`).
  */
 export const questionVersionSchema = z.object({
   id: uuidIdSchema,
@@ -128,11 +122,9 @@ export const questionVersionSchema = z.object({
 export type QuestionVersion = z.infer<typeof questionVersionSchema>;
 
 /**
- * Một đáp án của một phiên bản câu hỏi như API trả về (bảng
- * `question_answers` dùng chung mọi qtype): nội dung đáp án và feedback
- * đều là tài liệu Tiptap; `isCorrect` là cờ đúng/sai NHỊ PHÂN — tỉ
- * trọng (fraction) đã BỎ HẲN theo quyết 12:04 ngày 26/10/2026 (đáp án
- * chỉ đúng hoặc sai; multichoice đúng một đáp án đúng).
+ * Một đáp án của một phiên bản câu hỏi như API trả về (bảng `question_answers` dùng chung mọi qtype): nội dung đáp án
+ * và feedback đều là tài liệu Tiptap; `isCorrect` là cờ đúng/sai NHỊ PHÂN — tỉ trọng (fraction) đã BỎ HẲN theo quyết
+ * 12:04 ngày 26/10/2026 (đáp án chỉ đúng hoặc sai; multichoice đúng một đáp án đúng).
  */
 export const questionAnswerViewSchema = z.object({
   id: uuidIdSchema,
@@ -180,14 +172,11 @@ export const questionSolutionSchema = z.union([
 export type QuestionSolution = z.infer<typeof questionSolutionSchema>;
 
 /**
- * Bản ghi phía đáp án của một phiên bản câu hỏi (bảng
- * `question_answer_keys`, quan hệ 1-1 với version — quyết 12:12 ngày
- * 26/10/2026): `guidance` là HƯỚNG DẪN (gợi ý cách làm cho học sinh,
- * hiện kèm câu hỏi trong lúc làm bài — điểm quyết D-4), `solution` là
- * LỜI GIẢI đầy đủ (chỉ hiện ở màn xem lại theo cổng xem lại của lần
- * ghim). Cả hai nằm CÙNG ngữ cảnh phân quyền với đáp án: bản ghi này
- * chỉ đi trong view dành cho phía có quyền đáp án, học sinh không bao
- * giờ nhận nó qua question view.
+ * Bản ghi phía đáp án của một phiên bản câu hỏi (bảng `question_answer_keys`, quan hệ 1-1 với version — quyết 12:12
+ * ngày 26/10/2026): `guidance` là HƯỚNG DẪN (gợi ý cách làm cho học sinh, hiện kèm câu hỏi trong lúc làm bài — điểm
+ * quyết D-4), `solution` là LỜI GIẢI đầy đủ (chỉ hiện ở màn xem lại theo cổng xem lại của lần ghim). Cả hai nằm CÙNG
+ * ngữ cảnh phân quyền với đáp án: bản ghi này chỉ đi trong view dành cho phía có quyền đáp án, học sinh không bao giờ
+ * nhận nó qua question view.
  */
 export const questionAnswerKeyViewSchema = z.object({
   guidance: richTextDocumentSchema.nullable(),
@@ -218,17 +207,15 @@ export const questionSolutionInputSchema = z.union([
 export type QuestionSolutionInput = z.infer<typeof questionSolutionInputSchema>;
 
 /**
- * Options của một phiên bản câu hỏi ở view: bản ghi phẳng theo qtype do
- * tầng nghiệp vụ dựng từ bảng options riêng của qtype đó (`null` khi
- * phiên bản không có options).
+ * Options của một phiên bản câu hỏi ở view: bản ghi phẳng theo qtype do tầng nghiệp vụ dựng từ bảng options riêng của
+ * qtype đó (`null` khi phiên bản không có options).
  */
 export const questionOptionsViewSchema = z.record(z.string(), z.unknown()).nullable();
 export type QuestionOptionsView = z.infer<typeof questionOptionsViewSchema>;
 
 /**
- * Một ngữ liệu dùng chung (stimulus) như API trả về: thực thể độc lập gắn
- * với một question category, nội dung là một tài liệu Tiptap; nhiều phiên
- * bản câu hỏi có thể cùng tham chiếu một stimulus qua `stimulusId`.
+ * Một ngữ liệu dùng chung (stimulus) như API trả về: thực thể độc lập gắn với một question category, nội dung là một
+ * tài liệu Tiptap; nhiều phiên bản câu hỏi có thể cùng tham chiếu một stimulus qua `stimulusId`.
  */
 export const stimulusViewSchema = z.object({
   id: uuidIdSchema,
@@ -240,13 +227,10 @@ export const stimulusViewSchema = z.object({
 export type StimulusView = z.infer<typeof stimulusViewSchema>;
 
 /**
- * View đầy đủ của một câu hỏi: định danh + phiên bản mới nhất, kèm danh
- * sách đáp án, options và bản ghi phía đáp án (`answerKey`: guidance +
- * solution) của chính phiên bản đó, và `stimulus` là ngữ liệu đã gắn
- * của phiên bản mới nhất (tầng nghiệp vụ nạp sẵn từ
- * `latestVersion.stimulusId`; `null` khi phiên bản không gắn ngữ liệu).
- * Câu hỏi KHÔNG có trường tên (quyết 11:28 + 12:04 ngày 26/10/2026):
- * nhãn hiển thị ở các bề mặt là trích đoạn nội dung câu hỏi.
+ * View đầy đủ của một câu hỏi: định danh + phiên bản mới nhất, kèm danh sách đáp án, options và bản ghi phía đáp án
+ * (`answerKey`: guidance + solution) của chính phiên bản đó, và `stimulus` là ngữ liệu đã gắn của phiên bản mới nhất
+ * (tầng nghiệp vụ nạp sẵn từ `latestVersion.stimulusId`; `null` khi phiên bản không gắn ngữ liệu). Câu hỏi KHÔNG có
+ * trường tên (quyết 11:28 + 12:04 ngày 26/10/2026): nhãn hiển thị ở các bề mặt là trích đoạn nội dung câu hỏi.
  */
 export const questionViewSchema = z.object({
   question: z.object({
@@ -305,16 +289,12 @@ export const questionUsageSchema = z.object({
 });
 export type QuestionUsage = z.infer<typeof questionUsageSchema>;
 
-/* ---- Request payload schemas (Zod — nguồn sự thật duy nhất) ---- */
-
 /**
- * Một tiêu chí hoàn thành khoá học: loại tiêu chí + tham số riêng theo loại
- * (đủ 8 loại của Moodle: module, date, grade, self, course, duration, role,
- * unenrol). `courseInstance` là khoá tiên quyết của loại `course`;
- * `enrolPeriodDays` là số ngày sau ghi danh của loại `duration`; `roleId`
- * là vai trò được quyền duyệt hoàn thành của loại `role`. Loại `self` và
- * `unenrol` không có tham số. Tính bắt buộc của từng tham số do tầng nghiệp
- * vụ kiểm (theo loại), không nằm ở schema này.
+ * Một tiêu chí hoàn thành khoá học: loại tiêu chí + tham số riêng theo loại (đủ 8 loại của Moodle: module, date, grade,
+ * self, course, duration, role, unenrol). `courseInstance` là khoá tiên quyết của loại `course`; `enrolPeriodDays` là
+ * số ngày sau ghi danh của loại `duration`; `roleId` là vai trò được quyền duyệt hoàn thành của loại `role`. Loại
+ * `self` và `unenrol` không có tham số. Tính bắt buộc của từng tham số do tầng nghiệp vụ kiểm (theo loại), không nằm ở
+ * schema này.
  */
 export const completionCriterionSchema = z.strictObject({
   criteriaType: z.string(),
@@ -326,7 +306,6 @@ export const completionCriterionSchema = z.strictObject({
 });
 export type CompletionCriterion = z.infer<typeof completionCriterionSchema>;
 
-/** Payload đặt bộ tiêu chí hoàn thành cho một khoá học. */
 export const setCompletionCriteriaSchema = z.strictObject({
   method: z.number().int().optional(),
   criteria: z.array(completionCriterionSchema),
@@ -340,8 +319,8 @@ export const markCourseSelfCompletionSchema = z.strictObject({
 export type MarkCourseSelfCompletion = z.infer<typeof markCourseSelfCompletionSchema>;
 
 /**
- * Payload người giữ vai trò chỉ định trong tiêu chí `role` đánh dấu/bỏ đánh
- * dấu hoàn thành cho một học viên (manual completion by others của Moodle).
+ * Payload người giữ vai trò chỉ định trong tiêu chí `role` đánh dấu/bỏ đánh dấu hoàn thành cho một học viên (manual
+ * completion by others của Moodle).
  */
 export const markCourseCriteriaCompletionSchema = z.strictObject({
   userId: uuidIdSchema,
@@ -349,7 +328,6 @@ export const markCourseCriteriaCompletionSchema = z.strictObject({
 });
 export type MarkCourseCriteriaCompletion = z.infer<typeof markCourseCriteriaCompletionSchema>;
 
-/** Payload đánh dấu hoàn thành thủ công cho một course module. */
 export const markManualCompletionSchema = z.strictObject({
   userId: uuidIdSchema,
   complete: z.boolean(),
@@ -371,7 +349,6 @@ export const createGradeItemSchema = z.strictObject({
 });
 export type CreateGradeItem = z.infer<typeof createGradeItemSchema>;
 
-/** Payload sửa mục điểm (mọi trường đều tuỳ chọn); */
 export const updateGradeItemSchema = z.strictObject({
   itemName: z.string().optional(),
   gradeMax: z.number().optional(),
@@ -406,11 +383,10 @@ export const updateGradeSchema = z.strictObject({
 export type UpdateGrade = z.infer<typeof updateGradeSchema>;
 
 /**
- * Payload xuất bảng điểm ra Excel theo cấu trúc vnEdu/TT 22/2021 (issue #53; nguồn là điểm đã công bố của các bài GV chọn — issue #224):
- * giáo viên ánh xạ tường minh từng mục điểm lá sang một loại cột — các mục
- * thường xuyên (hệ số 1, ít nhất 1), đúng một mục giữa kỳ (hệ số 2) và một
- * mục cuối kỳ (hệ số 3). `semester` là học kỳ 1 hoặc 2; tên lớp/môn/năm học
- * bỏ trống thì phía server lấy mặc định từ khoá học.
+ * Payload xuất bảng điểm ra Excel theo cấu trúc vnEdu/TT 22/2021 (issue #53; nguồn là điểm đã công bố của các bài GV
+ * chọn — issue #224): giáo viên ánh xạ tường minh từng mục điểm lá sang một loại cột — các mục thường xuyên (hệ số 1,
+ * ít nhất 1), đúng một mục giữa kỳ (hệ số 2) và một mục cuối kỳ (hệ số 3). `semester` là học kỳ 1 hoặc 2; tên
+ * lớp/môn/năm học bỏ trống thì phía server lấy mặc định từ khoá học.
  */
 export const exportGradesVneduSchema = z.strictObject({
   regularItemIds: z.array(uuidIdSchema).min(1),
@@ -428,13 +404,11 @@ export const gradeExportProviderSchema = z.enum(['vnedu']);
 export type GradeExportProvider = z.infer<typeof gradeExportProviderSchema>;
 
 /**
- * Payload xuất điểm tại path đích `POST /courses/:courseId/grade-exports`
- * (áp chuẩn đường dẫn module điểm, issue #342): nhà cung cấp xuất là dữ
- * liệu nằm trong thân yêu cầu (trường `provider`), KHÔNG nằm trong path
- * như path cũ `POST /courses/:courseId/grades/export/vnedu`. Phần còn lại
- * của payload giữ đúng khuôn của nhà cung cấp tương ứng — với
- * `provider: 'vnedu'` là khuôn `exportGradesVneduSchema` nguyên vẹn:
- * định dạng và nội dung file xuất không đổi, chỉ đổi nơi khai nhà cung cấp.
+ * Payload xuất điểm tại path đích `POST /courses/:courseId/grade-exports` (áp chuẩn đường dẫn module điểm, issue #342):
+ * nhà cung cấp xuất là dữ liệu nằm trong thân yêu cầu (trường `provider`), KHÔNG nằm trong path như path cũ `POST
+ * /courses/:courseId/grades/export/vnedu`. Phần còn lại của payload giữ đúng khuôn của nhà cung cấp tương ứng — với
+ * `provider: 'vnedu'` là khuôn `exportGradesVneduSchema` nguyên vẹn: định dạng và nội dung file xuất không đổi, chỉ đổi
+ * nơi khai nhà cung cấp.
  */
 export const exportGradesSchema = z.strictObject({
   provider: gradeExportProviderSchema,
@@ -442,7 +416,6 @@ export const exportGradesSchema = z.strictObject({
 });
 export type ExportGrades = z.infer<typeof exportGradesSchema>;
 
-/** Payload tạo danh mục câu hỏi trong ngân hàng câu hỏi. */
 export const createQuestionCategorySchema = z.strictObject({
   name: z.string().min(1),
   contextId: uuidIdSchema,
@@ -454,13 +427,10 @@ export const createQuestionCategorySchema = z.strictObject({
 export type CreateQuestionCategory = z.infer<typeof createQuestionCategorySchema>;
 
 /**
- * Một đáp án trong payload tạo/sửa câu hỏi: nội dung rich text, cờ
- * `correct` cho biết đáp án này là đáp án ĐÚNG (vắng mặt = không
- * đúng) — đáp án chỉ đúng/sai nhị phân, KHÔNG còn tỉ trọng
- * `fraction` (quyết 12:04 ngày 26/10/2026). `feedback` rich text tuỳ
- * chọn hiện riêng cho đáp án này. Riêng shortanswer: mọi đáp án liệt
- * kê đều là đáp án ĐƯỢC CHẤP NHẬN (khớp = đúng trọn), không có khái
- * niệm đáp án đúng một phần.
+ * Một đáp án trong payload tạo/sửa câu hỏi: nội dung rich text, cờ `correct` cho biết đáp án này là đáp án ĐÚNG (vắng
+ * mặt = không đúng) — đáp án chỉ đúng/sai nhị phân, KHÔNG còn tỉ trọng `fraction` (quyết 12:04 ngày 26/10/2026).
+ * `feedback` rich text tuỳ chọn hiện riêng cho đáp án này. Riêng shortanswer: mọi đáp án liệt kê đều là đáp án ĐƯỢC
+ * CHẤP NHẬN (khớp = đúng trọn), không có khái niệm đáp án đúng một phần.
  */
 export const questionAnswerInputSchema = z.strictObject({
   text: richTextInputSchema,
@@ -470,19 +440,14 @@ export const questionAnswerInputSchema = z.strictObject({
 export type QuestionAnswerInput = z.infer<typeof questionAnswerInputSchema>;
 
 /**
- * Options theo qtype trong payload tạo/sửa câu hỏi — mọi trường đều tuỳ
- * chọn, tầng nghiệp vụ chỉ lấy các trường thuộc về qtype của câu hỏi:
- * multichoice (`shuffleAnswers`, `answerNumbering`,
- * `showStandardInstruction`, feedback đúng/sai theo mức câu), truefalse
- * (`showStandardInstruction`), shortanswer (`useCase` + cờ đáp án số
- * `numericAnswer`/`numericMaxLength`/`numericAllowSign`/
- * `numericAllowDecimal` — mặc định tắt, điểm 6.3.3 issue #30), essay
- * (`responseFormat`, `responseRequired`, `responseFieldLines`,
- * `minWordLimit`, `maxWordLimit`, `graderInfo`, `responseTemplate`).
- * Đã BỎ hẳn theo mô hình giaokhoa (quyết 12:04 + điểm quyết D-5 ngày
- * 26/10/2026): `single` (multichoice luôn chọn MỘT đáp án — không còn
- * chế độ chọn nhiều), `showNumCorrect` và `partiallyCorrectFeedback`
- * (chỉ có nghĩa khi còn điểm từng phần theo tỉ trọng).
+ * Options theo qtype trong payload tạo/sửa câu hỏi — mọi trường đều tuỳ chọn, tầng nghiệp vụ chỉ lấy các trường thuộc
+ * về qtype của câu hỏi: multichoice (`shuffleAnswers`, `answerNumbering`, `showStandardInstruction`, feedback đúng/sai
+ * theo mức câu), truefalse (`showStandardInstruction`), shortanswer (`useCase` + cờ đáp án số
+ * `numericAnswer`/`numericMaxLength`/`numericAllowSign`/ `numericAllowDecimal` — mặc định tắt, điểm 6.3.3 issue #30),
+ * essay (`responseFormat`, `responseRequired`, `responseFieldLines`, `minWordLimit`, `maxWordLimit`, `graderInfo`,
+ * `responseTemplate`). Đã BỎ hẳn theo mô hình giaokhoa (quyết 12:04 + điểm quyết D-5 ngày 26/10/2026): `single`
+ * (multichoice luôn chọn MỘT đáp án — không còn chế độ chọn nhiều), `showNumCorrect` và `partiallyCorrectFeedback` (chỉ
+ * có nghĩa khi còn điểm từng phần theo tỉ trọng).
  */
 export const questionOptionsInputSchema = z.strictObject({
   shuffleAnswers: z.boolean().optional(),
@@ -506,17 +471,12 @@ export const questionOptionsInputSchema = z.strictObject({
 export type QuestionOptionsInput = z.infer<typeof questionOptionsInputSchema>;
 
 /**
- * Payload tạo câu hỏi theo bốn qtype (`multichoice`, `truefalse`,
- * `shortanswer`, `essay`) — mô hình giaokhoa (quyết 12:04 ngày
- * 26/10/2026): câu hỏi KHÔNG có tên; `questionText` nhận chuỗi thuần
- * hoặc tài liệu Tiptap; đáp án truyền qua `answers` (mỗi đáp án mang
- * cờ `correct` đúng/sai nhị phân, KHÔNG tỉ trọng) + `options` theo
- * qtype và được tầng nghiệp vụ bung ra các bảng đáp án/options riêng.
- * `guidance` là HƯỚNG DẪN (tầng nghiệp vụ ghi vào bản ghi phía đáp án
- * `question_answer_keys`, quyết 12:12); `solution` là phía đáp án do
- * người soạn gửi lên (lời giải mẫu của essay; đáp án từng mệnh đề của
- * truefalse). Dạng payload cũ `answer` (truefalse {correct} /
- * shortanswer {answers}) đã BỎ HẲN.
+ * Payload tạo câu hỏi theo bốn qtype (`multichoice`, `truefalse`, `shortanswer`, `essay`) — mô hình giaokhoa (quyết
+ * 12:04 ngày 26/10/2026): câu hỏi KHÔNG có tên; `questionText` nhận chuỗi thuần hoặc tài liệu Tiptap; đáp án truyền qua
+ * `answers` (mỗi đáp án mang cờ `correct` đúng/sai nhị phân, KHÔNG tỉ trọng) + `options` theo qtype và được tầng nghiệp
+ * vụ bung ra các bảng đáp án/options riêng. `guidance` là HƯỚNG DẪN (tầng nghiệp vụ ghi vào bản ghi phía đáp án
+ * `question_answer_keys`, quyết 12:12); `solution` là phía đáp án do người soạn gửi lên (lời giải mẫu của essay; đáp án
+ * từng mệnh đề của truefalse). Dạng payload cũ `answer` (truefalse {correct} / shortanswer {answers}) đã BỎ HẲN.
  *
  * Luật phía đáp án kiểm ngay tại schema (thay luật "tổng fraction =
  * 1" của mô hình cũ):
@@ -555,8 +515,8 @@ export const createQuestionSchema = z
   .superRefine((input, ctx) => {
     const answers = input.answers ?? [];
     const correctCount = answers.filter((a) => a.correct === true).length;
-    // Danh sách mệnh đề là hình dạng riêng của thân câu đúng/sai chùm:
-    // xuất hiện trong thân câu của qtype khác là payload sai hình dạng.
+    // Danh sách mệnh đề là hình dạng riêng của thân câu đúng/sai chùm: xuất hiện trong thân câu của qtype khác là
+    // payload sai hình dạng.
     if (input.qtype !== 'truefalse' && typeof input.questionText !== 'string'
       && richTextBlocksContainStatementList(input.questionText.content)) {
       ctx.addIssue({
@@ -581,8 +541,8 @@ export const createQuestionSchema = z
         });
       }
     } else if (input.qtype === 'truefalse') {
-      // TF-A: câu đúng/sai là MỘT câu chùm — thân câu mang 4 mệnh đề,
-      // đáp án từng mệnh đề đi qua solution.answers, không qua answers.
+      // TF-A: câu đúng/sai là MỘT câu chùm — thân câu mang 4 mệnh đề, đáp án từng mệnh đề đi qua solution.answers,
+      // không qua answers.
       if (answers.length > 0) {
         ctx.addIssue({
           code: 'custom',

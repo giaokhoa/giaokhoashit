@@ -1,6 +1,6 @@
 /**
- * Bề mặt dùng chung của sự kiện outbox `auth_mail_requested` (aggregate
- * `auth`): hợp đồng payload + hàm dựng nội dung mail auth.
+ * Bề mặt dùng chung của sự kiện outbox `auth_mail_requested` (aggregate `auth`): hợp đồng payload + hàm dựng nội dung
+ * mail auth.
  *
  * Đây là điểm nối giữa hai tiến trình qua bảng `outbox_events`:
  * - Phía API (các callback của Better Auth qua cổng ghi outbox) chỉ
@@ -11,24 +11,18 @@
  *   dựng nội dung mail bằng {@link renderAuthMail} rồi gọi transport
  *   Resend của phía worker.
  *
- * Template và hợp đồng payload chỉ có ĐÚNG MỘT bản cài đặt ở đây để
- * hai phía không lệch nhau: cấm sao chép logic dựng mail vào từng
- * app. Nội dung mail (tiêu đề, câu chữ, hạn hiệu lực công bố với
- * người dùng) là một phần của hợp đồng này — đổi nội dung là đổi
- * hành vi nghiệp vụ của luồng auth, không phải việc của các issue
- * chuyển consumer.
+ * Template và hợp đồng payload chỉ có ĐÚNG MỘT bản cài đặt ở đây để hai phía không lệch nhau: cấm sao chép logic dựng
+ * mail vào từng app. Nội dung mail (tiêu đề, câu chữ, hạn hiệu lực công bố với người dùng) là một phần của hợp đồng này
+ * — đổi nội dung là đổi hành vi nghiệp vụ của luồng auth, không phải việc của các issue chuyển consumer.
  */
 
 /**
- * Payload của một yêu cầu gửi mail đặt lại mật khẩu, ghi vào outbox
- * (bảng `outbox_events`, type `auth_mail_requested`).
+ * Payload của một yêu cầu gửi mail đặt lại mật khẩu, ghi vào outbox (bảng `outbox_events`, type `auth_mail_requested`).
  *
- * Payload mang nội dung NHẠY CẢM theo đúng bản chất của nó (liên kết
- * reset chứa token): token là bí mật DÙNG MỘT LẦN và sống ngắn (reset
- * 1 giờ) theo cấu hình của Better Auth — cùng mức bảo vệ với chính
- * bảng `verification` của Better Auth, nơi token reset cũng nằm
- * trong DB. Consumer đọc payload, dựng nội dung mail bằng các hàm
- * trong file này rồi mới gọi transport.
+ * Payload mang nội dung NHẠY CẢM theo đúng bản chất của nó (liên kết reset chứa token): token là bí mật DÙNG MỘT LẦN và
+ * sống ngắn (reset 1 giờ) theo cấu hình của Better Auth — cùng mức bảo vệ với chính bảng `verification` của Better
+ * Auth, nơi token reset cũng nằm trong DB. Consumer đọc payload, dựng nội dung mail bằng các hàm trong file này rồi mới
+ * gọi transport.
  */
 export interface PasswordResetMailPayload {
   kind: 'password_reset';
@@ -51,11 +45,9 @@ export interface EmailOtpMailPayload {
 export type AuthMailPayload = PasswordResetMailPayload | EmailOtpMailPayload;
 
 /**
- * Một bức mail auth đã dựng xong từ payload: người nhận, tiêu đề và
- * nội dung ở cả hai dạng text (luôn có) và HTML. Hình dạng này khớp
- * bề mặt nhận của transport Resend ở cả hai phía (API và worker) —
- * nơi gửi chỉ việc truyền thẳng kết quả dựng vào transport của phía
- * mình.
+ * Một bức mail auth đã dựng xong từ payload: người nhận, tiêu đề và nội dung ở cả hai dạng text (luôn có) và HTML. Hình
+ * dạng này khớp bề mặt nhận của transport Resend ở cả hai phía (API và worker) — nơi gửi chỉ việc truyền thẳng kết quả
+ * dựng vào transport của phía mình.
  */
 export interface RenderedAuthMail {
   /** Địa chỉ email người nhận (một người nhận cho mỗi bức mail). */
@@ -80,7 +72,6 @@ function escapeHtml(value: string): string {
     .replaceAll('"', '&quot;');
 }
 
-/** Dựng nội dung mail (tiêu đề + text + html tối thiểu) từ payload outbox. */
 export function renderAuthMail(payload: AuthMailPayload): RenderedAuthMail {
   if (payload.kind === 'password_reset') {
     const subject = 'Đặt lại mật khẩu tài khoản LMS';

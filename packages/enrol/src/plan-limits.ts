@@ -3,12 +3,10 @@ import { SharedDomainError } from './errors';
 import type { EnrolDatabase, PlatformScopeRunner } from './types';
 
 /**
- * Giá trị KHỞI TẠO của các khoá cấu hình hạn mức slot (component
- * `payments` trong registry của site-config). Đây là bản dự phòng khi
- * kho cấu hình chưa có ghi đè nào: phải khớp `defaultValue` đã đăng
- * ký trong settings registry — quản trị đổi giá trị trong Cài đặt hệ
- * thống thì giá trị lưu trong cơ sở dữ liệu thắng, code không ghim
- * con số hiệu lực nào khác.
+ * Giá trị KHỞI TẠO của các khoá cấu hình hạn mức slot (component `payments` trong registry của site-config). Đây là bản
+ * dự phòng khi kho cấu hình chưa có ghi đè nào: phải khớp `defaultValue` đã đăng ký trong settings registry — quản trị
+ * đổi giá trị trong Cài đặt hệ thống thì giá trị lưu trong cơ sở dữ liệu thắng, code không ghim con số hiệu lực nào
+ * khác.
  */
 const SLOT_CONFIG_DEFAULTS = {
   tenantplanslots: 30,
@@ -20,76 +18,54 @@ const SLOT_CONFIG_DEFAULTS = {
 type SlotConfigName = keyof typeof SLOT_CONFIG_DEFAULTS;
 
 /**
- * Archetype của vai trò GIẢNG DẠY theo đặc tả slot đã duyệt: vai trò
- * có quyền soạn khoá/giao đề cho học viên. `manager` (quản lý trung
- * tâm), `coursecreator`, `student`, `guest`, `user` không phải vai
- * trò giảng dạy và không bao giờ tính slot.
+ * Archetype của vai trò GIẢNG DẠY theo đặc tả slot đã duyệt: vai trò có quyền soạn khoá/giao đề cho học viên. `manager`
+ * (quản lý trung tâm), `coursecreator`, `student`, `guest`, `user` không phải vai trò giảng dạy và không bao giờ tính
+ * slot.
  */
 export const TEACHING_ROLE_ARCHETYPES = ['editingteacher', 'teacher'] as const;
 
-/** Hạn mức hiệu lực đã phân giải cho một bên hưởng gói. */
 export interface EffectivePlanLimit {
-  /** Số slot tối đa được phép ở thời điểm hiện tại. */
   limit: number;
   /** Đang trong thời gian ân hạn của gói vừa hết hạn (vẫn áp hạn mức gói). */
   inGracePeriod: boolean;
-  /** Có gói đang hoạt động trong cửa sổ hiệu lực. */
   hasActivePlan: boolean;
 }
 
-/** Dữ kiện đếm slot của một người dùng trong một tenant. */
 export interface TenantSlotFacts {
-  /** Membership tại tenant đang ở trạng thái `active`. */
   membershipActive: boolean;
   /** Tài khoản không bị đình chỉ và chưa bị xoá. */
   accountActive: boolean;
-  /** Đang giữ ít nhất một dòng gán vai trò giảng dạy trong cây context của tenant. */
   holdsTeachingRole: boolean;
   /** Đang được đếm là một slot của tenant (đủ cả ba điều kiện trên). */
   counted: boolean;
 }
 
 /**
- * Lõi thực thi GIỚI HẠN SLOT của hai gói dùng chung (trích từ tầng
- * Access của API để mọi bề mặt vật chất hoá ghi danh — API hôm nay,
- * worker khi nó dựng consumer đồng bộ cohort — áp đúng một định
- * nghĩa đếm slot và một điểm chặn).
+ * Lõi thực thi GIỚI HẠN SLOT của hai gói dùng chung (trích từ tầng Access của API để mọi bề mặt vật chất hoá ghi danh —
+ * API hôm nay, worker khi nó dựng consumer đồng bộ cohort — áp đúng một định nghĩa đếm slot và một điểm chặn).
  *
- * Luồng nghiệp vụ tổng quát: gói trung tâm bán theo số TÀI KHOẢN
- * GIẢNG DẠY của trung tâm, gói giáo viên bán theo số KHOÁ HỌC giáo
- * viên làm chủ. Cả hai hạn mức đều là CẤU HÌNH HỆ THỐNG (component
- * `payments`, xem {@link SLOT_CONFIG_DEFAULTS}) — lõi này chỉ thực
- * thi: đếm số đang dùng theo định nghĩa đã duyệt, phân giải hạn mức
- * hiệu lực (gói đang hoạt động → hạn mức gói; hết hạn chưa quá số
- * ngày ân hạn `plangracedays` → vẫn hạn mức gói; còn lại → mức nền)
- * và CHẶN hành động làm tăng slot khi đã chạm hạn mức. Hành động bị
- * chặn không thay đổi bất kỳ thực thể đang có nào (không khoá/đình
- * chỉ/xoá giáo viên hay khoá học vượt mức).
+ * Luồng nghiệp vụ tổng quát: gói trung tâm bán theo số TÀI KHOẢN GIẢNG DẠY của trung tâm, gói giáo viên bán theo số
+ * KHOÁ HỌC giáo viên làm chủ. Cả hai hạn mức đều là CẤU HÌNH HỆ THỐNG (component `payments`, xem {@link
+ * SLOT_CONFIG_DEFAULTS}) — lõi này chỉ thực thi: đếm số đang dùng theo định nghĩa đã duyệt, phân giải hạn mức hiệu lực
+ * (gói đang hoạt động → hạn mức gói; hết hạn chưa quá số ngày ân hạn `plangracedays` → vẫn hạn mức gói; còn lại → mức
+ * nền) và CHẶN hành động làm tăng slot khi đã chạm hạn mức. Hành động bị chặn không thay đổi bất kỳ thực thể đang có
+ * nào (không khoá/đình chỉ/xoá giáo viên hay khoá học vượt mức).
  *
- * Vị trí đặt định nghĩa: tầng chung thấp nhất mà cả bốn bề mặt điểm
- * chặn (gán vai trò, membership, tài khoản, tạo khoá) đều phụ thuộc
- * vào. Lõi đọc dữ liệu xuyên bounded context bằng truy vấn Kysely
- * trực tiếp qua kho trung tâm, và bọc các lượt đọc đếm slot
- * trong ngữ cảnh platform do host cấp (cổng
- * {@link PlatformScopeRunner}) vì đếm slot là nghiệp vụ chính sách
- * của platform: ở ngữ cảnh của một tenant, RLS sẽ che membership
- * của tenant khác và làm sai số đếm.
+ * Vị trí đặt định nghĩa: tầng chung thấp nhất mà cả bốn bề mặt điểm chặn (gán vai trò, membership, tài khoản, tạo khoá)
+ * đều phụ thuộc vào. Lõi đọc dữ liệu xuyên bounded context bằng truy vấn Kysely trực tiếp qua kho trung tâm, và bọc các
+ * lượt đọc đếm slot trong ngữ cảnh platform do host cấp (cổng {@link PlatformScopeRunner}) vì đếm slot là nghiệp vụ
+ * chính sách của platform: ở ngữ cảnh của một tenant, RLS sẽ che membership của tenant khác và làm sai số đếm.
  */
 export class PlanLimitsCore {
-  /**
-   * @param db - tay cầm Kysely của host.
-   * @param runInPlatformScope - cổng chạy trong ngữ cảnh platform của host.
-   */
   constructor(
     private readonly db: EnrolDatabase,
     private readonly runInPlatformScope: PlatformScopeRunner,
   ) {}
 
   /**
-   * Đọc một khoá cấu hình hạn mức: giá trị quản trị đã lưu trong
-   * `plugin_config` (scope platform, tenant_id null) thắng; chưa có
-   * ghi đè hoặc giá trị lưu không hợp lệ (không phải số nguyên không
-   * âm) thì rơi về giá trị khởi tạo đã đăng ký trong registry.
+   * Đọc một khoá cấu hình hạn mức: giá trị quản trị đã lưu trong `plugin_config` (scope platform, tenant_id null)
+   * thắng; chưa có ghi đè hoặc giá trị lưu không hợp lệ (không phải số nguyên không âm) thì rơi về giá trị khởi tạo đã
+   * đăng ký trong registry.
    */
   private async readSlotConfig(name: SlotConfigName): Promise<number> {
     const row = await this.db
@@ -132,19 +108,15 @@ export class PlanLimitsCore {
   }
 
   /**
-   * Suy tenant sở hữu một context: context tenant là tổ tiên có
-   * `context_level = 20` trong `path` vật chất hoá của context (hoặc
-   * chính context đó). Trả null khi context không thuộc tenant nào
-   * (context hệ thống/người dùng ở tầng platform).
+   * Suy tenant sở hữu một context: context tenant là tổ tiên có `context_level = 20` trong `path` vật chất hoá của
+   * context (hoặc chính context đó). Trả null khi context không thuộc tenant nào (context hệ thống/người dùng ở tầng
+   * platform).
    */
   async tenantIdForContext(contextId: string, tx?: EnrolDatabase): Promise<string | null> {
-    // Bên gọi có thể truyền handle của một transaction Kysely đang
-    // mở để việc đọc thấy đúng trạng thái trong giao dịch đó; không
-    // truyền thì đọc qua handle mặc định của bề mặt. Handle này CHỈ
-    // là handle Kysely: đường transaction bộ máy cũ của API (createClass)
-    // được facade `PlanLimitsService` giữ lại ở nhánh riêng của nó
-    // (điểm nối chuyển tiếp, chủ đóng #651) — lõi này không bao giờ
-    // nhận handle bộ máy cũ.
+    // Bên gọi có thể truyền handle của một transaction Kysely đang mở để việc đọc thấy đúng trạng thái trong giao dịch
+    // đó; không truyền thì đọc qua handle mặc định của bề mặt. Handle này CHỈ là handle Kysely: đường transaction bộ
+    // máy cũ của API (createClass) được facade `PlanLimitsService` giữ lại ở nhánh riêng của nó (điểm nối chuyển tiếp,
+    // chủ đóng #651) — lõi này không bao giờ nhận handle bộ máy cũ.
     const db = tx ?? this.db;
     const row = await db.selectFrom('context').select(CONTEXT_COLUMNS_FOR_TENANT_ID).where('id', '=', contextId).executeTakeFirst();
     if (!row) return null;
@@ -162,7 +134,6 @@ export class PlanLimitsCore {
     return ancestors[0]?.instanceId ?? null;
   }
 
-  /** Context của chính tenant (level 20) — gốc cây context của tenant. */
   private async tenantContext(tenantId: string): Promise<{ id: string; path: string } | null> {
     const row = await this.db
       .selectFrom('context')
@@ -176,14 +147,11 @@ export class PlanLimitsCore {
   }
 
   /**
-   * Phân giải hạn mức hiệu lực của một bên hưởng gói tại thời điểm
-   * hiện tại, theo đúng luật đã duyệt: quyền lợi `active` còn trong
-   * cửa sổ [startsAt, expiresAt) → hạn mức gói; không còn quyền lợi
-   * đang hoạt động nhưng quyền lợi đã thật sự hết hạn gần nhất (mốc
-   * hết hạn không muộn hơn hiện tại) chưa quá `plangracedays` ngày
-   * → vẫn hạn mức gói (ân hạn); ngoài ra → mức nền. Quyền lợi có cửa
-   * sổ hoàn toàn trong tương lai chưa bắt đầu nên không phải mốc tính
-   * ân hạn. Quyền lợi đã bị đình chỉ (hoàn tiền) không mở ân hạn.
+   * Phân giải hạn mức hiệu lực của một bên hưởng gói tại thời điểm hiện tại, theo đúng luật đã duyệt: quyền lợi
+   * `active` còn trong cửa sổ [startsAt, expiresAt) → hạn mức gói; không còn quyền lợi đang hoạt động nhưng quyền lợi
+   * đã thật sự hết hạn gần nhất (mốc hết hạn không muộn hơn hiện tại) chưa quá `plangracedays` ngày → vẫn hạn mức gói
+   * (ân hạn); ngoài ra → mức nền. Quyền lợi có cửa sổ hoàn toàn trong tương lai chưa bắt đầu nên không phải mốc tính ân
+   * hạn. Quyền lợi đã bị đình chỉ (hoàn tiền) không mở ân hạn.
    */
   private async effectiveLimit(
     component: 'tenant_plan' | 'teacher_plan',
@@ -214,10 +182,9 @@ export class PlanLimitsCore {
     if (rows.some((r) => r.startsAt.getTime() <= now && now < r.expiresAt.getTime())) {
       return { limit: planLimit, inGracePeriod: false, hasActivePlan: true };
     }
-    // Ân hạn chỉ neo vào quyền lợi đã thật sự hết hạn. Không lấy mốc
-    // hết hạn của quyền lợi có cửa sổ trong tương lai: cửa sổ đó có
-    // thể phát sinh từ lần mua nối tiếp cộng dồn thời hạn, nhưng khi
-    // chưa bắt đầu thì không thể gia hạn hiệu lực cho hiện tại.
+    // Ân hạn chỉ neo vào quyền lợi đã thật sự hết hạn. Không lấy mốc hết hạn của quyền lợi có cửa sổ trong tương lai:
+    // cửa sổ đó có thể phát sinh từ lần mua nối tiếp cộng dồn thời hạn, nhưng khi chưa bắt đầu thì không thể gia hạn
+    // hiệu lực cho hiện tại.
     const lastExpiry = rows
       .map((r) => r.expiresAt.getTime())
       .filter((expiry) => expiry <= now)
@@ -228,23 +195,19 @@ export class PlanLimitsCore {
     return { limit: freeLimit, inGracePeriod: false, hasActivePlan: false };
   }
 
-  /** Hạn mức slot gói trung tâm hiệu lực của một tenant. */
   async effectiveTenantLimit(tenantId: string): Promise<EffectivePlanLimit> {
     return this.effectiveLimit('tenant_plan', { tenantId, userId: null }, 'tenantplanslots', 'tenantplanfreeslots');
   }
 
-  /** Hạn mức slot gói giáo viên hiệu lực của một giáo viên. */
   async effectiveTeacherLimit(userId: string): Promise<EffectivePlanLimit> {
     return this.effectiveLimit('teacher_plan', { tenantId: '', userId }, 'teacherplancourseslots', 'teacherplanfreecourseslots');
   }
 
   /**
-   * Dữ kiện đếm slot của một người dùng trong một tenant: membership
-   * đang `active` hay không, tài khoản có đang hoạt động hay không,
-   * và có giữ vai trò giảng dạy ở bất kỳ context nào trong cây của
-   * tenant hay không (context của tenant hoặc mọi context con — danh
-   * mục, lớp, khoá học). `counted` là hợp của cả ba điều kiện, đúng
-   * định nghĩa 1 slot của gói trung tâm đã duyệt.
+   * Dữ kiện đếm slot của một người dùng trong một tenant: membership đang `active` hay không, tài khoản có đang hoạt
+   * động hay không, và có giữ vai trò giảng dạy ở bất kỳ context nào trong cây của tenant hay không (context của tenant
+   * hoặc mọi context con — danh mục, lớp, khoá học). `counted` là hợp của cả ba điều kiện, đúng định nghĩa 1 slot của
+   * gói trung tâm đã duyệt.
    */
   async describeUserInTenant(tenantId: string, userId: string): Promise<TenantSlotFacts> {
     return this.runInPlatformScope(async () => {
@@ -274,10 +237,9 @@ export class PlanLimitsCore {
   }
 
   /**
-   * Người dùng có đang giữ ít nhất một dòng gán vai trò giảng dạy
-   * trong cây context của tenant hay không (không xét membership và
-   * trạng thái tài khoản — dùng cho các điểm chặn mà hành động đang
-   * thực hiện chính là khâu kích hoạt membership/tài khoản).
+   * Người dùng có đang giữ ít nhất một dòng gán vai trò giảng dạy trong cây context của tenant hay không (không xét
+   * membership và trạng thái tài khoản — dùng cho các điểm chặn mà hành động đang thực hiện chính là khâu kích hoạt
+   * membership/tài khoản).
    */
   async userHoldsTeachingRoleInTenant(tenantId: string, userId: string): Promise<boolean> {
     const tctx = await this.tenantContext(tenantId);

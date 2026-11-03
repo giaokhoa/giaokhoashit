@@ -57,9 +57,8 @@ export const courseSchema = z.object({
 export type Course = z.infer<typeof courseSchema>;
 
 /**
- * Trạng thái mở của section/module (K1): suy từ `visible` + `openAt` phía
- * server — `draft` = đang ẩn (visible=false), `scheduled` = đã mở nhưng
- * chờ tới ngày mở (openAt ở tương lai), `open` = đang mở cho học viên.
+ * Trạng thái mở của section/module (K1): suy từ `visible` + `openAt` phía server — `draft` = đang ẩn (visible=false),
+ * `scheduled` = đã mở nhưng chờ tới ngày mở (openAt ở tương lai), `open` = đang mở cho học viên.
  */
 export const courseItemStatusSchema = z.enum(['draft', 'open', 'scheduled']);
 export type CourseItemStatus = z.infer<typeof courseItemStatusSchema>;
@@ -147,10 +146,8 @@ export const cohortSchema = z.object({
 export type Cohort = z.infer<typeof cohortSchema>;
 
 /**
- * Grouping (nhóm các nhóm) trong một khoá học như API trả về — hàng của
- * bảng `groupings` phía groups module. Mốc thời gian để tuỳ chọn vì tầng
- * API trả thẳng hàng cơ sở dữ liệu và các bản ghi cũ có thể thiếu chúng
- * khi serialize.
+ * Grouping (nhóm các nhóm) trong một khoá học như API trả về — hàng của bảng `groupings` phía groups module. Mốc thời
+ * gian để tuỳ chọn vì tầng API trả thẳng hàng cơ sở dữ liệu và các bản ghi cũ có thể thiếu chúng khi serialize.
  */
 export const courseGroupingSchema = z.object({
   id: uuidIdSchema,
@@ -207,9 +204,6 @@ export type CourseCompletion = z.infer<typeof courseCompletionSchema>;
 /** JSON cây availability (shape của Moodle core_availability): các op & | !& !| với showc/show ở gốc. */
 export const availabilityOps = ['&', '|', '!&', '!|'] as const;
 
-/* ---- Request payload schemas (Zod — nguồn sự thật duy nhất) ---- */
-
-/** Payload tạo danh mục khoá học. */
 export const createCourseCategorySchema = z.strictObject({
   name: z.string().min(1),
   idNumber: z.string().optional(),
@@ -219,11 +213,9 @@ export const createCourseCategorySchema = z.strictObject({
 });
 export type CreateCourseCategory = z.infer<typeof createCourseCategorySchema>;
 
-/** Payload sửa danh mục khoá học (mọi trường đều tuỳ chọn). */
 export const updateCourseCategorySchema = createCourseCategorySchema.partial();
 export type UpdateCourseCategory = z.infer<typeof updateCourseCategorySchema>;
 
-/** Payload tạo khoá học. */
 export const createCourseSchema = z.strictObject({
   fullName: z.string().min(1),
   shortName: z.string().min(1),
@@ -279,11 +271,9 @@ export const createCourseSectionSchema = z.strictObject({
 });
 export type CreateCourseSection = z.infer<typeof createCourseSectionSchema>;
 
-/** Payload sửa section (mọi trường đều tuỳ chọn). */
 export const updateCourseSectionSchema = createCourseSectionSchema.partial();
 export type UpdateCourseSection = z.infer<typeof updateCourseSectionSchema>;
 
-/** Payload tạo course module trong một section. */
 export const createCourseModuleSchema = z.strictObject({
   sectionId: uuidIdSchema,
   component: z.string().min(1),
@@ -319,10 +309,9 @@ export const updateCourseModuleSchema = z.strictObject({
 export type UpdateCourseModule = z.infer<typeof updateCourseModuleSchema>;
 
 /**
- * Các loại nội dung giáo viên chọn từ menu trong Builder Outline (K1) —
- * thay cho ô gõ chuỗi `component` tự do. `createsInstance` cho biết loại
- * có vòng đời instance riêng (hiện chỉ quiz) nên builder phải tạo qua API
- * của module sở hữu thay vì tạo course module trần.
+ * Các loại nội dung giáo viên chọn từ menu trong Builder Outline (K1) — thay cho ô gõ chuỗi `component` tự do.
+ * `createsInstance` cho biết loại có vòng đời instance riêng (hiện chỉ quiz) nên builder phải tạo qua API của module sở
+ * hữu thay vì tạo course module trần.
  */
 export const COURSE_CONTENT_TYPES = [
   { component: 'mod_page', createsInstance: false },
@@ -381,13 +370,11 @@ export const updateGroupSchema = z.strictObject({
 });
 export type UpdateGroup = z.infer<typeof updateGroupSchema>;
 
-/** Payload thêm thành viên vào nhóm/cohort. */
 export const groupMemberSchema = z.strictObject({
   userId: uuidIdSchema,
 });
 export type GroupMember = z.infer<typeof groupMemberSchema>;
 
-/** Payload tạo grouping (nhóm các nhóm). */
 export const createGroupingSchema = z.strictObject({
   name: z.string().min(1),
   idNumber: z.string().optional(),
@@ -395,13 +382,11 @@ export const createGroupingSchema = z.strictObject({
 });
 export type CreateGrouping = z.infer<typeof createGroupingSchema>;
 
-/** Payload gắn một nhóm vào grouping. */
 export const groupingGroupSchema = z.strictObject({
   groupId: uuidIdSchema,
 });
 export type GroupingGroup = z.infer<typeof groupingGroupSchema>;
 
-/** Payload tạo cohort. */
 export const createCohortSchema = z.strictObject({
   name: z.string().min(1),
   idNumber: z.string().optional(),
@@ -411,7 +396,6 @@ export const createCohortSchema = z.strictObject({
 });
 export type CreateCohort = z.infer<typeof createCohortSchema>;
 
-/** Payload sửa cohort (mọi trường đều tuỳ chọn). */
 export const updateCohortSchema = z.strictObject({
   name: z.string().optional(),
   idNumber: z.string().optional(),
@@ -480,7 +464,6 @@ export const createPageSchema = z.strictObject({
 });
 export type CreatePage = z.infer<typeof createPageSchema>;
 
-/** Payload sửa trang đọc (mọi trường tuỳ chọn). */
 export const updatePageSchema = z.strictObject({
   name: z.string().min(1).optional(),
   content: z.string().optional(),

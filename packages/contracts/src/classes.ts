@@ -3,15 +3,12 @@ import { courseSchema } from './course.js';
 import { uuidIdSchema } from './ids.js';
 
 /**
- * Hợp đồng API của LỚP HỌC HẠNG NHẤT (issue #184, CLASS-0): lớp được tạo
- * TRƯỚC, khoá học nằm bên trong lớp; danh sách học sinh thuộc về lớp
- * (roster ≡ thành viên backing cohort) và tự vật chất hoá xuống mọi
- * khoá của lớp qua enrol instance cohort. Tạo lớp chỉ bắt buộc TÊN
- * (khuôn Azota). CLASS-3 bổ sung học phí theo lớp (`fee*` trên hình
- * dạng lớp + gói công khai để mua gói lớp ở cuối file): payment mang
- * `component = 'class_fee'`, `item_id = classes.id` qua seam thanh
- * toán sẵn có — hợp đồng payment nằm ở `platform.ts`, ở đây chỉ có
- * cấu hình học phí trên lớp và bề mặt công khai của gói lớp.
+ * Hợp đồng API của LỚP HỌC HẠNG NHẤT (issue #184, CLASS-0): lớp được tạo TRƯỚC, khoá học nằm bên trong lớp; danh sách
+ * học sinh thuộc về lớp (roster ≡ thành viên backing cohort) và tự vật chất hoá xuống mọi khoá của lớp qua enrol
+ * instance cohort. Tạo lớp chỉ bắt buộc TÊN (khuôn Azota). CLASS-3 bổ sung học phí theo lớp (`fee*` trên hình dạng lớp
+ * + gói công khai để mua gói lớp ở cuối file): payment mang `component = 'class_fee'`, `item_id = classes.id` qua seam
+ * thanh toán sẵn có — hợp đồng payment nằm ở `platform.ts`, ở đây chỉ có cấu hình học phí trên lớp và bề mặt công khai
+ * của gói lớp.
  */
 export const CLASS_ON_LEAVE_MODES = ['suspend', 'unenrol'] as const;
 export const CLASS_STATUSES = ['active', 'archived'] as const;
@@ -33,20 +30,17 @@ export const classSchema = z.object({
   status: z.enum(CLASS_STATUSES),
   description: z.string(),
   /**
-   * Học phí gói lớp (CLASS-3): số nguyên đơn vị nhỏ nhất (cùng bất biến
-   * tiền tệ của payments — không float). `null` hoặc 0 nghĩa là lớp
-   * KHÔNG thu học phí qua hệ thống: giá trị này chính là công tắc thu
-   * phí, không có cờ bật/tắt riêng.
+   * Học phí gói lớp (CLASS-3): số nguyên đơn vị nhỏ nhất (cùng bất biến tiền tệ của payments — không float). `null`
+   * hoặc 0 nghĩa là lớp KHÔNG thu học phí qua hệ thống: giá trị này chính là công tắc thu phí, không có cờ bật/tắt
+   * riêng.
    */
   feeCost: z.number().int().nullable(),
   /** Đơn vị tiền của học phí gói lớp (mặc định `VND` — thanh toán nội địa VietQR/SePay theo sổ quyết định mục E). */
   feeCurrency: z.string(),
   /**
-   * Tài khoản nhận học phí chỉ định riêng cho lớp; `null` = rơi về tài
-   * khoản mặc định của tenant sở hữu lớp (lớp của trung tâm → tài khoản
-   * của chính trung tâm; lớp của GV tự do ở trang chính → tài khoản
-   * platform). Chỉ là định danh tài khoản — cấu hình nhạy cảm của tài
-   * khoản vẫn bị che ở bề mặt payments.
+   * Tài khoản nhận học phí chỉ định riêng cho lớp; `null` = rơi về tài khoản mặc định của tenant sở hữu lớp (lớp của
+   * trung tâm → tài khoản của chính trung tâm; lớp của GV tự do ở trang chính → tài khoản platform). Chỉ là định danh
+   * tài khoản — cấu hình nhạy cảm của tài khoản vẫn bị che ở bề mặt payments.
    */
   feePaymentAccountId: uuidIdSchema.nullable(),
   createdAt: z.string(),
@@ -89,9 +83,8 @@ export const classListItemSchema = classSchema.extend({
 export type ClassListItem = z.infer<typeof classListItemSchema>;
 
 /**
- * Tạo lớp — chỉ `name` bắt buộc. `ownerId` chỉ dùng khi người tạo có
- * `tenant:manage` tại tenant (admin trung tâm/platform tạo lớp hộ giáo
- * viên); mặc định chủ lớp là chính người tạo.
+ * Tạo lớp — chỉ `name` bắt buộc. `ownerId` chỉ dùng khi người tạo có `tenant:manage` tại tenant (admin trung
+ * tâm/platform tạo lớp hộ giáo viên); mặc định chủ lớp là chính người tạo.
  */
 export const createClassSchema = z.strictObject({
   name: z.string().min(1).max(200),
@@ -103,15 +96,11 @@ export const createClassSchema = z.strictObject({
 export type CreateClass = z.infer<typeof createClassSchema>;
 
 /**
- * Sửa lớp: thông tin hiển thị + công tắc tự báo danh + chế độ khi rời
- * lớp; `rotateJoinCode: true` sinh mã tham gia mới (mã cũ mất hiệu lực
- * ngay). CLASS-3: cùng PATCH này đặt/đổi HỌC PHÍ gói lớp — gác bằng
- * capability `class:update` tại context lớp (chủ lớp giữ sẵn qua vai
- * editingteacher), không chế capability riêng cho học phí.
- * `feeCost: null` hoặc 0 = tắt thu học phí qua hệ thống.
- * `feePaymentAccountId: null` = gỡ chỉ định riêng, rơi về tài khoản mặc
- * định của tenant; tính hợp lệ của tài khoản (tồn tại + đúng tenant)
- * được kiểm ở lúc TẠO payment, cùng khuôn `enrol_fee`.
+ * Sửa lớp: thông tin hiển thị + công tắc tự báo danh + chế độ khi rời lớp; `rotateJoinCode: true` sinh mã tham gia mới
+ * (mã cũ mất hiệu lực ngay). CLASS-3: cùng PATCH này đặt/đổi HỌC PHÍ gói lớp — gác bằng capability `class:update` tại
+ * context lớp (chủ lớp giữ sẵn qua vai editingteacher), không chế capability riêng cho học phí. `feeCost: null` hoặc 0
+ * = tắt thu học phí qua hệ thống. `feePaymentAccountId: null` = gỡ chỉ định riêng, rơi về tài khoản mặc định của
+ * tenant; tính hợp lệ của tài khoản (tồn tại + đúng tenant) được kiểm ở lúc TẠO payment, cùng khuôn `enrol_fee`.
  */
 export const updateClassSchema = z.strictObject({
   name: z.string().min(1).max(200).optional(),
@@ -129,15 +118,12 @@ export const updateClassSchema = z.strictObject({
 export type UpdateClass = z.infer<typeof updateClassSchema>;
 
 /**
- * Một dòng roster của lớp (≡ một dòng cohort_members của backing
- * cohort) kèm thông tin hiển thị của tài khoản — bề mặt GV (CLASS-1)
- * cần tên/định danh để quản danh sách, không tra cứu thêm từng người.
- * Thu hẹp theo quyền của người gọi (phía server, hình dạng không
- * đổi): email là dữ kiện liên hệ phía quản trị và `username` của tài
- * khoản tạo qua đường nạp roster chính là số điện thoại, nên người
- * gọi KHÔNG có quyền quản roster của lớp nhận hai trường này dưới
- * dạng chuỗi rỗng — bạn học cùng lớp chỉ thấy họ tên nhau; người có
- * quyền quản roster (chủ lớp / vai quản roster) nhận đáp số đầy đủ.
+ * Một dòng roster của lớp (≡ một dòng cohort_members của backing cohort) kèm thông tin hiển thị của tài khoản — bề mặt
+ * GV (CLASS-1) cần tên/định danh để quản danh sách, không tra cứu thêm từng người. Thu hẹp theo quyền của người gọi
+ * (phía server, hình dạng không đổi): email là dữ kiện liên hệ phía quản trị và `username` của tài khoản tạo qua đường
+ * nạp roster chính là số điện thoại, nên người gọi KHÔNG có quyền quản roster của lớp nhận hai trường này dưới dạng
+ * chuỗi rỗng — bạn học cùng lớp chỉ thấy họ tên nhau; người có quyền quản roster (chủ lớp / vai quản roster) nhận đáp
+ * số đầy đủ.
  */
 export const classRosterMemberSchema = z.object({
   userId: uuidIdSchema,
@@ -155,21 +141,12 @@ export const addClassRosterMemberSchema = z.strictObject({
 });
 export type AddClassRosterMember = z.infer<typeof addClassRosterMemberSchema>;
 
-// ---------------------------------------------------------------------------
-// CLASS-1 (issue #184): bề mặt giáo viên — nạp roster theo định danh,
-// import Excel, phân quyền đồng GV tại context lớp, tự báo danh.
-// ---------------------------------------------------------------------------
-
 /**
- * Định danh một học sinh khi GV nạp roster bằng tay / qua file Excel
- * (mẫu Azota: Họ tên | SĐT | Email | Ngày sinh). Khớp tài khoản theo
- * EMAIL trước, không có email thì theo SĐT (= username); không khớp thì
- * hệ tạo tài khoản mới với mật khẩu tạm (buộc đổi ở lần đăng nhập đầu).
- * Phải có ít nhất một trong hai định danh email/SĐT — thiếu cả hai là lỗi
- * nghiệp vụ `class.roster_identity_missing` ở tầng service. `dateOfBirth`
- * chỉ là cột thông tin của file mẫu: hệ hiện không có trường ngày sinh
- * trên tài khoản nên giá trị này không được lưu (ghi rõ để không ai hiểu
- * nhầm là đã lưu).
+ * Định danh một học sinh khi GV nạp roster bằng tay / qua file Excel (mẫu Azota: Họ tên | SĐT | Email | Ngày sinh).
+ * Khớp tài khoản theo EMAIL trước, không có email thì theo SĐT (= username); không khớp thì hệ tạo tài khoản mới với
+ * mật khẩu tạm (buộc đổi ở lần đăng nhập đầu). Phải có ít nhất một trong hai định danh email/SĐT — thiếu cả hai là lỗi
+ * nghiệp vụ `class.roster_identity_missing` ở tầng service. `dateOfBirth` chỉ là cột thông tin của file mẫu: hệ hiện
+ * không có trường ngày sinh trên tài khoản nên giá trị này không được lưu (ghi rõ để không ai hiểu nhầm là đã lưu).
  */
 export const rosterStudentIdentitySchema = z.strictObject({
   fullName: z.string().min(1).max(200),
@@ -180,9 +157,8 @@ export const rosterStudentIdentitySchema = z.strictObject({
 export type RosterStudentIdentity = z.infer<typeof rosterStudentIdentitySchema>;
 
 /**
- * Kết quả nạp MỘT học sinh theo định danh: `matched` = khớp tài khoản có
- * sẵn, `created` = vừa tạo tài khoản mới (kèm mật khẩu tạm — chỉ trả
- * đúng lần này), `already_member` = tài khoản đã ở trong lớp từ trước.
+ * Kết quả nạp MỘT học sinh theo định danh: `matched` = khớp tài khoản có sẵn, `created` = vừa tạo tài khoản mới (kèm
+ * mật khẩu tạm — chỉ trả đúng lần này), `already_member` = tài khoản đã ở trong lớp từ trước.
  */
 export const addRosterStudentResultSchema = z.object({
   userId: uuidIdSchema,
@@ -256,10 +232,9 @@ export const setClassStaffRolesSchema = z.strictObject({
 export type SetClassStaffRoles = z.infer<typeof setClassStaffRolesSchema>;
 
 /**
- * Tự báo danh bằng mã tham gia (join_code). Luật chốt cứng (hồ sơ mục
- * 7.1): lớp TRỐNG (roster chưa có ai) thì vào thẳng; lớp đã có học sinh
- * thì vào HÀNG CHỜ duyệt, trừ khi chủ lớp bật `joinAutoApprove`. Mã chỉ
- * có hiệu lực khi lớp đang bật `allowSelfReport` và chưa lưu trữ.
+ * Tự báo danh bằng mã tham gia (join_code). Luật chốt cứng (hồ sơ mục 7.1): lớp TRỐNG (roster chưa có ai) thì vào
+ * thẳng; lớp đã có học sinh thì vào HÀNG CHỜ duyệt, trừ khi chủ lớp bật `joinAutoApprove`. Mã chỉ có hiệu lực khi lớp
+ * đang bật `allowSelfReport` và chưa lưu trữ.
  */
 export const joinClassByCodeSchema = z.strictObject({
   joinCode: z.string().min(4).max(40),
@@ -301,10 +276,8 @@ export const classJoinRequestSchema = z.object({
 export type ClassJoinRequest = z.infer<typeof classJoinRequestSchema>;
 
 /**
- * Một học sinh ĐÃ ĐÌNH CHỈ khỏi lớp: đã gỡ khỏi roster với chế độ rời
- * lớp `suspend` nên ghi danh ở các khoá của lớp đang SUSPENDED (giữ
- * điểm/bài làm); thêm lại vào roster là kích hoạt lại đúng các dòng ghi
- * danh cũ.
+ * Một học sinh ĐÃ ĐÌNH CHỈ khỏi lớp: đã gỡ khỏi roster với chế độ rời lớp `suspend` nên ghi danh ở các khoá của lớp
+ * đang SUSPENDED (giữ điểm/bài làm); thêm lại vào roster là kích hoạt lại đúng các dòng ghi danh cũ.
  */
 export const classSuspendedMemberSchema = z.object({
   userId: uuidIdSchema,
@@ -314,11 +287,6 @@ export const classSuspendedMemberSchema = z.object({
   email: z.string(),
 });
 export type ClassSuspendedMember = z.infer<typeof classSuspendedMemberSchema>;
-
-// ---------------------------------------------------------------------------
-// CLASS-2 (issue #184): dashboard theo lớp — gói tổng quan MỘT lớp cho
-// đúng vai của người gọi.
-// ---------------------------------------------------------------------------
 
 /**
  * Quan hệ của người gọi với lớp, do server suy từ dữ kiện thật (chủ lớp
@@ -337,12 +305,10 @@ export const classViewerRoleSchema = z.enum(CLASS_VIEWER_ROLES);
 export type ClassViewerRole = z.infer<typeof classViewerRoleSchema>;
 
 /**
- * Gói tổng quan của dashboard lớp (`GET /classes/:id/overview`): thông
- * tin lớp + quan hệ của người gọi + số học sinh của roster + danh sách
- * khoá ĐÃ LỌC THEO VAI ở phía server (member chỉ nhận khoá mình đang
- * học). Dashboard là bề mặt tổng quan/điều hướng thuần — gói này
- * KHÔNG mang bất kỳ dữ kiện điểm nào (mô hình điểm chốt 23:49
- * 25/10/2026: điểm chỉ theo từng bài, không có tổng hợp theo lớp/khoá).
+ * Gói tổng quan của dashboard lớp (`GET /classes/:id/overview`): thông tin lớp + quan hệ của người gọi + số học sinh
+ * của roster + danh sách khoá ĐÃ LỌC THEO VAI ở phía server (member chỉ nhận khoá mình đang học). Dashboard là bề mặt
+ * tổng quan/điều hướng thuần — gói này KHÔNG mang bất kỳ dữ kiện điểm nào (mô hình điểm chốt 23:49 25/10/2026: điểm chỉ
+ * theo từng bài, không có tổng hợp theo lớp/khoá).
  */
 export const classOverviewSchema = z.object({
   class: classSchema,
@@ -356,11 +322,6 @@ export const classOverviewSchema = z.object({
   courses: z.array(courseSchema),
 });
 export type ClassOverview = z.infer<typeof classOverviewSchema>;
-
-// ---------------------------------------------------------------------------
-// CLASS-3 (issue #184): học phí theo lớp — bề mặt công khai của gói lớp
-// để người CHƯA ghi danh xem và bắt đầu thanh toán.
-// ---------------------------------------------------------------------------
 
 /**
  * Gói công khai của một lớp (`GET /classes/:id/public`) — bề mặt cho

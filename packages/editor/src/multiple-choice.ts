@@ -4,9 +4,8 @@ import type { RichTextDocument } from '@lms/contracts';
 import { plainTextExtensions } from './extensions.js';
 
 /**
- * Tài liệu THỐNG NHẤT phía soạn của câu trắc nghiệm (multichoice) —
- * port theo mô hình editor giaokhoa (quyết 12:04 ngày 26/10/2026,
- * điều chỉnh bởi quyết 12:12 cùng ngày).
+ * Tài liệu THỐNG NHẤT phía soạn của câu trắc nghiệm (multichoice) — port theo mô hình editor giaokhoa (quyết 12:04 ngày
+ * 26/10/2026, điều chỉnh bởi quyết 12:12 cùng ngày).
  *
  * Flow tổng thể của module này:
  *
@@ -29,30 +28,24 @@ import { plainTextExtensions } from './extensions.js';
  *    chúng là trường soạn riêng ở form và payload gắn ở tầng trang
  *    vào `answer_key` theo hợp đồng.
  *
- * Bất biến quan trọng: tài liệu thống nhất CHỈ sống phía soạn. Node
- * `choice`/`choiceList` không bao giờ xuất hiện trong nội dung đã lưu
- * (thân câu lưu trữ luôn là tài liệu hợp đồng thuần), nên phía xem
- * tĩnh (`RichTextView`) không cần — và không được — render chúng;
- * cột xem trước của trang soạn render từ dạng đã tách.
+ * Bất biến quan trọng: tài liệu thống nhất CHỈ sống phía soạn. Node `choice`/`choiceList` không bao giờ xuất hiện trong
+ * nội dung đã lưu (thân câu lưu trữ luôn là tài liệu hợp đồng thuần), nên phía xem tĩnh (`RichTextView`) không cần — và
+ * không được — render chúng; cột xem trước của trang soạn render từ dạng đã tách.
  */
 
-/** Tên node danh sách lựa chọn trong tài liệu thống nhất (khớp giaokhoa). */
 export const CHOICE_LIST_NODE_TYPE = 'choiceList';
 
-/** Tên node một lựa chọn trong tài liệu thống nhất (khớp giaokhoa). */
 export const CHOICE_NODE_TYPE = 'choice';
 
 /**
- * Số lựa chọn của một câu trắc nghiệm soạn mới: khoá đúng 4 như
- * giaokhoa và như luật hợp đồng phía API (điểm quyết D-3 ngày
- * 26/10/2026 — đề thi chuẩn Việt Nam có 4 lựa chọn).
+ * Số lựa chọn của một câu trắc nghiệm soạn mới: khoá đúng 4 như giaokhoa và như luật hợp đồng phía API (điểm quyết D-3
+ * ngày 26/10/2026 — đề thi chuẩn Việt Nam có 4 lựa chọn).
  */
 export const MULTIPLE_CHOICE_COUNT = 4;
 
 /**
- * Một lựa chọn trong tài liệu thống nhất: node `choice` với `attrs.id`
- * là định danh ổn định trong vòng soạn và `content` là các block rich
- * text của nội dung lựa chọn (cùng lát block với hợp đồng).
+ * Một lựa chọn trong tài liệu thống nhất: node `choice` với `attrs.id` là định danh ổn định trong vòng soạn và
+ * `content` là các block rich text của nội dung lựa chọn (cùng lát block với hợp đồng).
  */
 export interface MultipleChoiceChoiceJson {
   type: typeof CHOICE_NODE_TYPE;
@@ -61,10 +54,9 @@ export interface MultipleChoiceChoiceJson {
 }
 
 /**
- * Tài liệu thống nhất phía soạn của câu trắc nghiệm: một `doc` mà
- * phần tử cuối là đúng một `choiceList` chứa các {@link
- * MultipleChoiceChoiceJson}; mọi phần tử trước nó là block nội dung
- * của thân câu (cùng lát block với `RichTextDocument` của hợp đồng).
+ * Tài liệu thống nhất phía soạn của câu trắc nghiệm: một `doc` mà phần tử cuối là đúng một `choiceList` chứa các {@link
+ * MultipleChoiceChoiceJson}; mọi phần tử trước nó là block nội dung của thân câu (cùng lát block với `RichTextDocument`
+ * của hợp đồng).
  */
 export interface MultipleChoiceDocumentJson {
   type: 'doc';
@@ -72,11 +64,9 @@ export interface MultipleChoiceDocumentJson {
 }
 
 /**
- * Sinh định danh cho một choice mới. Dùng `crypto.randomUUID` của nền
- * tảng; môi trường thiếu API đó (jsdom cũ) thì rơi về bộ đếm + thời
- * gian — id chỉ cần duy nhất trong vòng soạn, không phải định danh
- * bền xuyên phiên bản (bất biến R-2 của hồ sơ port).
- *
+ * Sinh định danh cho một choice mới. Dùng `crypto.randomUUID` của nền tảng; môi trường thiếu API đó (jsdom cũ) thì rơi
+ * về bộ đếm + thời gian — id chỉ cần duy nhất trong vòng soạn, không phải định danh bền xuyên phiên bản (bất biến R-2
+ * của hồ sơ port).
  * @returns Chuỗi định danh mới cho choice.
  */
 let fallbackIdCounter = 0;

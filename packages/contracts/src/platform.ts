@@ -3,7 +3,6 @@ import { uuidIdSchema } from './ids.js';
 
 /** Contract Dịch vụ nền tảng — các shape dùng chung giữa api và web. */
 
-/* ---- Search ---- */
 export const searchDocumentSchema = z.object({
   id: uuidIdSchema,
   area: z.enum(['courses', 'users', 'contentbank']),
@@ -25,7 +24,6 @@ export const externalServiceSchema = z.object({
 export type ExternalService = z.infer<typeof externalServiceSchema>;
 
 export const externalTokenCreatedSchema = z.object({
-  /** Token thô chỉ xuất hiện đúng một lần trong response tạo token. */
   token: z.string().length(64),
   id: uuidIdSchema,
   userId: uuidIdSchema,
@@ -35,7 +33,6 @@ export type ExternalTokenCreated = z.infer<typeof externalTokenCreatedSchema>;
 
 /* ---- Backup ---- */
 export const BACKUP_FORMAT_VERSION = 1;
-/** Phạm vi sao lưu: `course` gắn với một khoá học; `site` là sao lưu mức hệ thống (không gắn khoá, courseId = null). */
 export const BACKUP_SCOPES = ['course', 'site'] as const;
 export const backupJobSchema = z.object({
   id: uuidIdSchema,
@@ -58,7 +55,6 @@ export const backupIdMappingSchema = z.object({
 }).refine((m) => m.newId !== m.oldId, { message: 'restore must remap ids, never keep the original id' });
 export type BackupIdMapping = z.infer<typeof backupIdMappingSchema>;
 
-/* ---- Analytics ---- */
 export const insightSchema = z.object({
   id: uuidIdSchema,
   modelId: uuidIdSchema,
@@ -70,7 +66,6 @@ export const insightSchema = z.object({
 });
 export type Insight = z.infer<typeof insightSchema>;
 
-/* ---- Reports ---- */
 export const REPORT_DATASOURCES = ['enrolments', 'grades', 'completion'] as const;
 export const reportSchema = z.object({
   id: uuidIdSchema,
@@ -81,7 +76,6 @@ export const reportSchema = z.object({
 });
 export type Report = z.infer<typeof reportSchema>;
 
-/* ---- Content Bank / Kho học liệu (CB-1) ---- */
 /** Loại học liệu: đúng 5 nhóm của Điều 7 TT 09/2021 (bài giảng đa phương tiện gồm cả video). */
 export const contentBankResourceTypeSchema = z.enum(['multimedia_lecture', 'lab_guide', 'simulation', 'question_set', 'reference']);
 export type ContentBankResourceType = z.infer<typeof contentBankResourceTypeSchema>;
@@ -156,7 +150,6 @@ export const contentBankSpaceSchema = z.object({
 });
 export type ContentBankSpace = z.infer<typeof contentBankSpaceSchema>;
 
-/* ---- Payments ---- */
 export const paymentSchema = z.object({
   id: uuidIdSchema,
   accountId: uuidIdSchema,
@@ -165,18 +158,15 @@ export const paymentSchema = z.object({
   amount: z.number().int().positive(),
   currency: z.string().length(3),
   /**
-   * Vòng đời payment: `needs_review` là trạng thái chờ người xử lý khi
-   * tiền về nhưng không khớp đủ 3 điều kiện đối soát của issue #189
-   * (đúng mã thanh toán + đúng số tiền + đúng tài khoản nhận) — thiếu
-   * trạng thái này, mọi bề mặt parse qua schema sẽ từ chối payment
-   * đang chờ đối soát dù DB và API đều mang trạng thái đó hợp lệ.
+   * Vòng đời payment: `needs_review` là trạng thái chờ người xử lý khi tiền về nhưng không khớp đủ 3 điều kiện đối soát
+   * của issue #189 (đúng mã thanh toán + đúng số tiền + đúng tài khoản nhận) — thiếu trạng thái này, mọi bề mặt parse
+   * qua schema sẽ từ chối payment đang chờ đối soát dù DB và API đều mang trạng thái đó hợp lệ.
    */
   status: z.enum(['pending', 'succeeded', 'failed', 'refunded', 'needs_review']),
   gateway: z.string(),
 });
 export type Payment = z.infer<typeof paymentSchema>;
 
-/* ---- Privacy ---- */
 export const privacyRequestSchema = z.object({
   id: uuidIdSchema,
   userId: uuidIdSchema,
@@ -189,14 +179,12 @@ export type PrivacyRequest = z.infer<typeof privacyRequestSchema>;
  * validation: API kiểm chứng qua Standard Schema và form phía React
  * dùng cùng một schema, không định nghĩa bộ validation riêng) ---- */
 
-/** Payload lập chỉ mục một item của một search area đã đăng ký. */
 export const searchIndexItemSchema = z.strictObject({
   area: z.string().min(1),
   itemId: uuidIdSchema,
 });
 export type SearchIndexItem = z.infer<typeof searchIndexItemSchema>;
 
-/** Payload tạo external service. */
 export const createExternalServiceSchema = z.strictObject({
   name: z.string().min(1),
   shortName: z.string().min(1),
@@ -205,11 +193,9 @@ export const createExternalServiceSchema = z.strictObject({
 });
 export type CreateExternalService = z.infer<typeof createExternalServiceSchema>;
 
-/** Payload bật/tắt external service. */
 export const setExternalServiceEnabledSchema = z.strictObject({ enabled: z.boolean() });
 export type SetExternalServiceEnabled = z.infer<typeof setExternalServiceEnabledSchema>;
 
-/** Payload tạo external token cho một user trong một service. */
 export const createExternalTokenSchema = z.strictObject({
   userId: uuidIdSchema,
   serviceId: uuidIdSchema,
@@ -218,7 +204,6 @@ export const createExternalTokenSchema = z.strictObject({
 });
 export type CreateExternalToken = z.infer<typeof createExternalTokenSchema>;
 
-/** Payload gọi một external function qua envelope thống nhất. */
 export const callExternalFunctionSchema = z.strictObject({
   token: z.string().min(1),
   functionName: z.string().min(1),
@@ -227,10 +212,9 @@ export const callExternalFunctionSchema = z.strictObject({
 export type CallExternalFunction = z.infer<typeof callExternalFunctionSchema>;
 
 /**
- * Payload tạo backup job. Phạm vi mặc định là `course` và bắt buộc có
- * `courseId`; phạm vi `site` (sao lưu mức hệ thống: category câu hỏi mức
- * site, ngân hàng câu hỏi mức site, badge mức site, sự kiện/subscription
- * mức site) thì KHÔNG được gắn khoá học.
+ * Payload tạo backup job. Phạm vi mặc định là `course` và bắt buộc có `courseId`; phạm vi `site` (sao lưu mức hệ thống:
+ * category câu hỏi mức site, ngân hàng câu hỏi mức site, badge mức site, sự kiện/subscription mức site) thì KHÔNG được
+ * gắn khoá học.
  */
 export const createBackupSchema = z.strictObject({
   courseId: uuidIdSchema.optional(),
@@ -255,7 +239,6 @@ export const restoreCourseSchema = z.strictObject({
 });
 export type RestoreCourse = z.infer<typeof restoreCourseSchema>;
 
-/** Payload chạy một model phân tích cho một khoá. */
 export const runAnalyticsModelSchema = z.strictObject({ courseId: uuidIdSchema });
 export type RunAnalyticsModel = z.infer<typeof runAnalyticsModelSchema>;
 
@@ -270,16 +253,12 @@ export const createReportSchema = z.strictObject({
 });
 export type CreateReport = z.infer<typeof createReportSchema>;
 
-/** Payload đặt lịch chạy báo cáo. */
 export const createReportScheduleSchema = z.strictObject({ cron: z.string().optional() });
 export type CreateReportSchedule = z.infer<typeof createReportScheduleSchema>;
 
-/* ---- Nhật ký sự kiện (logstore) ---- */
-
 /**
- * Bộ lọc truy vấn nhật ký sự kiện (báo cáo "ai đã làm gì"): `userId` là
- * người thực hiện (actor), `relatedUserId` là người bị tác động; `from`/`to`
- * là mốc thời gian ISO của sự kiện. Phân trang theo chuẩn chung của repo.
+ * Bộ lọc truy vấn nhật ký sự kiện (báo cáo "ai đã làm gì"): `userId` là người thực hiện (actor), `relatedUserId` là
+ * người bị tác động; `from`/`to` là mốc thời gian ISO của sự kiện. Phân trang theo chuẩn chung của repo.
  */
 export const listEventLogsQuerySchema = z.strictObject({
   userId: uuidIdSchema.optional(),
@@ -296,11 +275,9 @@ export const listEventLogsQuerySchema = z.strictObject({
 export type ListEventLogsQuery = z.infer<typeof listEventLogsQuerySchema>;
 
 /**
- * Payload tạo học liệu Kho học liệu (CB-1). `contextId` không còn bắt buộc:
- * server tự suy theo `scope` (personal → context của tác giả, org/school →
- * context hệ thống); chỉ truyền khi cần bám hành vi cũ. Metadata chương
- * trình (môn/khối/node/YCCĐ) bắt buộc khi gửi duyệt scope org/school —
- * server kiểm ở bước submit.
+ * Payload tạo học liệu Kho học liệu (CB-1). `contextId` không còn bắt buộc: server tự suy theo `scope` (personal →
+ * context của tác giả, org/school → context hệ thống); chỉ truyền khi cần bám hành vi cũ. Metadata chương trình
+ * (môn/khối/node/YCCĐ) bắt buộc khi gửi duyệt scope org/school — server kiểm ở bước submit.
  */
 export const createContentBankContentSchema = z.strictObject({
   name: z.string().min(1),
@@ -334,7 +311,6 @@ export const createContentBankContentSchema = z.strictObject({
 });
 export type CreateContentBankContent = z.infer<typeof createContentBankContentSchema>;
 
-/** Payload sửa học liệu Content Bank. */
 export const updateContentBankContentSchema = createContentBankContentSchema
   .omit({ contextId: true })
   .partial()
@@ -342,9 +318,8 @@ export const updateContentBankContentSchema = createContentBankContentSchema
 export type UpdateContentBankContent = z.infer<typeof updateContentBankContentSchema>;
 
 /**
- * Payload duyệt học liệu (tổ trưởng/quản trị): quyết định + ghi chú +
- * checklist tiêu chí Bộ (CB1-B3). Service ép: từ chối thì ghi chú (lý do)
- * là BẮT BUỘC; phê duyệt thì checklist phải đủ 4 tiêu chí đạt.
+ * Payload duyệt học liệu (tổ trưởng/quản trị): quyết định + ghi chú + checklist tiêu chí Bộ (CB1-B3). Service ép: từ
+ * chối thì ghi chú (lý do) là BẮT BUỘC; phê duyệt thì checklist phải đủ 4 tiêu chí đạt.
  */
 export const reviewContentBankContentSchema = z.strictObject({
   decision: z.enum(['approved', 'rejected']),
@@ -652,13 +627,11 @@ export const planEntitlementSchema = z.object({
 });
 export type PlanEntitlement = z.infer<typeof planEntitlementSchema>;
 
-/** Payload người dùng tự gửi yêu cầu privacy cho chính mình. */
 export const createPrivacyRequestSchema = z.strictObject({
   type: z.enum(['export', 'delete']),
 });
 export type CreatePrivacyRequest = z.infer<typeof createPrivacyRequestSchema>;
 
-/** Payload phê duyệt/từ chối yêu cầu privacy. */
 export const decidePrivacyRequestSchema = z.strictObject({
   decision: z.enum(['approved', 'rejected']),
 });

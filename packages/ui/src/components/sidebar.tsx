@@ -69,8 +69,6 @@ function SidebarProvider({
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
 
-  // Đây là trạng thái nội bộ của sidebar.
-  // Dùng openProp và setOpenProp để điều khiển từ bên ngoài component.
   const [_open, _setOpen] = React.useState(defaultOpen)
   const open = openProp ?? _open
   const setOpen = React.useCallback(
@@ -82,7 +80,6 @@ function SidebarProvider({
         _setOpen(openState)
       }
 
-      // Đoạn này đặt cookie để giữ trạng thái của sidebar.
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
     },
     [setOpenProp, open]

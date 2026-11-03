@@ -32,8 +32,9 @@
  */
 
 /**
- * Chiến lược tổng hợp điểm của category: trung bình có trọng số (weightedmean), trung bình đơn giản, tự nhiên (natural — theo gradeMax), trung vị, điểm cao nhất/thấp nhất, mode, tổng.
- * Khớp aggregation của Moodle grade category (grade/classes).
+ * Chiến lược tổng hợp điểm của category: trung bình có trọng số (weightedmean), trung bình đơn giản, tự nhiên (natural
+ * — theo gradeMax), trung vị, điểm cao nhất/thấp nhất, mode, tổng. Khớp aggregation của Moodle grade category
+ * (grade/classes).
  */
 export type AggregationStrategy =
   | 'natural' | 'mean' | 'weightedmean' | 'simpleweightedmean'
@@ -43,9 +44,6 @@ export const AGGREGATIONS: AggregationStrategy[] = [
   'natural', 'mean', 'weightedmean', 'simpleweightedmean', 'median', 'lowest', 'highest', 'mode', 'sum',
 ];
 
-/**
- * Đầu vào tính điểm của một grade item: điểm thô, gradeMin/gradeMax, hệ số (aggregationCoef), extra credit, ẩn.
- */
 export interface CalcItemInput {
   itemId: string;
   gradeMin: number;
@@ -65,9 +63,6 @@ export interface CalcItemInput {
   frozen?: boolean;
 }
 
-/**
- * Đầu vào tính một category: danh sách item con (kèm kết quả category con) và chiến lược tổng hợp.
- */
 export interface CategoryCalcInput {
   aggregation: AggregationStrategy;
   /** Khoảng của category đối với các chiến lược không phải natural (mặc định của Moodle là 0..100). Đối với natural, max được suy ra. */
@@ -79,9 +74,6 @@ export interface CategoryCalcInput {
   items: CalcItemInput[];
 }
 
-/**
- * Kết quả tính category: finalGrade đã chuẩn hoá về thang của category, kèm chi tiết từng item để hiển thị sổ điểm.
- */
 export interface CategoryCalcResult {
   /** Null khi không có gì để tổng hợp (không có điểm nào dùng được). */
   finalGrade: number | null;
@@ -99,9 +91,9 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, v));
 }
 
-/** Áp multiplicator/offset (trừ khi đã đóng băng) và clamp vào khoảng của item. */
 /**
- * Chuẩn hoá điểm của item về thang 0..1 theo gradeMin/gradeMax; item ẩn hoặc chưa có điểm trả null (không tính vào tổng hợp).
+ * Áp multiplicator/offset (trừ khi đã đóng băng) và clamp vào khoảng của item; item chưa có điểm trả null (không tính
+ * vào tổng hợp).
  */
 export function adjustedGrade(item: CalcItemInput): number | null {
   if (item.grade === null || item.grade === undefined) return null;
@@ -124,7 +116,6 @@ interface Prepared {
   isExtra: boolean;
 }
 
-/** Trọng số hiệu lực của natural: các item bị ghi đè giữ nguyên trọng số của chúng; phần còn lại của 100% được chia theo (max-min). */
 /**
  * Trọng số “tự nhiên” của Moodle: mỗi item đóng góp tỉ lệ theo (gradeMax - gradeMin) của nó sau khi chuẩn hoá, extra credit không làm tăng mẫu số.
  */
@@ -173,14 +164,14 @@ function mode(values: number[]): number {
 }
 
 /**
- * Tính điểm category theo chiến lược tổng hợp: chuẩn hoá từng item, áp trọng số/hệ số, xử lý extra credit (chỉ cộng tử số), drop-lowest nếu cấu hình, rồi chiếu về thang điểm của category.
- * Đối chiếu Moodle: grade/lib.php grade_category::compute và bộ test PHPUnit của gradebook.
+ * Tính điểm category theo chiến lược tổng hợp: chuẩn hoá từng item, áp trọng số/hệ số, xử lý extra credit (chỉ cộng tử
+ * số), drop-lowest nếu cấu hình, rồi chiếu về thang điểm của category. Đối chiếu Moodle: grade/lib.php
+ * grade_category::compute và bộ test PHPUnit của gradebook.
  */
 export function calculateCategory(input: CategoryCalcInput): CategoryCalcResult {
   const dropLow = Math.max(0, input.dropLow ?? 0);
   const keepHigh = Math.max(0, input.keepHigh ?? 0);
 
-  // 1. Chuẩn bị: loại bỏ excluded; xử lý điểm trống theo chính sách; điều chỉnh + chuẩn hoá.
   const prepared: Prepared[] = [];
   for (const item of input.items) {
     if (item.excluded) continue;
@@ -209,7 +200,6 @@ export function calculateCategory(input: CategoryCalcInput): CategoryCalcResult 
     return { finalGrade: null, gradeMin: input.gradeMin, gradeMax, weights, fraction: null };
   }
 
-  // 2. Drop lowest / keep highest trên các điểm đã chuẩn hoá không phải extra.
   let main = prepared.filter((p) => !p.isExtra);
   const extras = prepared.filter((p) => p.isExtra);
   if (keepHigh > 0 && main.length > keepHigh) {
@@ -219,7 +209,6 @@ export function calculateCategory(input: CategoryCalcInput): CategoryCalcResult 
     main = [...main].sort((a, b) => a.fraction - b.fraction).slice(dropLow);
   }
 
-  // 3. Tổng hợp các phân số theo chiến lược.
   let fraction: number | null = null;
   let gradeMax = input.gradeMax;
   let gradeMin = input.gradeMin;
@@ -234,8 +223,8 @@ export function calculateCategory(input: CategoryCalcInput): CategoryCalcResult 
         const numer = main.reduce((s, p) => s + (p.adjusted - p.item.gradeMin), 0)
           + extras.reduce((s, p) => s + (p.adjusted - p.item.gradeMin), 0);
         fraction = denom > 0 ? numer / denom : (extras.length ? 1 : null);
-        // Với exclude-empty, main chỉ chứa các item đã có điểm: numer/denom là
-        // phân số của phần đã có điểm, sau đó được chiếu lên structural max ở dưới.
+        // Với exclude-empty, main chỉ chứa các item đã có điểm: numer/denom là phân số của phần đã có điểm, sau đó được
+        // chiếu lên structural max ở dưới.
         if (fraction === null) break;
       } else {
         const w = naturalWeights([...main, ...extras].map((p) => p.item));
@@ -283,17 +272,17 @@ export function calculateCategory(input: CategoryCalcInput): CategoryCalcResult 
   }
 
   if (fraction === null) return { finalGrade: null, gradeMin, gradeMax, weights, fraction: null };
-  // Extra credit có thể đẩy vượt quá 1 — max của category là giới hạn cứng (trừ việc nó
-  // không bao giờ có thể hạ một điểm đạt được hợp lệ xuống dưới khoảng).
+  // Extra credit có thể đẩy vượt quá 1 — max của category là giới hạn cứng (trừ việc nó không bao giờ có thể hạ một
+  // điểm đạt được hợp lệ xuống dưới khoảng).
   const capped = clamp(fraction, 0, 1);
   const finalGrade = gradeMin + capped * (gradeMax - gradeMin);
   void EPS;
   return { finalGrade, gradeMin, gradeMax, weights, fraction: capped };
 }
 
-/** Letter cho một điểm: phần trăm theo khoảng của item được đối chiếu với các biên (biên cao nhất <= pct sẽ thắng). */
 /**
- * Ánh xạ điểm phần trăm sang chữ cái (letter) theo bảng grade letters của khoá học; biên dưới của mỗi khoảng là bao hàm.
+ * Ánh xạ điểm phần trăm sang chữ cái (letter) theo bảng grade letters của khoá học: phần trăm theo khoảng của item
+ * được đối chiếu với các biên — biên cao nhất ≤ phần trăm sẽ thắng (biên dưới của mỗi khoảng là bao hàm).
  */
 export function letterForGrade(
   finalGrade: number, gradeMin: number, gradeMax: number,

@@ -16,19 +16,15 @@ import {
   type UserEnrolmentRow,
 } from './types';
 
-/** Trạng thái ghi danh đang hiệu lực. */
 export const ENROL_ACTIVE = 0;
-/** Trạng thái ghi danh bị đình chỉ (không truy cập được khoá, gán vai vẫn còn). */
 export const ENROL_SUSPENDED = 1;
 /** Trạng thái ghi danh đã rút nhưng dòng được giữ vì user còn dữ liệu liên quan trong khoá. */
 export const ENROL_WITHDRAWN = 2;
 
 /**
- * Loại sự kiện outbox yêu cầu tái tổng hợp hoàn thành khoá học cho
- * một người dùng sau khi gỡ ghi danh. Sự kiện được phát trong CÙNG
- * transaction với thao tác gỡ ghi danh (xem `unenrolInternal`), phía
- * API tiêu thụ qua consumer có watermark `seq` riêng — nó KHÔNG nằm
- * trong bảng định tuyến relay của worker.
+ * Loại sự kiện outbox yêu cầu tái tổng hợp hoàn thành khoá học cho một người dùng sau khi gỡ ghi danh. Sự kiện được
+ * phát trong CÙNG transaction với thao tác gỡ ghi danh (xem `unenrolInternal`), phía API tiêu thụ qua consumer có
+ * watermark `seq` riêng — nó KHÔNG nằm trong bảng định tuyến relay của worker.
  */
 export const COURSE_COMPLETION_REAGGREGATION_REQUESTED = 'course_completion_reaggregation_requested';
 
@@ -46,11 +42,9 @@ function isInstanceAssignment(a: RoleAssignmentRow, instance: EnrolInstanceRow):
 }
 
 /**
- * Lỗi có phải unique violation của PostgreSQL (mã 23505) hay không.
- * Qua Kysely, lỗi pg ném THÔ — `code`/`constraint` nằm trực tiếp
- * trên error, không có lớp bọc `cause` như qua bộ máy cũ (thử nghiệm
- * T-10) — nên kiểm error trước, rồi mới đi tiếp xuống chuỗi `cause`
- * tối đa 6 tầng cho các lớp bọc ngoài của host (nếu có).
+ * Lỗi có phải unique violation của PostgreSQL (mã 23505) hay không. Qua Kysely, lỗi pg ném THÔ — `code`/`constraint`
+ * nằm trực tiếp trên error, không có lớp bọc `cause` như qua bộ máy cũ (thử nghiệm T-10) — nên kiểm error trước, rồi
+ * mới đi tiếp xuống chuỗi `cause` tối đa 6 tầng cho các lớp bọc ngoài của host (nếu có).
  */
 function isUniqueViolation(err: unknown): boolean {
   let current: unknown = err;
@@ -62,15 +56,12 @@ function isUniqueViolation(err: unknown): boolean {
 }
 
 /**
- * Bề mặt VẬT CHẤT HOÁ COHORT dùng chung: biến quan hệ thành viên
- * cohort thành ghi danh cấp khoá — và biến việc rời cohort thành rút
- * hoặc đình chỉ ghi danh — bằng đúng một định nghĩa duy nhất chạy
- * được từ mọi tiến trình có tầng dữ liệu (API hôm nay qua listener
- * in-process và consumer outbox của nó; worker khi consumer đồng bộ
- * cohort của worker được dựng trên bề mặt này).
+ * Bề mặt VẬT CHẤT HOÁ COHORT dùng chung: biến quan hệ thành viên cohort thành ghi danh cấp khoá — và biến việc rời
+ * cohort thành rút hoặc đình chỉ ghi danh — bằng đúng một định nghĩa duy nhất chạy được từ mọi tiến trình có tầng dữ
+ * liệu (API hôm nay qua listener in-process và consumer outbox của nó; worker khi consumer đồng bộ cohort của worker
+ * được dựng trên bề mặt này).
  *
- * Bề mặt gồm ba tầng hành vi, giữ nguyên từng bất biến của đường
- * đồng bộ cohort hiện hành:
+ * Bề mặt gồm ba tầng hành vi, giữ nguyên từng bất biến của đường đồng bộ cohort hiện hành:
  *
  * 1. Funnel ghi danh lõi (`enrolUserInternal`): mọi đường ghi danh
  *    (tay, tự ghi danh, kích hoạt sau thanh toán, đồng bộ cohort)
@@ -99,9 +90,8 @@ function isUniqueViolation(err: unknown): boolean {
  *    viên bỏ qua riêng lẻ thành viên vi phạm chốt tách vai thay vì
  *    làm hỏng cả vòng lặp đồng bộ.
  *
- * Mọi điểm chặn mà funnel đi qua (tách vai, slot gói, toàn vẹn gán
- * do ghi danh cấp) đều là các lõi dùng chung của package này — bề
- * mặt không định nghĩa lại bất kỳ kiểm nào.
+ * Mọi điểm chặn mà funnel đi qua (tách vai, slot gói, toàn vẹn gán do ghi danh cấp) đều là các lõi dùng chung của
+ * package này — bề mặt không định nghĩa lại bất kỳ kiểm nào.
  */
 export class CohortMaterializationSurface {
   private readonly db: EnrolDatabase;
@@ -110,9 +100,6 @@ export class CohortMaterializationSurface {
   private readonly roleSeparation: RoleSeparationCore;
   private readonly roleAssignment: RoleAssignmentCore;
 
-  /**
-   * @param deps - bộ phụ thuộc host cấp: tay cầm Kysely, cổng outbox, cổng ngữ cảnh platform.
-   */
   constructor(deps: SharedSurfaceDeps) {
     this.db = deps.db;
     this.outbox = deps.outbox;
@@ -121,25 +108,18 @@ export class CohortMaterializationSurface {
     this.roleAssignment = new RoleAssignmentCore(deps.db, deps.outbox, this.planLimits, this.roleSeparation);
   }
 
-  /** Lõi tách vai dùng chung mà bề mặt này áp (host dùng lại cho các chốt ngoài funnel). */
   get roleSeparationChecks(): RoleSeparationCore {
     return this.roleSeparation;
   }
 
-  /** Lõi gán vai dùng chung mà bề mặt này áp (host dùng lại cho các đường gán ngoài funnel). */
   get roleAssignmentCore(): RoleAssignmentCore {
     return this.roleAssignment;
   }
 
-  /** Lõi giới hạn slot dùng chung mà bề mặt này áp (host dùng lại cho các điểm chặn ngoài funnel). */
   get planLimitsCore(): PlanLimitsCore {
     return this.planLimits;
   }
 
-  /**
-   * Lấy ghi danh của một người dùng qua một instance; undefined khi
-   * chưa từng ghi danh qua instance đó.
-   */
   private async getUserEnrolment(instanceId: string, userId: string): Promise<UserEnrolmentRow | undefined> {
     return this.db
       .selectFrom('user_enrolments')
@@ -152,13 +132,10 @@ export class CohortMaterializationSurface {
   }
 
   /**
-   * Cập nhật một dòng ghi danh (trạng thái, thời hạn, vết người thao
-   * tác). Ánh xạ ghi tường minh, loại từng trường `undefined` (kỷ
-   * luật T-4): `undefined` trong WHERE của Kysely gắn NULL và lặng
-   * lẽ trả 0 dòng, còn trong ghi thì rơi về mặc định của cột — cả
-   * hai đều sai ngữ nghĩa "trường vắng mặt thì giữ nguyên". `null`
-   * là giá trị thật (xoá thời hạn kết thúc, xoá vết thao tác) nên
-   * được giữ nguyên.
+   * Cập nhật một dòng ghi danh (trạng thái, thời hạn, vết người thao tác). Ánh xạ ghi tường minh, loại từng trường
+   * `undefined` (kỷ luật T-4): `undefined` trong WHERE của Kysely gắn NULL và lặng lẽ trả 0 dòng, còn trong ghi thì rơi
+   * về mặc định của cột — cả hai đều sai ngữ nghĩa "trường vắng mặt thì giữ nguyên". `null` là giá trị thật (xoá thời
+   * hạn kết thúc, xoá vết thao tác) nên được giữ nguyên.
    */
   private async updateUserEnrolment(handle: EnrolDatabase, id: string, v: UserEnrolmentPatch): Promise<void> {
     await handle
@@ -175,31 +152,18 @@ export class CohortMaterializationSurface {
   }
 
   /**
-   * Đường ghi danh lõi (cũng dùng cho đồng bộ cohort). Cấp role của
-   * instance tại context khoá học qua lõi gán vai dùng chung.
+   * Đường ghi danh lõi (cũng dùng cho đồng bộ cohort). Cấp role của instance tại context khoá học qua lõi gán vai dùng
+   * chung.
    *
-   * Flow: instance bị tắt → lỗi `enrol.instance_disabled`. Instance
-   * cấp vai học viên → chốt tách vai (người đã có cấp quyền giảng
-   * dạy bao phủ chính khoá đích bị từ chối với mã
-   * `access.role_context_conflict`, TRƯỚC khi bất kỳ bản ghi ghi
-   * danh hay dòng gán vai nào được tạo; instance cấp vai giảng dạy
-   * là đường cấp vai của quản trị, nằm ngoài quyết định tách vai,
-   * nên không qua chốt). Đã có ghi danh → kích hoạt lại và tính lại
-   * cửa sổ thời gian theo `enrolPeriod` của instance. Chưa có →
-   * chèn dòng ghi danh + phát `user_enrolled` trong cùng một
-   * transaction; đua ghi đồng thời (hai phía cùng qua cửa "chưa có"
-   * rồi cùng chèn) ăn unique violation ở phía thua thì nối vào
-   * đường cập nhật idempotent thay vì để lỗi lọt ra ngoài (phía
-   * thắng đã phát `user_enrolled`). Sau đó: đảm bảo membership
-   * active tại tenant của khoá, cấp vai của instance tại context
-   * khoá với truy vết của chính instance, và xếp người dùng vào
-   * nhóm đích của instance (lỗi xếp nhóm bị nuốt — xếp nhóm là hệ
-   * quả phụ, không được làm hỏng ghi danh).
-   *
-   * @param instance - enrol instance đích.
-   * @param userId - người dùng được ghi danh.
-   * @param modifierId - người thao tác (truy vết; vắng mặt khi là đồng bộ hệ thống).
-   * @param opts - cửa sổ thời gian tường minh; bỏ trống thì suy từ `enrolPeriod` của instance.
+   * Flow: instance bị tắt → lỗi `enrol.instance_disabled`. Instance cấp vai học viên → chốt tách vai (người đã có cấp
+   * quyền giảng dạy bao phủ chính khoá đích bị từ chối với mã `access.role_context_conflict`, TRƯỚC khi bất kỳ bản ghi
+   * ghi danh hay dòng gán vai nào được tạo; instance cấp vai giảng dạy là đường cấp vai của quản trị, nằm ngoài quyết
+   * định tách vai, nên không qua chốt). Đã có ghi danh → kích hoạt lại và tính lại cửa sổ thời gian theo `enrolPeriod`
+   * của instance. Chưa có → chèn dòng ghi danh + phát `user_enrolled` trong cùng một transaction; đua ghi đồng thời
+   * (hai phía cùng qua cửa "chưa có" rồi cùng chèn) ăn unique violation ở phía thua thì nối vào đường cập nhật
+   * idempotent thay vì để lỗi lọt ra ngoài (phía thắng đã phát `user_enrolled`). Sau đó: đảm bảo membership active tại
+   * tenant của khoá, cấp vai của instance tại context khoá với truy vết của chính instance, và xếp người dùng vào nhóm
+   * đích của instance (lỗi xếp nhóm bị nuốt — xếp nhóm là hệ quả phụ, không được làm hỏng ghi danh).
    * @returns dòng ghi danh sau ghi danh và cờ cho biết đây có phải ghi danh MỚI hay không
    * (host dùng cờ này cho các hệ quả chỉ áp cho ghi danh mới, vd tin nhắn chào mừng).
    * @throws SharedDomainError mã `enrol.instance_disabled`, hoặc lỗi của các điểm
@@ -214,11 +178,9 @@ export class CohortMaterializationSurface {
     if (instance.status !== 0) {
       throw new SharedDomainError('enrol.instance_disabled', 'Enrol instance is disabled');
     }
-    // Chốt TÁCH VAI — funnel 1 (RoleSeparationCore giữ định nghĩa
-    // dùng chung): mọi đường ghi danh đều hội tụ về hàm này (ghi
-    // danh tay, tự ghi danh, kích hoạt sau thanh toán, đồng bộ
-    // cohort), nên chốt tại đây phủ toàn bộ các đường đó. Chỉ áp khi
-    // instance cấp vai HỌC VIÊN.
+    // Chốt TÁCH VAI — funnel 1 (RoleSeparationCore giữ định nghĩa dùng chung): mọi đường ghi danh đều hội tụ về hàm này
+    // (ghi danh tay, tự ghi danh, kích hoạt sau thanh toán, đồng bộ cohort), nên chốt tại đây phủ toàn bộ các đường đó.
+    // Chỉ áp khi instance cấp vai HỌC VIÊN.
     if (await this.roleSeparation.isLearnerGrantRole(instance.roleId)) {
       await this.roleSeparation.assertLearnerEnrolmentAllowed(userId, instance.courseId);
     }
@@ -253,12 +215,9 @@ export class CohortMaterializationSurface {
         });
         isNewEnrolment = true;
       } catch (err) {
-        // Đua ghi đồng thời: consumer outbox phát lại sự kiện cohort
-        // trong lúc request tạo instance đang backfill cùng một học
-        // sinh — cả hai cùng qua cửa "chưa có UE" rồi cùng insert,
-        // một phía ăn unique violation trên (enrol_id, user_id). Nối
-        // vào đường cập nhật idempotent thay vì để lỗi lọt ra ngoài;
-        // phía thắng đã phát user_enrolled.
+        // Đua ghi đồng thời: consumer outbox phát lại sự kiện cohort trong lúc request tạo instance đang backfill cùng
+        // một học sinh — cả hai cùng qua cửa "chưa có UE" rồi cùng insert, một phía ăn unique violation trên (enrol_id,
+        // user_id). Nối vào đường cập nhật idempotent thay vì để lỗi lọt ra ngoài; phía thắng đã phát user_enrolled.
         if (!isUniqueViolation(err)) throw err;
         const winner = await this.getUserEnrolment(instance.id, userId);
         if (!winner) throw err;
@@ -266,9 +225,8 @@ export class CohortMaterializationSurface {
         ue = (await this.getUserEnrolment(instance.id, userId))!;
       }
     }
-    // Ghi danh vào khoá của tenant nào thì thuộc tenant đó:
-    // membership active được đảm bảo ngay tại đây để cổng membership
-    // của phép đánh giá quyền cho qua các vai ghi danh vừa cấp.
+    // Ghi danh vào khoá của tenant nào thì thuộc tenant đó: membership active được đảm bảo ngay tại đây để cổng
+    // membership của phép đánh giá quyền cho qua các vai ghi danh vừa cấp.
     const courseRow = await this.db
       .selectFrom('course')
       .select('course.tenant_id as tenantId')
@@ -277,9 +235,8 @@ export class CohortMaterializationSurface {
     if (courseRow?.tenantId) await ensureActiveTenantMembership(this.db, courseRow.tenantId, userId);
     if (instance.roleId) {
       const courseCtxId = await getCourseContextId(this.db, instance.courseId);
-      // Dòng gán mang truy vết của chính instance này — unenrol/đổi
-      // vai sau đó chỉ gỡ đúng dòng đó, không đụng gán của instance
-      // khác hay gán tay cùng role.
+      // Dòng gán mang truy vết của chính instance này — unenrol/đổi vai sau đó chỉ gỡ đúng dòng đó, không đụng gán của
+      // instance khác hay gán tay cùng role.
       await this.roleAssignment.assignRole(userId, instance.roleId, courseCtxId, modifierId, {
         component: ENROL_ASSIGNMENT_COMPONENT, itemId: instance.id,
       });
@@ -296,17 +253,10 @@ export class CohortMaterializationSurface {
   }
 
   /**
-   * Ghi danh một thành viên cohort qua đường đồng bộ hàng loạt
-   * (backfill khi tạo/khôi phục instance cohort, vật chất hoá sự
-   * kiện cohort): một thành viên vi phạm chốt tách vai bị BỎ QUA
-   * riêng lẻ — vòng lặp đồng bộ không được hỏng vì một thành viên,
-   * và các caller trực tiếp một người (ghi danh tay, tự ghi danh,
-   * thanh toán) vẫn nhận lỗi tường minh từ `enrolUserInternal`. Mọi
-   * lỗi khác ngoài xung đột vai đều nổi lên như cũ.
-   *
-   * @param instance - enrol instance cohort đích.
-   * @param userId - thành viên cohort được ghi danh.
-   * @param modifierId - người thao tác (khi backfill từ một thao tác quản trị).
+   * Ghi danh một thành viên cohort qua đường đồng bộ hàng loạt (backfill khi tạo/khôi phục instance cohort, vật chất
+   * hoá sự kiện cohort): một thành viên vi phạm chốt tách vai bị BỎ QUA riêng lẻ — vòng lặp đồng bộ không được hỏng vì
+   * một thành viên, và các caller trực tiếp một người (ghi danh tay, tự ghi danh, thanh toán) vẫn nhận lỗi tường minh
+   * từ `enrolUserInternal`. Mọi lỗi khác ngoài xung đột vai đều nổi lên như cũ.
    */
   async enrolFromCohortSync(instance: EnrolInstanceRow, userId: string, modifierId?: string): Promise<void> {
     try {
@@ -317,38 +267,22 @@ export class CohortMaterializationSurface {
   }
 
   /**
-   * Rút ghi danh nội bộ không kiểm capability (kiểm capability là
-   * việc của bề mặt gọi ở host).
+   * Rút ghi danh nội bộ không kiểm capability (kiểm capability là việc của bề mặt gọi ở host).
    *
-   * Flow: không có ghi danh → `{ withdrawn: false }`, không làm gì.
-   * Có ghi danh → quyết định giữ/xoá theo dữ liệu liên quan (truy
-   * vấn dữ liệu dùng chung): trong MỘT transaction, giữ thì chuyển
-   * dòng sang WITHDRAWN, không giữ thì XOÁ CỨNG dòng ngay trong
-   * cùng transaction, và phát cả `user_unenrolled` (mang cờ
-   * `keptData`) lẫn `course_completion_reaggregation_requested`
-   * trong cùng transaction đó. Sự kiện tái tổng hợp hoàn thành
-   * phải nằm trong cùng transaction này để việc gỡ ghi danh không
-   * bao giờ commit mà thiếu yêu cầu tái tổng hợp (đường hook đồng
-   * bộ trước đây chạy sau commit và nuốt lỗi: tiến trình chết giữa
-   * hai bước là mất tái tổng hợp vĩnh viễn). Lệnh xoá cứng cũng
-   * phải nằm trong transaction: sự kiện chỉ được phép trở nên
-   * nhìn thấy được khi dòng ghi danh đã biến mất — consumer tái
-   * tổng hợp quét mỗi giây, quan sát sự kiện trong lúc dòng còn
-   * hiệu lực sẽ đánh giá sai tiêu chí 'unenrol' rồi tiến
-   * watermark qua không quay lại, và xoá sau commit còn để cửa
-   * sổ tiến trình chết giữa commit và lệnh xoá (sự kiện đã chốt
-   * kèm dòng ghi danh mồ côi). Transaction rollback thì cả việc
-   * xoá lẫn hai sự kiện cùng biến mất. Transaction commit xong:
-   * gỡ đúng các dòng gán vai do chính instance này cấp
-   * (component='enrol' + itemId=instance, theo phạm vi Moodle) —
-   * gán của cùng role do instance khác cấp hoặc cấp tay vẫn giữ
-   * nguyên, nên user còn ghi danh qua instance khác vẫn giữ role.
-   * Việc tái tổng hợp không đọc gán vai nên thứ tự tiêu thụ sự
-   * kiện so với việc gỡ gán không ảnh hưởng kết quả của nó.
-   *
-   * @param instance - enrol instance của ghi danh.
-   * @param userId - người dùng bị rút ghi danh.
-   * @param modifierId - người thao tác (truy vết trong payload sự kiện).
+   * Flow: không có ghi danh → `{ withdrawn: false }`, không làm gì. Có ghi danh → quyết định giữ/xoá theo dữ liệu liên
+   * quan (truy vấn dữ liệu dùng chung): trong MỘT transaction, giữ thì chuyển dòng sang WITHDRAWN, không giữ thì XOÁ
+   * CỨNG dòng ngay trong cùng transaction, và phát cả `user_unenrolled` (mang cờ `keptData`) lẫn
+   * `course_completion_reaggregation_requested` trong cùng transaction đó. Sự kiện tái tổng hợp hoàn thành phải nằm
+   * trong cùng transaction này để việc gỡ ghi danh không bao giờ commit mà thiếu yêu cầu tái tổng hợp (đường hook đồng
+   * bộ trước đây chạy sau commit và nuốt lỗi: tiến trình chết giữa hai bước là mất tái tổng hợp vĩnh viễn). Lệnh xoá
+   * cứng cũng phải nằm trong transaction: sự kiện chỉ được phép trở nên nhìn thấy được khi dòng ghi danh đã biến mất —
+   * consumer tái tổng hợp quét mỗi giây, quan sát sự kiện trong lúc dòng còn hiệu lực sẽ đánh giá sai tiêu chí
+   * 'unenrol' rồi tiến watermark qua không quay lại, và xoá sau commit còn để cửa sổ tiến trình chết giữa commit và
+   * lệnh xoá (sự kiện đã chốt kèm dòng ghi danh mồ côi). Transaction rollback thì cả việc xoá lẫn hai sự kiện cùng biến
+   * mất. Transaction commit xong: gỡ đúng các dòng gán vai do chính instance này cấp (component='enrol' +
+   * itemId=instance, theo phạm vi Moodle) — gán của cùng role do instance khác cấp hoặc cấp tay vẫn giữ nguyên, nên
+   * user còn ghi danh qua instance khác vẫn giữ role. Việc tái tổng hợp không đọc gán vai nên thứ tự tiêu thụ sự kiện
+   * so với việc gỡ gán không ảnh hưởng kết quả của nó.
    * @returns `withdrawn: true` khi dòng ghi danh được giữ dạng WITHDRAWN.
    */
   async unenrolInternal(
@@ -363,34 +297,28 @@ export class CohortMaterializationSurface {
       if (hasRelated) {
         await this.updateUserEnrolment(trx, ue.id, { status: ENROL_WITHDRAWN, modifierId });
       } else {
-        // Xoá cứng NGAY trong transaction, không để sau commit: sự
-        // kiện chỉ được phép trở nên nhìn thấy được khi dòng ghi
-        // danh đã biến mất. Consumer tái tổng hợp quét mỗi giây —
-        // quan sát sự kiện trong lúc dòng còn hiệu lực sẽ đánh giá
-        // sai tiêu chí 'unenrol' (tiêu chí này là phủ định của
-        // việc còn ghi danh) rồi tiến watermark qua luôn không
-        // quay lại; xoá sau commit còn để cửa sổ tiến trình chết
-        // giữa commit và lệnh xoá, khi đó sự kiện đã chốt kèm một
-        // dòng ghi danh mồ côi không bao giờ bị xoá.
+        // Xoá cứng NGAY trong transaction, không để sau commit: sự kiện chỉ được phép trở nên nhìn thấy được khi dòng
+        // ghi danh đã biến mất. Consumer tái tổng hợp quét mỗi giây — quan sát sự kiện trong lúc dòng còn hiệu lực sẽ
+        // đánh giá sai tiêu chí 'unenrol' (tiêu chí này là phủ định của việc còn ghi danh) rồi tiến watermark qua luôn
+        // không quay lại; xoá sau commit còn để cửa sổ tiến trình chết giữa commit và lệnh xoá, khi đó sự kiện đã chốt
+        // kèm một dòng ghi danh mồ côi không bao giờ bị xoá.
         await trx.deleteFrom('user_enrolments').where('id', '=', ue.id).execute();
       }
       await this.outbox.enqueue(trx, {
         aggregate: 'enrol', type: 'user_unenrolled',
         payload: { courseId: instance.courseId, userId, instanceId: instance.id, keptData: hasRelated, actorId: modifierId ?? null },
       });
-      // Tái tổng hợp hoàn thành khoá cho người dùng này (tiêu chí
-      // 'unenrol'): phát cùng transaction với user_unenrolled; phía
-      // API tiêu thụ qua watermark seq riêng của CompletionModule,
-      // KHÔNG qua bảng định tuyến relay của worker.
+      // Tái tổng hợp hoàn thành khoá cho người dùng này (tiêu chí 'unenrol'): phát cùng transaction với
+      // user_unenrolled; phía API tiêu thụ qua watermark seq riêng của CompletionModule, KHÔNG qua bảng định tuyến
+      // relay của worker.
       await this.outbox.enqueue(trx, {
         aggregate: 'completion', type: COURSE_COMPLETION_REAGGREGATION_REQUESTED,
         payload: { courseId: instance.courseId, userId },
       });
     });
-    // Chỉ gỡ gán role mà instance ghi danh này đã cấp: gán của cùng
-    // role do instance khác cấp hoặc cấp tay vẫn giữ nguyên, nên
-    // user còn ghi danh qua instance khác vẫn giữ role. Các dòng cũ
-    // không có component/itemId tính là cấp tay và cũng được để yên.
+    // Chỉ gỡ gán role mà instance ghi danh này đã cấp: gán của cùng role do instance khác cấp hoặc cấp tay vẫn giữ
+    // nguyên, nên user còn ghi danh qua instance khác vẫn giữ role. Các dòng cũ không có component/itemId tính là cấp
+    // tay và cũng được để yên.
     if (instance.roleId) {
       const assignments = await this.roleAssignment.listAssignments({
         userId, contextId: await getCourseContextId(this.db, instance.courseId),
@@ -404,13 +332,6 @@ export class CohortMaterializationSurface {
     return { withdrawn: hasRelated };
   }
 
-  /**
-   * Người dùng hiện có đang là thành viên của cohort hay không —
-   * nguồn sự thật hiện tại mà hai điểm vào vật chất hoá neo vào.
-   *
-   * @param cohortId - cohort cần kiểm.
-   * @param userId - người dùng cần kiểm.
-   */
   async isCohortMember(cohortId: string, userId: string): Promise<boolean> {
     const row = await this.db
       .selectFrom('cohort_members')
@@ -423,11 +344,6 @@ export class CohortMaterializationSurface {
     return !!row;
   }
 
-  /**
-   * Các instance đồng bộ cohort đang trỏ tới một cohort.
-   *
-   * @param cohortId - cohort đích.
-   */
   async listCohortInstances(cohortId: string): Promise<EnrolInstanceRow[]> {
     const rows = await this.db
       .selectFrom('enrol')
@@ -438,16 +354,12 @@ export class CohortMaterializationSurface {
   }
 
   /**
-   * Vật chất hoá "thành viên mới vào cohort": ghi danh người dùng
-   * vào mọi khoá học có instance cohort tương ứng đang bật.
+   * Vật chất hoá "thành viên mới vào cohort": ghi danh người dùng vào mọi khoá học có instance cohort tương ứng đang
+   * bật.
    *
-   * Guard trạng thái hiện tại: sự kiện có thể được phát lại MUỘN,
-   * sau khi user đã rời cohort — không ghi danh cho người hiện
-   * không còn trong cohort. Thành viên vi phạm chốt tách vai bị bỏ
-   * qua riêng lẻ qua đường đồng bộ hàng loạt (xem
+   * Guard trạng thái hiện tại: sự kiện có thể được phát lại MUỘN, sau khi user đã rời cohort — không ghi danh cho người
+   * hiện không còn trong cohort. Thành viên vi phạm chốt tách vai bị bỏ qua riêng lẻ qua đường đồng bộ hàng loạt (xem
    * `enrolFromCohortSync`).
-   *
-   * @param payload - định danh cohort và người dùng của sự kiện thành viên.
    */
   async materializeCohortMemberAdded(payload: { cohortId: string; userId: string }): Promise<void> {
     if (!(await this.isCohortMember(payload.cohortId, payload.userId))) return;
@@ -459,20 +371,14 @@ export class CohortMaterializationSurface {
   }
 
   /**
-   * Vật chất hoá "thành viên rời cohort": rút hoặc đình chỉ ghi
-   * danh cohort tương ứng theo chế độ rời của từng instance.
+   * Vật chất hoá "thành viên rời cohort": rút hoặc đình chỉ ghi danh cohort tương ứng theo chế độ rời của từng
+   * instance.
    *
-   * Guard trạng thái hiện tại: sự kiện rời phát lại muộn KHÔNG được
-   * đình chỉ người đã vào lại cohort — nguồn sự thật là
-   * `cohort_members` hiện tại, không phải thứ tự tới của sự kiện
-   * (đường in-process và consumer outbox có thể đan nhau). Chế độ
-   * 'unenrol' đi qua đường gỡ ghi danh lõi; chế độ đình chỉ ghi
-   * trạng thái SUSPENDED với vết modifierId bị xoá về null (đình chỉ
-   * do ĐỒNG BỘ HỆ THỐNG — job đối soát phân biệt được với đình chỉ
-   * thủ công theo khoá, vốn mang vết của người thao tác) và phát
-   * `user_enrolment_suspended` với lý do `cohort_removed`.
-   *
-   * @param payload - định danh cohort và người dùng của sự kiện thành viên.
+   * Guard trạng thái hiện tại: sự kiện rời phát lại muộn KHÔNG được đình chỉ người đã vào lại cohort — nguồn sự thật là
+   * `cohort_members` hiện tại, không phải thứ tự tới của sự kiện (đường in-process và consumer outbox có thể đan nhau).
+   * Chế độ 'unenrol' đi qua đường gỡ ghi danh lõi; chế độ đình chỉ ghi trạng thái SUSPENDED với vết modifierId bị xoá
+   * về null (đình chỉ do ĐỒNG BỘ HỆ THỐNG — job đối soát phân biệt được với đình chỉ thủ công theo khoá, vốn mang vết
+   * của người thao tác) và phát `user_enrolment_suspended` với lý do `cohort_removed`.
    */
   async materializeCohortMemberRemoved(payload: { cohortId: string; userId: string }): Promise<void> {
     if (await this.isCohortMember(payload.cohortId, payload.userId)) return;

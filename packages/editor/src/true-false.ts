@@ -9,8 +9,8 @@ import {
 import { plainTextExtensions } from './extensions.js';
 
 /**
- * Tài liệu phía soạn của câu đúng/sai chùm (TF-A) — port theo mô hình
- * editor giaokhoa (điểm quyết D-1 ngày 26/10/2026, lát P5 đợt #248).
+ * Tài liệu phía soạn của câu đúng/sai chùm (TF-A) — port theo mô hình editor giaokhoa (điểm quyết D-1 ngày 26/10/2026,
+ * lát P5 đợt #248).
  *
  * Flow tổng thể của module này:
  *
@@ -34,24 +34,20 @@ import { plainTextExtensions } from './extensions.js';
  *    statementList đúng 4 mệnh đề); đáp án nạp riêng từ phía đáp án
  *    của version (`answerKey.solution`).
  *
- * Bất biến quan trọng: id của statement là neo của đáp án — sửa nội
- * dung một mệnh đề không đổi id của nó, nên đáp án Đ/S và đáp án học
- * sinh chọn luôn bám đúng mệnh đề qua mọi lần sửa nội dung; mệnh đề
- * mới sinh id mới và chưa có đáp án cho tới khi người soạn chọn Đ/S.
+ * Bất biến quan trọng: id của statement là neo của đáp án — sửa nội dung một mệnh đề không đổi id của nó, nên đáp án
+ * Đ/S và đáp án học sinh chọn luôn bám đúng mệnh đề qua mọi lần sửa nội dung; mệnh đề mới sinh id mới và chưa có đáp án
+ * cho tới khi người soạn chọn Đ/S.
  */
 
 export { TRUE_FALSE_STATEMENT_COUNT };
 
-/** Tên node danh sách mệnh đề trong tài liệu (khớp hợp đồng contracts). */
 export const STATEMENT_LIST_NODE_TYPE = 'statementList';
 
-/** Tên node một mệnh đề trong tài liệu (khớp hợp đồng contracts). */
 export const STATEMENT_NODE_TYPE = 'statement';
 
 /**
- * Một mệnh đề trong tài liệu soạn: node `statement` với `attrs.id` là
- * định danh ổn định và `content` là các block rich text của nội dung
- * mệnh đề (cùng lát block với hợp đồng).
+ * Một mệnh đề trong tài liệu soạn: node `statement` với `attrs.id` là định danh ổn định và `content` là các block rich
+ * text của nội dung mệnh đề (cùng lát block với hợp đồng).
  */
 export interface TrueFalseStatementJson {
   type: typeof STATEMENT_NODE_TYPE;
@@ -60,11 +56,9 @@ export interface TrueFalseStatementJson {
 }
 
 /**
- * Tài liệu phía soạn của câu đúng/sai chùm: một `doc` mà phần tử cuối
- * là đúng một `statementList` chứa các {@link TrueFalseStatementJson};
- * mọi phần tử trước nó là block nội dung của thân câu. Hình dạng này
- * TRÙNG hình dạng lưu trữ trong hợp đồng (khác tài liệu trắc nghiệm
- * thống nhất vốn chỉ sống phía soạn).
+ * Tài liệu phía soạn của câu đúng/sai chùm: một `doc` mà phần tử cuối là đúng một `statementList` chứa các {@link
+ * TrueFalseStatementJson}; mọi phần tử trước nó là block nội dung của thân câu. Hình dạng này TRÙNG hình dạng lưu trữ
+ * trong hợp đồng (khác tài liệu trắc nghiệm thống nhất vốn chỉ sống phía soạn).
  */
 export interface TrueFalseDocumentJson {
   type: 'doc';
@@ -72,11 +66,8 @@ export interface TrueFalseDocumentJson {
 }
 
 /**
- * Sinh định danh cho một mệnh đề mới. Cùng kỷ luật với `newChoiceId`:
- * `crypto.randomUUID` của nền tảng; môi trường thiếu API đó thì rơi
- * về bộ đếm + thời gian — id chỉ cần duy nhất và ổn định trong vòng
- * đời của version.
- *
+ * Sinh định danh cho một mệnh đề mới. Cùng kỷ luật với `newChoiceId`: `crypto.randomUUID` của nền tảng; môi trường
+ * thiếu API đó thì rơi về bộ đếm + thời gian — id chỉ cần duy nhất và ổn định trong vòng đời của version.
  * @returns Chuỗi định danh mới cho mệnh đề.
  */
 let fallbackIdCounter = 0;

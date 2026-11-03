@@ -3,11 +3,9 @@ import { COGNITIVE_LEVELS } from './assessment.js';
 import { uuidIdSchema } from './ids.js';
 
 /**
- * Hợp đồng API của KHO NGÂN HÀNG HỆ THỐNG (issue #585, chương trình
- * tenant #579): bản chính tập trung của Ngân hàng câu hỏi hệ thống
- * trên database riêng phía platform — phiên bản bất biến, giáo viên
- * tìm câu qua API, khi đưa câu vào đề thì sao chép bản chụp đúng
- * phiên bản vào kho trung tâm kèm truy vết nguồn.
+ * Hợp đồng API của KHO NGÂN HÀNG HỆ THỐNG (issue #585, chương trình tenant #579): bản chính tập trung của Ngân hàng câu
+ * hỏi hệ thống trên database riêng phía platform — phiên bản bất biến, giáo viên tìm câu qua API, khi đưa câu vào đề
+ * thì sao chép bản chụp đúng phiên bản vào kho trung tâm kèm truy vết nguồn.
  *
  * Ranh giới nghiệp vụ của tầng này:
  * - Gói phiên bản là tài liệu JSON tự chứa: nội dung câu, đáp án +
@@ -34,7 +32,6 @@ import { uuidIdSchema } from './ids.js';
  */
 export const SYSTEM_BANK_QUESTION_TYPES = ['multichoice', 'truefalse', 'shortanswer', 'essay'] as const;
 
-/** Một đáp án trong gói phiên bản: nội dung + đúng/sai + phản hồi riêng + thứ tự hiển thị. */
 export const systemBankPackageAnswerSchema = z.strictObject({
   answer: z.unknown(),
   isCorrect: z.boolean(),
@@ -43,7 +40,6 @@ export const systemBankPackageAnswerSchema = z.strictObject({
 });
 export type SystemBankPackageAnswer = z.infer<typeof systemBankPackageAnswerSchema>;
 
-/** Một liên kết YCCĐ trong gói: id chuẩn gốc phía platform + mức độ nhận thức của liên kết. */
 export const systemBankPackageOutcomeSchema = z.strictObject({
   outcomeId: uuidIdSchema,
   cognitiveLevel: z.enum(COGNITIVE_LEVELS),
@@ -89,12 +85,10 @@ export const withdrawSystemBankQuestionSchema = z.strictObject({
 export type WithdrawSystemBankQuestion = z.infer<typeof withdrawSystemBankQuestionSchema>;
 
 /**
- * Truy vấn khám phá câu hỏi hệ thống (chỉ câu đang phát hành):
- * lọc theo dạng câu, theo YCCĐ nguồn (outcomeId — vị trí chương trình
- * được suy qua YCCĐ: client duyệt cây chương trình qua API gói YCCĐ
- * rồi chọn chuẩn, không cần trường vị trí riêng trên câu hỏi), theo
- * mức độ nhận thức của liên kết. Phân trang bằng limit/offset (giới
- * hạn 100 như mọi danh sách khác của hệ).
+ * Truy vấn khám phá câu hỏi hệ thống (chỉ câu đang phát hành): lọc theo dạng câu, theo YCCĐ nguồn (outcomeId — vị trí
+ * chương trình được suy qua YCCĐ: client duyệt cây chương trình qua API gói YCCĐ rồi chọn chuẩn, không cần trường vị
+ * trí riêng trên câu hỏi), theo mức độ nhận thức của liên kết. Phân trang bằng limit/offset (giới hạn 100 như mọi danh
+ * sách khác của hệ).
  */
 export const discoverSystemBankQuestionsSchema = z.strictObject({
   qtype: z.enum(SYSTEM_BANK_QUESTION_TYPES).optional(),
@@ -106,10 +100,9 @@ export const discoverSystemBankQuestionsSchema = z.strictObject({
 export type DiscoverSystemBankQuestions = z.infer<typeof discoverSystemBankQuestionsSchema>;
 
 /**
- * Nhập bản chụp một phiên bản câu hỏi hệ thống vào kho trung tâm:
- * đích mặc định là bank cá nhân của người nhập (như đường copy câu
- * hiện hữu); đích tường minh phải là bank/category thuộc về bank đó.
- * Phiên bản vắng thì nhập phiên bản mới nhất đang phát hành.
+ * Nhập bản chụp một phiên bản câu hỏi hệ thống vào kho trung tâm: đích mặc định là bank cá nhân của người nhập (như
+ * đường copy câu hiện hữu); đích tường minh phải là bank/category thuộc về bank đó. Phiên bản vắng thì nhập phiên bản
+ * mới nhất đang phát hành.
  */
 export const importSystemBankQuestionSchema = z.strictObject({
   sourceQuestionId: uuidIdSchema,
@@ -120,11 +113,9 @@ export const importSystemBankQuestionSchema = z.strictObject({
 export type ImportSystemBankQuestion = z.infer<typeof importSystemBankQuestionSchema>;
 
 /**
- * Phát hành một gói YCCĐ phía platform: định danh phiên bản (duy nhất
- * toàn kho, dạng `YYYY.MM.DD.N`) + phạm vi (`all` hoặc slug môn học).
- * Ánh xạ mã cũ→mã mới là thông tin tham chiếu kèm theo gói (từ YCCĐ
- * cũ sang YCCĐ mới khi tách/gộp/đổi vị trí) — bản cài không tự sửa
- * các gắn chuẩn cũ theo ánh xạ.
+ * Phát hành một gói YCCĐ phía platform: định danh phiên bản (duy nhất toàn kho, dạng `YYYY.MM.DD.N`) + phạm vi (`all`
+ * hoặc slug môn học). Ánh xạ mã cũ→mã mới là thông tin tham chiếu kèm theo gói (từ YCCĐ cũ sang YCCĐ mới khi
+ * tách/gộp/đổi vị trí) — bản cài không tự sửa các gắn chuẩn cũ theo ánh xạ.
  */
 export const createSystemOutcomePackageSchema = z.strictObject({
   version: z.string().min(1).max(50),

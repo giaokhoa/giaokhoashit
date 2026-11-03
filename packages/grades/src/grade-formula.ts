@@ -1,12 +1,11 @@
 /**
  * GradeFormula — bộ đánh giá công thức điểm AN TOÀN (parser đệ quy, KHÔNG dùng eval).
  *
- * Nguồn oracle: MoodleDocs "Grade calculations" (docs.moodle.org/en/Grade_calculations,
- * tra cứu trực tuyến 2026-10-23): công thức bắt đầu bằng dấu `=`, tham chiếu một grade item
- * bằng idNumber của nó đặt trong ngoặc vuông kép — ví dụ `[[Quiz1]]` — các phép toán số học
- * `+ - * /`, dấu ngoặc, và các hàm `sum`, `average`, `min`, `max` với đối số tách bằng dấu phẩy.
- * Ví dụ trong tài liệu: `=average([[item1]], [[item2]])`,
- * `=sum([[item1]]*0.3, [[item2]]*0.6, [[item3]]*0.1)`, `=max([[A]], [[B]], 100)`.
+ * Nguồn oracle: MoodleDocs "Grade calculations" (docs.moodle.org/en/Grade_calculations, tra cứu trực tuyến 2026-10-23):
+ * công thức bắt đầu bằng dấu `=`, tham chiếu một grade item bằng idNumber của nó đặt trong ngoặc vuông kép — ví dụ
+ * `[[Quiz1]]` — các phép toán số học `+ - * /`, dấu ngoặc, và các hàm `sum`, `average`, `min`, `max` với đối số tách
+ * bằng dấu phẩy. Ví dụ trong tài liệu: `=average([[item1]], [[item2]])`, `=sum([[item1]]*0.3, [[item2]]*0.6,
+ * [[item3]]*0.1)`, `=max([[A]], [[B]], 100)`.
  *
  * Ngữ nghĩa đã chốt cho hệ này (ghi rõ vì Moodle không định nghĩa hết trong một trang):
  *  - Chia cho 0 cho kết quả null (không có điểm) thay vì lỗi/Infinity — khớp yêu cầu nghiệp vụ.
@@ -39,7 +38,6 @@ export class GradeFormulaError extends Error {
   }
 }
 
-/** Các hàm được hỗ trợ trong công thức tính điểm (đúng tập hàm lõi của tài liệu Moodle được yêu cầu). */
 export const FORMULA_FUNCTIONS = ['sum', 'average', 'min', 'max', 'power', 'round', 'mod', 'pi', 'if'] as const;
 export type FormulaFunction = (typeof FORMULA_FUNCTIONS)[number];
 
@@ -60,7 +58,6 @@ const FUNCTION_ARITY: Record<FormulaFunction, readonly [number, number]> = {
 export type ComparisonOp = '>' | '<' | '>=' | '<=' | '==' | '!=';
 const COMPARISON_OPS: readonly string[] = ['>', '<', '>=', '<=', '==', '!='];
 
-/** Nút cây cú pháp của công thức điểm. */
 export type FormulaNode =
   | { kind: 'number'; value: number }
   | { kind: 'reference'; idNumber: string }
@@ -76,8 +73,8 @@ type Token =
   | { type: 'op'; value: string };
 
 /**
- * Token hoá công thức: số, tham chiếu `[[idNumber]]`, tên hàm và toán tử/ngoặc/dấu phẩy.
- * Ném GradeFormulaError('syntax') khi gặp ký tự lạ hoặc tham chiếu không đóng ngoặc.
+ * Token hoá công thức: số, tham chiếu `[[idNumber]]`, tên hàm và toán tử/ngoặc/dấu phẩy. Ném
+ * GradeFormulaError('syntax') khi gặp ký tự lạ hoặc tham chiếu không đóng ngoặc.
  */
 function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
@@ -134,11 +131,10 @@ function tokenize(input: string): Token[] {
 }
 
 /**
- * Phân tích công thức (có hoặc không có dấu `=` ở đầu) thành cây cú pháp bằng parser đệ quy:
- * comparison → additive (comparisonOp additive)? → term ((+|-) term)* → factor ((*|/) factor)*
- * → unary → primary. So sánh không chuỗi được: sau một phép so sánh, token so sánh thứ hai
- * sẽ thành token thừa và bị từ chối.
- * Hàm lạ ném GradeFormulaError('unknown_function'); cú pháp sai ném ('syntax').
+ * Phân tích công thức (có hoặc không có dấu `=` ở đầu) thành cây cú pháp bằng parser đệ quy: comparison → additive
+ * (comparisonOp additive)? → term ((+|-) term)* → factor ((*|/) factor)* → unary → primary. So sánh không chuỗi được:
+ * sau một phép so sánh, token so sánh thứ hai sẽ thành token thừa và bị từ chối. Hàm lạ ném
+ * GradeFormulaError('unknown_function'); cú pháp sai ném ('syntax').
  */
 export function parseGradeFormula(formula: string): FormulaNode {
   const body = formula.trim().startsWith('=') ? formula.trim().slice(1) : formula;
