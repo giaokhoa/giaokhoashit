@@ -95,7 +95,7 @@ export class SeedService implements OnApplicationBootstrap {
         await this.assignRoleIfMissing(admin.id, manager.id, (await this.contexts.ensureTenantContext(school.id)).id);
       }
     }
-    await this.ensurePlatformOperator();
+    await this.ensurePlatformOperator(zero.id);
     await this.seedControlPlaneRegistry(zero, school);
   }
 
@@ -122,7 +122,7 @@ export class SeedService implements OnApplicationBootstrap {
    * trả về tường minh, không phải một membership), và các cổng
    * membership không bao giờ thấy operator là thành viên tenant nào.
    */
-  private async ensurePlatformOperator(): Promise<void> {
+  private async ensurePlatformOperator(tenantZeroId: string): Promise<void> {
     const username = this.config.get<string>('PLATFORM_ADMIN_USERNAME');
     if (!username) return;
     const bootstrapUsername = this.config.get<string>('ADMIN_USERNAME') ?? 'admin';
@@ -141,6 +141,10 @@ export class SeedService implements OnApplicationBootstrap {
     if (!admins.includes(operator.id)) {
       await this.evaluator.setSiteAdmins([...admins, operator.id]);
     }
+    // Dọn membership tenant-zero còn sót từ seed cũ. Quyền platform
+    // của operator đến từ siteadmins; không được giữ membership
+    // tenant-zero chỉ vì database đã boot bằng seed phiên bản trước.
+    await this.tenants.removeMembership(tenantZeroId, operator.id);
     // CỐ Ý không tạo membership tenant-zero ở đây: xem ghi chú
     // ranh giới platform ngay trên hàm này.
   }

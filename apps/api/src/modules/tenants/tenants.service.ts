@@ -593,6 +593,15 @@ export class TenantsService {
   }
 
   /**
+   * Dọn membership của platform principal khỏi tenant-zero.
+   * Chỉ seed vận hành platform gọi bề mặt này khi nâng cấp dữ liệu
+   * cũ; trạng thái siteadmin của user được giữ độc lập.
+   */
+  async removeMembership(tenantId: string, userId: string): Promise<void> {
+    await tenantAls.run({ platform: true }, () => this.repo.deleteMembership(tenantId, userId));
+  }
+
+  /**
    * Đồng bộ thư mục thành viên ở control plane sau một thao tác
    * ghi membership thành công (issue #587, hạng mục 3 — thiết kế
    * B1): chỉ áp cho tenant ở kho riêng và chỉ khi control plane

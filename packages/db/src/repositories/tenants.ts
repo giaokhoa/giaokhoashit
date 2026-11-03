@@ -413,6 +413,15 @@ export class TenantsRepository {
     }
   }
 
+  /** Xoá membership legacy của một user trong tenant đích (dùng cho dọn dữ liệu seed platform). */
+  async deleteMembership(tenantId: string, userId: string): Promise<void> {
+    await this.handle
+      .deleteFrom('tenant_memberships')
+      .where('tenant_id', '=', tenantId)
+      .where('user_id', '=', userId)
+      .execute();
+  }
+
   async listMembershipsForUser(userId: string): Promise<TenantMembershipRow[]> {
     try {
       return await this.handle

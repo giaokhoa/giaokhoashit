@@ -67,6 +67,9 @@ async function pg(url: string): Promise<Client> {
   return client;
 }
 
+let lastAdminLoginResponse = 'not attempted';
+let adminDbDiagnostic = 'not queried';
+
 async function tryAdminLogin(): Promise<boolean> {
   try {
     const res = await fetch(`${APP_BASE}/api/v1/auth/token`, {
@@ -74,8 +77,10 @@ async function tryAdminLogin(): Promise<boolean> {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ username: 'admin', password: 'Admin123!' }),
     });
+    lastAdminLoginResponse = `${res.status} ${await res.text()}`;
     return res.status === 200 || res.status === 201;
-  } catch {
+  } catch (error) {
+    lastAdminLoginResponse = String(error);
     return false;
   }
 }
@@ -123,8 +128,26 @@ describe('Seed bootstrap trên DB trống bằng role thường dưới RLS fail
       const baselines = readdirSync(migrationsDir, { withFileTypes: true })
         .filter((d) => d.isDirectory() && d.name.endsWith('_baseline'))
         .map((d) => join(migrationsDir, d.name, 'migration.sql'));
-      expect(baselines).toHaveLength(1);
+      if (baselines.length !== 1) {
+        throw new Error(`Expected one centre baseline migration, found ${baselines.length}`);
+      }
       await scratchAdmin.query(readFileSync(baselines[0]!, 'utf8'));
+      // Dựng dữ liệu cũ của seed trước khi app mới boot: platform
+      // operator đã tồn tại và còn membership active ở tenant-zero.
+      // Seed hiện tại phải giữ user/siteadmin nhưng dọn membership này.
+      await scratchAdmin.query(
+        `WITH zero AS (
+           INSERT INTO tenants (id, slug, name, kind, status)
+           VALUES (uuidv7(), 'trang-chinh', 'Trang chính', 'platform', 'active')
+           RETURNING id
+         ), operator AS (
+           INSERT INTO users (id, username, email, first_name, last_name)
+           VALUES (uuidv7(), 'platform-operator', 'platform-operator@localhost', 'Platform', 'Operator')
+           RETURNING id
+         )
+         INSERT INTO tenant_memberships (tenant_id, user_id, status)
+         SELECT zero.id, operator.id, 'active' FROM zero, operator`,
+      );
       // Role ứng dụng: thường tuyệt đối — không superuser, không
       // bypassrls, không phải chủ sở hữu bảng. Đây là đúng hình dạng kết
       // nối production đã làm app crash-loop.
@@ -149,6 +172,9 @@ describe('Seed bootstrap trên DB trống bằng role thường dưới RLS fail
     const env: NodeJS.ProcessEnv = {
       ...process.env,
       DATABASE_URL: urlFor(SCRATCH_DB, APP_ROLE, APP_ROLE_PASSWORD),
+      ADMIN_USERNAME: 'admin',
+      ADMIN_EMAIL: 'admin@localhost',
+      ADMIN_PASSWORD: 'Admin123!',
       PORT: String(APP_PORT),
       NODE_ENV: 'test',
       // Đúng hình dạng production: AS của MCP bật → main.ts mount
@@ -157,8 +183,10 @@ describe('Seed bootstrap trên DB trống bằng role thường dưới RLS fail
       MCP_AS_ENABLED: 'true',
       BETTER_AUTH_SECRET: 'seed-rls-spec-secret-not-production',
       BETTER_AUTH_URL: APP_BASE,
+      PLATFORM_ADMIN_USERNAME: 'platform-operator',
+      PLATFORM_ADMIN_EMAIL: 'platform-operator@localhost',
+      PLATFORM_ADMIN_PASSWORD: 'Platform123!',
     };
-    delete env.PLATFORM_ADMIN_USERNAME;
     child = spawn(process.execPath, [mainJs], { env, stdio: ['ignore', 'pipe', 'pipe'] });
     child.stdout?.on('data', (d: Buffer) => { childOutput += d.toString(); });
     child.stderr?.on('data', (d: Buffer) => { childOutput += d.toString(); });
@@ -176,7 +204,7 @@ describe('Seed bootstrap trên DB trống bằng role thường dưới RLS fail
       if (await tryAdminLogin()) break;
       if (Date.now() > deadline) {
         throw new Error(
-          `App con không sẵn sàng sau 180s trên DB trống bằng role thường. ` +
+          `App con không sẵn sàng sau 180s trên DB trống bằng role thường; lần đăng nhập cuối: ${lastAdminLoginResponse}. ` +
           `Cuối log:\n${childOutput.slice(-3000)}`,
         );
       }
@@ -218,6 +246,31 @@ describe('Seed bootstrap trên DB trống bằng role thường dưới RLS fail
           WHERE u.username = 'admin' AND tm.status = 'active'`,
       );
       expect(Number(memberships.rows[0]!.count)).toBeGreaterThanOrEqual(2);
+    } finally {
+      await client.end();
+    }
+  });
+
+  it('seed giữ platform operator nhưng dọn membership tenant-zero còn sót từ seed cũ', async () => {
+    const client = await pg(urlFor(SCRATCH_DB, APP_ROLE, APP_ROLE_PASSWORD));
+    try {
+      await client.query(`SELECT set_config('app.platform', 'on', false)`);
+      const operator = await client.query<{ id: string }>(
+        `SELECT id FROM users WHERE username = 'platform-operator'`,
+      );
+      expect(operator.rows).toHaveLength(1);
+      const siteAdmins = await client.query<{ value: string[] }>(
+        `SELECT value FROM config WHERE key = 'siteadmins'`,
+      );
+      expect(siteAdmins.rows[0]?.value).toContain(operator.rows[0]!.id);
+      const memberships = await client.query<{ count: string }>(
+        `SELECT count(*)::text AS count
+           FROM tenant_memberships tm
+           JOIN tenants t ON t.id = tm.tenant_id
+          WHERE tm.user_id = $1 AND t.slug = 'trang-chinh'`,
+        [operator.rows[0]!.id],
+      );
+      expect(Number(memberships.rows[0]!.count)).toBe(0);
     } finally {
       await client.end();
     }
