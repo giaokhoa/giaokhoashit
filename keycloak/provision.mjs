@@ -928,15 +928,6 @@ async function reconcileOrgAdminPermissions(rep, orgByAlias) {
       policyId,
     });
   }
-  // Permission Users theo từng Organization của mô hình cũ phải xoá: FGAP chấm UNANIMOUS nên mọi permission
-  // Users ở mức type đều áp dụng cho mọi user, admin của trung tâm này luôn trượt policy của trung tâm kia.
-  const perms = await listPaged(`${base}/permission/scope`);
-  for (const perm of perms || []) {
-    if (!/^org-admin-.+-users$/.test(perm.name)) continue;
-    const del = await api("DELETE", `${base}/permission/scope/${perm.id}`);
-    if (del.status === 204) ok(`realm ${realm}: đã xoá permission ${perm.name} của mô hình cũ`);
-    else fail(`realm ${realm}: xoá permission ${perm.name} của mô hình cũ trả HTTP ${del.status}`);
-  }
   const usersPolicyId = await ensureRolePolicy(
     realm,
     apId,

@@ -99,8 +99,7 @@ Realm đã tồn tại: bộ cấp phát hoà giải từng nhóm, không xoá d
     bộ cấp phát đọc lại để kiểm chứng thay vì tin mã trạng thái (xem mục Ghi chú hành vi).
 11. Bộ permission FGAP cho admin của từng trung tâm được hoà giải theo mẫu ở mục Organization và FGAP: với mỗi
     Organization, realm role, role policy và permission `-organizations` được tạo nếu thiếu, sửa nếu lệch; cặp dùng
-    chung toàn realm cho Users (`org-admin-users-policy` và `org-admin-users`) cũng được hoà giải, và permission sót
-    dạng `org-admin-<alias>-users` của mô hình cũ bị xoá nếu còn.
+    chung toàn realm cho Users (`org-admin-users-policy` và `org-admin-users`) cũng được hoà giải.
 
 ## Mẫu realm giaokhoa
 
