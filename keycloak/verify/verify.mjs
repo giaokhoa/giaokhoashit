@@ -525,19 +525,12 @@ async function phaseOrganizationClaim() {
     console.log("  --   Fixture verify: đã bật tạm direct access grants trên lms-web để đăng nhập bằng password grant");
   }
   const secret = await clientSecretValue("lms-web");
-  let res = await passwordGrant(REALM, { clientId: "lms-web", clientSecret: secret, username: "member-a" });
-  if (res.status === 200 && !("organization" in decodeJwtPayload(res.data.access_token))) {
-    // Scope organization là scope mặc định của lms-web nên claim phải
-    // tự có mặt; chỉ khi bản Keycloak không tự đưa vào mới xin lại
-    // với scope tường minh để khẳng định cơ chế mapper.
-    console.log("  --   Token đầu chưa mang claim organization — xin lại với scope=organization tường minh");
-    res = await passwordGrant(REALM, {
-      clientId: "lms-web",
-      clientSecret: secret,
-      username: "member-a",
-      scope: "organization",
-    });
-  }
+  // Scope organization là scope mặc định của lms-web nên access token
+  // đầu tiên (không xin scope tường minh) đã mang claim qua mapper —
+  // khẳng định ngay trên token đầu để lỗi ở đường token mặc định
+  // không bị che bởi một lần xin lại (đã kiểm chứng trên Keycloak
+  // 26.8.1: token đầu của member-a mang claim organization).
+  const res = await passwordGrant(REALM, { clientId: "lms-web", clientSecret: secret, username: "member-a" });
   check("member-a đăng nhập bằng password grant qua lms-web thành công", res.status === 200, `HTTP ${res.status}`);
   const claim = res.status === 200 ? decodeJwtPayload(res.data.access_token).organization : undefined;
   const claimText = JSON.stringify(claim || {});
