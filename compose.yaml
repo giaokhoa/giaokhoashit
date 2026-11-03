@@ -168,6 +168,14 @@ services:
     environment:
       OIDC_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-https://auth.fuckr.net/realms/giaokhoa}
       SERVER_PORT: 8081
+      # DataSource của server (Spring Boot bind SPRING_DATASOURCE_* vào spring.datasource.*): lấy từ cùng bộ biến stack
+      # của service postgres, vì Flyway của server sở hữu schema của nó trong chính database nghiệp vụ này.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-lms}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Can dat POSTGRES_PASSWORD trong file .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       # Image JRE không có curl: thăm health bằng Bash /dev/tcp như
       # healthcheck của service keycloak ở dưới.
