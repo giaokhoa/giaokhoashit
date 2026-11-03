@@ -762,14 +762,14 @@ async function ensureRealmRoleByName(realm, name) {
   return after.data || null;
 }
 
-async function ensureRolePolicy(realm, apId, name, roleId) {
+async function ensureRolePolicy(realm, apId, name, roles) {
   const base = `/admin/realms/${realm}/clients/${apId}/authz/resource-server`;
   const desired = {
     name,
     type: "role",
     logic: "POSITIVE",
     decisionStrategy: "UNANIMOUS",
-    roles: [{ id: roleId, required: true }],
+    roles,
   };
   const policies = await listPaged(`${base}/policy`);
   const found = (policies || []).find((p) => p.name === name);
@@ -785,7 +785,7 @@ async function ensureRolePolicy(realm, apId, name, roleId) {
   }
   const { data: current } = await api("GET", `${base}/policy/role/${found.id}`);
   const currentRoles = (current?.roles || []).map((r) => `${r.id}:${Boolean(r.required)}`);
-  if (!sameSet(currentRoles, [`${roleId}:true`])) {
+  if (!sameSet(currentRoles, roles.map((r) => `${r.id}:${Boolean(r.required)}`))) {
     const put = await api("PUT", `${base}/policy/role/${found.id}`, { ...desired, id: found.id });
     if (put.status !== 201 && put.status !== 204) {
       fail(`realm ${realm}: sửa role policy ${name} trả HTTP ${put.status}`);
@@ -888,9 +888,10 @@ async function assignOrganizationScope(rep) {
 
 // Với mỗi Organization: realm role org-admin-<alias> giữ độc quyền qua
 // role policy cùng tên; permission trên Organizations khoá đúng một
-// Organization theo id, còn permission trên Users (không resources)
-// là lớp hiển thị/quản trị user mà Keycloak bắt buộc phải có để admin
-// trung tâm thao tác member của Organization mình qua API.
+// Organization theo id. Permission trên Users (không resources) dùng
+// chung toàn realm qua một role policy chứa mọi role org-admin: lớp
+// hiển thị/quản trị user mà Keycloak bắt buộc phải có để admin trung
+// tâm thao tác member của Organization mình qua API.
 async function reconcileOrgAdminPermissions(rep, orgByAlias) {
   const realm = rep.realm;
   if (orgByAlias.size === 0) return;
@@ -908,6 +909,7 @@ async function reconcileOrgAdminPermissions(rep, orgByAlias) {
     fail(`realm ${realm}: client admin-permissions thiếu scope FGAP view/manage`);
     return;
   }
+  const orgAdminRoleIds = [];
   for (const [alias, org] of orgByAlias) {
     const roleName = `org-admin-${alias}`;
     const role = await ensureRealmRoleByName(realm, roleName);
@@ -915,7 +917,8 @@ async function reconcileOrgAdminPermissions(rep, orgByAlias) {
       fail(`realm ${realm}: không xác định được id của realm role ${roleName}`);
       continue;
     }
-    const policyId = await ensureRolePolicy(realm, apId, roleName, role.id);
+    orgAdminRoleIds.push(role.id);
+    const policyId = await ensureRolePolicy(realm, apId, roleName, [{ id: role.id, required: true }]);
     if (!policyId) continue;
     await ensureScopePermission(realm, apId, {
       name: `${roleName}-organizations`,
@@ -924,11 +927,28 @@ async function reconcileOrgAdminPermissions(rep, orgByAlias) {
       scopeIds: [viewId, manageId],
       policyId,
     });
+  }
+  // Permission Users theo từng Organization của mô hình cũ phải xoá: FGAP chấm UNANIMOUS nên mọi permission
+  // Users ở mức type đều áp dụng cho mọi user, admin của trung tâm này luôn trượt policy của trung tâm kia.
+  const perms = await listPaged(`${base}/permission/scope`);
+  for (const perm of perms || []) {
+    if (!/^org-admin-.+-users$/.test(perm.name)) continue;
+    const del = await api("DELETE", `${base}/permission/scope/${perm.id}`);
+    if (del.status === 204) ok(`realm ${realm}: đã xoá permission ${perm.name} của mô hình cũ`);
+    else fail(`realm ${realm}: xoá permission ${perm.name} của mô hình cũ trả HTTP ${del.status}`);
+  }
+  const usersPolicyId = await ensureRolePolicy(
+    realm,
+    apId,
+    "org-admin-users-policy",
+    orgAdminRoleIds.map((id) => ({ id, required: false })),
+  );
+  if (usersPolicyId) {
     await ensureScopePermission(realm, apId, {
-      name: `${roleName}-users`,
+      name: "org-admin-users",
       resourceType: "Users",
       scopeIds: [viewId, manageId],
-      policyId,
+      policyId: usersPolicyId,
     });
   }
   ok(`realm ${realm}: bộ permission FGAP cho admin trung tâm khớp mẫu`);
