@@ -198,6 +198,23 @@ export const TENANT_MEMBERSHIP_COLUMNS = [
   'ended_at as endedAt',
 ] as const;
 
+/**
+ * Cột đọc của bảng `tenant_memberships` ở schema baseline — trước
+ * migration cộng `primary_role`/`version` của issue #5. Xem ghi chú
+ * tương thích tiền di trú ở `tenant-membership.ts`: đường đọc/ghi
+ * thử danh sách đầy đủ trước, chỉ rơi về danh sách này khi database
+ * báo thiếu cột, và dòng đọc về được chuẩn hoá (vai `null`,
+ * phiên bản `1`).
+ */
+export const BASELINE_TENANT_MEMBERSHIP_COLUMNS = [
+  'id',
+  'tenant_id as tenantId',
+  'user_id as userId',
+  'status',
+  'joined_at as joinedAt',
+  'ended_at as endedAt',
+] as const;
+
 /** Cột đọc của bảng `enrol`. */
 export const ENROL_COLUMNS = [
   'id',
