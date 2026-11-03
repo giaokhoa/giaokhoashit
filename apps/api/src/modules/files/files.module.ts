@@ -12,12 +12,9 @@ import { FILE_CLEANUP_QUEUE, FilesService } from './files.service';
 import { OBJECT_STORAGE } from './storage';
 import { createObjectStorage } from './storage-factory';
 
-/**
- * Module quản lý file. Từ issue #647, repository của module sống
- * ở `@lms/db` trên Kysely (lớp thuần, không phụ thuộc Nest) nên
- * module lắp nó bằng factory provider trên handle định tuyến theo
- * không gian (`SpaceDatabaseService.routedKysely`) — cùng khuôn
- * lắp repository của pilot control plane.
+/** Module quản lý file. Từ issue #647, repository của module sống ở `@lms/db` trên Kysely (lớp thuần, không phụ thuộc
+ * Nest) nên module lắp nó bằng factory provider trên handle định tuyến theo không gian
+ * (`SpaceDatabaseService.routedKysely`) — cùng khuôn lắp repository của pilot control plane.
  */
 @Module({
   imports: [AccessModule, SpaceRoutingModule, BullModule.registerQueue({ name: FILE_CLEANUP_QUEUE })],
@@ -34,5 +31,4 @@ import { createObjectStorage } from './storage-factory';
   ],
   exports: [FilesService],
 })
-/** Module quản lý file. */
 export class FilesModule {}

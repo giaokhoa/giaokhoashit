@@ -29,10 +29,7 @@ import {
   type UpdateCourseSection,
 } from '@lms/contracts';
 
-/**
- * Validation của Courses dùng Zod qua Standard Schema — schema nền ở
- * `@lms/contracts` là nguồn sự thật duy nhất.
- */
+/** Validation của Courses dùng Zod qua Standard Schema — schema nền ở `@lms/contracts` là nguồn sự thật duy nhất. */
 export {
   applyCurriculumFrameSchema,
   copyCourseContentSchema,

@@ -4,22 +4,13 @@ import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectComm
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { contentKey, type ObjectStorage, type PresignedDownloadStorage } from './storage';
 
-/**
- * Adapter vật lý tương thích S3 cho port ObjectStorage: cùng
- * bố cục khoá định địa chỉ theo nội dung như adapter cục bộ
- * (`<2 chars>/<next 2 chars>/<sha256>`), để bucket có thể được kiểm tra và
- * đối soát với đúng cùng dạng như filedir cục bộ. Hoạt động
- * với AWS S3 và các endpoint tương thích S3 (Cloudflare R2, Backblaze
- * B2, MinIO) qua FILE_STORAGE_S3_ENDPOINT. Mọi cấu hình đều đến từ
- * env duy nhất; constructor fail fast (nêu tên các biến còn thiếu,
+/** Adapter vật lý tương thích S3 cho port ObjectStorage: cùng bố cục khoá định địa chỉ theo nội dung như adapter cục bộ
+ * (`<2 chars>/<next 2 chars>/<sha256>`), để bucket có thể được kiểm tra và đối soát với đúng cùng dạng như filedir cục
+ * bộ. Hoạt động với AWS S3 và các endpoint tương thích S3 (Cloudflare R2, Backblaze B2, MinIO) qua
+ * FILE_STORAGE_S3_ENDPOINT. Mọi cấu hình đều đến từ env duy nhất; constructor fail fast (nêu tên các biến còn thiếu,
  * không bao giờ nêu giá trị của chúng) khi thiếu các thiết lập bắt buộc của driver.
  */
 @Injectable()
-/**
- * Kho lưu trữ nội dung file trên S3 / endpoint tương thích S3, khoá theo contentHash —
- * cùng bố cục key với adapter local để hai kho đối chiếu được với nhau.
- * Cấu hình (bucket/endpoint/khoá) chỉ đọc từ env; thiếu biến bắt buộc thì fail-fast khi khởi tạo.
- */
 export class S3ObjectStorage implements ObjectStorage, PresignedDownloadStorage {
   private readonly client: S3Client;
   private readonly bucket: string;
@@ -51,9 +42,6 @@ export class S3ObjectStorage implements ObjectStorage, PresignedDownloadStorage 
     }
   }
 
-  /**
-   * Suy key S3 từ contentHash — cùng bố cục với adapter local.
-   */
   keyFor(contentHash: string): string { return contentKey(contentHash); }
 
   /**
@@ -74,7 +62,7 @@ export class S3ObjectStorage implements ObjectStorage, PresignedDownloadStorage 
    * cùng hash là cùng nội dung, không bao giờ ghi đè).
    */
   async put(contentHash: string, data: Buffer): Promise<void> {
-    if (await this.exists(contentHash)) return; // dedup: nội dung giống hệt đã được lưu vật lý một lần
+    if (await this.exists(contentHash)) return;
     await this.client.send(new PutObjectCommand({ Bucket: this.bucket, Key: this.keyFor(contentHash), Body: data }));
   }
 

@@ -10,10 +10,8 @@ import {
   type VneduExportModel,
 } from './vnedu-export';
 
-/**
- * VneduExport (issue #53) — oracle là Thông tư 22/2021/TT-BGDĐT:
- * Điều 5 (thang 10, làm tròn 1 chữ số thập phân), Điều 9 (ĐTBmhk =
- * (TĐĐGtx + 2×ĐĐGgk + 3×ĐĐGck) / (số ĐĐGtx + 5), chỉ tổng kết khi đủ điểm).
+/** VneduExport (issue #53) — oracle là Thông tư 22/2021/TT-BGDĐT: Điều 5 (thang 10, làm tròn 1 chữ số thập phân), Điều
+ * 9 (ĐTBmhk = (TĐĐGtx + 2×ĐĐGgk + 3×ĐĐGck) / (số ĐĐGtx + 5), chỉ tổng kết khi đủ điểm).
  */
 describe('Hàm roundToOneDecimal', () => {
   it('làm tròn nửa lên tới 1 chữ số thập phân, khử nhiễu phẩy động', () => {
@@ -104,8 +102,6 @@ describe('Hàm buildVneduGrid', () => {
       'ĐĐGgk (hệ số 2)', 'ĐĐGck (hệ số 3)',
       null,
     ]);
-    // Các vùng gộp cốt lõi: nhóm thường xuyên (dòng 4, cột 4–5), nhóm định kỳ
-    // (cột 6–7), ĐTBmhk gộp dọc 2 dòng đầu bảng, STT gộp dọc.
     expect(grid.merges).toContainEqual({ top: 4, left: 4, bottom: 4, right: 5 });
     expect(grid.merges).toContainEqual({ top: 4, left: 6, bottom: 4, right: 7 });
     expect(grid.merges).toContainEqual({ top: 4, left: 8, bottom: 5, right: 8 });
@@ -124,7 +120,7 @@ describe('Hàm buildVneduGrid', () => {
 describe('Hàm renderVneduWorkbook', () => {
   it('sinh file .xlsx đọc lại được, giữ đúng giá trị từng ô điểm', async () => {
     const buffer = await renderVneduWorkbook(sampleModel());
-    expect(buffer.subarray(0, 2).toString('latin1')).toBe('PK'); // xlsx là zip
+    expect(buffer.subarray(0, 2).toString('latin1')).toBe('PK');
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer as unknown as ExcelJS.Buffer);
     const sheet = workbook.getWorksheet('Bảng điểm');
@@ -132,7 +128,6 @@ describe('Hàm renderVneduWorkbook', () => {
     expect(sheet!.getCell(1, 1).value).toBe('BẢNG ĐIỂM MÔN HỌC');
     expect(sheet!.getCell(4, 4).value).toBe('Điểm đánh giá thường xuyên');
     expect(sheet!.getCell(5, 6).value).toBe('ĐĐGgk (hệ số 2)');
-    // Dòng dữ liệu đầu: STT 1, tx2 quy đổi 7.5, ĐTBmhk 8.1.
     expect(sheet!.getCell(VNEDU_DATA_START_ROW, 1).value).toBe(1);
     expect(sheet!.getCell(VNEDU_DATA_START_ROW, 5).value).toBe(7.5);
     expect(sheet!.getCell(VNEDU_DATA_START_ROW, 8).value).toBe(8.1);

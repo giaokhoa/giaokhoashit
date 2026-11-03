@@ -19,10 +19,7 @@ import {
   type UpdateSubject,
 } from '@lms/contracts';
 
-/**
- * Validation của Curriculum dùng Zod qua Standard Schema — schema nền ở
- * `@lms/contracts` là nguồn sự thật duy nhất.
- */
+/** Validation của Curriculum dùng Zod qua Standard Schema — schema nền ở `@lms/contracts` là nguồn sự thật duy nhất. */
 export {
   createCurriculumNodeSchema,
   createCurriculumSchema,

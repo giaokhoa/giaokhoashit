@@ -14,19 +14,13 @@ import { CourseGradeExportsController, CourseGradeItemsController, CourseGradebo
 import { LegacyGradesCourseController, LegacyGradesPhantomController } from './legacy-grades.controller';
 import { GradesService } from './grades.service';
 
-/**
- * GradesModule facade: GradesService (điểm theo từng bài). Depends on
- * Courses, Enrol, Access, Completion (chỉ qua facade). Đăng ký các
- * evaluator của nó vào Completion/Courses lúc khởi động.
+/** GradesModule facade: GradesService (điểm theo từng bài). Depends on Courses, Enrol, Access, Completion (chỉ qua
+ * facade). Đăng ký các evaluator của nó vào Completion/Courses lúc khởi động.
  *
- * GradesRepository là repository Kysely của `@lms/db` (issue
- * #644): provider dựng bằng factory với handle kho trung tâm đã
- * định tuyến theo không gian (`routedKysely` của
- * SpaceDatabaseService). Ba luồng ghi điểm (`setGrade`,
- * `recordActivityGrade`, `updateGrade`) chạy trọn trong
- * transaction Kysely của repository này kèm `enqueueKysely` của
- * OutboxService — repository chuyển tiếp phía bộ máy cũ của chúng
- * đã xoá ở issue #663 khi bộ máy cũ rời khỏi cây.
+ * GradesRepository là repository Kysely của `@lms/db` (issue #644): provider dựng bằng factory với handle kho trung tâm
+ * đã định tuyến theo không gian (`routedKysely` của SpaceDatabaseService). Ba luồng ghi điểm (`setGrade`,
+ * `recordActivityGrade`, `updateGrade`) chạy trọn trong transaction Kysely của repository này kèm `enqueueKysely` của
+ * OutboxService — repository chuyển tiếp phía bộ máy cũ của chúng đã xoá ở issue #663 khi bộ máy cũ rời khỏi cây.
  */
 @Module({
   imports: [
@@ -43,5 +37,4 @@ import { GradesService } from './grades.service';
   ],
   exports: [GradesService],
 })
-/** Module điểm theo bài. */
 export class GradesModule {}
