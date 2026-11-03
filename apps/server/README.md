@@ -15,6 +15,9 @@ các phần đó thuộc các lát cắt tiếp theo.
   trợ cả Maven và Gradle; Maven được chọn vì wrapper gọn, không cần daemon và khớp thói quen build một module đơn.
 - Dự án được khởi tạo bằng Spring Initializr với các dependency: webmvc, security, security-oauth2-resource-server,
   actuator — tên starter theo đúng thế hệ Spring Boot 4.
+- Tầng dữ liệu dùng Hibernate/JPA qua `spring-boot-starter-data-jpa` (Spring Data JPA) trên PostgreSQL. Schema do
+  Flyway quản lý bằng các script trong `src/main/resources/db/migration`; Hibernate không tự tạo hay sửa schema
+  (`spring.jpa.hibernate.ddl-auto=none`). Tầng dữ liệu không dùng jOOQ.
 
 ## Cấu hình
 
@@ -28,13 +31,23 @@ các phần đó thuộc các lát cắt tiếp theo.
 |                  |          | biến này ứng dụng không khởi động — cố ý không ghi sẵn địa chỉ của bất  |
 |                  |          | kỳ môi trường nào trong file cấu hình.                                  |
 | `SERVER_PORT`    | Không    | Cổng HTTP, mặc định 8080.                                               |
+| `SPRING_DATASOURCE_URL`      | Có       | JDBC URL của PostgreSQL của ứng dụng, dạng                              |
+|                              |          | `jdbc:postgresql://<host>:<cổng>/<database>`. Spring Boot tự cấu hình   |
+|                              |          | datasource và Flyway từ ba biến `SPRING_DATASOURCE_*` theo cơ chế       |
+|                              |          | relaxed binding; không ghi sẵn địa chỉ của bất kỳ môi trường nào.       |
+| `SPRING_DATASOURCE_USERNAME` | Có       | Tên đăng nhập database của ứng dụng.                                    |
+| `SPRING_DATASOURCE_PASSWORD` | Có       | Mật khẩu database của ứng dụng.                                         |
 
 ## Chạy tại local
 
-Điều kiện: JDK 25 và một Keycloak 26.8.1 có realm `giaokhoa` đang chạy.
+Điều kiện: JDK 25, một Keycloak 26.8.1 có realm `giaokhoa` đang chạy và một PostgreSQL trống cho ứng dụng (Flyway
+tự tạo schema khi khởi động).
 
 ```bash
 export OIDC_ISSUER_URI=http://localhost:8180/realms/giaokhoa
+export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/lms
+export SPRING_DATASOURCE_USERNAME=<tên đăng nhập database>
+export SPRING_DATASOURCE_PASSWORD=<mật khẩu database>
 ./mvnw spring-boot:run
 ```
 
@@ -48,6 +61,9 @@ export OIDC_ISSUER_URI=http://localhost:8180/realms/giaokhoa
 | `GET /api/ping`                 | JWT hợp lệ       | Endpoint mẫu chứng minh kiểm chứng token: trả `status` và `subject`    |
 |                                 |                  | lấy từ JWT. Thiếu token, token sai chữ ký, sai issuer hoặc hết hạn     |
 |                                 |                  | đều bị trả 401.                                                        |
+| `GET /api/profile`              | JWT hợp lệ       | Bản ghi liên kết danh tính của chính người gọi: `sub` lấy từ JWT đã     |
+|                                 |                  | kiểm chứng là khoá tra cứu duy nhất; lần gọi đầu của một `sub` chưa có  |
+|                                 |                  | bản ghi thì tự tạo. Trả `id`, `keycloakSub`, `createdAt`, `updatedAt`.  |
 
 ## Test
 
@@ -61,6 +77,11 @@ trả 401. Phần duy nhất được thay bằng fixture là bước tải JWKS
 tĩnh tự sinh kèm validator issuer và hạn token giống hệt cấu hình chạy thật, nên chữ ký, issuer và thời hạn vẫn được
 kiểm chứng thật mà test không cần Keycloak đang chạy và không cần Docker (môi trường dev hiện tại không có Docker nên
 không dùng Testcontainers).
+
+Bộ test `ProfileEndpointTests` chạy cùng chuỗi lọc bảo mật đó cộng tầng dữ liệu thật (Flyway áp migration lên H2 ở
+chế độ PostgreSQL, Hibernate/JPA truy vấn) với các ca: thiếu token trả 401; lần gọi đầu tự tạo bản ghi liên kết theo
+`sub` của token và lần gọi sau trả đúng cùng một bản ghi; người dùng thứ hai có bản ghi riêng và không thấy bản ghi
+của người dùng trước.
 
 ## Kiểm chứng trực tiếp với Keycloak thật
 
@@ -87,6 +108,21 @@ sai issuer trả 401, với validator issuer giống hệt cấu hình issuer). 
 chỉ dùng `OIDC_ISSUER_URI` và ứng dụng tự khám phá JWKS theo tài liệu — không có cấu hình khoá tĩnh nào được ghi vào
 repo.
 
+## Kiểm chứng khung liên kết danh tính trên đường chạy thật
+
+Khung liên kết danh tính (`app_user`, migration `V1`) đã được kiểm chứng trên đường chạy thật tại local: ứng dụng
+đóng gói dạng jar chạy với PostgreSQL 16 thật (database trống, Flyway tự áp `V1` khi khởi động) và Keycloak 26.8.1
+nói trên với hai người dùng thử thật. Kết quả: gọi `GET /api/profile` không kèm token trả 401; người dùng thứ nhất
+gọi lần đầu được tạo bản ghi với `keycloakSub` đúng `sub` của mình và gọi lần hai trả đúng cùng `id`; người dùng thứ
+hai có bản ghi riêng với `id` khác, phản hồi không chứa dữ kiện của người dùng thứ nhất; hai hàng tương ứng xuất
+hiện trong bảng `app_user`. Sau khi vô hiệu hoá người dùng thứ hai trong Keycloak, cấp token mới cho tài khoản đó bị
+từ chối với lỗi `invalid_grant` ("Account disabled").
+
+Vì sandbox chặn TCP của JVM (cùng lý do ở mục trên), lượt chạy này cấp khoá công khai của realm qua
+`public-key-location` như đã mô tả và nối JDBC tới PostgreSQL qua Unix socket bằng thư viện junixsocket đặt trên
+classpath lúc khởi động — cả hai đều là cấu hình của riêng lượt chạy kiểm chứng, không có trong repo; ở môi trường
+chạy bình thường ứng dụng dùng `OIDC_ISSUER_URI` và JDBC qua TCP như phần Cấu hình đã ghi.
+
 ## Nguồn tài liệu đã theo
 
 - Spring Boot — System Requirements (bản 4.1, khớp Spring Boot 4.1.2 của dự án; yêu cầu Java, Maven/Gradle):
@@ -99,6 +135,9 @@ repo.
 - Spring Boot Reference 4.1 — Actuator, Endpoints (mục Health: các nhóm liveness/readiness và thuộc tính
   `management.endpoint.health.probes.enabled`):
   https://docs.spring.io/spring-boot/4.1/reference/actuator/endpoints.html
+- Spring Boot Reference 4.1 — SQL Databases (cách dùng `spring-boot-starter-data-jpa`, Flyway chạy migration khi
+  khởi động và `spring.jpa.hibernate.ddl-auto` khi schema do công cụ migration quản lý):
+  https://docs.spring.io/spring-boot/4.1/reference/data/sql.html
 - Keycloak 26.8.1 — Securing Applications and Services, mục Planning for securing applications and services
   (nguyên tắc: ưu tiên hỗ trợ OIDC/OAuth2 có sẵn trong hệ sinh thái của ứng dụng, client adapter của Keycloak chỉ
   là lựa chọn cuối):
