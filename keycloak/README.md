@@ -97,8 +97,10 @@ Realm đã tồn tại: bộ cấp phát hoà giải từng nhóm, không xoá d
    hình.
 10. Scope `organization` được gắn làm scope mặc định cho `lms-web` và `lms-api` **sau khi** Organization đã có, và
     bộ cấp phát đọc lại để kiểm chứng thay vì tin mã trạng thái (xem mục Ghi chú hành vi).
-11. Bộ permission FGAP cho admin của từng trung tâm được hoà giải theo mẫu ở mục Organization và FGAP: realm role,
-    role policy và 2 permission của mỗi Organization được tạo nếu thiếu, sửa nếu lệch.
+11. Bộ permission FGAP cho admin của từng trung tâm được hoà giải theo mẫu ở mục Organization và FGAP: với mỗi
+    Organization, realm role, role policy và permission `-organizations` được tạo nếu thiếu, sửa nếu lệch; cặp dùng
+    chung toàn realm cho Users (`org-admin-users-policy` và `org-admin-users`) cũng được hoà giải, và permission sót
+    dạng `org-admin-<alias>-users` của mô hình cũ bị xoá nếu còn.
 
 ## Mẫu realm giaokhoa
 
@@ -135,32 +137,41 @@ Realm đã tồn tại: bộ cấp phát hoà giải từng nhóm, không xoá d
 
 Mỗi trung tâm là một Organization trong realm `giaokhoa`. Uỷ quyền quản trị dùng Admin Permissions (FGAP v2) trên
 client `admin-permissions` mà Keycloak tự tạo khi realm bật Admin Permissions. Với mỗi Organization có alias
-`<alias>`, bộ cấp phát dựng đúng một bộ ba:
+`<alias>`, bộ cấp phát dựng:
 
 - realm role `org-admin-<alias>` — gán cho user nào là admin của trung tâm đó;
 - role policy `org-admin-<alias>` trên client `admin-permissions`, trỏ đúng realm role trên;
 - permission `org-admin-<alias>-organizations`: resourceType `Organizations`, `resources` chứa đúng id của
-  Organization đó, scope `view` và `manage`, gắn với role policy trên;
-- permission `org-admin-<alias>-users`: resourceType `Users`, không khoá theo user cụ thể, scope `view` và
-  `manage`, gắn với cùng role policy.
+  Organization đó, scope `view` và `manage`, gắn với role policy trên.
+
+Cộng một cặp dùng chung toàn realm cho quyền trên Users:
+
+- role policy `org-admin-users-policy` trên client `admin-permissions`, chứa id của mọi realm role
+  `org-admin-<alias>`, tất cả đều `required: false`;
+- permission `org-admin-users`: resourceType `Users`, không khai `resources`, scope `view` và `manage`, gắn với
+  role policy `org-admin-users-policy`.
+
+Lý do phải gộp permission Users thành một cặp dùng chung: permission FGAP chỉ chấp nhận decisionStrategy
+`UNANIMOUS`; khi đánh giá, mọi permission áp dụng được cho resource và scope đang xét đều phải cho qua. Hai
+permission Users ở mức type theo từng trung tâm cùng áp dụng cho mọi user, nên admin của trung tâm này luôn trượt
+policy của trung tâm kia và bị phủ quyết lẫn nhau — đã kiểm chứng trên Keycloak 26.8.1. Một permission Users dùng
+chung với policy chứa mọi role admin (đều không bắt buộc) tránh được phủ quyết đó, trong khi ranh giới theo
+Organization vẫn do permission `-organizations` theo từng trung tâm giữ.
 
 Admin của một trung tâm còn cần các vai `query-users` và `query-organizations` của client `realm-management` để truy
 vấn resource qua Admin API — theo docs FGAP của Keycloak, đây là vai cơ bản để truy vấn, tự chúng không cấp quyền
 xem hay sửa; ranh giới xem/sửa do các permission ở trên quyết định. Việc gán vai cho từng admin cụ thể là thao tác
 vận hành (bộ kiểm chứng thực hiện trong fixture), không nằm trong mẫu cấp phát.
 
-Hành vi đã kiểm chứng trên Keycloak 26.8.1 với bộ ba trên: admin của trung tâm A đọc và cập nhật được Organization A
-(GET 200, PUT 204) và thấy được danh sách member của A; mọi thao tác tương tự lên Organization B đều bị 403.
+Hành vi đã kiểm chứng trên Keycloak 26.8.1 với mô hình trên: admin của trung tâm A đọc và cập nhật được
+Organization A (GET 200, PUT 204), thấy được danh sách member của A, và thêm/xoá member qua Organization A đạt
+(POST 201, DELETE 204); mọi thao tác tương tự lên Organization B đều bị 403.
 
-**Giới hạn đã kiểm chứng trên Keycloak 26.8.1**: thao tác member của Organization qua Admin API cần thêm permission
-loại Users (`view` + `manage`) như trên, vì FGAP v2 chưa giới hạn được Users theo membership của Organization —
-permission Users vì vậy ở mức toàn loại resource, còn ranh giới Organization được thực thi ở permission loại
-Organizations (Organization khác bị 403 toàn diện). Một giới hạn sâu hơn cũng đã kiểm chứng: permission Users ở mức
-loại resource cho admin xem được user, nhưng thao tác **thêm/xoá member** của Organization vẫn bị Keycloak trả 403 —
-đánh giá `manage` trên một user cụ thể chỉ đạt khi có permission gắn đúng resource của user đó, mà mẫu cấp phát theo
-trung tâm không sinh permission theo từng user. Hệ quả hiện tại: admin trung tâm xem và quản được Organization của
-mình qua API, nhưng thêm/xoá member vẫn phải qua tài khoản quản trị realm; điểm này cần một quyết định mô hình riêng
-nếu muốn mở, không tự nới trong mẫu cấp phát.
+**Giới hạn đã kiểm chứng trên Keycloak 26.8.1**: thao tác member của Organization qua Admin API cần permission loại
+Users (`view` + `manage`) như trên, vì FGAP v2 chưa giới hạn được Users theo membership của Organization —
+permission Users vì vậy là mức toàn realm, nên qua bề mặt `/users` chung, admin của trung tâm không bị lọc theo
+Organization. Ranh giới Organization thực thi ở permission loại Organizations (Organization khác bị 403 toàn
+diện) và ở các thao tác member qua Organization của mình.
 
 ## Realm master
 
@@ -200,22 +211,29 @@ từng kiểm, mã thoát khác 0 nếu có kiểm nào không đạt:
   client, scope `organization` kèm mapper membership và là scope mặc định của `lms-web`/`lms-api`; GET realm
   `tenant-a`/`tenant-b` trả 404; scope `roles` ánh xạ đúng 4 realm role, không client role;
 - mục 3: đúng 2 Organization theo cấu hình; mỗi Organization có đủ realm role `org-admin-<alias>`, role policy tương
-  ứng, permission `-organizations` khoá đúng id của Organization đó và permission `-users`, cả hai đều có scope
-  `view` + `manage`;
+  ứng và permission `-organizations` khoá đúng id của Organization đó với scope `view` + `manage`; role policy
+  `org-admin-users-policy` chứa đúng 2 role id của `org-admin-trung-tam-a` và `org-admin-trung-tam-b`, tất cả
+  `required: false`; tồn tại đúng một permission `org-admin-users` (resourceType `Users`, scope `view` + `manage`,
+  gắn đúng policy trên) và không tồn tại permission `org-admin-trung-tam-a-users` hay
+  `org-admin-trung-tam-b-users`;
 - mục 4: fixture qua tài khoản quản trị master — tạo user `member-a`, `member-b`, `admin-a` (bắt buộc có
   firstName/lastName), thêm member theo đúng Organization, gán realm role `org-admin-trung-tam-a` và 2 vai
   `query-*` cho admin-a;
 - mục 5: `member-a` đăng nhập bằng password grant qua `lms-web` (fixture của môi trường verify bật tạm direct
   access grants trên client này) — access token mang claim `organization` gồm `trung-tam-a` và không chứa
   `trung-tam-b`;
-- mục 6: ma trận FGAP bằng token của admin-a (password grant qua `admin-cli`): GET/PUT Organization của mình đạt
-  (200/204), Organization khác bị 403 toàn diện, xem được members của Organization mình; hai kiểm thêm/xoá member
-  hiện **chưa đạt** theo đúng giới hạn đã ghi ở mục Organization và FGAP;
+- mục 6: ma trận FGAP bằng token của admin-a (password grant qua `admin-cli`), đạt 10/10: GET/PUT Organization của
+  mình đạt (200/204), Organization khác bị 403 toàn diện, xem được members của Organization mình, thêm member vào
+  Organization mình đạt 201 và vào Organization khác bị 403, xoá member khỏi Organization mình đạt 204;
 - mục 7: realm master ở mặc định — `browserFlow` là flow dựng sẵn `browser`, không tồn tại flow
   `lms-master-browser`, không có thuộc tính `lms.master.mfa-session-migration`, user quản trị không bị gắn required
   action `CONFIGURE_TOTP`;
-- mục 8: chạy lại bộ cấp phát thoát 0, số Organization vẫn 2, số permission FGAP không tăng, bí mật của `lms-web`
-  không đổi.
+- mục 8: chạy lại bộ cấp phát thoát 0, số Organization vẫn 2, số permission FGAP không tăng (tổng ở lượt đầu là 3:
+  2 permission `-organizations` và 1 permission `org-admin-users`, so bằng số đếm động của lượt đầu), bí mật của
+  `lms-web` không đổi.
+
+Kết quả lượt chạy sạch gần nhất trên Keycloak 26.8.1 thật (xoá realm `giaokhoa` rồi chạy lại toàn trình, lặp lại
+hai lần): **60 đạt, 0 không đạt, mã thoát 0** ở cả hai lượt, trong đó mục 6 đạt 10/10.
 
 Cách chạy bằng Docker (môi trường có Docker):
 
@@ -250,8 +268,10 @@ theo đúng các hành vi này:
   `realmMappings`/`clientMappings` khi tập tương ứng rỗng. Bộ cấp phát hiểu trường vắng mặt là tập rỗng theo đúng
   thiết kế này, nhưng vẫn fail-closed — dừng và báo lỗi — khi HTTP lỗi hoặc trường có mặt mà sai kiểu dữ liệu, thay
   vì diễn giải một lần đọc hỏng thành "không có ánh xạ".
-- Đánh giá FGAP v2 cho thao tác `manage` trên một user cụ thể chỉ đạt khi có permission gắn đúng resource của user
-  đó; permission ở mức loại resource (resource mặc định `Users`) đủ cho thao tác `view` nhưng không đủ cho
-  `manage` — đây là căn cứ của giới hạn thêm/xoá member ghi ở mục Organization và FGAP.
+- Permission FGAP chỉ chấp nhận decisionStrategy `UNANIMOUS`: khi đánh giá, mọi permission áp dụng được cho
+  resource và scope đang xét đều phải cho qua. Vì vậy nhiều permission Users ở mức type theo từng trung tâm sẽ phủ
+  quyết lẫn nhau (mỗi permission cùng áp dụng cho mọi user, admin của trung tâm này luôn trượt policy của trung
+  tâm kia) — đây là lý do permission Users phải gộp thành một permission dùng chung toàn realm như ở mục
+  Organization và FGAP.
 - Realm PUT bỏ qua trường `authenticationFlows` một cách im lặng nhưng vẫn áp các trường vô hướng — bộ cấp phát
   dựa vào đúng hành vi này cho bước hoà giải vô hướng.
