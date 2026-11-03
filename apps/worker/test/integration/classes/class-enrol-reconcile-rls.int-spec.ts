@@ -127,18 +127,13 @@ describe('Worker class enrol reconcile dưới RLS (hồi quy #292)', () => {
     rlsPool = new TenantAwarePool({ connectionString: ordinaryRoleUrl(adminUrl) });
     rlsDb = createCentreKysely(rlsPool);
     processor = new ClassEnrolReconcileProcessor(
-      // Processor chạy trên handle Kysely định tuyến
-      // (`SpaceDatabaseService.routedKysely`): cấp một khung định
-      // tuyến tối thiểu mà `routedKysely` trỏ vào đúng pool role
-      // thường của ca này, để mọi đường đọc/ghi của processor
-      // giữ nguyên hình dạng kết nối production (role không
-      // BYPASSRLS) như trước.
+      // Processor chạy trên handle Kysely định tuyến (`SpaceDatabaseService.routedKysely`): cấp một khung định tuyến
+      // tối thiểu mà `routedKysely` trỏ vào đúng pool role thường của ca này, để mọi đường đọc/ghi của processor giữ
+      // nguyên hình dạng kết nối production (role không BYPASSRLS) như trước.
       { routedKysely: createCentreKysely(rlsPool) } as never,
-      // TaskLogService chạy trên handle Kysely định tuyến: cấp một
-      // khung định tuyến tối thiểu mà `routedKysely` trỏ vào đúng
-      // pool role thường của ca này, để đường ghi task_log giữ
-      // nguyên hình dạng kết nối production (role không BYPASSRLS)
-      // như trước.
+      // TaskLogService chạy trên handle Kysely định tuyến: cấp một khung định tuyến tối thiểu mà `routedKysely` trỏ vào
+      // đúng pool role thường của ca này, để đường ghi task_log giữ nguyên hình dạng kết nối production (role không
+      // BYPASSRLS) như trước.
       new TaskLogService({ routedKysely: createCentreKysely(rlsPool) } as never),
     );
   });

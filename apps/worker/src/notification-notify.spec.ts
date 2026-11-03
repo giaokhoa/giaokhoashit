@@ -231,11 +231,9 @@ describe('NotificationDeliveryService.notify — chín provider sự kiện thô
   });
 
   it('notify truyền courseId của người nhận đã tắt tiếng khoá đó: dừng sớm skipped-course-mute — không thông báo, không job email, không sự kiện', async () => {
-    // Lượt đọc tuỳ chọn đầu tiên trong deliverInApp là khoá tắt tiếng
-    // theo khoá (NB-4): giá trị 'mute' nghĩa là người nhận đã tắt
-    // tiếng khoá đó theo luật ghi đè của phía API. Provider dùng ở
-    // ca này là activity_due_soon — loại THƯỜNG, không thuộc diện
-    // miễn trừ P3 như grade_updated.
+    // Lượt đọc tuỳ chọn đầu tiên trong deliverInApp là khoá tắt tiếng theo khoá (NB-4): giá trị 'mute' nghĩa là người
+    // nhận đã tắt tiếng khoá đó theo luật ghi đè của phía API. Provider dùng ở ca này là activity_due_soon — loại
+    // THƯỜNG, không thuộc diện miễn trừ P3 như grade_updated.
     const { delivery, queue, insertedNotifications, insertedLogs, insertedOutbox } = buildNotify({
       user: ACTIVE_USER, preferenceReads: ['mute'],
     });

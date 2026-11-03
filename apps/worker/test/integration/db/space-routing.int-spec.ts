@@ -313,10 +313,9 @@ describe('Khung định tuyến theo trung tâm phía worker (integration)', () 
       });
       expect(probeBefore).toBe(CENTRE_DATABASE);
 
-      // Chờ quá ngưỡng nhàn rỗi + chu kỳ quét: pool của service
-      // này bị đóng và trạng thái đã-chuẩn-bị bị thu hồi. Bằng
-      // chứng pool đã đóng chính là hành vi ở bước sau — nếu pool
-      // chưa đóng, truy vấn qua handle định tuyến vẫn chạy được.
+      // Chờ quá ngưỡng nhàn rỗi + chu kỳ quét: pool của service này bị đóng và trạng thái đã-chuẩn-bị bị thu hồi. Bằng
+      // chứng pool đã đóng chính là hành vi ở bước sau — nếu pool chưa đóng, truy vấn qua handle định tuyến vẫn chạy
+      // được.
       await new Promise((resolve) => setTimeout(resolve, 600 + 1_800));
 
       // Ngữ cảnh vẫn mang slug, không chuẩn bị lại: truy vấn qua

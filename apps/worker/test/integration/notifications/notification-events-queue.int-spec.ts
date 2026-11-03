@@ -155,12 +155,10 @@ describe('Worker notification events queue mechanism (viết lại reanchor ở 
     const firstRow = await db.selectFrom('outbox_events').selectAll().where('id', '=', firstId).executeTakeFirst();
     const firstSeq = Number(firstRow!.seq);
 
-    // Sự kiện thứ hai được chèn với seq NHỎ HƠN seq đã xử lý — đúng
-    // hình dạng một đời DB mới sau reset mà consumer polling cũ
-    // phải neo-lại-watermark mới thấy được. Cột seq là identity
-    // GENERATED ALWAYS nên câu chèn phải khai OVERRIDING SYSTEM
-    // VALUE mới gán được seq tường minh. Relay chỉ quét publishedAt
-    // rỗng và consumer không so seq nên sự kiện vẫn tới nơi.
+    // Sự kiện thứ hai được chèn với seq NHỎ HƠN seq đã xử lý — đúng hình dạng một đời DB mới sau reset mà consumer
+    // polling cũ phải neo-lại-watermark mới thấy được. Cột seq là identity GENERATED ALWAYS nên câu chèn phải khai
+    // OVERRIDING SYSTEM VALUE mới gán được seq tường minh. Relay chỉ quét publishedAt rỗng và consumer không so seq nên
+    // sự kiện vẫn tới nơi.
     const secondPayload = {
       userId: student, enrolmentId: uid(952), enrolId: uid(953), courseId,
       timeEnd: new Date(Date.now() + 3 * DAY).toISOString(),

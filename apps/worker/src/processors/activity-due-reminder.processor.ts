@@ -76,12 +76,9 @@ export class ActivityDueReminderProcessor extends WorkerHost {
       .where('exam_pins.time_close', '<=', windowEnd)
       .execute();
     const reminded: ActivityDueReminderPair[] = [];
-    // Nạp theo lô thay cho kiểm tra từng cặp (học sinh × hoạt động):
-    // học sinh của một khoá chỉ nạp một lần cho cả lượt quét (nhiều
-    // hoạt động cùng khoá dùng chung), tập đã-nộp và tập đã-nhắc của
-    // một hoạt động cũng nạp một lần bằng một truy vấn rồi đối chiếu
-    // trong bộ nhớ — điều kiện phát nhắc giữ nguyên chính xác như
-    // khi kiểm tra từng cặp.
+    // Nạp theo lô thay cho kiểm tra từng cặp (học sinh × hoạt động): học sinh của một khoá chỉ nạp một lần cho cả lượt
+    // quét (nhiều hoạt động cùng khoá dùng chung), tập đã-nộp và tập đã-nhắc của một hoạt động cũng nạp một lần bằng
+    // một truy vấn rồi đối chiếu trong bộ nhớ — điều kiện phát nhắc giữ nguyên chính xác như khi kiểm tra từng cặp.
     const studentsByCourse = new Map<string, Promise<string[]>>();
     const studentsOf = (courseId: string): Promise<string[]> => {
       let cached = studentsByCourse.get(courseId);
@@ -170,10 +167,8 @@ export class ActivityDueReminderProcessor extends WorkerHost {
   }
 
   /**
-   * Học sinh thuộc diện nhắc của một khoá: user có ghi danh ACTIVE
-   * (status 0) còn hiệu lực tại thời điểm quét — đã bắt đầu
-   * (timeStart <= now) và chưa hết hạn (timeEnd trống hoặc > now) —
-   * qua mọi instance ghi danh đang bật của khoá.
+   * Học sinh thuộc diện nhắc của một khoá: user có ghi danh ACTIVE (status 0) còn hiệu lực tại thời điểm quét — đã bắt
+   * đầu (timeStart <= now) và chưa hết hạn (timeEnd trống hoặc > now) — qua mọi instance ghi danh đang bật của khoá.
    */
   private async enrolledStudentIds(courseId: string, now: Date): Promise<string[]> {
     const instances = await this.spaceDb.routedKysely
@@ -216,14 +211,10 @@ export class ActivityDueReminderProcessor extends WorkerHost {
   }
 
   /**
-   * Tập khoá "đã nhắc" của một pin, nạp một lần cho cả hoạt động:
-   * mỗi sự kiện nhắc đã có trong outbox đóng góp một khoá
-   * `<userId>|<timeClose ISO>` — đối chiếu trong bộ nhớ theo đúng bộ
-   * ba (userId, pinId, timeClose) của phép kiểm tra từng cặp trước
-   * đây. Chống trùng bền giữ nguyên: sự kiện nhắc cho đúng bộ ba đã
-   * tồn tại thì không phát lại — job chạy lại sau 5 phút hay worker
-   * khởi động lại đều không spam; mốc hạn đổi thì khoá khác đi và
-   * được nhắc lại.
+   * Tập khoá "đã nhắc" của một pin, nạp một lần cho cả hoạt động: mỗi sự kiện nhắc đã có trong outbox đóng góp một khoá
+   * `<userId>|<timeClose ISO>` — đối chiếu trong bộ nhớ theo đúng bộ ba (userId, pinId, timeClose) của phép kiểm tra
+   * từng cặp trước đây. Chống trùng bền giữ nguyên: sự kiện nhắc cho đúng bộ ba đã tồn tại thì không phát lại — job
+   * chạy lại sau 5 phút hay worker khởi động lại đều không spam; mốc hạn đổi thì khoá khác đi và được nhắc lại.
    */
   private async remindedKeysForPin(pinId: string): Promise<Set<string>> {
     // Toán tử JSON giữ nguyên văn như bản cũ trước chuyển đổi, chỉ đổi cách
@@ -239,10 +230,8 @@ export class ActivityDueReminderProcessor extends WorkerHost {
   }
 
   /**
-   * Tập học sinh ĐÃ NỘP của một bài tập, nạp một lần cho cả hoạt
-   * động: đã nộp = tồn tại bản nộp hiện hành ở trạng thái 'submitted'
-   * cho (assignment, học sinh); bản nháp ('draft' — chưa chốt nộp
-   * hoặc đã mở lại) tính là CHƯA nộp.
+   * Tập học sinh ĐÃ NỘP của một bài tập, nạp một lần cho cả hoạt động: đã nộp = tồn tại bản nộp hiện hành ở trạng thái
+   * 'submitted' cho (assignment, học sinh); bản nháp ('draft' — chưa chốt nộp hoặc đã mở lại) tính là CHƯA nộp.
    */
   private async submittedUserIdsForAssignment(assignmentId: string, studentIds: string[]): Promise<Set<string>> {
     const rows = await this.spaceDb.routedKysely
@@ -268,11 +257,9 @@ export class ActivityDueReminderProcessor extends WorkerHost {
 }
 
 /**
- * Khoá đối chiếu "đã nhắc" từ payload của một sự kiện nhắc đã phát:
- * `<userId>|<timeClose>` — payload do chính processor này ghi nên hai
- * trường luôn là chuỗi; sự kiện lạ thiếu trường cho khoá không khớp
- * được với bất kỳ cặp nào đang xét (đúng như phép kiểm tra từng cặp
- * bằng SQL trước đây, vốn đòi khớp cả ba trường).
+ * Khoá đối chiếu "đã nhắc" từ payload của một sự kiện nhắc đã phát: `<userId>|<timeClose>` — payload do chính processor
+ * này ghi nên hai trường luôn là chuỗi; sự kiện lạ thiếu trường cho khoá không khớp được với bất kỳ cặp nào đang xét
+ * (đúng như phép kiểm tra từng cặp bằng SQL trước đây, vốn đòi khớp cả ba trường).
  */
 function remindedKeyOf(payload: unknown): string {
   const p = (payload ?? {}) as { userId?: unknown; timeClose?: unknown };

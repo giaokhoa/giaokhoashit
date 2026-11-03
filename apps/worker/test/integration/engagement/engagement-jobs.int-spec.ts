@@ -159,9 +159,8 @@ describe('Engagement của worker: gửi thông báo, nhắc/lấy lịch, tự 
   });
 
   it('tự trao huy hiệu tôn trọng lá cohort + profile và coursecompletion theo ngày (bản song sinh worker của bộ đánh giá API)', async () => {
-    // Cohort và tư cách thành viên chỉ dành cho userA. Test tự tạo context
-    // hệ thống theo cùng mẫu idempotent của platform-jobs, thay vì mượn
-    // context do suite khác để lại — trên database mới bảng context rỗng.
+    // Cohort và tư cách thành viên chỉ dành cho userA. Test tự tạo context hệ thống theo cùng mẫu idempotent của
+    // platform-jobs, thay vì mượn context do suite khác để lại — trên database mới bảng context rỗng.
     await sql`insert into context (id, context_level, instance_id, path, depth)
       select '01990000-0000-7000-8000-0000000000a1', 10, null, '/01990000-0000-7000-8000-0000000000a1', 1
       where not exists (select 1 from context where context_level = 10 and instance_id is null)`.execute(db);

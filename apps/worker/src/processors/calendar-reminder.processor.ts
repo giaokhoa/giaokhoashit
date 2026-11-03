@@ -56,11 +56,9 @@ export class CalendarReminderProcessor extends WorkerHost {
     // truyền locale tường minh (mặc định 'vi' như các processor nền tảng).
     const recipientLocale = 'vi';
     const subject = this.i18n.t('platform.calendarReminderSubject', { locale: recipientLocale, args: { name: event.name } });
-    // TENANT-1 (#196): tenant của notification = tenant của khoá chứa
-    // sự kiện; sự kiện cá nhân/platform thì lấy tenant mặc định của
-    // người nhận theo membership. Truyền xuống hàm luật dùng chung để
-    // dòng thông báo + dispatch log mang đúng tenant (thiếu là thông
-    // báo thành "không gắn tenant", user trong tenant không thấy).
+    // TENANT-1 (#196): tenant của notification = tenant của khoá chứa sự kiện; sự kiện cá nhân/platform thì lấy tenant
+    // mặc định của người nhận theo membership. Truyền xuống hàm luật dùng chung để dòng thông báo + dispatch log mang
+    // đúng tenant (thiếu là thông báo thành "không gắn tenant", user trong tenant không thấy).
     let tenantId: string | null = null;
     if (event.courseId) {
       const courseRow = await this.spaceDb.routedKysely

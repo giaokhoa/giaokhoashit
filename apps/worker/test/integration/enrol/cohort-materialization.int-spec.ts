@@ -62,10 +62,9 @@ describe('Vật chất hoá cohort dùng chung — gọi được và đúng hà
     const cohortId = randomUUID();
     const instanceId = randomUUID();
     const courseCtxId = randomUUID();
-    // Cây context dùng chung của suite (hệ thống → tenant) đã dựng
-    // một lần ở beforeAll; mỗi đồ thị chỉ dựng thêm context khoá của
-    // riêng nó dưới tenant chung để các ca độc lập dữ kiện nghiệp vụ
-    // nhưng không chèn trùng các context dùng chung.
+    // Cây context dùng chung của suite (hệ thống → tenant) đã dựng một lần ở beforeAll; mỗi đồ thị chỉ dựng thêm
+    // context khoá của riêng nó dưới tenant chung để các ca độc lập dữ kiện nghiệp vụ nhưng không chèn trùng các
+    // context dùng chung.
     await pg.query(
       'INSERT INTO course (id, tenant_id, category, full_name, short_name, is_template) VALUES ($1, $2, $3, $4, $5, true)',
       [courseId, tenantId, categoryId, 'Khoá đặc tả hoá worker 527', `W527-${courseId.slice(0, 8)}`],
@@ -129,12 +128,9 @@ describe('Vật chất hoá cohort dùng chung — gọi được và đúng hà
     await pg.connect();
     pool = new Pool({ connectionString });
     db = createCentreKysely(pool);
-    // Cổng outbox phía worker tự cấp cho bề mặt: chèn thẳng vào
-    // outbox_events trên schema dùng chung; enqueue ghi trong
-    // transaction được truyền vào, enqueueStandalone ghi độc lập —
-    // đúng hợp đồng cổng mà package khai báo. Cột `payload` jsonb
-    // đi qua serialize tường minh kèm `::jsonb` theo khuôn ghi
-    // jsonb của `@lms/db`.
+    // Cổng outbox phía worker tự cấp cho bề mặt: chèn thẳng vào outbox_events trên schema dùng chung; enqueue ghi trong
+    // transaction được truyền vào, enqueueStandalone ghi độc lập — đúng hợp đồng cổng mà package khai báo. Cột
+    // `payload` jsonb đi qua serialize tường minh kèm `::jsonb` theo khuôn ghi jsonb của `@lms/db`.
     const outbox: SharedOutboxPort = {
       async enqueue(tx, input) {
         const tenantIdValue = input.tenantId ?? null;

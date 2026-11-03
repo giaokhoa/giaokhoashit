@@ -103,12 +103,9 @@ export class NotificationEventsCatchupService implements OnModuleInit, OnModuleD
   }
 
   /**
-   * Điểm vào khi module khởi động: chạy lượt phát bù và chờ nó
-   * rút cạn xong mới hoàn tất khởi tạo (hook async được NestJS
-   * chờ theo đúng vòng đời của framework).
-   * {@link drainLegacyBacklog} tự thử lại có backoff khi gặp
-   * lỗi thoáng qua nên hook này không ném; nó chỉ trở về sớm
-   * khi module bị huỷ giữa chừng (tiến trình đang đóng).
+   * Điểm vào khi module khởi động: chạy lượt phát bù và chờ nó rút cạn xong mới hoàn tất khởi tạo (hook async được
+   * NestJS chờ theo đúng vòng đời của framework). {@link drainLegacyBacklog} tự thử lại có backoff khi gặp lỗi thoáng
+   * qua nên hook này không ném; nó chỉ trở về sớm khi module bị huỷ giữa chừng (tiến trình đang đóng).
    */
   async onModuleInit(): Promise<void> {
     await this.drainLegacyBacklog();
@@ -137,12 +134,9 @@ export class NotificationEventsCatchupService implements OnModuleInit, OnModuleD
   }
 
   /**
-   * Vòng thử lại của lượt phát bù: chạy từng lần thử rút cạn
-   * ({@link drainAttempt}) cho tới khi một lần thử hoàn tất.
-   * Mỗi lần thử thất bại ghi log mức error kèm số lần thử, số
-   * job đã phát được trong lần thử đó và nhịp chờ backoff
-   * trước lần thử kế tiếp — tồn đọng không bao giờ kẹt lặng
-   * lẽ trong lúc tiến trình còn sống. Vòng chỉ dừng hẳn khi
+   * Vòng thử lại của lượt phát bù: chạy từng lần thử rút cạn ({@link drainAttempt}) cho tới khi một lần thử hoàn tất.
+   * Mỗi lần thử thất bại ghi log mức error kèm số lần thử, số job đã phát được trong lần thử đó và nhịp chờ backoff
+   * trước lần thử kế tiếp — tồn đọng không bao giờ kẹt lặng lẽ trong lúc tiến trình còn sống. Vòng chỉ dừng hẳn khi
    * module đang bị huỷ.
    *
    * @returns Số job đã phát trong lần thử hoàn tất (0 khi bị
@@ -178,15 +172,11 @@ export class NotificationEventsCatchupService implements OnModuleInit, OnModuleD
   }
 
   /**
-   * Một lần thử rút cạn trong ngữ cảnh platform đã bọc: đọc
-   * khoá watermark cũ và rút cạn các dòng trên nó. Lỗi ở bất
-   * kỳ bước nào được ném ra cho {@link drainWithRetry} quyết
-   * định thử lại — hàm này không tự nuốt lỗi.
+   * Một lần thử rút cạn trong ngữ cảnh platform đã bọc: đọc khoá watermark cũ và rút cạn các dòng trên nó. Lỗi ở bất kỳ
+   * bước nào được ném ra cho {@link drainWithRetry} quyết định thử lại — hàm này không tự nuốt lỗi.
    *
-   * Hai trạng thái kết thúc không phải lỗi: không có khoá cũ
-   * (hệ mới tinh hoặc chuyển tiếp đã xong — no-op) và giá trị
-   * khoá không phải số (dữ kiện hỏng cố định, thử lại không
-   * sửa được: ghi log mức warn và giữ nguyên khoá, giữ đúng
+   * Hai trạng thái kết thúc không phải lỗi: không có khoá cũ (hệ mới tinh hoặc chuyển tiếp đã xong — no-op) và giá trị
+   * khoá không phải số (dữ kiện hỏng cố định, thử lại không sửa được: ghi log mức warn và giữ nguyên khoá, giữ đúng
    * hành vi trước đây).
    *
    * @param onProgress Báo số job đã phát sau mỗi job, để tầng
@@ -220,11 +210,9 @@ export class NotificationEventsCatchupService implements OnModuleInit, OnModuleD
     onProgress: (enqueued: number) => void,
   ): Promise<number> {
 
-    // Neo khi DB đã dựng lại: watermark vượt quá seq lớn nhất
-    // hiện có thì không dòng nào của đời DB này nằm trên
-    // watermark — tồn đọng rỗng theo định nghĩa.
-    // `seq` là int8: Kysely trả chuỗi, bộ máy cũ trả số (bigint
-    // mode number) — `Number()` giữ đúng giá trị số như trước.
+    // Neo khi DB đã dựng lại: watermark vượt quá seq lớn nhất hiện có thì không dòng nào của đời DB này nằm trên
+    // watermark — tồn đọng rỗng theo định nghĩa. `seq` là int8: Kysely trả chuỗi, bộ máy cũ trả số (bigint mode number)
+    // — `Number()` giữ đúng giá trị số như trước.
     const maxRow = await this.spaceDb.routedKysely
       .selectFrom('outbox_events')
       .select((eb) => eb.fn.max('outbox_events.seq').as('value'))
@@ -233,10 +221,8 @@ export class NotificationEventsCatchupService implements OnModuleInit, OnModuleD
 
     let enqueued = 0;
     if (watermark < dbMax) {
-      // Đọc tồn đọng theo đúng hình dạng truy vấn của consumer
-      // cũ: `seq > watermark AND type IN (mười loại)`, thứ tự
-      // seq tăng dần, từng lô — chỉ khác ở chỗ cơ chế này đọc
-      // bất kể `publishedAt` và đích đến là hàng đợi thay vì
+      // Đọc tồn đọng theo đúng hình dạng truy vấn của consumer cũ: `seq > watermark AND type IN (mười loại)`, thứ tự
+      // seq tăng dần, từng lô — chỉ khác ở chỗ cơ chế này đọc bất kể `publishedAt` và đích đến là hàng đợi thay vì
       // handler trực tiếp.
       let cursor = watermark;
       for (;;) {

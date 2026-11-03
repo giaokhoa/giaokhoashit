@@ -211,12 +211,9 @@ export class NotificationDeliveryService implements OnModuleDestroy {
   }
 
   /**
-   * Chính sách phát của ADMIN ở cấp site cho provider này (NB-7) —
-   * cùng luật `isProviderEnabledBySitePolicy` phía API: chưa có ghi
-   * đè trong `plugin_config` (plugin `notifications`, khoá
-   * `provider_<tên>_enabled`, tenant NULL — setting scope platform)
-   * thì mặc định bật; giá trị lưu là JSON như SiteConfigRepository
-   * ghi. Loại bắt buộc (P2) luôn bật.
+   * Chính sách phát của ADMIN ở cấp site cho provider này (NB-7) — cùng luật `isProviderEnabledBySitePolicy` phía API:
+   * chưa có ghi đè trong `plugin_config` (plugin `notifications`, khoá `provider_<tên>_enabled`, tenant NULL — setting
+   * scope platform) thì mặc định bật; giá trị lưu là JSON như SiteConfigRepository ghi. Loại bắt buộc (P2) luôn bật.
    */
   private async isProviderEnabledBySitePolicy(provider: WorkerProviderLaw): Promise<boolean> {
     if (provider.mandatoryInApp) return true;
@@ -247,10 +244,8 @@ export class NotificationDeliveryService implements OnModuleDestroy {
   }
 
   /**
-   * Giá trị bật/tắt kênh trong-app HIỆU LỰC — cùng luật
-   * `resolveNotificationPreference` phía API (xem docblock của class):
-   * v2 → suy dữ liệu cũ (loggedin trước, loggedoff sau) → mặc định bật;
-   * loại bắt buộc ép bật sau cùng.
+   * Giá trị bật/tắt kênh trong-app HIỆU LỰC — cùng luật `resolveNotificationPreference` phía API (xem docblock của
+   * class): v2 → suy dữ liệu cũ (loggedin trước, loggedoff sau) → mặc định bật; loại bắt buộc ép bật sau cùng.
    */
   async resolvePopupEnabled(userId: string, provider: WorkerProviderLaw): Promise<boolean> {
     let enabled: boolean;
@@ -270,22 +265,19 @@ export class NotificationDeliveryService implements OnModuleDestroy {
   }
 
   /**
-   * Phát một thông báo trong-app cho user theo provider đã đăng ký, áp
-   * trọn luật ở docblock của class. `smallMessage` do nơi phát truyền
-   * tường minh để giữ nguyên bề mặt hiển thị hiện tại của từng đường
-   * phát (hai processor nền vốn lấy subject làm smallMessage).
+   * Phát một thông báo trong-app cho user theo provider đã đăng ký, áp trọn luật ở docblock của class. `smallMessage`
+   * do nơi phát truyền tường minh để giữ nguyên bề mặt hiển thị hiện tại của từng đường phát (hai processor nền vốn lấy
+   * subject làm smallMessage).
    */
   async deliverInApp(userId: string, providerName: string, input: {
     subject: string; body: string; smallMessage: string; contextUrl?: string | null; fromUserId?: string | null;
-    // TENANT-1 (#196): nơi phát truyền tenant đã phân giải (tenant của
-    // khoá chứa sự kiện / tenant mặc định của người nhận) để dòng
-    // thông báo + dispatch log mang đúng tenant; không truyền thì giữ
-    // hành vi cũ (không gắn tenant — chỉ hiển thị ở ngữ cảnh platform).
+    // TENANT-1 (#196): nơi phát truyền tenant đã phân giải (tenant của khoá chứa sự kiện / tenant mặc định của người
+    // nhận) để dòng thông báo + dispatch log mang đúng tenant; không truyền thì giữ hành vi cũ (không gắn tenant — chỉ
+    // hiển thị ở ngữ cảnh platform).
     tenantId?: string | null;
-    // NB-4 (áp ở lát #174-A): khoá nguồn của sự kiện — nơi phát biết sự
-    // kiện thuộc khoá nào thì truyền vào để áp ghi đè tắt tiếng theo
-    // khoá của người nhận, như tham số cùng tên của notify() phía API.
-    // Không truyền = sự kiện không gắn khoá, ghi đè không áp dụng.
+    // NB-4 (áp ở lát #174-A): khoá nguồn của sự kiện — nơi phát biết sự kiện thuộc khoá nào thì truyền vào để áp ghi đè
+    // tắt tiếng theo khoá của người nhận, như tham số cùng tên của notify() phía API. Không truyền = sự kiện không gắn
+    // khoá, ghi đè không áp dụng.
     courseId?: string | null;
   }): Promise<InAppDeliveryResult> {
     const provider = WORKER_PROVIDERS[providerName];
@@ -321,13 +313,10 @@ export class NotificationDeliveryService implements OnModuleDestroy {
       return { status: 'skipped-admin-disabled' };
     }
 
-    // Ghi đè tắt tiếng theo khoá (NB-4): áp SAU chính sách admin và
-    // TRƯỚC tuỳ chọn theo loại — đúng thứ tự của notify() phía API.
-    // Khoá nguồn đã bị người nhận tắt tiếng thì không sinh thông báo,
-    // chỉ ghi dispatch log 'skipped-course-mute' để truy vết; các loại
-    // miễn trừ P3/P2 không bao giờ bị chặn ở đây (luật toàn cục thắng
-    // ghi đè theo khoá). Khoá tuỳ chọn dùng đúng hình dạng khoá phía
-    // API: `notif.course.<courseId>` mang 'all' | 'mute'.
+    // Ghi đè tắt tiếng theo khoá (NB-4): áp SAU chính sách admin và TRƯỚC tuỳ chọn theo loại — đúng thứ tự của notify()
+    // phía API. Khoá nguồn đã bị người nhận tắt tiếng thì không sinh thông báo, chỉ ghi dispatch log
+    // 'skipped-course-mute' để truy vết; các loại miễn trừ P3/P2 không bao giờ bị chặn ở đây (luật toàn cục thắng ghi
+    // đè theo khoá). Khoá tuỳ chọn dùng đúng hình dạng khoá phía API: `notif.course.<courseId>` mang 'all' | 'mute'.
     if (input.courseId && !isExemptFromCourseMute(provider)
       && (await this.getPreference(userId, `notif.course.${input.courseId}`)) === 'mute') {
       await this.spaceDb.routedKysely.insertInto('notification_dispatch_log').values({
@@ -367,12 +356,9 @@ export class NotificationDeliveryService implements OnModuleDestroy {
   }
 
   /**
-   * Tần suất email HIỆU LỰC — cùng luật
-   * `resolveEmailFrequency` phía API: khoá v2
-   * `message_provider_<p>_email_v2` ('immediate'/'daily'/'off') thắng;
-   * chưa có thì giá trị kênh cũ: chưa đặt ở đâu → mặc định theo nhóm
-   * của provider (truyền vào qua `defaultFrequency`); đặt bật → mặc
-   * định đó; đặt tắt → 'off'.
+   * Tần suất email HIỆU LỰC — cùng luật `resolveEmailFrequency` phía API: khoá v2 `message_provider_<p>_email_v2`
+   * ('immediate'/'daily'/'off') thắng; chưa có thì giá trị kênh cũ: chưa đặt ở đâu → mặc định theo nhóm của provider
+   * (truyền vào qua `defaultFrequency`); đặt bật → mặc định đó; đặt tắt → 'off'.
    */
   private async resolveEmailFrequency(userId: string, providerName: string, defaultFrequency: Exclude<WorkerEmailFrequency, 'off'>): Promise<WorkerEmailFrequency> {
     const v2 = await this.getPreference(userId, `message_provider_${providerName}_email_v2`);
@@ -390,18 +376,12 @@ export class NotificationDeliveryService implements OnModuleDestroy {
    * Nội dung kênh NGOÀI theo luật C-5 (xem
    * {@link WORKER_NOTIFY_PROVIDERS}) — cùng luật
    * `resolveExternalContent` phía API:
-   * - Provider khai báo `'original-ok'`: bản tối thiểu hoá của nơi
-   *   phát cho trường nào có truyền, nội dung gốc cho trường còn
-   *   lại — registry đã xác nhận nội dung gốc của các provider này
-   *   an toàn cho kênh ngoài.
-   * - Provider thuộc diện `'minimized'`: kênh ngoài chỉ mang cặp
-   *   nội dung đã tối thiểu hoá do nơi phát truyền vào, KHÔNG bao
-   *   giờ mang tiêu đề/nội dung trong-app (chúng có thể chứa dữ
-   *   kiện nhạy cảm). Thiếu một trong hai trường: ở môi trường
-   *   test ném lỗi để lộ sớm; ở production ghi cảnh báo và thay
-   *   trường thiếu bằng nội dung generic không chứa dữ kiện nào.
-   *   Nơi phát KHÔNG kèm cặp này là lỗi lập trình, không phải ca
-   *   người dùng.
+   * - Provider khai báo `'original-ok'`: bản tối thiểu hoá của nơi phát cho trường nào có truyền, nội dung gốc cho
+   *   trường còn lại — registry đã xác nhận nội dung gốc của các provider này an toàn cho kênh ngoài.
+   * - Provider thuộc diện `'minimized'`: kênh ngoài chỉ mang cặp nội dung đã tối thiểu hoá do nơi phát truyền vào,
+   *   KHÔNG bao giờ mang tiêu đề/nội dung trong-app (chúng có thể chứa dữ kiện nhạy cảm). Thiếu một trong hai trường: ở
+   *   môi trường test ném lỗi để lộ sớm; ở production ghi cảnh báo và thay trường thiếu bằng nội dung generic không
+   *   chứa dữ kiện nào. Nơi phát KHÔNG kèm cặp này là lỗi lập trình, không phải ca người dùng.
    */
   private resolveExternalContent(providerName: string, law: WorkerNotifyProviderLaw, input: { subject: string; body: string; externalSubject?: string; externalBody?: string }): { subject: string; body: string } {
     if (law.externalPolicy === 'original-ok') {
@@ -430,52 +410,34 @@ export class NotificationDeliveryService implements OnModuleDestroy {
    * Luồng (đúng thứ tự luật của notify() phía API):
    *  1. Provider không có trong {@link WORKER_PROVIDERS} → trả
    *     `skipped: 'unknown-provider'`, không lưu gì, không sự kiện.
-   *  2. Nửa kênh trong-app qua chính {@link deliverInApp} (đình chỉ /
-   *     NB-7 / tuỳ chọn popup / ghi dòng + dispatch log + tín hiệu
-   *     chưa đọc). Kết quả 'skipped-suspended' / 'skipped-admin-
-   *     disabled' của nửa này là điểm dừng sớm như phía API: không
-   *     kênh ngoài, không sự kiện `notification_created`. Ghi đè tắt
-   *     tiếng theo khoá NB-4 áp khi nơi phát truyền `courseId` (từ
-   *     issue con #520 của #491, consumer thông báo sự kiện luôn
-   *     truyền khoá nguồn của sự kiện như consumer phía API trước
-   *     đây) — kết quả 'skipped-course-mute' cũng là điểm dừng sớm
-   *     như phía API; không truyền `courseId` thì ghi đè không áp
-   *     như trước.
-   *     Khác biệt còn lại so với phía API nằm ở dedupeKey của các
-   *     dispatch log kênh popup: giữ nguyên định dạng phía worker của
-   *     deliverInApp (không tiền tố tenant) — khoá đó chỉ để truy vết
-   *     nội bộ một tiến trình, không phải khoá chống trùng liên tiến
-   *     trình.
-   *  3. Nửa kênh email (chỉ với provider có trong
-   *     {@link WORKER_NOTIFY_PROVIDERS}): phân giải tần suất hiệu lực;
-   *     'off' → dispatch log `skipped-preference` (kênh email); khác
-   *     'off' → áp luật C-5 rồi xếp job 'dispatch' vào hàng đợi
-   *     `notification-dispatch` DÙNG CHUNG với phía API — jobId là
-   *     dedupeKey đúng định dạng phía API
-   *     (`<tenant|platform>-dispatch-<provider>-<userId>-email-<notificationId|uuid>`)
-   *     vì khoá này là khoá chống trùng liên tiến trình: cùng một
-   *     thông báo, dù API hay worker xếp job, cũng chỉ tồn tại một
-   *     job phát. Processor phát kênh ngoài (đã ở worker) áp tần
-   *     suất ('daily' → giữ lại tổng hợp) ở đầu kia.
-   *  4. Cuối đường chính (kể cả khi popup bị tuỳ chọn tắt): ghi sự
-   *     kiện outbox `notification_created` (aggregate 'messaging',
-   *     payload {userId, provider, notificationId} và tenantId được
-   *     phản chiếu vào payload như `OutboxService.enqueue` phía API)
-   *     để các đường đọc sự kiện phía API thấy đúng như khi API phát.
+   *  2. Nửa kênh trong-app qua chính {@link deliverInApp} (đình chỉ / NB-7 / tuỳ chọn popup / ghi dòng + dispatch log +
+   *     tín hiệu chưa đọc). Kết quả 'skipped-suspended' / 'skipped-admin- disabled' của nửa này là điểm dừng sớm như
+   *     phía API: không kênh ngoài, không sự kiện `notification_created`. Ghi đè tắt tiếng theo khoá NB-4 áp khi nơi
+   *     phát truyền `courseId` (từ issue con #520 của #491, consumer thông báo sự kiện luôn truyền khoá nguồn của sự
+   *     kiện như consumer phía API trước đây) — kết quả 'skipped-course-mute' cũng là điểm dừng sớm như phía API; không
+   *     truyền `courseId` thì ghi đè không áp như trước. Khác biệt còn lại so với phía API nằm ở dedupeKey của các
+   *     dispatch log kênh popup: giữ nguyên định dạng phía worker của deliverInApp (không tiền tố tenant) — khoá đó chỉ
+   *     để truy vết nội bộ một tiến trình, không phải khoá chống trùng liên tiến trình.
+   *  3. Nửa kênh email (chỉ với provider có trong {@link WORKER_NOTIFY_PROVIDERS}): phân giải tần suất hiệu lực; 'off'
+   *     → dispatch log `skipped-preference` (kênh email); khác 'off' → áp luật C-5 rồi xếp job 'dispatch' vào hàng đợi
+   *     `notification-dispatch` DÙNG CHUNG với phía API — jobId là dedupeKey đúng định dạng phía API
+   *     (`<tenant|platform>-dispatch-<provider>-<userId>-email-<notificationId|uuid>`) vì khoá này là khoá chống trùng
+   *     liên tiến trình: cùng một thông báo, dù API hay worker xếp job, cũng chỉ tồn tại một job phát. Processor phát
+   *     kênh ngoài (đã ở worker) áp tần suất ('daily' → giữ lại tổng hợp) ở đầu kia.
+   *  4. Cuối đường chính (kể cả khi popup bị tuỳ chọn tắt): ghi sự kiện outbox `notification_created` (aggregate
+   *     'messaging', payload {userId, provider, notificationId} và tenantId được phản chiếu vào payload như
+   *     `OutboxService.enqueue` phía API) để các đường đọc sự kiện phía API thấy đúng như khi API phát.
    *
-   * `smallMessage` của dòng thông báo = 200 ký tự đầu của `body`,
-   * như notify() phía API khi nơi phát không truyền smallMessage
-   * riêng. Không dùng lại phiên bản này cho provider chỉ có kênh
-   * trong-app — các đường đó gọi thẳng {@link deliverInApp}.
+   * `smallMessage` của dòng thông báo = 200 ký tự đầu của `body`, như notify() phía API khi nơi phát không truyền
+   * smallMessage riêng. Không dùng lại phiên bản này cho provider chỉ có kênh trong-app — các đường đó gọi thẳng {@link
+   * deliverInApp}.
    */
   async notify(userId: string, providerName: string, input: {
     subject: string; body: string; contextUrl?: string; fromUserId?: string;
     externalSubject?: string; externalBody?: string; tenantId?: string | null;
-    // NB-4: khoá nguồn của sự kiện — nơi phát biết sự kiện thuộc
-    // khoá nào thì truyền vào để áp ghi đè tắt tiếng theo khoá của
-    // người nhận qua deliverInApp, như tham số cùng tên của notify()
-    // phía API. Không truyền = sự kiện không gắn khoá, ghi đè không
-    // áp dụng.
+    // NB-4: khoá nguồn của sự kiện — nơi phát biết sự kiện thuộc khoá nào thì truyền vào để áp ghi đè tắt tiếng theo
+    // khoá của người nhận qua deliverInApp, như tham số cùng tên của notify() phía API. Không truyền = sự kiện không
+    // gắn khoá, ghi đè không áp dụng.
     courseId?: string | null;
   }): Promise<{ notificationId: string | null; channels: Record<string, string>; skipped?: string }> {
     const provider = WORKER_PROVIDERS[providerName];
@@ -524,10 +486,9 @@ export class NotificationDeliveryService implements OnModuleDestroy {
 
     await this.spaceDb.routedKysely.insertInto('outbox_events').values({
       aggregate: 'messaging', type: 'notification_created', tenant_id: tenantId,
-      // jsonb: serialize tường minh kèm `::jsonb` theo khuôn ghi
-      // jsonb của `@lms/db` (driver `pg` hiểu mảng cấp cao nhất là
-      // mảng PostgreSQL nên không gắn object thô); khoá payload giữ
-      // nguyên camelCase như sự kiện cũ vì consumer đọc đúng khoá đó.
+      // jsonb: serialize tường minh kèm `::jsonb` theo khuôn ghi jsonb của `@lms/db` (driver `pg` hiểu mảng cấp cao
+      // nhất là mảng PostgreSQL nên không gắn object thô); khoá payload giữ nguyên camelCase như sự kiện cũ vì consumer
+      // đọc đúng khoá đó.
       payload: sql<CentreDB['outbox_events']['payload']>`${JSON.stringify({ userId, provider: providerName, notificationId, ...(tenantId ? { tenantId } : {}) })}::jsonb`,
     }).execute();
     return { notificationId, channels };

@@ -95,10 +95,9 @@ describe('Worker cohort sync events delivery (chuyển consumer ở #528)', () =
   }
 
   /**
-   * Phát lại một sự kiện ngoài cửa sổ lưu giữ của `jobId`: job mới
-   * mang cùng `outboxId` + payload nhưng `jobId` khác, đúng hình
-   * dạng phát lại mà relay tạo khi dòng đã bị dọn khỏi hàng đợi.
-   * Chờ job phát lại này completed rồi mới khẳng định.
+   * Phát lại một sự kiện ngoài cửa sổ lưu giữ của `jobId`: job mới mang cùng `outboxId` + payload nhưng `jobId` khác,
+   * đúng hình dạng phát lại mà relay tạo khi dòng đã bị dọn khỏi hàng đợi. Chờ job phát lại này completed rồi mới khẳng
+   * định.
    */
   async function redeliver(type: string, outboxId: string, payload: Record<string, unknown>): Promise<void> {
     const job = await eventsQueue.add(type, {
@@ -207,13 +206,10 @@ describe('Worker cohort sync events delivery (chuyển consumer ở #528)', () =
     const rows = await sql`SELECT * FROM user_enrolments WHERE enrol_id = ${graph.instanceId} AND user_id = ${userId}`.execute(db) as unknown as { rows: Array<Record<string, unknown>> };
     expect(rows.rows).toHaveLength(1);
     expect(rows.rows[0]?.status).toBe(1);
-    // Ghi chú: phát lại ở chế độ đình chỉ phát thêm một dòng
-    // `user_enrolment_suspended` (đường đình chỉ của bề mặt phát sự
-    // kiện trong transaction riêng sau khi cập nhật trạng thái) —
-    // trạng thái ghi danh bền không đổi và loại sự kiện này hiện
-    // chưa có consumer nào, nên dòng trùng không gây tác dụng phụ
-    // nghiệp vụ nào. Khẳng định ở đây ghim trạng thái bền, không
-    // ghim số dòng sự kiện đình chỉ.
+    // Ghi chú: phát lại ở chế độ đình chỉ phát thêm một dòng `user_enrolment_suspended` (đường đình chỉ của bề mặt phát
+    // sự kiện trong transaction riêng sau khi cập nhật trạng thái) — trạng thái ghi danh bền không đổi và loại sự kiện
+    // này hiện chưa có consumer nào, nên dòng trùng không gây tác dụng phụ nghiệp vụ nào. Khẳng định ở đây ghim trạng
+    // thái bền, không ghim số dòng sự kiện đình chỉ.
   }, 180000);
 
   it('rời cohort ở chế độ rút khi không còn dữ liệu liên quan qua relay + hàng đợi: xoá cứng ghi danh, gỡ vai, phát user_unenrolled và yêu cầu tái tổng hợp', async () => {

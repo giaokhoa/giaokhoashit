@@ -128,19 +128,13 @@ describe('Nhắc sắp đến hạn hoạt động của worker (N5, issue #50)'
     harness = await bootWorkerModuleAsOrdinaryRole();
     context = harness.context;
     db = harness.adminDb;
-    // Tắt tài xế nền của chính queue này trong suốt lượt chạy của
-    // spec: module boot nguyên vẹn (như production) có scheduler
-    // đăng ký job lặp 5 phút cho CÙNG processor mà các ca dưới đây
-    // gọi trực tiếp — hai tài xế cùng quét thì lượt nền có thể chạy
-    // giữa lúc dựng fixture và lúc khẳng định, phát sự kiện cho
-    // trạng thái trung gian và làm số đếm lệch ngẫu nhiên (gốc cấu
-    // trúc của ca chập chờn ở spec này). Suite worker chạy nhiều
-    // file song song trên cùng một Redis và các context song song
-    // liên tục đăng ký lại scheduler của queue, nên gỡ scheduler
-    // không đủ: phải TẠM DỪNG queue (mọi worker đều tôn trọng cờ
-    // dừng ở tầng Redis) rồi chờ job đang chạy dở tại thời điểm dừng
-    // kết thúc — sau mốc này không lượt quét nền nào của queue chạy
-    // nữa. Mở lại queue ở afterAll. Harness giữ nguyên (vẫn boot cả
+    // Tắt tài xế nền của chính queue này trong suốt lượt chạy của spec: module boot nguyên vẹn (như production) có
+    // scheduler đăng ký job lặp 5 phút cho CÙNG processor mà các ca dưới đây gọi trực tiếp — hai tài xế cùng quét thì
+    // lượt nền có thể chạy giữa lúc dựng fixture và lúc khẳng định, phát sự kiện cho trạng thái trung gian và làm số
+    // đếm lệch ngẫu nhiên (gốc cấu trúc của ca chập chờn ở spec này). Suite worker chạy nhiều file song song trên cùng
+    // một Redis và các context song song liên tục đăng ký lại scheduler của queue, nên gỡ scheduler không đủ: phải TẠM
+    // DỪNG queue (mọi worker đều tôn trọng cờ dừng ở tầng Redis) rồi chờ job đang chạy dở tại thời điểm dừng kết thúc —
+    // sau mốc này không lượt quét nền nào của queue chạy nữa. Mở lại queue ở afterAll. Harness giữ nguyên (vẫn boot cả
     // scheduler như production), khẳng định nghiệp vụ không đổi.
     queue = context.get<Queue>(getQueueToken('activity-due-reminders'));
     await queue.pause();
@@ -168,11 +162,9 @@ describe('Nhắc sắp đến hạn hoạt động của worker (N5, issue #50)'
     const inProgress = uid(3);
     const suspendedEnrol = uid(4);
     const expiredEnrol = uid(5);
-    // Attempt tạo TRƯỚC ghi danh: scheduler nền của WorkerModule có
-    // thể quét chen giữa các bước dựng dữ liệu — thứ tự này bảo đảm
-    // học sinh "đã nộp" luôn nhất quán (đã có attempt hoàn tất) ở mọi
-    // thời điểm quét, và mọi khẳng định đều dựa trên SỰ KIỆN outbox
-    // bền thay vì kết quả trả về của một lượt gọi cụ thể.
+    // Attempt tạo TRƯỚC ghi danh: scheduler nền của WorkerModule có thể quét chen giữa các bước dựng dữ liệu — thứ tự
+    // này bảo đảm học sinh "đã nộp" luôn nhất quán (đã có attempt hoàn tất) ở mọi thời điểm quét, và mọi khẳng định đều
+    // dựa trên SỰ KIỆN outbox bền thay vì kết quả trả về của một lượt gọi cụ thể.
     await addAttempt(quizId, finished, 'finished');
     await addAttempt(quizId, inProgress, 'inprogress');
     await enrolStudent(inst, noAttempt);

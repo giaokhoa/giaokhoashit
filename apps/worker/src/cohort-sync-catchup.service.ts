@@ -44,9 +44,9 @@ const DRAIN_RETRY_MAX_DELAY_MS = 30_000;
  * 1. Dựng lại khoá watermark của consumer cũ từ tên database trong `DATABASE_URL` — đúng cách consumer cũ dựng — và đọc
  *    giá trị đã lưu. Khoá không tồn tại nghĩa là hệ mới tinh (consumer cũ chưa từng chạy trên đời DB này): dừng ngay,
  *    không làm gì thêm.
- * 2. Đọc các dòng thuộc hai loại sự kiện cohort có `seq` lớn hơn watermark, theo thứ tự `seq` tăng dần, từng lô
- *    {@link DRAIN_BATCH_SIZE} dòng, BẤT KỂ dòng đã có `publishedAt` hay chưa (dòng chưa có dấu thì relay cũng sẽ phát —
- *    hai đường gặp nhau ở khoá chống trùng dưới đây).
+ * 2. Đọc các dòng thuộc hai loại sự kiện cohort có `seq` lớn hơn watermark, theo thứ tự `seq` tăng dần, từng lô {@link
+ *    DRAIN_BATCH_SIZE} dòng, BẤT KỂ dòng đã có `publishedAt` hay chưa (dòng chưa có dấu thì relay cũng sẽ phát — hai
+ *    đường gặp nhau ở khoá chống trùng dưới đây).
  * 3. Mỗi dòng được phát thành job vào hàng đợi `cohort-sync-events` theo đúng hình dạng relay phát: tên job là loại sự
  *    kiện, `jobId` là id của dòng, dữ liệu là toàn bộ dòng đã chuẩn hoá ({@link OutboxEventJobData}).
  * 4. Rút cạn hết các lô thì XOÁ khoá watermark cũ: dấu vết chuyển tiếp không còn, các lần khởi động sau là no-op.
@@ -102,12 +102,9 @@ export class CohortSyncCatchupService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Điểm vào khi module khởi động: chạy lượt phát bù và chờ nó
-   * rút cạn xong mới hoàn tất khởi tạo (hook async được NestJS
-   * chờ theo đúng vòng đời của framework).
-   * {@link drainLegacyBacklog} tự thử lại có backoff khi gặp
-   * lỗi thoáng qua nên hook này không ném; nó chỉ trở về sớm
-   * khi module bị huỷ giữa chừng (tiến trình đang đóng).
+   * Điểm vào khi module khởi động: chạy lượt phát bù và chờ nó rút cạn xong mới hoàn tất khởi tạo (hook async được
+   * NestJS chờ theo đúng vòng đời của framework). {@link drainLegacyBacklog} tự thử lại có backoff khi gặp lỗi thoáng
+   * qua nên hook này không ném; nó chỉ trở về sớm khi module bị huỷ giữa chừng (tiến trình đang đóng).
    */
   async onModuleInit(): Promise<void> {
     await this.drainLegacyBacklog();
@@ -136,12 +133,9 @@ export class CohortSyncCatchupService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Vòng thử lại của lượt phát bù: chạy từng lần thử rút cạn
-   * ({@link drainAttempt}) cho tới khi một lần thử hoàn tất.
-   * Mỗi lần thử thất bại ghi log mức error kèm số lần thử, số
-   * job đã phát được trong lần thử đó và nhịp chờ backoff
-   * trước lần thử kế tiếp — tồn đọng không bao giờ kẹt lặng
-   * lẽ trong lúc tiến trình còn sống. Vòng chỉ dừng hẳn khi
+   * Vòng thử lại của lượt phát bù: chạy từng lần thử rút cạn ({@link drainAttempt}) cho tới khi một lần thử hoàn tất.
+   * Mỗi lần thử thất bại ghi log mức error kèm số lần thử, số job đã phát được trong lần thử đó và nhịp chờ backoff
+   * trước lần thử kế tiếp — tồn đọng không bao giờ kẹt lặng lẽ trong lúc tiến trình còn sống. Vòng chỉ dừng hẳn khi
    * module đang bị huỷ.
    *
    * @returns Số job đã phát trong lần thử hoàn tất (0 khi bị
@@ -177,15 +171,11 @@ export class CohortSyncCatchupService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Một lần thử rút cạn trong ngữ cảnh platform đã bọc: đọc
-   * khoá watermark cũ và rút cạn các dòng trên nó. Lỗi ở bất
-   * kỳ bước nào được ném ra cho {@link drainWithRetry} quyết
-   * định thử lại — hàm này không tự nuốt lỗi.
+   * Một lần thử rút cạn trong ngữ cảnh platform đã bọc: đọc khoá watermark cũ và rút cạn các dòng trên nó. Lỗi ở bất kỳ
+   * bước nào được ném ra cho {@link drainWithRetry} quyết định thử lại — hàm này không tự nuốt lỗi.
    *
-   * Hai trạng thái kết thúc không phải lỗi: không có khoá cũ
-   * (hệ mới tinh hoặc chuyển tiếp đã xong — no-op) và giá trị
-   * khoá không phải số (dữ kiện hỏng cố định, thử lại không
-   * sửa được: ghi log mức warn và giữ nguyên khoá, giữ đúng
+   * Hai trạng thái kết thúc không phải lỗi: không có khoá cũ (hệ mới tinh hoặc chuyển tiếp đã xong — no-op) và giá trị
+   * khoá không phải số (dữ kiện hỏng cố định, thử lại không sửa được: ghi log mức warn và giữ nguyên khoá, giữ đúng
    * hành vi trước đây).
    *
    * @param onProgress Báo số job đã phát sau mỗi job, để tầng
@@ -219,10 +209,8 @@ export class CohortSyncCatchupService implements OnModuleInit, OnModuleDestroy {
     onProgress: (enqueued: number) => void,
   ): Promise<number> {
 
-    // Neo khi DB đã dựng lại: watermark vượt quá seq lớn nhất
-    // hiện có thì không dòng nào của đời DB này nằm trên
-    // watermark — tồn đọng rỗng theo định nghĩa. Cột `seq` là
-    // int8: Kysely đọc thành chuỗi nên giá trị lớn nhất được
+    // Neo khi DB đã dựng lại: watermark vượt quá seq lớn nhất hiện có thì không dòng nào của đời DB này nằm trên
+    // watermark — tồn đọng rỗng theo định nghĩa. Cột `seq` là int8: Kysely đọc thành chuỗi nên giá trị lớn nhất được
     // chuyển về số tường minh tại biên đọc này.
     const maxRow = await this.spaceDb.routedKysely
       .selectFrom('outbox_events')
@@ -232,11 +220,9 @@ export class CohortSyncCatchupService implements OnModuleInit, OnModuleDestroy {
 
     let enqueued = 0;
     if (watermark < dbMax) {
-      // Đọc tồn đọng theo đúng hình dạng truy vấn của consumer
-      // cũ: `seq > watermark AND type IN (hai loại cohort)`,
-      // thứ tự seq tăng dần, từng lô — chỉ khác ở chỗ cơ chế
-      // này đọc bất kể `publishedAt` và đích đến là hàng đợi
-      // thay vì handler trực tiếp.
+      // Đọc tồn đọng theo đúng hình dạng truy vấn của consumer cũ: `seq > watermark AND type IN (hai loại cohort)`, thứ
+      // tự seq tăng dần, từng lô — chỉ khác ở chỗ cơ chế này đọc bất kể `publishedAt` và đích đến là hàng đợi thay vì
+      // handler trực tiếp.
       let cursor = watermark;
       for (;;) {
         const rows = await this.spaceDb.routedKysely

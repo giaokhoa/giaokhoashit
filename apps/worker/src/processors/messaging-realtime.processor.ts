@@ -106,10 +106,8 @@ export class MessagingRealtimeProcessor extends WorkerHost {
     await this.jobRunner.runForJob(data, async () => {
       const markKey = `${MESSAGING_DISTRIBUTED_KEY_PREFIX}${data.outboxId}`;
       try {
-        // Đọc dấu nằm TRONG cùng phạm vi thử lại: lỗi đọc dấu
-        // (Redis dấu lỗi thoáng qua) cũng phải hoãn job như mọi
-        // lỗi phân phối khác — ném thẳng ra ngoài là đốt attempts
-        // rồi mất push, vì relay đã đóng dấu publishedAt.
+        // Đọc dấu nằm TRONG cùng phạm vi thử lại: lỗi đọc dấu (Redis dấu lỗi thoáng qua) cũng phải hoãn job như mọi lỗi
+        // phân phối khác — ném thẳng ra ngoài là đốt attempts rồi mất push, vì relay đã đóng dấu publishedAt.
         if ((await this.redis.exists(markKey)) === 1) {
           this.logger.debug(`Bỏ qua job phát lại của sự kiện outbox ${data.outboxId} (đã phân phối)`);
           return;
@@ -117,12 +115,9 @@ export class MessagingRealtimeProcessor extends WorkerHost {
         await this.distribution.distributeEvent(data.type, data.payload ?? {});
         await this.redis.set(markKey, '1', 'EX', DISTRIBUTED_MARK_TTL_SECONDS);
       } catch (error) {
-        // Lỗi thật của lượt phân phối: hoãn job để thử lại thay
-        // vì để BullMQ đốt attempts rồi giết job (dòng outbox đã
-        // đóng dấu publishedAt ở relay nên job chết là mất sự
-        // kiện — xem ngữ nghĩa lỗi ở đầu file). Thao tác hoãn
-        // lỗi (hạ tầng hàng đợi sập) thì lỗi của nó truyền ra
-        // ngoài thay cho DelayedError, đúng ranh giới đã ghi.
+        // Lỗi thật của lượt phân phối: hoãn job để thử lại thay vì để BullMQ đốt attempts rồi giết job (dòng outbox đã
+        // đóng dấu publishedAt ở relay nên job chết là mất sự kiện — xem ngữ nghĩa lỗi ở đầu file). Thao tác hoãn lỗi
+        // (hạ tầng hàng đợi sập) thì lỗi của nó truyền ra ngoài thay cho DelayedError, đúng ranh giới đã ghi.
         this.logger.error(
           `Phân phối sự kiện outbox ${data.outboxId} (loại ${data.type}) lỗi, hẹn thử lại sau ${DISTRIBUTION_RETRY_DELAY_MS}ms: ${
             error instanceof Error ? error.message : String(error)

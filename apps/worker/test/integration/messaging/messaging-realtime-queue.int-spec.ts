@@ -533,12 +533,10 @@ describe('Worker — phân phối realtime messaging qua hàng đợi (issue #52
   });
 
   /**
-   * Vũ trụ đếm chưa đọc chuẩn (issue #592): conversation đã tắt
-   * thông báo thì số chưa đọc realtime cũng bằng 0 — cùng luật
-   * với badge sidebar và danh sách (luật đếm duy nhất trong
-   * `countUnreadForConversation`), nên các bề mặt hội tụ ngay
-   * trong cùng một chu kỳ cập nhật thay vì lệch nhau tới 30–60s.
-   * Thành viên không tắt vẫn nhận đúng số chưa đọc thật.
+   * Vũ trụ đếm chưa đọc chuẩn (issue #592): conversation đã tắt thông báo thì số chưa đọc realtime cũng bằng 0 — cùng
+   * luật với badge sidebar và danh sách (luật đếm duy nhất trong `countUnreadForConversation`), nên các bề mặt hội tụ
+   * ngay trong cùng một chu kỳ cập nhật thay vì lệch nhau tới 30–60s. Thành viên không tắt vẫn nhận đúng số chưa đọc
+   * thật.
    */
   it('thành viên đã tắt thông báo nhận conversation.updated với unreadCount bằng 0, thành viên còn lại nhận đúng số', async () => {
     const tenantId = randomUUID();

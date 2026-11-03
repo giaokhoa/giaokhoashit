@@ -192,9 +192,8 @@ export class CompletionRecalculateProcessor extends WorkerHost {
         .execute();
     }
 
-    // Lan truyền tiên quyết: user mới hoàn thành có thể thoả mãn tiêu chí 'course'
-    // trong các khoá học phụ thuộc. Chỉ completion MỚI mới đưa vào queue, nên một
-    // chu trình tiên quyết sẽ lắng xuống thay vì ping-pong mãi mãi.
+    // Lan truyền tiên quyết: user mới hoàn thành có thể thoả mãn tiêu chí 'course' trong các khoá học phụ thuộc. Chỉ
+    // completion MỚI mới đưa vào queue, nên một chu trình tiên quyết sẽ lắng xuống thay vì ping-pong mãi mãi.
     if (newlyCompletedUsers.length) {
       const dependents = await this.spaceDb.routedKysely
         .selectFrom('course_completion_criteria')

@@ -154,21 +154,15 @@ describe('Worker — job phân phối realtime lỗi bền không chết theo at
 });
 
 /**
- * Thử lại khi đọc dấu đã-phân-phối lỗi bền (điểm chặn của lượt
- * chấm lại trên head `daf49959`, phán quyết đối chiếu trên PR
- * #543): lệnh đọc dấu nằm trong cùng phạm vi `try/catch` hoãn
- * job như mọi lỗi phân phối khác — lỗi đọc dấu không được ném
- * thẳng ra cho BullMQ đốt attempts rồi giết job.
+ * Thử lại khi đọc dấu đã-phân-phối lỗi bền (điểm chặn của lượt chấm lại trên head `daf49959`, phán quyết đối chiếu trên
+ * PR #543): lệnh đọc dấu nằm trong cùng phạm vi `try/catch` hoãn job như mọi lỗi phân phối khác — lỗi đọc dấu không
+ * được ném thẳng ra cho BullMQ đốt attempts rồi giết job.
  *
- * Khuôn test: như spec trên (hàng đợi BullMQ THẬT, processor
- * THẬT, chính sách job mặc định sao đúng `worker.module.ts`),
- * nhưng lần này stub đúng biên đọc dấu: client Redis dấu bọc
- * client thật, `exists` ném lỗi 4 lần liên tiếp (nhiều hơn
- * attempts mặc định 3) rồi hoạt động lại, trong khi hàng đợi
- * vẫn lành mạnh và tầng phân phối luôn thành công. Kỳ vọng:
- * trong lúc lỗi, job nằm ở trạng thái hoãn (delayed) với
- * `attemptsMade` bằng 0; lỗi hết thì sự kiện phân phối đúng
- * một lần và dấu ghi đúng một lần.
+ * Khuôn test: như spec trên (hàng đợi BullMQ THẬT, processor THẬT, chính sách job mặc định sao đúng
+ * `worker.module.ts`), nhưng lần này stub đúng biên đọc dấu: client Redis dấu bọc client thật, `exists` ném lỗi 4 lần
+ * liên tiếp (nhiều hơn attempts mặc định 3) rồi hoạt động lại, trong khi hàng đợi vẫn lành mạnh và tầng phân phối luôn
+ * thành công. Kỳ vọng: trong lúc lỗi, job nằm ở trạng thái hoãn (delayed) với `attemptsMade` bằng 0; lỗi hết thì sự
+ * kiện phân phối đúng một lần và dấu ghi đúng một lần.
  */
 const EXISTS_RETRY_TEST_QUEUE = 'messaging-realtime-exists-retry-test';
 

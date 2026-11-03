@@ -53,11 +53,9 @@ export function validateEnv(config: Record<string, unknown>): Env {
 /**
  * Dựng tham số `connection` cho bộ máy cũ từ URL và cờ TLS.
  *
- * Không bật TLS thì trả nguyên chuỗi (hành vi cũ). Bật thì trả PoolConfig
- * có `ssl.rejectUnauthorized = false` — chứng chỉ của nhà cung cấp
- * PostgreSQL do CA riêng của nhà cung cấp ký nên không kiểm chứng theo
- * CA hệ thống được; đây là cấu hình driver `pg` cần khi gặp CA riêng
- * như vậy.
+ * Không bật TLS thì trả nguyên chuỗi (hành vi cũ). Bật thì trả PoolConfig có `ssl.rejectUnauthorized = false` — chứng
+ * chỉ của nhà cung cấp PostgreSQL do CA riêng của nhà cung cấp ký nên không kiểm chứng theo CA hệ thống được; đây là
+ * cấu hình driver `pg` cần khi gặp CA riêng như vậy.
  */
 export function databaseConnectionFromEnv(url: string, ssl: boolean): string | PoolConfig {
   if (!ssl) return url;

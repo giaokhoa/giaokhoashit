@@ -140,7 +140,10 @@ describe('Kích hoạt ghi danh trả phí theo không gian của payment (integ
     return id;
   }
 
-  /** Dòng thư mục của tenant ở KHO CHUNG — nguồn tra slug của điểm phân giải (chỉ dòng `tenants`, không kèm dữ kiện nghiệp vụ). */
+  /**
+   * Dòng thư mục của tenant ở KHO CHUNG — nguồn tra slug của điểm phân giải (chỉ dòng `tenants`, không kèm dữ kiện
+   * nghiệp vụ).
+   */
   async function seedDirectoryRow(tenantId: string, slug: string): Promise<void> {
     await sharedPg.query('INSERT INTO tenants (id, slug, name, kind) VALUES ($1, $2, $3, $4)', [
       tenantId, slug, `Trung tâm ${slug}`, 'school',
@@ -303,11 +306,9 @@ describe('Kích hoạt ghi danh trả phí theo không gian của payment (integ
     const businessDatabase = decodeURIComponent(businessUrl.pathname.replace(/^\//, ''));
     const businessRole = decodeURIComponent(businessUrl.username);
 
-    // Cấp phát control plane + kho riêng của trung tâm trên cùng
-    // cụm test bằng tên mới của riêng ca này (khuôn spec khung
-    // định tuyến; ở ca này mọi kho dùng chung role của database
-    // test vì ca chỉ ghim đích ghi của kích hoạt, không ghim cách
-    // ly CONNECT theo role).
+    // Cấp phát control plane + kho riêng của trung tâm trên cùng cụm test bằng tên mới của riêng ca này (khuôn spec
+    // khung định tuyến; ở ca này mọi kho dùng chung role của database test vì ca chỉ ghim đích ghi của kích hoạt, không
+    // ghim cách ly CONNECT theo role).
     await withClient(clusterUrl('postgres'), async (admin) => {
       for (const database of [CP_DATABASE, CENTRE_DATABASE]) {
         await admin.query(`DROP DATABASE IF EXISTS ${quoted(database)} WITH (FORCE)`);
@@ -327,11 +328,9 @@ describe('Kích hoạt ghi danh trả phí theo không gian của payment (integ
       join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre', '20261025163710_baseline', 'migration.sql'),
     );
 
-    // Gieo sổ đăng ký: trung tâm kho riêng trỏ database riêng
-    // (chuỗi bí mật mang tên database mặc định của role — resolver
-    // chốt đích về `databaseName` trong sổ và kiểm chứng role
-    // khớp `connectionRoleRef`), trung tâm kho chung, trung tâm
-    // lỗi trỏ một bí mật không tồn tại.
+    // Gieo sổ đăng ký: trung tâm kho riêng trỏ database riêng (chuỗi bí mật mang tên database mặc định của role —
+    // resolver chốt đích về `databaseName` trong sổ và kiểm chứng role khớp `connectionRoleRef`), trung tâm kho chung,
+    // trung tâm lỗi trỏ một bí mật không tồn tại.
     process.env.SPACE_TEST_TD1_URL = clusterUrl('postgres');
     const cpSeedPool = new Pool({ connectionString: clusterUrl(CP_DATABASE) });
     try {
@@ -357,10 +356,8 @@ describe('Kích hoạt ghi danh trả phí theo không gian của payment (integ
       await cpSeedPool.end();
     }
 
-    // Đồ thị service của nhịp quét — đúng ngăn xếp production,
-    // handle inject là handle ĐỊNH TUYẾN của khung như module
-    // worker gắn; handle Kysely kho chung gắn vào khung như factory
-    // của module làm lúc khởi động.
+    // Đồ thị service của nhịp quét — đúng ngăn xếp production, handle inject là handle ĐỊNH TUYẾN của khung như module
+    // worker gắn; handle Kysely kho chung gắn vào khung như factory của module làm lúc khởi động.
     spaceDb = new SpaceDatabaseService({
       get: (key: string) =>
         ({
@@ -372,11 +369,9 @@ describe('Kích hoạt ghi danh trả phí theo không gian của payment (integ
         })[key],
     } as unknown as ConfigService);
     sharedPool = new TenantAwarePool({ connectionString: process.env.DATABASE_URL! });
-    // Handle Kysely trên pool dùng chung (đúng như factory của
-    // module worker) cho repository + writer của `@lms/payments` và
-    // cho toàn bộ adapter của worker qua khung định tuyến này: điểm
-    // phân giải không gian chỉ cần khung, hai adapter kích hoạt
-    // và settlement chạy trên handle Kysely định tuyến của khung.
+    // Handle Kysely trên pool dùng chung (đúng như factory của module worker) cho repository + writer của
+    // `@lms/payments` và cho toàn bộ adapter của worker qua khung định tuyến này: điểm phân giải không gian chỉ cần
+    // khung, hai adapter kích hoạt và settlement chạy trên handle Kysely định tuyến của khung.
     spaceDb.bindSharedKysely(createCentreKysely(sharedPool));
 
     const repo = new PaymentsRepository(spaceDb.routedKysely);
@@ -398,10 +393,8 @@ describe('Kích hoạt ghi danh trả phí theo không gian của payment (integ
     centrePg = new Client({ connectionString: clusterUrl(CENTRE_DATABASE) });
     await centrePg.connect();
 
-    // Khung dữ kiện của ba trung tâm: dòng thư mục của cả ba nằm
-    // ở kho chung; khung nghiệp vụ nằm ở kho của từng trung tâm
-    // (trung tâm kho chung và trung tâm lỗi: chính kho chung;
-    // trung tâm kho riêng: kho riêng của nó).
+    // Khung dữ kiện của ba trung tâm: dòng thư mục của cả ba nằm ở kho chung; khung nghiệp vụ nằm ở kho của từng trung
+    // tâm (trung tâm kho chung và trung tâm lỗi: chính kho chung; trung tâm kho riêng: kho riêng của nó).
     await seedDirectoryRow(centreTenantId, CENTRE_SLUG);
     centreFrame = await seedLocalFrame(centrePg, centreTenantId, CENTRE_SLUG);
     sharedFrame = await seedLocalFrame(sharedPg, sharedTenantId, SHARED_SLUG);

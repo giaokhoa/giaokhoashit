@@ -95,10 +95,9 @@ export class NotificationEventsMarker implements OnModuleDestroy {
   }
 
   /**
-   * Nhả lease đang giữ — chỉ xoá khi token trong Redis vẫn là
-   * token của lượt chạy này (so khớp nguyên tử bằng script Lua,
-   * khuôn của BullMQ cho các thao tác kiểm-tra-rồi-xoá trên Redis).
-   * Lease đã hết hạn hoặc đã thuộc lượt khác thì thao tác là no-op.
+   * Nhả lease đang giữ — chỉ xoá khi token trong Redis vẫn là token của lượt chạy này (so khớp nguyên tử bằng script
+   * Lua, khuôn của BullMQ cho các thao tác kiểm-tra-rồi-xoá trên Redis). Lease đã hết hạn hoặc đã thuộc lượt khác thì
+   * thao tác là no-op.
    *
    * @param outboxId Id dòng outbox của sự kiện.
    * @param token Token do {@link claimProcessing} cấp cho lượt này.

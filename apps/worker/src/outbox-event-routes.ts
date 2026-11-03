@@ -110,9 +110,9 @@ export function allQueueNamesOfRoutes(routes: OutboxEventQueueRoutes): string[] 
 }
 
 /**
- * Khoá tiêm (injection token) của bảng định tuyến cấp cho relay. `worker.module.ts` cấp chính
- * {@link OUTBOX_EVENT_QUEUE_ROUTES} cho khoá này; test đặc trưng hoá cấp bảng thử riêng để ghim hành vi định tuyến mà
- * không đụng bảng production.
+ * Khoá tiêm (injection token) của bảng định tuyến cấp cho relay. `worker.module.ts` cấp chính {@link
+ * OUTBOX_EVENT_QUEUE_ROUTES} cho khoá này; test đặc trưng hoá cấp bảng thử riêng để ghim hành vi định tuyến mà không
+ * đụng bảng production.
  */
 export const OUTBOX_EVENT_ROUTES = 'OUTBOX_EVENT_ROUTES';
 

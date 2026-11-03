@@ -29,8 +29,8 @@ import { NotificationEventsProcessor } from '../../../src/processors/notificatio
  * tâm (lượt quét theo trung tâm), phát job mang slug của trung tâm, và đóng dấu `publishedAt` ở chính kho đó — kiểm
  * chứng trực tiếp trong từng kho; sự kiện ở kho chung giữ đúng đường hiện tại (job mang slug của tenant ở kho chung).
  * (2) consumer thật (`NotificationEventsProcessor` + handler + đường phát thông báo thật) xử lý job của trung tâm thì
- * thông báo được ghi vào kho riêng của trung tâm — kiểm chứng trực tiếp tại database của kho riêng, và kho chung không
- * có thông báo đó.
+ *     thông báo được ghi vào kho riêng của trung tâm — kiểm chứng trực tiếp tại database của kho riêng, và kho chung
+ *     không có thông báo đó.
  *
  * Shim `uuidv7()` chỉ áp khi server PostgreSQL dưới 18 như ca tích hợp của khung (PG18 có sẵn hàm này).
  */
@@ -328,11 +328,9 @@ describe('Định tuyến job theo trung tâm phía worker (integration)', () =>
   it('relay phát sự kiện ở kho chung theo đường hiện tại: job mang slug của tenant ở kho chung và dòng được đóng dấu ở kho chung', async () => {
     const { relay, queue } = makeRelay();
 
-    // Relay chạy trong ngữ cảnh platform tường minh như nhịp
-    // `relayTick` trên production (RLS fail-closed ngoài ngữ
-    // cảnh). Database test của worker dùng chung với các ca tích
-    // hợp khác nên lô có thể gồm dòng chờ của ca khác — khẳng
-    // định nhắm đúng dòng của ca này.
+    // Relay chạy trong ngữ cảnh platform tường minh như nhịp `relayTick` trên production (RLS fail-closed ngoài ngữ
+    // cảnh). Database test của worker dùng chung với các ca tích hợp khác nên lô có thể gồm dòng chờ của ca khác —
+    // khẳng định nhắm đúng dòng của ca này.
     await tenantAls.run({ platform: true }, () => relay.publishPending());
 
     const sharedJob = queue.jobs.find((job) => job.data.outboxId === SHARED_OUTBOX_ID);
@@ -387,13 +385,10 @@ describe('Định tuyến job theo trung tâm phía worker (integration)', () =>
 
   it('consumer thật xử lý job của trung tâm thì thông báo được ghi vào kho riêng của trung tâm, không vào kho chung', async () => {
     const { relay, queue } = makeRelay();
-    // Phát lại từ đầu trên một dòng outbox MỚI trong kho riêng để
-    // job đi trọn đường relay → consumer như production (dòng của
-    // ca trước đã đóng dấu và đã được kiểm chứng ở ca đó).
-    // Id dòng outbox của ca này phải DUY NHẤT theo lượt chạy:
-    // dấu chống trùng của consumer nằm trong Redis dùng chung
-    // (không bị xoá cùng database khi dọn), nên id cố định sẽ bị
-    // coi là "đã xử lý" ở mọi lượt chạy sau lượt đầu tiên.
+    // Phát lại từ đầu trên một dòng outbox MỚI trong kho riêng để job đi trọn đường relay → consumer như production
+    // (dòng của ca trước đã đóng dấu và đã được kiểm chứng ở ca đó). Id dòng outbox của ca này phải DUY NHẤT theo lượt
+    // chạy: dấu chống trùng của consumer nằm trong Redis dùng chung (không bị xoá cùng database khi dọn), nên id cố
+    // định sẽ bị coi là "đã xử lý" ở mọi lượt chạy sau lượt đầu tiên.
     const freshOutboxId = randomUUID();
     await spaceDb.withSpaceKysely(
       CENTRE_SLUG,

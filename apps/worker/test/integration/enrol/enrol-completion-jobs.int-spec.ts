@@ -163,11 +163,9 @@ describe('Ghi danh và hoàn thành của worker: bộ xử lý enrol-expiry + c
     await processor.process({ data: { courseId } } as never);
     expect(await statusOf(userId)).toBe('complete');
 
-    // role: dùng chung đường bằng chứng markedKeys với self, nhưng
-    // dòng crit_compl được ghi bởi một MARKER (markedBy ≠ người học) —
-    // "manual completion by others". Worker chỉ đọc bằng chứng;
-    // ai được phép ghi các dòng này là kiểm tra role phía API (issue #23 F1).
-    // Cần một dòng role thật: criteria.role_id có FK tới role.id.
+    // role: dùng chung đường bằng chứng markedKeys với self, nhưng dòng crit_compl được ghi bởi một MARKER (markedBy ≠
+    // người học) — "manual completion by others". Worker chỉ đọc bằng chứng; ai được phép ghi các dòng này là kiểm tra
+    // role phía API (issue #23 F1). Cần một dòng role thật: criteria.role_id có FK tới role.id.
     const roleRows = await sql`insert into role (name, short_name) values ('Worker marker role', ${`wkmarker${suffix}`}) returning id`.execute(db);
     const markerRoleId = (roleRows.rows[0] as { id: string }).id;
     await db.deleteFrom('course_completion_criteria').where('course', '=', courseId).execute();

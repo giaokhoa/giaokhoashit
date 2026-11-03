@@ -203,10 +203,9 @@ describe('Kênh email thông báo của worker + digest hàng ngày (NB-5, issue
     expect((await logRow(`nb5-dg4-${suffix}`)).status).toBe('skipped-suspended');
     expect(mail.sent.some((m) => m.to === `nb5-s-${suffix}@x.io`)).toBe(false);
 
-    // Chạy lại lượt quét: không còn mục chờ của hai người trên (mục
-    // của ca 'daily frequency' ở trên thuộc userActive — lượt quét
-    // đầu đã gom cả mục đó; khẳng định ở đây là không có mail digest
-    // THỨ HAI nào cho userDigest và trạng thái các mục không đổi).
+    // Chạy lại lượt quét: không còn mục chờ của hai người trên (mục của ca 'daily frequency' ở trên thuộc userActive —
+    // lượt quét đầu đã gom cả mục đó; khẳng định ở đây là không có mail digest THỨ HAI nào cho userDigest và trạng thái
+    // các mục không đổi).
     const second = await digest.process({} as never);
     expect(mail.sent.filter((m) => m.to === `nb5-d-${suffix}@x.io`)).toHaveLength(1);
     expect(second.itemsSent).toBe(0);
@@ -240,10 +239,9 @@ describe('Kênh email thông báo của worker + digest hàng ngày (NB-5, issue
   });
 
   it('digest tôn trọng chính sách site (NB-7) lúc gửi, kèm ngoại lệ bắt buộc P2', async () => {
-    // Admin tắt grade_updated và cả admin_announcement ở cấp site
-    // SAU khi các mục đã xếp hàng: mục grade_updated bị chặn ở lúc
-    // tổng hợp; mục admin_announcement là loại bắt buộc P2 — chính
-    // sách site không chặn được nó ở bất kỳ đường phát nào.
+    // Admin tắt grade_updated và cả admin_announcement ở cấp site SAU khi các mục đã xếp hàng: mục grade_updated bị
+    // chặn ở lúc tổng hợp; mục admin_announcement là loại bắt buộc P2 — chính sách site không chặn được nó ở bất kỳ
+    // đường phát nào.
     await db.insertInto('plugin_config').values({ plugin: 'notifications', name: 'provider_grade_updated_enabled', value: 'false' }).onConflict((oc) => oc.doNothing()).execute();
     await db.insertInto('plugin_config').values({ plugin: 'notifications', name: 'provider_admin_announcement_enabled', value: 'false' }).onConflict((oc) => oc.doNothing()).execute();
     try {

@@ -53,15 +53,11 @@ class WorkerOutboxPort implements SharedOutboxPort {
  * cohort ở worker và bề mặt đó (issue con #528 của #519, đợt tách
  * #491).
  *
- * Vai trò: dựng bề mặt một lần bằng tay cầm Kysely đã định tuyến
- * của worker, cổng outbox của worker và cổng ngữ cảnh platform của
- * worker (`tenantAls` của worker — mỗi app giữ bản sao hạ tầng riêng
- * theo tiền lệ repo, package không được giữ bản sao thứ ba), rồi uỷ
- * hai điểm vào vật chất hoá theo sự kiện thành viên cohort cho bề
- * mặt. Mọi luật nghiệp vụ (điều kiện thành viên, chốt tách vai, chế
- * độ rời, phát tiếp `user_enrolment_suspended`) sống trong bề mặt
- * dùng chung — service này không định nghĩa lại bất kỳ kiểm nào,
- * không giữ trạng thái xử lý nào của riêng nó.
+ * Vai trò: dựng bề mặt một lần bằng tay cầm Kysely đã định tuyến của worker, cổng outbox của worker và cổng ngữ cảnh
+ * platform của worker (`tenantAls` của worker — mỗi app giữ bản sao hạ tầng riêng theo tiền lệ repo, package không được
+ * giữ bản sao thứ ba), rồi uỷ hai điểm vào vật chất hoá theo sự kiện thành viên cohort cho bề mặt. Mọi luật nghiệp vụ
+ * (điều kiện thành viên, chốt tách vai, chế độ rời, phát tiếp `user_enrolment_suspended`) sống trong bề mặt dùng chung
+ * — service này không định nghĩa lại bất kỳ kiểm nào, không giữ trạng thái xử lý nào của riêng nó.
  */
 @Injectable()
 export class CohortSyncService {
@@ -71,23 +67,19 @@ export class CohortSyncService {
     this.materialization = new CohortMaterializationSurface({
       db: spaceDb.routedKysely,
       outbox: new WorkerOutboxPort(spaceDb),
-      // Phạm vi platform của bề mặt: giữ nguyên `spaceSlug` của
-      // ngữ cảnh đang chạy (issue #582) — phạm vi này chỉ đổi tầm
-      // nhìn RLS sang đường platform, không đổi kho đích; một job
-      // của trung tâm ở kho riêng chạy trong phiên theo trung tâm
-      // mà phạm vi platform dựng store mới không mang slug thì
-      // handle định tuyến rơi về kho chung, ghi sai kho.
+      // Phạm vi platform của bề mặt: giữ nguyên `spaceSlug` của ngữ cảnh đang chạy (issue #582) — phạm vi này chỉ đổi
+      // tầm nhìn RLS sang đường platform, không đổi kho đích; một job của trung tâm ở kho riêng chạy trong phiên theo
+      // trung tâm mà phạm vi platform dựng store mới không mang slug thì handle định tuyến rơi về kho chung, ghi sai
+      // kho.
       runInPlatformScope: (fn) =>
         tenantAls.run({ platform: true, spaceSlug: tenantAls.getStore()?.spaceSlug }, fn),
     });
   }
 
   /**
-   * Vật chất hoá "thành viên mới vào cohort": ghi danh người dùng
-   * vào mọi khoá học có instance cohort tương ứng đang bật, qua
-   * bề mặt dùng chung (guard theo trạng thái hiện tại của
-   * `cohort_members`, bỏ qua riêng lẻ thành viên vi phạm chốt tách
-   * vai).
+   * Vật chất hoá "thành viên mới vào cohort": ghi danh người dùng vào mọi khoá học có instance cohort tương ứng đang
+   * bật, qua bề mặt dùng chung (guard theo trạng thái hiện tại của `cohort_members`, bỏ qua riêng lẻ thành viên vi phạm
+   * chốt tách vai).
    *
    * @param payload Định danh cohort và người dùng của sự kiện thành viên.
    */
@@ -96,11 +88,9 @@ export class CohortSyncService {
   }
 
   /**
-   * Vật chất hoá "thành viên rời cohort": rút hoặc đình chỉ ghi danh
-   * cohort tương ứng theo chế độ rời của từng instance, qua bề mặt
-   * dùng chung (guard theo trạng thái hiện tại của `cohort_members`;
-   * chế độ đình chỉ phát tiếp `user_enrolment_suspended` với lý do
-   * `cohort_removed`).
+   * Vật chất hoá "thành viên rời cohort": rút hoặc đình chỉ ghi danh cohort tương ứng theo chế độ rời của từng
+   * instance, qua bề mặt dùng chung (guard theo trạng thái hiện tại của `cohort_members`; chế độ đình chỉ phát tiếp
+   * `user_enrolment_suspended` với lý do `cohort_removed`).
    *
    * @param payload Định danh cohort và người dùng của sự kiện thành viên.
    */

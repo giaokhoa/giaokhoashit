@@ -112,11 +112,9 @@ export class EnrolExpiryProcessor extends WorkerHost {
   }
 
   /**
-   * Lượt quét cảnh báo: ghi danh ACTIVE sắp hết hạn trong cửa sổ
-   * ENROL_EXPIRY_WARNING_WINDOW_DAYS mà chưa từng được cảnh báo thì
-   * phát sự kiện `enrol_expiry_warning` (kèm courseId lấy từ instance
-   * và mốc timeEnd) để phía API tạo thông báo. Trả về id các ghi danh
-   * vừa được cảnh báo trong lượt này.
+   * Lượt quét cảnh báo: ghi danh ACTIVE sắp hết hạn trong cửa sổ ENROL_EXPIRY_WARNING_WINDOW_DAYS mà chưa từng được
+   * cảnh báo thì phát sự kiện `enrol_expiry_warning` (kèm courseId lấy từ instance và mốc timeEnd) để phía API tạo
+   * thông báo. Trả về id các ghi danh vừa được cảnh báo trong lượt này.
    */
   private async warnExpiring(now: Date): Promise<string[]> {
     const windowEnd = new Date(now.getTime() + ENROL_EXPIRY_WARNING_WINDOW_DAYS * 24 * 3600_000);

@@ -259,12 +259,10 @@ describe('Worker: mail auth qua hàng đợi (issue #517)', () => {
   });
 
   it('hai lượt xử lý đồng thời cùng outboxId trên Redis thật chỉ gửi đúng một mail và lượt thua bị hẹn thử lại', async () => {
-    // Hai processor và hai bản dấu riêng (mỗi bản một kết nối) trên
-    // cùng một Redis — mô phỏng hai tiến trình worker cùng nhận xử
-    // lý một sự kiện (job mất khoá BullMQ được nhận lại trong lúc
-    // lượt đầu còn đang gửi). Lượt nào chiếm được lease trước là
-    // không xác định qua mạng, nên khẳng định đặt trên CẶP kết quả:
-    // đúng một lượt gửi thành công, lượt còn lại ném DelayedError.
+    // Hai processor và hai bản dấu riêng (mỗi bản một kết nối) trên cùng một Redis — mô phỏng hai tiến trình worker
+    // cùng nhận xử lý một sự kiện (job mất khoá BullMQ được nhận lại trong lúc lượt đầu còn đang gửi). Lượt nào chiếm
+    // được lease trước là không xác định qua mạng, nên khẳng định đặt trên CẶP kết quả: đúng một lượt gửi thành công,
+    // lượt còn lại ném DelayedError.
     const mailer = new GatedMailer();
     const markerA = makeMarker();
     const markerB = makeMarker();
@@ -283,10 +281,8 @@ describe('Worker: mail auth qua hàng đợi (issue #517)', () => {
       const first = track(settleProcess(processorA.process(job as never)));
       const second = track(settleProcess(processorB.process(job as never)));
 
-      // Chờ đường đua bộc lộ: một lượt đã tới transport (đang treo
-      // ở cổng) và lượt còn lại đã bị hàng rào chặn xong (ném tín
-      // hiệu hẹn thử lại) — hoặc cả hai cùng tới transport nếu
-      // hàng rào thủng, khi đó ca này phải đỏ.
+      // Chờ đường đua bộc lộ: một lượt đã tới transport (đang treo ở cổng) và lượt còn lại đã bị hàng rào chặn xong
+      // (ném tín hiệu hẹn thử lại) — hoặc cả hai cùng tới transport nếu hàng rào thủng, khi đó ca này phải đỏ.
       const deadline = Date.now() + 10000;
       while (!(mailer.calls >= 2 || (mailer.calls >= 1 && settledCount >= 1))) {
         if (Date.now() > deadline) throw new Error('Hết hạn chờ hai lượt xử lý đồng thời tới điểm quyết định');

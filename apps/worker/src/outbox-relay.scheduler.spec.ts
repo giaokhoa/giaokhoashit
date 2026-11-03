@@ -58,10 +58,9 @@ function makeRow(partial: Partial<FakeRow>): FakeRow {
 }
 
 /**
- * Hàng đợi giả theo khuôn BullMQ: `add` với `jobId` đã tồn tại thì
- * trả lại job cũ thay vì tạo job trùng; ghi lại trạng thái đóng dấu
- * của dòng tại đúng thời điểm job được đẩy để kiểm chứng thứ tự
- * phát → đóng dấu bằng trạng thái quan sát được.
+ * Hàng đợi giả theo khuôn BullMQ: `add` với `jobId` đã tồn tại thì trả lại job cũ thay vì tạo job trùng; ghi lại trạng
+ * thái đóng dấu của dòng tại đúng thời điểm job được đẩy để kiểm chứng thứ tự phát → đóng dấu bằng trạng thái quan sát
+ * được.
  */
 class FakeQueue {
   readonly jobs = new Map<string, { name: string; data: OutboxEventJobData }>();
@@ -87,12 +86,9 @@ class FakeQueue {
 }
 
 /**
- * DB giả theo chuỗi truy vấn Kysely mà relay dùng (`selectFrom` /
- * `updateTable` trên handle định tuyến): lượt quét outbox trả các
- * dòng chưa có dấu theo đúng thứ tự mảng và trần `limit`; tra cứu
- * `tenants` lọc theo danh sách id của điều kiện `in`; bước đóng dấu
- * áp `published_at` lên đúng dòng mà điều kiện `where` của lệnh
- * cập nhật chỉ tới.
+ * DB giả theo chuỗi truy vấn Kysely mà relay dùng (`selectFrom` / `updateTable` trên handle định tuyến): lượt quét
+ * outbox trả các dòng chưa có dấu theo đúng thứ tự mảng và trần `limit`; tra cứu `tenants` lọc theo danh sách id của
+ * điều kiện `in`; bước đóng dấu áp `published_at` lên đúng dòng mà điều kiện `where` của lệnh cập nhật chỉ tới.
  */
 function makeFakeDb(rows: FakeRow[], tenantSlugs: Record<string, string> = {}) {
   const control = { failNextStamp: false };
@@ -170,12 +166,10 @@ interface Harness {
 }
 
 /**
- * Khung định tuyến giả cho relay: danh sách đăng ký cấu hình sẵn
- * và một bản đồ slug → DB giả của kho trung tâm; `withSpaceKysely`
- * của giả chạy thân quét trên đúng DB giả của slug đó (mô phỏng
- * phiên theo trung tâm của khung thật) và ném lỗi cho slug được
- * đánh dấu lỗi — đủ để khoá hành vi quét theo trung tâm của relay
- * mà không cần Postgres thật (đường DB thật có spec tích hợp).
+ * Khung định tuyến giả cho relay: danh sách đăng ký cấu hình sẵn và một bản đồ slug → DB giả của kho trung tâm;
+ * `withSpaceKysely` của giả chạy thân quét trên đúng DB giả của slug đó (mô phỏng phiên theo trung tâm của khung thật)
+ * và ném lỗi cho slug được đánh dấu lỗi — đủ để khoá hành vi quét theo trung tâm của relay mà không cần Postgres thật
+ * (đường DB thật có spec tích hợp).
  */
 function makeFakeSpaceDb(
   spaces: SpaceRegistryEntry[],

@@ -51,10 +51,9 @@ describe('Dịch vụ platform của worker: backup, reindex tìm kiếm, analyt
     const catId = (catRows.rows[0] as { id: string }).id;
     const courseRows = await sql`insert into course (category, tenant_id, full_name, short_name, class_id) values (${catId}, (select tenant_id from course_categories where id = ${catId}), ${`Worker Platform Course ${suffix}`}, ${`wk5c${suffix}`}, ${await fixtureClassId()}) returning id`.execute(db);
     courseId = (courseRows.rows[0] as { id: string }).id;
-    // Chuỗi context phải hợp lệ theo bất biến của cây context: path gồm
-    // các id UUID thật và kết thúc bằng id của chính context — tài liệu
-    // search gắn với context này được PermissionEvaluator ở phía API
-    // duyệt lại theo path, path hư cấu sẽ làm nổ truy vấn đó.
+    // Chuỗi context phải hợp lệ theo bất biến của cây context: path gồm các id UUID thật và kết thúc bằng id của chính
+    // context — tài liệu search gắn với context này được PermissionEvaluator ở phía API duyệt lại theo path, path hư
+    // cấu sẽ làm nổ truy vấn đó.
     await sql`insert into context (id, context_level, instance_id, path, depth)
       select '01990000-0000-7000-8000-0000000000a1', 10, null, '/01990000-0000-7000-8000-0000000000a1', 1
       where not exists (select 1 from context where context_level = 10 and instance_id is null)`.execute(db);

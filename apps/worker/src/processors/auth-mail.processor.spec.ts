@@ -113,14 +113,10 @@ class FakeSentMarker implements AuthMailSentMarker {
 }
 
 /**
- * Hàng rào giả có cổng chặn ở lượt chiếm lease ĐẦU TIÊN: lượt gọi
- * `claimProcessing` đầu tiên được báo hiệu qua `firstClaimParked`
- * rồi treo lại cho tới khi test mở cổng; mọi thao tác còn lại uỷ
- * thác nguyên vẹn cho bản giả trong bộ nhớ. Dùng để ép lịch xen
- * kẽ xác định: lượt A đọc dấu đã gửi (chưa có) rồi bị giữ ngay
- * trước khi chiếm lease, trong lúc lượt B chạy trọn chu trình
- * gửi — đúng cửa sổ mà kết quả kiểm tra dấu đọc trước khi chiếm
- * lease trở nên cũ.
+ * Hàng rào giả có cổng chặn ở lượt chiếm lease ĐẦU TIÊN: lượt gọi `claimProcessing` đầu tiên được báo hiệu qua
+ * `firstClaimParked` rồi treo lại cho tới khi test mở cổng; mọi thao tác còn lại uỷ thác nguyên vẹn cho bản giả trong
+ * bộ nhớ. Dùng để ép lịch xen kẽ xác định: lượt A đọc dấu đã gửi (chưa có) rồi bị giữ ngay trước khi chiếm lease, trong
+ * lúc lượt B chạy trọn chu trình gửi — đúng cửa sổ mà kết quả kiểm tra dấu đọc trước khi chiếm lease trở nên cũ.
  */
 class FirstClaimGatedMarker implements AuthMailSentMarker {
   private readonly inner = new FakeSentMarker();
@@ -185,11 +181,9 @@ function makeJob(
 }
 
 /**
- * Bộ chạy job THẬT với khung định tuyến không có sổ phía sau
- * (issue #582): các job của spec này không mang slug trung tâm
- * nên bộ chạy luôn mở ngữ cảnh platform như đường xử lý trước
- * đợt này — spec khoá hành vi của processor, không khoá định
- * tuyến kho (định tuyến có spec riêng của bộ chạy và của relay).
+ * Bộ chạy job THẬT với khung định tuyến không có sổ phía sau (issue #582): các job của spec này không mang slug trung
+ * tâm nên bộ chạy luôn mở ngữ cảnh platform như đường xử lý trước đợt này — spec khoá hành vi của processor, không khoá
+ * định tuyến kho (định tuyến có spec riêng của bộ chạy và của relay).
  */
 function makeJobRunner(): SpaceJobRunner {
   return new SpaceJobRunner({
@@ -252,12 +246,10 @@ describe('AuthMailProcessor (consumer mail auth trên hàng đợi ở worker)',
     const processor = new AuthMailProcessor(mailer as unknown as ResendMailService, new FakeSentMarker(), makeJobRunner());
     const job = makeJob({ kind: 'password_reset', to: 'user@example.com', url: RESET_URL });
 
-    // Hai lượt xử lý cùng một job chạy chồng lấn: lượt thứ hai bắt
-    // đầu khi lượt thứ nhất còn đang treo ở transport (cổng chưa
-    // mở) — đúng tình huống job bị nhận xử lý lại sau khi mất khoá
-    // BullMQ trong lúc lượt đầu chưa gửi xong. Lượt thứ hai không
-    // chiếm được lease nên phải ném tín hiệu hẹn thử lại
-    // DelayedError thay vì trả duplicate như thể mail đã gửi.
+    // Hai lượt xử lý cùng một job chạy chồng lấn: lượt thứ hai bắt đầu khi lượt thứ nhất còn đang treo ở transport
+    // (cổng chưa mở) — đúng tình huống job bị nhận xử lý lại sau khi mất khoá BullMQ trong lúc lượt đầu chưa gửi xong.
+    // Lượt thứ hai không chiếm được lease nên phải ném tín hiệu hẹn thử lại DelayedError thay vì trả duplicate như thể
+    // mail đã gửi.
     const first = processor.process(job);
     let secondSettled = false;
     const second = processor.process(job).then(
@@ -311,10 +303,8 @@ describe('AuthMailProcessor (consumer mail auth trên hàng đợi ở worker)',
     expect(turnB.status).toBe('sent');
     expect(mailer.calls).toBe(1);
 
-    // Mở cổng cho lượt A tiếp tục: lượt A chiếm được lease lượt
-    // B vừa nhả. Kết quả có hiệu lực phải là lần đọc lại dấu
-    // trong lúc đang giữ lease — dấu đã đứng nên lượt A kết
-    // thúc trùng lặp và transport không bị gọi lần hai.
+    // Mở cổng cho lượt A tiếp tục: lượt A chiếm được lease lượt B vừa nhả. Kết quả có hiệu lực phải là lần đọc lại dấu
+    // trong lúc đang giữ lease — dấu đã đứng nên lượt A kết thúc trùng lặp và transport không bị gọi lần hai.
     marker.releaseFirstClaim();
     const turnAResult = await turnA;
     expect(turnAResult.status).toBe('duplicate');

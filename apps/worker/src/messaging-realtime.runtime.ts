@@ -33,11 +33,9 @@ export class MessagingRealtimeRuntime implements OnModuleDestroy {
       logger.warn(`Redis của consumer phân phối messaging lỗi: ${error.message}`);
     });
     this.distribution = createMessagingDistributionService({
-      // Tầng store dùng chung nay nhận handle Kysely (issue #658):
-      // truyền facade định tuyến theo không gian của worker —
-      // cùng handle mà các processor của job hiện hành dùng qua
-      // SpaceJobRunner, nên ngữ cảnh kho/GUC của lượt phân phối
-      // không đổi so với đường cũ trước đây.
+      // Tầng store dùng chung nay nhận handle Kysely (issue #658): truyền facade định tuyến theo không gian của worker
+      // — cùng handle mà các processor của job hiện hành dùng qua SpaceJobRunner, nên ngữ cảnh kho/GUC của lượt phân
+      // phối không đổi so với đường cũ trước đây.
       store: createMessagingDistributionStore(spaceDb.routedKysely),
       emitter: this.emitterHandle.emitter,
       logger: {

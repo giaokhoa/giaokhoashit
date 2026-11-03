@@ -272,10 +272,8 @@ export class WorkerPaymentSettlementService implements PaymentSettlementPort {
     if (!ue || ue.status === ENROL_WITHDRAWN) {
       throw new SharedDomainError('enrol.user_not_enrolled', 'User enrolment not found');
     }
-    // modifierId = người thao tác: VẾT phân biệt đình chỉ THỦ CÔNG
-    // theo khoá với đình chỉ do hệ thống đồng bộ áp (job đối soát
-    // class-enrol-reconcile chỉ tôn trọng/không kích hoạt lại đúng
-    // các dòng mang vết người này).
+    // modifierId = người thao tác: VẾT phân biệt đình chỉ THỦ CÔNG theo khoá với đình chỉ do hệ thống đồng bộ áp (job
+    // đối soát class-enrol-reconcile chỉ tôn trọng/không kích hoạt lại đúng các dòng mang vết người này).
     await tx.updateTable('user_enrolments')
       .set({ status: ENROL_SUSPENDED, modifier_id: actorId, updated_at: new Date() })
       .where('id', '=', ue.id)
@@ -287,16 +285,12 @@ export class WorkerPaymentSettlementService implements PaymentSettlementPort {
   }
 
   /**
-   * Gỡ người học khỏi backing cohort khi hoàn đủ gói lớp — đối tác
-   * phía worker của `ClassesService.suspendPaidClassMember` trong
-   * transaction của khâu settle: việc xoá và dòng outbox
-   * `cohort_member_removed` đi bằng chính transaction đó (rollback
-   * thì cả hai cùng huỷ). Không phải thành viên thì im lặng bỏ qua
-   * (idempotent). Lớp ĐÃ LƯU TRỮ vẫn gỡ được — hoàn tiền là giao
-   * dịch bù trừ tài chính, không phải thao tác sửa roster, nên luật
-   * đóng băng roster không chặn nó. Lớp không tồn tại thì bỏ qua
-   * (đường API trả null trong ca này; khâu settle vẫn ghi sổ hoàn
-   * vì quyết định hoàn đã chốt, khác đường kích hoạt vốn ném lỗi).
+   * Gỡ người học khỏi backing cohort khi hoàn đủ gói lớp — đối tác phía worker của
+   * `ClassesService.suspendPaidClassMember` trong transaction của khâu settle: việc xoá và dòng outbox
+   * `cohort_member_removed` đi bằng chính transaction đó (rollback thì cả hai cùng huỷ). Không phải thành viên thì im
+   * lặng bỏ qua (idempotent). Lớp ĐÃ LƯU TRỮ vẫn gỡ được — hoàn tiền là giao dịch bù trừ tài chính, không phải thao tác
+   * sửa roster, nên luật đóng băng roster không chặn nó. Lớp không tồn tại thì bỏ qua (đường API trả null trong ca này;
+   * khâu settle vẫn ghi sổ hoàn vì quyết định hoàn đã chốt, khác đường kích hoạt vốn ném lỗi).
    */
   private async suspendPaidClassMember(
     classId: string,
@@ -326,25 +320,17 @@ export class WorkerPaymentSettlementService implements PaymentSettlementPort {
    * ĐỘNG qua sự kiện `debit` — cùng khuôn với
    * `PaymentsService.applyRefundSettlement` phía API:
    *
-   * 1. Đọc lại dòng hoàn DƯỚI khoá: đã `settled` (lượt đua thắng đã
-   *    ghi) thì trả nguyên dòng đó, không ghi thêm; không còn
-   *    `approved` thì ném `payment.refund_not_approved` TRƯỚC mọi
-   *    đình chỉ — không bao giờ đình chỉ oan cho một khoản hoàn
-   *    không được ghi.
-   * 2. Tính lại tổng đã `settled` DƯỚI khoá: lần xác nhận này có làm
-   *    cộng dồn đạt 100% hay không được quyết định TẠI ĐÂY, không
-   *    dựa vào bất kỳ lượt đọc ngoài khoá nào (quyết định đình chỉ
-   *    bằng tổng đọc ngoài khoá là khe đồng thời: hai dòng hoàn bù
-   *    nhau cùng xác nhận một lúc đều đọc tổng settled bằng 0,
-   *    không lượt nào đình chỉ, nhưng transaction vào sau vẫn lật
-   *    khoản thu `refunded` trong khi quyền lợi chưa hề bị đình chỉ).
-   * 3. Đạt 100% theo tổng đã khoá thì đình chỉ quyền lợi
-   *    (idempotent) TRƯỚC khi ghi: đình chỉ ném lỗi ⇒ transaction
-   *    huỷ, chưa ghi gì, gọi lại được. Chưa đạt thì ghi mà không
-   *    đình chỉ. Đình chỉ ghi BẰNG CHÍNH transaction này — mọi bước
-   *    ghi sổ sau đó mà lỗi, transaction rollback thì đình chỉ cũng
-   *    bị huỷ theo, không còn trạng thái "đã đình chỉ nhưng chưa
-   *    ghi hoàn".
+   * 1. Đọc lại dòng hoàn DƯỚI khoá: đã `settled` (lượt đua thắng đã ghi) thì trả nguyên dòng đó, không ghi thêm; không
+   *    còn `approved` thì ném `payment.refund_not_approved` TRƯỚC mọi đình chỉ — không bao giờ đình chỉ oan cho một
+   *    khoản hoàn không được ghi.
+   * 2. Tính lại tổng đã `settled` DƯỚI khoá: lần xác nhận này có làm cộng dồn đạt 100% hay không được quyết định TẠI
+   *    ĐÂY, không dựa vào bất kỳ lượt đọc ngoài khoá nào (quyết định đình chỉ bằng tổng đọc ngoài khoá là khe đồng
+   *    thời: hai dòng hoàn bù nhau cùng xác nhận một lúc đều đọc tổng settled bằng 0, không lượt nào đình chỉ, nhưng
+   *    transaction vào sau vẫn lật khoản thu `refunded` trong khi quyền lợi chưa hề bị đình chỉ).
+   * 3. Đạt 100% theo tổng đã khoá thì đình chỉ quyền lợi (idempotent) TRƯỚC khi ghi: đình chỉ ném lỗi ⇒ transaction
+   *    huỷ, chưa ghi gì, gọi lại được. Chưa đạt thì ghi mà không đình chỉ. Đình chỉ ghi BẰNG CHÍNH transaction này —
+   *    mọi bước ghi sổ sau đó mà lỗi, transaction rollback thì đình chỉ cũng bị huỷ theo, không còn trạng thái "đã đình
+   *    chỉ nhưng chưa ghi hoàn".
    * 4. Ghi dòng hoàn `settled` (+ lật khoản thu `refunded` khi đạt
    *    100%) trong cùng transaction rồi commit.
    *

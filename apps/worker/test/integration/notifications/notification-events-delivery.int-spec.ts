@@ -109,7 +109,10 @@ describe('Worker notification events delivery (chuyển consumer ở #520)', () 
     await sql`insert into role_assignments (role_id, user_id, context_id) values (${role[0]!.id}, ${teacherId}, ${courseCtxId})`.execute(db);
   }
 
-  /** Section + course module hiển thị cho một khoá; trả cmId. Section 0 của khoá là duy nhất nên lượt dựng module thứ hai cho cùng khoá dùng lại section đã có. */
+  /**
+   * Section + course module hiển thị cho một khoá; trả cmId. Section 0 của khoá là duy nhất nên lượt dựng module thứ
+   * hai cho cùng khoá dùng lại section đã có.
+   */
   async function makeModule(courseId: string, component: string): Promise<string> {
     await sql`insert into course_sections (course, section) values (${courseId}, 0) on conflict (course, section) do nothing`.execute(db);
     const sec = await execRows<{ id: string }>(sql`select id from course_sections where course = ${courseId} and section = 0`);
@@ -123,7 +126,10 @@ describe('Worker notification events delivery (chuyển consumer ở #520)', () 
     return row.id;
   }
 
-  /** Bank → đề → version → lần ghim tối thiểu bằng SQL như các fixture worker khác; time_close để trống để lượt quét hạn không chen vào. */
+  /**
+   * Bank → đề → version → lần ghim tối thiểu bằng SQL như các fixture worker khác; time_close để trống để lượt quét hạn
+   * không chen vào.
+   */
   async function makePin(courseId: string, examName: string): Promise<string> {
     const cmId = await makeModule(courseId, 'mod_quiz');
     const bank = await execRows<{ id: string }>(sql`insert into question_banks (name, bank_kind, scope, context_id, created_by, tenant_id) values ('NE520 bank', 'exam', 'personal', ${uid(900)}, ${uid(900)}, ${fixtureTenantId}) returning id`);

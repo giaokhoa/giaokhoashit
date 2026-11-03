@@ -209,11 +209,9 @@ describe('Worker notification events catch-up (phát bù tồn đọng theo wate
     // đúng trạng thái của lần triển khai chuyển đổi thật.
     await redis.set(legacyWatermarkKey, String(below.seq));
 
-    // Boot một module worker mới: hook OnModuleInit của service
-    // phát bù phải tự rút cạn trong lúc context.init() chạy. Ca
-    // này không hề gọi drainLegacyBacklog() — nếu sau khi boot
-    // xong mà khoá đã mất và job đã vào hàng đợi thì chỉ có thể
-    // do đường khởi động tự chạy.
+    // Boot một module worker mới: hook OnModuleInit của service phát bù phải tự rút cạn trong lúc context.init() chạy.
+    // Ca này không hề gọi drainLegacyBacklog() — nếu sau khi boot xong mà khoá đã mất và job đã vào hàng đợi thì chỉ có
+    // thể do đường khởi động tự chạy.
     const bootHarness = await bootWorkerModuleAsOrdinaryRole();
     try {
       expect(await redis.get(legacyWatermarkKey)).toBeNull();
@@ -238,12 +236,9 @@ describe('Worker notification events catch-up (phát bù tồn đọng theo wate
     await marker.markProcessed(marked.id);
     await redis.set(legacyWatermarkKey, String(below.seq));
 
-    // Tiêm lỗi thoáng qua: lần queue.add đầu tiên cho đúng dòng
-    // tồn đọng này ném lỗi, mọi lần đẩy khác đi qua bình thường
-    // (relay thường trực đẩy các dòng khác không bị ảnh hưởng).
-    // Tại thời điểm lỗi nổ ra, ghi lại giá trị khoá để khẳng định
-    // khoá vẫn còn nguyên — khoá chỉ được xoá sau khi rút cạn
-    // thành công.
+    // Tiêm lỗi thoáng qua: lần queue.add đầu tiên cho đúng dòng tồn đọng này ném lỗi, mọi lần đẩy khác đi qua bình
+    // thường (relay thường trực đẩy các dòng khác không bị ảnh hưởng). Tại thời điểm lỗi nổ ra, ghi lại giá trị khoá để
+    // khẳng định khoá vẫn còn nguyên — khoá chỉ được xoá sau khi rút cạn thành công.
     const originalAdd = eventsQueue.add.bind(eventsQueue);
     let faultArmed = true;
     let keyValueAtFailure: string | null = null;

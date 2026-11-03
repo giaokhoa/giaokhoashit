@@ -236,10 +236,8 @@ export class SpaceConnectionResolver {
         `Connection secret for space ${entry.slug} is not a valid connection URL`,
       );
     }
-    // Role trong chuỗi kết nối phải đúng role sổ đã đăng ký cho kho
-    // này: kết nối bằng role khác (dù kết nối được) là đi chệch sổ —
-    // fail-closed tại đây thay vì để tầng dữ kiện chạy bằng quyền
-    // không thuộc về kho của trung tâm.
+    // Role trong chuỗi kết nối phải đúng role sổ đã đăng ký cho kho này: kết nối bằng role khác (dù kết nối được) là đi
+    // chệch sổ — fail-closed tại đây thay vì để tầng dữ kiện chạy bằng quyền không thuộc về kho của trung tâm.
     const role = decodeURIComponent(url.username);
     if (role !== entry.connectionRoleRef) {
       throw new SpaceRoutingError(

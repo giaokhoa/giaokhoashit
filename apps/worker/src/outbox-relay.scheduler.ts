@@ -197,11 +197,9 @@ export class OutboxRelayScheduler {
     try {
       spaces = await this.spaceDb.listRegisteredSpaces();
     } catch (err) {
-      // Không đọc được sổ ở nhịp này: bỏ qua lượt theo trung tâm
-      // của nhịp này (nhịp sau thử lại) thay vì làm hỏng cả nhịp
-      // relay — lượt kho chung không phụ thuộc sổ — NHƯNG trả tín
-      // hiệu lỗi riêng để nhịp ghi `task_log` failed phân biệt
-      // được, thay vì trôi qua như nhịp không có trung tâm nào.
+      // Không đọc được sổ ở nhịp này: bỏ qua lượt theo trung tâm của nhịp này (nhịp sau thử lại) thay vì làm hỏng cả
+      // nhịp relay — lượt kho chung không phụ thuộc sổ — NHƯNG trả tín hiệu lỗi riêng để nhịp ghi `task_log` failed
+      // phân biệt được, thay vì trôi qua như nhịp không có trung tâm nào.
       const message = err instanceof Error ? err.message : String(err);
       this.logger.warn(
         `Không đọc được sổ đăng ký để quét outbox theo trung tâm ở nhịp này: ${message}`,
@@ -227,10 +225,8 @@ export class OutboxRelayScheduler {
   }
 
   /**
-   * Thân lượt phát dùng chung cho kho chung và cho từng kho riêng
-   * của trung tâm: cùng flow phát → đóng dấu → phản chiếu trên
-   * đúng handle `db` được truyền (handle kho chung, hoặc handle
-   * của kho trung tâm trong phiên theo trung tâm).
+   * Thân lượt phát dùng chung cho kho chung và cho từng kho riêng của trung tâm: cùng flow phát → đóng dấu → phản chiếu
+   * trên đúng handle `db` được truyền (handle kho chung, hoặc handle của kho trung tâm trong phiên theo trung tâm).
    */
   private async publishPendingFrom(db: CentreDb, limit: number): Promise<number> {
     const pendingRaw = await db
@@ -281,11 +277,9 @@ export class OutboxRelayScheduler {
   }
 
   /**
-   * Suy ra slug của trung tâm cho từng tenant có mặt trong lô:
-   * một truy vấn duy nhất trên bảng `tenants` CỦA CÙNG KHO chứa
-   * các dòng outbox (slug của tenant và slug đăng ký của trung
-   * tâm là một — xem `OutboxEventJobData.spaceSlug`). Tenant
-   * không còn dòng tương ứng thì sự kiện của nó mang slug null.
+   * Suy ra slug của trung tâm cho từng tenant có mặt trong lô: một truy vấn duy nhất trên bảng `tenants` CỦA CÙNG KHO
+   * chứa các dòng outbox (slug của tenant và slug đăng ký của trung tâm là một — xem `OutboxEventJobData.spaceSlug`).
+   * Tenant không còn dòng tương ứng thì sự kiện của nó mang slug null.
    */
   private async resolveSpaceSlugs(db: CentreDb, rows: OutboxRow[]): Promise<Map<string, string>> {
     const tenantIds = [...new Set(rows.map((row) => row.tenantId).filter((id): id is string => !!id))];
@@ -301,16 +295,11 @@ export class OutboxRelayScheduler {
   }
 
   /**
-   * Bước phát của một dòng: đẩy job BullMQ vào mọi hàng đợi đích
-   * của loại sự kiện nếu loại đó đã có trong bảng định tuyến; chưa
-   * có thì dòng chưa thuộc phạm vi phát job và bước phát là rỗng
-   * (phía tiêu thụ của dòng vẫn đọc trực tiếp bảng outbox như hiện
-   * hành). Hàm chỉ resolve khi MỌI đích đã nhận job — mọi lỗi đều
-   * ném ra để dòng không bị đóng dấu: phát lại ở nhịp sau an toàn ở
-   * các đích đã nhận nhờ `jobId` bằng id dòng outbox (BullMQ trả
-   * lại job đã có thay vì tạo job thứ hai), nên bất biến "đóng dấu
-   * chỉ sau khi phát thành công" giữ nguyên cả khi fan-out nhiều
-   * đích.
+   * Bước phát của một dòng: đẩy job BullMQ vào mọi hàng đợi đích của loại sự kiện nếu loại đó đã có trong bảng định
+   * tuyến; chưa có thì dòng chưa thuộc phạm vi phát job và bước phát là rỗng (phía tiêu thụ của dòng vẫn đọc trực tiếp
+   * bảng outbox như hiện hành). Hàm chỉ resolve khi MỌI đích đã nhận job — mọi lỗi đều ném ra để dòng không bị đóng
+   * dấu: phát lại ở nhịp sau an toàn ở các đích đã nhận nhờ `jobId` bằng id dòng outbox (BullMQ trả lại job đã có thay
+   * vì tạo job thứ hai), nên bất biến "đóng dấu chỉ sau khi phát thành công" giữ nguyên cả khi fan-out nhiều đích.
    *
    * @param row Dòng outbox đang phát (chưa có `publishedAt` tại thời
    * điểm hàm chạy — job được đẩy trong khi dòng còn chưa có dấu).
@@ -337,11 +326,9 @@ export class OutboxRelayScheduler {
           `Outbox event type "${row.type}" is routed to queue "${queueName}" but that queue is not registered`,
         );
       }
-      // jobId bằng id của dòng outbox (không chứa dấu ':' theo luật của
-      // package): phát lại cùng một dòng trong lúc job còn được BullMQ
-      // lưu giữ thì không tạo job trùng ở đích đó; ngoài cửa sổ lưu
-      // giữ đó, chống trùng tác dụng phụ là việc của processor
-      // (idempotent theo outboxId — xem outbox-event-routes.ts).
+      // jobId bằng id của dòng outbox (không chứa dấu ':' theo luật của package): phát lại cùng một dòng trong lúc job
+      // còn được BullMQ lưu giữ thì không tạo job trùng ở đích đó; ngoài cửa sổ lưu giữ đó, chống trùng tác dụng phụ là
+      // việc của processor (idempotent theo outboxId — xem outbox-event-routes.ts).
       await queue.add(row.type, data, { jobId: row.id });
     }
   }

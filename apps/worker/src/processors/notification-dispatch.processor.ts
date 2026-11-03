@@ -144,10 +144,9 @@ export class NotificationDispatchProcessor extends WorkerHost {
   }
 
   /**
-   * Nhánh kênh email (NB-5): kiểm tuỳ chọn v2 tại lúc phát, rồi theo
-   * tần suất trong job mà xếp vào hàng tổng hợp ngày hoặc gửi thật
-   * qua Resend. Mọi kết quả đều chốt bằng đúng một dòng dispatch log
-   * (trừ khi Resend ném lỗi — job thử lại và chưa ghi gì).
+   * Nhánh kênh email (NB-5): kiểm tuỳ chọn v2 tại lúc phát, rồi theo tần suất trong job mà xếp vào hàng tổng hợp ngày
+   * hoặc gửi thật qua Resend. Mọi kết quả đều chốt bằng đúng một dòng dispatch log (trừ khi Resend ném lỗi — job thử
+   * lại và chưa ghi gì).
    */
   private async dispatchEmail(
     job: Job<NotificationDispatchJobData>,
@@ -162,10 +161,8 @@ export class NotificationDispatchProcessor extends WorkerHost {
         notification_id: job.data.notificationId ?? null,
       }).onConflict((oc) => oc.doNothing()).execute();
 
-    // Tuỳ chọn email v2 ở trạng thái tắt TẠI LÚC PHÁT thắng tần suất
-    // đã phân giải lúc xếp hàng: người dùng tắt sau khi job xếp hàng
-    // thì email này không đi (kiểm mô hình cũ ở trên không đọc khoá
-    // v2 nên phải kiểm riêng ở đây).
+    // Tuỳ chọn email v2 ở trạng thái tắt TẠI LÚC PHÁT thắng tần suất đã phân giải lúc xếp hàng: người dùng tắt sau khi
+    // job xếp hàng thì email này không đi (kiểm mô hình cũ ở trên không đọc khoá v2 nên phải kiểm riêng ở đây).
     if (preferencesByName.get(`message_provider_${provider}_email_v2`) === 'off') {
       await logRow('skipped-preference');
       return { status: 'skipped-preference', channel };

@@ -75,19 +75,15 @@ function displayNameOf(user: { firstName: string; lastName: string; username: st
  * - `quiz_attempt_finished`: chỉ phát bản gộp cho đội ngũ phụ
  *   trách khi lượt làm cần chấm tay và không phải preview.
  *
- * Khác biệt cơ chế duy nhất so với consumer polling: consumer cũ
- * khử dội các sự kiện điểm của cùng (user, item) trong MỘT lô quét
- * 500 ms và chỉ báo sự kiện cuối. Hàng đợi xử lý từng sự kiện thành
- * một job độc lập, không còn cửa sổ lô để gộp; việc dựng lại cửa sổ
- * chờ nhân tạo sẽ trì hoãn thông báo và tạo ngữ nghĩa mới ngoài
- * đặc tả. Điều kiện phát, người nhận và nội dung của từng sự kiện
- * không đổi; chống trùng khi phát lại do processor phụ trách bằng
- * dấu theo `outboxId`.
+ * Khác biệt cơ chế duy nhất so với consumer polling: consumer cũ khử dội các sự kiện điểm của cùng (user, item) trong
+ * MỘT lô quét 500 ms và chỉ báo sự kiện cuối. Hàng đợi xử lý từng sự kiện thành một job độc lập, không còn cửa sổ lô để
+ * gộp; việc dựng lại cửa sổ chờ nhân tạo sẽ trì hoãn thông báo và tạo ngữ nghĩa mới ngoài đặc tả. Điều kiện phát, người
+ * nhận và nội dung của từng sự kiện không đổi; chống trùng khi phát lại do processor phụ trách bằng dấu theo
+ * `outboxId`.
  *
- * Payload thiếu hoặc sai kiểu ở trường bắt buộc được bỏ qua lặng
- * lẽ như consumer cũ. Lỗi DB hoặc lỗi của đường phát được ném ra
- * cho processor/BullMQ thử lại, vì thông báo không có chốt nghiệp
- * vụ bền nào ngoài dấu đã xử lý của processor để nuốt lỗi an toàn.
+ * Payload thiếu hoặc sai kiểu ở trường bắt buộc được bỏ qua lặng lẽ như consumer cũ. Lỗi DB hoặc lỗi của đường phát
+ * được ném ra cho processor/BullMQ thử lại, vì thông báo không có chốt nghiệp vụ bền nào ngoài dấu đã xử lý của
+ * processor để nuốt lỗi an toàn.
  */
 @Injectable()
 export class NotificationEventsHandlerService {
@@ -243,12 +239,10 @@ export class NotificationEventsHandlerService {
   }
 
   /**
-   * Phát thông báo kiểu gộp theo (người nhận, provider, contextUrl):
-   * còn một bản chưa đọc của cùng ngữ cảnh thì cập nhật nội dung của
-   * bản đó, không sinh bản mới; đã đọc hết thì lần phát sau sinh bản
-   * mới như thường. Khi phải sinh bản mới, tenant mặc định của
-   * người nhận được phân giải và truyền tường minh cho `notify()`,
-   * giữ đúng kết quả phân giải tenant của consumer cũ.
+   * Phát thông báo kiểu gộp theo (người nhận, provider, contextUrl): còn một bản chưa đọc của cùng ngữ cảnh thì cập
+   * nhật nội dung của bản đó, không sinh bản mới; đã đọc hết thì lần phát sau sinh bản mới như thường. Khi phải sinh
+   * bản mới, tenant mặc định của người nhận được phân giải và truyền tường minh cho `notify()`, giữ đúng kết quả phân
+   * giải tenant của consumer cũ.
    *
    * @param userId Người nhận.
    * @param provider Provider thông báo.

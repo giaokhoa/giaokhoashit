@@ -103,10 +103,8 @@ export class WorkerPaidClassEnrolActivationService implements PaidClassEnrolActi
           if (await this.materialization.isCohortMember(row.cohortId, userId)) return;
           await ensureActiveTenantMembership(this.spaceScope.routedKysely, row.tenantId, userId);
           await this.materialization.roleSeparationChecks.assertCohortMembershipAllowed(userId, row.cohortId);
-          // Chèn thành viên + cả hai dòng outbox trong CÙNG một
-          // transaction Kysely: lỗi ở bước nào cũng rollback toàn
-          // bộ, lần chạy lại thấy chưa thuộc roster và chạy đủ cả
-          // ba bước ghi. Hai dòng outbox đi qua cổng `enqueue`
+          // Chèn thành viên + cả hai dòng outbox trong CÙNG một transaction Kysely: lỗi ở bước nào cũng rollback toàn
+          // bộ, lần chạy lại thấy chưa thuộc roster và chạy đủ cả ba bước ghi. Hai dòng outbox đi qua cổng `enqueue`
           // trên chính transaction đó.
           await this.spaceScope.routedKysely.transaction().execute(async (tx) => {
             const inserted = await tx

@@ -204,14 +204,10 @@ export class SpaceDatabaseService implements OnModuleDestroy {
   }
 
   /**
-   * Mở phiên làm việc theo trung tâm cho một tác vụ nền: chuẩn bị
-   * handle của trung tâm rồi chạy `fn` trong ngữ cảnh ALS mang
-   * slug của trung tâm (hợp thêm tenant/user của tác vụ nếu
-   * truyền; truyền tenant thì ngữ cảnh thôi là đường platform).
-   * Scheduler/processor gọi đường này khi job mang định danh trung
-   * tâm — từ issue #582 qua `SpaceJobRunner` ở các processor tiêu
-   * thụ job outbox, và trực tiếp ở lượt quét outbox theo trung
-   * tâm của relay.
+   * Mở phiên làm việc theo trung tâm cho một tác vụ nền: chuẩn bị handle của trung tâm rồi chạy `fn` trong ngữ cảnh ALS
+   * mang slug của trung tâm (hợp thêm tenant/user của tác vụ nếu truyền; truyền tenant thì ngữ cảnh thôi là đường
+   * platform). Scheduler/processor gọi đường này khi job mang định danh trung tâm — từ issue #582 qua `SpaceJobRunner`
+   * ở các processor tiêu thụ job outbox, và trực tiếp ở lượt quét outbox theo trung tâm của relay.
    */
   async withSpaceKysely<T>(
     slug: string,
@@ -222,21 +218,16 @@ export class SpaceDatabaseService implements OnModuleDestroy {
     const parent = tenantAls.getStore();
     const store: TenantAlsStore = { ...parent, ...context, spaceSlug: slug };
     if (context?.tenantId) store.platform = false;
-    // Bọc `fn` trong một hàm async ngay bên trong `run` — cùng lý
-    // do với bản phía API: việc thực thi truy vấn chỉ bắt đầu tại
-    // điểm await quyết định ngữ cảnh ALS, điểm await đó phải nằm
-    // trong `run` thì GUC tenant mới được gắn đúng khi kết nối
-    // checkout.
+    // Bọc `fn` trong một hàm async ngay bên trong `run` — cùng lý do với bản phía API: việc thực thi truy vấn chỉ bắt
+    // đầu tại điểm await quyết định ngữ cảnh ALS, điểm await đó phải nằm trong `run` thì GUC tenant mới được gắn đúng
+    // khi kết nối checkout.
     return tenantAls.run(store, async () => fn(db));
   }
 
   /**
-   * Toàn bộ dòng đăng ký không gian ở dạng bộ phân giải cần — chỉ
-   * bản worker có hàm này (xem mô tả lớp): relay outbox dùng để
-   * quét thêm outbox của từng trung tâm ở kho riêng ở mỗi nhịp
-   * (issue #582). Chưa cấu hình control plane thì trả danh sách
-   * rỗng — không có trung tâm nào để quét, các đường kho chung
-   * không bị ảnh hưởng.
+   * Toàn bộ dòng đăng ký không gian ở dạng bộ phân giải cần — chỉ bản worker có hàm này (xem mô tả lớp): relay outbox
+   * dùng để quét thêm outbox của từng trung tâm ở kho riêng ở mỗi nhịp (issue #582). Chưa cấu hình control plane thì
+   * trả danh sách rỗng — không có trung tâm nào để quét, các đường kho chung không bị ảnh hưởng.
    */
   async listRegisteredSpaces(): Promise<SpaceRegistryEntry[]> {
     const db = this.registryDb;
@@ -269,14 +260,10 @@ export class SpaceDatabaseService implements OnModuleDestroy {
   }
 
   /**
-   * Handle hiệu lực cho ngữ cảnh hiện tại — cùng hợp đồng với bản
-   * phía API: slug chưa từng chuẩn bị ở kho riêng thì về kho
-   * chung; slug đã chuẩn bị ở kho riêng mà mục đã-chuẩn-bị đã bị
-   * thu hồi (pool đóng vì nhàn rỗi hoặc bị thay vì đổi danh tính)
-   * thì ném `SpaceRoutingError`
-   * (`space_routing.prepared_revoked`) — fail-closed, tuyệt đối
-   * không rơi im lặng về kho chung; bên gọi chuẩn bị lại qua
-   * `getKyselyForSpace`/`withSpaceKysely` rồi thử lại.
+   * Handle hiệu lực cho ngữ cảnh hiện tại — cùng hợp đồng với bản phía API: slug chưa từng chuẩn bị ở kho riêng thì về
+   * kho chung; slug đã chuẩn bị ở kho riêng mà mục đã-chuẩn-bị đã bị thu hồi (pool đóng vì nhàn rỗi hoặc bị thay vì đổi
+   * danh tính) thì ném `SpaceRoutingError` (`space_routing.prepared_revoked`) — fail-closed, tuyệt đối không rơi im
+   * lặng về kho chung; bên gọi chuẩn bị lại qua `getKyselyForSpace`/`withSpaceKysely` rồi thử lại.
    */
   private currentKysely(): CentreDb {
     const slug = tenantAls.getStore()?.spaceSlug;
@@ -294,11 +281,9 @@ export class SpaceDatabaseService implements OnModuleDestroy {
   }
 
   /**
-   * Dựng handle định tuyến — cùng cơ chế Proxy uỷ thác theo ngữ
-   * cảnh với phía API: mỗi lần đọc thuộc tính đều lấy từ handle
-   * hiệu lực của ngữ cảnh TẠI THỜI ĐIỂM ĐÓ và gắn hàm về đúng
-   * handle đó (hàm trần không gắn sẽ mất `this` nội bộ của
-   * handle).
+   * Dựng handle định tuyến — cùng cơ chế Proxy uỷ thác theo ngữ cảnh với phía API: mỗi lần đọc thuộc tính đều lấy từ
+   * handle hiệu lực của ngữ cảnh TẠI THỜI ĐIỂM ĐÓ và gắn hàm về đúng handle đó (hàm trần không gắn sẽ mất `this` nội bộ
+   * của handle).
    */
   private createRoutedHandle<TDatabase extends object>(current: () => TDatabase): TDatabase {
     return new Proxy({} as TDatabase, {

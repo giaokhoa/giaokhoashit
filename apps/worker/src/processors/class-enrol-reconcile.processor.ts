@@ -154,14 +154,11 @@ export class ClassEnrolReconcileProcessor extends WorkerHost {
   /**
    * Một lượt quét đối soát toàn hệ.
    *
-   * Flow: (1) đọc danh sách lớp `active` — bước này chạy trong ngữ
-   * cảnh platform do {@link process} bọc nên thấy mọi tenant; (2) với
-   * TỪNG lớp, hạ ngữ cảnh xuống đúng tenant của lớp đó rồi mới lên kế
-   * hoạch + áp sửa — mọi truy vấn/ghi của một lớp (cohort_members,
-   * course, enrol, user_enrolments, role_assignments, groups_members,
-   * outbox_events...) đều nằm trong ngữ cảnh của lớp, để RLS tự giới
-   * hạn đúng phạm vi tenant và các dòng ghi mang đúng tenant, theo
-   * đúng mẫu quét-theo-từng-tenant của guardian-digest.
+   * Flow: (1) đọc danh sách lớp `active` — bước này chạy trong ngữ cảnh platform do {@link process} bọc nên thấy mọi
+   * tenant; (2) với TỪNG lớp, hạ ngữ cảnh xuống đúng tenant của lớp đó rồi mới lên kế hoạch + áp sửa — mọi truy vấn/ghi
+   * của một lớp (cohort_members, course, enrol, user_enrolments, role_assignments, groups_members, outbox_events...)
+   * đều nằm trong ngữ cảnh của lớp, để RLS tự giới hạn đúng phạm vi tenant và các dòng ghi mang đúng tenant, theo đúng
+   * mẫu quét-theo-từng-tenant của guardian-digest.
    *
    * @returns Kết quả tổng hợp của lượt quét.
    */
@@ -179,11 +176,9 @@ export class ClassEnrolReconcileProcessor extends WorkerHost {
       .execute();
     for (const clazz of activeClasses) {
       result.classesChecked += 1;
-      // Xử lý một lớp trong ngữ cảnh tenant của CHÍNH lớp đó: đọc hai
-      // phía (roster ↔ vật chất hoá) và mọi đường ghi trong
-      // planForClass/applyFix đều chạy dưới ngữ cảnh này — không để
-      // sót đường nào chạy ngoài ngữ cảnh (RLS sẽ lặng lẽ cho 0 dòng
-      // ở các bảng có tenant_id, hoặc ghi lệch phạm vi tenant).
+      // Xử lý một lớp trong ngữ cảnh tenant của CHÍNH lớp đó: đọc hai phía (roster ↔ vật chất hoá) và mọi đường ghi
+      // trong planForClass/applyFix đều chạy dưới ngữ cảnh này — không để sót đường nào chạy ngoài ngữ cảnh (RLS sẽ
+      // lặng lẽ cho 0 dòng ở các bảng có tenant_id, hoặc ghi lệch phạm vi tenant).
       await tenantAls.run({ tenantId: clazz.tenantId }, async () => {
         const fixes = await this.planForClass(clazz);
         if (fixes === null) return;
@@ -205,7 +200,10 @@ export class ClassEnrolReconcileProcessor extends WorkerHost {
     return result;
   }
 
-  /** Lên kế hoạch sửa cho một lớp: đọc toàn bộ hai phía (roster ↔ UE trên các instance cohort của lớp) và suy ra việc cần làm. */
+  /**
+   * Lên kế hoạch sửa cho một lớp: đọc toàn bộ hai phía (roster ↔ UE trên các instance cohort của lớp) và suy ra việc
+   * cần làm.
+   */
   private async planForClass(clazz: ReconcileClassRow): Promise<{ planned: PlannedFix[]; scale: number } | null> {
     const members = await this.spaceDb.routedKysely
       .selectFrom('cohort_members')
@@ -238,11 +236,9 @@ export class ClassEnrolReconcileProcessor extends WorkerHost {
       scale += ues.length;
       const ueByUser = new Map(ues.map((ue) => [ue.userId, ue]));
       const courseCtx = await this.courseContextId(instance.courseId);
-      // Gán vai của instance nạp MỘT lần cho cả instance (một truy
-      // vấn inArray trên tập thành viên) rồi đối chiếu trong bộ nhớ —
-      // thay cho truy vấn theo từng cặp (instance × thành viên) trước
-      // đây. Điều kiện lọc giữ nguyên: đúng context của khoá, đúng
-      // vai của instance, đúng component và itemId của instance.
+      // Gán vai của instance nạp MỘT lần cho cả instance (một truy vấn inArray trên tập thành viên) rồi đối chiếu trong
+      // bộ nhớ — thay cho truy vấn theo từng cặp (instance × thành viên) trước đây. Điều kiện lọc giữ nguyên: đúng
+      // context của khoá, đúng vai của instance, đúng component và itemId của instance.
       const assignedUserIds = new Set<string>();
       if (instance.roleId && courseCtx && memberIds.size > 0) {
         const assignments = await this.spaceDb.routedKysely

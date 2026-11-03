@@ -76,11 +76,9 @@ export class BackupProcessor extends WorkerHost {
         })
         .execute();
     }
-    // Archive dùng CHUNG định dạng lms-backup v1 với API: bản tóm
-    // tắt của worker mang đủ các section contributor mới (questions/badges/
-    // calendar) bên cạnh các section cũ; attempts/usages của question bank
-    // và assertions của badge KHÔNG bao giờ vào archive (dữ liệu vận hành /
-    // bằng chứng lịch sử của khoá gốc).
+    // Archive dùng CHUNG định dạng lms-backup v1 với API: bản tóm tắt của worker mang đủ các section contributor mới
+    // (questions/badges/ calendar) bên cạnh các section cũ; attempts/usages của question bank và assertions của badge
+    // KHÔNG bao giờ vào archive (dữ liệu vận hành / bằng chứng lịch sử của khoá gốc).
     const extended = {
       questions: { categories: qCategories.length, questions: qRows.length, entries: qEntries.length, versions: qVersions.length },
       badges: { badges: badges.length, criteria: criteria.length },
@@ -119,7 +117,10 @@ export class BackupProcessor extends WorkerHost {
   }
 }
 
-/** Restore: với job restore pending mang archive ở trường archive, sao chép section/cm sang course đích và ghi id mapping. */
+/**
+ * Restore: với job restore pending mang archive ở trường archive, sao chép section/cm sang course đích và ghi id
+ * mapping.
+ */
 @Processor('restore')
 /**
  * Xử lý job khôi phục khoá học nền.
@@ -362,14 +363,16 @@ export class AnalyticsRunProcessor extends WorkerHost {
   }
 }
 
-/** Report schedule: chạy báo cáo enrolments dưới danh tính người tạo (đếm dòng enrolment) + notification + lưu lastResult. */
+/**
+ * Report schedule: chạy báo cáo enrolments dưới danh tính người tạo (đếm dòng enrolment) + notification + lưu
+ * lastResult.
+ */
 @Processor('report-schedule')
 /**
- * Xử lý job báo cáo theo lịch: sinh báo cáo và gửi notification (nội dung từ catalog i18n).
- * Thông báo đi qua hàm luật phân phối dùng chung ({@link NotificationDeliveryService},
- * NB-6): trước lát này processor insert thẳng vào bảng notifications —
- * không kiểm đình chỉ, không kiểm tuỳ chọn, không ghi dispatch log; nay áp
- * đúng luật như `notify()` phía API cho kênh trong-app.
+ * Xử lý job báo cáo theo lịch: sinh báo cáo và gửi notification (nội dung từ catalog i18n). Thông báo đi qua hàm luật
+ * phân phối dùng chung ({@link NotificationDeliveryService}, NB-6): trước lát này processor insert thẳng vào bảng
+ * notifications — không kiểm đình chỉ, không kiểm tuỳ chọn, không ghi dispatch log; nay áp đúng luật như `notify()`
+ * phía API cho kênh trong-app.
  */
 export class ReportScheduleProcessor extends WorkerHost {
   constructor(
@@ -410,18 +413,16 @@ export class ReportScheduleProcessor extends WorkerHost {
       .where('id', '=', schedule.id)
       .execute();
     /**
-     * Text thông báo tra trong catalog i18n theo ngôn ngữ của người nhận:
-     * worker chạy ngoài request context nên truyền `locale` tường minh vào
-     * `I18nService.t()` (mẫu dịch ngoài request của docs @nestjs/i18n). Hệ
-     * thống chưa lưu locale riêng cho từng user nên dùng locale mặc định 'vi';
-     * khi có user preference về ngôn ngữ, chỉ cần thay hằng số này.
+     * Text thông báo tra trong catalog i18n theo ngôn ngữ của người nhận: worker chạy ngoài request context nên truyền
+     * `locale` tường minh vào `I18nService.t()` (mẫu dịch ngoài request của docs @nestjs/i18n). Hệ thống chưa lưu
+     * locale riêng cho từng user nên dùng locale mặc định 'vi'; khi có user preference về ngôn ngữ, chỉ cần thay hằng
+     * số này.
      */
     const recipientLocale = 'vi';
     const subject = this.i18n.t('platform.reportReadySubject', { locale: recipientLocale });
-    // TENANT-1 (#196): báo cáo chưa mang tenant riêng — notification
-    // gắn tenant mặc định của người tạo lịch theo membership (người
-    // sẽ đọc thông báo), truyền xuống hàm luật dùng chung để dòng
-    // thông báo + dispatch log mang đúng tenant.
+    // TENANT-1 (#196): báo cáo chưa mang tenant riêng — notification gắn tenant mặc định của người tạo lịch theo
+    // membership (người sẽ đọc thông báo), truyền xuống hàm luật dùng chung để dòng thông báo + dispatch log mang đúng
+    // tenant.
     const tenantId = await resolveDefaultTenantId(this.spaceDb.routedKysely, schedule.createdBy);
     await this.delivery.deliverInApp(schedule.createdBy, 'report_scheduled', {
       subject,

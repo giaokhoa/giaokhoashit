@@ -81,11 +81,9 @@ function makeJob(partial: Partial<OutboxEventJobData> = {}) {
 }
 
 /**
- * Bộ chạy job THẬT với khung định tuyến không có sổ phía sau
- * (issue #582): các job của spec này không mang slug trung tâm
- * nên bộ chạy luôn mở ngữ cảnh platform như đường xử lý trước
- * đợt này — spec khoá hành vi của processor, không khoá định
- * tuyến kho (định tuyến có spec riêng của bộ chạy và của relay).
+ * Bộ chạy job THẬT với khung định tuyến không có sổ phía sau (issue #582): các job của spec này không mang slug trung
+ * tâm nên bộ chạy luôn mở ngữ cảnh platform như đường xử lý trước đợt này — spec khoá hành vi của processor, không khoá
+ * định tuyến kho (định tuyến có spec riêng của bộ chạy và của relay).
  */
 function makeJobRunner(): SpaceJobRunner {
   return new SpaceJobRunner({

@@ -233,14 +233,11 @@ export class BadgeAwardProcessor extends WorkerHost {
         tenantId = courseRow?.tenantId ?? null;
       }
       if (!tenantId) tenantId = await resolveDefaultTenantId(this.spaceDb.routedKysely, userId);
-      // Phát qua hàm luật phân phối chung của worker (lát #174-A, xem
-      // docblock đầu file): truyền `courseId` của huy hiệu để ghi đè
-      // tắt tiếng theo khoá (NB-4) áp đúng như đường API — huy hiệu
-      // cấp site (không gắn khoá) truyền null, ghi đè không áp. Nội
-      // dung giữ nguyên văn như đường ghi thẳng trước đây (subject /
-      // body / smallMessage từ cùng khoá i18n); kết quả phát bị chặn
-      // (mute / admin tắt / tuỳ chọn tắt) KHÔNG ảnh hưởng assertion
-      // vừa cấp ở trên.
+      // Phát qua hàm luật phân phối chung của worker (lát #174-A, xem docblock đầu file): truyền `courseId` của huy
+      // hiệu để ghi đè tắt tiếng theo khoá (NB-4) áp đúng như đường API — huy hiệu cấp site (không gắn khoá) truyền
+      // null, ghi đè không áp. Nội dung giữ nguyên văn như đường ghi thẳng trước đây (subject / body / smallMessage từ
+      // cùng khoá i18n); kết quả phát bị chặn (mute / admin tắt / tuỳ chọn tắt) KHÔNG ảnh hưởng assertion vừa cấp ở
+      // trên.
       await this.delivery.deliverInApp(userId, 'badge_awarded', {
         subject: this.i18n.t('platform.badgeAwardedSubject', { locale: recipientLocale, args: { name: badgeRow.name } }),
         body: this.i18n.t('platform.badgeAwardedBody', { locale: recipientLocale, args: { name: badgeRow.name, issuer: badgeRow.issuerName } }),

@@ -74,10 +74,10 @@ import { ResendMailService } from '../resend-mail.service';
  */
 
 /**
- * Hàng rào chống trùng hai trạng thái của sự kiện outbox theo `outboxId` — bề mặt tối thiểu mà
- * {@link AuthMailProcessor} cần để đạt tính idempotent kể cả khi hai lượt xử lý chạy đồng thời và khi một lượt chết
- * giữa chừng. Bản cài đặt production là {@link RedisAuthMailSentMarker} (mọi thao tác đều là lệnh Redis nguyên tử);
- * test cấp bản giả trong bộ nhớ có cùng ngữ nghĩa.
+ * Hàng rào chống trùng hai trạng thái của sự kiện outbox theo `outboxId` — bề mặt tối thiểu mà {@link
+ * AuthMailProcessor} cần để đạt tính idempotent kể cả khi hai lượt xử lý chạy đồng thời và khi một lượt chết giữa
+ * chừng. Bản cài đặt production là {@link RedisAuthMailSentMarker} (mọi thao tác đều là lệnh Redis nguyên tử); test cấp
+ * bản giả trong bộ nhớ có cùng ngữ nghĩa.
  */
 export interface AuthMailSentMarker {
   /**
@@ -221,11 +221,9 @@ export interface AuthMailProcessResult {
 }
 
 /**
- * Processor của hàng đợi `auth-mail`: nhận job sự kiện
- * `auth_mail_requested` do relay outbox phát, dựng nội dung bằng
- * template dùng chung và gửi qua transport Resend phía worker.
- * Xem mô tả ở đầu file cho flow đầy đủ, bất biến idempotent theo
- * `outboxId` và hành vi theo từng kết quả.
+ * Processor của hàng đợi `auth-mail`: nhận job sự kiện `auth_mail_requested` do relay outbox phát, dựng nội dung bằng
+ * template dùng chung và gửi qua transport Resend phía worker. Xem mô tả ở đầu file cho flow đầy đủ, bất biến
+ * idempotent theo `outboxId` và hành vi theo từng kết quả.
  */
 @Processor('auth-mail')
 export class AuthMailProcessor extends WorkerHost {
@@ -273,12 +271,9 @@ export class AuthMailProcessor extends WorkerHost {
    * ghi ở đầu file.
    */
   async process(job: Job<OutboxEventJobData>, token?: string): Promise<AuthMailProcessResult> {
-    // Job chạy trong phiên đúng với trung tâm mà sự kiện thuộc về
-    // qua `SpaceJobRunner` (issue #582) — cùng một đường như mọi
-    // consumer của relay: trung tâm ở kho riêng thì phiên theo
-    // trung tâm được mở trước khi thân xử lý chạy; trung tâm ở
-    // kho chung thì là ngữ cảnh platform như hiện tại. Thân xử
-    // lý ở `processInContext` không đổi.
+    // Job chạy trong phiên đúng với trung tâm mà sự kiện thuộc về qua `SpaceJobRunner` (issue #582) — cùng một đường
+    // như mọi consumer của relay: trung tâm ở kho riêng thì phiên theo trung tâm được mở trước khi thân xử lý chạy;
+    // trung tâm ở kho chung thì là ngữ cảnh platform như hiện tại. Thân xử lý ở `processInContext` không đổi.
     return this.jobRunner.runForJob(job.data, () => this.processInContext(job, token));
   }
 
@@ -293,14 +288,10 @@ export class AuthMailProcessor extends WorkerHost {
       return { status: 'invalid' };
     }
 
-    // Hàng rào idempotent, trạng thái ĐÃ GỬI — lần đọc nhanh
-    // trước khi chiếm lease: dấu chỉ tồn tại khi transport đã
-    // thật sự nhận mail ở một lần xử lý trước — thấy dấu này thì
-    // bỏ qua ngay, không gửi lại. Kết quả lần đọc này CHƯA phải
-    // kết quả có hiệu lực: một lượt có thể đọc "chưa gửi" rồi bị
-    // chậm trước khi chiếm lease, trong lúc lượt khác gửi trọn,
-    // ghi dấu và nhả lease — kết quả có hiệu lực là lần đọc lại
-    // trong lúc đang giữ lease ở dưới.
+    // Hàng rào idempotent, trạng thái ĐÃ GỬI — lần đọc nhanh trước khi chiếm lease: dấu chỉ tồn tại khi transport đã
+    // thật sự nhận mail ở một lần xử lý trước — thấy dấu này thì bỏ qua ngay, không gửi lại. Kết quả lần đọc này CHƯA
+    // phải kết quả có hiệu lực: một lượt có thể đọc "chưa gửi" rồi bị chậm trước khi chiếm lease, trong lúc lượt khác
+    // gửi trọn, ghi dấu và nhả lease — kết quả có hiệu lực là lần đọc lại trong lúc đang giữ lease ở dưới.
     if (await this.sentMarker.hasSent(data.outboxId)) {
       this.logger.log(
         `Mail auth của dòng outbox ${data.outboxId} đã được gửi ở lần xử lý trước — bỏ qua lần phát lại.`,
@@ -308,12 +299,9 @@ export class AuthMailProcessor extends WorkerHost {
       return { status: 'duplicate' };
     }
 
-    // Hàng rào idempotent, trạng thái ĐANG XỬ LÝ: chiếm lease
-    // nguyên tử theo outboxId trước khi gửi. Không chiếm được
-    // nghĩa là một lượt khác đang xử lý sự kiện này (hoặc lease
-    // của một lượt đã chết chưa hết hạn) — chưa biết mail có được
-    // gửi hay không, nên không kết thúc như đã xử lý mà hẹn hàng
-    // đợi phát lại sau theo pattern hoãn của BullMQ.
+    // Hàng rào idempotent, trạng thái ĐANG XỬ LÝ: chiếm lease nguyên tử theo outboxId trước khi gửi. Không chiếm được
+    // nghĩa là một lượt khác đang xử lý sự kiện này (hoặc lease của một lượt đã chết chưa hết hạn) — chưa biết mail có
+    // được gửi hay không, nên không kết thúc như đã xử lý mà hẹn hàng đợi phát lại sau theo pattern hoãn của BullMQ.
     const leaseToken = await this.sentMarker.claimProcessing(data.outboxId);
     if (!leaseToken) {
       this.logger.log(
@@ -326,16 +314,11 @@ export class AuthMailProcessor extends WorkerHost {
     }
 
     try {
-      // Đọc lại dấu ĐÃ GỬI trong lúc đang giữ lease, TRƯỚC khi
-      // gọi transport: đây là kết quả có hiệu lực. Nếu một lượt
-      // khác đã gửi trọn và ghi dấu trong cửa sổ lượt này bị
-      // chậm trước khi chiếm lease (lần đọc nhanh ở trên cho
-      // kết quả cũ "chưa gửi"), dấu giờ đã đứng — nhả lease của
-      // chính lượt này (kiểm tra chủ) và kết thúc `duplicate`,
-      // không gửi lần hai. Lỗi của thao tác nhả ở đây bị nuốt
-      // có chủ đích như ở bước thành công: dấu ĐÃ GỬI đã đứng
-      // và tự nó bảo đảm các lần phát lại bỏ qua; lease còn sót
-      // sẽ tự hết hạn trong hạn ngắn.
+      // Đọc lại dấu ĐÃ GỬI trong lúc đang giữ lease, TRƯỚC khi gọi transport: đây là kết quả có hiệu lực. Nếu một lượt
+      // khác đã gửi trọn và ghi dấu trong cửa sổ lượt này bị chậm trước khi chiếm lease (lần đọc nhanh ở trên cho kết
+      // quả cũ "chưa gửi"), dấu giờ đã đứng — nhả lease của chính lượt này (kiểm tra chủ) và kết thúc `duplicate`,
+      // không gửi lần hai. Lỗi của thao tác nhả ở đây bị nuốt có chủ đích như ở bước thành công: dấu ĐÃ GỬI đã đứng và
+      // tự nó bảo đảm các lần phát lại bỏ qua; lease còn sót sẽ tự hết hạn trong hạn ngắn.
       if (await this.sentMarker.hasSent(data.outboxId)) {
         this.logger.log(
           `Mail auth của dòng outbox ${data.outboxId} đã được gửi bởi lượt xử lý vừa nhả lease — bỏ qua, không gửi lần hai.`,
@@ -351,21 +334,16 @@ export class AuthMailProcessor extends WorkerHost {
           `Mail auth tới ${parsed.to} (loại ${parsed.kind}) không được gửi: ${result.reason} — môi trường chưa cấu hình Resend.`,
         );
       }
-      // Transport đã nhận mail (hoặc khai báo bỏ qua — coi như đã
-      // xử lý như đường cũ): CHỈ BÂY GIỜ mới ghi dấu ĐÃ GỬI, rồi
-      // nhả lease ngay trong cùng bước thành công. Lỗi của thao
-      // tác nhả ở đây bị nuốt có chủ đích (dấu ĐÃ GỬI đã đứng và
-      // tự nó bảo đảm các lần phát lại bỏ qua; lease còn sót sẽ
-      // tự hết hạn trong hạn ngắn) — không để lỗi nhả biến một lần
-      // gửi thành công thành job thất bại.
+      // Transport đã nhận mail (hoặc khai báo bỏ qua — coi như đã xử lý như đường cũ): CHỈ BÂY GIỜ mới ghi dấu ĐÃ GỬI,
+      // rồi nhả lease ngay trong cùng bước thành công. Lỗi của thao tác nhả ở đây bị nuốt có chủ đích (dấu ĐÃ GỬI đã
+      // đứng và tự nó bảo đảm các lần phát lại bỏ qua; lease còn sót sẽ tự hết hạn trong hạn ngắn) — không để lỗi nhả
+      // biến một lần gửi thành công thành job thất bại.
       await this.sentMarker.markSent(data.outboxId);
       await this.sentMarker.releaseProcessing(data.outboxId, leaseToken).catch(() => undefined);
       return { status: result.status };
     } catch (error) {
-      // Gửi thất bại, đọc lại dấu ĐÃ GỬI trong lease thất bại,
-      // hoặc ghi dấu ĐÃ GỬI thất bại: nhả lease (kiểm tra chủ)
-      // TRƯỚC khi ném lỗi, để lượt thử lại của BullMQ chiếm lại
-      // được lease và gửi được. Lỗi của chính thao tác nhả
+      // Gửi thất bại, đọc lại dấu ĐÃ GỬI trong lease thất bại, hoặc ghi dấu ĐÃ GỬI thất bại: nhả lease (kiểm tra chủ)
+      // TRƯỚC khi ném lỗi, để lượt thử lại của BullMQ chiếm lại được lease và gửi được. Lỗi của chính thao tác nhả
       // lease không được nuốt lỗi gốc.
       await this.sentMarker.releaseProcessing(data.outboxId, leaseToken).catch(() => undefined);
       throw error;

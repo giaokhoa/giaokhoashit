@@ -201,10 +201,9 @@ describe('Worker guardian digest delivery (PH-2, issue #159; chuyển worker ở
   }
 
   /**
-   * Bằng chứng kênh email của một thông báo: hoặc job dispatch còn
-   * trên hàng đợi (dữ liệu job mang subject kênh ngoài), hoặc
-   * processor phát kênh ngoài đã ghi dispatch log với dedupe_key =
-   * jobId — cả hai đều phải chỉ chứa bản tối thiểu hoá.
+   * Bằng chứng kênh email của một thông báo: hoặc job dispatch còn trên hàng đợi (dữ liệu job mang subject kênh ngoài),
+   * hoặc processor phát kênh ngoài đã ghi dispatch log với dedupe_key = jobId — cả hai đều phải chỉ chứa bản tối thiểu
+   * hoá.
    */
   async function waitEmailEvidence(jobId: string, timeoutMs = 60000): Promise<{ subject: string; raw: string }> {
     const deadline = Date.now() + timeoutMs;
