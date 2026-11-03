@@ -94,13 +94,12 @@ repo.
 - Spring Security 7.1.2 — OAuth 2.0 Resource Server JWT (hai bước cấu hình tối thiểu: dependency và `issuer-uri`;
   cơ chế khám phá JWKS và kiểm chứng `iss`, `exp`, `nbf`):
   https://docs.spring.io/spring-security/reference/7.1/servlet/oauth2/resource-server/jwt.html
-- Spring Boot Reference 4.1 — Spring Security (cách Spring Boot tích hợp Spring Security, gồm cấu hình resource
-  server qua thuộc tính `spring.security.oauth2.resourceserver.jwt.*`):
+- Spring Boot Reference 4.1 — Spring Security (cách Spring Boot tích hợp Spring Security):
   https://docs.spring.io/spring-boot/4.1/reference/web/spring-security.html
 - Spring Boot Reference 4.1 — Actuator, Endpoints (mục Health: các nhóm liveness/readiness và thuộc tính
   `management.endpoint.health.probes.enabled`):
   https://docs.spring.io/spring-boot/4.1/reference/actuator/endpoints.html
 - Keycloak 26.8.1 — Securing Applications and Services, mục Planning for securing applications and services
   (nguyên tắc: ưu tiên hỗ trợ OIDC/OAuth2 có sẵn trong hệ sinh thái của ứng dụng, client adapter của Keycloak chỉ
-  là lựa chọn cuối; ứng dụng phía service đóng vai resource server kiểm chứng bearer token do realm phát hành):
+  là lựa chọn cuối):
   https://www.keycloak.org/securing-apps/overview
