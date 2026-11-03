@@ -64,16 +64,29 @@ CREATE POLICY "tenant_isolation" ON "identity_links" USING (current_setting('app
 --> statement-breakpoint
 ALTER TABLE "tenant_memberships" ADD COLUMN "primary_role" text;
 --> statement-breakpoint
--- Lấp vai chính cho các membership đang `active` mà lịch sử để trống
--- (phán quyết vòng sửa PR #25): ràng buộc dưới đây cấm membership
--- active thiếu vai, nên các dòng lịch sử này phải được lấp TRƯỚC khi
--- ràng buộc có hiệu lực. Giá trị lấp là `member` — mặc định của đường
--- ghi danh trong `@lms/enrol`; quản trị/giáo viên bị lấp nhầm vẫn sửa
--- lại được qua bề mặt thêm/kích hoạt thành viên với vai tường minh.
--- Membership đã kết thúc/đình chỉ giữ NULL cho tới khi được kích hoạt
--- lại, lúc đó đường ghi bắt buộc lấp vai.
+-- Khôi phục vai tường minh mà @lms/enrol đã staging trên baseline.
+-- tenant_config tồn tại từ baseline và chịu cùng RLS tenant_isolation;
+-- chỉ giá trị thuộc tập đóng mới được chuyển sang membership.
+UPDATE "tenant_memberships" AS tm
+SET "primary_role" = tc."value" #>> '{}'
+FROM "tenant_config" AS tc
+WHERE tc."tenant_id" = tm."tenant_id"
+  AND tc."key" = '__migration_tenant_membership_primary_role__:' || tm."user_id"::text
+  AND tm."primary_role" IS NULL
+  AND tc."value" #>> '{}' IN ('admin', 'teacher', 'member');
+--> statement-breakpoint
+-- Dọn mọi khoá staging sau khi đã chuyển vai; dòng staging không có
+-- membership tương ứng cũng bị bỏ, không trở thành dữ liệu cấu hình lâu dài.
+DELETE FROM "tenant_config"
+WHERE left("key", length('__migration_tenant_membership_primary_role__:')) = '__migration_tenant_membership_primary_role__:';
+--> statement-breakpoint
+-- Lấp member chỉ cho membership active lịch sử không có vai staging.
+-- Membership chưa active được giữ NULL; hai CHECK độc lập bên dưới
+-- lần lượt khoá tập giá trị và buộc active phải có vai.
 UPDATE "tenant_memberships" SET "primary_role" = 'member' WHERE "status" = 'active' AND "primary_role" IS NULL;
 --> statement-breakpoint
-ALTER TABLE "tenant_memberships" ADD CONSTRAINT "tenant_memberships_primary_role_check" CHECK ("status" <> 'active' OR ("primary_role" IS NOT NULL AND "primary_role" IN ('admin', 'teacher', 'member')));
+ALTER TABLE "tenant_memberships" ADD CONSTRAINT "tenant_memberships_primary_role_value_check" CHECK ("primary_role" IS NULL OR "primary_role" IN ('admin', 'teacher', 'member'));
+--> statement-breakpoint
+ALTER TABLE "tenant_memberships" ADD CONSTRAINT "tenant_memberships_active_primary_role_check" CHECK ("status" <> 'active' OR "primary_role" IS NOT NULL);
 --> statement-breakpoint
 ALTER TABLE "tenant_memberships" ADD COLUMN "version" integer DEFAULT 1 NOT NULL;

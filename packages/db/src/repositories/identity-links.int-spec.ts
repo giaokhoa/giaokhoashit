@@ -275,6 +275,16 @@ describe('vai chính của membership ở tầng dữ liệu', () => {
     expect((err as { code?: string }).code).toBe('23514');
   });
 
+  it('vai ngoài tập đóng bị từ chối cả khi membership đang suspended', async () => {
+    const err = await captureError(runInTestPlatformContext(async () => {
+      await db
+        .insertInto('tenant_memberships')
+        .values({ tenant_id: tenantBId, user_id: userBId, status: 'suspended', primary_role: 'superadmin' })
+        .execute();
+    }));
+    expect((err as { code?: string }).code).toBe('23514');
+  });
+
   it('membership active thiếu vai chính bị ràng buộc CHECK chặn, còn membership chưa active thiếu vai vẫn ghi được để chờ lấp ở lần kích hoạt lại', async () => {
     const activeErr = await captureError(runInTestPlatformContext(async () => {
       await db
