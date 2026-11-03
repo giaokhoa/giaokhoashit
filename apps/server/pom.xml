@@ -48,7 +48,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-jooq</artifactId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -96,55 +96,6 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-			<!-- jOOQ sinh mã từ chính các script Flyway (DDLDatabase theo tài liệu jOOQ): schema là nguồn sự thật duy
-				nhất, không cần database sống ở bước build và không commit mã sinh. -->
-			<plugin>
-				<groupId>org.jooq</groupId>
-				<artifactId>jooq-codegen-maven</artifactId>
-				<version>${jooq.version}</version>
-				<executions>
-					<execution>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-					</execution>
-				</executions>
-				<dependencies>
-					<dependency>
-						<groupId>org.jooq</groupId>
-						<artifactId>jooq-meta-extensions</artifactId>
-						<version>${jooq.version}</version>
-					</dependency>
-				</dependencies>
-				<configuration>
-					<generator>
-						<database>
-							<name>org.jooq.meta.extensions.ddl.DDLDatabase</name>
-							<properties>
-								<property>
-									<key>scripts</key>
-									<value>src/main/resources/db/migration/*.sql</value>
-								</property>
-								<property>
-									<key>sort</key>
-									<value>flyway</value>
-								</property>
-								<!-- PostgreSQL gấp định danh không ngoặc kép thành chữ thường; đặt defaultNameCase
-									là lower để mã sinh ra khớp đúng tên bảng/cột mà PostgreSQL lưu. -->
-								<property>
-									<key>defaultNameCase</key>
-									<value>lower</value>
-								</property>
-							</properties>
-						</database>
-						<target>
-							<packageName>com.giaokhoa.server.jooq</packageName>
-							<directory>target/generated-sources/jooq</directory>
-						</target>
-					</generator>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>

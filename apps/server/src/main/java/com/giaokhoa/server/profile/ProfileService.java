@@ -1,19 +1,13 @@
 package com.giaokhoa.server.profile;
 
-import static com.giaokhoa.server.jooq.Tables.APP_USER;
-import static com.giaokhoa.server.jooq.Tables.CUSTOM_FIELD_DEFINITION;
-import static com.giaokhoa.server.jooq.Tables.USER_CUSTOM_FIELD_VALUE;
-
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-import com.giaokhoa.server.jooq.tables.records.AppUserRecord;
-import com.giaokhoa.server.jooq.tables.records.CustomFieldDefinitionRecord;
-import org.jooq.DSLContext;
-import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +16,17 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class ProfileService {
 
-	private final DSLContext dsl;
+	private final AppUserRepository users;
 
-	public ProfileService(DSLContext dsl) {
-		this.dsl = dsl;
+	private final CustomFieldDefinitionRepository definitions;
+
+	private final UserCustomFieldValueRepository values;
+
+	public ProfileService(AppUserRepository users, CustomFieldDefinitionRepository definitions,
+			UserCustomFieldValueRepository values) {
+		this.users = users;
+		this.definitions = definitions;
+		this.values = values;
 	}
 
 	public record ProfileView(UUID id, String keycloakSub, String displayName, String avatarUrl,
@@ -43,7 +44,7 @@ public class ProfileService {
 	@Transactional
 	public ProfileView updateProfile(String keycloakSub, String displayName, String avatarUrl,
 			Map<String, String> customFields) {
-		AppUserRecord user = findOrCreateUser(keycloakSub);
+		AppUser user = findOrCreateUser(keycloakSub);
 		if (displayName != null) {
 			user.setDisplayName(displayName);
 		}
@@ -51,7 +52,7 @@ public class ProfileService {
 			user.setAvatarUrl(avatarUrl);
 		}
 		user.setUpdatedAt(OffsetDateTime.now());
-		user.store();
+		this.users.save(user);
 		if (customFields != null) {
 			customFields.forEach((fieldKey, value) -> setCustomFieldValue(user.getId(), fieldKey, value));
 		}
@@ -59,9 +60,10 @@ public class ProfileService {
 	}
 
 	public List<DefinitionView> listDefinitions() {
-		return this.dsl.selectFrom(CUSTOM_FIELD_DEFINITION)
-				.orderBy(CUSTOM_FIELD_DEFINITION.FIELD_KEY)
-				.fetch(record -> new DefinitionView(record.getId(), record.getFieldKey(), record.getLabel()));
+		return this.definitions.findAllByOrderByFieldKeyAsc().stream()
+				.map(definition -> new DefinitionView(definition.getId(), definition.getFieldKey(),
+						definition.getLabel()))
+				.toList();
 	}
 
 	@Transactional
@@ -73,38 +75,35 @@ public class ProfileService {
 		if (label == null || label.isBlank() || label.length() > 200) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "label must be 1-200 characters");
 		}
-		boolean exists = this.dsl.fetchExists(CUSTOM_FIELD_DEFINITION,
-				CUSTOM_FIELD_DEFINITION.FIELD_KEY.eq(fieldKey));
-		if (exists) {
+		if (this.definitions.findByFieldKey(fieldKey).isPresent()) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "custom field already exists: " + fieldKey);
 		}
-		CustomFieldDefinitionRecord record = this.dsl.newRecord(CUSTOM_FIELD_DEFINITION);
-		record.setId(UUID.randomUUID());
-		record.setFieldKey(fieldKey);
-		record.setLabel(label);
-		record.store();
-		return new DefinitionView(record.getId(), record.getFieldKey(), record.getLabel());
+		CustomFieldDefinition definition = new CustomFieldDefinition();
+		definition.setId(UUID.randomUUID());
+		definition.setFieldKey(fieldKey);
+		definition.setLabel(label);
+		definition.setCreatedAt(OffsetDateTime.now());
+		this.definitions.save(definition);
+		return new DefinitionView(definition.getId(), definition.getFieldKey(), definition.getLabel());
 	}
 
-	private AppUserRecord findOrCreateUser(String keycloakSub) {
-		AppUserRecord user = this.dsl.selectFrom(APP_USER)
-				.where(APP_USER.KEYCLOAK_SUB.eq(keycloakSub))
-				.fetchOne();
-		if (user != null) {
-			return user;
-		}
-		try {
-			AppUserRecord created = this.dsl.newRecord(APP_USER);
+	private AppUser findOrCreateUser(String keycloakSub) {
+		return this.users.findByKeycloakSub(keycloakSub).orElseGet(() -> {
+			AppUser created = new AppUser();
 			created.setId(UUID.randomUUID());
 			created.setKeycloakSub(keycloakSub);
-			created.store();
-			return created;
-		}
-		catch (DataAccessException ex) {
-			// Hai request đầu tiên của cùng một `sub` có thể cùng thấy chưa có hồ sơ và cùng chèn; request thua
-			// cuộc đua nhận lỗi trùng khoá unique và chỉ cần đọc lại bản ghi mà request thắng vừa tạo.
-			return this.dsl.selectFrom(APP_USER).where(APP_USER.KEYCLOAK_SUB.eq(keycloakSub)).fetchOne();
-		}
+			OffsetDateTime now = OffsetDateTime.now();
+			created.setCreatedAt(now);
+			created.setUpdatedAt(now);
+			try {
+				return this.users.saveAndFlush(created);
+			}
+			catch (DataIntegrityViolationException ex) {
+				// Hai request đầu tiên của cùng một `sub` có thể cùng thấy chưa có hồ sơ và cùng chèn; request
+				// thua cuộc đua nhận lỗi trùng khoá unique và chỉ cần đọc lại bản ghi request thắng vừa tạo.
+				return this.users.findByKeycloakSub(keycloakSub).orElseThrow(() -> ex);
+			}
+		});
 	}
 
 	private void setCustomFieldValue(UUID userId, String fieldKey, String value) {
@@ -112,40 +111,34 @@ public class ProfileService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 					"custom field value must be at most 2000 characters: " + fieldKey);
 		}
-		UUID definitionId = this.dsl.select(CUSTOM_FIELD_DEFINITION.ID)
-				.from(CUSTOM_FIELD_DEFINITION)
-				.where(CUSTOM_FIELD_DEFINITION.FIELD_KEY.eq(fieldKey))
-				.fetchOne(CUSTOM_FIELD_DEFINITION.ID);
-		if (definitionId == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "unknown custom field: " + fieldKey);
-		}
-		int updated = this.dsl.update(USER_CUSTOM_FIELD_VALUE)
-				.set(USER_CUSTOM_FIELD_VALUE.FIELD_VALUE, value)
-				.set(USER_CUSTOM_FIELD_VALUE.UPDATED_AT, OffsetDateTime.now())
-				.where(USER_CUSTOM_FIELD_VALUE.USER_ID.eq(userId)
-						.and(USER_CUSTOM_FIELD_VALUE.DEFINITION_ID.eq(definitionId)))
-				.execute();
-		if (updated == 0) {
-			this.dsl.insertInto(USER_CUSTOM_FIELD_VALUE)
-					.set(USER_CUSTOM_FIELD_VALUE.USER_ID, userId)
-					.set(USER_CUSTOM_FIELD_VALUE.DEFINITION_ID, definitionId)
-					.set(USER_CUSTOM_FIELD_VALUE.FIELD_VALUE, value)
-					.execute();
-		}
+		CustomFieldDefinition definition = this.definitions.findByFieldKey(fieldKey)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"unknown custom field: " + fieldKey));
+		UserCustomFieldValue.Id id = new UserCustomFieldValue.Id(userId, definition.getId());
+		UserCustomFieldValue entry = this.values.findById(id).orElseGet(() -> {
+			UserCustomFieldValue created = new UserCustomFieldValue();
+			created.setId(id);
+			return created;
+		});
+		entry.setFieldValue(value);
+		entry.setUpdatedAt(OffsetDateTime.now());
+		this.values.save(entry);
 	}
 
-	private ProfileView toView(AppUserRecord user) {
-		Map<String, String> values = new LinkedHashMap<>();
-		this.dsl.select(CUSTOM_FIELD_DEFINITION.FIELD_KEY, USER_CUSTOM_FIELD_VALUE.FIELD_VALUE)
-				.from(USER_CUSTOM_FIELD_VALUE)
-				.join(CUSTOM_FIELD_DEFINITION)
-				.on(USER_CUSTOM_FIELD_VALUE.DEFINITION_ID.eq(CUSTOM_FIELD_DEFINITION.ID))
-				.where(USER_CUSTOM_FIELD_VALUE.USER_ID.eq(user.getId()))
-				.orderBy(CUSTOM_FIELD_DEFINITION.FIELD_KEY)
-				.forEach(row -> values.put(row.get(CUSTOM_FIELD_DEFINITION.FIELD_KEY),
-						row.get(USER_CUSTOM_FIELD_VALUE.FIELD_VALUE)));
+	private ProfileView toView(AppUser user) {
+		List<UserCustomFieldValue> entries = this.values.findByIdUserId(user.getId());
+		Map<UUID, String> keyByDefinitionId = this.definitions
+				.findAllById(entries.stream().map(entry -> entry.getId().getDefinitionId()).toList())
+				.stream()
+				.collect(Collectors.toMap(CustomFieldDefinition::getId, CustomFieldDefinition::getFieldKey));
+		Map<String, String> customFields = new LinkedHashMap<>();
+		entries.stream()
+				.sorted((a, b) -> keyByDefinitionId.get(a.getId().getDefinitionId())
+						.compareTo(keyByDefinitionId.get(b.getId().getDefinitionId())))
+				.forEach(entry -> customFields.put(keyByDefinitionId.get(entry.getId().getDefinitionId()),
+						entry.getFieldValue()));
 		return new ProfileView(user.getId(), user.getKeycloakSub(), user.getDisplayName(), user.getAvatarUrl(),
-				values, user.getCreatedAt(), user.getUpdatedAt());
+				customFields, user.getCreatedAt(), user.getUpdatedAt());
 	}
 
 }
