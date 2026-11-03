@@ -377,7 +377,7 @@ services:
       - keycloak-net
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.7.5
+    image: quay.io/keycloak/keycloak:26.8.1
     restart: unless-stopped
     command: ["start"]
     environment:
