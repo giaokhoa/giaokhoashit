@@ -1,15 +1,17 @@
-name: Kiểm chứng mẫu realm Keycloak
+name: Kiểm chứng cấp phát Keycloak
 
 # Workflow riêng cho thư mục keycloak/: dựng Keycloak 26.8.1 sạch
 # bằng stack kiểm chứng (keycloak/verify/compose.verify.yaml) rồi
-# chạy bộ kiểm chứng keycloak/verify/verify.mjs — cấp phát hai
-# realm tenant + realm giaokhoa từ môi trường trống, chạy lại để
-# chứng minh không trùng và không mất bí mật, và đối chiếu token,
-# MFA, brute force, refresh rotation, đổi khoá ký trên bản
-# Keycloak thật. Workflow này không thay job verify/verify-stack
-# của cổng merge vào main; nó là kiểm chứng chuyên biệt cho mẫu
-# realm và chỉ chạy khi thư mục keycloak/ thay đổi hoặc khi được
-# gọi tay.
+# chạy bộ kiểm chứng keycloak/verify/verify.mjs — cấp phát một
+# realm giaokhoa duy nhất với 2 Organization mẫu từ môi trường
+# trống, đối chiếu cấu trúc realm, permission FGAP, claim
+# organization trong token và ma trận quản trị của admin trung
+# tâm, kiểm chứng realm master giữ mặc định, rồi chạy lại bộ cấp
+# phát để chứng minh không trùng và không mất bí mật.
+# Workflow này không thay job verify/verify-stack của cổng merge
+# vào main; nó là kiểm chứng chuyên biệt cho việc cấp phát
+# Keycloak và chỉ chạy khi thư mục keycloak/ thay đổi hoặc khi
+# được gọi tay.
 
 on:
   pull_request:
@@ -33,13 +35,7 @@ jobs:
       KC_ADMIN_USERNAME: localadmin
       KC_ADMIN_PASSWORD: verify-admin-password
       PROVISION_CONFIG: keycloak/verify/provision.config.verify.json
-      LMS_WEB_SECRET__TENANT_A: verify-web-secret-a
-      LMS_WEB_SECRET__TENANT_B: verify-web-secret-b
-      PLATFORM_WEB_SECRET: verify-platform-secret
-      GOOGLE_CLIENT_ID: verify-google-client-id
-      GOOGLE_CLIENT_SECRET: verify-google-client-secret
-      FACEBOOK_CLIENT_ID: verify-facebook-client-id
-      FACEBOOK_CLIENT_SECRET: verify-facebook-client-secret
+      LMS_WEB_SECRET: verify-web-secret
     steps:
       - uses: actions/checkout@v4
 
@@ -63,7 +59,7 @@ jobs:
           docker compose -f keycloak/verify/compose.verify.yaml logs
           exit 1
 
-      - name: Chạy bộ kiểm chứng mẫu realm
+      - name: Chạy bộ kiểm chứng cấp phát
         run: node keycloak/verify/verify.mjs
 
       - name: Dọn stack kiểm chứng
