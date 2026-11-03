@@ -1,0 +1,488 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #0a0a0a;
+    background: #ffffff;
+    -webkit-font-smoothing: antialiased;
+}
+
+.gk-page {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    overflow: hidden;
+}
+
+/* Hai vòng tròn nét đứt là hoạ tiết nền duy nhất của trang, bám theo mẫu: một vòng ở mép dưới-trái của
+   thẻ và một vòng ở mép phải, giữa chiều cao của thẻ. Khung trang luôn căn giữa nên vị trí tương đối
+   theo khung vẫn giữ đúng quan hệ với thẻ ở mọi chiều ngang màn hình. */
+.gk-decor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.gk-circle {
+    position: absolute;
+    border: 2px dashed #e7e7ea;
+    border-radius: 50%;
+}
+
+.gk-circle--left {
+    width: 340px;
+    height: 340px;
+    left: calc(50% - 430px);
+    bottom: calc(50% - 330px);
+}
+
+.gk-circle--right {
+    width: 300px;
+    height: 300px;
+    right: calc(50% - 460px);
+    top: calc(50% - 150px);
+}
+
+.gk-card {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 12px 32px -12px rgba(16, 24, 40, 0.12);
+    padding: 32px;
+}
+
+.gk-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.gk-brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #0a0a0a;
+    color: #ffffff;
+    flex: none;
+}
+
+.gk-brand-mark svg {
+    width: 21px;
+    height: 21px;
+}
+
+.gk-brand-name {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.gk-title {
+    margin: 26px 0 0;
+    font-size: 24px;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.gk-subtitle {
+    margin: 6px 0 0;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.gk-required-note {
+    margin: 10px 0 0;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.gk-required {
+    color: #dc2626;
+}
+
+.gk-alert {
+    margin-top: 20px;
+    padding: 11px 13px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 13.5px;
+    line-height: 1.45;
+}
+
+.gk-alert--error {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #b91c1c;
+}
+
+.gk-alert--success {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+
+.gk-alert--warning {
+    background: #fffbeb;
+    border-color: #fde68a;
+    color: #92400e;
+}
+
+.gk-alert--info {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.gk-role-toggle {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.gk-role-btn {
+    flex: 1 1 0;
+    padding: 9px 12px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: #0a0a0a;
+    background: #ffffff;
+    border: 1px solid #d4d4d8;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.gk-role-btn:hover {
+    border-color: #a1a1aa;
+}
+
+.gk-role-btn.is-active {
+    background: #0a0a0a;
+    border-color: #0a0a0a;
+    color: #ffffff;
+}
+
+.gk-field {
+    margin-top: 18px;
+}
+
+.gk-label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.gk-input {
+    width: 100%;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 14.5px;
+    color: #0a0a0a;
+    background: #ffffff;
+    border: 1px solid #d4d4d8;
+    border-radius: 8px;
+    outline: none;
+}
+
+.gk-input::placeholder {
+    color: #9ca3af;
+}
+
+.gk-input:focus {
+    border-color: #0a0a0a;
+    box-shadow: 0 0 0 3px rgba(10, 10, 10, 0.1);
+}
+
+.gk-input[aria-invalid="true"] {
+    border-color: #dc2626;
+}
+
+.gk-password-wrap {
+    position: relative;
+}
+
+.gk-password-wrap .gk-input {
+    padding-right: 44px;
+}
+
+.gk-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: #6b7280;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.gk-password-toggle:hover {
+    color: #0a0a0a;
+}
+
+.gk-password-toggle svg {
+    width: 19px;
+    height: 19px;
+}
+
+.gk-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+    font-size: 13.5px;
+}
+
+.gk-remember {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    color: #27272a;
+}
+
+.gk-remember input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: #0a0a0a;
+}
+
+.gk-forgot a {
+    color: #0a0a0a;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.gk-forgot a:hover {
+    text-decoration: underline;
+}
+
+.gk-submit {
+    width: 100%;
+    margin-top: 22px;
+    padding: 11px 16px;
+    font: inherit;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #ffffff;
+    background: #0a0a0a;
+    border: 1px solid #0a0a0a;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.gk-submit:hover {
+    background: #262626;
+}
+
+.gk-submit:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.gk-info {
+    margin-top: 20px;
+}
+
+.gk-registration {
+    font-size: 13.5px;
+    color: #6b7280;
+    text-align: center;
+}
+
+.gk-registration a,
+.gk-alt-action a {
+    color: #0a0a0a;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.gk-registration a:hover,
+.gk-alt-action a:hover {
+    text-decoration: underline;
+}
+
+.gk-alt-action {
+    margin-top: 16px;
+    font-size: 13.5px;
+    text-align: center;
+}
+
+.gk-social {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.gk-social-title {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+    text-align: center;
+}
+
+.gk-social-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.gk-social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #0a0a0a;
+    text-decoration: none;
+    background: #ffffff;
+    border: 1px solid #d4d4d8;
+    border-radius: 8px;
+}
+
+.gk-social-btn:hover {
+    border-color: #a1a1aa;
+}
+
+.gk-attempted {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 22px;
+    padding: 6px 8px 6px 12px;
+    font-size: 13.5px;
+    font-weight: 500;
+    background: #f4f4f5;
+    border: 1px solid #e5e5e5;
+    border-radius: 999px;
+}
+
+.gk-attempted a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    color: #6b7280;
+    border-radius: 50%;
+}
+
+.gk-attempted a:hover {
+    color: #0a0a0a;
+}
+
+.gk-attempted svg {
+    width: 15px;
+    height: 15px;
+}
+
+/* Các trang phụ của luồng đăng nhập (đặt lại mật khẩu, cập nhật hồ sơ, OTP, lỗi, thông báo) dùng lại
+   template của theme cha nên không có class riêng của theme này; các luật dưới đây định kiểu theo thẻ
+   và thuộc tính để chúng vẫn nhất quán trong cùng một thẻ. */
+.gk-card form label:not(.gk-label):not(.gk-remember) {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.gk-card form input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="hidden"]):not(.gk-input),
+.gk-card form select,
+.gk-card form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 14.5px;
+    color: #0a0a0a;
+    background: #ffffff;
+    border: 1px solid #d4d4d8;
+    border-radius: 8px;
+    outline: none;
+}
+
+.gk-card input[type="submit"]:not(.gk-submit) {
+    width: 100%;
+    margin-top: 22px;
+    padding: 11px 16px;
+    font: inherit;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #ffffff;
+    background: #0a0a0a;
+    border: 1px solid #0a0a0a;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.gk-card #kc-error-message .instruction,
+.gk-card #kc-info-message .instruction {
+    margin: 18px 0 0;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: #27272a;
+}
+
+.gk-card #kc-error-message a,
+.gk-card #kc-info-message a {
+    color: #0a0a0a;
+    font-weight: 500;
+}
+
+.gk-card a[aria-disabled="true"] {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+@media (max-width: 480px) {
+    .gk-page {
+        padding: 16px 12px;
+        align-items: flex-start;
+    }
+
+    .gk-card {
+        padding: 24px 20px;
+    }
+
+    .gk-circle--left {
+        left: -190px;
+        bottom: -140px;
+    }
+
+    .gk-circle--right {
+        right: -200px;
+    }
+}
