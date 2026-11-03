@@ -4,10 +4,9 @@
  * Các đường thuộc về tiến trình API nội bộ, SSR chỉ chuyển tiếp:
  *   - `/api` và mọi subpath: REST API (`/api/v1/...`).
  *   - `/socket.io/...`: realtime (HTTP polling + đường hầm upgrade).
- *   - `/mcp` và mọi subpath: endpoint MCP của issue #110 (MCP-0 mount
- *     NGOÀI `/api/v1` theo thiết kế — Streamable HTTP stateless).
- *   - `/.well-known/oauth-protected-resource` và mọi subpath: metadata
- *     PRM (RFC 9728) của MCP, gồm cả biến thể
+ *   - `/mcp` và mọi subpath: endpoint MCP của issue #110 (MCP-0 mount NGOÀI `/api/v1` theo thiết kế — Streamable HTTP
+ *     stateless).
+ *   - `/.well-known/oauth-protected-resource` và mọi subpath: metadata PRM (RFC 9728) của MCP, gồm cả biến thể
  *     `/.well-known/oauth-protected-resource/mcp`.
  *   - `/.well-known/oauth-authorization-server` và mọi subpath: metadata AS (RFC 8414) của MCP AS (issue #7) — gồm dạng
  *     gốc, dạng chèn-đường-dẫn (`/.well-known/oauth-authorization-server/api/v1/auth`) và dạng hậu tố qua

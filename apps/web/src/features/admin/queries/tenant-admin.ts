@@ -18,11 +18,10 @@ import { queryKeys } from './keys';
  * Tầng dữ liệu của bề mặt quản trị tenant.
  *
  * Luồng đọc có hai chế độ được quyết định bởi trang gọi:
- * - Platform: `GET /api/v1/tenants` trả mọi tenant; trang chọn một
- *   tenant rồi đọc membership và người dùng của đúng tenant đó.
- * - Tenant: `GET /api/v1/tenants/current` chỉ trả tenant hiệu lực của
- *   phiên; trang dùng chính `id` trong đáp ứng này cho mọi lời gọi
- *   membership và người dùng, không tự suy tenant từ danh sách platform.
+ * - Platform: `GET /api/v1/tenants` trả mọi tenant; trang chọn một tenant rồi đọc membership và người dùng của đúng
+ *   tenant đó.
+ * - Tenant: `GET /api/v1/tenants/current` chỉ trả tenant hiệu lực của phiên; trang dùng chính `id` trong đáp ứng này
+ *   cho mọi lời gọi membership và người dùng, không tự suy tenant từ danh sách platform.
  *
  * Mọi thao tác ghi đều đi qua API tenant hiện có. Sau khi server xác nhận, tầng này làm mới gốc khoá `admin.tenants` để
  * danh sách tenant, membership và hồ sơ người dùng cùng về trạng thái mới; riêng đổi trạng thái membership còn làm mới

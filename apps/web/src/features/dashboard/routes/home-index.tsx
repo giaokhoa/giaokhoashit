@@ -25,9 +25,8 @@ import { MyBadgeView } from '#features/badges/types/badges';
  * Loader phía server cho route `/` (tầng SL-1 của #7).
  *
  * Hai mặt của route theo phiên:
- *   - CHƯA đăng nhập (không cookie phiên Better Auth): loader không
- *     gọi API nghiệp vụ nào, trả dehydrated state rỗng — mặt công
- *     khai giữ nguyên và là bản được prerender lúc build.
+ *   - CHƯA đăng nhập (không cookie phiên Better Auth): loader không gọi API nghiệp vụ nào, trả dehydrated state rỗng —
+ *     mặt công khai giữ nguyên và là bản được prerender lúc build.
  *   - ĐÃ đăng nhập: prefetch bằng cookie của chính request (xem `lib/ssr-data.ts`) rồi dehydrate cho root.tsx hydrate:
  *     lượt 1 gồm hai query gốc của PermissionsProvider (ảnh chụp quyền `capabilities` + danh sách khoá `courses` — có
  *     chúng thì provider phân loại vai ngay từ lần render đầu, dashboard hết hiện khung giữ chỗ chờ phân loại) và các

@@ -30,8 +30,7 @@ export interface NavItem {
 /**
  * Một mục cha thu/mở được trong sidebar (cơ chế collapse lấy từ block sidebar-07). Hai biến thể:
  *
- * - KHÔNG có `url`: cha là nút thu/mở thuần — bấm chỉ mở/đóng danh sách
- *   mục con (vd "Học tập", "Cài đặt hệ thống").
+ * - KHÔNG có `url`: cha là nút thu/mở thuần — bấm chỉ mở/đóng danh sách mục con (vd "Học tập", "Cài đặt hệ thống").
  * - CÓ `url`: thân mục cha là LINK điều hướng tới trang danh sách của chính nó (vd "Ngân hàng câu hỏi" → /questions);
  *   khi nhóm có mục con, chevron thu/mở GẮN Ở CUỐI CÙNG MỘT bề mặt nút với nhãn (trigger định vị tuyệt đối bên trong
  *   SidebarMenuItem, `toggleLabel` là nhãn aria của trigger đó) — KHÔNG tách thành một nút chevron riêng đứng cạnh

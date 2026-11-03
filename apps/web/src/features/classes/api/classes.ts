@@ -51,10 +51,8 @@ export function fetchClassOverview(classId: string): Promise<ClassOverview> {
  * nằm ở API messaging.
  *
  * @param classId - Id của lớp cần mở chat.
- * @returns Id của conversation cấp lớp (tạo mới ở lần mở đầu hoặc
- *   conversation đã có của lớp).
- * @throws Khi API trả lỗi (ví dụ 404 với người ngoài lớp) — phía
- *   gọi hiển thị thông báo mở chat thất bại.
+ * @returns Id của conversation cấp lớp (tạo mới ở lần mở đầu hoặc conversation đã có của lớp).
+ * @throws Khi API trả lỗi (ví dụ 404 với người ngoài lớp) — phía gọi hiển thị thông báo mở chat thất bại.
  */
 export function ensureClassConversation(classId: string): Promise<{ id: string }> {
   return apiJson<{ id: string }>(`/api/v1/messages/classes/${classId}/conversation`);

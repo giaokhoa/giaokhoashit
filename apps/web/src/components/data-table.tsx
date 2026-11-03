@@ -108,17 +108,17 @@ function pageNumberList(pageCount: number, current: number): (number | 'ellipsis
 }
 
 /**
- * Bảng dữ liệu dùng chung của toàn app (trang tổng quan, quản trị người dùng, ngân hàng câu hỏi, sổ điểm, ma trận vai
- * trò…), khung theo block dashboard-01 và hướng dẫn data-table chính thức của shadcn: thanh công cụ có ô lọc toàn bảng
- * + nút tuỳ biến cột, bảng viền bo góc, chân phân trang. Mọi cơ chế bảng (sắp xếp, lọc, ẩn/hiện cột, phân trang, chọn
- * hàng) do TanStack Table đảm nhiệm — không trang nào tự chế lại. Hai chế độ dữ liệu: mặc định trang gọi đưa toàn bộ
- * hàng và bảng tự sắp xếp/lọc/phân trang phía client; khi dữ liệu đã phân trang phía server thì bật manualPagination
+ * Bảng dữ liệu dùng chung của toàn app (trang tổng quan, quản trị người dùng, ngân hàng câu hỏi, sổ điểm, ma trận
+ * vai trò…), khung theo block dashboard-01 và hướng dẫn data-table chính thức của shadcn: thanh công cụ có ô lọc toàn
+ * bảng + nút tuỳ biến cột, bảng viền bo góc, chân phân trang. Mọi cơ chế bảng (sắp xếp, lọc, ẩn/hiện cột, phân trang,
+ * chọn hàng) do TanStack Table đảm nhiệm — không trang nào tự chế lại. Hai chế độ dữ liệu: mặc định trang gọi đưa toàn
+ * bộ hàng và bảng tự sắp xếp/lọc/phân trang phía client; khi dữ liệu đã phân trang phía server thì bật manualPagination
  * và giữ trạng thái trang ở trang gọi (bảng không tự cắt trang). Tương tự, khi thứ tự dòng do server quyết định theo
  * hợp đồng sắp xếp thì bật manualSorting và giữ trạng thái sắp xếp ở trang gọi (bảng không tự sắp xếp lại trang đơn lẻ
  * — sắp xếp một trang sẽ gây hiểu nhầm là sắp xếp toàn cục). Dữ liệu và cột do trang gọi cung cấp — luôn là dữ liệu
- * thật của vai trò tương ứng; component không biết nghiệp vụ. Chân bảng có hai biến thể do nhãn của trang gọi chọn:
- * mặc định hiện "Trang X / Y" và chỉ bày cụm nút khi có từ hai trang; khi trang gọi truyền nhãn rangeInfo thì hiện
- * khoảng dòng đang hiển thị kèm cụm nút luôn bày (có thêm nút số trang) như các bảng quản trị mẫu.
+ * thật của vai trò tương ứng; component không biết nghiệp vụ. Chân bảng có hai biến thể do nhãn của trang gọi chọn: mặc
+ * định hiện "Trang X / Y" và chỉ bày cụm nút khi có từ hai trang; khi trang gọi truyền nhãn rangeInfo thì hiện khoảng
+ * dòng đang hiển thị kèm cụm nút luôn bày (có thêm nút số trang) như các bảng quản trị mẫu.
  *
  * Chi tiết kiểu: TanStack v9 chỉ suy luận chặt khi mảng cột được bọc qua `columnHelper.columns(...)` với kiểu hàng cụ
  * thể, nên phần nội bộ làm việc trên Record<string, any> và ép ngược về T tại đúng các điểm chạm dữ liệu của trang gọi

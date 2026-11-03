@@ -2,8 +2,7 @@
  * Tiến trình SSR của apps/web (Giai đoạn 3 của issue #7, topology C).
  *
  * Một tiến trình Node thuần (không framework ngoài) giữ ba vai:
- *   1. Mặt tiền HTTP duy nhất: bind cổng PUBLIC_PORT (mặc định $PORT
- *      do môi trường triển khai cấp).
+ *   1. Mặt tiền HTTP duy nhất: bind cổng PUBLIC_PORT (mặc định $PORT do môi trường triển khai cấp).
  *   2. Proxy các đường của API (xem `proxy-paths.mjs`: `/api/*`, `/socket.io/*`, `/mcp`,
  *      `/.well-known/oauth-protected-resource`) về API ở địa chỉ nội bộ (LMS_API_INTERNAL_URL, mặc định
  *      http://127.0.0.1:3000): chuyển nguyên header (Cookie đi lên, Set-Cookie — kể cả nhiều header — đi xuống; Host

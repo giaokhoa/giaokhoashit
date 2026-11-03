@@ -14,9 +14,8 @@ import { baSessionResponse, isGetSessionUrl } from '#test/ba-session';
  * - F-11: root loader đọc cookie `sidebar_state` của chính request và trả `sidebarDefaultOpen` tương ứng; không có
  *   cookie phiên Better Auth thì KHÔNG gọi API (giữ nguyên tắc cách ly GĐ4). Shell dựng từ giá trị loader cho
  *   data-state khớp (false → collapsed, true → expanded) ngay từ lần render đầu.
- * - F-07: một route lá lỗi (loader ném lỗi route) thì biên lỗi của
- *   route đó hiện trong vùng nội dung, khung vẫn nguyên; bấm Thử lại
- *   (revalidate) sau khi hết lỗi thì trang hiện lại.
+ * - F-07: một route lá lỗi (loader ném lỗi route) thì biên lỗi của route đó hiện trong vùng nội dung, khung vẫn nguyên;
+ *   bấm Thử lại (revalidate) sau khi hết lỗi thì trang hiện lại.
  */
 
 const ADMIN_ID = '01900000-0000-7000-8000-0000000000a1';

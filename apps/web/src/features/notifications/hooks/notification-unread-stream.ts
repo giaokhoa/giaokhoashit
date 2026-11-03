@@ -8,8 +8,7 @@ const unreadCountEventSchema = z.object({ unread: z.number().int().nonnegative()
 const STREAM_URL = '/api/v1/notifications/unread-count/stream';
 
 /**
- * Giữ số thông báo chưa đọc thời gian thực bằng SSE (Server-Sent
- * Events), thay cho polling định kỳ:
+ * Giữ số thông báo chưa đọc thời gian thực bằng SSE (Server-Sent Events), thay cho polling định kỳ:
  *
  * - Số hiển thị ban đầu vẫn lấy từ truy vấn REST unread-count (nơi gắn hook lo phần đó); hook này chỉ ĐẨY số mới vào
  *   đúng cache key `notificationUnreadCount` mỗi khi server phát sự kiện — snapshot đầu stream và mọi thay đổi về sau

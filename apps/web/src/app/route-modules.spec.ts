@@ -10,8 +10,8 @@ import { describe, expect, it } from 'vitest';
  * Vì sao phải gác ở mức toàn bộ cây route: React Router framework mode chỉ lấy component của route từ export mặc định
  * (hoặc export tên `Component`) của route module. Thiếu export mặc định thì:
  *
- *  1. Điều hướng trong ứng dụng: outlet không gắn được component —
- *     khung vỏ hiện, vùng nội dung trống, không thông báo lỗi.
+ *  1. Điều hướng trong ứng dụng: outlet không gắn được component — khung vỏ hiện, vùng nội dung trống, không thông báo
+ *     lỗi.
  *  2. Mở thẳng URL / hard reload: nếu route lá đồng thời thiếu cả `ErrorBoundary`, request tài liệu bị xếp vào đường
  *     resource route và trả HTTP 400 với thân `{"message":"Unexpected Server Error"}` thay vì HTML của trang.
  *

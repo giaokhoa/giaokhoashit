@@ -20,8 +20,7 @@ import * as teacherCurriculumRoute from '#features/curriculum/routes/teacher-cur
  * và không spec nào gọi `meta()` của module thật, nên một khoá tiêu đề gõ sai vẫn qua được typecheck (các helper của
  * `lib/route-meta.ts` nhận chuỗi tự do) và chỉ lộ khi rà tay.
  *
- * Với từng page module, spec khẳng định hai điểm của nghiệm thu lát
- * hoàn tất F-07/F-08:
+ * Với từng page module, spec khẳng định hai điểm của nghiệm thu lát hoàn tất F-07/F-08:
  *  1. Export `ErrorBoundary` là ĐÚNG component dùng chung `RouteErrorBoundary` (so sánh đồng nhất tham chiếu, không
  *     phải một component trông giống) — lỗi của trang được chứa trong vùng nội dung theo cơ chế đã gác ở
  *     `routes/ssr-frame.spec.tsx`.

@@ -164,8 +164,8 @@ export async function previewMatrixImport(file: File): Promise<MatrixImportPrevi
  *
  * @param file - Cùng file .xlsx đã qua bước xem trước.
  * @returns View ma trận đã ghi (hoặc bản đã có khi trùng nội dung).
- * @throws ApiError 422 kèm `problem.matrixImportIssues` khi file
- *   không còn hợp lệ tại thời điểm ghi; 403 khi thiếu quyền tại môn.
+ * @throws ApiError 422 kèm `problem.matrixImportIssues` khi file không còn hợp lệ tại thời điểm ghi; 403 khi thiếu
+ *   quyền tại môn.
  */
 export async function commitMatrixImport(file: File): Promise<ExamMatrixView> {
   const form = new FormData();

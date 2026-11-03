@@ -33,15 +33,13 @@ function isForbidden(error: unknown): boolean {
 /**
  * Trang quản trị tenant tối thiểu.
  *
- * Luồng hiển thị được quyết định từ ảnh chụp quyền trước, sau đó mọi dữ
- * liệu đều lấy từ API tenant:
- * 1. Người có `tenant:viewall`/`tenant:manage` ở context hệ thống (hoặc
- *    site admin) dùng chế độ platform: danh sách `GET /tenants`, chọn
- *    một tenant, rồi đọc membership/người dùng của đúng tenant đã chọn.
+ * Luồng hiển thị được quyết định từ ảnh chụp quyền trước, sau đó mọi dữ liệu đều lấy từ API tenant:
+ * 1. Người có `tenant:viewall`/`tenant:manage` ở context hệ thống (hoặc site admin) dùng chế độ platform: danh sách
+ *    `GET /tenants`, chọn một tenant, rồi đọc membership/người dùng của đúng tenant đã chọn.
  * 2. Người không có quyền platform nhưng có quyền tại tenant hiệu lực dùng chế độ tenant: `GET /tenants/current` là
  *    nguồn tenant duy nhất; trang không nạp danh sách platform và không có điều khiển chọn tenant khác.
- * 3. Người không có cả hai phạm vi quyền chỉ nhận trạng thái cấm và
- *    trang không bật bất kỳ truy vấn quản trị tenant nào.
+ * 3. Người không có cả hai phạm vi quyền chỉ nhận trạng thái cấm và trang không bật bất kỳ truy vấn quản trị tenant
+ *    nào.
  *
  * Các điều khiển ghi chỉ xuất hiện khi capability tương ứng có hiệu lực tại phạm vi đang quản lý (`tenant:manage` phía
  * platform hoặc tại chính tenant đó). Đây chỉ là điều kiện trình bày: API kiểm tra lại quyền ở mọi endpoint và trang

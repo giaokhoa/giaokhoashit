@@ -16,15 +16,13 @@ import { queryKeys } from '../queries/keys';
 import { buildSsrLoaderData, serverProbe, serverQueryFn, type SsrLoaderData } from '#lib/ssr-data';
 
 /**
- * Loader phía server (tầng SL-1 của #7): prefetch bằng cookie của
- * chính request rồi dehydrate cho root.tsx hydrate vào cache (xem
- * `lib/ssr-data.ts`):
+ * Loader phía server (tầng SL-1 của #7): prefetch bằng cookie của chính request rồi dehydrate cho root.tsx hydrate vào
+ * cache (xem `lib/ssr-data.ts`):
  *   - Trang ĐẦU của danh sách nhóm ở bộ lọc mặc định mà trang mở ra (nhóm 'all', không chỉ-chưa-đọc — key
  *     `notificationGroups('all', false)`, infinite query): cuộn tiếp/tải thêm và đổi bộ lọc vẫn chạy phía client như
  *     trước; các bộ lọc khác không prefetch vì key của chúng chỉ sinh khi người dùng chọn.
- *   - Toàn bộ dòng tuỳ chọn (key `messagePreferences`) và ghi đè theo
- *     khoá (key `messageCourseOverrides`, dữ liệu dehydrate là MẢNG
- *     `courses` đã bóc như queryFn phía client).
+ *   - Toàn bộ dòng tuỳ chọn (key `messagePreferences`) và ghi đè theo khoá (key `messageCourseOverrides`, dữ liệu
+ *     dehydrate là MẢNG `courses` đã bóc như queryFn phía client).
  * Không có cookie phiên thì không gọi API nào.
  */
 export async function loader({ request }: { request: Request }): Promise<SsrLoaderData> {

@@ -10,12 +10,11 @@ import { baSessionResponse, isGetSessionUrl } from '#test/ba-session';
  * Test cho bảng lệnh tìm nhanh Cmd+K (issue #54): dựng đúng cây thật (App → Shell → SiteHeader → CommandPalette) như
  * app-sidebar.spec, stub fetch theo vai trò:
  *
- * - Ctrl+K mở bảng lệnh từ bất kỳ trang nào; nút ở header cũng mở được;
- *   Escape đóng.
+ * - Ctrl+K mở bảng lệnh từ bất kỳ trang nào; nút ở header cũng mở được; Escape đóng.
  * - Kết quả tôn trọng quyền của vai đang đăng nhập, theo cùng cổng với sidebar: học viên không thấy mục quản trị cũng
  *   không thấy Ngân hàng câu hỏi; admin thấy đủ; giáo viên có capability câu hỏi thì thấy Ngân hàng câu hỏi.
- * - Khoá học lấy từ danh sách khoá của người dùng; gõ không dấu vẫn
- *   khớp ("toan" → "Toán 6"); Enter đi thẳng tới trang khoá.
+ * - Khoá học lấy từ danh sách khoá của người dùng; gõ không dấu vẫn khớp ("toan" → "Toán 6"); Enter đi thẳng tới trang
+ *   khoá.
  */
 
 const ADMIN_ID = '01900000-0000-7000-8000-0000000000a1';

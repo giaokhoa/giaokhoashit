@@ -1,7 +1,6 @@
 /**
- * Khuôn SSR-data dùng chung cho các route tầng SL (server loader +
- * dehydrate) — lát SL-1 của chương trình #7, theo bảng phân tầng route
- * (hồ sơ `route-tiering-table-2026-10-26.md` mục 2/3/6).
+ * Khuôn SSR-data dùng chung cho các route tầng SL (server loader + dehydrate) — lát SL-1 của chương trình #7, theo bảng
+ * phân tầng route (hồ sơ `route-tiering-table-2026-10-26.md` mục 2/3/6).
  *
  * Flow tổng thể của một route SL:
  *   1. Loader của route chạy PHÍA SERVER với request thật; nếu request không mang cookie phiên Better Auth thì KHÔNG

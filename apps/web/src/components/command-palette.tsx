@@ -37,10 +37,10 @@ const CONTENT_AREA_LABEL_KEYS: Record<string, string> = {
 };
 
 /**
- * Bề mặt tìm kiếm hợp nhất của header, mở bằng Cmd+K / Ctrl+K từ mọi trang của khu vực đã đăng nhập (chuẩn app hiện
- * đại — Linear, Notion, GitHub). Chủ repo chốt gộp hai bề mặt tìm kiếm cũ thành một (ngày 27/10/2026): nút "Tìm
- * nhanh…" riêng ở vùng phải header đã BỎ — bề mặt này chỉ còn mở bằng phím tắt; ô tìm kiếm ở giữa header giữ nguyên
- * vai trò đường vào trang kết quả đầy đủ `/search`. Một ô gõ duy nhất cho ra hai nhóm kết quả:
+ * Bề mặt tìm kiếm hợp nhất của header, mở bằng Cmd+K / Ctrl+K từ mọi trang của khu vực đã đăng nhập (chuẩn app hiện đại
+ * — Linear, Notion, GitHub). Chủ repo chốt gộp hai bề mặt tìm kiếm cũ thành một (ngày 27/10/2026): nút "Tìm nhanh…"
+ * riêng ở vùng phải header đã BỎ — bề mặt này chỉ còn mở bằng phím tắt; ô tìm kiếm ở giữa header giữ nguyên vai trò
+ * đường vào trang kết quả đầy đủ `/search`. Một ô gõ duy nhất cho ra hai nhóm kết quả:
  *
  * - Nhóm "Đi tới": màn hình theo quyền + khoá học của tôi, lọc chữ tại client và Enter/nhấp là đi thẳng. Tôn trọng
  *   quyền theo đúng cây sidebar: danh sách màn hình dựng từ CÙNG các cổng của AppSidebar (canUseQuestionBank cho Ngân

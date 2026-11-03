@@ -2,12 +2,10 @@ import { describe, expect, it } from 'vitest';
 import routesConfig from './routes';
 
 /**
- * Spec khoá bản đồ route của lát R2–R4 (chuẩn đường dẫn #221) trên CHÍNH bảng route thật của app
- * (`src/app/routes.ts`):
+ * Spec khoá bản đồ route của lát R2–R4 (chuẩn đường dẫn #221) trên CHÍNH bảng route thật của app (`src/app/routes.ts`):
  *
- * - R2: khu vực phụ huynh có gốc `/guardian` và path theo từng con
- *   `/guardian/students/:studentId` — đối tượng chính của khu vực
- *   nằm trong path, không định danh bằng query.
+ * - R2: khu vực phụ huynh có gốc `/guardian` và path theo từng con `/guardian/students/:studentId` — đối tượng chính
+ *   của khu vực nằm trong path, không định danh bằng query.
  * - R3: họ Kho học liệu có cây chính viết tách `/content-bank*` và cả ba path cũ viết dính `/contentbank*` còn được
  *   khai làm lớp tương thích (hành vi chuyển hướng của chúng được kiểm ở
  *   `features/questions/routes/legacy-redirects.spec.tsx`).

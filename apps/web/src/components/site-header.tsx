@@ -49,8 +49,7 @@ const TITLE_KEYS: { prefix: string; key: string; ns: 'app' | 'dashboard' }[] = [
  * sang trang kết quả.
  *
  * Flow:
- * 1. Người dùng gõ vào ô (trạng thái chữ sống cục bộ trong component
- *    này, gõ không làm điều hướng hay gọi API).
+ * 1. Người dùng gõ vào ô (trạng thái chữ sống cục bộ trong component này, gõ không làm điều hướng hay gọi API).
  * 2. Enter / submit form: từ khoá sau khi cắt khoảng trắng mà RỖNG thì KHÔNG điều hướng (ở yên trang hiện tại — tránh
  *    đẩy người dùng tới một trang kết quả trống vô nghĩa); có chữ thì điều hướng tới `/search?q=<từ khoá đã mã hoá
  *    URL>` và trang kết quả tự đọc `q` chạy tìm ngay (xem pages/platform-search.tsx).
@@ -100,8 +99,7 @@ function HeaderSearch() {
  * Header trên cùng của khu vực đã đăng nhập (khung block dashboard-01), bố cục BA VÙNG theo chốt 23:52 ngày 26/10/2026
  * (issue #303, khuôn Facebook/YouTube):
  *
- * - VÙNG TRÁI: nút thu/mở sidebar + tiêu đề trang hiện tại (tra
- *   catalog i18n theo route bằng TITLE_KEYS ở trên).
+ * - VÙNG TRÁI: nút thu/mở sidebar + tiêu đề trang hiện tại (tra catalog i18n theo route bằng TITLE_KEYS ở trên).
  * - VÙNG GIỮA: ô tìm kiếm nội dung toàn cục (component HeaderSearch cùng file) — vùng co giãn linh hoạt ở giữa, ô có bề
  *   rộng tối đa cố định và tự co khi bề ngang hẹp để không đẩy vùng phải tràn hàng. Mục "Tìm kiếm" ở sidebar đã BỎ từ
  *   cùng chốt này.
