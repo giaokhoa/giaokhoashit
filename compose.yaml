@@ -224,6 +224,9 @@ services:
       NODE_ENV: production
       PORT: 8080
       LMS_API_INTERNAL_URL: http://api:3100
+      # Upstream riêng của đúng đường /api/me (endpoint danh tính của
+      # apps/server) trong proxy của web — xem apps/web/server/proxy-paths.mjs.
+      LMS_SERVER_INTERNAL_URL: http://server:8081
     ports:
       # Cổng của ứng dụng được publish ra host. Khi gắn Cloudflare
       # Tunnel, tunnel trỏ vào đúng cổng này của máy host. (Keycloak

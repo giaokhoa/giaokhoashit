@@ -5,9 +5,11 @@
  *   1. Mặt tiền HTTP duy nhất: bind cổng PUBLIC_PORT (mặc định $PORT do môi trường triển khai cấp).
  *   2. Proxy các đường của API (xem `proxy-paths.mjs`: `/api/*`, `/socket.io/*`, `/mcp`,
  *      `/.well-known/oauth-protected-resource`) về API ở địa chỉ nội bộ (LMS_API_INTERNAL_URL, mặc định
- *      http://127.0.0.1:3000): chuyển nguyên header (Cookie đi lên, Set-Cookie — kể cả nhiều header — đi xuống; Host
- *      GIỮ NGUYÊN của request gốc vì tầng ứng dụng phân giải trung tâm theo Host, xem proxy-headers.mjs), nối tiếp
- *      chuỗi X-Forwarded-For của chặng trước, và STREAM không đệm để SSE sống qua proxy; trình duyệt đóng kết nối thì
+ *      http://127.0.0.1:3000) — riêng đúng đường `/api/me` đi về `apps/server` ở địa chỉ LMS_SERVER_INTERNAL_URL
+ *      (mặc định http://127.0.0.1:8081): chuyển nguyên header (Cookie đi lên, Set-Cookie — kể cả nhiều header — đi
+ *      xuống; Host GIỮ NGUYÊN của request gốc vì tầng ứng dụng phân giải trung tâm theo Host, xem
+ *      proxy-headers.mjs), nối tiếp chuỗi X-Forwarded-For của chặng trước, và STREAM không đệm để SSE sống qua
+ *      proxy; trình duyệt đóng kết nối thì
  *      hủy luôn request phía API. WebSocket (socket.io) đi qua đường hầm TCP ở sự kiện `upgrade` — đầu request upgrade
  *      cũng giữ nguyên Host gốc (xem `proxy-headers.mjs`), vì socket auth phân giải trung tâm theo Host của chính
  *      request bắt tay đó.
@@ -18,7 +20,8 @@
  *
  * Chạy độc lập: `node server/prod-server.mjs` (cần `react-router build` trước) — đây cũng là cách target `web` của
  * Dockerfile ở gốc repo chạy tiến trình này trong stack Docker Compose. Chạy cả topology ở local thì khởi động thêm
- * tiến trình API riêng (`apps/api/dist/main.js`) và trỏ `LMS_API_INTERNAL_URL` về API đó.
+ * tiến trình API riêng (`apps/api/dist/main.js`) và trỏ `LMS_API_INTERNAL_URL` về API đó; đường `/api/me` cần thêm
+ * `apps/server` chạy riêng và trỏ `LMS_SERVER_INTERNAL_URL` về địa chỉ của nó.
  */
 import { createServer, request as httpRequest } from 'node:http';
 import { connect as netConnect } from 'node:net';
@@ -27,12 +30,13 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequestListener } from '@react-router/node';
 import * as serverBuild from '../build/server/index.js';
-import { isProxyPath } from './proxy-paths.mjs';
+import { isProxyPath, isServerProxyPath } from './proxy-paths.mjs';
 import { buildProxyHeaders, buildUpgradeRequestLines } from './proxy-headers.mjs';
 import { compressBuffer, isCompressibleType, MIN_COMPRESS_BYTES, pickEncoding } from './compression.mjs';
 import { applyDocumentSecurityHeaders } from './security-headers.mjs';
 
 const apiOrigin = new URL(process.env.LMS_API_INTERNAL_URL ?? 'http://127.0.0.1:3000');
+const serverOrigin = new URL(process.env.LMS_SERVER_INTERNAL_URL ?? 'http://127.0.0.1:8081');
 const publicPort = Number(process.env.PORT ?? process.env.PUBLIC_PORT ?? 8080);
 const clientDir = fileURLToPath(new URL('../build/client/', import.meta.url));
 
@@ -61,14 +65,17 @@ const MIME = {
 };
 
 function proxyHttp(req, res) {
-  // Header dựng ở proxy-headers.mjs: Host GIỮ NGUYÊN của request gốc — tầng ứng dụng phân giải trung tâm theo Host
-  // (issue #582), ghi đè bằng origin nội bộ là địa chỉ trung tâm biến mất trước khi tới API (tiền điều kiện TĐ5 của
-  // issue #587). Đích kết nối vẫn là origin nội bộ qua hostname/port dưới đây.
-  const headers = buildProxyHeaders(req.headers, req.socket.remoteAddress, apiOrigin.host);
+  // Chọn upstream TRƯỚC khi rơi về upstream API chung: đúng đường `/api/me` thuộc `apps/server` (xem
+  // isServerProxyPath trong proxy-paths.mjs), mọi đường proxy còn lại thuộc API. Header dựng ở proxy-headers.mjs:
+  // Host GIỮ NGUYÊN của request gốc — tầng ứng dụng phân giải trung tâm theo Host (issue #582), ghi đè bằng origin
+  // nội bộ là địa chỉ trung tâm biến mất trước khi tới đích (tiền điều kiện TĐ5 của issue #587). Đích kết nối vẫn là
+  // origin nội bộ đã chọn qua hostname/port dưới đây.
+  const origin = isServerProxyPath(req.url ?? '') ? serverOrigin : apiOrigin;
+  const headers = buildProxyHeaders(req.headers, req.socket.remoteAddress, origin.host);
   const upstream = httpRequest(
     {
-      hostname: apiOrigin.hostname,
-      port: apiOrigin.port,
+      hostname: origin.hostname,
+      port: origin.port,
       path: req.url,
       method: req.method,
       headers,
@@ -230,5 +237,7 @@ const server = createServer(async (req, res) => {
 server.on('upgrade', proxyUpgrade);
 
 server.listen(publicPort, () => {
-  console.log(`[ssr] listening on :${publicPort}, api internal ${apiOrigin.href}`);
+  console.log(
+    `[ssr] listening on :${publicPort}, api internal ${apiOrigin.href}, server internal ${serverOrigin.href}`,
+  );
 });

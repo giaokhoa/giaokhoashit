@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isProxyPath } from './proxy-paths.mjs';
+import { isProxyPath, isServerProxyPath } from './proxy-paths.mjs';
 
 /**
  * Hồi quy bộ khớp đường proxy của prod-server.mjs (topology C).
@@ -7,6 +7,8 @@ import { isProxyPath } from './proxy-paths.mjs';
  * Bối cảnh: MCP-0 (issue #110) mount `/mcp` + `/.well-known/oauth-protected-resource` NGOÀI `/api/v1`, nhưng
  * isProxyPath bản cũ chỉ khớp `/api/*` + `/socket.io/*` → POST /mcp trên production rơi vào SSR, trả 404 kèm HTML
  * (probe live v99). Spec này ghim: đường của API phải qua proxy, đường của SSR và các đường gần giống KHÔNG được qua.
+ * Thêm bối cảnh vòng sửa PR #46 (issue #38): endpoint danh tính `/api/me` do `apps/server` phục vụ nhưng mọi
+ * `/api/*` từng rơi về upstream API duy nhất → luật upstream riêng `isServerProxyPath` phải tách đúng đường này ra.
  */
 describe('isProxyPath', () => {
   it('chuyển tiếp endpoint MCP (exact, subpath, kèm query)', () => {
@@ -50,5 +52,24 @@ describe('isProxyPath', () => {
     expect(isProxyPath('/.well-known/oauth-protected-resourceXYZ')).toBe(false);
     expect(isProxyPath('/.well-known/oauth-authorization-serverXYZ')).toBe(false);
     expect(isProxyPath('/dashboard/mcp')).toBe(false);
+  });
+});
+
+describe('isServerProxyPath (upstream riêng của /api/me)', () => {
+  it('đúng đường /api/me đi upstream server, kể cả khi kèm query string', () => {
+    expect(isProxyPath('/api/me')).toBe(true);
+    expect(isServerProxyPath('/api/me')).toBe(true);
+    expect(isServerProxyPath('/api/me?x=1')).toBe(true);
+  });
+
+  it('mọi đường /api còn lại vẫn đi upstream api cũ', () => {
+    expect(isServerProxyPath('/api')).toBe(false);
+    expect(isServerProxyPath('/api/v1/courses')).toBe(false);
+    expect(isServerProxyPath('/api/v1/courses?page=2')).toBe(false);
+  });
+
+  it('không mở tiền tố: subpath của /api/me và đường gần giống vẫn đi upstream api cũ', () => {
+    expect(isServerProxyPath('/api/me/extra')).toBe(false);
+    expect(isServerProxyPath('/api/me2')).toBe(false);
   });
 });
