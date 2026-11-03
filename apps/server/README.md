@@ -6,8 +6,11 @@ các phần đó thuộc các lát cắt tiếp theo.
 
 ## Công nghệ
 
-- Spring Boot 4.1.2 (bản ổn định hiện hành theo tài liệu Spring Boot), Spring Security 7 (OAuth2 Resource Server).
-- Java 25 (LTS). Spring Boot 4.1 yêu cầu tối thiểu Java 17; dự án chốt bản LTS hiện hành để đồng nhất toolchain.
+- Spring Boot 4.1.2 (bản ổn định hiện hành theo tài liệu Spring Boot), Spring Security 7.1.2 (OAuth2 Resource
+  Server).
+- Java 25 (LTS): dự án yêu cầu JDK 25 — `pom.xml` khai báo `java.version` 25 và biên dịch với `--release 25`. Mức
+  tối thiểu Java 17 là yêu cầu của riêng Spring Boot 4.1.2 đối với ứng dụng dùng nó, không phải mức của dự án này;
+  JDK 17 không đủ để biên dịch dự án.
 - Build bằng Maven qua wrapper `./mvnw` đi kèm trong thư mục này (không cần cài Maven riêng). Tài liệu Spring Boot hỗ
   trợ cả Maven và Gradle; Maven được chọn vì wrapper gọn, không cần daemon và khớp thói quen build một module đơn.
 - Dự án được khởi tạo bằng Spring Initializr với các dependency: webmvc, security, security-oauth2-resource-server,
@@ -28,7 +31,7 @@ các phần đó thuộc các lát cắt tiếp theo.
 
 ## Chạy tại local
 
-Điều kiện: JDK 25 (hoặc tối thiểu JDK 17) và một Keycloak 26.8.1 có realm `giaokhoa` đang chạy.
+Điều kiện: JDK 25 và một Keycloak 26.8.1 có realm `giaokhoa` đang chạy.
 
 ```bash
 export OIDC_ISSUER_URI=http://localhost:8180/realms/giaokhoa
@@ -86,16 +89,18 @@ repo.
 
 ## Nguồn tài liệu đã theo
 
-- Spring Boot — System Requirements (bản ổn định hiện hành 4.1.2; yêu cầu Java, Maven/Gradle):
-  https://docs.spring.io/spring-boot/4.0/system-requirements.html
-- Spring Security — OAuth 2.0 Resource Server JWT (hai bước cấu hình tối thiểu: dependency và `issuer-uri`; cơ chế
-  khám phá JWKS và kiểm chứng `iss`, `exp`, `nbf`):
-  https://docs.spring.io/spring-security/reference/7.0-SNAPSHOT/servlet/oauth2/resource-server/jwt.html
-- Spring Boot Reference — Spring Security (thuộc tính `spring.security.oauth2.resourceserver.jwt.*` phía Boot):
-  https://github.com/spring-projects/spring-boot/blob/v4.0.6/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/web/spring-security.adoc
-- Spring Boot Reference — Actuator, Health Endpoints (các nhóm liveness/readiness và thuộc tính
-  `management.endpoint.health.probes.enabled`).
-- Keycloak — Securing Applications and Services Guide (nguyên tắc: ưu tiên hỗ trợ OIDC/OAuth2 có sẵn trong hệ sinh
-  thái của ứng dụng, client adapter của Keycloak chỉ là lựa chọn cuối; ứng dụng phía service đóng vai resource server
-  kiểm chứng bearer token do realm phát hành) — bản Red Hat build of Keycloak 26.0 có cùng nội dung với bản tại
-  keycloak.org: https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.0/html-single/securing_applications_and_services_guide/securing_applications_and_services_guide
+- Spring Boot — System Requirements (bản 4.1, khớp Spring Boot 4.1.2 của dự án; yêu cầu Java, Maven/Gradle):
+  https://docs.spring.io/spring-boot/4.1/system-requirements.html
+- Spring Security 7.1.2 — OAuth 2.0 Resource Server JWT (hai bước cấu hình tối thiểu: dependency và `issuer-uri`;
+  cơ chế khám phá JWKS và kiểm chứng `iss`, `exp`, `nbf`):
+  https://docs.spring.io/spring-security/reference/7.1/servlet/oauth2/resource-server/jwt.html
+- Spring Boot Reference 4.1 — Spring Security (cách Spring Boot tích hợp Spring Security, gồm cấu hình resource
+  server qua thuộc tính `spring.security.oauth2.resourceserver.jwt.*`):
+  https://docs.spring.io/spring-boot/4.1/reference/web/spring-security.html
+- Spring Boot Reference 4.1 — Actuator, Endpoints (mục Health: các nhóm liveness/readiness và thuộc tính
+  `management.endpoint.health.probes.enabled`):
+  https://docs.spring.io/spring-boot/4.1/reference/actuator/endpoints.html
+- Keycloak 26.8.1 — Securing Applications and Services, mục Planning for securing applications and services
+  (nguyên tắc: ưu tiên hỗ trợ OIDC/OAuth2 có sẵn trong hệ sinh thái của ứng dụng, client adapter của Keycloak chỉ
+  là lựa chọn cuối; ứng dụng phía service đóng vai resource server kiểm chứng bearer token do realm phát hành):
+  https://www.keycloak.org/securing-apps/overview
