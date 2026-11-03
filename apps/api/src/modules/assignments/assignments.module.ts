@@ -13,15 +13,11 @@ import { AssignCommentBankController, AssignmentsController, CourseAssignmentsCo
 import { AssignmentsService } from './assignments.service';
 
 /**
- * AssignmentsModule facade: AssignmentsService (hoạt động mod_assign —
- * bài tập nộp tệp/ảnh). Phụ thuộc facade của Courses (course module +
- * context), Enrol (danh sách ghi danh cho bề mặt chấm), Files (lưu trữ
- * dedup + signed URL), Grades (grade item + ghi điểm của hoạt động) và
- * Access (PermissionEvaluator/Contexts) — không vòng phụ thuộc vì không
- * module nào trong số đó phụ thuộc Assignments. Repository của module
- * nằm ở `@lms/db/repositories/assignments` trên Kysely và được dựng
- * bằng factory trên facade định tuyến kho trung tâm
- * (`SpaceDatabaseService.routedKysely`).
+ * AssignmentsModule facade: AssignmentsService (hoạt động mod_assign — bài tập nộp tệp/ảnh). Phụ thuộc facade của
+ * Courses (course module + context), Enrol (danh sách ghi danh cho bề mặt chấm), Files (lưu trữ dedup + signed URL),
+ * Grades (grade item + ghi điểm của hoạt động) và Access (PermissionEvaluator/Contexts) — không vòng phụ thuộc vì không
+ * module nào trong số đó phụ thuộc Assignments. Repository của module nằm ở `@lms/db/repositories/assignments` trên
+ * Kysely và được dựng bằng factory trên facade định tuyến kho trung tâm (`SpaceDatabaseService.routedKysely`).
  */
 @Module({
   imports: [AccessModule, CoursesModule, EnrolModule, FilesModule, GradesModule, UsersModule, EventsModule, SpaceRoutingModule],
@@ -36,5 +32,4 @@ import { AssignmentsService } from './assignments.service';
   ],
   exports: [AssignmentsService],
 })
-/** Module hoạt động Bài tập nộp tệp/ảnh (mod_assign). */
 export class AssignmentsModule {}

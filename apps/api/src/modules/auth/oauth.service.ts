@@ -11,9 +11,8 @@ import { AuthService, type SessionClientInfo } from './auth.service';
 import { SessionService } from './session.service';
 
 /**
- * Lỗi nghiệp vụ của luồng OAuth được mang theo `code` ổn định để callback
- * chuyển hướng về trang login kèm mã lỗi (`/login?oauthError=<code>`) thay
- * vì trả JSON giữa chừng — trình duyệt đang ở ngoài SPA tại thời điểm đó.
+ * Lỗi nghiệp vụ của luồng OAuth được mang theo `code` ổn định để callback chuyển hướng về trang login kèm mã lỗi
+ * (`/login?oauthError=<code>`) thay vì trả JSON giữa chừng — trình duyệt đang ở ngoài SPA tại thời điểm đó.
  */
 export class OAuthFlowException extends Error {
   constructor(readonly code: string) {
@@ -71,10 +70,9 @@ interface OAuthState {
 }
 
 /**
- * Giá trị lưu cho một mã bàn giao: định danh user + dấu MFA đã qua.
- * Dấu chỉ do `finishSignIn` đặt (sau cổng MFA hoặc khi tài khoản
- * không bật MFA). Giá trị lưu DẠNG CŨ là chuỗi định danh user thuần —
- * `exchangeHandoff` hiểu dạng cũ là chưa qua MFA.
+ * Giá trị lưu cho một mã bàn giao: định danh user + dấu MFA đã qua. Dấu chỉ do `finishSignIn` đặt (sau cổng MFA hoặc
+ * khi tài khoản không bật MFA). Giá trị lưu DẠNG CŨ là chuỗi định danh user thuần — `exchangeHandoff` hiểu dạng cũ là
+ * chưa qua MFA.
  */
 interface OAuthHandoffRecord {
   userId: string;
@@ -82,33 +80,26 @@ interface OAuthHandoffRecord {
 }
 
 /**
- * Kết quả callback OAuth: hoặc đăng nhập hoàn tất (phiên + mã bàn
- * giao), hoặc bị chặn ở bước MFA kèm challenge token đích `oauth`
- * (chưa tồn tại phiên/mã bàn giao nào).
+ * Kết quả callback OAuth: hoặc đăng nhập hoàn tất (phiên + mã bàn giao), hoặc bị chặn ở bước MFA kèm challenge token
+ * đích `oauth` (chưa tồn tại phiên/mã bàn giao nào).
  */
 export type OAuthCallbackOutcome =
   | { mfaRequired: false; user: UserRow; sessionId: string; handoffCode: string }
   | { mfaRequired: true; user: UserRow; challengeToken: string };
 
 /**
- * Đăng nhập xã hội theo mẫu plugin lõi `auth_oauth2` của Moodle: issuer
- * dựng sẵn Google/Facebook chạy luồng authorization code; callback khớp
- * tài khoản theo thứ tự (1) liên kết đã có theo tài khoản provider,
- * (2) liên kết đích danh khi user đang đăng nhập xin liên kết, (3) email
- * đã xác thực trùng một tài khoản sẵn có ⇒ tạo liên kết, (4) chưa có ⇒
- * tạo tài khoản mới đã xác nhận (`create_new_confirmed_account`).
- * Hoàn tất đăng nhập dùng ĐÚNG cơ chế sẵn có: phiên web cookie được tạo
- * như đăng nhập thường và SPA nhận cặp token qua mã bàn giao một lần —
- * không tồn tại cơ chế phiên thứ hai.
+ * Đăng nhập xã hội theo mẫu plugin lõi `auth_oauth2` của Moodle: issuer dựng sẵn Google/Facebook chạy luồng
+ * authorization code; callback khớp tài khoản theo thứ tự (1) liên kết đã có theo tài khoản provider, (2) liên kết đích
+ * danh khi user đang đăng nhập xin liên kết, (3) email đã xác thực trùng một tài khoản sẵn có ⇒ tạo liên kết, (4) chưa
+ * có ⇒ tạo tài khoản mới đã xác nhận (`create_new_confirmed_account`). Hoàn tất đăng nhập dùng ĐÚNG cơ chế sẵn có:
+ * phiên web cookie được tạo như đăng nhập thường và SPA nhận cặp token qua mã bàn giao một lần — không tồn tại cơ chế
+ * phiên thứ hai.
  *
- * Cổng MFA: tài khoản đã bật MFA (trạng thái ở `user_totp` — nguồn duy
- * nhất của hệ, qua `AuthService.isMfaEnabled`) thì callback KHÔNG tạo
- * phiên và KHÔNG phát mã bàn giao; luồng dừng ở challenge MFA đích
- * `oauth` và chỉ hoàn tất sau khi qua bước verify (xem
- * `completeOAuthMfa`). Lớp gác thứ hai nằm ở `exchangeHandoff`: mã bàn
- * giao mang dấu đã-qua-MFA tại thời điểm phát hành, tài khoản đang bật
- * MFA mà mã không có dấu thì bị từ chối — chặn cả mã phát hành từ
- * trước khi có cổng.
+ * Cổng MFA: tài khoản đã bật MFA (trạng thái ở `user_totp` — nguồn duy nhất của hệ, qua `AuthService.isMfaEnabled`) thì
+ * callback KHÔNG tạo phiên và KHÔNG phát mã bàn giao; luồng dừng ở challenge MFA đích `oauth` và chỉ hoàn tất sau khi
+ * qua bước verify (xem `completeOAuthMfa`). Lớp gác thứ hai nằm ở `exchangeHandoff`: mã bàn giao mang dấu đã-qua-MFA
+ * tại thời điểm phát hành, tài khoản đang bật MFA mà mã không có dấu thì bị từ chối — chặn cả mã phát hành từ trước khi
+ * có cổng.
  */
 @Injectable()
 export class OAuthService {
@@ -137,9 +128,6 @@ export class OAuthService {
     return Boolean(this.clientId(issuer) && this.clientSecret(issuer));
   }
 
-  /**
-   * Trạng thái bật/tắt của mọi issuer dựng sẵn cho endpoint cấu hình công khai của trang login.
-   */
   listProviders(): { issuer: OAuthIssuer; enabled: boolean }[] {
     return (Object.keys(PROVIDER_DEFINITIONS) as OAuthIssuer[]).map((issuer) => ({ issuer, enabled: this.isEnabled(issuer) }));
   }
@@ -153,10 +141,9 @@ export class OAuthService {
   }
 
   /**
-   * Dựng URL authorize để trình duyệt chuyển hướng sang provider. State
-   * là JWT ký bằng khoá của hệ (hạn ngắn), mang issuer, redirect_uri sẽ
-   * dùng lại nguyên vẹn ở bước đổi code và — khi user đang đăng nhập xin
-   * liên kết — định danh user đích.
+   * Dựng URL authorize để trình duyệt chuyển hướng sang provider. State là JWT ký bằng khoá của hệ (hạn ngắn), mang
+   * issuer, redirect_uri sẽ dùng lại nguyên vẹn ở bước đổi code và — khi user đang đăng nhập xin liên kết — định danh
+   * user đích.
    */
   async buildAuthorizeUrl(issuer: OAuthIssuer, redirectUri: string, linkUserId?: string): Promise<string> {
     if (!this.isEnabled(issuer)) {
@@ -245,9 +232,8 @@ export class OAuthService {
   }
 
   /**
-   * Tạo liên kết provider → user, chịu được cuộc đua hai callback đồng
-   * thời: nếu ràng buộc duy nhất ở DB đã chặn thì đọc lại liên kết thắng
-   * cuộc và dùng nó (chỉ khi nó trỏ về đúng user này).
+   * Tạo liên kết provider → user, chịu được cuộc đua hai callback đồng thời: nếu ràng buộc duy nhất ở DB đã chặn thì
+   * đọc lại liên kết thắng cuộc và dùng nó (chỉ khi nó trỏ về đúng user này).
    */
   private async ensureLink(user: UserRow, issuer: OAuthIssuer, profile: ProviderProfile): Promise<UserOauthLinkRow> {
     const existing = await this.repo.getOauthLinkBySubject(issuer, profile.subject);
@@ -265,12 +251,10 @@ export class OAuthService {
   }
 
   /**
-   * Xử lý callback của provider: kiểm state → đổi code → lấy hồ sơ (bắt
-   * buộc email đã xác thực) → khớp/tạo tài khoản như `complete_login` của
-   * Moodle → cổng MFA → ghi nhận đăng nhập, tạo phiên web và cấp mã bàn
-   * giao một lần cho SPA đổi lấy cặp token. Tài khoản đã bật MFA thì
-   * kết quả là nhánh `mfaRequired` kèm challenge token (chưa có phiên,
-   * chưa có mã bàn giao nào tồn tại).
+   * Xử lý callback của provider: kiểm state → đổi code → lấy hồ sơ (bắt buộc email đã xác thực) → khớp/tạo tài khoản
+   * như `complete_login` của Moodle → cổng MFA → ghi nhận đăng nhập, tạo phiên web và cấp mã bàn giao một lần cho SPA
+   * đổi lấy cặp token. Tài khoản đã bật MFA thì kết quả là nhánh `mfaRequired` kèm challenge token (chưa có phiên, chưa
+   * có mã bàn giao nào tồn tại).
    */
   async handleCallback(
     issuer: OAuthIssuer,
@@ -290,9 +274,8 @@ export class OAuthService {
     if (linked) {
       user = await this.users.getUser(linked.userId);
     } else if (state.linkUserId) {
-      // User đang đăng nhập xin liên kết: chính họ vừa chứng minh quyền
-      // sở hữu tài khoản provider qua luồng authorize, nên liên kết được
-      // xác nhận ngay (Moodle: confirmtoken rỗng sau bước xác nhận).
+            // User đang đăng nhập xin liên kết: chính họ vừa chứng minh quyền sở hữu tài khoản provider qua luồng authorize,
+      // nên liên kết được xác nhận ngay (Moodle: confirmtoken rỗng sau bước xác nhận).
       user = await this.users.getUser(state.linkUserId);
       await this.ensureLink(user, issuer, profile);
     } else {
@@ -309,12 +292,10 @@ export class OAuthService {
     }
     if (user.deleted || user.suspended) throw new OAuthFlowException('auth.account_inactive');
 
-    // Cổng MFA: trạng thái lấy từ `user_totp` (nguồn duy nhất — xem
-    // AuthService.isMfaEnabled). Đã bật MFA thì dừng ở challenge đích
-    // `oauth`: phiên và mã bàn giao chỉ sinh ở bước hoàn tất sau khi
-    // qua verify (completeOAuthMfa), không sinh ở đây trong bất kỳ
-    // nhánh khớp tài khoản nào (kể cả nhánh liên kết tường minh của
-    // user đang đăng nhập — cổng áp đồng nhất cho mọi callback).
+        // Cổng MFA: trạng thái lấy từ `user_totp` (nguồn duy nhất — xem AuthService.isMfaEnabled). Đã bật MFA thì dừng ở
+    // challenge đích `oauth`: phiên và mã bàn giao chỉ sinh ở bước hoàn tất sau khi qua verify (completeOAuthMfa),
+    // không sinh ở đây trong bất kỳ nhánh khớp tài khoản nào (kể cả nhánh liên kết tường minh của user đang đăng nhập —
+    // cổng áp đồng nhất cho mọi callback).
     if (await this.auth.isMfaEnabled(user.id)) {
       const challengeToken = await this.auth.createOAuthMfaChallenge(user);
       return { mfaRequired: true, user, challengeToken };
@@ -325,12 +306,10 @@ export class OAuthService {
   }
 
   /**
-   * Đuôi hoàn tất đăng nhập dùng chung của callback (không qua MFA)
-   * và của bước hoàn tất MFA: ghi nhận đăng nhập, tạo phiên web, phát
-   * mã bàn giao một lần. Mã bàn giao lưu dạng object mang dấu
-   * `mfaSatisfied: true` — dấu này chỉ được đặt TẠI ĐÂY, tức sau khi
-   * cổng MFA đã qua (hoặc tài khoản không bật MFA), và là căn cứ cho
-   * lớp gác thứ hai ở `exchangeHandoff`.
+   * Đuôi hoàn tất đăng nhập dùng chung của callback (không qua MFA) và của bước hoàn tất MFA: ghi nhận đăng nhập, tạo
+   * phiên web, phát mã bàn giao một lần. Mã bàn giao lưu dạng object mang dấu `mfaSatisfied: true` — dấu này chỉ được
+   * đặt TẠI ĐÂY, tức sau khi cổng MFA đã qua (hoặc tài khoản không bật MFA), và là căn cứ cho lớp gác thứ hai ở
+   * `exchangeHandoff`.
    */
   private async finishSignIn(
     user: UserRow,
@@ -345,10 +324,9 @@ export class OAuthService {
   }
 
   /**
-   * Hoàn tất đăng nhập OAuth sau bước hai MFA: challenge đích `oauth`
-   * + mã TOTP qua lõi dùng chung của AuthService (chữ ký/hạn/scope/
-   * flow, trạng thái tài khoản, lockout, ghi attempt) ⇒ chạy đúng
-   * đuôi hoàn tất như callback không qua MFA.
+   * Hoàn tất đăng nhập OAuth sau bước hai MFA: challenge đích `oauth` + mã TOTP qua lõi dùng chung của AuthService (chữ
+   * ký/hạn/scope/ flow, trạng thái tài khoản, lockout, ghi attempt) ⇒ chạy đúng đuôi hoàn tất như callback không qua
+   * MFA.
    */
   async completeOAuthMfa(
     challengeToken: string,
@@ -361,15 +339,12 @@ export class OAuthService {
   }
 
   /**
-   * Đổi mã bàn giao một lần lấy cặp token như đăng nhập thường. Mã bị
-   * xoá ngay khi đổi (dù thành công hay tài khoản đã mất hiệu lực) nên
-   * không dùng lại được lần hai.
+   * Đổi mã bàn giao một lần lấy cặp token như đăng nhập thường. Mã bị xoá ngay khi đổi (dù thành công hay tài khoản đã
+   * mất hiệu lực) nên không dùng lại được lần hai.
    *
-   * Lớp gác MFA thứ hai: mã bàn giao phát hành trước khi có cổng (dạng
-   * lưu cũ — chỉ là chuỗi định danh user) hoặc từ bất kỳ đường nào
-   * không qua `finishSignIn` đều KHÔNG có dấu `mfaSatisfied`; tài
-   * khoản đang bật MFA cầm mã như vậy thì bị từ chối tại đây, kể cả
-   * khi callback ở thời điểm phát hành chưa bị gác.
+   * Lớp gác MFA thứ hai: mã bàn giao phát hành trước khi có cổng (dạng lưu cũ — chỉ là chuỗi định danh user) hoặc từ
+   * bất kỳ đường nào không qua `finishSignIn` đều KHÔNG có dấu `mfaSatisfied`; tài khoản đang bật MFA cầm mã như vậy
+   * thì bị từ chối tại đây, kể cả khi callback ở thời điểm phát hành chưa bị gác.
    */
   async exchangeHandoff(code: string, client?: SessionClientInfo): Promise<{ user: UserRow; tokens: Awaited<ReturnType<AuthService['issueTokensFor']>> }> {
     const key = `oauthhandoff:${code}`;
@@ -406,10 +381,9 @@ export class OAuthService {
   }
 
   /**
-   * Gỡ một liên kết của chính user. Chặn gỡ khi đó là đường đăng nhập
-   * DUY NHẤT còn lại của một tài khoản không có mật khẩu (gỡ xong user
-   * sẽ không còn cách nào vào lại) — cùng lý lẽ Moodle không để user tự
-   * cắt đường đăng nhập cuối cùng; user đặt mật khẩu trước thì gỡ được.
+   * Gỡ một liên kết của chính user. Chặn gỡ khi đó là đường đăng nhập DUY NHẤT còn lại của một tài khoản không có mật
+   * khẩu (gỡ xong user sẽ không còn cách nào vào lại) — cùng lý lẽ Moodle không để user tự cắt đường đăng nhập cuối
+   * cùng; user đặt mật khẩu trước thì gỡ được.
    */
   async unlink(userId: string, linkId: string): Promise<void> {
     const link = await this.repo.getOauthLinkById(linkId);

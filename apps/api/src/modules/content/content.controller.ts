@@ -13,12 +13,10 @@ import {
 
 @ApiTags('content')
 @Controller({ path: 'courses/:courseId/pages', version: '1' })
-/** API tạo trang đọc (mod_page) trong một khoá học. */
 export class CoursePagesController {
   constructor(private readonly content: ContentService) {}
 
   @Post()
-  /** POST /courses/:courseId/pages — tạo trang đọc kèm course module. */
   async create(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @Body({ schema: createPageSchema }) dto: CreatePageDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.content.createPage(actor.id, courseId, dto);
   }
@@ -26,18 +24,15 @@ export class CoursePagesController {
 
 @ApiTags('content')
 @Controller({ path: 'pages', version: '1' })
-/** API trang đọc: đọc cho người xem, sửa và xoá cho người quản hoạt động. */
 export class PagesController {
   constructor(private readonly content: ContentService) {}
 
   @Get(':id')
-  /** GET /pages/:id — nội dung trang đọc cho người xem (qua cổng khoá học). */
   async get(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() viewer: AuthenticatedUser) {
     return this.content.getPageForUser(viewer.id, id);
   }
 
   @Patch(':id')
-  /** PATCH /pages/:id — sửa trang đọc. */
   async update(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: updatePageSchema }) dto: UpdatePageDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.content.updatePage(actor.id, id, dto);
   }
@@ -52,12 +47,10 @@ export class PagesController {
 
 @ApiTags('content')
 @Controller({ path: 'courses/:courseId/resources', version: '1' })
-/** API tạo tài nguyên (mod_resource) trong một khoá học. */
 export class CourseResourcesController {
   constructor(private readonly content: ContentService) {}
 
   @Post()
-  /** POST /courses/:courseId/resources — tạo tài nguyên (file hoặc liên kết) kèm course module. */
   async create(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @Body({ schema: createResourceSchema }) dto: CreateResourceDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.content.createResource(actor.id, courseId, dto);
   }
@@ -65,18 +58,15 @@ export class CourseResourcesController {
 
 @ApiTags('content')
 @Controller({ path: 'resources', version: '1' })
-/** API tài nguyên: đọc cho người xem (file kèm URL đã ký), sửa và xoá. */
 export class ResourcesController {
   constructor(private readonly content: ContentService) {}
 
   @Get(':id')
-  /** GET /resources/:id — tài nguyên cho người xem (qua cổng khoá học). */
   async get(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() viewer: AuthenticatedUser) {
     return this.content.getResourceForUser(viewer.id, id);
   }
 
   @Patch(':id')
-  /** PATCH /resources/:id — sửa tài nguyên. */
   async update(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: updateResourceSchema }) dto: UpdateResourceDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.content.updateResource(actor.id, id, dto);
   }
@@ -91,7 +81,6 @@ export class ResourcesController {
 
 @ApiTags('content')
 @Controller({ path: 'courses/:courseId', version: '1' })
-/** API trang học (player) và tiến độ học trong khoá. */
 export class PlayerController {
   constructor(private readonly content: ContentService) {}
 
@@ -102,13 +91,11 @@ export class PlayerController {
   }
 
   @Get('progress/me')
-  /** GET /courses/:courseId/progress/me — tiến độ của chính người xem + điểm Học tiếp. */
   async myProgress(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @CurrentUser() viewer: AuthenticatedUser) {
     return this.content.getMyProgress(viewer.id, courseId);
   }
 
   @Get('progress/class-markers')
-  /** GET /courses/:courseId/progress/class-markers — mốc "lớp đã học tới đây" theo từng lớp (nhóm). */
   async classMarkers(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @CurrentUser() viewer: AuthenticatedUser) {
     return this.content.getClassMarkers(viewer.id, courseId);
   }
@@ -127,13 +114,10 @@ export class PlayerController {
 
   @Get('progress/reports')
   /**
-   * GET /courses/:courseId/progress/reports — bản xuất của ma trận tiến độ để tải xuống.
-   * Định dạng là dữ liệu yêu cầu qua tham số truy vấn `format` (hiện
-   * chỉ hỗ trợ `csv`; vắng mặt thì mặc định `csv`), không còn nằm
-   * trong path theo chuẩn bỏ hậu tố file (issue #345); nội dung file
-   * xuất giữ nguyên như bản CSV trước đây, `?groupId=` lọc theo
-   * lớp/nhóm như cũ. Định dạng khác `csv` bị từ chối 400
-   * `content.progress_report_format_unsupported`. Path cũ
+   * GET /courses/:courseId/progress/reports — bản xuất của ma trận tiến độ để tải xuống. Định dạng là dữ liệu yêu cầu
+   * qua tham số truy vấn `format` (hiện chỉ hỗ trợ `csv`; vắng mặt thì mặc định `csv`), không còn nằm trong path theo
+   * chuẩn bỏ hậu tố file (issue #345); nội dung file xuất giữ nguyên như bản CSV trước đây, `?groupId=` lọc theo
+   * lớp/nhóm như cũ. Định dạng khác `csv` bị từ chối 400 `content.progress_report_format_unsupported`. Path cũ
    * `progress/report.csv` giữ qua handler alias ngay dưới.
    */
   async progressReports(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @Query('groupId') groupId: string | undefined, @Query('format') format: string | undefined, @CurrentUser() viewer: AuthenticatedUser, @Res() res: Response) {
@@ -149,12 +133,9 @@ export class PlayerController {
   @Get('progress/report.csv')
   @UseInterceptors(DeprecatedRouteAliasInterceptor)
   /**
-   * GET /courses/:courseId/progress/report.csv — alias cũ của GET
-   * /courses/:courseId/progress/reports (định dạng `csv` cố định bởi
-   * chính hậu tố path): uỷ quyền nguyên vẹn cho handler canonical;
-   * response mang header Deprecation/Sunset và lượt gọi được ghi log
-   * alias có cấu trúc (căn cứ điều kiện gỡ alias: 0 lượt gọi trong 14
-   * ngày).
+   * GET /courses/:courseId/progress/report.csv — alias cũ của GET /courses/:courseId/progress/reports (định dạng `csv`
+   * cố định bởi chính hậu tố path): uỷ quyền nguyên vẹn cho handler canonical; response mang header Deprecation/Sunset
+   * và lượt gọi được ghi log alias có cấu trúc (căn cứ điều kiện gỡ alias: 0 lượt gọi trong 14 ngày).
    */
   async progressReportCsv(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @Query('groupId') groupId: string | undefined, @CurrentUser() viewer: AuthenticatedUser, @Res() res: Response) {
     return this.progressReports(courseId, groupId, 'csv', viewer, res);

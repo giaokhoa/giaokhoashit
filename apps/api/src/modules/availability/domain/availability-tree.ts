@@ -1,26 +1,20 @@
 /**
  * AvailabilityTree — miền thuần (không Nest, không DB), report §2#10.
  *
- * Hình dạng JSON của Moodle: một nút cây là `{ op, c: [...] }` với
- * op ∈ '&' (AND), '|' (OR), '!&' (NOT-AND), '!|' (NOT-OR); nút ROOT còn có thể
- * mang `show` (boolean) và các nút không phải root/root mang `showc`
- * (boolean theo từng con). Lá là các đối tượng điều kiện `{ type: string, ... }`.
+ * Hình dạng JSON của Moodle: một nút cây là `{ op, c: [...] }` với op ∈ '&' (AND), '|' (OR), '!&' (NOT-AND), '!|'
+ * (NOT-OR); nút ROOT còn có thể mang `show` (boolean) và các nút không phải root/root mang `showc` (boolean theo từng
+ * con). Lá là các đối tượng điều kiện `{ type: string, ... }`.
  *
- * Ngữ nghĩa (dịch từ availability/tests/tree_test.php
- * ::test_check_available):
- *  - Cây AND/OR rỗng thì khả dụng; cây NOT rỗng thì KHÔNG khả dụng
- *    (NOT của phần tử trung hoà sẽ đảo nó — Moodle xử lý `!&`/`!|` không có
- *    con bằng cùng quy tắc gộp-rồi-phủ-định dùng ở đây).
- *  - `!&` = NOT(AND(children)) và `!|` = NOT(OR(children)) — De Morgan vì vậy
- *    là cấu trúc, không phải phép viết lại: ta gộp rồi phủ định.
- *  - `showc[i] === false` cho một con không đạt sẽ ẩn MỌI thông tin
- *    hạn chế của toàn cây ("nếu bạn không có điều kiện đó thì
- *    bạn không được thấy gì cả") — mô hình hoá ở đây thành
- *    `informationHidden = true`, và chính item bị ẩn.
+ * Ngữ nghĩa (dịch từ availability/tests/tree_test.php ::test_check_available):
+ *  - Cây AND/OR rỗng thì khả dụng; cây NOT rỗng thì KHÔNG khả dụng (NOT của phần tử trung hoà sẽ đảo nó — Moodle xử lý
+ *    `!&`/`!|` không có con bằng cùng quy tắc gộp-rồi-phủ-định dùng ở đây).
+ *  - `!&` = NOT(AND(children)) và `!|` = NOT(OR(children)) — De Morgan vì vậy là cấu trúc, không phải phép viết lại: ta
+ *    gộp rồi phủ định.
+ *  - `showc[i] === false` cho một con không đạt sẽ ẩn MỌI thông tin hạn chế của toàn cây ("nếu bạn không có điều kiện
+ *    đó thì bạn không được thấy gì cả") — mô hình hoá ở đây thành `informationHidden = true`, và chính item bị ẩn.
  *  - Root `show === false` cũng ẩn thông tin tương tự khi không khả dụng.
- *  - Tính hiển thị của một item không khả dụng: hiện (làm mờ, kèm thông tin)
- *    chỉ khi thông tin không bị ẩn; ngược lại ẩn hẳn.
- *    Dù trường hợp nào item cũng KHÔNG truy cập được — show/showc không bao giờ cấp quyền truy cập.
+ *  - Tính hiển thị của một item không khả dụng: hiện (làm mờ, kèm thông tin) chỉ khi thông tin không bị ẩn; ngược lại
+ *    ẩn hẳn. Dù trường hợp nào item cũng KHÔNG truy cập được — show/showc không bao giờ cấp quyền truy cập.
  */
 
 /**
@@ -48,9 +42,6 @@ export interface AvailabilityNode {
 }
 export type AvailabilityChild = AvailabilityNode | AvailabilityLeaf;
 
-/**
- * Phân biệt nút cây (có op/c) với điều kiện lá.
- */
 export function isTreeNode(child: AvailabilityChild): child is AvailabilityNode {
   return typeof (child as AvailabilityNode).op === 'string' && Array.isArray((child as AvailabilityNode).c);
 }
@@ -60,7 +51,6 @@ export function isTreeNode(child: AvailabilityChild): child is AvailabilityNode 
  */
 export interface LeafResult {
   available: boolean;
-  /** Mô tả ngắn dễ đọc cho người dùng về điều kiện (chưa đạt), vd để hiển thị trên UI. */
   description?: string;
 }
 
@@ -130,9 +120,8 @@ export async function evaluateTree(
   }
   const available = node.c.length === 0 ? (node.op === '&' || node.op === '|') : aggregate(node.op, values);
 
-  // Ẩn thông tin: một con không đạt mà showc của nó là false sẽ ẩn mọi thứ.
-  // Với các op phủ định, một con "góp phần gây không đạt" khi nó khả dụng
-  // (chính thành công của con làm NOT-AND/NOT-OR không đạt).
+    // Ẩn thông tin: một con không đạt mà showc của nó là false sẽ ẩn mọi thứ. Với các op phủ định, một con "góp phần gây
+  // không đạt" khi nó khả dụng (chính thành công của con làm NOT-AND/NOT-OR không đạt).
   let informationHidden = false;
   if (!available) {
     if (isRoot && node.show === false) informationHidden = true;
@@ -190,9 +179,6 @@ export async function evaluateTree(
 }
 
 /** Đường tắt đồng bộ dùng bởi các golden test với giá trị lá trong bộ nhớ. */
-/**
- * Dựng map đánh giá lá từ kết quả từng điều kiện (đủ/không đủ) và mô tả hiển thị tương ứng — đầu vào cho bước gộp cây.
- */
 export function leafFromMap(values: Record<string, boolean>, descriptions: Record<string, string> = {}) {
   return async (leaf: AvailabilityLeaf): Promise<LeafResult> => {
     const key = String(leaf.id ?? leaf.type);

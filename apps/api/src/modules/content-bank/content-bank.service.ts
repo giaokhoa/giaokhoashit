@@ -12,11 +12,8 @@ export const CONTENT_TYPES = ['file-based'] as const;
 
 /** Loại học liệu của Kho học liệu: đúng 5 nhóm Điều 7 TT 09/2021 (CB1-B2). */
 export const RESOURCE_TYPES = ['multimedia_lecture', 'lab_guide', 'simulation', 'question_set', 'reference'] as const;
-/** Không gian của Kho học liệu: cá nhân | tổ chuyên môn | toàn trường. */
 export const SCOPES = ['personal', 'org', 'school'] as const;
-/** Cấp học độc lập với khối (CB1-B2). */
 export const LEVELS = ['primary', 'lower_secondary', 'upper_secondary', 'multi'] as const;
-/** Nguồn gốc học liệu (CB1-B1). */
 export const SOURCE_KINDS = ['self', 'cited', 'derived'] as const;
 export const TARGET_AUDIENCES = ['students', 'teachers', 'both'] as const;
 /** Vị trí dùng trong bài theo khung CV 5512 (CB1-B3). */
@@ -69,16 +66,12 @@ export interface SpaceView {
 }
 
 /**
- * ContentBankModule facade — Kho học liệu (CB-1, issue #69).
- * Trên khung Content Bank sẵn có (bảng/API/Files): học liệu mang metadata
- * chương trình (môn–khối–node–YCCĐ) + loại học liệu, sống trong một không
- * gian (cá nhân / tổ chuyên môn qua cohort / toàn trường) và học liệu chia
- * sẻ phải qua duyệt của tổ trưởng (`contentbank:reviewcontent` +
- * `cohort:manage` tại context của tổ; cấp trường là reviewcontent tại
- * context hệ thống) mới hiện với đồng nghiệp. Học liệu chưa duyệt KHÔNG hiện ở
- * scope tổ/trường với người ngoài (chỉ tác giả + người duyệt thấy).
- * Ngân hàng câu hỏi là kho TÁCH RIÊNG: loại `question_set` chỉ THAM CHIẾU
- * category của ngân hàng câu hỏi, không chứa bản sao câu hỏi.
+ * ContentBankModule facade — Kho học liệu (CB-1, issue #69). Trên khung Content Bank sẵn có (bảng/API/Files): học liệu
+ * mang metadata chương trình (môn–khối–node–YCCĐ) + loại học liệu, sống trong một không gian (cá nhân / tổ chuyên môn
+ * qua cohort / toàn trường) và học liệu chia sẻ phải qua duyệt của tổ trưởng (`contentbank:reviewcontent` +
+ * `cohort:manage` tại context của tổ; cấp trường là reviewcontent tại context hệ thống) mới hiện với đồng nghiệp. Học
+ * liệu chưa duyệt KHÔNG hiện ở scope tổ/trường với người ngoài (chỉ tác giả + người duyệt thấy). Ngân hàng câu hỏi là
+ * kho TÁCH RIÊNG: loại `question_set` chỉ THAM CHIẾU category của ngân hàng câu hỏi, không chứa bản sao câu hỏi.
  */
 @Injectable()
 export class ContentBankService {
@@ -97,8 +90,6 @@ export class ContentBankService {
     return row;
   }
 
-  // --- không gian & context ---------------------------------------------------
-
   private async systemContextId(): Promise<string> {
     return (await this.contexts.ensureSystemContext()).id;
   }
@@ -110,9 +101,8 @@ export class ContentBankService {
   }
 
   /**
-   * Suy context neo theo scope: personal → context của tác giả; org/school →
-   * context hệ thống. Với org, kiểm tra cohort tồn tại và (khi `forWrite`)
-   * tác giả là thành viên của tổ.
+   * Suy context neo theo scope: personal → context của tác giả; org/school → context hệ thống. Với org, kiểm tra cohort
+   * tồn tại và (khi `forWrite`) tác giả là thành viên của tổ.
    */
   private async resolveContext(actorId: string, scope: string, spaceId?: string | null): Promise<string> {
     if (scope === 'personal') return this.personalContextId(actorId);
@@ -133,10 +123,9 @@ export class ContentBankService {
 
   /**
    * Người duyệt (tổ trưởng):
-   * - scope tổ: có `contentbank:reviewcontent` VÀ `cohort:manage` tại
-   *   context của chính tổ đó — giáo viên thường (editingteacher) là
-   *   thành viên tổ KHÔNG tự thành người duyệt; tổ trưởng là người được
-   *   gán vai quản lý tại context của tổ. Site admin qua bypass.
+   * - scope tổ: có `contentbank:reviewcontent` VÀ `cohort:manage` tại context của chính tổ đó — giáo viên thường
+   *   (editingteacher) là thành viên tổ KHÔNG tự thành người duyệt; tổ trưởng là người được gán vai quản lý tại context
+   *   của tổ. Site admin qua bypass.
    * - scope trường: có reviewcontent tại context hệ thống.
    */
   async canReview(userId: string, row: ContentRow): Promise<boolean> {
@@ -151,34 +140,28 @@ export class ContentBankService {
     return this.evaluator.hasCapability(userId, 'contentbank:reviewcontent', await this.systemContextId());
   }
 
-  // --- quyền xem ---------------------------------------------------------------
-
   /**
    * Ai được xem một học liệu:
    * - tác giả: luôn được;
    * - người có editcontent tại context neo: được (quản trị);
-   * - tổ/trường đã duyệt (approved): thành viên tổ (org) / đã public
-   *   thì mọi người dùng đã đăng nhập của trường (school);
-   * - tổ/trường chưa duyệt: chỉ tác giả + người duyệt — KHÔNG lộ ra ngoài,
-   *   kể cả khi visibility bị đặt public thủ công;
-   * - cá nhân (gồm các bản ghi kiểu cũ neo ở context khoá): giữ hành vi
-   *   nền cũ — public + viewcontent tại context neo thì xem được.
+   * - tổ/trường đã duyệt (approved): thành viên tổ (org) / đã public thì mọi người dùng đã đăng nhập của trường
+   *   (school);
+   * - tổ/trường chưa duyệt: chỉ tác giả + người duyệt — KHÔNG lộ ra ngoài, kể cả khi visibility bị đặt public thủ công;
+   * - cá nhân (gồm các bản ghi kiểu cũ neo ở context khoá): giữ hành vi nền cũ — public + viewcontent tại context neo
+   *   thì xem được.
    */
   async canView(userId: string, row: ContentRow): Promise<boolean> {
     if (row.creatorId === userId) return true;
     if (row.scope === 'org' || row.scope === 'school') {
-      // Kho chia sẻ KHÔNG dùng lối tắt editcontent tại context neo (neo ở
-      // hệ thống nên mọi vai trò cấp hệ thống sẽ lọt): chưa duyệt chỉ tác
-      // giả + người duyệt; đã duyệt mới mở cho đúng đối tượng của scope.
-      // Site admin vẫn qua được nhờ bypass trong evaluator (canReview).
+            // Kho chia sẻ KHÔNG dùng lối tắt editcontent tại context neo (neo ở hệ thống nên mọi vai trò cấp hệ thống sẽ
+      // lọt): chưa duyệt chỉ tác giả + người duyệt; đã duyệt mới mở cho đúng đối tượng của scope. Site admin vẫn qua
+      // được nhờ bypass trong evaluator (canReview).
       if (await this.canReview(userId, row)) return true;
       if (row.reviewStatus !== 'approved') return false;
       if (row.scope === 'org') return row.spaceId ? this.repo.isCohortMember(row.spaceId, userId) : false;
-      // Scope trường đã duyệt + public = công khai trong trường (phân xử
-      // điểm mở probe v86, issue #69): mọi người dùng ĐÃ ĐĂNG NHẬP đều
-      // xem được. Cổng cũ đòi viewcontent tại context hệ thống làm học
-      // liệu public không tới được giáo viên/học sinh (họ chỉ có vai ở
-      // context khoá/tổ) — vòng đời duyệt vì thế vô nghĩa.
+            // Scope trường đã duyệt + public = công khai trong trường (phân xử điểm mở probe v86, issue #69): mọi người dùng
+      // ĐÃ ĐĂNG NHẬP đều xem được. Cổng cũ đòi viewcontent tại context hệ thống làm học liệu public không tới được giáo
+      // viên/học sinh (họ chỉ có vai ở context khoá/tổ) — vòng đời duyệt vì thế vô nghĩa.
       return row.visibility === 'public';
     }
     if (await this.evaluator.hasCapability(userId, 'contentbank:editcontent', row.contextId)) return true;
@@ -191,9 +174,6 @@ export class ContentBankService {
     return row;
   }
 
-  // --- không gian của người dùng ----------------------------------------------
-
-  /** Các không gian người dùng thấy ở Kho học liệu: của tôi + các tổ là thành viên (+ mọi tổ nếu là người duyệt) + toàn trường. */
   async listSpaces(userId: string): Promise<SpaceView[]> {
     const sys = await this.systemContextId();
     const schoolReviewer = await this.evaluator.hasCapability(userId, 'contentbank:reviewcontent', sys);
@@ -218,8 +198,6 @@ export class ContentBankService {
     ];
   }
 
-  // --- CRUD ---------------------------------------------------------------------
-
   /** Ép các enum metadata mới (CB1-B1/B2/B3) — giá trị lạ bị từ chối sớm với mã lỗi riêng. */
   private assertEnumFields(input: Partial<LibraryItemInput>): void {
     const checks: [string | undefined, readonly string[], string][] = [
@@ -239,11 +217,10 @@ export class ContentBankService {
   private static readonly DERIVED_CHAIN_MAX_DEPTH = 32;
 
   /**
-   * Kiểm tra `derivedFromId` (CB1-B1): đích phải tồn tại, không được là
-   * chính bản ghi đang ghi, và chuỗi dẫn xuất của đích không được có vòng
-   * (kể cả vòng quay về chính bản ghi). Không có các chặn này, học liệu
-   * trường khai sourceKind='derived' có thể trỏ về chính mình để đạt yêu
-   * cầu "phải có derivedFromId" khi gửi duyệt — làm rỗng cổng B1.
+   * Kiểm tra `derivedFromId` (CB1-B1): đích phải tồn tại, không được là chính bản ghi đang ghi, và chuỗi dẫn xuất của
+   * đích không được có vòng (kể cả vòng quay về chính bản ghi). Không có các chặn này, học liệu trường khai
+   * sourceKind='derived' có thể trỏ về chính mình để đạt yêu cầu "phải có derivedFromId" khi gửi duyệt — làm rỗng cổng
+   * B1.
    */
   private async assertDerivedFromValid(selfId: string | null, derivedFromId: string): Promise<void> {
     if (selfId && derivedFromId === selfId) {
@@ -267,15 +244,12 @@ export class ContentBankService {
   }
 
   /**
-   * Cổng dùng kho cá nhân (phân xử điểm mở probe v86, issue #69): quyền
-   * suy ra từ CHỦ SỞ HỮU bank + "vai trò được dùng kho cá nhân" — actor
-   * phải giữ `contentbank:upload` từ một gán vai THẬT ở đâu đó (giáo
-   * viên có vai ở một khoá bất kỳ là đủ), thay vì đòi capability tại
-   * context cá nhân (nơi theo thiết kế không ai được gán vai) hay gán
-   * vai cấp hệ thống. Học sinh thuần vẫn bị chặn: vai student không có
-   * upload ở bất kỳ context nào. Cố ý KHÔNG tự gán vai/capability tại
-   * context cá nhân cho chính chủ — nếu không, bất kỳ ai (kể cả học
-   * sinh) cũng tự mở quyền cho mình chỉ bằng cách gọi tạo học liệu.
+   * Cổng dùng kho cá nhân (phân xử điểm mở probe v86, issue #69): quyền suy ra từ CHỦ SỞ HỮU bank + "vai trò được dùng
+   * kho cá nhân" — actor phải giữ `contentbank:upload` từ một gán vai THẬT ở đâu đó (giáo viên có vai ở một khoá bất kỳ
+   * là đủ), thay vì đòi capability tại context cá nhân (nơi theo thiết kế không ai được gán vai) hay gán vai cấp hệ
+   * thống. Học sinh thuần vẫn bị chặn: vai student không có upload ở bất kỳ context nào. Cố ý KHÔNG tự gán
+   * vai/capability tại context cá nhân cho chính chủ — nếu không, bất kỳ ai (kể cả học sinh) cũng tự mở quyền cho mình
+   * chỉ bằng cách gọi tạo học liệu.
    */
   private async assertCanUsePersonalBank(actorId: string): Promise<void> {
     if (await this.evaluator.hasCapabilityFromRealAssignmentAnywhere(actorId, 'contentbank:upload')) return;
@@ -293,10 +267,9 @@ export class ContentBankService {
     if (scope === 'org' && input.spaceId) await this.assertOrgMembership(actorId, input.spaceId);
     const contextId = input.contextId ?? (await this.resolveContext(actorId, scope, input.spaceId));
     if (scope === 'personal' && contextId === (await this.personalContextId(actorId))) {
-      // Tạo trong kho cá nhân của CHÍNH MÌNH (đường mặc định của UI,
-      // không contextId): cổng riêng theo chủ sở hữu — xem
-      // assertCanUsePersonalBank. Các đường còn lại (contextId tường
-      // minh, scope tổ/trường) giữ cổng capability tại context neo.
+            // Tạo trong kho cá nhân của CHÍNH MÌNH (đường mặc định của UI, không contextId): cổng riêng theo chủ sở hữu — xem
+      // assertCanUsePersonalBank. Các đường còn lại (contextId tường minh, scope tổ/trường) giữ cổng capability tại
+      // context neo.
       await this.assertCanUsePersonalBank(actorId);
     } else {
       await this.evaluator.requireCapability(actorId, 'contentbank:upload', contextId);
@@ -413,7 +386,6 @@ export class ContentBankService {
     await this.search.removeDoc('contentbank', id);
   }
 
-  /** Upload file qua FilesModule và gắn vào nội dung. */
   async uploadFile(actorId: string, id: string, input: { fileName: string; contentBase64: string; mimeType?: string }): Promise<ContentRow> {
     const row = await this.get(id);
     await this.assertCanEdit(actorId, row);
@@ -422,8 +394,7 @@ export class ContentBankService {
       contextId: row.contextId, component: 'core_contentbank', fileArea: 'content', itemId: row.id,
       fileName: input.fileName, data, mimeType: input.mimeType, userId: actorId,
     });
-    // Metadata kỹ thuật tự sinh từ file thật (CB1-B2): định dạng theo đuôi
-    // file + dung lượng đúng số byte đã tải lên.
+        // Metadata kỹ thuật tự sinh từ file thật (CB1-B2): định dạng theo đuôi file + dung lượng đúng số byte đã tải lên.
     const ext = input.fileName.includes('.') ? input.fileName.split('.').pop()!.toLowerCase() : null;
     await this.repo.update(id, { fileId: file.id, sizeBytes: data.length, ...(ext ? { techFormat: ext } : {}) });
     // Thay file của học liệu đã/chờ duyệt → quay về draft chờ duyệt lại.
@@ -441,20 +412,14 @@ export class ContentBankService {
     return this.files.createSignedUrl(row.fileId, actorId);
   }
 
-  // --- duyệt (tổ trưởng) ---------------------------------------------------------
-
   /**
    * Metadata bắt buộc khi chia sẻ lên tổ/trường:
-   * - chương trình: môn – khối – node chương trình; bộ câu hỏi tham chiếu
-   *   phải có category (hoặc file bài tập); loại khác phải có file hoặc
-   *   liên kết ngoài;
-   * - sư phạm (CB1-B3): mô tả, từ khoá, đối tượng sử dụng, gợi ý vị trí
-   *   dùng trong bài (khung CV 5512);
-   * - bản quyền (CB1-B1) — CHỈ scope trường: tác giả gốc, nguồn gốc,
-   *   giấy phép; nguồn trích dẫn thì phải ghi nguồn cụ thể, học liệu dẫn
-   *   xuất thì phải trỏ về học liệu gốc. Thiếu là chưa được mở scope
-   *   trường (yêu cầu cứng của TT 09/2021 Điều 4.3, thể lệ QĐ 2915/2021
-   *   và QĐ 1965/QĐ-TTg về tôn trọng quyền tác giả).
+   * - chương trình: môn – khối – node chương trình; bộ câu hỏi tham chiếu phải có category (hoặc file bài tập); loại
+   *   khác phải có file hoặc liên kết ngoài;
+   * - sư phạm (CB1-B3): mô tả, từ khoá, đối tượng sử dụng, gợi ý vị trí dùng trong bài (khung CV 5512);
+   * - bản quyền (CB1-B1) — CHỈ scope trường: tác giả gốc, nguồn gốc, giấy phép; nguồn trích dẫn thì phải ghi nguồn cụ
+   *   thể, học liệu dẫn xuất thì phải trỏ về học liệu gốc. Thiếu là chưa được mở scope trường (yêu cầu cứng của TT
+   *   09/2021 Điều 4.3, thể lệ QĐ 2915/2021 và QĐ 1965/QĐ-TTg về tôn trọng quyền tác giả).
    */
   private assertMetadataComplete(row: ContentRow): void {
     const missing: string[] = [];
@@ -493,11 +458,9 @@ export class ContentBankService {
   }
 
   /**
-   * Duyệt/từ chối một học liệu đang chờ (pending). Theo CB1-B3: từ chối
-   * BẮT BUỘC có lý do (ghi chú); phê duyệt BẮT BUỘC checklist 4 tiêu chí
-   * của thể lệ Bộ đều đạt (nội dung chính xác–khoa học / nguồn gốc rõ
-   * ràng / sư phạm–thẩm mỹ / chạy được trên di động) — checklist được
-   * lưu cùng quyết định để truy vết.
+   * Duyệt/từ chối một học liệu đang chờ (pending). Theo CB1-B3: từ chối BẮT BUỘC có lý do (ghi chú); phê duyệt BẮT BUỘC
+   * checklist 4 tiêu chí của thể lệ Bộ đều đạt (nội dung chính xác–khoa học / nguồn gốc rõ ràng / sư phạm–thẩm mỹ /
+   * chạy được trên di động) — checklist được lưu cùng quyết định để truy vết.
    */
   async review(actorId: string, id: string, input: { decision: 'approved' | 'rejected'; note?: string; checklist?: ReviewChecklist }): Promise<ContentRow> {
     const row = await this.get(id);
@@ -527,14 +490,10 @@ export class ContentBankService {
     return updated;
   }
 
-  // --- điểm cắm "Thêm từ kho" ------------------------------------------------------
-
   /**
-   * Cắm học liệu vào một section của khoá: tạo course module `mod_resource`
-   * bằng BẢN SAO file (file được sao sang context của module mới — sửa ở
-   * kho không đổi bản đã cắm và ngược lại). Quyền: xem được học liệu (và
-   * nếu là học liệu chia sẻ của người khác thì phải đã duyệt) + quyền thêm
-   * hoạt động vào khoá (do CoursesService.createCm tự gác
+   * Cắm học liệu vào một section của khoá: tạo course module `mod_resource` bằng BẢN SAO file (file được sao sang
+   * context của module mới — sửa ở kho không đổi bản đã cắm và ngược lại). Quyền: xem được học liệu (và nếu là học liệu
+   * chia sẻ của người khác thì phải đã duyệt) + quyền thêm hoạt động vào khoá (do CoursesService.createCm tự gác
    * course:manageactivities).
    */
   async insertIntoCourse(actorId: string, id: string, input: { courseId: string; sectionId: string }): Promise<{ cmId: string; courseId: string; sectionId: string; fileId: string | null; sourceContentId: string }> {
@@ -544,10 +503,8 @@ export class ContentBankService {
       throw new ForbiddenException({ message: 'Only approved library items can be inserted into a course', code: 'contentbank.not_approved' });
     }
     if (row.resourceType === 'question_set' && !row.fileId) {
-      // Bộ câu hỏi THAM CHIẾU (có category, không có file) sống ở Ngân
-      // hàng câu hỏi — không cắm thành tài nguyên khoá. Học liệu nhóm câu
-      // hỏi/bài tập có file đính kèm (phiếu bài tập) thì cắm như tài
-      // nguyên bình thường.
+            // Bộ câu hỏi THAM CHIẾU (có category, không có file) sống ở Ngân hàng câu hỏi — không cắm thành tài nguyên khoá.
+      // Học liệu nhóm câu hỏi/bài tập có file đính kèm (phiếu bài tập) thì cắm như tài nguyên bình thường.
       throw new BadRequestException({ message: 'Question-set references are used from the question bank, not inserted as course resources', code: 'contentbank.question_set_not_insertable' });
     }
     const cm = await this.courses.createCm(actorId, input.courseId, { sectionId: input.sectionId, component: 'mod_resource', name: row.name });

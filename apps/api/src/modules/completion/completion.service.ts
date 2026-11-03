@@ -24,35 +24,27 @@ export const AGGREGATION_ANY = 2;
 
 /**
  * Facade của CompletionModule (core_completion của Moodle), phần hoạt động:
- *  - Trạng thái hoàn thành là dữ liệu ĐÃ LƯU (course_modules_completion) dẫn động bởi
- *    các tiêu chí khai báo trước trên cm: completionView, completionManual,
- *    completionExpected, completionUseGrade (đã khai báo; đánh giá điểm là
- *    hook của Grades — một cm yêu cầu điểm thì không thể hoàn thành khi thiếu điểm).
+ *  - Trạng thái hoàn thành là dữ liệu ĐÃ LƯU (course_modules_completion) dẫn động bởi các tiêu chí khai báo trước trên
+ *    cm: completionView, completionManual, completionExpected, completionUseGrade (đã khai báo; đánh giá điểm là hook
+ *    của Grades — một cm yêu cầu điểm thì không thể hoàn thành khi thiếu điểm).
  *  - Sự kiện `cm_viewed` (từ CoursesService) dẫn động completionView.
- *  - Hoàn thành khoá học tổng hợp các tiêu chí — đủ 8 loại của Moodle: module,
- *    date, grade, self, course (tiên quyết), duration, role, unenrol —
- *    với phương thức của khoá ALL(AND)/ANY(OR) vào course_completions.
- *    Các loại thủ công (self, role) được chứng bằng dòng course_completion_crit_compl;
- *    các loại còn lại đánh giá từ dữ liệu sống. Kích hoạt đánh giá lại:
- *    sự kiện cm, làm mới điểm, đánh dấu self/role, unenrol (sự kiện
- *    outbox `course_completion_reaggregation_requested` phát trong
- *    cùng transaction với thao tác gỡ ghi danh — consumer riêng của
- *    module này tiêu thụ qua mốc seq của nó), một
- *    khoá tiên quyết chuyển sang hoàn thành (tổng hợp lại khoá phụ thuộc),
- *    thay đổi tiêu chí và tính lại tường minh/hàng loạt (date/duration là
- *    theo thời gian và có hiệu lực ở lần tổng hợp lại tiếp theo, như tổng hợp
- *    do cron dẫn động của Moodle).
- *  - Đổi tiêu chí sau khi đã có dữ liệu sẽ gắn cờ tổng hợp lại và xếp hàng
- *    job completion-recalculate của worker (tính lại có kiểm soát,
- *    report §2#9) — không bao giờ viết lại lặng lẽ tại chỗ.
+ *  - Hoàn thành khoá học tổng hợp các tiêu chí — đủ 8 loại của Moodle: module, date, grade, self, course (tiên quyết),
+ *    duration, role, unenrol — với phương thức của khoá ALL(AND)/ANY(OR) vào course_completions. Các loại thủ công
+ *    (self, role) được chứng bằng dòng course_completion_crit_compl; các loại còn lại đánh giá từ dữ liệu sống. Kích
+ *    hoạt đánh giá lại: sự kiện cm, làm mới điểm, đánh dấu self/role, unenrol (sự kiện outbox
+ *    `course_completion_reaggregation_requested` phát trong cùng transaction với thao tác gỡ ghi danh — consumer riêng
+ *    của module này tiêu thụ qua mốc seq của nó), một khoá tiên quyết chuyển sang hoàn thành (tổng hợp lại khoá phụ
+ *    thuộc), thay đổi tiêu chí và tính lại tường minh/hàng loạt (date/duration là theo thời gian và có hiệu lực ở lần
+ *    tổng hợp lại tiếp theo, như tổng hợp do cron dẫn động của Moodle).
+ *  - Đổi tiêu chí sau khi đã có dữ liệu sẽ gắn cờ tổng hợp lại và xếp hàng job completion-recalculate của worker (tính
+ *    lại có kiểm soát, report §2#9) — không bao giờ viết lại lặng lẽ tại chỗ.
  */
 @Injectable()
 /**
- * Nghiệp vụ hoàn thành (completion tracking).
- * Đối chiếu Moodle: lib/completionlib.php (completion_info).
- * Trạng thái cm: incomplete / complete / complete-pass / complete-fail, suy từ điều kiện đã cấu hình
- * (xem, đạt điểm, hoàn thành thủ công, ngày…). Hoàn thành khoá học được tổng hợp từ bộ tiêu chí (criteria)
- * và trạng thái được tính lại qua hàng đợi khi có sự kiện điểm/lượt xem.
+ * Nghiệp vụ hoàn thành (completion tracking). Đối chiếu Moodle: lib/completionlib.php (completion_info). Trạng thái cm:
+ * incomplete / complete / complete-pass / complete-fail, suy từ điều kiện đã cấu hình (xem, đạt điểm, hoàn thành thủ
+ * công, ngày…). Hoàn thành khoá học được tổng hợp từ bộ tiêu chí (criteria) và trạng thái được tính lại qua hàng đợi
+ * khi có sự kiện điểm/lượt xem.
  */
 export class CompletionService implements OnModuleInit {
   private readonly logger = new Logger(CompletionService.name);
@@ -61,30 +53,20 @@ export class CompletionService implements OnModuleInit {
   /** Do GradesModule đăng ký: kiểm tra tiêu chí 'grade' của khoá học. */
   private courseGradeChecker?: (courseId: string, userId: string) => Promise<boolean>;
 
-  /**
-   * Đăng ký evaluator điểm cho điều kiện hoàn thành theo điểm (module grades cắm vào).
-   */
   registerGradeEvaluator(fn: (cmId: string, userId: string) => Promise<number | null>): void {
     this.gradeEvaluator = fn;
   }
 
   /**
-   * Các hook phía sau: các module (Badges, Competencies) đăng ký quan tâm tới
-   * THAY ĐỔI completion thay vì thăm dò hoặc đọc bảng của module này
-   * (report §2#9: completion là ĐẦU VÀO của badges/competency — phía tiêu thụ
-   * đăng ký nhận, chúng không bao giờ tự suy lại completion).
+   * Các hook phía sau: các module (Badges, Competencies) đăng ký quan tâm tới THAY ĐỔI completion thay vì thăm dò hoặc
+   * đọc bảng của module này (report §2#9: completion là ĐẦU VÀO của badges/competency — phía tiêu thụ đăng ký nhận,
+   * chúng không bao giờ tự suy lại completion).
    */
   private readonly cmCompletionHooks: ((e: { cmId: string; courseId: string; userId: string; state: number }) => Promise<void>)[] = [];
   private readonly courseCompletionHooks: ((e: { courseId: string; userId: string }) => Promise<void>)[] = [];
-  /**
-   * Đăng ký hook chạy sau khi trạng thái cm thay đổi (badges/competencies lắng nghe).
-   */
   registerCmCompletionHook(fn: (e: { cmId: string; courseId: string; userId: string; state: number }) => Promise<void>): void {
     this.cmCompletionHooks.push(fn);
   }
-  /**
-   * Đăng ký hook chạy sau khi hoàn thành khoá học thay đổi.
-   */
   registerCourseCompletionHook(fn: (e: { courseId: string; userId: string }) => Promise<void>): void {
     this.courseCompletionHooks.push(fn);
   }
@@ -159,9 +141,6 @@ export class CompletionService implements OnModuleInit {
       .execute();
   }
 
-  /**
-   * Khởi tạo: nối các hook liên module.
-   */
   onModuleInit(): void {
     // Lá 'completion' của Availability: hoàn thành khi trạng thái đã lưu của cm được tham chiếu
     // đối với user này là COMPLETE (hoặc pass/fail sau khi đã chấm).
@@ -181,12 +160,7 @@ export class CompletionService implements OnModuleInit {
     // sự kiện đó qua mốc seq riêng để gọi reaggregateCourseCompletion.
   }
 
-  // --- hoàn thành hoạt động ---------------------------------------------------
-
   /** Tính trạng thái nội bộ từ các tiêu chí đã khai báo của cm (internal_get_state của completionlib Moodle, tập con hoạt động). */
-  /**
-   * Tính trạng thái hoàn thành của một cm cho user từ các điều kiện đã cấu hình.
-   */
   async computeCmState(cmId: string, userId: string): Promise<number> {
     const cm = await this.courses.getCm(cmId);
     const row = await this.repo.getCmCompletion(cmId, userId);
@@ -210,12 +184,8 @@ export class CompletionService implements OnModuleInit {
   }
 
   /**
-   * GradesModule gọi sau khi chấm lại (gọi qua facade): tính lại
-   * trạng thái hoàn thành đã lưu của một cm dẫn động bởi điểm và tổng hợp lại khoá học.
-   * Phát cm_completion_changed qua outbox khi trạng thái thay đổi.
-   */
-  /**
-   * Tính lại completion theo điểm của cm sau khi điểm thay đổi.
+   * GradesModule gọi sau khi chấm lại (gọi qua facade): tính lại trạng thái hoàn thành đã lưu của một cm dẫn động bởi
+   * điểm và tổng hợp lại khoá học. Phát cm_completion_changed qua outbox khi trạng thái thay đổi.
    */
   async refreshGradeCompletion(cmId: string, userId: string): Promise<void> {
     const cm = await this.courses.getCm(cmId).catch(() => undefined);
@@ -270,26 +240,17 @@ export class CompletionService implements OnModuleInit {
 
   /** Dọn dẹp khi cm_deleted thuộc sở hữu của module này: mọi bản ghi completion của cm biến mất cùng nó. */
   @OnEvent('cm_deleted')
-  /**
-   * Xử lý sự kiện xoá cm: dọn trạng thái hoàn thành của cm.
-   */
   async onCmDeleted(payload: { cmId: string; courseId: string }): Promise<void> {
     const removed = await this.repo.deleteCmCompletionsForCm(payload.cmId);
     if (removed) this.logger.log(`cm_deleted: removed ${removed} completion record(s) for cm ${payload.cmId}`);
   }
 
-  /**
-   * Trạng thái hoàn thành hiện tại của cm cho user.
-   */
   async getCmCompletion(cmId: string, userId: string): Promise<{ cmId: string; userId: string; state: number; viewed: boolean }> {
     const row = await this.repo.getCmCompletion(cmId, userId);
     const state = await this.computeCmState(cmId, userId).catch(() => row?.completionState ?? 0);
     return { cmId, userId, state: row && row.completionState !== COMPLETION_INCOMPLETE ? row.completionState : state, viewed: row?.viewed ?? false };
   }
 
-  /**
-   * Tiến độ hoàn thành cm của mọi học viên trong khoá học.
-   */
   async listCmCompletionsForCourse(courseId: string, userId: string): Promise<{ cmId: string; state: number; viewed: boolean }[]> {
     const cms = await this.courses.listCms(courseId);
     const rows = await this.repo.listCmCompletionsForUser(userId, cms.map((c) => c.id));
@@ -302,9 +263,6 @@ export class CompletionService implements OnModuleInit {
   /**
    * Đánh dấu thủ công (completionManual / completion=1): chính user,
    * hoặc một actor có completion:markothers tại context khoá học.
-   */
-  /**
-   * Đánh dấu hoàn thành thủ công (self hoặc giáo viên ghi thay theo capability).
    */
   async markManual(actorId: string, cmId: string, targetUserId: string, complete: boolean): Promise<{ cmId: string; userId: string; state: number }> {
     const cm = await this.courses.getCm(cmId);
@@ -334,14 +292,10 @@ export class CompletionService implements OnModuleInit {
     return { cmId, userId: targetUserId, state };
   }
 
-  // --- hoàn thành khoá học ---------------------------------------------------------
-
   /**
-   * Đặt bộ tiêu chí hoàn thành khoá học (thay thế toàn bộ). Đủ 8 loại của
-   * Moodle; tham số bắt buộc theo từng loại được kiểm tại đây (module →
-   * moduleInstance, date → date, course → courseInstance trỏ tới khoá khác
-   * có thật, duration → enrolPeriodDays, role → roleId có thật; self,
-   * grade, unenrol không tham số).
+   * Đặt bộ tiêu chí hoàn thành khoá học (thay thế toàn bộ). Đủ 8 loại của Moodle; tham số bắt buộc theo từng loại được
+   * kiểm tại đây (module → moduleInstance, date → date, course → courseInstance trỏ tới khoá khác có thật, duration →
+   * enrolPeriodDays, role → roleId có thật; self, grade, unenrol không tham số).
    */
   async setCriteria(actorId: string, courseId: string, input: {
     method?: number;
@@ -428,14 +382,11 @@ export class CompletionService implements OnModuleInit {
     return { method: settings.method, criteria: await this.repo.listCriteria(courseId) };
   }
 
-  /** Đánh giá mọi tiêu chí cho một user. Trả kết quả theo từng tiêu chí + kết quả tổng hợp. */
   /**
-   * Đánh giá bộ tiêu chí cho một user: đạt tất cả/bất kỳ theo cấu hình tổng hợp.
-   * Ngữ nghĩa từng loại theo Moodle: module = cm đã hoàn thành; date = đã tới
-   * ngày; grade = qua checker của Grades; self/role = có dấu crit_compl;
-   * course = bản ghi hoàn thành của khoá tiên quyết ở trạng thái complete;
-   * duration = đã ghi danh đủ số ngày (neo vào timeStart ghi danh sớm nhất
-   * chưa rút); unenrol = user hiện không còn ghi danh trong khoá.
+   * Đánh giá bộ tiêu chí cho một user: đạt tất cả/bất kỳ theo cấu hình tổng hợp. Ngữ nghĩa từng loại theo Moodle:
+   * module = cm đã hoàn thành; date = đã tới ngày; grade = qua checker của Grades; self/role = có dấu crit_compl;
+   * course = bản ghi hoàn thành của khoá tiên quyết ở trạng thái complete; duration = đã ghi danh đủ số ngày (neo vào
+   * timeStart ghi danh sớm nhất chưa rút); unenrol = user hiện không còn ghi danh trong khoá.
    */
   async evaluateCriteria(courseId: string, userId: string, now = new Date()): Promise<{ results: boolean[]; complete: boolean; method: number }> {
     const criteria = await this.repo.listCriteria(courseId);
@@ -464,9 +415,8 @@ export class CompletionService implements OnModuleInit {
       } else if (c.criteriaType === 'self' || c.criteriaType === 'role') {
         results.push(markedCriteria.has(c.id));
       } else if (c.criteriaType === 'course' && c.courseInstance) {
-        // Tiên quyết: đọc completion ĐÃ LƯU của khoá tiên quyết
-        // (không bao giờ đánh giá đệ quy — các khoá phụ thuộc được tổng hợp lại
-        // khi tiên quyết chuyển sang hoàn thành, xem bên dưới).
+                // Tiên quyết: đọc completion ĐÃ LƯU của khoá tiên quyết (không bao giờ đánh giá đệ quy — các khoá phụ thuộc
+        // được tổng hợp lại khi tiên quyết chuyển sang hoàn thành, xem bên dưới).
         const prereq = await this.repo.getCourseCompletion(userId, c.courseInstance);
         results.push(prereq?.status === 'complete');
       } else if (c.criteriaType === 'duration' && c.enrolPeriodDays !== null && c.enrolPeriodDays !== undefined) {
@@ -483,9 +433,6 @@ export class CompletionService implements OnModuleInit {
   }
 
   /** Tính lại và lưu completion khoá học của một user từ tiêu chí hiện tại (idempotent). */
-  /**
-   * Tổng hợp lại trạng thái hoàn thành khoá học của user và phát hook khi thay đổi.
-   */
   async reaggregateCourseCompletion(userId: string, courseId: string): Promise<CourseCompletionRow> {
     const existing = await this.repo.getCourseCompletion(userId, courseId);
     const { complete } = await this.evaluateCriteria(courseId, userId);
@@ -509,10 +456,9 @@ export class CompletionService implements OnModuleInit {
       for (const hook of this.courseCompletionHooks) {
         await hook({ courseId, userId }).catch((err) => this.logger.warn(`course completion hook failed: ${String(err)}`));
       }
-      // Lan truyền tiên quyết: các khoá liệt kê khoá NÀY làm tiêu chí 'course'
-      // giờ có thể hoàn thành cho user của chúng. Chỉ chuyển VÀO
-      // complete mới kích hoạt việc này, và khoá phụ thuộc chỉ có thể chuyển cùng chiều,
-      // nên chu trình tiên quyết lắng xuống thay vì lặp vô hạn.
+            // Lan truyền tiên quyết: các khoá liệt kê khoá NÀY làm tiêu chí 'course' giờ có thể hoàn thành cho user của
+      // chúng. Chỉ chuyển VÀO complete mới kích hoạt việc này, và khoá phụ thuộc chỉ có thể chuyển cùng chiều, nên chu
+      // trình tiên quyết lắng xuống thay vì lặp vô hạn.
       const dependentIds = await this.repo.listDependentCourseIds(courseId);
       for (const dependentId of dependentIds) {
         if (dependentId === courseId) continue;
@@ -523,17 +469,10 @@ export class CompletionService implements OnModuleInit {
     return row;
   }
 
-  // --- tiêu chí khoá học thủ công (self / role) -----------------------------------
-
   /**
-   * Tự hoàn thành (completion_criteria_self của Moodle): người học tự đánh dấu
-   * CHÍNH MÌNH hoàn thành cho tiêu chí/các tiêu chí self của khoá học. Dấu
-   * là một dòng crit_compl (ghi ai + khi nào); bỏ dấu thì xoá nó. Người
-   * học phải có quyền truy cập khoá học; một khoá không có tiêu chí self
-   * sẽ từ chối lời gọi.
-   */
-  /**
-   * Học viên tự đánh dấu hoàn thành khoá học (tiêu chí self).
+   * Tự hoàn thành (completion_criteria_self của Moodle): người học tự đánh dấu CHÍNH MÌNH hoàn thành cho tiêu chí/các
+   * tiêu chí self của khoá học. Dấu là một dòng crit_compl (ghi ai + khi nào); bỏ dấu thì xoá nó. Người học phải có
+   * quyền truy cập khoá học; một khoá không có tiêu chí self sẽ từ chối lời gọi.
    */
   async markSelfCompletion(actorId: string, courseId: string, complete: boolean): Promise<{ courseId: string; userId: string; complete: boolean; status: string }> {
     await this.courses.getCourse(courseId);
@@ -551,18 +490,11 @@ export class CompletionService implements OnModuleInit {
   }
 
   /**
-   * Hoàn thành thủ công bởi người khác (completion_criteria_role của Moodle): một user
-   * giữ role của tiêu chí đánh dấu một người học hoàn thành (hoặc gỡ
-   * dấu). Dấu là một dòng crit_compl ghi ai đánh dấu cho ai, và
-   * khi nào. Gán role kế thừa xuống cây context (ngữ nghĩa
-   * role_assign của Moodle), nên giữ role tại context khoá học HOẶC
-   * tại bất kỳ context tổ tiên nào (category, system) đều cho phép đánh dấu — cùng
-   * tra cứu đường tổ tiên mà PermissionEvaluator thực hiện; gán
-   * ở các nhánh không liên quan không tính. Gán role là
-   * quyền, theo Moodle.
-   */
-  /**
-   * Người giữ vai trò trong tiêu chí role (tại context khoá học hoặc bất kỳ context tổ tiên nào) đánh dấu hoàn thành cho học viên.
+   * Hoàn thành thủ công bởi người khác (completion_criteria_role của Moodle): một user giữ role của tiêu chí đánh dấu
+   * một người học hoàn thành (hoặc gỡ dấu). Dấu là một dòng crit_compl ghi ai đánh dấu cho ai, và khi nào. Gán role kế
+   * thừa xuống cây context (ngữ nghĩa role_assign của Moodle), nên giữ role tại context khoá học HOẶC tại bất kỳ
+   * context tổ tiên nào (category, system) đều cho phép đánh dấu — cùng tra cứu đường tổ tiên mà PermissionEvaluator
+   * thực hiện; gán ở các nhánh không liên quan không tính. Gán role là quyền, theo Moodle.
    */
   async markCriterionByRole(actorId: string, courseId: string, criteriaId: string, targetUserId: string, complete: boolean): Promise<{ courseId: string; criteriaId: string; userId: string; complete: boolean; status: string }> {
     await this.courses.getCourse(courseId);
@@ -588,9 +520,6 @@ export class CompletionService implements OnModuleInit {
   }
 
   /** Tính lại hàng loạt cho worker (worker chạy bản sao của chính nó; đây là bản song sinh phía API dùng bởi test/kích hoạt thủ công). */
-  /**
-   * Tính lại completion toàn khoá học (hàng loạt, qua worker khi cần).
-   */
   async recalculateCourse(courseId: string): Promise<{ courseId: string; users: number }> {
     const enrolments = await this.enrol.listEnrolmentsForCourse(courseId);
     const userIds = [...new Set(enrolments.map((e) => e.userId))];
@@ -602,28 +531,18 @@ export class CompletionService implements OnModuleInit {
     return { courseId, users: userIds.length };
   }
 
-  /**
-   * Bản ghi hoàn thành khoá học của user.
-   */
   async getCourseCompletion(userId: string, courseId: string): Promise<CourseCompletionRow> {
     const existing = await this.repo.getCourseCompletion(userId, courseId);
     if (existing) return existing;
     return this.reaggregateCourseCompletion(userId, courseId);
   }
-  /**
-   * Tiến độ hoàn thành khoá học của mọi học viên.
-   */
   async listCourseCompletions(courseId: string): Promise<CourseCompletionRow[]> {
     return this.repo.listCourseCompletions(courseId);
   }
 
-  /**
-   * Cổng capability quản trị completion tại context khoá học.
-   */
   async requireCompletionManage(actorId: string, courseId: string): Promise<void> {
     await this.evaluator.requireCapability(actorId, 'completion:manage', await this.courses.courseContextId(courseId));
   }
   notFound(): never { throw new NotFoundException({ message: 'Completion record not found', code: 'completion.not_found' }); }
-  /** Ném lỗi 403 chuẩn hoá của module (hàm hỗ trợ nội bộ). */
   forbidden(msg: string): never { throw new ForbiddenException({ message: msg, code: 'completion.forbidden' }); }
 }

@@ -34,7 +34,6 @@ export function isProficientGrade(framework: FrameworkRow, grade: number | null 
   return parseScale(framework).proficient.includes(grade);
 }
 
-/** Một dòng điểm trong cấu hình rule points: competency con đóng góp điểm khi đạt proficiency. */
 export interface CompetencyRulePointsEntry { competencyId: string; points: number; required: boolean }
 
 /** Cấu hình rule points đã chuẩn hoá (Moodle `competency_rule_points`: base points + danh sách con). */
@@ -66,27 +65,22 @@ export interface FrameworkExportDoc {
 
 /**
  * Facade của CompetenciesModule (core_competency / tool_lp của Moodle):
- *  - Framework sở hữu một CÂY competency (path/depth) và một SCALE; proficiency
- *    được đọc từ cấu hình scale — KHÔNG BAO GIỜ suy từ điểm. Một
- *    điểm chỉ có thể thành EVIDENCE khi ruleOutcome của một liên kết nói
- *    'attach-evidence' (và ngay cả khi đó nó không đặt proficiency).
- *  - Liên kết khoá học/cm mang ruleOutcome tường minh được module NÀY áp
- *    khi CompletionModule báo một completion (hook đã đăng ký — module
- *    này không bao giờ đọc bảng completion).
- *  - Learning plan: template → plan cho cohort; vòng đời
- *    draft → active → waitingforreview → inreview → (approve → active |
- *    complete). Mọi chuyển đổi đều ghi vào competency_plan_review.
- *  - User competency mang proficiency + một máy trạng thái review
- *    (none → waiting → inreview → approve/reject); dòng evidence là
- *    lịch sử bất biến của mọi việc đã xảy ra.
+ *  - Framework sở hữu một CÂY competency (path/depth) và một SCALE; proficiency được đọc từ cấu hình scale — KHÔNG BAO
+ *    GIỜ suy từ điểm. Một điểm chỉ có thể thành EVIDENCE khi ruleOutcome của một liên kết nói 'attach-evidence' (và
+ *    ngay cả khi đó nó không đặt proficiency).
+ *  - Liên kết khoá học/cm mang ruleOutcome tường minh được module NÀY áp khi CompletionModule báo một completion (hook
+ *    đã đăng ký — module này không bao giờ đọc bảng completion).
+ *  - Learning plan: template → plan cho cohort; vòng đời draft → active → waitingforreview → inreview → (approve →
+ *    active | complete). Mọi chuyển đổi đều ghi vào competency_plan_review.
+ *  - User competency mang proficiency + một máy trạng thái review (none → waiting → inreview → approve/reject); dòng
+ *    evidence là lịch sử bất biến của mọi việc đã xảy ra.
  */
 @Injectable()
 /**
- * Nghiệp vụ khung năng lực và kế hoạch học tập (learning plans).
- * Đối chiếu Moodle: competency/classes (framework, competency, plan, user_competency).
- * Quy tắc review: người học không được tự duyệt năng lực/kế hoạch của chính mình (assertNotSelfReview);
- * proficiency chỉ được đặt qua chấm (grade) hoặc duyệt evidence; hoàn thành khoá học/cm có thể tự động
- * cấp proficiency cho các competency đã liên kết khi framework cấu hình như vậy.
+ * Nghiệp vụ khung năng lực và kế hoạch học tập (learning plans). Đối chiếu Moodle: competency/classes (framework,
+ * competency, plan, user_competency). Quy tắc review: người học không được tự duyệt năng lực/kế hoạch của chính mình
+ * (assertNotSelfReview); proficiency chỉ được đặt qua chấm (grade) hoặc duyệt evidence; hoàn thành khoá học/cm có thể
+ * tự động cấp proficiency cho các competency đã liên kết khi framework cấu hình như vậy.
  */
 export class CompetenciesService implements OnModuleInit {
   constructor(
@@ -103,9 +97,6 @@ export class CompetenciesService implements OnModuleInit {
     private readonly i18n: I18nService,
   ) {}
 
-  /**
-   * Khởi tạo: đăng ký hook hoàn thành course/cm để tự động xét proficiency.
-   */
   onModuleInit(): void {
     this.completion.registerCourseCompletionHook(async ({ courseId, userId }) => {
       await this.applyCourseCompletion(courseId, userId);
@@ -123,11 +114,6 @@ export class CompetenciesService implements OnModuleInit {
     await this.evaluator.requireCapability(actorId, 'competency:competencymanage', await this.systemCtx());
   }
 
-  // --- framework & competency -------------------------------------------------
-
-  /**
-   * Tạo framework năng lực.
-   */
   async createFramework(actorId: string, input: { shortName: string; idNumber?: string; description?: string; scale: ScaleConfiguration; visible?: boolean }): Promise<FrameworkRow> {
     await this.requireManage(actorId);
     if (!input.scale.values.length) throw new BadRequestException({ message: 'A framework scale needs at least one value', code: 'competency.scale_empty' });
@@ -149,9 +135,6 @@ export class CompetenciesService implements OnModuleInit {
     if (!row) throw new NotFoundException({ message: `Framework ${id} not found`, code: 'competency.framework_not_found' });
     return row;
   }
-  /**
-   * Liệt kê framework.
-   */
   async listFrameworks(): Promise<FrameworkRow[]> { return this.repo.listFrameworks(); }
 
   /**
@@ -175,23 +158,15 @@ export class CompetenciesService implements OnModuleInit {
     await this.repo.updateCompetency(created.id, { path });
     return (await this.repo.getCompetency(created.id))!;
   }
-  /**
-   * Lấy competency; ném competencies.not_found khi vắng.
-   */
   async getCompetency(id: string): Promise<CompetencyRow> {
     const row = await this.repo.getCompetency(id);
     if (!row) throw new NotFoundException({ message: `Competency ${id} not found`, code: 'competency.not_found' });
     return row;
   }
-  /**
-   * Competency của framework.
-   */
   async listCompetencies(frameworkId: string): Promise<CompetencyRow[]> {
     await this.getFramework(frameworkId);
     return this.repo.listCompetencies(frameworkId);
   }
-
-  // --- rule competency (points) ---------------------------------------------------------
 
   /**
    * Xem rule của một competency (null khi competency chưa có rule).
@@ -207,11 +182,9 @@ export class CompetenciesService implements OnModuleInit {
   }
 
   /**
-   * Xem rule qua HTTP (H14, rà soát #134): rule là cấu hình biên soạn của
-   * framework — chỉ người có `competency:competencymanage` (cùng cổng
-   * với đường ghi setCompetencyRule) hoặc
-   * `competency:usercompetencyreview` tại system mới xem; đường nội bộ
-   * (đánh giá rule khi chấm) vẫn gọi getCompetencyRule không gác.
+   * Xem rule qua HTTP (H14, rà soát #134): rule là cấu hình biên soạn của framework — chỉ người có
+   * `competency:competencymanage` (cùng cổng với đường ghi setCompetencyRule) hoặc `competency:usercompetencyreview`
+   * tại system mới xem; đường nội bộ (đánh giá rule khi chấm) vẫn gọi getCompetencyRule không gác.
    */
   async getCompetencyRuleFor(actorId: string, competencyId: string) {
     const sys = await this.systemCtx();
@@ -224,10 +197,9 @@ export class CompetenciesService implements OnModuleInit {
   }
 
   /**
-   * Đặt rule points cho competency cha (oracle: Moodle `competency_rule_points::validate_config`).
-   * Quy tắc kiểm tra bám Moodle: ngưỡng điểm >= 1; mỗi dòng điểm tham chiếu một competency
-   * CON TRỰC TIẾP, không trùng, không tự tham chiếu, điểm >= 0; tổng điểm các con phải
-   * với tới ngưỡng — cấu hình không bao giờ đạt được bị từ chối ngay khi đặt.
+   * Đặt rule points cho competency cha (oracle: Moodle `competency_rule_points::validate_config`). Quy tắc kiểm tra bám
+   * Moodle: ngưỡng điểm >= 1; mỗi dòng điểm tham chiếu một competency CON TRỰC TIẾP, không trùng, không tự tham chiếu,
+   * điểm >= 0; tổng điểm các con phải với tới ngưỡng — cấu hình không bao giờ đạt được bị từ chối ngay khi đặt.
    */
   async setCompetencyRule(actorId: string, competencyId: string, input: { outcome: string; pointsRequired: number; entries: CompetencyRulePointsEntry[] }): Promise<{ competencyId: string; type: string | null; outcome: string; config: CompetencyRulePointsConfig | null }> {
     await this.requireManage(actorId);
@@ -256,12 +228,11 @@ export class CompetenciesService implements OnModuleInit {
   }
 
   /**
-   * Đánh giá rule points của competency CHA sau khi một competency con đạt proficiency
-   * (oracle: Moodle `api::apply_competency_rules_from_usercompetency`). Rule thỏa khi mọi
-   * con `required` đều proficient (trong cùng scope plan/course của con) và tổng điểm
-   * các con đã đạt >= ngưỡng. Idempotent: cha đã proficient (outcome complete) hoặc đã có
-   * evidence `rule_points_met` (outcome attach-evidence) thì không ghi thêm gì.
-   * Cha đạt nhờ rule lại được đánh giá tiếp lên ông (đệ quy theo cây).
+   * Đánh giá rule points của competency CHA sau khi một competency con đạt proficiency (oracle: Moodle
+   * `api::apply_competency_rules_from_usercompetency`). Rule thỏa khi mọi con `required` đều proficient (trong cùng
+   * scope plan/course của con) và tổng điểm các con đã đạt >= ngưỡng. Idempotent: cha đã proficient (outcome complete)
+   * hoặc đã có evidence `rule_points_met` (outcome attach-evidence) thì không ghi thêm gì. Cha đạt nhờ rule lại được
+   * đánh giá tiếp lên ông (đệ quy theo cây).
    */
   private async evaluateParentRule(userId: string, childCompetencyId: string, scope: { planId?: string; courseId?: string }): Promise<void> {
     const child = await this.repo.getCompetency(childCompetencyId);
@@ -313,8 +284,6 @@ export class CompetenciesService implements OnModuleInit {
     await this.evaluateParentRule(userId, parent.id, scope);
   }
 
-  // --- export / import / nhân bản framework --------------------------------------------
-
   /**
    * Export một framework ra tài liệu JSON của hệ thống (cây competency + scale + taxonomies + rule).
    * `key` trong tài liệu là id nguồn, chỉ dùng để nối cấu trúc nội bộ của file.
@@ -345,10 +314,9 @@ export class CompetenciesService implements OnModuleInit {
   }
 
   /**
-   * Kiểm tra tính toàn vẹn nội bộ của tài liệu export trước khi tạo framework:
-   * key duy nhất, parentKey tồn tại và không tạo chu trình, rule chỉ tham chiếu con
-   * trực tiếp của chính competency mang rule, ngưỡng điểm với tới được, scale hợp lệ.
-   * Mọi lỗi đều là `competency.import_invalid` (400) và không có gì được tạo.
+   * Kiểm tra tính toàn vẹn nội bộ của tài liệu export trước khi tạo framework: key duy nhất, parentKey tồn tại và không
+   * tạo chu trình, rule chỉ tham chiếu con trực tiếp của chính competency mang rule, ngưỡng điểm với tới được, scale
+   * hợp lệ. Mọi lỗi đều là `competency.import_invalid` (400) và không có gì được tạo.
    */
   private validateFrameworkExport(doc: FrameworkExportDoc): void {
     const invalid = (msg: string): never => { throw new BadRequestException({ message: msg, code: 'competency.import_invalid' }); };
@@ -384,9 +352,8 @@ export class CompetenciesService implements OnModuleInit {
   }
 
   /**
-   * Tạo framework MỚI từ tài liệu export (id mới toàn bộ, cấu trúc cây/scale/rule giữ nguyên).
-   * Toàn bộ thao tác nằm trong MỘT transaction: tài liệu hỏng ⇒ rollback, không tạo nửa vời.
-   * Dùng chung cho import và duplication.
+   * Tạo framework MỚI từ tài liệu export (id mới toàn bộ, cấu trúc cây/scale/rule giữ nguyên). Toàn bộ thao tác nằm
+   * trong MỘT transaction: tài liệu hỏng ⇒ rollback, không tạo nửa vời. Dùng chung cho import và duplication.
    */
   private async createFrameworkFromExport(doc: FrameworkExportDoc, overrides?: { shortName?: string; idNumber?: string }): Promise<FrameworkRow> {
     this.validateFrameworkExport(doc);
@@ -432,19 +399,15 @@ export class CompetenciesService implements OnModuleInit {
     return this.getFramework(frameworkId);
   }
 
-  /**
-   * Import tài liệu export thành một framework mới (capability quản lý framework).
-   */
   async importFramework(actorId: string, doc: FrameworkExportDoc): Promise<FrameworkRow> {
     await this.requireManage(actorId);
     return this.createFrameworkFromExport(doc);
   }
 
   /**
-   * Nhân bản framework ngay trong hệ thống (oracle: Moodle `api::duplicate_framework` /
-   * `test_duplicate_framework`): framework mới mang idNumber chưa dùng (hậu tố `_1`, `_2`, …),
-   * shortName thêm " (copy)", toàn bộ cây + rule được sao với id mới (rule config được
-   * migrate sang id con mới như Moodle `migrate_competency_tree_rules`).
+   * Nhân bản framework ngay trong hệ thống (oracle: Moodle `api::duplicate_framework` / `test_duplicate_framework`):
+   * framework mới mang idNumber chưa dùng (hậu tố `_1`, `_2`, …), shortName thêm " (copy)", toàn bộ cây + rule được sao
+   * với id mới (rule config được migrate sang id con mới như Moodle `migrate_competency_tree_rules`).
    */
   async duplicateFramework(actorId: string, frameworkId: string): Promise<FrameworkRow> {
     const doc = await this.exportFramework(actorId, frameworkId);
@@ -456,8 +419,6 @@ export class CompetenciesService implements OnModuleInit {
     return this.createFrameworkFromExport(doc, { shortName: `${original.shortName} (copy)`, idNumber: candidate });
   }
 
-  // --- liên kết khoá học / cm --------------------------------------------------------------
-
   private assertOutcome(outcome: string): RuleOutcome {
     if (!RULE_OUTCOMES.includes(outcome as RuleOutcome)) {
       throw new BadRequestException({ message: `Unknown ruleOutcome ${outcome} (expected complete | attach-evidence | nothing)`, code: 'competency.bad_ruleoutcome' });
@@ -465,9 +426,6 @@ export class CompetenciesService implements OnModuleInit {
     return outcome as RuleOutcome;
   }
 
-  /**
-   * Liên kết competency với khoá học + quy tắc tự cấp proficiency.
-   */
   async linkCourseCompetency(actorId: string, courseId: string, input: { competencyId: string; ruleOutcome: string }) {
     await this.courses.getCourse(courseId);
     await this.evaluator.requireCapability(actorId, 'competency:coursecompetencymanage', await this.courses.courseContextId(courseId));
@@ -475,17 +433,13 @@ export class CompetenciesService implements OnModuleInit {
     return this.repo.insertCourseLink({ courseId: courseId, competencyId: competencyRow.id, ruleOutcome: this.assertOutcome(input.ruleOutcome) });
   }
   /**
-   * Competency đã liên kết với khoá học (H14, rà soát #134): cấu trúc theo
-   * khoá chỉ mở cho người qua được cổng truy cập khoá như mọi đường đọc
-   * nội dung theo khoá khác.
+   * Competency đã liên kết với khoá học (H14, rà soát #134): cấu trúc theo khoá chỉ mở cho người qua được cổng truy cập
+   * khoá như mọi đường đọc nội dung theo khoá khác.
    */
   async listCourseCompetencies(actorId: string, courseId: string) {
     await this.courses.assertCourseAccess(actorId, courseId);
     return this.repo.listCourseLinks(courseId);
   }
-  /**
-   * Liên kết competency với course module.
-   */
   async linkModuleCompetency(actorId: string, cmId: string, input: { competencyId: string; ruleOutcome: string }) {
     const cm = await this.courses.getCm(cmId);
     await this.evaluator.requireCapability(actorId, 'competency:coursecompetencymanage', await this.courses.courseContextId(cm.course));
@@ -493,8 +447,7 @@ export class CompetenciesService implements OnModuleInit {
     return this.repo.insertModuleLink({ courseModuleId: cmId, competencyId: competencyRow.id, ruleOutcome: this.assertOutcome(input.ruleOutcome) });
   }
   /**
-   * Competency đã liên kết với module (H14, rà soát #134): qua cổng truy
-   * cập của khoá chứa module.
+   * Competency đã liên kết với module (H14, rà soát #134): qua cổng truy cập của khoá chứa module.
    */
   async listModuleCompetencies(actorId: string, cmId: string) {
     const cm = await this.courses.getCm(cmId);
@@ -502,11 +455,6 @@ export class CompetenciesService implements OnModuleInit {
     return this.repo.listModuleLinks(cmId);
   }
 
-  // --- user competency + evidence -------------------------------------------------------
-
-  /**
-   * Lấy hoặc tạo bản ghi năng lực của user cho một competency.
-   */
   async getOrCreateUsercomp(userId: string, competencyId: string, scope: { planId?: string; courseId?: string }): Promise<UsercompRow> {
     const planId = scope.planId ?? null;
     const courseId = scope.courseId ?? null;
@@ -515,29 +463,20 @@ export class CompetenciesService implements OnModuleInit {
     return this.repo.insertUsercomp({ userId: userId, competencyId: competencyId, planId, courseId });
   }
 
-  /**
-   * Lấy usercomp theo id.
-   */
   async getUsercomp(id: string): Promise<UsercompRow> {
     const row = await this.repo.getUsercomp(id);
     if (!row) throw new NotFoundException({ message: `User competency ${id} not found`, code: 'competency.usercomp_not_found' });
     return row;
   }
-  /**
-   * Usercomp của user.
-   */
   async listUsercompsForUser(userId: string): Promise<UsercompRow[]> {
     return this.repo.listUsercompsForUser(userId);
   }
 
   /**
-   * Cổng đọc hồ sơ năng lực của một user qua HTTP (H8, rà soát #134):
-   * chỉ chính chủ, hoặc người có `competency:usercompetencyreview` tại
-   * system — cùng cổng với workflow duyệt usercomp của module. KHÔNG
-   * dùng `competency:planview` làm cổng ở đây: registry cấp planview cho
-   * archetype `user` (mọi user đã đăng nhập) nên nó không phân biệt
-   * được ai với ai. Người ngoài nhận 403, không đọc được proficiency +
-   * nhận xét chấm của HS khác.
+   * Cổng đọc hồ sơ năng lực của một user qua HTTP (H8, rà soát #134): chỉ chính chủ, hoặc người có
+   * `competency:usercompetencyreview` tại system — cùng cổng với workflow duyệt usercomp của module. KHÔNG dùng
+   * `competency:planview` làm cổng ở đây: registry cấp planview cho archetype `user` (mọi user đã đăng nhập) nên nó
+   * không phân biệt được ai với ai. Người ngoài nhận 403, không đọc được proficiency + nhận xét chấm của HS khác.
    */
   private async assertCanViewUsercomps(actorId: string, targetUserId: string): Promise<void> {
     if (actorId === targetUserId) return;
@@ -546,16 +485,12 @@ export class CompetenciesService implements OnModuleInit {
     throw new ForbiddenException({ message: 'You cannot view the competency profile of another user', code: 'competency.usercomp_forbidden' });
   }
 
-  /** Danh sách usercomp của một user qua HTTP: qua cổng assertCanViewUsercomps (H8). */
   async listUsercompsForUserFor(actorId: string, userId: string): Promise<UsercompRow[]> {
     await this.assertCanViewUsercomps(actorId, userId);
     return this.repo.listUsercompsForUser(userId);
   }
 
   /** Facade cho BadgesModule: user này có đạt chuẩn competency này không (bất kỳ scope nào)? */
-  /**
-   * User đã đạt chuẩn competency hay chưa.
-   */
   async isProficient(userId: string, competencyId: string): Promise<boolean> {
     const rows = await this.repo.listUsercompsForUser(userId);
     return rows.some((r) => r.competencyId === competencyId && r.proficiency === true);
@@ -575,15 +510,10 @@ export class CompetenciesService implements OnModuleInit {
   }
 
   /**
-   * Gắn evidence vào competency của một user (oracle: api_test
-   * test_add_evidence_*). Một điểm trên evidence là INDEX CỦA SCALE: nó đặt
-   * proficiency theo scale của framework — nhưng chỉ khi actor được chấm
-   * (capability review, hoặc đường manager của plan/khoá học). Evidence do
-   * chính người học nộp được ghi MÀ KHÔNG có hiệu lực proficiency
-   * trừ khi sendForReview chuyển nó vào workflow review.
-   */
-  /**
-   * Thêm bằng chứng cho usercomp (có thể đồng thời gửi duyệt).
+   * Gắn evidence vào competency của một user (oracle: api_test test_add_evidence_*). Một điểm trên evidence là INDEX
+   * CỦA SCALE: nó đặt proficiency theo scale của framework — nhưng chỉ khi actor được chấm (capability review, hoặc
+   * đường manager của plan/khoá học). Evidence do chính người học nộp được ghi MÀ KHÔNG có hiệu lực proficiency trừ khi
+   * sendForReview chuyển nó vào workflow review.
    */
   async addEvidence(actorId: string, input: {
     userId: string; competencyId: string; planId?: string; courseId?: string;
@@ -632,22 +562,16 @@ export class CompetenciesService implements OnModuleInit {
     return { usercomp: await this.getUsercomp(usercomp.id), evidence };
   }
 
-  /**
-   * Bằng chứng của usercomp.
-   */
   async listEvidence(usercompId: string): Promise<EvidenceRow[]> {
     await this.getUsercomp(usercompId);
     return this.repo.listEvidence(usercompId);
   }
 
-  /** Bằng chứng của usercomp qua HTTP: qua cổng sở hữu/quyền như listUsercompsForUserFor (H8). */
   async listEvidenceFor(actorId: string, usercompId: string): Promise<EvidenceRow[]> {
     const usercomp = await this.getUsercomp(usercompId);
     await this.assertCanViewUsercomps(actorId, usercomp.userId);
     return this.repo.listEvidence(usercompId);
   }
-
-  // --- workflow review usercomp ---------------------------------------------------------
 
   private async transitionUsercompReview(actorId: string, usercompId: string, action: 'request' | 'start' | 'approve' | 'reject',
     opts?: { grade?: number; note?: string }): Promise<UsercompRow> {
@@ -710,35 +634,20 @@ export class CompetenciesService implements OnModuleInit {
     return this.getUsercomp(usercompId);
   }
 
-  /**
-   * Gửi usercomp đi duyệt.
-   */
   async requestUsercompReview(actorId: string, usercompId: string): Promise<UsercompRow> {
     return this.transitionUsercompReview(actorId, usercompId, 'request');
   }
-  /**
-   * Reviewer bắt đầu duyệt usercomp.
-   */
   async startUsercompReview(actorId: string, usercompId: string): Promise<UsercompRow> {
     return this.transitionUsercompReview(actorId, usercompId, 'start');
   }
-  /**
-   * Duyệt đạt: đặt proficiency theo thang của framework.
-   */
   async approveUsercompReview(actorId: string, usercompId: string, grade?: number, note?: string): Promise<UsercompRow> {
     return this.transitionUsercompReview(actorId, usercompId, 'approve', { grade, note });
   }
-  /**
-   * Từ chối duyệt usercomp.
-   */
   async rejectUsercompReview(actorId: string, usercompId: string, note?: string): Promise<UsercompRow> {
     return this.transitionUsercompReview(actorId, usercompId, 'reject', { note });
   }
 
   /** Chấm trực tiếp bởi một reviewer (oracle: test_add_evidence_complete / grade_competency_in_course). */
-  /**
-   * Chấm trực tiếp proficiency cho usercomp bởi người có capability.
-   */
   async gradeUsercomp(actorId: string, input: { userId: string; competencyId: string; planId?: string; courseId?: string; grade: number; note?: string }): Promise<UsercompRow> {
     await this.evaluator.requireCapability(actorId, 'competency:usercompetencyreview', await this.systemCtx());
     const framework = await this.validateGrade(input.competencyId, input.grade);
@@ -755,12 +664,7 @@ export class CompetenciesService implements OnModuleInit {
     return this.getUsercomp(usercomp.id);
   }
 
-  // --- rule outcome dẫn động bởi completion (hook đã đăng ký) --------------------------------
-
   /** Hoàn thành khoá học ⇒ áp ruleOutcome của từng competency đã liên kết trong scope COURSE. */
-  /**
-   * Hook hoàn thành khoá học: cấp proficiency cho competency liên kết có quy tắc tự động.
-   */
   async applyCourseCompletion(courseId: string, userId: string): Promise<void> {
     const links = await this.repo.listCourseLinks(courseId);
     for (const link of links) {
@@ -769,9 +673,6 @@ export class CompetenciesService implements OnModuleInit {
     }
   }
   /** Hoàn thành hoạt động ⇒ áp ruleOutcome của từng competency đã liên kết trong scope COURSE của khoá học chứa cm. */
-  /**
-   * Hook hoàn thành cm: cấp proficiency cho competency liên kết với module.
-   */
   async applyCmCompletion(cmId: string, userId: string): Promise<void> {
     const links = await this.repo.listModuleLinks(cmId);
     if (!links.length) return;
@@ -786,8 +687,7 @@ export class CompetenciesService implements OnModuleInit {
     outcome: RuleOutcome, description: string): Promise<void> {
     const usercomp = await this.getOrCreateUsercomp(userId, competencyId, scope);
     if (outcome === 'attach-evidence') {
-      // CHỈ evidence: proficiency không bị chạm — điểm/số điểm không bao giờ rò
-      // vào proficiency (report §2#15).
+            // CHỈ evidence: proficiency không bị chạm — điểm/số điểm không bao giờ rò vào proficiency (report §2#15).
       await this.repo.insertEvidence({
         userCompetencyId: usercomp.id, actionUserId: userId, action: 'course_completed',
         description, grade: null,
@@ -814,11 +714,6 @@ export class CompetenciesService implements OnModuleInit {
     }
   }
 
-  // --- template ---------------------------------------------------------------------------
-
-  /**
-   * Tạo template kế hoạch.
-   */
   async createTemplate(actorId: string, input: { shortName: string; description?: string; dueDate?: string }): Promise<TemplateRow> {
     await this.requireManage(actorId);
     return this.repo.insertTemplate({
@@ -826,21 +721,12 @@ export class CompetenciesService implements OnModuleInit {
       contextId: await this.systemCtx(), dueDate: input.dueDate ? new Date(input.dueDate) : null,
     });
   }
-  /**
-   * Lấy template; ném competencies.template_not_found khi vắng.
-   */
   async getTemplate(id: string): Promise<TemplateRow> {
     const row = await this.repo.getTemplate(id);
     if (!row) throw new NotFoundException({ message: `Template ${id} not found`, code: 'competency.template_not_found' });
     return row;
   }
-  /**
-   * Liệt kê template.
-   */
   async listTemplates(): Promise<TemplateRow[]> { return this.repo.listTemplates(); }
-  /**
-   * Thêm competency vào template.
-   */
   async addTemplateCompetency(actorId: string, templateId: string, competencyId: string): Promise<{ templateId: string; competencies: CompetencyRow[] }> {
     await this.requireManage(actorId);
     await this.getTemplate(templateId);
@@ -848,9 +734,6 @@ export class CompetenciesService implements OnModuleInit {
     await this.repo.addTemplateCompetency(templateId, competencyId);
     return { templateId, competencies: await this.repo.listTemplateCompetencies(templateId) };
   }
-  /**
-   * Gắn cohort vào template.
-   */
   async addTemplateCohort(actorId: string, templateId: string, cohortId: string): Promise<{ templateId: string; cohorts: string[] }> {
     await this.requireManage(actorId);
     await this.getTemplate(templateId);
@@ -896,11 +779,6 @@ export class CompetenciesService implements OnModuleInit {
     return plan;
   }
 
-  // --- plan ---------------------------------------------------------------------------------
-
-  /**
-   * Tạo plan thủ công cho user.
-   */
   async createPlan(actorId: string, input: { userId?: string; name: string; description?: string; templateId?: string }): Promise<PlanRow & { competencies: string[] }> {
     const userId = input.userId ?? actorId;
     if (userId !== actorId) {
@@ -943,9 +821,6 @@ export class CompetenciesService implements OnModuleInit {
     return { plan, competencies, reviews: await this.repo.listPlanReviews(planId) };
   }
 
-  /**
-   * Plan của user.
-   */
   async listPlansForUser(actorId: string, userId: string): Promise<PlanRow[]> {
     if (actorId !== userId) {
       await this.evaluator.requireCapability(actorId, 'competency:planview', await this.systemCtx());
@@ -1008,10 +883,9 @@ export class CompetenciesService implements OnModuleInit {
       await this.messaging.notify(plan.reviewerId, 'competency_review_requested', {
         subject: this.i18n.t('platform.planReviewRequestedSubject', { args: { name: plan.name } }),
         body: this.i18n.t('platform.planReviewRequestedBody', { args: { userId: plan.userId, planId: plan.id } }),
-        // Luật C-5 (issue #219): provider này thuộc diện tối thiểu
-        // hoá — bản kênh ngoài KHÔNG mang UUID nội bộ (userId/planId)
-        // như bản trong app, chỉ nêu có kế hoạch chờ duyệt + tên
-        // kế hoạch; chi tiết xem trong app sau đăng nhập.
+                // Luật C-5 (issue #219): provider này thuộc diện tối thiểu hoá — bản kênh ngoài KHÔNG mang UUID nội bộ
+        // (userId/planId) như bản trong app, chỉ nêu có kế hoạch chờ duyệt + tên kế hoạch; chi tiết xem trong app sau
+        // đăng nhập.
         externalSubject: this.i18n.t('platform.planReviewRequestedSubject', { args: { name: plan.name } }),
         externalBody: this.i18n.t('platform.planReviewRequestedExternalBody', { args: { name: plan.name } }),
         contextUrl: `/competencies/plans/${plan.id}`,
@@ -1024,43 +898,16 @@ export class CompetenciesService implements OnModuleInit {
     return (await this.repo.getPlan(planId))!;
   }
 
-  /**
-   * Kích hoạt plan (draft → active).
-   */
   async activatePlan(actorId: string, planId: string): Promise<PlanRow> { return this.planTransition(actorId, planId, 'activate'); }
-  /**
-   * Gửi plan đi duyệt (notification nội dung lấy từ catalog i18n).
-   */
   async requestPlanReview(actorId: string, planId: string): Promise<PlanRow> { return this.planTransition(actorId, planId, 'request-review'); }
-  /**
-   * Huỷ yêu cầu duyệt plan.
-   */
   async cancelPlanReview(actorId: string, planId: string): Promise<PlanRow> { return this.planTransition(actorId, planId, 'cancel-review'); }
-  /**
-   * Reviewer bắt đầu duyệt plan.
-   */
   async startPlanReview(actorId: string, planId: string): Promise<PlanRow> { return this.planTransition(actorId, planId, 'start-review'); }
-  /**
-   * Dừng vòng duyệt plan.
-   */
   async stopPlanReview(actorId: string, planId: string): Promise<PlanRow> { return this.planTransition(actorId, planId, 'stop-review'); }
-  /**
-   * Duyệt plan.
-   */
   async approvePlan(actorId: string, planId: string): Promise<PlanRow> { return this.planTransition(actorId, planId, 'approve'); }
-  /**
-   * Gỡ duyệt plan.
-   */
   async unapprovePlan(actorId: string, planId: string): Promise<PlanRow> { return this.planTransition(actorId, planId, 'unapprove'); }
-  /**
-   * Hoàn tất plan.
-   */
   async completePlan(actorId: string, planId: string): Promise<PlanRow> { return this.planTransition(actorId, planId, 'complete'); }
 
   /** Cổng cấm import: chủ plan không được review plan của chính mình. */
-  /**
-   * Chặn tự duyệt: reviewer phải khác chủ plan/usercomp.
-   */
   async assertNotSelfReview(actorId: string, userId: string): Promise<void> {
     if (actorId === userId) throw new ForbiddenException({ message: 'You cannot review your own competencies', code: 'competency.self_review' });
   }

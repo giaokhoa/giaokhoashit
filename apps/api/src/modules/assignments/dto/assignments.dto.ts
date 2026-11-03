@@ -19,11 +19,6 @@ import {
   type UpsertAssignRubric,
 } from '@lms/contracts';
 
-/**
- * Validation của Bài tập nộp tệp/ảnh dùng Zod qua Standard Schema —
- * schema nền ở `@lms/contracts` là nguồn sự thật duy nhất (giống các
- * module khác).
- */
 export {
   createAssignAnnotationSchema,
   createAssignFeedbackMessageSchema,

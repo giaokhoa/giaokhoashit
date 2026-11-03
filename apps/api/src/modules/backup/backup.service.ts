@@ -18,11 +18,9 @@ import type {
 } from './backup-archive.types';
 
 /**
- * Danh sách cột tường minh có bí danh camelCase cho các bảng mà các
- * contributor tích hợp sẵn đọc/ghi (chuyển Kysely, issue #648): dòng
- * đọc ra giữ đúng hình dạng camelCase của archive như khi còn đọc
- * qua bộ máy cũ; insert/update viết bằng tên cột snake_case của
- * database. Kiểu dòng tương ứng nằm ở `backup-archive.types.ts`.
+ * Danh sách cột tường minh có bí danh camelCase cho các bảng mà các contributor tích hợp sẵn đọc/ghi (chuyển Kysely,
+ * issue #648): dòng đọc ra giữ đúng hình dạng camelCase của archive như khi còn đọc qua bộ máy cũ; insert/update viết
+ * bằng tên cột snake_case của database. Kiểu dòng tương ứng nằm ở `backup-archive.types.ts`.
  */
 const COURSE_COLUMNS = [
   'id', 'tenant_id as tenantId', 'category', 'full_name as fullName', 'short_name as shortName', 'id_number as idNumber',
@@ -159,14 +157,11 @@ const CALENDAR_SUBSCRIPTIONS_COLUMNS = [
   'user_id as userId', 'poll_interval as pollInterval', 'last_updated as lastUpdated', 'created_at as createdAt',
 ] as const;
 
-/** Kiểu jsonb của cột `badge_criteria.params` theo schema codegen của package @lms/db. */
 type BadgeCriteriaParams = Selectable<CentreDB['badge_criteria']>['params'];
 
 /**
- * Bọc `params` của một tiêu chí badge thành biểu thức jsonb tường
- * minh (serialize + `::jsonb`) — cùng khuôn jsonbValue của các
- * repository ở package: giá trị là một object ở cấp cao nhất nên
- * không gắn tham số trực tiếp qua driver.
+ * Bọc `params` của một tiêu chí badge thành biểu thức jsonb tường minh (serialize + `::jsonb`) — cùng khuôn jsonbValue
+ * của các repository ở package: giá trị là một object ở cấp cao nhất nên không gắn tham số trực tiếp qua driver.
  */
 function badgeCriteriaParamsJsonb(value: Record<string, unknown>): RawBuilder<BadgeCriteriaParams> {
   return sql<BadgeCriteriaParams>`${JSON.stringify(value)}::jsonb`;
@@ -183,12 +178,10 @@ export interface RestoreMapping {
 }
 
 /**
- * Một BackupContributor đăng ký đảo ngược (§3.12): export phần dữ liệu của
- * mình theo course và import với id-mapping. BackupService không import
- * service của module khác để lấy dữ liệu — contributor tự biết bảng của mình.
- * `courseId = null` nghĩa là phạm vi SITE (sao lưu mức hệ thống): chỉ các
- * contributor có `supportsSite = true` mới tham gia job site; các contributor
- * chỉ-mức-khoá bị bỏ qua ở cả export lẫn import của job site.
+ * Một BackupContributor đăng ký đảo ngược (§3.12): export phần dữ liệu của mình theo course và import với id-mapping.
+ * BackupService không import service của module khác để lấy dữ liệu — contributor tự biết bảng của mình.
+ * `courseId = null` nghĩa là phạm vi SITE (sao lưu mức hệ thống): chỉ các contributor có `supportsSite = true` mới tham
+ * gia job site; các contributor chỉ-mức-khoá bị bỏ qua ở cả export lẫn import của job site.
  */
 export interface BackupContributor {
   name: string;
@@ -196,23 +189,18 @@ export interface BackupContributor {
   supportsSite?: boolean;
   export(courseId: string | null, anonymize: boolean): Promise<unknown>;
   /**
-   * Import dữ liệu của contributor vào khoá đích. Trả về tuỳ chọn
-   * `detail` để runner ghi vào chi tiết của bước (step) trong job
-   * restore — kênh ghi nhận chính thức của restore (vd contributor
-   * `enrol` báo số ghi danh bị bỏ qua vì chốt tách vai); không trả gì
-   * thì bước được ghi hoàn tất không kèm chi tiết như trước.
+   * Import dữ liệu của contributor vào khoá đích. Trả về tuỳ chọn `detail` để runner ghi vào chi tiết của bước (step)
+   * trong job restore — kênh ghi nhận chính thức của restore (vd contributor `enrol` báo số ghi danh bị bỏ qua vì chốt
+   * tách vai); không trả gì thì bước được ghi hoàn tất không kèm chi tiết như trước.
    */
   import(targetCourseId: string | null, data: never, mapping: RestoreMapping, actorId: string): Promise<{ detail?: Record<string, unknown> } | void>;
 }
 
 /**
- * Viết lại các tham chiếu id trong `params` của một lá tiêu chí badge qua
- * id-mapping của job restore: `courseId` → khoá mới, `cmId` → cm mới,
- * `competencyId` → năng lực mới (chỉ khi có mapping — năng lực là thực thể
- * mức site dùng chung, không nằm trong archive nên thường giữ nguyên),
- * `badgeId` → badge mới (khi badge được tham chiếu cũng nằm trong cùng
- * archive). Các khoá khác (cohortId/cohortIds/roleId/field/byDate…) là
- * tham chiếu mức site dùng chung nên giữ nguyên.
+ * Viết lại các tham chiếu id trong `params` của một lá tiêu chí badge qua id-mapping của job restore: `courseId` → khoá
+ * mới, `cmId` → cm mới, `competencyId` → năng lực mới (chỉ khi có mapping — năng lực là thực thể mức site dùng chung,
+ * không nằm trong archive nên thường giữ nguyên), `badgeId` → badge mới (khi badge được tham chiếu cũng nằm trong cùng
+ * archive). Các khoá khác (cohortId/cohortIds/roleId/field/byDate…) là tham chiếu mức site dùng chung nên giữ nguyên.
  */
 export function remapBadgeCriteriaParams(
   params: unknown,
@@ -235,9 +223,8 @@ export function remapBadgeCriteriaParams(
 }
 
 /**
- * Facade của BackupModule (Moodle core_backup, §2#22).
- * Backup là một kế hoạch nhiều bước theo contributor; restore map lại mọi id
- * qua backup_id_mappings — không bao giờ giữ id gốc. Ba chế độ: new/merge/replace.
+ * Facade của BackupModule (Moodle core_backup, §2#22). Backup là một kế hoạch nhiều bước theo contributor; restore map
+ * lại mọi id qua backup_id_mappings — không bao giờ giữ id gốc. Ba chế độ: new/merge/replace.
  */
 @Injectable()
 export class BackupService {
@@ -261,7 +248,6 @@ export class BackupService {
 
   private registerBuiltinContributors(): void {
     const db = this.repo.dbHandle;
-    // --- courses/sections/cm -------------------------------------------------
     this.registerContributor({
       name: 'courses',
       export: async (courseId) => {
@@ -294,7 +280,6 @@ export class BackupService {
         }
       },
     });
-    // --- enrol ---------------------------------------------------------------
     this.registerContributor({
       name: 'enrol',
       export: async (courseId, anonymize) => {
@@ -324,15 +309,11 @@ export class BackupService {
           const newInstance = mapping.get('enrol', ue.enrolId);
           if (!newInstance) continue;
           const inst = d.instances.find((i) => i.id === ue.enrolId);
-          // Chốt TÁCH VAI — funnel 3 (RoleSeparationService giữ định
-          // nghĩa dùng chung): contributor này ghi thẳng ghi danh nên
-          // không đi qua funnel 1/2. Một ghi danh khôi phục sẽ ở trạng
-          // thái ĐANG HOẠT ĐỘNG, qua instance cấp vai học viên, cho
-          // người đã có cấp quyền giảng dạy bao phủ chính khoá ĐÍCH
-          // là lẫn vai cùng khoá — BỎ QUA riêng ghi danh đó (không
-          // tạo bản ghi, không gán vai) và ĐẾM để báo vào chi tiết
-          // bước restore; các ghi danh còn lại khôi phục bình thường,
-          // một ghi danh vi phạm không làm hỏng toàn bộ lượt restore.
+                    // Chốt TÁCH VAI — funnel 3 (RoleSeparationService giữ định nghĩa dùng chung): contributor này ghi thẳng ghi
+          // danh nên không đi qua funnel 1/2. Một ghi danh khôi phục sẽ ở trạng thái ĐANG HOẠT ĐỘNG, qua instance cấp
+          // vai học viên, cho người đã có cấp quyền giảng dạy bao phủ chính khoá ĐÍCH là lẫn vai cùng khoá — BỎ QUA
+          // riêng ghi danh đó (không tạo bản ghi, không gán vai) và ĐẾM để báo vào chi tiết bước restore; các ghi danh
+          // còn lại khôi phục bình thường, một ghi danh vi phạm không làm hỏng toàn bộ lượt restore.
           if (
             ue.status === 0
             && inst
@@ -346,16 +327,14 @@ export class BackupService {
             enrol_id: newInstance, user_id: ue.userId, status: ue.status, time_start: ue.timeStart, time_end: ue.timeEnd,
           }).onConflict((oc) => oc.doNothing()).returning(USER_ENROLMENTS_COLUMNS).execute();
           if (ueRow) await mapping.map('user_enrolment', ue.id, ueRow.id);
-          // Ghi danh khôi phục vẫn là gán do enrol cấp: mang truy vết của
-          // instance MỚI ở khoá đích để unenrol sau này gỡ đúng dòng này
-          // (issue #157).
+                    // Ghi danh khôi phục vẫn là gán do enrol cấp: mang truy vết của instance MỚI ở khoá đích để unenrol sau này
+          // gỡ đúng dòng này (issue #157).
           if (inst?.roleId) await this.roles.assignRole(ue.userId, inst.roleId, targetCtx, undefined, { component: ENROL_ASSIGNMENT_COMPONENT, itemId: newInstance }).catch(() => undefined);
         }
         if (skippedRoleConflicts > 0) return { detail: { skippedRoleConflictEnrolments: skippedRoleConflicts } };
         return undefined;
       },
     });
-    // --- groups ---------------------------------------------------------------
     this.registerContributor({
       name: 'groups',
       export: async (courseId) => {
@@ -406,10 +385,9 @@ export class BackupService {
       },
       import: async (targetCourseId, data, mapping) => {
         if (!targetCourseId) return;
-        // Bản backup cũ có thể mang trường categories/item loại
-        // category/course của gradebook tổng hợp đã gỡ (issue #224) —
-        // các phần đó bị BỎ QUA khi khôi phục, chỉ item điểm theo bài
-        // (manual/mod) và điểm của chúng được khôi phục.
+                // Bản backup cũ có thể mang trường categories/item loại category/course của gradebook tổng hợp đã gỡ (issue
+        // #224) — các phần đó bị BỎ QUA khi khôi phục, chỉ item điểm theo bài (manual/mod) và điểm của chúng được khôi
+        // phục.
         const d = data as {
           items: GradeItemsRow[]; grades: GradeGradesRow[];
         };
@@ -440,7 +418,6 @@ export class BackupService {
         }
       },
     });
-    // --- completion -------------------------------------------------------------
     this.registerContributor({
       name: 'completion',
       export: async (courseId, anonymize) => {
@@ -464,8 +441,7 @@ export class BackupService {
           settings: CourseCompletionSettingsRow | null;
         };
         if (d.settings) {
-          // Chốt giá trị trước khi vào callback onConflict: thu hẹp
-          // kiểu của `d.settings` không giữ qua biên closure.
+                    // Chốt giá trị trước khi vào callback onConflict: thu hẹp kiểu của `d.settings` không giữ qua biên closure.
           const settingsMethod = d.settings.method;
           await db.insertInto('course_completion_settings').values({ course: targetCourseId, method: settingsMethod })
             .onConflict((oc) => oc.column('course').doUpdateSet({ method: settingsMethod })).execute();
@@ -505,7 +481,6 @@ export class BackupService {
         }
       },
     });
-    // --- files (theo contentHash) -------------------------------------------------
     this.registerContributor({
       name: 'files',
       export: async (courseId) => {
@@ -551,12 +526,10 @@ export class BackupService {
         }
       },
     });
-    // --- ngân hàng câu hỏi ---------------------------------------------------------
-    // Ngân hàng câu hỏi bám theo CONTEXT (bản model hiện hữu): category của
-    // khoá nằm ở context của khoá (level 50), category mức site nằm ở context
-    // hệ thống (level 10). Export cây category + question + bank entry + MỌI
-    // version. KHÔNG export question_usages / question_attempts / steps:
-    // đó là dữ liệu vận hành (lượt làm bài) chứ không phải nội dung bank.
+        // Ngân hàng câu hỏi bám theo CONTEXT (bản model hiện hữu): category của khoá nằm ở context của khoá (level 50),
+    // category mức site nằm ở context hệ thống (level 10). Export cây category + question + bank entry + MỌI version.
+    // KHÔNG export question_usages / question_attempts / steps: đó là dữ liệu vận hành (lượt làm bài) chứ không phải
+    // nội dung bank.
     this.registerContributor({
       name: 'questions',
       supportsSite: true,
@@ -572,9 +545,8 @@ export class BackupService {
         const entryIds = entries.map((e) => e.id);
         const versions = entryIds.length ? await db.selectFrom('question_versions').select(QUESTION_VERSIONS_COLUMNS).where('question_bank_entry_id', 'in', entryIds).execute() : [];
         const versionIds = versions.map((v) => v.id);
-        // Nội dung chấm của version (answers + options từng qtype) và ngữ
-        // liệu của category đi cùng archive — thiếu chúng thì bản restore
-        // mất toàn bộ dữ liệu chấm.
+                // Nội dung chấm của version (answers + options từng qtype) và ngữ liệu của category đi cùng archive — thiếu
+        // chúng thì bản restore mất toàn bộ dữ liệu chấm.
         const stimuliRows = catIds.length ? await db.selectFrom('stimuli').select(STIMULI_COLUMNS).where('category_id', 'in', catIds).execute() : [];
         const answers = versionIds.length ? await db.selectFrom('question_answers').select(QUESTION_ANSWERS_COLUMNS).where('question_version_id', 'in', versionIds).execute() : [];
         // Bản ghi phía đáp án (guidance + solution) của từng version —
@@ -716,11 +688,9 @@ export class BackupService {
         }
       },
     });
-    // --- badges ------------------------------------------------------------------
-    // Định nghĩa badge của khoá (type=2) hoặc mức site (type=1) + toàn bộ
-    // criteria; params của criteria được viết lại qua mapping (xem
-    // remapBadgeCriteriaParams). KHÔNG export badge_issued (lượt đã cấp —
-    // assertion là bằng chứng lịch sử của khoá gốc) và badge_manual_award.
+        // Định nghĩa badge của khoá (type=2) hoặc mức site (type=1) + toàn bộ criteria; params của criteria được viết lại
+    // qua mapping (xem remapBadgeCriteriaParams). KHÔNG export badge_issued (lượt đã cấp — assertion là bằng chứng lịch
+    // sử của khoá gốc) và badge_manual_award.
     this.registerContributor({
       name: 'badges',
       supportsSite: true,
@@ -733,8 +703,7 @@ export class BackupService {
       },
       import: async (targetCourseId, data, mapping, actorId) => {
         const d = data as { badges: BadgeRow[]; criteria: BadgeCriteriaRow[] };
-        // Pha 1: tạo badge trước để tiêu chí `badge` tham chiếu chéo trong
-        // cùng archive tra được mapping ở pha 2.
+                // Pha 1: tạo badge trước để tiêu chí `badge` tham chiếu chéo trong cùng archive tra được mapping ở pha 2.
         for (const b of d.badges ?? []) {
           const [row] = await db.insertInto('badge').values({
             name: b.name, description: b.description, type: targetCourseId ? 2 : b.type,
@@ -757,11 +726,9 @@ export class BackupService {
         }
       },
     });
-    // --- calendar ------------------------------------------------------------------
-    // Sự kiện mức khoá (course + group; group được map qua contributor groups
-    // chạy trước) và subscription của khoá; ở phạm vi site là sự kiện
-    // eventType='site' + subscription mức site. Chuỗi lặp: repeatId /
-    // exceptionOf được nối lại ở pha 2 sau khi mọi sự kiện đã có id mới.
+        // Sự kiện mức khoá (course + group; group được map qua contributor groups chạy trước) và subscription của khoá; ở
+    // phạm vi site là sự kiện eventType='site' + subscription mức site. Chuỗi lặp: repeatId / exceptionOf được nối lại
+    // ở pha 2 sau khi mọi sự kiện đã có id mới.
     this.registerContributor({
       name: 'calendar',
       supportsSite: true,
@@ -823,11 +790,9 @@ export class BackupService {
   }
 
   /**
-   * Cổng đọc job (H7, rà soát #134): các đường đọc job/steps/mappings/
-   * checklist trước đây không gác gì trong khi create/restore đã đòi
-   * capability — nay người đọc phải có `backup:backupcourse` hoặc
-   * `backup:restorecourse` tại context của khoá thuộc job (job site-scope
-   * thì tại context hệ thống), đúng khuôn hai đường ghi.
+   * Cổng đọc job (H7, rà soát #134): các đường đọc job/steps/mappings/ checklist trước đây không gác gì trong khi
+   * create/restore đã đòi capability — nay người đọc phải có `backup:backupcourse` hoặc `backup:restorecourse` tại
+   * context của khoá thuộc job (job site-scope thì tại context hệ thống), đúng khuôn hai đường ghi.
    */
   private async jobReadContextId(job: JobRow): Promise<string> {
     if (job.scope === 'course' && job.courseId) return this.courses.courseContextId(job.courseId);
@@ -865,11 +830,9 @@ export class BackupService {
   }
 
   /**
-   * Tạo và chạy backup job (API twin của worker processor): ghi bước cho từng
-   * contributor. Phạm vi `course` cần `courseId`; phạm vi `site` sao lưu mức
-   * hệ thống (courseId = null, chỉ các contributor `supportsSite` tham gia —
-   * question bank mức site, badge mức site, calendar mức site) và kiểm tra
-   * capability tại context hệ thống.
+   * Tạo và chạy backup job (API twin của worker processor): ghi bước cho từng contributor. Phạm vi `course` cần
+   * `courseId`; phạm vi `site` sao lưu mức hệ thống (courseId = null, chỉ các contributor `supportsSite` tham gia —
+   * question bank mức site, badge mức site, calendar mức site) và kiểm tra capability tại context hệ thống.
    */
   async createBackup(actorId: string, courseId: string | null, anonymize = false, scope: 'course' | 'site' = 'course'): Promise<JobRow> {
     if (scope === 'site' && courseId) {
@@ -913,29 +876,23 @@ export class BackupService {
   }
 
   /**
-   * Tạo và chạy restore job với 3 chế độ tường minh. Backup mức SITE chỉ
-   * khôi phục ở chế độ `new` (tạo dữ liệu mức site MỚI, không có khoá đích):
-   * merge/replace/khoá đích đều bị từ chối vì không có course đích để gộp.
-   * Trước mọi xử lý, người gọi phải qua cổng đọc tại khoá NGUỒN của job
-   * backup (cùng cổng `assertJobReadable` với các đường đọc) — restore là
-   * đường chép dữ kiện khoá nên không được nhẹ cổng hơn đường đọc.
+   * Tạo và chạy restore job với 3 chế độ tường minh. Backup mức SITE chỉ khôi phục ở chế độ `new` (tạo dữ liệu mức site
+   * MỚI, không có khoá đích): merge/replace/khoá đích đều bị từ chối vì không có course đích để gộp. Trước mọi xử lý,
+   * người gọi phải qua cổng đọc tại khoá NGUỒN của job backup (cùng cổng `assertJobReadable` với các đường đọc) —
+   * restore là đường chép dữ kiện khoá nên không được nhẹ cổng hơn đường đọc.
    */
   async restore(actorId: string, backupJobId: string, mode: 'new' | 'merge' | 'replace', targetCourseId?: string): Promise<JobRow> {
     const backup = await this.getJob(backupJobId);
     if (backup.type !== 'backup' || backup.status !== 'completed' || !backup.archive) {
       throw new BadRequestException({ message: 'Backup job is not a completed backup', code: 'backup.not_completed' });
     }
-    // Cổng đọc tại NGUỒN: mọi đường chép dữ kiện khoá phải qua cùng cổng
-    // đọc tại nguồn như các đường đọc — người gọi phải có
-    // `backup:backupcourse` hoặc `backup:restorecourse` tại context của
-    // khoá thuộc job (job site thì tại context hệ thống, nơi đường
-    // restore site vốn đã đòi `restorecourse` nên hành vi site không
-    // đổi). Biết ID của job không đồng nghĩa có quyền trên dữ kiện của
-    // job. Kiểm này chạy TRƯỚC mọi xử lý archive và trước mọi kiểm tra
-    // phía đích để phủ cả 3 chế độ merge/new/replace: nếu chỉ kiểm phía
-    // đích, ai có quyền khôi phục ở khoá của mình cũng chép được toàn bộ
-    // dữ kiện (ngân hàng câu hỏi kèm đáp án/lời giải, điểm, ghi danh,
-    // tệp) của khoá bất kỳ — kể cả khoá của tenant khác — chỉ bằng ID.
+        // Cổng đọc tại NGUỒN: mọi đường chép dữ kiện khoá phải qua cùng cổng đọc tại nguồn như các đường đọc — người gọi
+    // phải có `backup:backupcourse` hoặc `backup:restorecourse` tại context của khoá thuộc job (job site thì tại
+    // context hệ thống, nơi đường restore site vốn đã đòi `restorecourse` nên hành vi site không đổi). Biết ID của job
+    // không đồng nghĩa có quyền trên dữ kiện của job. Kiểm này chạy TRƯỚC mọi xử lý archive và trước mọi kiểm tra phía
+    // đích để phủ cả 3 chế độ merge/new/replace: nếu chỉ kiểm phía đích, ai có quyền khôi phục ở khoá của mình cũng
+    // chép được toàn bộ dữ kiện (ngân hàng câu hỏi kèm đáp án/lời giải, điểm, ghi danh, tệp) của khoá bất kỳ — kể cả
+    // khoá của tenant khác — chỉ bằng ID.
     await this.assertJobReadable(actorId, backup);
     const archive = backup.archive as {
       format: string; version: number; scope?: string;
@@ -1046,11 +1003,10 @@ export class BackupService {
   }
 
   /**
-   * Checklist tương đương giữa course nguồn và course đích của một restore job.
-   * Với restore mức SITE không có khoá đích: phía đích sống CÙNG không gian
-   * với phía nguồn (cùng context hệ thống) nên không đếm trực tiếp được —
-   * `target` là số bản ghi MỚI mà job đã tạo theo từng itemType trong
-   * backup_id_mappings, `source` là tổng hiện có trừ đi phần mới tạo đó.
+   * Checklist tương đương giữa course nguồn và course đích của một restore job. Với restore mức SITE không có khoá
+   * đích: phía đích sống CÙNG không gian với phía nguồn (cùng context hệ thống) nên không đếm trực tiếp được — `target`
+   * là số bản ghi MỚI mà job đã tạo theo từng itemType trong backup_id_mappings, `source` là tổng hiện có trừ đi phần
+   * mới tạo đó.
    */
   async restoreChecklist(actorId: string, restoreJobId: string): Promise<Record<string, { source: number; target: number }>> {
     const job = await this.getJob(restoreJobId);

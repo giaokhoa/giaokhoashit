@@ -7,15 +7,12 @@ import { TotpService } from './totp.service';
 /**
  * Cổng tái xác thực khi setup lại TOTP trên một factor ĐANG BẬT.
  *
- * Luật nghiệp vụ: `setup` ghi đè secret và đưa bản ghi về chưa xác nhận,
- * mà cổng đăng nhập chỉ nhìn cờ `confirmed` — nên ghi đè vô điều kiện
- * trên factor đang bật đồng nghĩa tắt MFA ngay lập tức và làm
- * authenticator hiện tại thành vô dụng, chỉ với một phiên đăng nhập sẵn
- * có. Các ca ở đây ghim luật: factor đang bật thì setup lại bắt buộc mã
- * TOTP hiện tại đúng (cùng khuôn với luồng tắt MFA); thiếu/sai mã thì bị
- * từ chối và factor cũ nguyên vẹn; chưa có factor đang bật (lần đầu,
- * hoặc đang chờ xác nhận) thì setup vẫn tự do như luồng thường. Luồng
- * HTTP trọn đường được kiểm ở e2e của luồng auth.
+ * Luật nghiệp vụ: `setup` ghi đè secret và đưa bản ghi về chưa xác nhận, mà cổng đăng nhập chỉ nhìn cờ `confirmed` —
+ * nên ghi đè vô điều kiện trên factor đang bật đồng nghĩa tắt MFA ngay lập tức và làm authenticator hiện tại thành vô
+ * dụng, chỉ với một phiên đăng nhập sẵn có. Các ca ở đây ghim luật: factor đang bật thì setup lại bắt buộc mã TOTP hiện
+ * tại đúng (cùng khuôn với luồng tắt MFA); thiếu/sai mã thì bị từ chối và factor cũ nguyên vẹn; chưa có factor đang bật
+ * (lần đầu, hoặc đang chờ xác nhận) thì setup vẫn tự do như luồng thường. Luồng HTTP trọn đường được kiểm ở e2e của
+ * luồng auth.
  */
 
 const USER_ID = '01900000-0000-7000-8000-0000000000aa';
@@ -67,7 +64,6 @@ async function wrongCode(secret: string): Promise<string> {
   throw new Error('no wrong-code candidate available');
 }
 
-/** Bắt lỗi ném ra và đọc mã lỗi ProblemDetails trong thân lỗi. */
 async function thrownErrorCode(run: () => Promise<unknown>): Promise<string | undefined> {
   try {
     await run();
@@ -115,8 +111,7 @@ describe('Cổng tái xác thực khi thiết lập TotpService', () => {
     const code = await thrownErrorCode(() => service.setup(USER_ID, USERNAME));
 
     expect(code).toBe('auth.mfa_reauth_required');
-    // Factor cũ nguyên vẹn: cùng bản ghi đã mã hoá, vẫn đang bật, mã của
-    // authenticator hiện tại vẫn kiểm chứng được.
+        // Factor cũ nguyên vẹn: cùng bản ghi đã mã hoá, vẫn đang bật, mã của authenticator hiện tại vẫn kiểm chứng được.
     expect(storedRow()).toEqual(before);
     expect(await service.isEnabled(USER_ID)).toBe(true);
     expect(await service.verifyForUser(USER_ID, await currentCode(activeSecret))).toBe(true);
@@ -147,7 +142,6 @@ describe('Cổng tái xác thực khi thiết lập TotpService', () => {
     // confirm bằng mã của secret mới, đúng luồng setup thường.
     expect(storedRow()?.confirmed).toBe(false);
     expect(await service.isEnabled(USER_ID)).toBe(false);
-    // Authenticator cũ không còn giá trị; confirm bằng secret mới bật lại MFA.
     expect(await service.verifyForUser(USER_ID, await currentCode(activeSecret))).toBe(false);
     await service.confirm(USER_ID, await currentCode(replacement.secret));
     expect(await service.isEnabled(USER_ID)).toBe(true);

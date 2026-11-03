@@ -30,5 +30,4 @@ import { BookService } from './books.service';
   ],
   exports: [BookService],
 })
-/** Module sách: thực thể sách độc lập, cây mục lục, ánh xạ chương trình, nạp dataset sách đã kiểm chứng. */
 export class BooksModule {}

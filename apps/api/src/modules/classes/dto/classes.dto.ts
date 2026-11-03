@@ -15,10 +15,6 @@ import {
   type UpdateClass,
 } from '@lms/contracts';
 
-/**
- * Validation của module Classes dùng Zod qua Standard Schema — schema
- * nền ở `@lms/contracts` là nguồn sự thật duy nhất (khuôn Tenants).
- */
 export {
   addClassRosterMemberSchema,
   createClassSchema,

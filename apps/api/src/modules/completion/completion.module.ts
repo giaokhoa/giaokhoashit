@@ -35,5 +35,4 @@ import { COMPLETION_QUEUE, CompletionService } from './completion.service';
   ],
   exports: [CompletionService],
 })
-/** Module theo dõi hoàn thành. */
 export class CompletionModule {}

@@ -2,12 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { evaluateTree, leafFromMap, parseAvailabilityTree, type AvailabilityNode } from './availability-tree';
 
 /**
- * Các test availability dạng GOLDEN.
- * Oracle: Moodle availability/tests/tree_test.php ::test_check_available
- * (MOODLE_503_STABLE, public/availability/tests/tree_test.php) — các điều kiện mock
- * ở đó (a=true/false, m=message) trở thành các lá được khoá theo `id`
- * tại đây; các assertion về availability + khả năng hiển thị thông tin đi theo
- * đúng thứ tự kịch bản gốc.
+ * Các test availability dạng GOLDEN. Oracle: Moodle availability/tests/tree_test.php ::test_check_available
+ * (MOODLE_503_STABLE, public/availability/tests/tree_test.php) — các điều kiện mock ở đó (a=true/false, m=message) trở
+ * thành các lá được khoá theo `id` tại đây; các assertion về availability + khả năng hiển thị thông tin đi theo đúng
+ * thứ tự kịch bản gốc.
  */
 const ev = (tree: AvailabilityNode, values: Record<string, boolean>) =>
   evaluateTree(tree, leafFromMap(values, { a: 'A', b: 'B', c1: 'C1' }));
@@ -73,9 +71,8 @@ describe('AvailabilityTree chuẩn (tree_test.php::test_check_available)', () =>
   });
 
   it('lồng nhau: gốc NOT-AND chứa một NOT-AND lồng (ca NOT lồng của Moodle)', async () => {
-    // tree_test: op ngoài là !& (mang sang từ ca trước), nút con là một
-    // cây !& lồng nhau với một điều kiện đúng: trong = !(true) = false,
-    // ngoài = !(false) = true. Khi lá là false: trong=true, ngoài=false.
+        // tree_test: op ngoài là !& (mang sang từ ca trước), nút con là một cây !& lồng nhau với một điều kiện đúng: trong
+    // = !(true) = false, ngoài = !(false) = true. Khi lá là false: trong=true, ngoài=false.
     const tree: AvailabilityNode = { op: '!&', show: true, c: [{ op: '!&', c: [{ type: 'mock', id: 'a' }] }] };
     expect((await ev(tree, { a: true })).available).toBe(true);
     expect((await ev(tree, { a: false })).available).toBe(false);
@@ -102,7 +99,6 @@ describe('AvailabilityTree chuẩn (tree_test.php::test_check_available)', () =>
       c: [{ op: '&', showc: [true, true], c: [{ type: 'completion', id: 'comp' }, { type: 'group', id: 'grp' }] }],
     };
     const cases: [boolean, boolean, boolean][] = [
-      // comp, grp, khả dụng kỳ vọng
       [false, false, true],
       [true, false, true],
       [false, true, true],

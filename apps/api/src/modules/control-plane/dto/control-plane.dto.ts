@@ -11,10 +11,6 @@ import {
   type UpdateSpaceSchemaRegistry,
 } from '@lms/contracts';
 
-/**
- * Validation của module Control Plane dùng Zod qua Standard Schema —
- * schema nền ở `@lms/contracts` là nguồn sự thật duy nhất.
- */
 export {
   changeSpaceStatusSchema,
   createSpaceRegistrationSchema,
