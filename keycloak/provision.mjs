@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 // Bộ cấp phát realm Keycloak từ mẫu cấu hình trong keycloak/templates/.
 //
-// Việc này (issue #6) đưa realm/client/role/flow của Keycloak 26.8.1
-// vào repo dưới dạng mẫu JSON có kiểm chứng + bộ cấp phát chạy lại
-// được: chạy lần đầu tạo realm từ môi trường trống; chạy lại không
-// tạo trùng, không ghi đè bí mật đang có bằng giá trị rỗng, và khôi
-// phục các trường cấu hình bị lệch khỏi mẫu (scalar realm, role,
-// client, scope). Flow xác thực là phần nhạy cảm: bộ cấp phát chỉ
-// tạo flow khi realm được tạo mới (đi cùng bản import realm) hoặc
-// khi flow còn thiếu hẳn; nếu flow đã có mà lệch mẫu, bộ cấp phát
-// BÁO LỖI rõ ràng thay vì tự viết lại flow đang chạy.
+// Việc này (issue #31) cấp đúng MỘT realm duy nhất tên "giaokhoa": mỗi
+// trung tâm là một Organization trong realm (Organizations và Admin
+// Permissions/FGAP v2 bật từ mẫu), thay cho mô hình realm-mỗi-trung-tâm
+// của issue #6. Chạy lần đầu tạo realm từ môi trường trống; chạy lại
+// không tạo trùng (kể cả Organization, role, policy và permission
+// FGAP), không ghi đè bí mật đang có bằng giá trị rỗng, và khôi phục
+// các trường cấu hình bị lệch khỏi mẫu (scalar realm, role, client,
+// scope). Realm master giữ nguyên cấu hình mặc định của Keycloak: bộ
+// cấp phát chỉ lấy access token admin qua realm master, không sửa gì
+// trên đó.
 //
-// Bí mật không bao giờ nằm trong repo: mẫu chỉ chứa placeholder,
-// giá trị thật đi qua biến môi trường lúc chạy (xem keycloak/README.md
-// và keycloak/provision.config.example.json cho phần cấu hình không
-// bí mật). Script chỉ dùng thư viện chuẩn của Node (fetch, fs).
+// Bí mật không bao giờ nằm trong repo: mẫu chỉ chứa placeholder, giá
+// trị thật đi qua biến môi trường lúc chạy (xem keycloak/README.md và
+// keycloak/provision.config.example.json cho phần cấu hình không bí
+// mật). Script chỉ dùng thư viện chuẩn của Node (fetch, fs).
 //
 // Cách chạy:
 //   KC_ADMIN_USERNAME=... KC_ADMIN_PASSWORD=... \
@@ -38,6 +39,20 @@ const configPath = args.includes("--config")
 const dryRun = args.includes("--dry-run");
 
 const config = JSON.parse(readFileSync(configPath, "utf8"));
+if ("tenants" in config || "platform" in config) {
+  console.error(
+    'Cấu hình còn khoá "tenants"/"platform": mô hình realm-mỗi-trung-tâm đã bị thay thế bởi một realm ' +
+      '"giaokhoa" duy nhất với Organization theo trung tâm. Hãy chuyển cấu hình sang khoá "realm" ' +
+      "(xem keycloak/provision.config.example.json).",
+  );
+  process.exit(2);
+}
+if (config.realm?.name !== "giaokhoa") {
+  console.error(
+    'Cấu hình bị từ chối: realm.name phải đúng "giaokhoa" — bộ cấp phát chỉ cấp phát realm giaokhoa duy nhất.',
+  );
+  process.exit(2);
+}
 const baseUrl = (process.env.KC_BASE_URL || config.authBaseUrl || "").replace(/\/$/, "");
 if (!baseUrl) {
   console.error("Thiếu KC_BASE_URL (hoặc authBaseUrl trong file cấu hình).");
@@ -49,15 +64,6 @@ if (!dryRun && (!adminUser || !adminPass)) {
   console.error("Thiếu KC_ADMIN_USERNAME / KC_ADMIN_PASSWORD cho Admin REST API.");
   process.exit(2);
 }
-
-// Các placeholder được phép rỗng khi thiếu cấu hình tương ứng: IdP bị
-// loại khỏi bản cấp phát thay vì tạo bằng thông tin đăng nhập rỗng.
-const OPTIONAL_PLACEHOLDERS = new Set([
-  "GOOGLE_CLIENT_ID",
-  "GOOGLE_CLIENT_SECRET",
-  "FACEBOOK_CLIENT_ID",
-  "FACEBOOK_CLIENT_SECRET",
-]);
 
 let failures = 0;
 function ok(msg) {
@@ -127,13 +133,8 @@ async function api(method, path, body) {
 function renderTemplate(templateText, values) {
   return templateText.replace(/\{\{([A-Z0-9_]+)\}\}/g, (match, key) => {
     if (key in values) return values[key];
-    if (OPTIONAL_PLACEHOLDERS.has(key)) return "";
     throw new Error(`Thiếu giá trị cho placeholder {{${key}}}`);
   });
-}
-
-function realmEnvKey(realm) {
-  return realm.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
 }
 
 function smtpServerFromEnv() {
@@ -151,42 +152,20 @@ function smtpServerFromEnv() {
   };
 }
 
-const IDP_ENV = {
-  google: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
-  facebook: ["FACEBOOK_CLIENT_ID", "FACEBOOK_CLIENT_SECRET"],
-};
-
-function idpConfigured(alias) {
-  const [idKey, secretKey] = IDP_ENV[alias] || [];
-  return Boolean(idKey && process.env[idKey] && process.env[secretKey]);
-}
-
-// Dựng representation cho một realm từ file mẫu: thay placeholder, gắn
-// SMTP khi có cấu hình, loại IdP chưa có thông tin đăng nhập, gắn bí
-// mật client web khi môi trường cấp (chỉ dùng ở nhánh tạo mới; nhánh
-// cập nhật xử lý bí mật riêng để không ghi đè giá trị đang có).
-function buildRepresentation(templateFile, values, webClientId, webSecretEnvName) {
-  const raw = readFileSync(join(HERE, "templates", templateFile), "utf8");
-  const rendered = renderTemplate(raw, values);
-  const rep = JSON.parse(rendered);
+// Dựng representation của realm giaokhoa từ mẫu: thay placeholder,
+// gắn SMTP khi có cấu hình, gắn bí mật client web khi môi trường cấp
+// (chỉ dùng ở nhánh tạo mới; nhánh cập nhật xử lý bí mật riêng để
+// không ghi đè giá trị đang có).
+function buildRepresentation(values) {
+  const raw = readFileSync(join(HERE, "templates", "giaokhoa-realm.json"), "utf8");
+  const rep = JSON.parse(renderTemplate(raw, values));
 
   const smtp = smtpServerFromEnv();
   if (smtp) rep.smtpServer = smtp;
 
-  if (Array.isArray(rep.identityProviders)) {
-    rep.identityProviders = rep.identityProviders.filter((idp) => {
-      if (idpConfigured(idp.alias)) return true;
-      note(
-        `IdP ${idp.alias} của realm ${rep.realm}: chưa có thông tin đăng nhập trong môi trường, bỏ qua khi cấp phát`,
-      );
-      return false;
-    });
-  }
-
-  const webSecret = webSecretEnvName ? process.env[webSecretEnvName] : undefined;
-  if (webSecret) {
-    const web = (rep.clients || []).find((c) => c.clientId === webClientId);
-    if (web) web.secret = webSecret;
+  if (process.env.LMS_WEB_SECRET) {
+    const web = (rep.clients || []).find((c) => c.clientId === "lms-web");
+    if (web) web.secret = process.env.LMS_WEB_SECRET;
   }
   return rep;
 }
@@ -195,13 +174,15 @@ function buildRepresentation(templateFile, values, webClientId, webSecretEnvName
 // Đối chiếu trên realm đã tồn tại
 // ---------------------------------------------------------------------------
 
-// Các trường scalar mà mẫu là nguồn sự thật trên realm đã có. Flow,
-// role và client KHÔNG nằm ở đây: realm PUT bỏ qua flow (đã kiểm
-// chứng trên binary 26.8.1) và role/client có endpoint riêng chuẩn hơn.
+// Các trường scalar mà mẫu là nguồn sự thật trên realm đã có. Role và
+// client KHÔNG nằm ở đây: chúng có endpoint riêng chuẩn hơn. Mọi tuỳ
+// chọn còn lại của Keycloak (thời hạn token, brute force, OTP...) để
+// mặc định, không khai trong mẫu nên cũng không hoà giải tại đây.
 const MANAGED_SCALAR_KEYS = [
   "displayName",
   "enabled",
-  "sslRequired",
+  "organizationsEnabled",
+  "adminPermissionsEnabled",
   "registrationAllowed",
   "registrationEmailAsUsername",
   "loginWithEmailAllowed",
@@ -210,46 +191,8 @@ const MANAGED_SCALAR_KEYS = [
   "resetPasswordAllowed",
   "rememberMe",
   "verifyEmail",
-  "browserFlow",
   "defaultDefaultClientScopes",
   "defaultOptionalClientScopes",
-  "accessTokenLifespan",
-  "accessTokenLifespanForImplicitFlow",
-  "ssoSessionIdleTimeout",
-  "ssoSessionMaxLifespan",
-  "ssoSessionIdleTimeoutRememberMe",
-  "ssoSessionMaxLifespanRememberMe",
-  "clientSessionIdleTimeout",
-  "clientSessionMaxLifespan",
-  "clientOfflineSessionIdleTimeout",
-  "clientOfflineSessionMaxLifespan",
-  "offlineSessionIdleTimeout",
-  "offlineSessionMaxLifespan",
-  "accessCodeLifespan",
-  "accessCodeLifespanLogin",
-  "accessCodeLifespanUserAction",
-  "bruteForceProtected",
-  "bruteForceStrategy",
-  "permanentLockout",
-  "failureFactor",
-  "waitIncrementSeconds",
-  "minimumQuickLoginWaitSeconds",
-  "quickLoginCheckMilliSeconds",
-  "maxFailureWaitSeconds",
-  "maxDeltaTimeSeconds",
-  "revokeRefreshToken",
-  "refreshTokenMaxReuse",
-  "eventsEnabled",
-  "eventsListeners",
-  "adminEventsEnabled",
-  "adminEventsDetailsEnabled",
-  "userManagedAccessAllowed",
-  "organizationsEnabled",
-  "otpPolicyType",
-  "otpPolicyAlgorithm",
-  "otpPolicyDigits",
-  "otpPolicyPeriod",
-  "otpPolicyLookAheadWindow",
 ];
 
 async function reconcileScalars(rep) {
@@ -310,7 +253,7 @@ async function reconcileRequiredActions(rep) {
 }
 
 // Gỡ offline_access khỏi composite default-roles-<realm>: offline
-// access tắt theo mặc định ở mọi realm (việc con 7).
+// access tắt theo mặc định ở mọi realm.
 async function stripOfflineAccessFromDefaultRoles(realm) {
   const name = `default-roles-${realm}`;
   const { status, data } = await api(
@@ -387,39 +330,34 @@ async function reconcileClientScopes(rep) {
 
 // Bộ scope gán cho từng client là nguồn sự thật khép kín: thiếu thì
 // gắn thêm, thừa thì gỡ — để token không mang scope ngoài ý đồ của mẫu
-// (Full Scope Allowed đã tắt ở mọi client).
+// (Full Scope Allowed đã tắt ở mọi client). Scope "organization" do
+// Keycloak tự tạo khi realm bật Organizations (kèm mapper membership)
+// nên không khai trong mẫu; nó nằm trong bộ gán dưới đây và còn được
+// bước assignOrganizationScope gắn riêng sau khi Organization đã có
+// (xem giải thích tại bước đó).
 const CLIENT_SCOPE_ASSIGNMENTS = {
-  tenant: {
-    "lms-web": {
-      default: ["basic", "profile", "email", "roles", "web-origins", "acr", "lms-api-audience"],
-      optional: [],
-    },
-    "lms-api": { default: [], optional: [] },
-    "lms-mcp": { default: [], optional: [] },
-    "lms-mcp-client": {
-      default: ["basic", "lms-mcp-audience"],
-      optional: [
-        "profile",
-        "email",
-        "roles",
-        "lms.questions.read",
-        "lms.questions.draft",
-        "lms.questions.write",
-        "lms.banks.contribute",
-      ],
-    },
+  "lms-web": {
+    default: ["basic", "profile", "email", "roles", "web-origins", "acr", "lms-api-audience", "organization"],
+    optional: [],
   },
-  platform: {
-    "platform-web": {
-      default: ["basic", "profile", "email", "roles", "web-origins", "acr", "platform-api-audience"],
-      optional: [],
-    },
-    "platform-api": { default: [], optional: [] },
+  "lms-api": { default: ["organization"], optional: [] },
+  "lms-mcp": { default: [], optional: [] },
+  "lms-mcp-client": {
+    default: ["basic", "lms-mcp-audience"],
+    optional: [
+      "profile",
+      "email",
+      "roles",
+      "lms.questions.read",
+      "lms.questions.draft",
+      "lms.questions.write",
+      "lms.banks.contribute",
+    ],
   },
 };
 
-async function reconcileClientScopeAssignments(realm, kind, clientInternalId, clientId) {
-  const plan = CLIENT_SCOPE_ASSIGNMENTS[kind]?.[clientId];
+async function reconcileClientScopeAssignments(realm, clientInternalId, clientId) {
+  const plan = CLIENT_SCOPE_ASSIGNMENTS[clientId];
   if (!plan) return;
   const { data: allScopes } = await api("GET", `/admin/realms/${realm}/client-scopes`);
   const scopeIdByName = new Map((allScopes || []).map((s) => [s.name, s.id]));
@@ -456,7 +394,7 @@ async function reconcileClientScopeAssignments(realm, kind, clientInternalId, cl
   ok(`realm ${realm}: bộ scope gán cho client ${clientId} khớp mẫu`);
 }
 
-async function reconcileClients(rep, kind, webClientId, webSecretEnvName) {
+async function reconcileClients(rep) {
   const realm = rep.realm;
   for (const client of rep.clients || []) {
     const { data: found } = await api(
@@ -476,16 +414,14 @@ async function reconcileClients(rep, kind, webClientId, webSecretEnvName) {
         `/admin/realms/${realm}/clients?clientId=${encodeURIComponent(client.clientId)}`,
       );
       const internalId = after.data?.[0]?.id;
-      if (internalId) await reconcileClientScopeAssignments(realm, kind, internalId, client.clientId);
+      if (internalId) await reconcileClientScopeAssignments(realm, internalId, client.clientId);
       continue;
     }
     // Cập nhật: phủ các trường của mẫu lên bản hiện tại. Bí mật chỉ ghi
     // khi môi trường cấp giá trị tường minh; thiếu biến thì giữ nguyên
     // bí mật đang có trong Keycloak (không gửi trường secret).
     const desired = { ...existing, ...client, id: existing.id };
-    const envSecret = webSecretEnvName && client.clientId === webClientId
-      ? process.env[webSecretEnvName]
-      : undefined;
+    const envSecret = client.clientId === "lms-web" ? process.env.LMS_WEB_SECRET : undefined;
     if (envSecret) desired.secret = envSecret;
     else delete desired.secret;
     const put = await api("PUT", `/admin/realms/${realm}/clients/${existing.id}`, desired);
@@ -493,41 +429,19 @@ async function reconcileClients(rep, kind, webClientId, webSecretEnvName) {
       fail(`realm ${realm}: cập nhật client ${client.clientId} trả HTTP ${put.status}`);
       continue;
     }
-    await reconcileClientScopeAssignments(realm, kind, existing.id, client.clientId);
+    await reconcileClientScopeAssignments(realm, existing.id, client.clientId);
   }
   ok(`realm ${realm}: clients khớp mẫu`);
-}
-
-async function reconcileClientRoles(rep) {
-  const realm = rep.realm;
-  const clientRoles = rep.roles?.client || {};
-  for (const [clientId, roles] of Object.entries(clientRoles)) {
-    const { data: found } = await api(
-      "GET",
-      `/admin/realms/${realm}/clients?clientId=${encodeURIComponent(clientId)}`,
-    );
-    const client = Array.isArray(found) ? found[0] : null;
-    if (!client) {
-      fail(`realm ${realm}: không thấy client ${clientId} để gắn client role`);
-      continue;
-    }
-    const { data: existing } = await api("GET", `/admin/realms/${realm}/clients/${client.id}/roles`);
-    const names = new Set((existing || []).map((r) => r.name));
-    for (const role of roles) {
-      if (names.has(role.name)) continue;
-      const created = await api("POST", `/admin/realms/${realm}/clients/${client.id}/roles`, role);
-      if (created.status === 201) ok(`realm ${realm}: đã tạo client role ${role.name} trên ${clientId}`);
-      else fail(`realm ${realm}: tạo client role ${role.name} trả HTTP ${created.status}`);
-    }
-  }
 }
 
 // Ánh xạ vai lên client scope "roles": vì Full Scope Allowed tắt ở
 // mọi client, token chỉ mang vai khi vai đó được ánh xạ vào một scope
 // mà client mang. Scope "roles" (mặc định của client web) được ánh xạ
-// đúng tập vai được phép xuất hiện trong token: ba vai chính ở realm
-// tenant; client role platform-admin ở realm giaokhoa. Đây là chốt
-// "role scope giới hạn ở mức cần thiết" của việc con 3.
+// đúng tập vai được phép xuất hiện trong token: cả bốn realm role của
+// mẫu (ba vai chính của trung tâm và platform-admin). Realm không còn
+// client role nào, nên mọi ánh xạ client role hiện hữu đều là ngoài
+// mẫu và phải gỡ. Đây là chốt "role scope giới hạn ở mức cần thiết"
+// của việc con 3.
 //
 // Tập ánh xạ trên scope "roles" là nguồn sự thật khép kín của mẫu
 // (như bộ scope gán cho client): hoà giải cả hai chiều — thiếu thì
@@ -563,7 +477,7 @@ function scopeMappingsShapeOk(m) {
   return true;
 }
 
-async function reconcileScopeRoleMappings(rep, kind) {
+async function reconcileScopeRoleMappings(rep) {
   const realm = rep.realm;
   const failuresBefore = failures;
   const scopesRes = await api("GET", `/admin/realms/${realm}/client-scopes`);
@@ -591,11 +505,9 @@ async function reconcileScopeRoleMappings(rep, kind) {
     return;
   }
 
-  // Tập đích theo loại realm: tenant chỉ ánh xạ ba vai chính và
-  // không ánh xạ client role nào; giaokhoa chỉ ánh xạ các client
-  // role của mẫu (platform-admin) và không ánh xạ realm role nào.
-  const wantedRealmRoles = kind === "tenant" ? rep.roles?.realm || [] : [];
-  const wantedClientRoles = kind === "platform" ? rep.roles?.client || {} : {};
+  // Tập đích: cả bốn realm role của mẫu, không client role nào.
+  const wantedRealmRoles = rep.roles?.realm || [];
+  const wantedClientRoles = {};
 
   const currentRealmMappings = mappings.realmMappings || [];
   const wantedRealmNames = new Set(wantedRealmRoles.map((r) => r.name));
@@ -727,100 +639,28 @@ async function findClientInternalId(realm, clientId) {
   return data[0]?.id;
 }
 
-async function reconcileIdps(rep) {
-  const realm = rep.realm;
-  for (const idp of rep.identityProviders || []) {
-    if (!idpConfigured(idp.alias)) continue; // đã ghi chú ở bước dựng mẫu
-    const { status } = await api(
-      "GET",
-      `/admin/realms/${realm}/identity-provider/instances/${idp.alias}`,
-    );
-    if (status === 404) {
-      const created = await api("POST", `/admin/realms/${realm}/identity-provider/instances`, idp);
-      if (created.status === 201) ok(`realm ${realm}: đã tạo IdP ${idp.alias} (callback .../realms/${realm}/broker/${idp.alias}/endpoint)`);
-      else fail(`realm ${realm}: tạo IdP ${idp.alias} trả HTTP ${created.status}`);
-    } else if (status === 200) {
-      const put = await api(
-        "PUT",
-        `/admin/realms/${realm}/identity-provider/instances/${idp.alias}`,
-        idp,
-      );
-      if (put.status === 204) ok(`realm ${realm}: IdP ${idp.alias} đã đồng bộ theo mẫu`);
-      else fail(`realm ${realm}: cập nhật IdP ${idp.alias} trả HTTP ${put.status}`);
-    }
-  }
-}
-
-// Chữ ký của một flow để so lệch: danh sách (authenticator|flowAlias,
-// requirement, authenticatorConfig) đã sắp xếp theo priority.
-function flowSignature(flow) {
-  return (flow.authenticationExecutions || [])
-    .map((e) =>
-      [e.authenticator || `flow:${e.flowAlias}`, e.requirement, e.authenticatorConfig || ""].join("|"),
-    )
-    .join(";");
-}
-
-async function reconcileFlows(rep) {
-  const realm = rep.realm;
-  const wanted = rep.authenticationFlows || [];
-  if (wanted.length === 0) return;
-  const { status, data: exported } = await api(
-    "POST",
-    `/admin/realms/${realm}/partial-export?exportGroupsAndRoles=false&exportClients=false`,
-  );
-  if (status !== 200) {
-    fail(`realm ${realm}: không xuất được realm để đối chiếu flow (HTTP ${status})`);
-    return;
-  }
-  const existingByAlias = new Map(
-    (exported.authenticationFlows || []).map((f) => [f.alias, f]),
-  );
-  const configByAlias = new Map(
-    (exported.authenticatorConfig || []).map((c) => [c.alias, c.config]),
-  );
-  let drift = 0;
-  for (const flow of wanted) {
-    const found = existingByAlias.get(flow.alias);
-    if (!found) {
-      fail(
-        `realm ${realm}: flow ${flow.alias} còn thiếu trên realm đã tồn tại — bộ cấp phát không tự viết lại flow; hãy tạo qua Admin Console theo mẫu hoặc dựng lại realm ở môi trường phi production`,
-      );
-      drift += 1;
-      continue;
-    }
-    if (flowSignature(found) !== flowSignature(flow)) {
-      fail(`realm ${realm}: flow ${flow.alias} lệch mẫu (requirement/execution khác) — cần xử lý tay theo mẫu, bộ cấp phát không tự sửa flow đang chạy`);
-      drift += 1;
-    }
-  }
-  for (const cfg of rep.authenticatorConfig || []) {
-    const foundCfg = configByAlias.get(cfg.alias);
-    if (!foundCfg || JSON.stringify(foundCfg) !== JSON.stringify(cfg.config)) {
-      fail(`realm ${realm}: authenticator config ${cfg.alias} lệch mẫu`);
-      drift += 1;
-    }
-  }
-  if (drift === 0) ok(`realm ${realm}: toàn bộ flow và authenticator config khớp mẫu`);
-}
-
 // ---------------------------------------------------------------------------
 // Cấp phát một realm
 // ---------------------------------------------------------------------------
 
-async function provisionRealm(rep, kind, webClientId, webSecretEnvName) {
+async function provisionRealm(rep) {
   const realm = rep.realm;
   console.log(`Realm ${realm}:`);
   const { status } = await api("GET", `/admin/realms/${realm}`);
   if (status === 404) {
-    const created = await api("POST", "/admin/realms", rep);
+    // Không gửi clientScopes trong lượt import tạo realm: khi danh sách scope đi kèm bản import, Keycloak dùng đúng
+    // danh sách đó thay cho bộ scope mặc định và không tự tạo scope "organization" của tính năng Organizations. Để
+    // trống lúc tạo realm để Keycloak dựng bộ mặc định (gồm "organization" kèm mapper của nó); các scope của mẫu
+    // được reconcileClientScopes tạo và đồng bộ ngay sau đó như bình thường.
+    const { clientScopes: _templateScopes, ...createRep } = rep;
+    const created = await api("POST", "/admin/realms", createRep);
     if (created.status !== 201) {
       fail(
         `tạo realm ${realm} trả HTTP ${created.status}: ${JSON.stringify(created.data)?.slice(0, 300) ?? ""}`,
       );
       return;
     }
-    ok(`đã tạo realm ${realm} từ mẫu (kèm flow, role, client, scope)`);
+    ok(`đã tạo realm ${realm} từ mẫu (kèm role, client, scope)`);
   } else if (status !== 200) {
     fail(`đọc realm ${realm} trả HTTP ${status}`);
     return;
@@ -832,302 +672,8 @@ async function provisionRealm(rep, kind, webClientId, webSecretEnvName) {
   await reconcileRealmRoles(rep);
   await stripOfflineAccessFromDefaultRoles(realm);
   await reconcileClientScopes(rep);
-  await reconcileClients(rep, kind, webClientId, webSecretEnvName);
-  await reconcileClientRoles(rep);
-  await reconcileScopeRoleMappings(rep, kind);
-  await reconcileIdps(rep);
-  await reconcileFlows(rep);
-}
-
-// ---------------------------------------------------------------------------
-// Lớp phủ cho realm master — MFA bắt buộc cho đăng nhập tương tác
-// ---------------------------------------------------------------------------
-//
-// Realm master không có mẫu import (nó ra đời cùng bản Keycloak),
-// nên lớp phủ này áp bằng Admin REST API thuần:
-//
-// - Cùng tham số chống brute force và cờ sự kiện như các realm
-//   khác.
-// - Flow trình duyệt riêng "lms-master-browser" (cùng cấu trúc
-//   flow platform-browser đã kiểm chứng ở realm giaokhoa: cookie
-//   ALTERNATIVE, subflow form chứa mật khẩu REQUIRED rồi OTP
-//   REQUIRED) và đặt làm browserFlow của realm. OTP REQUIRED vô
-//   điều kiện nghĩa là mọi đăng nhập trình duyệt vào master đều
-//   phải qua yếu tố thứ hai: chưa có credential OTP thì
-//   authenticator tự kích hoạt required action khai báo TOTP và
-//   đăng nhập không thể hoàn tất trước khi khai báo xong; đã có
-//   thì bị hỏi mã OTP. Flow này chỉ tác động đăng nhập tương tác:
-//   các lượt cấp token qua endpoint token (password grant của bộ
-//   cấp phát qua admin-cli) không đi qua browser flow.
-// - Gắn thêm required action CONFIGURE_TOTP cho mọi tài khoản
-//   master chưa có credential OTP, trừ đúng một tài khoản: tài
-//   khoản đang gọi Admin API (KC_ADMIN_USERNAME). Đây là sự tách
-//   bạch theo thiết kế giữa tài khoản tự động hoá (chỉ gọi API,
-//   không đăng nhập tương tác) và tài khoản vận hành tương tác
-//   (người dùng Admin Console): Keycloak từ chối cấp token cho
-//   tài khoản còn required action chưa hoàn tất, nên gắn yêu cầu
-//   cho chính tài khoản gọi API sẽ tự khoá đường cấp phát; mọi
-//   tài khoản còn lại đều bị bắt buộc MFA mà không cần khai báo
-//   thêm biến môi trường nào.
-// - Chuyển đổi một lần khi sang flow MFA: flow mới vẫn giữ
-//   auth-cookie ALTERNATIVE cùng cấp với subflow form, nên một
-//   phiên SSO master đã tạo từ trước (khi master chưa bắt MFA)
-//   có thể tiếp tục bằng cookie cũ mà bỏ qua subflow mật khẩu +
-//   OTP. Vì vậy bộ cấp phát dùng một realm attribute bền vững,
-//   độc lập với browserFlow, để ghi nhận migration đã hoàn tất.
-//   Khi chưa có đúng mốc hiện hành, bộ cấp phát gọi endpoint
-//   chính thức POST /admin/realms/master/logout-all và chỉ ghi
-//   mốc sau khi thu hồi thành công. Nếu logout-all lỗi, mốc vẫn
-//   thiếu nên lượt chạy sau bắt buộc thử lại. Nếu browserFlow
-//   từng bị quay lui khỏi flow MFA, mốc cũ bị xoá khi áp lại để
-//   chu kỳ chuyển đổi mới cũng thu hồi toàn bộ phiên hiện có.
-//
-// Flow được tạo TỪNG BƯỚC bằng các endpoint chính thức (tạo flow,
-// thêm từng execution, đặt requirement bằng PUT từng bản ghi
-// execution nguyên trạng đọc từ GET — đã kiểm chứng trên binary
-// 26.8.1; gửi cả danh sách executions trong một PUT bị lỗi 400).
-// Nếu flow đã tồn tại mà lệch cấu trúc, bộ cấp phát báo lỗi và
-// không tự viết lại flow đang chạy, cùng kỷ luật với
-// reconcileFlows của các realm có mẫu.
-
-const MASTER_BROWSER_FLOW = "lms-master-browser";
-const MASTER_BROWSER_FORMS = "lms-master-browser forms";
-const MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE = "lms.master.mfa-session-migration";
-const MASTER_MFA_SESSION_MIGRATION_VERSION = "logout-all-v1";
-
-// Chữ ký đích của flow: [mức lồng, định danh execution, requirement].
-// Execution dạng subflow mang định danh "flow:<alias của subflow>".
-const MASTER_FLOW_SIGNATURE = [
-  [0, "auth-cookie", "ALTERNATIVE"],
-  [0, `flow:${MASTER_BROWSER_FORMS}`, "ALTERNATIVE"],
-  [1, "auth-username-password-form", "REQUIRED"],
-  [1, "auth-otp-form", "REQUIRED"],
-];
-
-function masterFlowKey(e) {
-  return e.authenticationFlow ? `flow:${e.displayName}` : e.providerId;
-}
-
-function masterFlowElements(execs) {
-  return (execs || [])
-    .map((e) => `${e.level}|${masterFlowKey(e)}`)
-    .sort()
-    .join(";");
-}
-
-async function ensureMasterBrowserFlow() {
-  const execsPath = `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FLOW)}/executions`;
-  const first = await api("GET", execsPath);
-  if (first.status === 404) {
-    const created = await api("POST", "/admin/realms/master/authentication/flows", {
-      alias: MASTER_BROWSER_FLOW,
-      description:
-        "Flow trình duyệt của realm master: mật khẩu và OTP bắt buộc cho mọi đăng nhập tương tác",
-      providerId: "basic-flow",
-      topLevel: true,
-      builtIn: false,
-    });
-    if (created.status !== 201) {
-      fail(`tạo flow ${MASTER_BROWSER_FLOW} cho realm master trả HTTP ${created.status}`);
-      return false;
-    }
-    const steps = [
-      [
-        `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FLOW)}/executions/execution`,
-        { provider: "auth-cookie" },
-      ],
-      [
-        `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FLOW)}/executions/flow`,
-        {
-          alias: MASTER_BROWSER_FORMS,
-          type: "basic-flow",
-          description: "Form đăng nhập của realm master: mật khẩu rồi OTP",
-        },
-      ],
-      [
-        `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FORMS)}/executions/execution`,
-        { provider: "auth-username-password-form" },
-      ],
-      [
-        `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FORMS)}/executions/execution`,
-        { provider: "auth-otp-form" },
-      ],
-    ];
-    for (const [path, body] of steps) {
-      const res = await api("POST", path, body);
-      if (res.status !== 201) {
-        fail(`dựng flow ${MASTER_BROWSER_FLOW}: POST ${path} trả HTTP ${res.status}`);
-        return false;
-      }
-    }
-    ok(`đã tạo flow ${MASTER_BROWSER_FLOW} cho realm master (mật khẩu + OTP bắt buộc)`);
-  } else if (first.status !== 200) {
-    fail(`đọc flow ${MASTER_BROWSER_FLOW} của realm master trả HTTP ${first.status}`);
-    return false;
-  }
-
-  const wantedElements = MASTER_FLOW_SIGNATURE.map(([level, key]) => `${level}|${key}`)
-    .sort()
-    .join(";");
-  let { data: execs } = await api("GET", execsPath);
-  if (masterFlowElements(execs) !== wantedElements) {
-    fail(
-      `flow ${MASTER_BROWSER_FLOW} của realm master lệch mẫu về cấu trúc execution — bộ cấp phát không tự viết lại flow đang chạy; hãy xử lý tay theo keycloak/README.md`,
-    );
-    return false;
-  }
-  // Đặt requirement còn lệch: PUT từng bản ghi execution nguyên
-  // trạng đọc từ GET, chỉ thay trường requirement.
-  const wantedRequirement = new Map(
-    MASTER_FLOW_SIGNATURE.map(([level, key, req]) => [`${level}|${key}`, req]),
-  );
-  for (const e of execs || []) {
-    const target = wantedRequirement.get(`${e.level}|${masterFlowKey(e)}`);
-    if (!target || e.requirement === target) continue;
-    const put = await api(
-      "PUT",
-      `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FLOW)}/executions`,
-      { ...e, requirement: target },
-    );
-    if (put.status !== 204) {
-      fail(`đặt requirement ${target} cho execution ${e.displayName} của flow master trả HTTP ${put.status}`);
-      return false;
-    }
-  }
-  const finalRead = await api("GET", execsPath);
-  const finalExecs = finalRead.data;
-  // Fail-closed: phải đọc lại được executions và đối chiếu cả tập
-  // phần tử lẫn requirement của từng phần tử. Mảng rỗng không
-  // được coi là đạt — phép every trên mảng rỗng luôn đúng theo
-  // tính chất vacuous truth.
-  const signatureOk =
-    finalRead.status === 200 &&
-    Array.isArray(finalExecs) &&
-    finalExecs.length > 0 &&
-    masterFlowElements(finalExecs) === wantedElements &&
-    finalExecs.every(
-      (e) => wantedRequirement.get(`${e.level}|${masterFlowKey(e)}`) === e.requirement,
-    );
-  if (!signatureOk) {
-    fail(
-      `flow ${MASTER_BROWSER_FLOW} của realm master chưa đạt đúng requirement theo mẫu sau khi đặt (đọc lại HTTP ${finalRead.status})`,
-    );
-    return false;
-  }
-  ok(`flow ${MASTER_BROWSER_FLOW} của realm master khớp mẫu (OTP bắt buộc sau mật khẩu)`);
-  return true;
-}
-
-async function applyMasterOverlay() {
-  console.log("Realm master (lớp phủ vận hành):");
-  const flowReady = await ensureMasterBrowserFlow();
-  const { data: master } = await api("GET", "/admin/realms/master");
-  const wanted = {
-    bruteForceProtected: true,
-    bruteForceStrategy: "LINEAR",
-    permanentLockout: false,
-    failureFactor: 5,
-    waitIncrementSeconds: 60,
-    minimumQuickLoginWaitSeconds: 60,
-    quickLoginCheckMilliSeconds: 1000,
-    maxFailureWaitSeconds: 900,
-    maxDeltaTimeSeconds: 43200,
-    eventsEnabled: true,
-    eventsListeners: ["jboss-logging"],
-    adminEventsEnabled: true,
-    adminEventsDetailsEnabled: false,
-  };
-  // Chỉ trỏ browserFlow về flow MFA khi flow đã bảo đảm đúng mẫu,
-  // tránh để realm master trỏ vào một flow chưa sẵn sàng.
-  if (flowReady) wanted.browserFlow = MASTER_BROWSER_FLOW;
-
-  const migrationComplete =
-    master?.attributes?.[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE] ===
-    MASTER_MFA_SESSION_MIGRATION_VERSION;
-  const migrationPending =
-    flowReady && (master?.browserFlow !== MASTER_BROWSER_FLOW || !migrationComplete);
-
-  // Nếu flow từng bị quay lui, mốc cũ không còn đại diện cho chu kỳ
-  // chuyển đổi hiện tại: xoá nó ngay trong PUT đưa flow về MFA.
-  if (flowReady && master?.browserFlow !== MASTER_BROWSER_FLOW && migrationComplete) {
-    wanted.attributes = { ...(master.attributes || {}) };
-    delete wanted.attributes[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE];
-  }
-
-  const updated = { ...master, ...wanted };
-  const { status } = await api("PUT", "/admin/realms/master", updated);
-  if (status === 204) {
-    ok("đã áp tham số brute force, sự kiện và browser flow MFA cho realm master");
-    if (migrationPending) {
-      const revoked = await api("POST", "/admin/realms/master/logout-all");
-      if (revoked.status === 200) {
-        ok(
-          "migration MFA master: đã thu hồi toàn bộ phiên đăng nhập hiện có — phiên cũ phải đăng nhập lại qua MFA",
-        );
-        // logout-all thu hồi cả phiên của chính tài khoản gọi
-        // Admin API, nên phải xin token mới trước khi ghi mốc.
-        cachedToken = null;
-        tokenExpiresAt = 0;
-
-        const masterAfterLogout = await api("GET", "/admin/realms/master");
-        if (masterAfterLogout.status !== 200 || !masterAfterLogout.data) {
-          fail(
-            `đọc realm master sau khi thu hồi phiên trả HTTP ${masterAfterLogout.status}; chưa ghi mốc migration`,
-          );
-        } else {
-          const marked = await api("PUT", "/admin/realms/master", {
-            ...masterAfterLogout.data,
-            attributes: {
-              ...(masterAfterLogout.data.attributes || {}),
-              [MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE]: MASTER_MFA_SESSION_MIGRATION_VERSION,
-            },
-          });
-          if (marked.status === 204) {
-            ok("migration MFA master: đã ghi mốc thu hồi phiên hoàn tất");
-          } else {
-            fail(`ghi mốc migration MFA master trả HTTP ${marked.status}`);
-          }
-        }
-      } else {
-        fail(`thu hồi phiên realm master cho migration MFA trả HTTP ${revoked.status}`);
-      }
-    }
-  } else fail(`PUT realm master trả HTTP ${status}`);
-
-  // Gắn CONFIGURE_TOTP cho mọi tài khoản tương tác chưa có
-  // credential OTP, trừ tài khoản đang gọi Admin API (xem khối
-  // giải thích ở đầu mục này).
-  const { data: users } = await api("GET", "/admin/realms/master/users?first=0&max=1000");
-  let covered = 0;
-  for (const entry of users || []) {
-    if ((entry.username || "").toLowerCase() === adminUser.toLowerCase()) continue;
-    const { data: user } = await api("GET", `/admin/realms/master/users/${entry.id}`);
-    if (!user) continue;
-    const { data: creds } = await api("GET", `/admin/realms/master/users/${user.id}/credentials`);
-    if ((creds || []).some((c) => c.type === "otp")) {
-      covered += 1;
-      continue;
-    }
-    const actions = new Set(user.requiredActions || []);
-    if (actions.has("CONFIGURE_TOTP")) {
-      covered += 1;
-      continue;
-    }
-    actions.add("CONFIGURE_TOTP");
-    const put = await api("PUT", `/admin/realms/master/users/${user.id}`, {
-      ...user,
-      requiredActions: [...actions],
-    });
-    if (put.status === 204) {
-      covered += 1;
-      ok(`đã gắn yêu cầu khai báo TOTP cho tài khoản master ${user.username}`);
-    } else {
-      fail(`gắn CONFIGURE_TOTP cho tài khoản master ${user.username} trả HTTP ${put.status}`);
-    }
-  }
-  note(
-    `realm master: ${covered} tài khoản tương tác đã nằm trong diện bắt buộc MFA; tài khoản gọi Admin API (${adminUser}) tách riêng cho tự động hoá nên không gắn required action`,
-  );
+  await reconcileClients(rep);
+  await reconcileScopeRoleMappings(rep);
 }
 
 // ---------------------------------------------------------------------------
@@ -1135,60 +681,25 @@ async function applyMasterOverlay() {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const jobs = [];
-  for (const tenant of config.tenants || []) {
-    jobs.push({
-      rep: buildRepresentation(
-        "tenant-realm.json",
-        {
-          REALM: tenant.realm,
-          TENANT_HOST: tenant.host,
-          MCP_RESOURCE_URL: tenant.mcpResourceUrl,
-          MCP_REDIRECT_URIS: JSON.stringify(tenant.mcpRedirectUris || []),
-          GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
-          "GOOGLE_CLIENT_SECRET": process.env.GOOGLE_CLIENT_SECRET || "",
-          FACEBOOK_CLIENT_ID: process.env.FACEBOOK_CLIENT_ID || "",
-          "FACEBOOK_CLIENT_SECRET": process.env.FACEBOOK_CLIENT_SECRET || "",
-        },
-        "lms-web",
-        `LMS_WEB_SECRET__${realmEnvKey(tenant.realm)}`,
-      ),
-      kind: "tenant",
-      webClientId: "lms-web",
-      webSecretEnvName: `LMS_WEB_SECRET__${realmEnvKey(tenant.realm)}`,
-    });
-  }
-  if (config.platform) {
-    jobs.push({
-      rep: buildRepresentation(
-        "platform-realm.json",
-        { PLATFORM_HOST: config.platform.host },
-        "platform-web",
-        "PLATFORM_WEB_SECRET",
-      ),
-      kind: "platform",
-      webClientId: "platform-web",
-      webSecretEnvName: "PLATFORM_WEB_SECRET",
-    });
-  }
+  const realmConfig = config.realm;
+  const rep = buildRepresentation({
+    REALM: realmConfig.name,
+    HOST: realmConfig.host,
+    MCP_RESOURCE_URL: realmConfig.mcpResourceUrl,
+    MCP_REDIRECT_URIS: JSON.stringify(realmConfig.mcpRedirectUris || []),
+  });
+  const organizations = realmConfig.organizations || [];
 
   if (dryRun) {
-    for (const job of jobs) {
-      console.log(
-        `DRY-RUN realm ${job.rep.realm}: ${job.rep.clients?.length || 0} client, ` +
-          `${job.rep.roles?.realm?.length || 0} realm role, ` +
-          `${job.rep.authenticationFlows?.length || 0} flow, ` +
-          `${job.rep.identityProviders?.length || 0} IdP sau lọc theo môi trường`,
-      );
-    }
-    console.log("DRY-RUN realm master: lớp phủ brute force + flow trình duyệt bắt OTP + CONFIGURE_TOTP cho mọi tài khoản tương tác trừ tài khoản gọi API; migration MFA chưa có mốc bền vững sẽ thu hồi toàn bộ phiên master hiện có rồi mới ghi mốc hoàn tất");
+    console.log(
+      `DRY-RUN realm ${rep.realm}: ${rep.clients?.length || 0} client, ` +
+        `${rep.roles?.realm?.length || 0} realm role, ` +
+        `${organizations.length} Organization theo cấu hình`,
+    );
     return;
   }
 
-  for (const job of jobs) {
-    await provisionRealm(job.rep, job.kind, job.webClientId, job.webSecretEnvName);
-  }
-  await applyMasterOverlay();
+  await provisionRealm(rep);
 
   if (failures > 0) {
     console.error(`Cấp phát kết thúc với ${failures} lỗi.`);
