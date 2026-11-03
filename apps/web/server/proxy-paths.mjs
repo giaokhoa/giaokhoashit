@@ -35,7 +35,6 @@ const PROXY_PREFIXES = [
   '/.well-known/oauth-authorization-server/',
 ];
 
-/** true nếu request (theo req.url thô, có thể kèm query) phải proxy về API. */
 export function isProxyPath(url) {
   const path = url.split('?')[0];
   return PROXY_EXACT.has(path) || PROXY_PREFIXES.some((prefix) => path.startsWith(prefix));

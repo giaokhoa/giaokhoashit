@@ -26,12 +26,6 @@ export function localQuoteOf(m: MessageView): MessageQuoteView {
   };
 }
 
-/**
- * Mốc thời gian tương đối của tin cuối trong danh sách conversation
- * (lát M1, issue #204 — cùng khuôn và cùng khoá i18n với trang thông
- * báo): "vừa xong", "{{count}} phút/giờ/ngày trước"; quá một tuần thì
- * in ngày giờ cụ thể.
- */
 export function relativeTime(iso: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   if (diffMs < 60_000) return t('justNow');
@@ -44,17 +38,6 @@ export function relativeTime(iso: string, t: (key: string, opts?: Record<string,
   return formatDateTime(iso);
 }
 
-/**
- * Mốc thời gian trên HÀNG hội thoại (issue #608 — căn theo đúng
- * hàm định dạng phía bản demo, trích từ chunk JS của demo): dưới
- * một phút là "vừa xong"; dưới 60 phút là dạng rút gọn "{{số}}m";
- * trong ngày là khuôn 12 giờ (`h:mm a` bản địa hoá theo ngôn ngữ
- * hiển thị); hôm qua là nhãn "Hôm qua"; cũ hơn là ngày lịch dạng
- * tháng viết tắt + ngày (ví dụ "Jun 5" / "5 thg 6"), không kèm
- * năm. Khác `relativeTime` ở trên (khuôn tương đối đầy đủ của
- * các bề mặt cũ): hàng hội thoại của demo không dùng khuôn giờ/
- * ngày tương đối.
- */
 export function conversationTime(
   iso: string,
   t: (key: string, opts?: Record<string, unknown>) => string,
@@ -74,12 +57,6 @@ export function conversationTime(
   return formatWithOptions(date, lang, { month: 'short', day: 'numeric' });
 }
 
-/**
- * Bản đồ màu chấm hiện diện theo trạng thái (issue #608 — đúng
- * bản đồ phía bản demo): trực tuyến xanh lá, vắng mặt vàng, đang
- * bận đỏ, ngoại tuyến xám muted. Các màu đi qua token màu của hệ
- * (green/yellow/red-500 đã căn về giá trị demo ở `globals.css`).
- */
 export const PRESENCE_DOT_CLASS: Record<PresenceStatus, string> = {
   online: 'bg-green-500',
   away: 'bg-yellow-500',
@@ -87,20 +64,11 @@ export const PRESENCE_DOT_CLASS: Record<PresenceStatus, string> = {
   offline: 'bg-muted-foreground',
 };
 
-/**
- * Ánh xạ dữ kiện hiện diện hiện hành (ba trạng thái theo sự kiện:
- * `true` đã xác nhận trực tuyến, `false` đã xác nhận ngoại
- * tuyến, `undefined` chưa biết) sang trạng thái hiển thị. Dữ
- * kiện hiện hành không mang vắng mặt/bận nên hai trạng thái đó
- * chưa bao giờ được hàm này trả ra — chúng chỉ có mặt ở bản đồ
- * hiển thị, chờ dữ kiện (xem {@link PresenceStatus}).
- */
 export function presenceStatusOf(isOnline: boolean | undefined): PresenceStatus | undefined {
   if (isOnline === undefined) return undefined;
   return isOnline ? 'online' : 'offline';
 }
 
-/** Khoá i18n của nhãn một trạng thái hiện diện (dòng trạng thái ở đầu khung và panel). */
 export function presenceLabelKey(status: PresenceStatus): string {
   switch (status) {
     case 'online': return 'onlineNow';
@@ -131,11 +99,6 @@ export function presenceLabelKey(status: PresenceStatus): string {
  */
 export const CHAT_MENU_CONTENT_CLASS = 'w-max min-w-52 max-w-[calc(100vw-2rem)]';
 
-/**
- * Mục của menu chat luôn nằm trên MỘT dòng (đi cùng
- * {@link CHAT_MENU_CONTENT_CLASS}): icon và nhãn thẳng hàng, không
- * bẻ chữ xuống dòng như trước lát dọn gọn.
- */
 export const CHAT_MENU_ITEM_CLASS = 'whitespace-nowrap';
 
 /**
@@ -168,8 +131,6 @@ export function mergeMessages(existing: MessageView[], incoming: MessageView[]):
   const byId = new Map<string, MessageView>();
   for (const m of existing) byId.set(m.id, m);
   for (const m of incoming) {
-    // Tin lạc quan của chính lần gửi này đã được server xác nhận: bỏ
-    // bản tạm, dùng bản thật (khớp theo clientMessageId).
     if (m.clientMessageId) {
       for (const [id, local] of byId) {
         if (local.localStatus && local.clientMessageId === m.clientMessageId) byId.delete(id);

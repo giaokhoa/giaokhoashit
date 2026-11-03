@@ -45,5 +45,4 @@ export const authClient = createAuthClient({
   },
 });
 
-/** Hook phiên dùng chung: AuthProvider là nơi duy nhất tiêu thụ trực tiếp. */
 export const { useSession } = authClient;

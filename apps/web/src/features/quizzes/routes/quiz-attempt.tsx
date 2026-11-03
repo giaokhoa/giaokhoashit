@@ -1,33 +1,3 @@
-/**
- * Trang làm bài + xem lại lượt làm quiz (bề mặt học sinh).
- *
- * Flow tổng thể của module:
- * 1. Nạp view lượt làm từ `GET /quiz-attempts/:id` — view mang nội
- *    dung của các version câu hỏi ĐÃ PIN trong lần ghim (câu hỏi,
- *    stimulus, các lựa chọn) kèm hai trường phía đáp án theo mô hình
- *    giaokhoa (đợt port #248, lát P3 cấp dữ liệu, lát P7 hiển thị):
- *    `guidance` (hướng dẫn — hiện kèm câu hỏi ngay trong lúc làm,
- *    điểm quyết D-4) và `solution` (đáp án đúng dạng cấu trúc — API
- *    chỉ trả khi cổng xem lại `reviewRightAnswer` của lần ghim mở;
- *    cổng đóng thì trường là `null` và web không tự suy diễn đáp án
- *    từ bất kỳ nguồn nào khác).
- * 2. Khi lượt đang chạy: học sinh trả lời theo từng qtype, lưu từng
- *    câu qua engine (`POST /responses`), nộp bài (`POST /submit`) để
- *    chốt điểm; hết giờ thì server tự chốt ở tương tác kế tiếp.
- * 3. Khi lượt đã nộp, trang chuyển thành màn XEM LẠI: điểm từng câu,
- *    đáp án đúng được đánh dấu ngay trên lựa chọn/mệnh đề, khối "Lời
- *    giải" gồm đáp án đúng dạng chữ (`rightAnswer`, cùng cổng với
- *    `solution`) + feedback của đáp án đã chọn (cổng
- *    reviewSpecificFeedback) + generalFeedback (cổng
- *    reviewGeneralFeedback) + đáp án được chấp nhận của shortanswer /
- *    lời giải mẫu của essay (từ `solution`). Guidance vẫn hiện ở màn
- *    xem lại, cùng vị trí như lúc làm.
- *
- * Bất biến hiển thị: câu hỏi không có trường tên — nhãn của câu là
- * TRÍCH ĐOẠN nội dung (`questionExcerpt`); multichoice luôn là radio
- * chọn một (mô hình giaokhoa khoá đúng một đáp án đúng — quyết
- * 12:04 ngày 26/10/2026), không còn nhánh checkbox chọn-nhiều.
- */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import {
@@ -36,10 +6,9 @@ import {
   type RichTextDocument,
 } from '@lms/contracts';
 import { RichTextView } from '@lms/editor';
-// CSS của KaTeX nạp tại route module này (issue #503): trang làm bài
-// hiển thị nội dung câu hỏi qua RichTextView — HTML công thức do KaTeX
-// sinh cần bộ CSS này mới dựng đúng; nạp tại đây để CSS chỉ đi theo
-// route làm bài thay vì mọi route như khi nạp ở root.
+// CSS của KaTeX nạp tại route module này (issue #503): trang làm bài hiển thị nội dung câu hỏi qua RichTextView — HTML
+// công thức do KaTeX sinh cần bộ CSS này mới dựng đúng; nạp tại đây để CSS chỉ đi theo route làm bài thay vì mọi route
+// như khi nạp ở root.
 import 'katex/dist/katex.min.css';
 import { Button } from '@lms/ui/components/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@lms/ui/components/card';
@@ -57,16 +26,6 @@ function plainText(doc: RichTextDocument | null | undefined): string {
   return doc ? extractRichTextPlainText(doc) : '';
 }
 
-/**
- * Tài liệu rich text có nội dung thật hay không: có chữ khác rỗng ở
- * bất kỳ mức lồng nào, hoặc chứa node mang nội dung phi văn bản (ảnh,
- * công thức). Dùng để quyết định có dựng khối "Hướng dẫn" hay không —
- * một tài liệu chỉ gồm paragraph rỗng (kiểu tài liệu trắng của
- * editor) không được dựng thành khối trống trên bề mặt học sinh.
- *
- * @param doc - Tài liệu cần kiểm (null/undefined = không có nội dung).
- * @returns `true` khi tài liệu có nội dung hiển thị được.
- */
 function hasRichTextContent(doc: RichTextDocument | null | undefined): boolean {
   if (!doc) return false;
   const visit = (node: { type: string; text?: string; content?: unknown[] }): boolean => {
@@ -79,49 +38,18 @@ function hasRichTextContent(doc: RichTextDocument | null | undefined): boolean {
   return visit(doc as { type: string; text?: string; content?: unknown[] });
 }
 
-/**
- * Id đáp án đúng của một câu từ `solution` dạng cấu trúc (chỉ
- * multichoice/truefalse một mệnh đề mới có biến thể này).
- *
- * @param q - Câu trong lượt làm.
- * @returns Id của dòng đáp án đúng, hoặc null khi cổng xem lại đóng /
- *   câu thuộc dạng có hình dạng solution khác.
- */
 function solutionCorrectAnswerId(q: AttemptQuestion): string | null {
   return q.solution && 'correctAnswerId' in q.solution ? q.solution.correctAnswerId : null;
 }
 
-/**
- * Các đáp án được chấp nhận của câu shortanswer từ `solution` (màn
- * xem lại hiện nguyên danh sách này trong khối "Lời giải").
- *
- * @param q - Câu trong lượt làm.
- * @returns Mảng đáp án được chấp nhận, hoặc null khi không có.
- */
 function solutionAcceptedAnswers(q: AttemptQuestion): string[] | null {
   return q.solution && 'acceptedAnswers' in q.solution ? q.solution.acceptedAnswers : null;
 }
 
-/**
- * Lời giải mẫu của câu essay từ `solution` (biến thể `{answer}` —
- * dạng nhiều ý theo partId thuộc điểm quyết D-6 đang hoãn, chưa có
- * ở đợt này).
- *
- * @param q - Câu trong lượt làm.
- * @returns Tài liệu lời giải mẫu, hoặc null khi không có.
- */
 function solutionModelAnswer(q: AttemptQuestion): RichTextDocument | null {
   return q.solution && 'answer' in q.solution ? q.solution.answer : null;
 }
 
-/**
- * Đáp án Đ/S của từng mệnh đề trong câu truefalse TF-A từ
- * `solution.statements` (màn xem lại hiện đúng/sai TỪNG Ý).
- *
- * @param q - Câu truefalse trong lượt làm.
- * @returns Danh sách `{statementId, value}` theo thứ tự mệnh đề, hoặc
- *   null khi cổng xem lại đóng / câu không phải TF-A.
- */
 function solutionTrueFalseStatements(
   q: AttemptQuestion,
 ): { statementId: string; value: boolean }[] | null {
@@ -133,9 +61,6 @@ function solutionTrueFalseStatements(
  * `statementId → boolean` (ý chưa trả lời vắng mặt trong bản đồ).
  * Chuỗi không phải JSON/bản đồ thì coi như chưa trả lời ý nào — cùng
  * quy ước toàn phần với engine chấm phía API.
- *
- * @param value - Response đã lưu của lượt làm.
- * @returns Bản đồ đáp án theo mệnh đề (có thể rỗng).
  */
 function parseTrueFalseResponse(value: string): Record<string, boolean> {
   try {
@@ -164,24 +89,9 @@ function shuffled<T>(items: T[], seedText: string): T[] {
   return out;
 }
 
-/**
- * Trang làm bài quiz: câu hỏi theo trang của đề kèm khối "Hướng dẫn"
- * (guidance của version đã pin — hiện ngay trong lúc làm theo D-4),
- * trả lời theo từng qtype (multichoice luôn chọn một, truefalse,
- * shortanswer, essay), lưu từng câu qua question engine, nộp bài để
- * chốt điểm. Khi lượt đã nộp, trang chuyển thành màn xem lại: điểm
- * từng câu, đáp án đúng được đánh dấu trên lựa chọn, khối "Lời giải"
- * theo các cổng xem lại của lần ghim và trạng thái chờ chấm tay của
- * essay. Hết giờ làm bài thì server tự chốt ở tương tác kế tiếp —
- * đồng hồ trên trang chỉ để học sinh theo dõi.
- */
 export function QuizAttemptPage() {
   const { t } = useTranslation('app');
   const { attemptId } = useParams();
-  // View lượt làm qua TanStack Query (F-01 của #133,
-  // `lib/quiz-data.ts`): clientLoader của route nạp trước đúng khoá;
-  // tải hỏng khi chưa có dữ liệu thì trang báo lỗi tải như bản thủ
-  // công, lỗi ở lần nạp lại sau đó giữ nguyên view đang hiện.
   const attemptQuery = useQuizAttempt(attemptId);
   const view = attemptQuery.data ?? null;
   const error = attemptQuery.isError && !attemptQuery.data ? t('quizAttemptLoadFailed') : null;
@@ -193,10 +103,8 @@ export function QuizAttemptPage() {
   const [busy, setBusy] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
 
-  // Mỗi khi view mới về (tải đầu, nạp lại sau lưu/nộp, hết giờ tự
-  // chốt): lấp các ô trả lời cục bộ còn trống bằng response phía
-  // server — đúng nhịp gộp của reload thủ công trước đây, không bao
-  // giờ đè lên chữ người dùng đang gõ.
+  // Mỗi khi view mới về (tải đầu, nạp lại sau lưu/nộp, hết giờ tự chốt): lấp các ô trả lời cục bộ còn trống bằng
+  // response phía server — đúng nhịp gộp của reload thủ công trước đây, không bao giờ đè lên chữ người dùng đang gõ.
   useEffect(() => {
     const fresh = attemptQuery.data;
     if (!fresh) return;
@@ -222,9 +130,8 @@ export function QuizAttemptPage() {
   }, [deadline]);
 
   const remainingSeconds = deadline ? Math.max(0, Math.floor((deadline - nowTick) / 1000)) : null;
-  // Hết giờ: nạp lại view đúng một lần ở nhịp đồng hồ chạm 0 (server
-  // tự chốt lượt ở tương tác này) — ref giữ hàm refetch mới nhất để
-  // effect chỉ chạy theo hai điều kiện dưới đây như bản thủ công.
+  // Hết giờ: nạp lại view đúng một lần ở nhịp đồng hồ chạm 0 (server tự chốt lượt ở tương tác này) — ref giữ hàm
+  // refetch mới nhất để effect chỉ chạy theo hai điều kiện dưới đây như bản thủ công.
   const refetchRef = useRef(attemptQuery.refetch);
   refetchRef.current = attemptQuery.refetch;
   useEffect(() => {
@@ -359,8 +266,6 @@ export function QuizAttemptPage() {
               </div>
             ) : null}
             {q.qtype === 'truefalse' ? (
-              // TF-A: chỉ hiện THÂN CHUNG ở đây; từng mệnh đề hiện
-              // trong bộ nhập kèm cặp Đ/S của chính nó.
               <RichTextView
                 value={
                   {
@@ -372,8 +277,7 @@ export function QuizAttemptPage() {
             ) : (
               <p className="text-sm whitespace-pre-wrap">{plainText(q.questionText)}</p>
             )}
-            {/* Hướng dẫn (guidance) hiện kèm câu hỏi ngay trong lúc làm — điểm quyết D-4;
-                khối này giữ nguyên ở màn xem lại, cùng vị trí như lúc làm. */}
+            {}
             {hasRichTextContent(q.guidance) ? (
               <div className="rounded-md border p-3" data-testid={`quiz-guidance-${q.slot}`}>
                 <h4 className="text-sm font-medium">{t('guidanceHeading')}</h4>
@@ -401,11 +305,7 @@ export function QuizAttemptPage() {
                     ? t('quizQuestionWaitingGrade')
                     : t('quizQuestionMark', { mark: q.mark ?? 0, max: q.maxMark })}
                 </p>
-                {/* Khối "Lời giải" của màn xem lại — chỉ dựng khi API trả ít nhất một
-                    thành phần; từng thành phần đã qua đúng cổng xem lại của lần ghim ở
-                    phía API (solution/rightAnswer: reviewRightAnswer, feedback của đáp
-                    án đã chọn: reviewSpecificFeedback, generalFeedback:
-                    reviewGeneralFeedback), web chỉ trình bày những gì nhận được. */}
+                {}
                 {q.solution || q.rightAnswer || q.feedback || q.generalFeedback ? (
                   <div className="rounded-md border p-3 space-y-2" data-testid={`quiz-solution-${q.slot}`}>
                     <h4 className="text-sm font-medium">{t('quizSolutionHeading')}</h4>
@@ -473,9 +373,7 @@ function QuestionAnswerInput(props: {
   disabled: boolean;
   value: string;
   onChange: (value: string) => void;
-  /** Id đáp án đúng để đánh dấu ở màn xem lại; null = không đánh dấu. */
   correctAnswerId: string | null;
-  /** Đáp án Đ/S từng mệnh đề của truefalse ở màn xem lại; null = không đánh dấu. */
   tfSolution: { statementId: string; value: boolean }[] | null;
 }) {
   const { t } = useTranslation('app');
@@ -516,8 +414,6 @@ function QuestionAnswerInput(props: {
     );
   }
   if (q.qtype === 'truefalse') {
-    // TF-A: mỗi mệnh đề một cặp radio Đ/S riêng; response là chuỗi
-    // JSON của bản đồ statementId → boolean (ý chưa chọn vắng mặt).
     const statements = getTrueFalseStatements(q.questionText) ?? [];
     const chosen = parseTrueFalseResponse(value);
     const correctById = new Map((tfSolution ?? []).map((s) => [s.statementId, s.value]));
@@ -607,18 +503,10 @@ function QuestionAnswerInput(props: {
   );
 }
 
-/** Export mặc định cho route module React Router framework mode (xem src/routes.ts). */
 export default function QuizAttemptRoute() {
   return <QuizAttemptPage />;
 }
 
-/**
- * clientLoader (F-01, rà soát #133): prefetch view lượt làm vào
- * QueryClient singleton dùng chung (đúng khoá factory) trước khi
- * component mount — điều hướng vào trang không còn thác nước
- * mount-rồi-fetch. prefetchQuery không ném lỗi: tải hỏng thì
- * component tự xử lý qua useQuery như trước.
- */
 export async function clientLoader({ params }: { params: Record<string, string | undefined> }) {
   if (params.attemptId) {
     await quizAttemptPageClientLoader(params.attemptId);

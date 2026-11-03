@@ -25,26 +25,6 @@ import '#config/i18n';
 import { usePermissions } from '#lib/permissions';
 import { courseAdminPageClientLoader, useAddCohortMember, useAddCourseGroupMember, useAddGroupToGrouping, useCohortMembers, useCohorts, useCourseCompletions, useCourseConversation, useCourseDetail, useCourseEnrolInstances, useCourseEnrolments, useCourseGroupingGroups, useCourseGroupings, useCourseGroupMembers, useCourseGroups, useCreateCourseGroup, useCreateCourseGrouping, useDeleteCourseGroup, useDeleteCourseGrouping, useEnrolUserManually, useOpenGroupConversation, useRemoveCohortMember, useRemoveCourseGroupMember, useRenameCourseGroup, useSaveCourseGroupMode, useToggleCourseConversation, useToggleEnrolSuspend } from '../queries/course-admin';
 
-/**
- * Quản trị khoá học: nhóm, cohort, ghi danh thủ công kèm tạm khoá/kích
- * hoạt lại và tiến độ hoàn thành của học viên. Khu XÂY DỰNG khoá học
- * (thông tin khoá, section, module, khung chương trình, tiêu chí hoàn
- * thành) đã tách sang trang Builder Outline riêng `/courses/:id/builder`
- * (K1 — chuẩn §9: mỗi mảng một màn riêng); trang này chỉ còn thẻ liên
- * kết sang builder cho người có quyền xây dựng khoá. Quyền suy từ
- * `usePermissions()`; API vẫn là nơi thực thi quyền thật.
- *
- * Luồng dữ liệu (F-01 của rà soát #133): mọi mảng của trang đọc qua
- * TanStack Query từ lib/course-admin-data — danh sách nền tải lỗi thì
- * rỗng như bản thủ công; thành viên của nhóm/cohort và nhóm của
- * grouping chỉ tải khi dòng được mở (component con gắn truy vấn theo
- * dòng) và lỗi tải báo đúng thông điệp của mảng đó; ghi thao tác đi
- * qua đột biến, làm mới đúng cụm khoá bị ảnh hưởng.
- */
-
-// --- Các mảng lười tải theo dòng mở rộng ---------------------------------------
-
-/** Mảng thành viên của một nhóm khoá đang mở: tải khi mở lần đầu, thêm/gỡ qua đột biến rồi danh sách tự làm mới. */
 function GroupMembersSection({
   courseId,
   group,
@@ -78,7 +58,6 @@ function GroupMembersSection({
       e.status === 0 && !memberIds.has(e.userId) && all.findIndex((x) => x.userId === e.userId) === idx,
   );
 
-  /** Thêm một học sinh đã ghi danh vào nhóm; API chặn người chưa ghi danh hiệu lực (400 group.member_not_enrolled). */
   async function addGroupMember() {
     if (!selection) return;
     try {
@@ -90,7 +69,6 @@ function GroupMembersSection({
     }
   }
 
-  /** Gỡ thành viên khỏi nhóm (chỉ gỡ khỏi nhóm, ghi danh khoá giữ nguyên). */
   async function removeGroupMember(userId: string) {
     try {
       await removeMember.mutateAsync({ groupId: group.id, userId });
@@ -162,7 +140,6 @@ function GroupMembersSection({
   );
 }
 
-/** Mảng các nhóm trong một grouping đang mở: tải khi mở lần đầu, gắn nhóm qua đột biến rồi danh sách tự làm mới. */
 function GroupingGroupsSection({
   courseId,
   grouping,
@@ -189,7 +166,6 @@ function GroupingGroupsSection({
   const inGrouping = groupsQuery.data ?? [];
   const candidates = groups.filter((gr) => !inGrouping.some((x) => x.id === gr.id));
 
-  /** Gắn một nhóm vào grouping qua POST groupings/:groupingId/groups với `{ groupId }`. */
   async function addGroupToGrouping() {
     if (!selection) return;
     try {
@@ -249,7 +225,6 @@ function GroupingGroupsSection({
   );
 }
 
-/** Mảng thành viên của một cohort đang mở: tải khi mở lần đầu, thêm/gỡ qua đột biến rồi danh sách tự làm mới. */
 function CohortMembersSection({
   cohort,
   canManageCohorts,
@@ -274,7 +249,6 @@ function CohortMembersSection({
 
   const members = membersQuery.data ?? [];
 
-  /** Thêm thành viên vào cohort; backend kích hoạt đồng bộ ghi danh theo cohort. */
   async function addCohortMember() {
     const userId = input.trim();
     if (!userId) return;
@@ -287,7 +261,6 @@ function CohortMembersSection({
     }
   }
 
-  /** Gỡ thành viên khỏi cohort qua DELETE /cohorts/:id/members/:userId. */
   async function removeCohortMember(userId: string) {
     try {
       await removeMember.mutateAsync({ cohortId: cohort.id, userId });
@@ -339,8 +312,6 @@ function CohortMembersSection({
   );
 }
 
-// --- Trang quản trị --------------------------------------------------------------
-
 export function CourseAdminPage() {
   const { t } = useTranslation('app');
   const { id } = useParams();
@@ -359,18 +330,15 @@ export function CourseAdminPage() {
   const [groupMemberSelection, setGroupMemberSelection] = useState<Record<string, string>>({});
   const [renamingGroupId, setRenamingGroupId] = useState('');
   const [groupRenameDraft, setGroupRenameDraft] = useState('');
-  /** Bản nháp chế độ nhóm của khoá (GN-3): khởi tạo một lần từ GET khoá, GV sửa rồi lưu qua PATCH khoá. */
   const [groupModeDraft, setGroupModeDraft] = useState<number | null>(null);
   const [groupModeForceDraft, setGroupModeForceDraft] = useState(false);
   const groupModeInitRef = useRef(false);
 
-  /** Được xây dựng khoá này hay không: teaching của khoá hoặc quản trị hệ thống. */
   const courseAccess = perms.courses.find((c) => c.course.id === courseId);
   const canBuild =
     perms.canAdminister ||
     perms.teaching.some((c) => c.course.id === courseId) ||
     (courseAccess?.capabilities.includes('course:update') ?? false);
-  /** Quản lý grouping cần `course:managegroups` tại context khoá (đúng capability backend đòi ở groups service) hoặc quyền quản trị hệ thống. */
   const canManageGroups =
     perms.canAdminister || (courseAccess?.capabilities.includes('course:managegroups') ?? false);
   /** Quản lý thành viên cohort cần `cohort:manage` ở context của cohort; giao diện hiện thao tác khi capability này xuất hiện trong ảnh chụp quyền ở bất kỳ context nào hoặc là quản trị hệ thống — API vẫn thực thi theo đúng context của từng cohort. */
@@ -393,7 +361,6 @@ export function CourseAdminPage() {
   const instances = instancesQuery.data ?? [];
   const enrolments = enrolmentsQuery.data ?? [];
   const completions = completionsQuery.data ?? [];
-  /** Trạng thái chat toàn lớp (conversation cấp khoá): null = chưa nạp được/không thuộc khoá. */
   const courseChat = chatQuery.data ?? null;
   const loading = [
     groupsQuery, groupingsQuery, cohortsQuery, instancesQuery,
@@ -435,12 +402,10 @@ export function CourseAdminPage() {
     }
   }
 
-  /** Mở/thu danh sách thành viên của một nhóm khoá: mảng con tự tải khi được gắn. */
   function toggleGroupMembers(groupId: string) {
     setExpandedGroupId((prev) => (prev === groupId ? '' : groupId));
   }
 
-  /** Đổi tên nhóm ngay tại dòng qua đột biến PATCH groups/:groupId (chỉ gửi `name`). */
   async function renameGroup(groupId: string) {
     const name = groupRenameDraft.trim();
     if (!name) return;
@@ -454,7 +419,6 @@ export function CourseAdminPage() {
     }
   }
 
-  /** Xoá nhóm qua đột biến DELETE groups/:groupId — hỏi xác nhận trước; thành viên bị gỡ khỏi nhóm nhưng ghi danh khoá không đổi. */
   async function deleteGroup(group: CourseGroup) {
     if (!window.confirm(t('confirmDeleteGroup', { name: group.name }))) return;
     try {
@@ -466,7 +430,6 @@ export function CourseAdminPage() {
     }
   }
 
-  /** Lưu chế độ nhóm của khoá qua đột biến PATCH /courses/:id (`groupMode` + `groupModeForce` — hai trường API khoá đã nhận). */
   async function saveGroupMode(event: FormEvent) {
     event.preventDefault();
     if (groupModeDraft === null) return;
@@ -478,7 +441,6 @@ export function CourseAdminPage() {
     }
   }
 
-  /** Bật/tắt chat toàn lớp qua đột biến PATCH /messages/conversations/:id (cờ `enabled` sẵn có; chỉ staff khoá đổi được — API thực thi). */
   async function toggleCourseChat() {
     if (!courseChat) return;
     try {
@@ -489,7 +451,6 @@ export function CourseAdminPage() {
     }
   }
 
-  /** Mở chat của một course group: tạo hội thoại nhóm (đường sẵn có) rồi deep-link trang Tin nhắn. */
   async function openGroupChat(groupId: string) {
     try {
       const conv = await openGroupChatMutation.mutateAsync(groupId);
@@ -499,7 +460,6 @@ export function CourseAdminPage() {
     }
   }
 
-  /** Tạo grouping qua đột biến POST /courses/:id/groupings (`createGroupingSchema`: name bắt buộc, idNumber/description tuỳ chọn). */
   async function createGrouping(event: FormEvent) {
     event.preventDefault();
     try {
@@ -515,7 +475,6 @@ export function CourseAdminPage() {
     }
   }
 
-  /** Xoá grouping qua đột biến DELETE /courses/:id/groupings/:groupingId — hỏi xác nhận trước; các nhóm trong khoá không bị xoá theo. */
   async function deleteGrouping(grouping: CourseGrouping) {
     if (!window.confirm(t('confirmDeleteGrouping', { name: grouping.name }))) return;
     try {
@@ -527,12 +486,10 @@ export function CourseAdminPage() {
     }
   }
 
-  /** Mở/thu danh sách nhóm của một grouping: mảng con tự tải khi được gắn. */
   function toggleGroupingGroups(groupingId: string) {
     setExpandedGroupingId((prev) => (prev === groupingId ? '' : groupingId));
   }
 
-  /** Mở/thu danh sách thành viên của một cohort: mảng con tự tải khi được gắn. */
   function toggleCohortMembers(cohortId: string) {
     setExpandedCohortId((prev) => (prev === cohortId ? '' : cohortId));
   }
@@ -920,7 +877,6 @@ export async function clientLoader({ params }: { params: Record<string, string |
   return null;
 }
 
-/** Export mặc định cho route module React Router framework mode (xem src/routes.ts). */
 export default CourseAdminPage;
 
 // Biên lỗi + tiêu đề theo route (cụm khung SSR #146, từ rà soát #133).

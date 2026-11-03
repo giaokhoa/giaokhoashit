@@ -34,35 +34,17 @@
 import { problemDetailsSchema } from '@lms/contracts';
 import { ApiError } from '#lib/api';
 
-/** Trần thời gian cho MỘT lượt gọi API nội bộ phía server (mili giây). */
 export const SSR_FETCH_TIMEOUT_MS = 10_000;
 
 export function apiInternalBase(): string {
   return process.env.LMS_API_INTERNAL_URL ?? 'http://127.0.0.1:3000';
 }
 
-/**
- * Dựng signal hiệu lực cho một lượt gọi phía server: timeout cố định
- * {@link SSR_FETCH_TIMEOUT_MS} gộp với signal của caller (nếu có).
- *
- * @param callerSignal - Signal hủy của caller, ví dụ signal của TanStack Query.
- * @returns Signal đã gộp; hủy khi caller hủy HOẶC hết timeout.
- */
 function internalSignal(callerSignal?: AbortSignal): AbortSignal {
   const timeout = AbortSignal.timeout(SSR_FETCH_TIMEOUT_MS);
   return callerSignal ? AbortSignal.any([timeout, callerSignal]) : timeout;
 }
 
-/**
- * Dựng `ApiError` từ một đáp ứng HTTP lỗi của API nội bộ — cùng khuôn
- * với `parseProblem` phía client (`lib/api.ts`): thân đáp ứng parse
- * được bằng schema Problem Details thì dùng nguyên, không parse được
- * thì dựng Problem Details tối thiểu mang ĐÚNG status thật và mã
- * `http.unknown`. Điểm cốt yếu là status không bao giờ bị mất.
- *
- * @param res - Đáp ứng HTTP lỗi từ API nội bộ.
- * @returns ApiError mang status thật của đáp ứng.
- */
 async function toApiError(res: Response): Promise<ApiError> {
   const body: unknown = await res.json().catch(() => null);
   const parsed = problemDetailsSchema.safeParse(body);

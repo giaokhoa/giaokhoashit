@@ -32,7 +32,6 @@ export default function McpLoginPage() {
   const [needsMfa, setNeedsMfa] = useState(false);
   const [mfaCode, setMfaCode] = useState('');
 
-  // Đã có phiên BA rồi thì khỏi đăng nhập lại: đi thẳng authorize.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -69,15 +68,13 @@ export default function McpLoginPage() {
         setBusy(false);
         return;
       }
-      // Tài khoản có MFA: chưa có phiên — sang bước nhập mã TOTP,
-      // authorize chỉ được quay lại sau khi bước hai qua.
+      // Tài khoản có MFA: chưa có phiên — sang bước nhập mã TOTP, authorize chỉ được quay lại sau khi bước hai qua.
       const body = (await res.json().catch(() => null)) as { twoFactorRedirect?: unknown } | null;
       if (body && typeof body === 'object' && body.twoFactorRedirect) {
         setNeedsMfa(true);
         setBusy(false);
         return;
       }
-      // Phiên BA đã được đặt cookie — quay lại authorize với query gốc.
       window.location.assign(`/api/v1/auth/oauth2/authorize${window.location.search}`);
     } catch {
       setError('Không kết nối được máy chủ. Thử lại sau ít phút.');
@@ -85,7 +82,6 @@ export default function McpLoginPage() {
     }
   }
 
-  /** Bước hai MFA của luồng MCP: mã đúng → cookie phiên được đặt → quay lại authorize với query gốc. */
   async function onMfaSubmit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);

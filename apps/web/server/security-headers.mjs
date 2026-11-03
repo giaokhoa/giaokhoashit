@@ -33,7 +33,6 @@
  *   này.
  */
 
-/** Chính sách Content-Security-Policy áp cho mọi tài liệu HTML của ứng dụng. */
 export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
@@ -49,12 +48,6 @@ export const CONTENT_SECURITY_POLICY = [
   "frame-ancestors 'none'",
 ].join('; ');
 
-/**
- * Gắn header CSP (và `X-Content-Type-Options: nosniff` đi kèm cho
- * tài liệu) lên một response tài liệu HTML sắp được gửi.
- *
- * @param {import('node:http').ServerResponse} res Response đang xử lý.
- */
 export function applyDocumentSecurityHeaders(res) {
   res.setHeader('Content-Security-Policy', CONTENT_SECURITY_POLICY);
   res.setHeader('X-Content-Type-Options', 'nosniff');

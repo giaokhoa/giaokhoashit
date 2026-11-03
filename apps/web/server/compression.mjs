@@ -13,17 +13,14 @@
  */
 import { brotliCompressSync, gzipSync, constants as zlibConstants } from 'node:zlib';
 
-/** File tĩnh nhỏ hơn ngưỡng này trả thẳng, không nén. */
 export const MIN_COMPRESS_BYTES = 1024;
 
 const COMPRESSIBLE_TYPE = /^(?:text\/|application\/json\b|image\/svg\+xml\b)/;
 
-/** Loại nội dung có lợi khi nén (JS/CSS/HTML/JSON/SVG/text); ảnh và font đã nén sẵn thì không. */
 export function isCompressibleType(contentType) {
   return COMPRESSIBLE_TYPE.test(contentType ?? '');
 }
 
-/** q-value của một encoding trong Accept-Encoding; undefined nếu không được nhắc tới. */
 function encodingQ(entries, name) {
   if (entries.has(name)) return entries.get(name);
   return entries.get('*');

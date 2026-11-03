@@ -27,14 +27,6 @@ import type { ClassFeePaymentView } from '../types/classes';
  * API; phần tái xuất kiểu và hằng đã tách sang `../types/classes`.
  */
 
-
-/**
- * Danh sách lớp của người gọi (GET /classes): mỗi dòng kèm bốn cờ
- * khả năng do server suy cho đúng người gọi (`canCreate` /
- * `canUpdate` / `canDelete` / `canManageRoster`) — trang danh sách
- * lớp vẽ nút "Tạo lớp" và các hành động của từng dòng thuần theo
- * các cờ này; quyền thật vẫn gác ở API.
- */
 export function fetchClasses(): Promise<ClassListItem[]> {
   return apiJson<ClassListItem[]>('/api/v1/classes');
 }
@@ -159,7 +151,6 @@ export function joinClassByCode(joinCode: string): Promise<JoinClassResult> {
   return apiJson<JoinClassResult>('/api/v1/classes/join', { method: 'POST', body: JSON.stringify({ joinCode }) });
 }
 
-/** Nạp roster trực tiếp từ file Excel (multipart): server đọc sheet đầu tiên và trả báo cáo từng dòng. */
 export async function importRosterFile(classId: string, file: File): Promise<ClassRosterImportReport> {
   const form = new FormData();
   form.set('file', file);
@@ -168,7 +159,6 @@ export async function importRosterFile(classId: string, file: File): Promise<Cla
   return (await res.json()) as ClassRosterImportReport;
 }
 
-/** Tải file mẫu roster .xlsx (endpoint đòi đăng nhập nên fetch kèm token rồi tải blob — cùng khuôn tải ICS ở trang Lịch). */
 export async function downloadRosterTemplate(): Promise<void> {
   const res = await apiFetch('/api/v1/classes/roster-template');
   if (!res.ok) throw new Error('template download failed');
@@ -181,26 +171,11 @@ export async function downloadRosterTemplate(): Promise<void> {
   URL.revokeObjectURL(objectUrl);
 }
 
-/** Tên hiển thị "Họ Tên" của một dòng người dùng; rơi về username khi thiếu tên. */
 export function personName(p: { firstName: string; lastName: string; username: string }): string {
   const full = `${p.lastName} ${p.firstName}`.trim();
   return full || p.username;
 }
 
-// ---------------------------------------------------------------------------
-// CLASS-3 (issue #184): học phí theo lớp — gói công khai + bắt đầu thanh
-// toán gói lớp. Web chỉ trình bày và dẫn luồng; luật tiền nằm ở API.
-// ---------------------------------------------------------------------------
-
-/**
- * Gói công khai của lớp (GET /classes/:id/public): thông tin lớp + gói
- * học phí cho người CHƯA ghi danh, kèm cờ `isMember`/`canPurchase` do
- * server suy cho đúng người gọi — trang mua gói dựng hiển thị thuần
- * theo gói này (đã là thành viên thì không hiện nút mua).
- *
- * @param classId - Id của lớp cần xem gói.
- * @returns Gói khớp `classPublicViewSchema` của contracts.
- */
 export function fetchClassPublic(classId: string): Promise<ClassPublicView> {
   return apiJson<ClassPublicView>(`/api/v1/classes/${classId}/public`);
 }
@@ -218,13 +193,6 @@ export function createClassFeePayment(classId: string): Promise<ClassFeePaymentV
   return apiJson<ClassFeePaymentView>(`/api/v1/payments/class-fee/${classId}`, { method: 'POST', body: JSON.stringify({}) });
 }
 
-/**
- * Đọc lại một payment của chính người dùng (GET /payments/:id) — trang
- * mua gói poll trạng thái này sau khi hiện QR để biết đối soát đã khớp
- * (succeeded) hay còn chờ.
- *
- * @param paymentId - Id của payment cần đọc trạng thái.
- */
 export function fetchPayment(paymentId: string): Promise<ClassFeePaymentView> {
   return apiJson<ClassFeePaymentView>(`/api/v1/payments/${paymentId}`);
 }

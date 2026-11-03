@@ -55,7 +55,6 @@ export function baSessionResponse(user: { id: string; username?: string; email?:
   });
 }
 
-/** Đáp ứng get-session khi chưa có phiên: BA trả 200 với thân `null`. */
 export function baNoSessionResponse(): Response {
   return new Response('null', { status: 200, headers: { 'Content-Type': 'application/json' } });
 }

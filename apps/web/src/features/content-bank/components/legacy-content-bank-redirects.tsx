@@ -10,19 +10,16 @@ import { Navigate, useLocation, useParams } from 'react-router';
  * mô hình features/ (issue #500).
  */
 
-/** Path cũ `/contentbank` → `/content-bank`. */
 export function LegacyContentBankRedirect() {
   const location = useLocation();
   return <Navigate to={`/content-bank${location.search}`} replace />;
 }
 
-/** Path cũ `/contentbank/new` → `/content-bank/new`. */
 export function LegacyContentBankNewRedirect() {
   const location = useLocation();
   return <Navigate to={`/content-bank/new${location.search}`} replace />;
 }
 
-/** Path cũ `/contentbank/:id/edit` → `/content-bank/:id/edit`. */
 export function LegacyContentBankEditRedirect() {
   const { id } = useParams();
   const location = useLocation();

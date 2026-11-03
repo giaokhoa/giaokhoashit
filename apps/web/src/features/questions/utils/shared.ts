@@ -1,22 +1,7 @@
-/**
- * Hằng số, kiểu dữ liệu và hàm thuần DÙNG CHUNG của cụm ngân hàng câu hỏi:
- * nhãn loại câu hỏi/mức nhận thức, hàm bóc văn bản thuần từ tài liệu rich
- * text, trích đoạn câu hỏi, kiểm tra đủ lựa chọn theo loại câu và khoá i18n
- * cho trạng thái ma trận/hồ sơ. Các panel của trang ngân hàng câu hỏi
- * (components/questions/*) và hai màn riêng (tạo danh mục, lượt dùng) cùng
- * nhập từ đây để giữ đúng một hành vi; bề mặt xuất khẩu của trang cũ được
- * giữ nguyên bằng cách trang questions.tsx xuất khẩu lại từ module này.
- */
 import { extractRichTextPlainText, type QuestionView, type RichTextDocument } from '@lms/contracts';
 
 import { ApiError } from '#lib/api';
 
-/**
- * Thông báo lỗi kèm lý do thật từ API (ProblemDetails.detail) — trước
- * đây các catch nuốt lỗi gốc và chỉ hiện câu chung chung, giáo viên
- * không biết sai ở đâu (issue #55 mục 3). Export để màn editor riêng
- * (question-editor.tsx) dùng chung đúng hành vi này.
- */
 export function withApiReason(fallback: string, err: unknown): string {
   if (err instanceof ApiError) {
     const reason = err.problem.detail ?? err.problem.title;
@@ -25,7 +10,6 @@ export function withApiReason(fallback: string, err: unknown): string {
   return fallback;
 }
 
-/** Một lựa chọn ngữ cảnh cho form danh mục mới. */
 export interface ContextOption {
   id: string;
   level: number;
@@ -42,7 +26,6 @@ export const QTYPE_LABEL_KEYS: Record<Qtype, string> = {
   essay: 'qtypeEssay',
 };
 
-/** Mức độ nhận thức trên dòng nối câu hỏi × YCCĐ (issue #20 Chặng 2, mục A.2). */
 export const COGNITIVE_LEVELS = ['biet', 'hieu', 'van_dung', 'van_dung_cao'] as const;
 export const LEVEL_LABEL_KEYS: Record<(typeof COGNITIVE_LEVELS)[number], string> = {
   biet: 'levelBiet',
@@ -51,14 +34,12 @@ export const LEVEL_LABEL_KEYS: Record<(typeof COGNITIVE_LEVELS)[number], string>
   van_dung_cao: 'levelVanDungCao',
 };
 
-/** Gắn kết chương trình của một câu hỏi — hình dạng của GET /questions/:id/curriculum-links. */
 export interface CurriculumLinksView {
   questionId: string;
   subjectIds: string[];
   outcomes: { outcomeId: string; cognitiveLevel: string }[];
 }
 
-/** Một node trong cây chương trình trả về bởi GET /curriculum/curricula/:id/tree. */
 export interface CurriculumTreeNode {
   id: string;
   title: string;
@@ -66,22 +47,11 @@ export interface CurriculumTreeNode {
   children: CurriculumTreeNode[];
 }
 
-
-
-
-
-
-
-
-
-
-/** Khoá học cho hộp thoại triển khai đề vào quiz. */
 interface CourseLite {
   id: string;
   fullName: string;
 }
 
-/** Nhóm của khoá cho hộp thoại ghim đề (GET /courses/:id/groups). */
 interface CourseGroupLite {
   id: string;
   name: string;
@@ -158,12 +128,10 @@ export type BankArea =
   | 'system-exams'
   | 'system-matrices';
 
-/** Khoá i18n cho trạng thái ma trận dùng chung: pending/approved/rejected ghép từ tên trạng thái. */
 export function matrixStatusKey(status: string): string {
   return `matrixStatus${status[0]!.toUpperCase()}${status.slice(1)}`;
 }
 
-/** Khoá i18n cho trạng thái chờ duyệt (EB-3): từ vựng trạng thái của hồ sơ và của đóng góp đề là một (pending/pending_board/approved/rejected) nên dùng chung — pending_board là khoá ghép riêng. */
 export function dossierStatusKey(status: string): string {
   return status === 'pending_board'
     ? 'dossierStatusPendingBoard'

@@ -2,9 +2,6 @@ import { type RouteConfig, relative } from '@react-router/dev/routes';
 
 const { route } = relative(import.meta.dirname);
 
-/**
- * Khu route của feature auth: đăng nhập và callback OAuth nằm trong shell; hai trang uỷ quyền MCP nằm ngoài shell (khối `standaloneRoutes`).
- */
 export default [
   route('login', 'routes/login.tsx'),
   route('oauth/callback', 'routes/oauth-callback.tsx'),

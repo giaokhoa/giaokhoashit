@@ -30,11 +30,9 @@ export function TeacherPanel({ data }: { data: AssignmentForUserView }) {
   const queryClient = useQueryClient();
   const releaseBatchMutation = useReleaseSubmissionsBatch();
 
-  /** Lỗi nạp danh sách lần đầu (chưa từng có dữ kiện trong cache) — lỗi hành động vẫn qua state `error`. */
   const loadError = summariesQuery.isError && !summariesQuery.data ? t('assignLoadFailed') : null;
   const shownError = error ?? loadError;
 
-  /** Nạp lại danh sách bài nộp từ server (bề mặt chấm gọi sau mỗi hành động ghi). */
   const loadSummaries = useCallback(async () => {
     await queryClient.refetchQueries({ queryKey: queryKeys.assignmentSubmissions(assignment.id) });
   }, [assignment.id, queryClient]);

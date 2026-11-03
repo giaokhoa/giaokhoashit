@@ -38,21 +38,11 @@ import '#config/i18n';
 /**
  * Ô bị khoá thao tác boolean ở vòng này hay không: giá trị đang hiển
  * thị là Ngăn chặn hoặc Cấm hẳn đã lưu.
- *
- * @param value - Giá trị quyền bốn trạng thái đang hiển thị của ô.
  */
 export function isLockedPermission(value: number): boolean {
   return value === CAP.PREVENT || value === CAP.PROHIBIT;
 }
 
-/**
- * Huy hiệu trạng thái khoá đặt cạnh ô mang Ngăn chặn/Cấm hẳn: Cấm
- * hẳn dùng biến thể destructive, Ngăn chặn dùng dải amber như huy
- * hiệu trạng thái chờ của hệ — cả hai đều khác hẳn ô Kế thừa (không
- * có huy hiệu).
- *
- * @param props - Giá trị khoá (Ngăn chặn hoặc Cấm hẳn) cần bày tên.
- */
 function LockedPermissionMark({ value }: { value: number }) {
   const { t } = useTranslation('app');
   const prohibit = value === CAP.PROHIBIT;
@@ -67,15 +57,10 @@ function LockedPermissionMark({ value }: { value: number }) {
   );
 }
 
-/** Thuộc tính của ô checkbox quyền trong hộp thoại ma trận vai trò. */
 export interface PermissionCheckboxCellProps {
-  /** Giá trị bốn trạng thái đang hiển thị của ô. */
   value: number;
-  /** Khoá ô vì lý do ngoài trạng thái khoá (đang lưu ở bề mặt chứa). */
   disabled?: boolean;
-  /** Nhãn truy cập mô tả ô cho trình đọc màn hình. */
   ariaLabel: string;
-  /** Báo bề mặt chứa khi người dùng bật (true = Cho phép) hoặc tắt (false = Kế thừa) ô. */
   onToggle: (allowed: boolean) => void;
 }
 
@@ -83,8 +68,6 @@ export interface PermissionCheckboxCellProps {
  * Ô checkbox của một năng lực trong hộp thoại ma trận vai trò: tích
  * khi ô đang Cho phép, trống khi Kế thừa; ô Ngăn chặn/Cấm hẳn hiện
  * trống kèm huy hiệu trạng thái và bị khoá.
- *
- * @param props - Xem {@link PermissionCheckboxCellProps}.
  */
 export function PermissionCheckboxCell({ value, disabled, ariaLabel, onToggle }: PermissionCheckboxCellProps) {
   const locked = isLockedPermission(value);
@@ -101,15 +84,10 @@ export function PermissionCheckboxCell({ value, disabled, ariaLabel, onToggle }:
   );
 }
 
-/** Thuộc tính của ô toggle quyền trong trang Quyền độc lập. */
 export interface PermissionToggleCellProps {
-  /** Giá trị bốn trạng thái đang hiển thị của ô. */
   value: number;
-  /** Loại năng lực (`read` | `write`) — quyết định icon của nút toggle. */
   capType: string;
-  /** Khoá ô vì lý do ngoài trạng thái khoá (ô đang lưu ở bề mặt chứa). */
   disabled?: boolean;
-  /** Nhãn truy cập mô tả ô (năng lực × vai trò) cho trình đọc màn hình. */
   ariaLabel: string;
   /**
    * Tên năng lực đầy đủ đặt ở thuộc tính `title` của nút: từ vòng
@@ -118,22 +96,9 @@ export interface PermissionToggleCellProps {
    * của trình duyệt) bên cạnh aria-label.
    */
   title?: string;
-  /** Báo bề mặt chứa khi người dùng bật (true = Cho phép) hoặc tắt (false = Kế thừa) ô. */
   onToggle: (allowed: boolean) => void;
 }
 
-/**
- * Ô toggle của một cặp (vai trò × năng lực) trong trang Quyền độc
- * lập: nút icon size-8 như demo — trạng thái chưa cấp dùng variant
- * outline của Toggle (có viền, nền background, bóng `shadow-xs`,
- * chữ muted, hover chuyển foreground) như nút chưa cấp của demo,
- * nhấn khi ô đang Cho phép chuyển sang dải primary nhạt; biểu tượng
- * trong nút cỡ 12px như demo. Ô Ngăn chặn/Cấm hẳn bị khoá và mang
- * huy hiệu trạng thái ngay cạnh nút — cùng cách bày với ô checkbox
- * của hộp thoại ma trận.
- *
- * @param props - Xem {@link PermissionToggleCellProps}.
- */
 export function PermissionToggleCell({ value, capType, disabled, ariaLabel, title, onToggle }: PermissionToggleCellProps) {
   const locked = isLockedPermission(value);
   return (

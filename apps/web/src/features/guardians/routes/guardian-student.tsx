@@ -9,12 +9,6 @@ export { GuardianPage as default } from './guardian';
 
 import { guardianStudentPageClientLoader } from '../queries/guardians';
 
-/**
- * clientLoader (F-01, rà soát #133): prefetch danh sách con + bộ dữ
- * liệu của đúng con trên path vào QueryClient singleton (đúng khoá
- * factory) trước khi component mount; component vẫn đọc bằng useQuery
- * cùng khoá và tự xử lý khi tải hỏng.
- */
 export async function clientLoader({ params }: { params: Record<string, string | undefined> }) {
   if (params.studentId) {
     await guardianStudentPageClientLoader(params.studentId);

@@ -21,13 +21,9 @@ import { useDeleteRoleAssignment } from '../queries/admin-roles';
  * API, không tự phân giải định danh.
  */
 export interface UnassignTarget {
-  /** Dòng gán cần gỡ (chỉ cần định danh để gọi API gỡ). */
   assignment: Pick<AssignmentListItem, 'id'>;
-  /** Tên người dùng hiển thị của dòng gán. */
   userLabel: string;
-  /** Tên vai trò hiển thị của dòng gán. */
   roleLabel: string;
-  /** Nhãn ngữ cảnh hiển thị của dòng gán. */
   contextLabel: string;
 }
 
@@ -46,22 +42,13 @@ export interface UnassignTarget {
  *
  * Dòng do ghi danh quản lý không tới được hộp thoại này: bảng hiển thị
  * thẳng trạng thái không gỡ trực tiếp được thay cho nút gỡ.
- *
- * @param props - Trạng thái mở, dòng gán sắp gỡ và hàm đóng hộp thoại.
  */
 export interface RoleUnassignDialogProps {
-  /** Hộp thoại đang mở hay không. */
   open: boolean;
-  /** Dòng gán sắp gỡ; null khi hộp thoại đóng. */
   target: UnassignTarget | null;
-  /** Đóng hộp thoại (sau khi gỡ thành công hoặc khi người dùng huỷ). */
   onClose: () => void;
 }
 
-/**
- * Dịch mã lỗi gỡ gán của backend thành thông báo cho người dùng; mã lạ
- * thì dùng thông báo chung, không hiện mã kỹ thuật ra giao diện.
- */
 function unassignErrorMessage(error: unknown, t: (key: string) => string): string {
   if (error instanceof ApiError && error.problem.code === 'access.assignment_enrol_managed') {
     return t('assignmentEnrolManaged');
@@ -76,7 +63,6 @@ export function RoleUnassignDialog({ open, target, onClose }: RoleUnassignDialog
 
   if (!open || !target) return null;
 
-  /** Gỡ gán: lỗi thì giữ hộp thoại mở kèm lý do; thành công thì đóng. */
   async function confirmUnassign() {
     if (!target) return;
     setError(null);

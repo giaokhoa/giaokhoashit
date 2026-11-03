@@ -28,7 +28,6 @@
  */
 import type { ContextRow } from '#lib/access';
 
-/** Ánh xạ cấp ngữ cảnh sang khoá i18n của nhãn cấp dạng chữ. */
 const CONTEXT_LEVEL_LABEL_KEYS: Record<number, string> = {
   10: 'contextLevelSystem',
   20: 'contextLevelTenant',
@@ -40,12 +39,6 @@ const CONTEXT_LEVEL_LABEL_KEYS: Record<number, string> = {
   80: 'contextLevelBlock',
 };
 
-/**
- * Khoá i18n của nhãn cấp ngữ cảnh dạng chữ.
- *
- * @param level - Cấp ngữ cảnh dạng số (của dòng gán hoặc dòng ngữ cảnh).
- * @returns Khoá nhãn của cấp đã biết, hoặc khoá nhãn cấp chung khi cấp lạ.
- */
 export function contextLevelLabelKey(level: number): string {
   return CONTEXT_LEVEL_LABEL_KEYS[level] ?? 'contextLevelUnknown';
 }
@@ -57,11 +50,6 @@ export function contextLevelLabelKey(level: number): string {
  * ở hai ngữ cảnh cùng cấp phân biệt được; khi cây không chứa ngữ cảnh
  * đó (dữ kiện cũ, cây tải thiếu) thì lùi về nhãn cấp trần như trước
  * thay vì lộ định danh hay đường dẫn kỹ thuật.
- *
- * @param contexts - Toàn bộ cây ngữ cảnh đã tải ở trang.
- * @param assignment - Dòng gán cần lấy nhãn (định danh và cấp ngữ cảnh).
- * @param translate - Hàm dịch i18n của nơi gọi (namespace `app`).
- * @returns Nhãn dạng chữ đọc được của ngữ cảnh dòng gán.
  */
 export function assignmentContextLabel(
   contexts: ContextRow[],
@@ -79,11 +67,6 @@ export function assignmentContextLabel(
  * Nhãn hiển thị của một ngữ cảnh trong ô chọn: nhãn cấp dạng chữ đã
  * dịch, kèm số thứ tự trong cùng cấp khi cấp đó có nhiều ngữ cảnh —
  * tuyệt đối không chứa định danh, đường dẫn hay chuỗi kỹ thuật.
- *
- * @param contexts - Toàn bộ cây ngữ cảnh đang hiển thị trong ô chọn.
- * @param context - Ngữ cảnh cần lấy nhãn.
- * @param translate - Hàm dịch i18n của nơi gọi (namespace `app`).
- * @returns Nhãn dạng chữ đọc được của ngữ cảnh.
  */
 export function contextOptionLabel(
   contexts: ContextRow[],

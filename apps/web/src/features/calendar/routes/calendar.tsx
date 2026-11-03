@@ -44,9 +44,6 @@ const EVENT_TYPES = ['user', 'site', 'category', 'course', 'group'] as const;
  * Không có cookie phiên thì không gọi API nào (trang tải phía client
  * như trước SL-1). Lỗi ở một endpoint chỉ làm query đó vắng mặt trong
  * state, trang tự fetch lại đúng key đó.
- *
- * @param request - Request đang phục vụ (nguồn cookie phiên).
- * @returns Dehydrated state cho HydrationBoundary ở root.
  */
 export async function loader({ request }: { request: Request }): Promise<SsrLoaderData> {
   const range = currentMonthRangeIso();
@@ -68,23 +65,6 @@ export async function loader({ request }: { request: Request }): Promise<SsrLoad
   });
 }
 
-/**
- * Lịch: xem sự kiện tháng hiện tại (lọc theo loại), tạo/xoá sự kiện, đặt
- * nhắc, và quản lý subscription lịch ngoài kèm nhập ngay. API áp dụng luật
- * hiển thị (site cho mọi người, course cho người đã ghi danh, group cho
- * thành viên, user chỉ cho chủ sở hữu) — vì vậy nút xoá chỉ hiện ở sự kiện
- * loại `user`, tức sự kiện của chính người đang xem; nhắc thì API cho phép
- * với mọi sự kiện người dùng nhìn thấy được.
- *
- * Dữ liệu qua TanStack Query (lib/calendar.ts, F-01): sự kiện tháng dùng
- * đúng khoá factory `calendarEvents(from, to)` đã có sẵn; subscription và
- * token xuất lịch là hai query riêng (lỗi tải giữ dữ liệu cũ như trước);
- * mọi đột biến làm mới các truy vấn lịch qua tiền tố khoá thay vì nạp lại
- * thủ công. Từ lát SL-1 (#7), loader của route prefetch cả ba query phía
- * server (khi có cookie phiên) và trang hydrate từ cache — khoảng tháng
- * lấy từ `currentMonthRangeIso` (múi giờ ứng dụng) để key của trang khớp
- * tuyệt đối với key loader đã prefetch.
- */
 export function CalendarPage() {
   const { t, i18n } = useTranslation('app');
   const [typeFilter, setTypeFilter] = useState<(typeof TYPES)[number]>('all');
@@ -102,10 +82,9 @@ export function CalendarPage() {
   const [subName, setSubName] = useState('');
   const [subUrl, setSubUrl] = useState('');
   const now = useMemo(() => new Date(), []);
-  // Khoảng tháng cho query sự kiện: tính theo múi giờ ứng dụng qua
-  // helper dùng chung với loader SL-1 (trước đây tính theo giờ máy
-  // của trình duyệt — hai phía lệch múi giờ là key không bao giờ
-  // khớp để hydrate; xem `currentMonthRangeIso` ở lib/calendar.ts).
+  // Khoảng tháng cho query sự kiện: tính theo múi giờ ứng dụng qua helper dùng chung với loader SL-1 (trước đây tính
+  // theo giờ máy của trình duyệt — hai phía lệch múi giờ là key không bao giờ khớp để hydrate; xem
+  // `currentMonthRangeIso` ở lib/calendar.ts).
   const range = useMemo(() => currentMonthRangeIso(), []);
 
   const eventsQuery = useCalendarEvents(range.from, range.to);
@@ -125,7 +104,6 @@ export function CalendarPage() {
   const loading = eventsQuery.isPending;
   const loadFailed = eventsQuery.isError;
 
-  /** Tạo sự kiện theo đúng DTO: loại sự kiện quyết định id phạm vi đi kèm. */
   function createEvent(event: FormEvent) {
     event.preventDefault();
     setMessage(null);
@@ -154,7 +132,6 @@ export function CalendarPage() {
     );
   }
 
-  /** Xoá một sự kiện của mình; danh sách tháng được làm mới qua invalidation. */
   function deleteEvent(id: string) {
     setMessage(null);
     deleteEventMutation.mutate(id, {
@@ -163,7 +140,6 @@ export function CalendarPage() {
     });
   }
 
-  /** Đặt nhắc trước sự kiện 60 phút (DTO nhắc chỉ gồm `minutesBefore`). */
   function remind(id: string) {
     setMessage(null);
     remindMutation.mutate(id, {
@@ -193,7 +169,6 @@ export function CalendarPage() {
     );
   }
 
-  /** Yêu cầu nhập ngay một subscription (server đưa vào hàng đợi worker). */
   function importSubscription(id: string) {
     setMessage(null);
     importSubscriptionMutation.mutate(id, {
@@ -202,7 +177,6 @@ export function CalendarPage() {
     });
   }
 
-  /** Tải tệp ICS của chính user qua GET /calendar/exports?format=ics (endpoint đòi đăng nhập nên phải fetch kèm token rồi tải blob, không dùng link trực tiếp). */
   async function downloadIcs() {
     setMessage(null);
     try {
@@ -220,7 +194,6 @@ export function CalendarPage() {
     }
   }
 
-  /** Tạo hoặc tạo lại đường dẫn đăng ký xuất lịch (POST /calendar/export-token thay token cũ). */
   function createExportToken() {
     setMessage(null);
     createTokenMutation.mutate(undefined, {
@@ -229,7 +202,6 @@ export function CalendarPage() {
     });
   }
 
-  /** Thu hồi đường dẫn đăng ký xuất lịch (DELETE /calendar/export-token) — đường dẫn cũ lập tức hết hiệu lực. */
   function revokeExportToken() {
     setMessage(null);
     revokeTokenMutation.mutate(undefined, {
@@ -239,9 +211,8 @@ export function CalendarPage() {
   }
 
   const visible = events.filter((e) => typeFilter === 'all' || e.eventType === typeFilter);
-  // Gom sự kiện theo ngày địa phương; tiêu đề ngày và giờ sự kiện luôn
-  // định dạng theo ngôn ngữ giao diện (i18n.language) thay vì mặc định
-  // trình duyệt, để trang không lẫn định dạng tiếng Anh khi locale là vi.
+  // Gom sự kiện theo ngày địa phương; tiêu đề ngày và giờ sự kiện luôn định dạng theo ngôn ngữ giao diện
+  // (i18n.language) thay vì mặc định trình duyệt, để trang không lẫn định dạng tiếng Anh khi locale là vi.
   const byDay = new Map<string, { date: Date; events: EventView[] }>();
   for (const e of visible) {
     const start = new Date(e.timeStart);
@@ -262,8 +233,7 @@ export function CalendarPage() {
               <SheetHeader>
                 <SheetTitle>{t('createEventTitle')}</SheetTitle>
               </SheetHeader>
-              {/* §5.6: form sự kiện nằm trong Sheet — danh sách sự kiện là
-                  nội dung chính của trang, form không chiếm chỗ cố định. */}
+              {}
               <form onSubmit={(e) => createEvent(e)} className="px-4">
                 <FieldGroup>
                   <Field>
@@ -517,7 +487,6 @@ export function CalendarPage() {
   );
 }
 
-/** Export mặc định cho route module React Router framework mode (xem src/routes.ts). */
 export default CalendarPage;
 
 // Biên lỗi + tiêu đề theo route (cụm khung SSR #146, từ rà soát #133).

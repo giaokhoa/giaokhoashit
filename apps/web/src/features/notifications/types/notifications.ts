@@ -1,12 +1,4 @@
-/**
- * Kiểu dữ liệu của trung tâm thông báo thuộc feature notifications.
- * Tách từ module phẳng `src/lib/notifications.ts` khi tổ chức lại
- * apps/web theo mô hình features/ (issue #500): kiểu nằm ở tầng
- * types/, hàm thuần ở tầng utils/, lời gọi API thuần ở tầng api/,
- * options/hook và thao tác cache ở tầng queries/.
- */
 
-/** Một mục thông báo đầy đủ như API danh sách phẳng của trung tâm v2 trả về. */
 export interface NotificationItemView {
   id: string;
   subject: string;
@@ -21,10 +13,6 @@ export interface NotificationItemView {
 
 export type NotificationGroupFilter = 'learning' | 'people' | 'system';
 
-/**
- * Một dòng GỘP của trung tâm thông báo v2 (issue #51): khoá gộp
- * (loại × nguồn × ngày), `latest` là mục mới nhất đại diện.
- */
 export interface NotificationGroupView {
   eventType: string;
   component: string;
@@ -43,13 +31,11 @@ export interface NotificationGroupView {
   };
 }
 
-/** Một trang của danh sách nhóm (phân trang con trỏ phía server). */
 export interface NotificationGroupsPage {
   items: NotificationGroupView[];
   nextCursor: string | null;
 }
 
-/** Tần suất gửi email của một loại thông báo (mô hình tuỳ chọn v2, NB-2 issue #174). */
 export type EmailFrequency = 'immediate' | 'daily' | 'off';
 
 /**
@@ -79,7 +65,6 @@ export interface NotificationPreferenceView {
   siteEnabled: boolean;
 }
 
-/** Một thay đổi tuỳ chọn v2 cho một provider: popup và/hoặc tần suất email. */
 export interface PreferencePatch {
   popupEnabled?: boolean;
   emailFrequency?: EmailFrequency;
@@ -93,7 +78,6 @@ export interface PreferencePatch {
  */
 export type NotificationCourseOverrideMode = 'all' | 'mute';
 
-/** Một dòng ghi đè theo khoá đúng như API trả (GET /messages/preferences/courses). */
 export interface NotificationCourseOverrideView {
   courseId: string;
   courseName: string;

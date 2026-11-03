@@ -330,8 +330,6 @@ export function GradingPanel({
                 void (async () => {
                   setBusy(true);
                   try {
-                    // Mục vừa tạo do đột biến vá thẳng vào cache ngân
-                    // hàng ở tầng dữ kiện — danh sách tự cập nhật.
                     await createBankEntryMutation.mutateAsync({
                       category: bankCategory,
                       text: bankDraft.trim(),

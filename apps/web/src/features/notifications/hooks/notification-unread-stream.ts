@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { queryKeys } from '#lib/query-keys';
 
-/** Payload của sự kiện `unread-count` trên stream SSE — cùng hình dạng với đáp ứng REST GET /notifications/unread-count. */
 const unreadCountEventSchema = z.object({ unread: z.number().int().nonnegative() });
 
 const STREAM_URL = '/api/v1/notifications/unread-count/stream';

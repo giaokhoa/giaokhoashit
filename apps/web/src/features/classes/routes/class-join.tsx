@@ -52,13 +52,10 @@ export function ClassJoinPage() {
     onError: () => setError(t('classJoinInvalid')),
   });
 
-  // Tự xem trước cho mã có sẵn trong link: chỉ chạy đúng một
-  // lần lúc mở trang (gác bằng ref). `initialCode` là giá trị
-  // khởi tạo lấy từ URL lúc trang mở — không tự xem trước lại
-  // khi URL đổi trong lúc trang đang mở, khớp cách `code` được
-  // khởi tạo một lần bằng useState ở trên. Mảng phụ thuộc liệt
-  // kê đủ giá trị hiệu ứng đọc; ref gác làm các lần chạy thêm
-  // (khi phụ thuộc đổi danh tính) thoát ngay, hành vi không đổi.
+  // Tự xem trước cho mã có sẵn trong link: chỉ chạy đúng một lần lúc mở trang (gác bằng ref). `initialCode` là giá trị
+  // khởi tạo lấy từ URL lúc trang mở — không tự xem trước lại khi URL đổi trong lúc trang đang mở, khớp cách `code`
+  // được khởi tạo một lần bằng useState ở trên. Mảng phụ thuộc liệt kê đủ giá trị hiệu ứng đọc; ref gác làm các lần
+  // chạy thêm (khi phụ thuộc đổi danh tính) thoát ngay, hành vi không đổi.
   const autoPreviewedRef = useRef(false);
   useEffect(() => {
     if (autoPreviewedRef.current) return;

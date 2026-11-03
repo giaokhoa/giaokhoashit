@@ -1,35 +1,12 @@
-/**
- * Hook điều phối kiểm duyệt tin của trang Tin nhắn (đợt C của issue
- * #223, lát 3): sở hữu tập tin đã chọn để gỡ hàng loạt và các thao
- * tác xoá-phía-mình, thu hồi, xoá cứng, gỡ hàng loạt. Di chuyển từ
- * `pages/messages.tsx` (dòng 343–351 và khoảng 1.380–1.458), giữ
- * nguyên luật: chỉ tác giả mới xoá-phía-mình mọi lúc; thu hồi chỉ
- * trong cửa sổ (client chỉ ẩn nút khi tin đã cũ, server là thẩm
- * quyền cuối); xoá cứng và gỡ hàng loạt hỏi lý do bắt buộc qua
- * `window.prompt`; toàn bộ danh sách gỡ hàng loạt được kiểm tra
- * thẩm quyền trước, một tin ngoài phạm vi là cả lượt bị từ chối.
- *
- * @param params - `active` là conversation đang mở; `myId` để xét
- * quyền thu hồi; `patchMessages` để áp kết quả của đột biến lên
- * mọi đoạn cửa sổ tin trong cache (bốn đột biến theo tin chỉ mang
- * id tin, không mang id hội thoại, nên việc vá cache nằm ở tầng
- * hook này — nơi biết conversation của tin);
- * `setActionMessage` để báo kết quả ở dải thông báo của khung chat.
- * @returns Trạng thái kiểm duyệt và handler cho trang lắp ghép.
- */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBulkRemoveMessages, useDeleteMessageForMe, useHardDeleteMessage, useRecallMessage } from '../queries/messaging';
 import type { ConversationView, MessageView } from '../types/types';
 
 export interface UseMessageModerationParams {
-  /** Conversation đang mở (null khi chưa chọn). */
   active: ConversationView | null;
-  /** Id người xem hiện tại (chỉ tác giả mới thu hồi/xoá-phía-mình). */
   myId: string | undefined;
-  /** Áp một phép biến đổi lên mọi đoạn cửa sổ tin của một conversation trong cache. */
   patchMessages: (conversationId: string, updater: (messages: MessageView[]) => MessageView[]) => void;
-  /** Ghi thông báo hành động của khung chat. */
   setActionMessage: (message: string | null) => void;
 }
 
@@ -43,7 +20,6 @@ const RECALL_WINDOW_MINUTES = 15;
 
 export function useMessageModeration({ active, myId, patchMessages, setActionMessage }: UseMessageModerationParams) {
   const { t } = useTranslation('app');
-  /** Tin đã chọn để gỡ hàng loạt (chỉ moderator) — chọn bằng checkbox ở từng dòng tin. */
   const [selectedForBulk, setSelectedForBulk] = useState<Set<string>>(new Set());
 
   const deleteMessageMutation = useDeleteMessageForMe();
@@ -82,7 +58,6 @@ export function useMessageModeration({ active, myId, patchMessages, setActionMes
     return Date.now() - new Date(message.createdAt).getTime() < RECALL_WINDOW_MINUTES * 60 * 1000;
   }
 
-  /** Thu hồi tin của mình cho mọi người (chỉ trong cửa sổ): nội dung bị vô hiệu, khung hiện dòng đã thu hồi. */
   async function recallMessage(message: MessageView) {
     setActionMessage(null);
     try {
@@ -104,7 +79,6 @@ export function useMessageModeration({ active, myId, patchMessages, setActionMes
     }
   }
 
-  /** Xoá cứng một tin (chỉ moderator có moderation:manage): lý do bắt buộc, tin biến mất khỏi khung ngay. */
   async function hardDeleteMessage(message: MessageView) {
     setActionMessage(null);
     if (!window.confirm(t('hardDeleteConfirm'))) return;

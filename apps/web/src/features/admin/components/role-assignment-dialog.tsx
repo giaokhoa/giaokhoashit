@@ -53,30 +53,19 @@ import { AdminSelect } from './admin-select';
  * tải thêm ẩn đi kèm gợi ý thu hẹp từ khoá, vì gửi `pageSize` vượt
  * trần bị server trả HTTP 400 và người sau 100 kết quả không chọn
  * được bằng cách bấm thêm nữa.
- *
- * @param props - Trạng thái mở, danh sách vai trò và cây context đã tải
- * ở trang, người dùng chọn sẵn (tuỳ chọn) và hàm đóng hộp thoại.
  */
 export interface RoleAssignmentDialogProps {
-  /** Hộp thoại đang mở hay không. */
   open: boolean;
-  /** Danh sách vai trò để chọn (lưới thẻ của trang đã tải). */
   roles: RoleListItem[];
-  /** Cây context để chọn ngữ cảnh gán. */
   contexts: ContextRow[];
   /**
    * Người dùng chọn sẵn: khi có, hộp thoại bỏ bước tìm/chọn người
    * dùng và gán thẳng cho người này.
    */
   presetUser?: Pick<UserProfile, 'id' | 'username' | 'email'> | null;
-  /** Đóng hộp thoại (sau khi gán thành công hoặc khi người dùng huỷ). */
   onClose: () => void;
 }
 
-/**
- * Dịch mã lỗi gán vai của backend thành thông báo cho người dùng; mã lạ
- * thì dùng thông báo chung, không hiện mã kỹ thuật ra giao diện.
- */
 function assignErrorMessage(error: unknown, t: (key: string) => string): string {
   if (error instanceof ApiError) {
     if (error.problem.code === 'plan.tenant_slot_limit_reached') {
@@ -101,16 +90,13 @@ export function RoleAssignmentDialog({
 }: RoleAssignmentDialogProps) {
   const { t } = useTranslation('app');
   const [userSearch, setUserSearch] = useState('');
-  /** Số người tối đa tải về cho ô chọn; nút tải thêm tăng từng đợt 20 tới trần của API. */
   const [userPageSize, setUserPageSize] = useState(20);
-  /** Người dùng đã chọn trong danh sách tìm kiếm; null khi chưa chọn (và không có người chọn sẵn). */
   const [selectedUser, setSelectedUser] = useState<Pick<UserProfile, 'id' | 'username' | 'email'> | null>(null);
   const [roleId, setRoleId] = useState('');
   const [contextId, setContextId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const createMutation = useCreateRoleAssignment();
 
-  /** Danh sách người dùng cho ô chọn: tải từ đầu với cỡ trang hiện tại, tìm phía server theo từ khoá. */
   const usersQuery = useQuery({
     ...adminUsersQueryOptions(1, userPageSize, userSearch),
     placeholderData: keepPreviousData,
@@ -119,7 +105,6 @@ export function RoleAssignmentDialog({
 
   if (!open) return null;
 
-  /** Người được gán hiệu lực: người chọn sẵn, nếu không thì lựa chọn trong danh sách tìm kiếm. */
   const effectiveUser = presetUser ?? selectedUser;
 
   /**
@@ -130,7 +115,6 @@ export function RoleAssignmentDialog({
   const effectiveContextId =
     contextId === '' ? (contexts.find((ctx) => ctx.contextLevel === 10)?.id ?? '') : contextId;
 
-  /** Gán vai: lỗi thì giữ hộp thoại mở kèm lý do; thành công thì đóng. */
   async function submitAssign() {
     if (!effectiveUser || !roleId || !effectiveContextId) return;
     setError(null);
@@ -186,7 +170,7 @@ export function RoleAssignmentDialog({
                   />
                 </InputGroup>
               </Field>
-              {/* Danh sách chọn người dùng: mỗi dòng là một nút chọn, dòng đã chọn tô đậm. */}
+              {}
               {usersQuery.isPending ? (
                 <PageSkeleton label={t('loading')} rows={['h-9 w-full', 'h-9 w-full']} />
               ) : usersQuery.isError ? (

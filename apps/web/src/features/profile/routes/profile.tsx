@@ -13,21 +13,6 @@ import '#config/i18n';
 import { apiJson } from '#lib/api';
 import { useAuth } from '#lib/auth';
 
-/**
- * Trang HỒ SƠ (`/profile`) — từ issue #288 (quyết định 21:29 ngày
- * 26/10/2026 theo research chuẩn site lớn) trang này CHỈ còn thông tin
- * user: form họ/tên/email + các trường tuỳ biến, lưu qua
- * `PATCH /api/v1/users/:id` rồi nạp lại phiên (`reload`) để mọi bề mặt
- * dùng chung AuthContext thấy tên/email mới ngay.
- *
- * Mọi khối CÀI ĐẶT từng xếp chồng ở đây đã chuyển sang khu Cài đặt
- * riêng (menu trái): xác thực hai lớp + phiên đăng nhập ở
- * `/settings/security`, tài khoản liên kết ở
- * `/settings/linked-accounts` — các thẻ đó sống ở
- * `components/profile-cards.tsx` và chỉ được di chuyển nguyên trạng,
- * không đổi nghiệp vụ. Dòng nhắc `forcePasswordChange` giữ nguyên ở
- * đầu thẻ form như trước (khối đổi mật khẩu là lát riêng, chưa làm).
- */
 export function ProfilePage() {
   const { t } = useTranslation('app');
   const { user, reload } = useAuth();
@@ -39,10 +24,9 @@ export function ProfilePage() {
   } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  // Lưu hồ sơ qua đột biến TanStack Query (F-01 của #133): dữ liệu
-  // đọc của trang vẫn là phiên ở AuthContext (không phải query), nên
-  // đột biến không invalidate khoá nào — thành công thì nạp lại phiên
-  // như trước để mọi bề mặt thấy tên/email mới ngay.
+  // Lưu hồ sơ qua đột biến TanStack Query (F-01 của #133): dữ liệu đọc của trang vẫn là phiên ở AuthContext (không phải
+  // query), nên đột biến không invalidate khoá nào — thành công thì nạp lại phiên như trước để mọi bề mặt thấy
+  // tên/email mới ngay.
   const updateProfile = useMutation({
     mutationFn: (body: {
       firstName: string;
@@ -158,7 +142,6 @@ export function ProfilePage() {
   );
 }
 
-/** Export mặc định cho route module React Router framework mode (xem src/routes.ts). */
 export default ProfilePage;
 
 // Biên lỗi + tiêu đề theo route (cụm khung SSR #146, từ rà soát #133).

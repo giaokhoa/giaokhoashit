@@ -12,22 +12,7 @@ import type {
 } from '@lms/contracts';
 import { apiJson } from '#lib/api';
 
-/**
- * Tầng gọi API thuần của bề mặt quản trị vai trò thuộc feature admin:
- * chỉ chứa các hàm gọi HTTP, không phụ thuộc React hay React Query.
- * Tầng `queries/` của feature bọc các hàm này thành đột biến. Các
- * thao tác đọc (danh sách vai kèm tổng hợp, danh mục capability, cây
- * context, ma trận đã lưu) nằm ở tầng dùng chung `src/lib/access.ts`
- * vì nhiều feature cùng dùng; riêng bốn thao tác ghi của đợt 2 đặt ở
- * đây để hộp thoại ma trận không gọi thẳng client dùng chung.
- */
-
-/**
- * Tạo vai trò mới (POST /access/roles) — vai mới bắt đầu với 0 ghi đè.
- *
- * @param draft - Tên, `shortName` bắt buộc duy nhất và mô tả tuỳ chọn.
- * @returns Vai trò vừa tạo.
- */
+/** Tạo vai trò mới (POST /access/roles) — vai mới bắt đầu với 0 ghi đè. */
 export function createRole(draft: CreateRole) {
   return apiJson<Role>('/api/v1/access/roles', { method: 'POST', body: JSON.stringify(draft) });
 }
@@ -35,9 +20,6 @@ export function createRole(draft: CreateRole) {
 /**
  * Cập nhật tên/mô tả của vai trò (PATCH /access/roles/:id) — `shortName`
  * và `archetype` không đổi được qua endpoint này.
- *
- * @param input - Định danh vai trò và trường muốn đổi.
- * @returns Vai trò sau khi cập nhật.
  */
 export function updateRole(input: { roleId: string; draft: UpdateRole }) {
   return apiJson<Role>(`/api/v1/access/roles/${input.roleId}`, {
@@ -80,28 +62,14 @@ export function deleteRole(roleId: string) {
  * truy vấn để backend hiểu là không lọc theo tiêu chí đó.
  */
 export interface ListAssignmentsParams {
-  /** Chỉ giữ dòng của người dùng này; bỏ qua thì không lọc theo người dùng. */
   userId?: string;
-  /** Chỉ giữ dòng của vai trò này; bỏ qua thì không lọc theo vai trò. */
   roleId?: string;
-  /** Chỉ giữ dòng tại ngữ cảnh này; bỏ qua thì không lọc theo ngữ cảnh. */
   contextId?: string;
-  /** Từ khoá khớp tên hoặc email người dùng; bỏ qua khi rỗng. */
   search?: string;
-  /** Số trang (bắt đầu từ 1). */
   page: number;
-  /** Số dòng mỗi trang. */
   pageSize: number;
 }
 
-/**
- * Liệt kê dòng gán vai đã phân trang phía server
- * (GET /access/assignments) — phản hồi kèm tổng số dòng khớp bộ lọc để
- * bảng tính số trang; mỗi dòng đã ghép sẵn tên và email người dùng.
- *
- * @param params - Bộ lọc, từ khoá và phân trang của trang hiện tại.
- * @returns Trang dòng gán kèm tổng số dòng khớp.
- */
 export function listAssignments(params: ListAssignmentsParams) {
   const query = new URLSearchParams();
   if (params.userId) query.set('userId', params.userId);
@@ -116,18 +84,6 @@ export function listAssignments(params: ListAssignmentsParams) {
 /** Cỡ trang của lượt quét toàn bộ tập người giữ vai — khớp trần phía server của danh sách gán vai. */
 const ALL_ASSIGNMENTS_PAGE_SIZE = 100;
 
-/**
- * Đọc tập định danh người dùng đang giữ một vai trò tại một ngữ cảnh
- * (GET /access/assignments lọc theo vai trò + ngữ cảnh, quét lần lượt
- * các trang ở cỡ 100 cho tới khi đủ tổng server công bố). Phục vụ bộ
- * lọc theo vai trò của trang danh sách người dùng: phép lọc chạy phía
- * server trên endpoint gán vai, trang người dùng giao tập định danh
- * này với tập người dùng đã lọc/sắp xếp phía server của chính nó.
- *
- * @param roleId - Vai trò cần lọc.
- * @param contextId - Ngữ cảnh của vai trò (bộ lọc vai trò của trang người dùng luôn là ngữ cảnh hệ thống).
- * @returns Tập định danh người dùng giữ vai trò tại ngữ cảnh đó.
- */
 export async function fetchRoleHolderUserIds(roleId: string, contextId: string) {
   const userIds = new Set<string>();
   let page = 1;
@@ -200,17 +156,11 @@ export function setCapabilityOverride(input: OverrideCapability) {
   });
 }
 
-/** Tham số của danh sách người dùng kèm gán vai — mọi trường đều tuỳ chọn trừ phân trang. */
 export interface ListUsersWithAssignmentsParams {
-  /** Từ khoá tìm theo tên đăng nhập, họ tên hoặc email (server khớp mờ). */
   search?: string;
-  /** Chỉ lấy người dùng đang giữ vai trò này ở bất kỳ ngữ cảnh nào. */
   roleId?: string;
-  /** Nhóm trạng thái tài khoản; vắng mặt thì server chỉ trả người dùng chưa xoá. */
   status?: UserListStatus;
-  /** Trang bắt đầu từ 1. */
   page: number;
-  /** Cỡ trang, tối đa 100 theo hợp đồng. */
   pageSize: number;
 }
 

@@ -1,8 +1,3 @@
-/**
- * Hàm thuần về múi giờ của trang lịch thuộc feature calendar.
- * Tách từ module phẳng `src/lib/calendar.ts` khi tổ chức lại
- * apps/web theo mô hình features/ (issue #500).
- */
 
 /**
  * Múi giờ nghiệp vụ của ứng dụng (trường học Việt Nam): mọi khoảng
@@ -39,18 +34,15 @@ const zonedClockPartsFormatter = new Intl.DateTimeFormat('en-US', {
   second: '2-digit',
 });
 
-/** Đọc một trường số từ kết quả formatToParts (thiếu trường thì 0 — không xảy ra với các formatter ở đây). */
 function partNumber(parts: Intl.DateTimeFormatPart[], type: string): number {
   return Number(parts.find((p) => p.type === type)?.value ?? '0');
 }
 
-/** Ngày lịch (năm/tháng/ngày) của một mốc thời gian theo múi giờ ứng dụng. */
 function zonedDateParts(instant: Date): { year: number; month: number; day: number } {
   const parts = zonedDayPartsFormatter.formatToParts(instant);
   return { year: partNumber(parts, 'year'), month: partNumber(parts, 'month'), day: partNumber(parts, 'day') };
 }
 
-/** Độ lệch của múi giờ ứng dụng so với UTC tại một mốc (ms): format ngược mốc đó theo giờ địa phương rồi trừ. */
 function zonedOffsetMs(instant: Date): number {
   const parts = zonedClockPartsFormatter.formatToParts(instant);
   const asUtcMs = Date.UTC(
@@ -79,9 +71,6 @@ function zonedMidnightUtcMs(year: number, month: number, day: number): number {
  * (from = 00:00 ngày 1, to = 23:59:59.999 ngày cuối tháng). Trang
  * lịch và loader SL-1 của nó dùng CHUNG hàm này nên query key
  * `calendarEvents(from, to)` khớp tuyệt đối giữa hai phía.
- *
- * @param now - Mốc "hiện tại" (mặc định lúc gọi); truyền tường minh khi test.
- * @returns `{ from, to }` là chuỗi ISO của hai đầu khoảng.
  */
 export function currentMonthRangeIso(now: Date = new Date()): { from: string; to: string } {
   const { year, month } = zonedDateParts(now);
@@ -92,18 +81,6 @@ export function currentMonthRangeIso(now: Date = new Date()): { from: string; to
   return { from: new Date(fromMs).toISOString(), to: new Date(toMs).toISOString() };
 }
 
-/**
- * Khoảng sự kiện `days` ngày tính từ ĐẦU NGÀY HÔM NAY theo múi giờ
- * ứng dụng (from = 00:00 hôm nay, to = from + đúng `days` ngày) —
- * khối học viên của dashboard dùng cho biểu đồ hoạt động: cửa sổ lấy
- * sự kiện phủ đúng các ô ngày mà biểu đồ dựng (ô đầu là hôm nay
- * 00:00 theo giờ ứng dụng), và loader SL-1 tính lại cùng một khoảng
- * nên key khớp.
- *
- * @param days - Số ngày của cửa sổ (dashboard dùng 30).
- * @param now - Mốc "hiện tại" (mặc định lúc gọi); truyền tường minh khi test.
- * @returns `{ from, to }` là chuỗi ISO của hai đầu khoảng.
- */
 export function upcomingDaysRangeIso(days: number, now: Date = new Date()): { from: string; to: string } {
   const { year, month, day } = zonedDateParts(now);
   const fromMs = zonedMidnightUtcMs(year, month, day);

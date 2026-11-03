@@ -49,7 +49,6 @@ import { COGNITIVE_LEVELS, LEVEL_LABEL_KEYS, QTYPES, QTYPE_LABEL_KEYS, withApiRe
 
 const SELECT_CLASS = 'h-9 w-full rounded-md border border-input bg-transparent px-2.5 text-sm shadow-xs';
 
-/** Các bước của wizard, theo đúng thứ tự nhiệm vụ I-3 giao. */
 const STEP_KEYS = [
   'matrixImportStep1',
   'matrixImportStep2',
@@ -58,18 +57,9 @@ const STEP_KEYS = [
   'matrixImportStep5',
 ] as const;
 
-/**
- * Một lỗi cứng định vị trong file nhập (cùng hình dạng
- * `MatrixImportIssue` của contracts, ở cả xem trước lẫn 422 lúc ghi).
- *
- * @param issue - Lỗi cần trình bày; `row`/`column` null khi lỗi thuộc
- *   toàn file hoặc khối thông tin chung không định vị được một ô.
- */
 function IssueTable({ issues }: { issues: MatrixImportIssue[] }) {
   const { t } = useTranslation('app');
   if (issues.length === 0) return null;
-  // Khoá hàng giữ đúng công thức của bảng tự vẽ trước đây (mã + dòng +
-  // cột + số thứ tự) để định danh hàng ổn định trong bảng dùng chung.
   const rows = issues.map((issue, index) => ({
     ...issue,
     rowKey: `${issue.code}-${issue.row ?? ''}-${issue.column ?? ''}-${index}`,
@@ -102,14 +92,11 @@ function IssueTable({ issues }: { issues: MatrixImportIssue[] }) {
   );
 }
 
-/** Trang wizard nhập ma trận từ file (route /matrices/import). */
 export function MatrixImportPage() {
   const { t } = useTranslation('app');
   const navigate = useNavigate();
   const perms = usePermissions();
 
-  // Bước hiện tại của wizard (1–5); file + kết quả xem trước được giữ
-  // xuyên suốt để bước ghi gửi lại đúng file đã xem trước.
   const [step, setStep] = useState(1);
   const [subjectId, setSubjectId] = useState('');
   const [curriculumId, setCurriculumId] = useState('');
@@ -123,12 +110,10 @@ export function MatrixImportPage() {
   const [previewBusy, setPreviewBusy] = useState(false);
   const [commitBusy, setCommitBusy] = useState(false);
 
-  // Khoá của giáo viên để mở nhánh đọc khung theo khoá (điểm nghẽn
-  // D-3 của issue #233): môn/chương trình là dữ liệu quốc gia chung
-  // nên khoá nào của giáo viên cũng cho cùng danh sách — `forCourseId`
-  // chỉ mở cổng đọc, không lọc danh sách theo khoá. Danh sách khoá
-  // phải về trước mới gọi, để tránh một lượt gọi không kèm khoá rồi
-  // hiện lỗi giả trước khi khoá kịp về.
+  // Khoá của giáo viên để mở nhánh đọc khung theo khoá (điểm nghẽn D-3 của issue #233): môn/chương trình là dữ liệu
+  // quốc gia chung nên khoá nào của giáo viên cũng cho cùng danh sách — `forCourseId` chỉ mở cổng đọc, không lọc danh
+  // sách theo khoá. Danh sách khoá phải về trước mới gọi, để tránh một lượt gọi không kèm khoá rồi hiện lỗi giả trước
+  // khi khoá kịp về.
   const coursesQuery = useCourseList();
   const forCourseId = coursesQuery.data?.[0]?.id;
   const subjectsQuery = useCurriculumSubjects(
@@ -138,13 +123,8 @@ export function MatrixImportPage() {
   const subjects = subjectsQuery.data ?? [];
   const curriculaQuery = useCurriculaBySubject(subjectId, forCourseId);
   const curricula = curriculaQuery.data ?? [];
-  // Lỗi tải danh sách nền không còn nuốt thành rỗng im lặng: hiện trạng
-  // thái lỗi ngay ở bước 1 để giáo viên biết đường liệt kê đang gãy
-  // thay vì thấy hai dropdown chỉ có "—" mà không rõ lý do.
   const subjectsLoadFailed = subjectsQuery.isError || curriculaQuery.isError;
 
-  // Đổi môn: giữ chương trình nếu còn thuộc môn mới, không thì tự
-  // chọn chương trình đầu (cùng nhịp effect của màn tạo ma trận tay).
   useEffect(() => {
     if (!subjectId) {
       setCurriculumId('');
@@ -155,11 +135,6 @@ export function MatrixImportPage() {
     setCurriculumId((prev) => (rows.some((c) => c.id === prev) ? prev : (rows[0]?.id ?? '')));
   }, [subjectId, curriculaQuery.data]);
 
-  /**
-   * Bước 1 — tải workbook mẫu do server sinh cho đúng (môn, chương
-   * trình, bộ mức) đã chọn. Tải xong vẫn ở bước 1 để giáo viên điền
-   * số rồi bấm Tiếp tục sang bước tải file lên.
-   */
   async function downloadTemplate() {
     if (!subjectId || !curriculumId) return;
     setTemplateBusy(true);
@@ -227,7 +202,6 @@ export function MatrixImportPage() {
     }
   }
 
-  /** Chọn file mới thì kết quả xem trước cũ hết hiệu lực — xoá để wizard không ghi bằng file cũ. */
   function onFileChange(next: File | null) {
     setFile(next);
     setPreview(null);
@@ -261,17 +235,12 @@ export function MatrixImportPage() {
     );
   }
 
-  // Khả dụng của một ô dự thảo: khớp theo (ĐVK, mức, dạng) vì ô dự
-  // thảo chưa có cellId (chỉ có sau khi ghi).
+  // Khả dụng của một ô dự thảo: khớp theo (ĐVK, mức, dạng) vì ô dự thảo chưa có cellId (chỉ có sau khi ghi).
   const availabilityOf = (nodeId: string, level: string, qtype: string) =>
     preview?.availability.find(
       (a) => a.curriculumNodeId === nodeId && a.cognitiveLevel === level && a.qtype === qtype,
     );
 
-  // Hàng của bảng ô ma trận ở bước xem trước: làm phẳng cặp (hàng chủ
-  // đề, ô) thành từng hàng dữ liệu cho bảng dùng chung — thứ tự giữ
-  // đúng vòng lặp của bảng tự vẽ trước đây (theo thứ tự hàng chủ đề,
-  // trong mỗi hàng theo thứ tự ô của hàng đó).
   const previewCellRows = preview
     ? preview.rows.flatMap((row) =>
         preview.cells
@@ -314,7 +283,7 @@ export function MatrixImportPage() {
           {message}
         </ErrorAlert>
       ) : null}
-      {/* Chỉ báo bước: bước hiện tại đánh dấu aria-current, các bước đã qua giữ nguyên thứ tự để giáo viên biết mình đang ở đâu. */}
+      {}
       <ol className="flex flex-wrap gap-2 text-sm">
         {STEP_KEYS.map((key, index) => (
           <li

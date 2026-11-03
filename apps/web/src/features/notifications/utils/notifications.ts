@@ -1,17 +1,9 @@
 import type { NotificationGroupView, NotificationPreferenceView } from '../types/notifications';
 
-/**
- * Hàm thuần của trung tâm thông báo thuộc feature notifications.
- * Tách từ module phẳng `src/lib/notifications.ts` khi tổ chức lại
- * apps/web theo mô hình features/ (issue #500).
- */
-
-/** Khoá định danh một dòng gộp trong cache/trạng thái hiển thị. */
 export function notificationGroupKey(g: Pick<NotificationGroupView, 'eventType' | 'contextUrl' | 'day'>): string {
   return `${g.eventType}|${g.contextUrl ?? ''}|${g.day}`;
 }
 
-/** Khoá định danh một dòng tuỳ chọn v2 (một dòng cho mỗi provider). */
 export function preferenceKey(row: Pick<NotificationPreferenceView, 'provider'>): string {
   return row.provider;
 }

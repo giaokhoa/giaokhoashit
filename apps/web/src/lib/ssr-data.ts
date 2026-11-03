@@ -32,7 +32,6 @@ import { dehydrate, type DehydratedState, type QueryClient } from '@tanstack/rea
 import { createQueryClient } from '#lib/query-client';
 import { fetchApiJsonForRequest, fetchApiJsonForRequestOrThrow } from '#lib/server-api';
 
-/** Hình dạng dữ liệu loader mà mọi route tầng SL trả về cho root.tsx gom qua HydrationBoundary. */
 export interface SsrLoaderData {
   dehydratedState: DehydratedState;
 }
@@ -42,9 +41,6 @@ export interface SsrLoaderData {
  * diện với loader gốc ở root.tsx (bản https có tiền tố `__Secure-`).
  * Đây là cổng duy nhất quyết định loader SL có được gọi API nghiệp vụ
  * hay không: không cookie = chắc chắn ẩn danh.
- *
- * @param request - Request đang được loader phục vụ.
- * @returns true khi header Cookie chứa cookie phiên Better Auth.
  */
 export function hasSessionCookie(request: Request): boolean {
   const cookie = request.headers.get('Cookie') ?? '';
@@ -65,10 +61,6 @@ export function hasSessionCookie(request: Request): boolean {
  * ứng 200 là `null` vẫn coi là lỗi như trước (có endpoint trả null khi
  * không có dữ liệu — ví dụ token xuất lịch — và phía client cũng
  * không coi null là dữ liệu hợp lệ của query đó).
- *
- * @param request - Request đang được loader phục vụ (nguồn cookie).
- * @param path - Đường dẫn API đầy đủ, gồm cả `/api/v1` và query string.
- * @returns Hàm queryFn dùng cho prefetchQuery/prefetchInfiniteQuery.
  */
 export function serverQueryFn<T>(
   request: Request,

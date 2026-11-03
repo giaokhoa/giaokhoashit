@@ -73,9 +73,8 @@ describe('i18n — catalog tiếng Anh nạp lười', () => {
 });
 
 describe('i18n — nạp lười catalog tiếng Anh gặp lỗi rồi thử lại', () => {
-  // Trần thời gian nới riêng cho ca này: lần nạp đầu lỗi được i18next
-  // tự thử lại theo cấp số nhân (retryTimeout 350ms nhân đôi, tối đa
-  // maxRetries 5 lượt) nên riêng chặng lỗi chạy khoảng 11 giây.
+  // Trần thời gian nới riêng cho ca này: lần nạp đầu lỗi được i18next tự thử lại theo cấp số nhân (retryTimeout 350ms
+  // nhân đôi, tối đa maxRetries 5 lượt) nên riêng chặng lỗi chạy khoảng 11 giây.
   it('lần nạp đầu lỗi thì lần chuyển sang en sau đó nạp lại thành công thay vì kẹt ở promise đã reject', async () => {
     vi.resetModules();
     // Giả lập chunk catalog en tải lỗi (mạng/CDN) ở lần import đầu tiên:

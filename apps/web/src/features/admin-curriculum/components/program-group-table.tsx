@@ -33,13 +33,11 @@ export interface ProgramRow {
   path: string[];
 }
 
-/** Flatten một subtree thành các dòng bảng (cha trước con, giữ thứ tự cây). */
 export function flattenProgramRows(node: CurriculumTreeNode, path: string[], out: ProgramRow[]): void {
   if (node.kind === 'lesson' || node.outcomes.length > 0) out.push({ node, path });
   for (const child of node.children) flattenProgramRows(child, [...path, node.title], out);
 }
 
-/** Các nút thao tác tại dòng của một node (dùng cho cả tiêu đề mạch lẫn dòng nội dung). */
 export function NodeRowActions({
   node, curriculumId, onDeleteNode,
 }: {
@@ -66,19 +64,6 @@ export function NodeRowActions({
   );
 }
 
-/**
- * Nội dung một YCCĐ giữ cấu trúc dòng: YCCĐ một dòng render nguyên như
- * cũ; YCCĐ nhiều dòng thì mỗi dòng là một khối riêng trong cùng ô
- * (thứ tự dòng giữ nguyên thứ tự canonical của dataset).
- *
- * Khi có tài liệu Tiptap (`contentDoc`), render theo đúng cấu trúc
- * tài liệu thay vì phẳng hoá theo dòng text: đoạn văn thành một
- * khối; mục danh sách thành một khối thụt lề kèm dấu gạch đầu dòng,
- * và danh sách lồng bên trong mục đó thụt lề thêm một mức (đệ quy).
- * Nhờ đó quan hệ cha–con nhìn thấy được ngay trong ô, không cần
- * đọc text để đoán. Không có tài liệu (dữ liệu cũ hoặc bề mặt chưa
- * trả trường này) thì giữ đúng hành vi cũ: tách text theo dòng.
- */
 export function OutcomeContent({
   content,
   contentDoc,
@@ -107,14 +92,6 @@ export function OutcomeContent({
   );
 }
 
-/**
- * Một node trong tài liệu Tiptap của một YCCĐ, render theo độ sâu
- * lồng của nó: đoạn văn là một khối text; mục danh sách là một khối
- * thụt lề (`pl-4`) kèm dấu gạch đầu dòng nằm cùng dòng với đoạn văn
- * của chính mục, danh sách lồng bên trong mục thụt lề thêm một mức.
- * Node lạ không thuộc các dạng này được bỏ qua thay vì làm vỡ cả
- * ô — text canonical ở `content` vẫn là nguồn đối chiếu đầy đủ.
- */
 function OutcomeDocNode({
   node,
 }: {
@@ -128,9 +105,6 @@ function OutcomeDocNode({
     return <span className="block">{text}</span>;
   }
   if (node.type === 'listItem') {
-    // Dấu gạch đầu dòng nằm cùng dòng với đoạn văn của chính mục
-    // này; danh sách lồng bên trong (nếu có) render thành các khối
-    // riêng thụt lề thêm một mức dưới nó.
     const children = node.content ?? [];
     const ownText = children
       .filter((child) => child.type === 'paragraph')
@@ -164,7 +138,6 @@ function OutcomeDocNode({
   return null;
 }
 
-/** Một bảng chương trình: tiêu đề mạch (nếu có) + các dòng Nội dung | Yêu cầu cần đạt. */
 export function ProgramGroupTable({
   title, groupNode, rows, curriculumId, onDeleteNode, onDeleteOutcome, continued = false, readOnly = false,
 }: {
@@ -174,9 +147,7 @@ export function ProgramGroupTable({
   curriculumId: string;
   onDeleteNode?: (node: CurriculumTreeNode) => void;
   onDeleteOutcome?: (node: CurriculumTreeNode, outcomeId: string) => void;
-  /** Mạch này đã bắt đầu ở trang trước (phân trang cắt qua mạch) → tiêu đề kèm dấu (tiếp) như văn bản in. */
   continued?: boolean;
-  /** Chỉ xem (trang giáo viên): ẩn mọi nút thao tác tại dòng và tại tiêu đề mạch. */
   readOnly?: boolean;
 }) {
   const { t } = useTranslation('app');

@@ -5,14 +5,6 @@ import {
 } from '../api/badges';
 import { queryKeys } from './keys';
 
-/**
- * Tầng dữ liệu TanStack Query của trang huy hiệu thuộc feature
- * badges: các hook đọc/ghi bọc tầng `../api/badges` (tách khỏi
- * module phẳng `src/lib/badges.ts` khi tổ chức lại apps/web
- * theo mô hình features/, issue #500).
- */
-
-/** Toàn bộ huy hiệu (GET /badges). */
 export function useAllBadges() {
   return useQuery({
     queryKey: queryKeys.badgesAll,
@@ -20,7 +12,6 @@ export function useAllBadges() {
   });
 }
 
-/** Huy hiệu đã cấp cho chính người dùng (GET /badges/mine). */
 export function useMyBadges() {
   return useQuery({
     queryKey: sharedQueryKeys.myBadges,
@@ -28,7 +19,6 @@ export function useMyBadges() {
   });
 }
 
-/** Danh sách đã cấp của một huy hiệu — chỉ tải khi badge được chọn xem. */
 export function useBadgeIssued(badgeId: string | null) {
   return useQuery({
     queryKey: queryKeys.badgeIssued(badgeId ?? ''),
@@ -37,13 +27,11 @@ export function useBadgeIssued(badgeId: string | null) {
   });
 }
 
-/** Làm mới mọi truy vấn huy hiệu (danh sách, của tôi, đã cấp) sau một đột biến. */
 function useInvalidateBadges() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: queryKeys.badges });
 }
 
-/** Tạo một site badge mới (POST /badges). */
 export function useCreateBadge() {
   const invalidate = useInvalidateBadges();
   return useMutation({
@@ -52,7 +40,6 @@ export function useCreateBadge() {
   });
 }
 
-/** Đặt tiêu chí hoàn thành khoá học cho một badge (PUT /badges/:id/criteria). */
 export function useSetBadgeCriteria() {
   const invalidate = useInvalidateBadges();
   return useMutation({
@@ -61,7 +48,6 @@ export function useSetBadgeCriteria() {
   });
 }
 
-/** Đổi trạng thái một badge (POST /badges/:id/status) — kích hoạt dùng { status: 1 }. */
 export function useSetBadgeStatus() {
   const invalidate = useInvalidateBadges();
   return useMutation({

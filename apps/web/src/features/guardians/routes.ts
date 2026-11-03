@@ -15,14 +15,6 @@ export default prefix('guardian', [
   route('students/:studentId', 'routes/guardian-student.tsx'),
 ]) satisfies RouteConfig;
 
-/**
- * Quản lý liên kết giám hộ phụ huynh–học viên (gói kích hoạt phụ
- * huynh): trang chỉ dành cho người có capability guardian:manage
- * — mục điều hướng gác bằng cờ quyền phía web, mọi endpoint quản
- * lý tự gác lại ở API. Route này thuộc feature guardians nhưng
- * nằm dưới tiền tố /admin nên khai riêng để file gộp giữ đúng vị
- * trí gốc trong khối quản trị.
- */
 export const adminGuardianLinksRoutes = [
   route('admin/guardian-links', 'routes/admin-guardian-links.tsx'),
 ] satisfies RouteConfig;

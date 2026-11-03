@@ -2,19 +2,6 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/r
 import { apiJson } from '#lib/api';
 import { queryKeys } from '#lib/query-keys';
 
-/**
- * Kiểu + lời gọi API dùng chung cho chương trình GDPT 2018 (K0a):
- * trang quản trị chương trình, khối chọn khung khi tạo khoá và panel
- * nạp khung trong quản trị khoá cùng đọc một hình dạng cây.
- * Chương trình quốc gia neo ở context hệ thống (contextLevel 10) —
- * cùng cách khối Chương trình trong editor câu hỏi đang đọc.
- *
- * Phần cuối module là tầng TanStack Query (F-01 của rà soát #133)
- * bọc đúng các lời gọi ở đây: các trang đọc chương trình qua hook với
- * khoá theo (context/khoá) — ngữ cảnh khoá là một phần của khoá vì
- * cùng một môn có thể đọc được hay bị 403 tuỳ khoá đang neo quyền.
- */
-
 export interface CurriculumSubject {
   id: string;
   contextId: string;
@@ -29,12 +16,6 @@ export interface Curriculum {
   grade: number;
 }
 
-/**
- * Một node trong tài liệu Tiptap của một YCCĐ, đúng hình dạng tài
- * liệu mà API lưu trong cột jsonb: đoạn văn mang text, danh sách
- * gạch đầu dòng lồng mang các ý con. Marks trên node text được giữ
- * nguyên khi lưu nhưng bị bỏ qua khi trích text canonical.
- */
 export interface CurriculumOutcomeDocNode {
   type: string;
   text?: string;
@@ -42,7 +23,6 @@ export interface CurriculumOutcomeDocNode {
   content?: CurriculumOutcomeDocNode[];
 }
 
-/** Tài liệu Tiptap của một YCCĐ, API trả kèm text canonical ở `content`. */
 export interface CurriculumOutcomeDoc {
   type: 'doc';
   content?: CurriculumOutcomeDocNode[];
@@ -51,7 +31,6 @@ export interface CurriculumOutcomeDoc {
 export interface CurriculumOutcome {
   id: string;
   content: string;
-  /** Tài liệu gốc để bảng chương trình render phân cấp cha–con; vắng khi bề mặt cũ chưa trả trường này. */
   contentDoc?: CurriculumOutcomeDoc;
   position: number;
   sourceKind: string;
@@ -78,7 +57,6 @@ export interface CurriculumTree {
   nodes: CurriculumTreeNode[];
 }
 
-/** Id của context hệ thống (nơi neo cây chương trình quốc gia). */
 export async function fetchSystemContextId(): Promise<string | null> {
   const contexts = await apiJson<{ id: string; contextLevel: number }[]>('/api/v1/access/contexts');
   return contexts.find((c) => c.contextLevel === 10)?.id ?? null;
@@ -100,19 +78,16 @@ export async function fetchSubjects(contextId?: string, forCourseId?: string): P
   return apiJson<CurriculumSubject[]>(`/api/v1/curriculum/subjects${query ? `?${query}` : ''}`);
 }
 
-/** Các chương trình (theo khối) của một môn. */
 export async function fetchCurricula(subjectId: string, forCourseId?: string): Promise<Curriculum[]> {
   const frame = forCourseId ? `&forCourseId=${forCourseId}` : '';
   return apiJson<Curriculum[]>(`/api/v1/curriculum/curricula?subjectId=${subjectId}${frame}`);
 }
 
-/** Cây nội dung trọn vẹn của một chương trình. */
 export async function fetchTree(curriculumId: string, forCourseId?: string): Promise<CurriculumTree> {
   const frame = forCourseId ? `?forCourseId=${forCourseId}` : '';
   return apiJson<CurriculumTree>(`/api/v1/curriculum/curricula/${curriculumId}/tree${frame}`);
 }
 
-/** Tuỳ chọn truy vấn môn chương trình trong context hệ thống kèm ngữ cảnh khoá. */
 export function curriculumSubjectsScopedQueryOptions(contextId: string, forCourseId?: string) {
   return queryOptions({
     queryKey: queryKeys.curriculumSubjectsScoped(contextId, forCourseId ?? null),
@@ -120,16 +95,6 @@ export function curriculumSubjectsScopedQueryOptions(contextId: string, forCours
   });
 }
 
-/**
- * Hook đọc môn chương trình cho các bề mặt xem/nạp khung: chưa có
- * context hệ thống VÀ chưa có khoá thì chưa gọi API (trang tự suy
- * trạng thái rỗng); có khoá thì gọi ngay cả khi chưa đọc được context
- * hệ thống — API mặc định về hệ thống và mở nhánh theo khoá (trang
- * /curriculum không còn tắc vì 403 ở `/access/contexts`).
- * Lỗi (kể cả 403 thiếu quyền đọc) nổi lên query để trang xử lý.
- * `enabled` cho phép trang chờ thêm điều kiện riêng (ví dụ danh sách
- * khoá neo quyền xem phải về trước).
- */
 export function useCurriculumSubjectsScoped(contextId: string | null, forCourseId?: string, enabled = true) {
   return useQuery({
     ...curriculumSubjectsScopedQueryOptions(contextId ?? '', forCourseId),
@@ -137,7 +102,6 @@ export function useCurriculumSubjectsScoped(contextId: string | null, forCourseI
   });
 }
 
-/** Tuỳ chọn truy vấn các chương trình của một môn kèm ngữ cảnh khoá. */
 export function curriculumCurriculaScopedQueryOptions(subjectId: string, forCourseId?: string) {
   return queryOptions({
     queryKey: queryKeys.curriculumCurriculaScoped(subjectId, forCourseId ?? null),
@@ -145,7 +109,6 @@ export function curriculumCurriculaScopedQueryOptions(subjectId: string, forCour
   });
 }
 
-/** Hook đọc các chương trình (theo khối) của môn đang chọn; chưa chọn môn thì chưa gọi API. */
 export function useCurriculumCurriculaScoped(subjectId: string, forCourseId?: string, enabled = true) {
   return useQuery({
     ...curriculumCurriculaScopedQueryOptions(subjectId, forCourseId),
@@ -153,7 +116,6 @@ export function useCurriculumCurriculaScoped(subjectId: string, forCourseId?: st
   });
 }
 
-/** Tuỳ chọn truy vấn cây chương trình kèm ngữ cảnh khoá. */
 export function curriculumTreeScopedQueryOptions(curriculumId: string, forCourseId?: string) {
   return queryOptions({
     queryKey: queryKeys.curriculumTreeScoped(curriculumId, forCourseId ?? null),
@@ -161,7 +123,6 @@ export function curriculumTreeScopedQueryOptions(curriculumId: string, forCourse
   });
 }
 
-/** Hook đọc cây chương trình của chương trình đang chọn; chưa chọn thì chưa gọi API. */
 export function useCurriculumTreeScoped(curriculumId: string, forCourseId?: string, enabled = true) {
   return useQuery({
     ...curriculumTreeScopedQueryOptions(curriculumId, forCourseId),
@@ -169,7 +130,6 @@ export function useCurriculumTreeScoped(curriculumId: string, forCourseId?: stri
   });
 }
 
-/** Tuỳ chọn truy vấn đơn vị khung chọn được của cặp (môn, khối) kèm ngữ cảnh khoá. */
 export function curriculumFrameUnitsQueryOptions(subjectId: string, grade: number, forCourseId?: string) {
   return queryOptions({
     queryKey: queryKeys.curriculumFrameUnits(subjectId, grade, forCourseId ?? null),
@@ -177,11 +137,6 @@ export function curriculumFrameUnitsQueryOptions(subjectId: string, grade: numbe
   });
 }
 
-/**
- * Hook đọc đơn vị khung cho các bộ chọn khung (wizard tạo khoá, panel
- * nạp khung): chưa đủ (môn, khối) thì chưa gọi API và coi như chưa có
- * khung nào để chọn.
- */
 export function useCurriculumFrameUnits(subjectId: string, grade: number | null, forCourseId?: string) {
   return useQuery({
     ...curriculumFrameUnitsQueryOptions(subjectId, grade ?? 0, forCourseId),
@@ -189,7 +144,6 @@ export function useCurriculumFrameUnits(subjectId: string, grade: number | null,
   });
 }
 
-/** Một đơn vị khung chọn được khi nạp khung vào khoá: node không phải `lesson` + số YCCĐ trong subtree. */
 export interface FrameUnit {
   nodeId: string;
   title: string;
@@ -208,7 +162,6 @@ function countOutcomes(node: CurriculumTreeNode): number {
   return node.outcomes.length + node.children.reduce((n, c) => n + countOutcomes(c), 0);
 }
 
-/** Làm phẳng cây thành danh sách đơn vị khung theo thứ tự duyệt cây (cha trước con). */
 export function flattenFrameUnits(nodes: CurriculumTreeNode[], depth = 0, out: FrameUnit[] = []): FrameUnit[] {
   for (const node of nodes) {
     let unit: FrameUnit | null = null;
@@ -247,11 +200,6 @@ function collectFrameUnits(
   }
 }
 
-/**
- * Đơn vị khung của cặp (môn, khối): không có chương trình cho khối đó
- * thì trả curriculumId null + danh sách rỗng (khoá vẫn tạo/nạp bình
- * thường, chỉ là chưa có khung để chọn).
- */
 export async function fetchFrameUnitsFor(
   subjectId: string,
   grade: number,
@@ -264,9 +212,6 @@ export async function fetchFrameUnitsFor(
   return { curriculumId: curriculum.id, units: flattenFrameUnits(tree.nodes) };
 }
 
-// --- Tầng SGK "Kết nối tri thức với cuộc sống" (K0b) ---------------------------
-
-/** Trạng thái nạp của một dataset SGK trong manifest phía máy chủ. */
 export interface BookDatasetStatus {
   datasetKey: string;
   subjectName: string;
@@ -281,7 +226,6 @@ export interface BookDatasetStatus {
   lastImportedAt: string | null;
 }
 
-/** Một cuốn SGK đã nạp. */
 export interface Book {
   id: string;
   kind: string;
@@ -297,7 +241,6 @@ export interface Book {
   position: number;
 }
 
-/** Một đích ánh xạ của một bài SGK (mã bản ghi chương trình để truy vết). */
 export interface BookMappingView {
   curriculumNodeId: string | null;
   learningOutcomeId: string | null;
@@ -305,7 +248,6 @@ export interface BookMappingView {
   targetTitle: string | null;
 }
 
-/** Một bài SGK trong cây sách, kèm ánh xạ và YCCĐ suy qua ánh xạ. */
 export interface BookLessonView {
   id: string;
   title: string;
@@ -317,7 +259,6 @@ export interface BookLessonView {
   outcomes: { outcomeId: string; content: string }[];
 }
 
-/** Cây đầy đủ của một cuốn SGK: chủ đề → bài. */
 export interface BookTree {
   book: Book;
   subject: { id: string; name: string; slug: string } | null;
@@ -330,12 +271,10 @@ export interface BookTree {
   }[];
 }
 
-/** Trạng thái nạp của mọi dataset SGK (bề mặt quản trị — cần curriculum:view hệ thống). */
 export async function fetchBookDatasetStatus(): Promise<BookDatasetStatus[]> {
   return apiJson<BookDatasetStatus[]>('/api/v1/books/dataset-import');
 }
 
-/** Danh sách SGK đã nạp; kèm subjectId lọc theo môn, forCourseId mở nhánh chọn khung cho khoá. */
 export async function fetchBooks(subjectId?: string, forCourseId?: string): Promise<Book[]> {
   const params = new URLSearchParams();
   if (subjectId) params.set('subjectId', subjectId);
@@ -344,13 +283,11 @@ export async function fetchBooks(subjectId?: string, forCourseId?: string): Prom
   return apiJson<Book[]>(`/api/v1/books${query ? `?${query}` : ''}`);
 }
 
-/** Cây sách đầy đủ của một cuốn SGK. */
 export async function fetchBookTree(bookId: string, forCourseId?: string): Promise<BookTree> {
   const frame = forCourseId ? `?forCourseId=${forCourseId}` : '';
   return apiJson<BookTree>(`/api/v1/books/${bookId}/tree${frame}`);
 }
 
-/** Một đơn vị khung SGK chọn được: một chủ đề + số bài + số YCCĐ suy qua ánh xạ của cả chủ đề. */
 export interface BookFrameChapter {
   nodeId: string;
   title: string;
@@ -358,14 +295,6 @@ export interface BookFrameChapter {
   outcomeCount: number;
 }
 
-// --- Tầng quản trị chương trình (F-01 của rà soát #133) -----------------------
-//
-// Trang quản trị chương trình + các màn riêng (môn, chương trình,
-// node, YCCĐ, cây) đọc/ghi qua các hook dưới đây. Mọi đột biến làm
-// mới đúng cụm khoá bị ảnh hưởng: danh sách môn/cây theo tiền tố có
-// phạm vi, trạng thái dataset và danh sách sách theo khoá của chúng.
-
-/** Trạng thái nạp của một dataset chương trình chuẩn trong manifest phía máy chủ. */
 export interface ProgramDatasetStatus {
   datasetKey: string;
   subjectName: string;
@@ -377,12 +306,10 @@ export interface ProgramDatasetStatus {
   lastImportedAt: string | null;
 }
 
-/** Trạng thái các dataset chương trình chuẩn (GET /curriculum/program-import). */
 export async function fetchProgramDatasetStatus(): Promise<ProgramDatasetStatus[]> {
   return apiJson<ProgramDatasetStatus[]>('/api/v1/curriculum/program-import');
 }
 
-/** Tuỳ chọn truy vấn trạng thái dataset chương trình chuẩn. */
 export function programDatasetStatusQueryOptions() {
   return queryOptions({
     queryKey: queryKeys.programDatasetStatus,
@@ -390,12 +317,10 @@ export function programDatasetStatusQueryOptions() {
   });
 }
 
-/** Hook đọc trạng thái dataset chương trình cho trang quản trị. */
 export function useProgramDatasetStatus() {
   return useQuery(programDatasetStatusQueryOptions());
 }
 
-/** Tuỳ chọn truy vấn trạng thái dataset SGK (GET /books/dataset-import). */
 export function bookDatasetStatusQueryOptions() {
   return queryOptions({
     queryKey: queryKeys.bookDatasetStatus,
@@ -403,12 +328,10 @@ export function bookDatasetStatusQueryOptions() {
   });
 }
 
-/** Hook đọc trạng thái dataset SGK cho trang quản trị. */
 export function useBookDatasetStatus() {
   return useQuery(bookDatasetStatusQueryOptions());
 }
 
-/** Tuỳ chọn truy vấn danh sách SGK đã nạp (GET /books). */
 export function booksQueryOptions() {
   return queryOptions({
     queryKey: queryKeys.books,
@@ -416,12 +339,10 @@ export function booksQueryOptions() {
   });
 }
 
-/** Hook đọc danh sách SGK cho trang quản trị. */
 export function useBooks() {
   return useQuery(booksQueryOptions());
 }
 
-/** Tuỳ chọn truy vấn cây của một cuốn SGK (GET /books/:id/tree). */
 export function bookTreeQueryOptions(bookId: string) {
   return queryOptions({
     queryKey: queryKeys.bookTree(bookId),
@@ -429,12 +350,10 @@ export function bookTreeQueryOptions(bookId: string) {
   });
 }
 
-/** Hook đọc cây sách — chỉ tải khi bề mặt cần (mở một cuốn sách). */
 export function useBookTree(bookId: string, enabled: boolean) {
   return useQuery({ ...bookTreeQueryOptions(bookId), enabled });
 }
 
-/** Tuỳ chọn truy vấn một môn theo id (GET /curriculum/subjects/:id). */
 export function curriculumSubjectRowQueryOptions(subjectId: string) {
   return queryOptions({
     queryKey: queryKeys.curriculumSubjectRow(subjectId),
@@ -442,7 +361,6 @@ export function curriculumSubjectRowQueryOptions(subjectId: string) {
   });
 }
 
-/** Hook đọc một môn cho màn sửa môn; lỗi tải nổi lên query (màn giữ trạng thái đang tải như trước). */
 export function useCurriculumSubjectRow(subjectId: string | undefined) {
   return useQuery({
     ...curriculumSubjectRowQueryOptions(subjectId ?? ''),
@@ -450,7 +368,6 @@ export function useCurriculumSubjectRow(subjectId: string | undefined) {
   });
 }
 
-/** Tuỳ chọn truy vấn một chương trình theo id (GET /curriculum/curricula/:id). */
 export function curriculumRowQueryOptions(curriculumId: string) {
   return queryOptions({
     queryKey: queryKeys.curriculumRow(curriculumId),
@@ -458,7 +375,6 @@ export function curriculumRowQueryOptions(curriculumId: string) {
   });
 }
 
-/** Hook đọc một chương trình cho màn sửa chương trình. */
 export function useCurriculumRow(curriculumId: string | undefined) {
   return useQuery({
     ...curriculumRowQueryOptions(curriculumId ?? ''),
@@ -466,7 +382,6 @@ export function useCurriculumRow(curriculumId: string | undefined) {
   });
 }
 
-/** Một node chương trình theo hình dạng các màn node/YCCĐ tiêu thụ (GET /curriculum/nodes/:id). */
 export interface CurriculumNodeRow {
   id: string;
   curriculumId: string;
@@ -478,7 +393,6 @@ export interface CurriculumNodeRow {
   durationPercent: number | null;
 }
 
-/** Tuỳ chọn truy vấn một node theo id. */
 export function curriculumNodeQueryOptions(nodeId: string) {
   return queryOptions({
     queryKey: queryKeys.curriculumNode(nodeId),
@@ -486,7 +400,6 @@ export function curriculumNodeQueryOptions(nodeId: string) {
   });
 }
 
-/** Hook đọc một node cho các màn sửa node và tạo/sửa YCCĐ. */
 export function useCurriculumNode(nodeId: string | undefined) {
   return useQuery({
     ...curriculumNodeQueryOptions(nodeId ?? ''),
@@ -494,7 +407,6 @@ export function useCurriculumNode(nodeId: string | undefined) {
   });
 }
 
-/** Một YCCĐ theo hình dạng màn sửa YCCĐ tiêu thụ (GET /curriculum/outcomes/:id). */
 export interface CurriculumOutcomeRow {
   id: string;
   nodeId: string;
@@ -505,7 +417,6 @@ export interface CurriculumOutcomeRow {
   derivedFromId: string | null;
 }
 
-/** Tuỳ chọn truy vấn một YCCĐ theo id. */
 export function curriculumOutcomeQueryOptions(outcomeId: string) {
   return queryOptions({
     queryKey: queryKeys.curriculumOutcome(outcomeId),
@@ -513,7 +424,6 @@ export function curriculumOutcomeQueryOptions(outcomeId: string) {
   });
 }
 
-/** Hook đọc một YCCĐ cho màn sửa YCCĐ. */
 export function useCurriculumOutcome(outcomeId: string | undefined) {
   return useQuery({
     ...curriculumOutcomeQueryOptions(outcomeId ?? ''),
@@ -521,14 +431,10 @@ export function useCurriculumOutcome(outcomeId: string | undefined) {
   });
 }
 
-/** Tiền tố khoá của mọi danh sách môn theo ngữ cảnh (để làm mới sau đột biến quản trị). */
 const SUBJECTS_SCOPED_PREFIX = ['curriculum', 'subjects', 'scoped'] as const;
-/** Tiền tố khoá của mọi danh sách chương trình theo môn (để làm mới sau đột biến quản trị). */
 const CURRICULA_SCOPED_PREFIX = ['curriculum', 'curricula', 'scoped'] as const;
-/** Tiền tố khoá của mọi cây chương trình (để làm mới sau đột biến quản trị). */
 const TREE_SCOPED_PREFIX = ['curriculum', 'tree', 'scoped'] as const;
 
-/** Kết quả một lượt đồng bộ dataset chương trình (POST /curriculum/program-import). */
 export interface ProgramImportResult {
   created: number;
   updated: number;
@@ -552,11 +458,6 @@ export interface ProgramImportResult {
   changesOmitted: number;
 }
 
-/**
- * Đột biến đồng bộ một dataset chương trình chuẩn vào cây (POST
- * /curriculum/program-import, idempotent phía API) — thành công thì
- * làm mới trạng thái dataset, danh sách môn và mọi cây.
- */
 export function useImportProgramDataset() {
   const client = useQueryClient();
   return useMutation({
@@ -573,7 +474,6 @@ export function useImportProgramDataset() {
   });
 }
 
-/** Kết quả một lượt đồng bộ dataset SGK (POST /books/dataset-import). */
 export interface BookImportResult {
   created: number;
   updated: number;
@@ -582,11 +482,6 @@ export interface BookImportResult {
   totalRecords: number;
 }
 
-/**
- * Đột biến đồng bộ một dataset SGK vào cây sách + ánh xạ (POST
- * /books/dataset-import, idempotent phía API) — thành công thì làm
- * mới trạng thái dataset sách và danh sách sách.
- */
 export function useImportBookDataset() {
   const client = useQueryClient();
   return useMutation({
@@ -603,7 +498,6 @@ export function useImportBookDataset() {
   });
 }
 
-/** Đột biến xoá một môn (DELETE /curriculum/subjects/:id, cascade toàn bộ chương trình của môn). */
 export function useDeleteCurriculumSubject() {
   const client = useQueryClient();
   return useMutation({
@@ -616,7 +510,6 @@ export function useDeleteCurriculumSubject() {
   });
 }
 
-/** Đột biến xoá một chương trình (DELETE /curriculum/curricula/:id, cascade cây node + YCCĐ của khối đó). */
 export function useDeleteCurriculumRow() {
   const client = useQueryClient();
   return useMutation({
@@ -629,11 +522,6 @@ export function useDeleteCurriculumRow() {
   });
 }
 
-/**
- * Đột biến tạo môn mới (POST /curriculum/subjects): môn neo ở context
- * hệ thống nên trước hết tra id context đó qua tầng contexts — giữ
- * nguyên hai bước như bản thủ công của form môn.
- */
 export function useCreateCurriculumSubject() {
   const client = useQueryClient();
   return useMutation({
@@ -652,7 +540,6 @@ export function useCreateCurriculumSubject() {
   });
 }
 
-/** Đột biến sửa môn (PATCH /curriculum/subjects/:id). */
 export function useUpdateCurriculumSubject() {
   const client = useQueryClient();
   return useMutation({
@@ -669,7 +556,6 @@ export function useUpdateCurriculumSubject() {
   });
 }
 
-/** Đột biến tạo chương trình cho một môn (POST /curriculum/curricula). */
 export function useCreateCurriculumRow() {
   const client = useQueryClient();
   return useMutation({
@@ -685,7 +571,6 @@ export function useCreateCurriculumRow() {
   });
 }
 
-/** Đột biến sửa khối của một chương trình (PATCH /curriculum/curricula/:id). */
 export function useUpdateCurriculumRow() {
   const client = useQueryClient();
   return useMutation({
@@ -702,7 +587,6 @@ export function useUpdateCurriculumRow() {
   });
 }
 
-/** Thân ghi của một node chương trình (tạo/sửa dùng chung một hình dạng). */
 export interface CurriculumNodePayload {
   title: string;
   kind: string;
@@ -712,7 +596,6 @@ export interface CurriculumNodePayload {
   durationPercent: number | null;
 }
 
-/** Đột biến tạo node (POST /curriculum/nodes) — thành công thì làm mới cây chứa node. */
 export function useCreateCurriculumNode() {
   const client = useQueryClient();
   return useMutation({
@@ -730,7 +613,6 @@ export function useCreateCurriculumNode() {
   });
 }
 
-/** Đột biến sửa node (PATCH /curriculum/nodes/:id) — thành công thì làm mới cây chứa node và chính node. */
 export function useUpdateCurriculumNode() {
   const client = useQueryClient();
   return useMutation({
@@ -749,7 +631,6 @@ export function useUpdateCurriculumNode() {
   });
 }
 
-/** Đột biến xoá node (DELETE /curriculum/nodes/:id) ở trang cây — thành công thì làm mới cây đó. */
 export function useDeleteCurriculumNode() {
   const client = useQueryClient();
   return useMutation({
@@ -761,7 +642,6 @@ export function useDeleteCurriculumNode() {
   });
 }
 
-/** Thân ghi của một YCCĐ (tạo/sửa dùng chung một hình dạng). */
 export interface CurriculumOutcomePayload {
   content: string;
   position: number;
@@ -770,7 +650,6 @@ export interface CurriculumOutcomePayload {
   derivedFromId: string | null;
 }
 
-/** Đột biến tạo YCCĐ cho một node (POST /curriculum/outcomes) — YCCĐ hiện trong cây nên làm mới mọi cây. */
 export function useCreateCurriculumOutcome() {
   const client = useQueryClient();
   return useMutation({
@@ -786,7 +665,6 @@ export function useCreateCurriculumOutcome() {
   });
 }
 
-/** Đột biến sửa YCCĐ (PATCH /curriculum/outcomes/:id). */
 export function useUpdateCurriculumOutcome() {
   const client = useQueryClient();
   return useMutation({
@@ -803,7 +681,6 @@ export function useUpdateCurriculumOutcome() {
   });
 }
 
-/** Đột biến xoá YCCĐ (DELETE /curriculum/outcomes/:id) ở trang cây — thành công thì làm mới mọi cây. */
 export function useDeleteCurriculumOutcome() {
   const client = useQueryClient();
   return useMutation({
@@ -816,10 +693,6 @@ export function useDeleteCurriculumOutcome() {
   });
 }
 
-/**
- * Đơn vị khung SGK của cặp (môn, khối): không có cuốn sách nào cho
- * khối đó thì trả bookId null + danh sách rỗng.
- */
 export async function fetchBookFrameChaptersFor(
   subjectId: string,
   grade: number,
@@ -846,7 +719,6 @@ export async function fetchBookFrameChaptersFor(
   };
 }
 
-/** Tuỳ chọn truy vấn đơn vị khung SGK của cặp (môn, khối) kèm ngữ cảnh khoá. */
 export function bookFrameChaptersQueryOptions(subjectId: string, grade: number, forCourseId?: string) {
   return queryOptions({
     queryKey: queryKeys.bookFrameChapters(subjectId, grade, forCourseId ?? null),
@@ -854,10 +726,6 @@ export function bookFrameChaptersQueryOptions(subjectId: string, grade: number, 
   });
 }
 
-/**
- * Hook đọc đơn vị khung SGK cho panel nạp khung sách: chưa đủ (môn,
- * khối) thì chưa gọi API và coi như chưa có sách nào để chọn.
- */
 export function useBookFrameChapters(subjectId: string, grade: number | null, forCourseId?: string) {
   return useQuery({
     ...bookFrameChaptersQueryOptions(subjectId, grade ?? 0, forCourseId),

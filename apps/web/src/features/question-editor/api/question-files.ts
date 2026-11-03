@@ -6,14 +6,6 @@ import {
   type QuestionImageUploadResult,
 } from '../types/question-files';
 
-/**
- * Tầng gọi API thuần của phía client hợp đồng file câu hỏi thuộc
- * feature question-editor: chỉ chứa các hàm gọi HTTP, không phụ
- * thuộc React hay React Query. Tách từ module phẳng
- * `src/lib/question-files.ts` khi tổ chức lại apps/web theo mô
- * hình features/ (issue #500).
- */
-
 interface UploadResponseBody { id: string; src: string; fileName: string; mimeType: string }
 interface ErrorBody { code?: string; message?: string }
 
@@ -45,7 +37,6 @@ export async function uploadQuestionImage(
   return { fileId: body.id, src: body.src, alt: file.name.replace(/\.[^.]+$/, ''), fileName: body.fileName, mimeType: body.mimeType };
 }
 
-/** Đổi một fileId thành URL ký còn hạn (cổng files:view tại context của file). */
 export async function resolveFileDisplayUrl(fileId: string): Promise<string> {
   const { url } = await apiJson<{ url: string; expiresAt: number }>(`/api/v1/files/${fileId}/signed-url`, { method: 'POST' });
   return url;

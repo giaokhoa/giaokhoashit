@@ -14,17 +14,6 @@ import '#config/i18n';
 import { apiFetch } from '#lib/api';
 import { paperPageClientLoader, useAssignScanBatch, useAssignScanIdentity, useCreatePaperBatch, useDeleteScan, usePaperBatches, usePaperScans, useRecordScan, useResolveScanReadings } from '../queries/paper';
 
-/**
- * CAM-0 (issue #112) — Chấm bài giấy bằng camera, phía giáo viên:
- * sinh lô IN + tải PDF (phiếu DÙNG CHUNG là mặc định; in theo danh
- * sách là tuỳ chọn hẹp), chụp/tải ảnh cả buổi một lượt (hệ thống tự
- * khớp mã đề về đúng lô in), xử lý hai hàng chờ (gán lô/gán định danh
- * với ảnh cắt vùng mã + vùng tên và ứng viên chưa khớp, xác nhận câu
- * mơ hồ trên ảnh đã nắn phẳng) rồi ghi điểm thành attempt thi giấy.
- * Hệ thống không bao giờ chấm đoán: phiếu chưa chắc chắn nằm ở hàng
- * chờ cho tới khi giáo viên quyết.
- */
-
 const TEMPLATE_WIDTH = 1240;
 const LETTERS = ['A', 'B', 'C', 'D', 'E'];
 
@@ -57,7 +46,6 @@ function fetchWarpedBlob(scanId: string): Promise<Blob> {
   return promise;
 }
 
-/** URL object của ảnh phiếu đã nắn phẳng (qua endpoint có gác quyền chấm giấy). */
 function useWarpedUrl(scanId: string): string | null {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -77,7 +65,6 @@ function useWarpedUrl(scanId: string): string | null {
   return url;
 }
 
-/** Vùng cắt quanh một dòng câu trên ảnh đã nắn (toạ độ template 1240×1754). */
 function RowCrop({ scanId, centers }: { scanId: string; centers: { x: number; y: number }[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -105,7 +92,6 @@ function RowCrop({ scanId, centers }: { scanId: string; centers: { x: number; y:
   );
 }
 
-/** Vùng cắt theo hình chữ nhật template (vùng mã / vùng tên) trên ảnh đã nắn — cho hàng chờ định danh. */
 function RegionCrop({ scanId, region, label }: { scanId: string; region: { x: number; y: number; w: number; h: number }; label: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -143,11 +129,9 @@ function RegionCrop({ scanId, region, label }: { scanId: string; region: { x: nu
 export default function QuizPaperPage() {
   const { id: courseId, pinId: quizId } = useParams();
   const { t } = useTranslation('app');
-  // Hai danh sách của trang qua TanStack Query (F-01 của #133,
-  // `lib/paper-data.ts`): clientLoader của route nạp trước đúng khoá;
-  // một trong hai danh sách tải hỏng ngay từ đầu (chưa có dữ liệu) thì
-  // trang báo lỗi tải như bản thủ công — lỗi ở lần nạp lại sau đó giữ
-  // nguyên dữ liệu đang hiện.
+  // Hai danh sách của trang qua TanStack Query (F-01 của #133, `lib/paper-data.ts`): clientLoader của route nạp trước
+  // đúng khoá; một trong hai danh sách tải hỏng ngay từ đầu (chưa có dữ liệu) thì trang báo lỗi tải như bản thủ công —
+  // lỗi ở lần nạp lại sau đó giữ nguyên dữ liệu đang hiện.
   const batchesQuery = usePaperBatches(quizId ?? '');
   const scansQuery = usePaperScans(quizId ?? '');
   const batches = batchesQuery.data ?? null;
@@ -173,24 +157,16 @@ export default function QuizPaperPage() {
   const [identityChoice, setIdentityChoice] = useState<Record<string, string>>({});
   const [batchChoice, setBatchChoice] = useState<Record<string, string>>({});
   const [resolutions, setResolutions] = useState<Record<string, Record<number, number | null>>>({});
-  // Quyết mơ hồ của slot TF-A: theo TỪNG Ý của slot (mảng 4 phần tử
-  // 0 = Đúng, 1 = Sai, null = để trống), tách khỏi quyết chọn-một của
-  // các loại câu còn lại.
   const [pairResolutions, setPairResolutions] = useState<
     Record<string, Record<number, (0 | 1 | null)[]>>
   >({});
   const [recordedGrades, setRecordedGrades] = useState<Record<string, number>>({});
 
-  // Nạp lại cả hai danh sách — dùng cho luồng tải ảnh lên (mệnh lệnh,
-  // ngoài tầng đột biến): tương đương invalidate của các đột biến.
   const reload = async () => {
     await Promise.all([batchesQuery.refetch(), scansQuery.refetch()]);
   };
 
   const batchById = new Map((batches ?? []).map((b) => [b.id, b]));
-  // Lô đang chọn: lựa chọn tường minh của người dùng, chưa chọn thì
-  // lô đầu danh sách — đúng nhịp bản thủ công chốt lô đầu sau lần tải
-  // đầu và giữ nguyên lựa chọn ở các lần tải lại sau.
   const effectiveBatchId = selectedBatchId ?? batches?.[0]?.id ?? null;
   const selectedBatch = effectiveBatchId ? (batchById.get(effectiveBatchId) ?? null) : null;
 
@@ -248,7 +224,6 @@ export default function QuizPaperPage() {
     await runAction(async () => {
       const form = new FormData();
       for (const file of files) form.append('files', file);
-      // Tải theo BUỔI (lô chụp): máy tự khớp mã đề về đúng lô in.
       const res = await apiFetch(`/api/v1/exam-scans?pinId=${quizId}`, {
         method: 'POST',
         body: form,
@@ -282,14 +257,12 @@ export default function QuizPaperPage() {
     });
   }
 
-  /** Mã đề đọc được trên phiếu khác mã đề của lô in → phiếu bị chặn ghi điểm cho tới khi xử lý lại. */
   function variantMismatch(scan: PaperScan): boolean {
     if (!scan.batchId || !scan.variantCodeRead) return false;
     const batch = batchById.get(scan.batchId);
     return Boolean(batch?.examCode && batch.examCode !== scan.variantCodeRead);
   }
 
-  /** Slot thuộc câu truefalse TF-A hay không (theo layout của lô in của phiếu). */
   function isTrueFalseSlot(scan: PaperScan, slot: number): boolean {
     const batch = scan.batchId ? batchById.get(scan.batchId) : undefined;
     return batch?.layout.find((l) => l.slot === slot)?.qtype === 'truefalse';
@@ -599,9 +572,6 @@ export default function QuizPaperPage() {
                         const row = scan.rows.find((r) => r.slot === reading.slot);
                         const optionCount = row?.centers.length ?? reading.densities.length;
                         if (isTrueFalseSlot(scan, reading.slot)) {
-                          // TF-A: quyết TỪNG Ý của slot (mỗi ý một cặp
-                          // Đ/S) — máy đã đọc được ý nào thì giữ nguyên
-                          // làm giá trị khởi đầu, ý mơ hồ chờ GV chốt.
                           const current: (0 | 1 | null | undefined)[] =
                             pairPicks[reading.slot] ??
                             (reading.pairChoices ?? [null, null, null, null]).map(
@@ -770,13 +740,6 @@ export default function QuizPaperPage() {
   );
 }
 
-/**
- * clientLoader (F-01, rà soát #133): prefetch cả hai danh sách của
- * trang vào QueryClient singleton dùng chung (đúng khoá factory)
- * trước khi component mount — điều hướng vào trang không còn thác
- * nước mount-rồi-fetch. prefetchQuery không ném lỗi: tải hỏng thì
- * component tự xử lý qua useQuery như trước.
- */
 export async function clientLoader({ params }: { params: Record<string, string | undefined> }) {
   if (params.pinId) {
     await paperPageClientLoader(params.pinId);

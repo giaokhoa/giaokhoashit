@@ -59,16 +59,12 @@ export interface MessagingRealtimeHandlers {
 }
 
 export interface MessagingRealtimeHandle {
-  /** Xin các tin còn thiếu theo mốc seq của từng conversation; kết quả qua promise ack. */
   sync(lastSeqByConversation: MessagingSyncRequest): Promise<MessagingSyncResult>;
-  /** Xin vào room của một conversation mới (server kiểm tra tư cách thành viên). */
   joinConversation(conversationId: string): void;
-  /** Phát tín hiệu đang nhập (server đã throttle theo cửa sổ 4 giây). */
   typing(conversationId: string): void;
   disconnect(): void;
 }
 
-/** Mở kết nối realtime cho trang tin nhắn; trả handle điều khiển + đăng ký handlers. */
 export function connectMessagingRealtime(handlers: MessagingRealtimeHandlers): MessagingRealtimeHandle {
   const socket: Socket = io('/messaging', {
     withCredentials: true,

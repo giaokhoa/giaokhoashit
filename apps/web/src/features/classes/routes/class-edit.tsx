@@ -18,15 +18,6 @@ import { queryKeys as classesQueryKeys } from '../queries/keys';
 
 const SELECT_CLASS = 'flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm';
 
-/**
- * Màn sửa lớp riêng (CLASS-1, issue #184) — ngoài thông tin cơ bản, màn
- * này giữ các cài đặt vòng đời của lớp: luật rời lớp (đình chỉ giữ điểm
- * là mặc định / rút hẳn), tự báo danh + mã tham gia + xoay mã, tự duyệt
- * yêu cầu. CLASS-3 bổ sung khối HỌC PHÍ gói lớp (số tiền + đơn vị tiền +
- * tài khoản nhận chỉ định riêng). Mọi thay đổi đi qua PATCH
- * /classes/:id; API gác quyền tại context lớp nên web không tự giấu
- * theo vai (AGENTS.md web: giấu UI không phải là gác).
- */
 export function ClassEditPage() {
   const { t } = useTranslation('app');
   const { id } = useParams<{ id: string }>();
@@ -41,8 +32,7 @@ export function ClassEditPage() {
   const [onLeave, setOnLeave] = useState<'suspend' | 'unenrol'>('suspend');
   const [allowSelfReport, setAllowSelfReport] = useState(false);
   const [joinAutoApprove, setJoinAutoApprove] = useState(false);
-  // CLASS-3: học phí gói lớp — số tiền giữ dạng chuỗi trong form (để
-  // trống = tắt thu phí), chuyển số nguyên khi lưu.
+  // CLASS-3: học phí gói lớp — số tiền giữ dạng chuỗi trong form (để trống = tắt thu phí), chuyển số nguyên khi lưu.
   const [feeCost, setFeeCost] = useState('');
   const [feeCurrency, setFeeCurrency] = useState('VND');
   const [feePaymentAccountId, setFeePaymentAccountId] = useState('');

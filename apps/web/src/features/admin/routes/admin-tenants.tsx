@@ -21,13 +21,11 @@ import { appKeyMeta } from '#lib/route-meta';
 import { currentTenantQueryOptions, tenantMembersQueryOptions, tenantUsersQueryOptions, tenantsQueryOptions, useAddTenantMember, useCreateTenant, useCreateTenantUser, useSetTenantMemberStatus } from '../queries/tenant-admin';
 import type { TenantMemberStatus, TenantUserSummary } from '../types/tenant-admin';
 
-/** Một dòng thành viên đã ghép membership với hồ sơ người dùng của cùng tenant. */
 interface TenantMemberRow {
   membership: TenantMembership;
   user: TenantUserSummary | null;
 }
 
-/** Kiểm tra lỗi API có phải lỗi cấm quyền hay không để trang chọn thông điệp đúng. */
 function isForbidden(error: unknown): boolean {
   return error instanceof ApiError && error.problem.status === 403;
 }
@@ -74,9 +72,8 @@ export function AdminTenantsPage() {
 
   const platformTenants = useMemo(() => tenantsQuery.data ?? [], [tenantsQuery.data]);
 
-  // Tenant đầu tiên là lựa chọn mặc định ở chế độ platform để khu thành
-  // viên có một đích xác định ngay khi danh sách tải xong; người dùng
-  // đổi lựa chọn thì mọi truy vấn thành viên đi theo lựa chọn mới.
+  // Tenant đầu tiên là lựa chọn mặc định ở chế độ platform để khu thành viên có một đích xác định ngay khi danh sách
+  // tải xong; người dùng đổi lựa chọn thì mọi truy vấn thành viên đi theo lựa chọn mới.
   useEffect(() => {
     if (!platformMode || platformTenants.length === 0) return;
     if (!platformTenants.some((tenant) => tenant.id === selectedTenantId)) {
@@ -84,10 +81,8 @@ export function AdminTenantsPage() {
     }
   }, [platformMode, platformTenants, selectedTenantId]);
 
-  // Cả hai chế độ đều giữ bản ghi tenant đầy đủ `Tenant`: endpoint
-  // current trả cùng DTO với danh sách platform, nên thẻ hiển thị ở
-  // chế độ tenant đọc trạng thái vòng đời từ trường `status` như chế
-  // độ platform.
+  // Cả hai chế độ đều giữ bản ghi tenant đầy đủ `Tenant`: endpoint current trả cùng DTO với danh sách platform, nên thẻ
+  // hiển thị ở chế độ tenant đọc trạng thái vòng đời từ trường `status` như chế độ platform.
   const selectedTenant: Tenant | null = platformMode
     ? (platformTenants.find((tenant) => tenant.id === selectedTenantId) ?? null)
     : (currentTenantQuery.data ?? null);
@@ -142,7 +137,6 @@ export function AdminTenantsPage() {
     );
   }
 
-  /** Thêm một tài khoản toàn cục có sẵn vào đúng tenant đang quản lý bằng ID người dùng. */
   function addMember(event: FormEvent) {
     event.preventDefault();
     if (!selectedTenant) return;
@@ -185,7 +179,6 @@ export function AdminTenantsPage() {
     );
   }
 
-  /** Đổi trạng thái membership của một thành viên trong đúng tenant đang quản lý. */
   function setMemberStatus(membership: TenantMembership, status: TenantMemberStatus) {
     if (!selectedTenant || membership.status === status) return;
     setMessage(null);
@@ -198,21 +191,18 @@ export function AdminTenantsPage() {
     );
   }
 
-  /** Nhãn loại tenant theo hợp đồng API (`school`, `center` hoặc `platform`). */
   function kindLabel(kind: Tenant['kind']): string {
     if (kind === 'center') return t('tenantKindCenter');
     if (kind === 'school') return t('tenantKindSchool');
     return t('tenantKindPlatform');
   }
 
-  /** Nhãn trạng thái vòng đời của tenant. */
   function tenantStatusLabel(status: Tenant['status']): string {
     if (status === 'suspended') return t('tenantStatusSuspended');
     if (status === 'archived') return t('tenantStatusArchived');
     return t('tenantStatusActive');
   }
 
-  /** Nhãn trạng thái membership. */
   function memberStatusLabel(status: TenantMembership['status']): string {
     if (status === 'suspended') return t('tenantMemberStatusSuspended');
     if (status === 'ended') return t('tenantMemberStatusEnded');
@@ -408,12 +398,9 @@ export function AdminTenantsPage() {
               </ErrorAlert>
             ) : null}
             {!canViewSelected ? (
-              // Ảnh chụp quyền đã sẵn sàng nhưng người dùng không có
-              // quyền tại tenant đang chọn/hiệu lực (quyền tenant chỉ
-              // nằm ở một tenant khác): hai truy vấn thành viên bị tắt
-              // theo `canViewSelected` nên rơi xuống nhánh chờ sẽ treo
-              // khung chờ vô hạn — hiện trạng thái cấm như các khu vực
-              // khác của trang.
+              // Ảnh chụp quyền đã sẵn sàng nhưng người dùng không có quyền tại tenant đang chọn/hiệu lực (quyền tenant
+              // chỉ nằm ở một tenant khác): hai truy vấn thành viên bị tắt theo `canViewSelected` nên rơi xuống nhánh
+              // chờ sẽ treo khung chờ vô hạn — hiện trạng thái cấm như các khu vực khác của trang.
               <ErrorAlert variant="destructive">{t('tenantsForbidden')}</ErrorAlert>
             ) : membersQuery.isPending || usersQuery.isPending ? (
               <PageSkeleton rows={['h-12 w-full', 'h-12 w-full', 'h-12 w-full']} label={t('loading')} />
@@ -579,7 +566,6 @@ export function AdminTenantsPage() {
   );
 }
 
-/** Export mặc định cho route module React Router framework mode (xem src/routes.ts). */
 export default AdminTenantsPage;
 
 // Biên lỗi + tiêu đề theo route (cụm khung SSR, cùng mẫu các trang quản trị khác).

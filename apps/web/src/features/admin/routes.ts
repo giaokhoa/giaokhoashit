@@ -2,10 +2,6 @@ import { type RouteConfig, relative } from '@react-router/dev/routes';
 
 const { prefix, route } = relative(import.meta.dirname);
 
-/**
- * Khu route của feature admin: quản trị người dùng, tenant, vai
- * trò và cấu hình site.
- */
 export default [
   ...prefix('admin', [
     route('users', 'routes/admin-users.tsx'),

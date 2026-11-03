@@ -17,7 +17,6 @@ import { ErrorAlert } from '#components/error-alert';
  * CVE-2026-67337 ghi trong addendum của issue).
  */
 
-/** Nhãn tiếng Việt + mức cảnh báo cho từng scope MCP. */
 const SCOPE_LABELS: Record<string, { label: string; sensitive?: boolean }> = {
   'lms.questions.read': { label: 'Xem ngân hàng câu hỏi: danh sách bank, thư mục, tìm và đọc câu hỏi' },
   'lms.questions.draft': { label: 'Tạo câu hỏi BẢN NHÁP trong ngân hàng cá nhân của bạn (chưa dùng được cho tới khi bạn duyệt)' },
@@ -32,7 +31,6 @@ interface ConsentContext {
   clientId: string;
   clientName: string;
   scopes: string[];
-  /** Chuỗi query authorize nguyên văn để gửi lại cho AS. */
   oauthQuery: string;
 }
 
@@ -77,7 +75,6 @@ export default function McpConsentPage() {
           { credentials: 'include' },
         );
         if (res.status === 401) {
-          // Chưa có phiên BA → quay về trang đăng nhập, giữ nguyên query.
           window.location.assign(`/mcp-login${window.location.search}`);
           return;
         }

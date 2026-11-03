@@ -1,14 +1,5 @@
 import type { Course, CourseContent, EnrolInstance } from '@lms/contracts';
 
-/**
- * Kiểu dữ liệu của trang khoá học thuộc feature courses. Tách từ
- * module dữ liệu phẳng `src/lib/course-data.ts` khi tổ chức lại
- * apps/web theo mô hình features/ (issue #500): kiểu nằm ở tầng
- * types/, lời gọi API thuần ở tầng api/, tuỳ chọn truy vấn và hook
- * ở tầng queries/.
- */
-
-/** Ghi danh của chính người dùng trong khoá (GET /courses/:id/enrolments/me). */
 export interface MyEnrolmentView {
   courseId: string;
   userId: string;
@@ -31,7 +22,6 @@ export interface MyPaymentView {
   itemId: string | null;
 }
 
-/** Một dòng tiến độ hoạt động trong GET /courses/:id/completion/me. */
 export interface CompletionActivityView {
   cmId: string;
   state: number;
@@ -49,7 +39,6 @@ export interface MyCompletionView {
   course: { id: string; userId: string; course: string; status: string; timeCompleted: string | null };
 }
 
-/** Tiến độ học của tôi trong khoá (GET /courses/:id/progress/me — K2). */
 export interface MyProgressView {
   percent: number | null;
   completed: number;
@@ -61,12 +50,10 @@ export interface MyProgressView {
   resume: { cmId: string; reason: string } | null;
 }
 
-/** Mốc "lớp đã học tới đây" theo từng lớp (GET /courses/:id/progress/class-markers — K2). */
 export interface ClassMarkersView {
   markers: { groupId: string | null; groupName: string; markerCmId: string | null }[];
 }
 
-/** Gói dữ liệu trang khoá học (trừ thanh toán của tôi — query riêng). */
 export interface CoursePageData {
   course: Course | null;
   instances: EnrolInstance[];

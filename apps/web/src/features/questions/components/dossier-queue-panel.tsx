@@ -1,14 +1,3 @@
-/**
- * Panel hàng chờ BỘ HỒ SƠ trong section đề chung (khu vực Ngân hàng
- * hệ thống): bề mặt đọc lịch sử của các bộ hồ sơ đang chờ của bank
- * đang chọn — người duyệt mở/tải bản đặc tả đã chụp ngay tại hàng
- * chờ; thao tác duyệt đi trên đóng góp đã chuyển đổi từ chính bộ hồ
- * sơ (trang truyền bản đồ nối hồ sơ → đóng góp xuống). Dữ liệu hàng
- * chờ do trang nạp và lọc; panel giữ state bản đặc tả đang mở, tự
- * nạp đặc tả qua query options của lib/questions-data và tải file
- * đặc tả xlsx qua apiFetch (thao tác tải file có sẵn của bề mặt này).
- * Làm mới sau duyệt qua các hàm refresh của trang truyền xuống.
- */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -21,28 +10,15 @@ import { examDossierSpecQueryOptions, useReviewExamPaperContribution } from '../
 import type { DossierSpecLite, ExamContributionLite, ExamDossierLite } from '../types/questions';
 import { dossierStatusKey, withApiReason } from '../utils/shared';
 
-/** Props của panel hàng chờ bộ hồ sơ. */
 export interface DossierQueuePanelProps {
-  /** Các bộ hồ sơ đang chờ của bank đang chọn (trang nạp và lọc theo trạng thái đóng góp liên kết). */
   bankDossiers: ExamDossierLite[];
-  /** Bản đồ hồ sơ gốc → đóng góp đã chuyển đổi từ hồ sơ đó (khoá thao tác duyệt). */
   contributionBySourceDossierId: Map<string, ExamContributionLite>;
-  /** Bank đề chung đang chọn (state của trang). */
   systemExamBankId: string;
-  /** Làm mới cụm đề chung của một bank (hàm của trang). */
   refreshSystemPapers: (bankId: string) => void;
-  /** Làm mới danh sách hồ sơ của tôi (hàm của trang). */
   refreshMyDossiers: () => void;
-  /** Báo thông báo kết quả lên khung trang. */
   setMessage: (message: string | null) => void;
 }
 
-/**
- * Panel hàng chờ bộ hồ sơ.
- *
- * @param props - Dữ liệu, các hàm làm mới và bộ báo thông báo của trang.
- * @returns Khối hàng chờ bộ hồ sơ (chỉ hiện khi đã chọn bank và có bộ đang chờ).
- */
 export function DossierQueuePanel({
   bankDossiers,
   contributionBySourceDossierId,
@@ -94,7 +70,6 @@ export function DossierQueuePanel({
     }
   }
 
-  /** Mở/đóng bản đặc tả ĐÃ CHỤP của bộ hồ sơ ngay trong hàng chờ. */
   async function toggleDossierSpec(dossierId: string) {
     if (openDossierSpec?.dossierId === dossierId) { setOpenDossierSpec(null); return; }
     try {
@@ -105,7 +80,6 @@ export function DossierQueuePanel({
     }
   }
 
-  /** Tải bản đặc tả đã chụp của bộ hồ sơ ra file xlsx. */
   async function downloadDossierSpec(dossierId: string) {
     try {
       const res = await apiFetch(`/api/v1/exams/dossiers/${dossierId}/specification/export?format=xlsx`);
@@ -124,13 +98,7 @@ export function DossierQueuePanel({
 
   return (
     <>
-    {/* Hàng chờ BỘ HỒ SƠ (EB-3): bề mặt ĐỌC lịch sử của các
-        bộ đã nộp theo đường hồ sơ cũ — người duyệt mở bản
-        đặc tả đã chụp ngay tại hàng chờ. Thao tác DUYỆT đi
-        trên đóng góp đã chuyển đổi từ chính bộ hồ sơ (nối
-        bằng sourceDossierId): cấp 1 khi đóng góp `pending`,
-        cấp 2 (BGH) khi đóng góp `pending_board`; bộ chưa có
-        đóng góp liên kết thì chỉ còn xem/tải đặc tả. */}
+    {}
     {systemExamBankId && bankDossiers.length > 0 ? (
       <div className="space-y-2">
         <h4 className="font-medium">{t('dossierQueue')}</h4>

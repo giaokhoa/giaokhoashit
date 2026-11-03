@@ -28,28 +28,17 @@
  * request chưa mang (chặng tunnel ở biên đã mang thì giữ nguyên).
  */
 
-/** Chuỗi X-Forwarded-For: giữ nguyên các chặng trước rồi nối IP của chặng proxy này. */
 function forwardedFor(prior, remoteAddress) {
   const clientIp = remoteAddress ?? '';
   return prior ? `${prior}, ${clientIp}` : clientIp;
 }
 
-/**
- * Dựng header cho request phía API từ header của request gốc.
- *
- * @param incomingHeaders - Header của request gốc (req.headers của node:http, khoá chữ thường).
- * @param remoteAddress - IP của chặng kết nối tới prod-server (req.socket.remoteAddress).
- * @param apiHost - Host của origin API nội bộ (apiOrigin.host) — chỉ còn là giá trị dự phòng khi request gốc không mang Host.
- * @returns Bộ header gắn lên request phía API: Host giữ nguyên của request gốc, X-Forwarded-For đã nối chặng, X-Forwarded-Proto đã có giá trị.
- */
 export function buildProxyHeaders(incomingHeaders, remoteAddress, apiHost) {
   const headers = {
     ...incomingHeaders,
-    // Host giữ nguyên của request gốc (xem bất biến địa chỉ ở đầu
-    // file): chỉ khi request không mang Host mới rơi về origin nội
-    // bộ như hành vi cũ cho các request không địa chỉ (health check
-    // nội bộ...). TUYỆT ĐỐI không ghi đè Host đã có — đích kết nối
-    // do hostname/port của httpRequest quyết, không do header này.
+    // Host giữ nguyên của request gốc (xem bất biến địa chỉ ở đầu file): chỉ khi request không mang Host mới rơi về
+    // origin nội bộ như hành vi cũ cho các request không địa chỉ (health check nội bộ...). TUYỆT ĐỐI không ghi đè Host
+    // đã có — đích kết nối do hostname/port của httpRequest quyết, không do header này.
     host: incomingHeaders.host ?? apiHost,
     'x-forwarded-for': forwardedFor(incomingHeaders['x-forwarded-for'], remoteAddress),
   };
@@ -92,10 +81,8 @@ export function buildUpgradeRequestLines({ method, url, httpVersion, rawHeaders,
     const name = rawHeaders[i];
     const lower = name.toLowerCase();
     if (lower === 'host') {
-      // Host giữ nguyên giá trị gốc của client (xem bất biến địa
-      // chỉ ở đầu file) — TUYỆT ĐỐI không ghi đè bằng origin nội
-      // bộ; đích của đường hầm do hostname/port của origin quyết
-      // ở điểm gọi netConnect, không do dòng header này.
+      // Host giữ nguyên giá trị gốc của client (xem bất biến địa chỉ ở đầu file) — TUYỆT ĐỐI không ghi đè bằng origin
+      // nội bộ; đích của đường hầm do hostname/port của origin quyết ở điểm gọi netConnect, không do dòng header này.
       lines.push(`Host: ${rawHeaders[i + 1]}`);
       hostSeen = true;
     } else if (lower === 'x-forwarded-for') {

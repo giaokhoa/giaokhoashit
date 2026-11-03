@@ -14,7 +14,6 @@ interface AuthState {
   loginWithEmailOtp: (email: string, otp: string) => Promise<UserProfile>;
   loginWithSocial: (provider: 'google' | 'facebook') => Promise<void>;
   logout: () => Promise<void>;
-  /** Nạp lại phiên từ cookie; true khi đã áp được một kết luận phiên. */
   reload: () => Promise<boolean>;
 }
 
@@ -38,11 +37,6 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode; i
   const [user, setUser] = useState<UserProfile | null>(initialUser ?? null);
   const [loading, setLoading] = useState(initialUser === undefined);
   const session = useSession();
-  /**
-   * Id người dùng của phiên mà hồ sơ hiện tại đã đồng bộ theo
-   * (undefined = chưa đồng bộ lần nào, null = đã đồng bộ về ẩn danh).
-   * Chặn việc nạp lại hồ sơ mỗi lần atom phiên phát cùng một giá trị.
-   */
   const syncedForRef = useRef<string | null | undefined>(undefined);
 
   /**
@@ -84,9 +78,8 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode; i
       return;
     }
     syncedForRef.current = sessionUserId;
-    // Bản ghi chuyến bay được đặt vào ref TRƯỚC khi thân bất đồng bộ
-    // chạy: thân tự nhận biết mình còn là chuyến bay hiện hành hay đã
-    // bị một lần resolve mới hơn thay thế bằng cách so chính bản ghi.
+    // Bản ghi chuyến bay được đặt vào ref TRƯỚC khi thân bất đồng bộ chạy: thân tự nhận biết mình còn là chuyến bay
+    // hiện hành hay đã bị một lần resolve mới hơn thay thế bằng cách so chính bản ghi.
     const record: { id: string; promise: Promise<void> } = {
       id: sessionUserId,
       promise: Promise.resolve(),
@@ -95,9 +88,8 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode; i
     record.promise = (async () => {
       try {
         const res = await apiFetch('/api/v1/users/me');
-        // Đã có lần resolve mới hơn thay thế chuyến bay này (đăng
-        // nhập/đăng xuất/xoá phiên chen vào): không áp kết quả cũ,
-        // cũng không đọc thân đáp ứng nữa.
+        // Đã có lần resolve mới hơn thay thế chuyến bay này (đăng nhập/đăng xuất/xoá phiên chen vào): không áp kết quả
+        // cũ, cũng không đọc thân đáp ứng nữa.
         if (profileFlightRef.current !== record) return;
         if (res.ok) setUser(userProfileSchema.parse(await res.json()));
         else setUser(null);
@@ -132,9 +124,8 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode; i
   const [mountTick, setMountTick] = useState(0);
 
   useEffect(() => {
-    // Phiên còn đang resolve phía client thì không đụng trạng thái đã
-    // seed từ loader — tránh việc SSR vừa render đúng danh tính lại bị
-    // pha chờ của client xoá mất trước khi get-session trả về.
+    // Phiên còn đang resolve phía client thì không đụng trạng thái đã seed từ loader — tránh việc SSR vừa render đúng
+    // danh tính lại bị pha chờ của client xoá mất trước khi get-session trả về.
     if (session.isPending) return;
     if (!mountSettledRef.current) return;
     if (consumedAtomDataRef.current === session.data) return;
@@ -159,13 +150,10 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode; i
       const { data } = await authClient.getSession();
       sessionUserId = data?.user?.id ?? null;
     } catch {
-      // Không đọc được phiên (lỗi mạng/phía client): giữ nguyên trạng
-      // thái hiện tại thay vì kết luận vội — atom phiên vẫn là đường
-      // resolve nền và sẽ áp kết quả của nó qua effect ở trên.
+      // Không đọc được phiên (lỗi mạng/phía client): giữ nguyên trạng thái hiện tại thay vì kết luận vội — atom phiên
+      // vẫn là đường resolve nền và sẽ áp kết quả của nó qua effect ở trên.
       return false;
     }
-    // Buộc nạp lại hồ sơ kể cả khi id không đổi (phiên được gia hạn /
-    // hồ sơ vừa bị sửa ở nơi khác).
     await applySession(sessionUserId, true);
     return true;
   }, [applySession]);
@@ -177,9 +165,8 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode; i
     let alive = true;
     void reload().then((applied) => {
       if (!alive) return;
-      // Reload đã áp kết luận dứt khoát: giá trị atom hiện tại (có
-      // thể là dư âm của vòng đời trước) coi như đã tiêu thụ — chỉ
-      // các giá trị atom mới sau đây mới được effect áp tiếp.
+      // Reload đã áp kết luận dứt khoát: giá trị atom hiện tại (có thể là dư âm của vòng đời trước) coi như đã tiêu thụ
+      // — chỉ các giá trị atom mới sau đây mới được effect áp tiếp.
       if (applied) consumedAtomDataRef.current = sessionDataRef.current;
       mountSettledRef.current = true;
       setMountTick((t) => t + 1);
@@ -197,7 +184,6 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode; i
    */
   const establishSession = useCallback(async (): Promise<UserProfile> => {
     queryClient.clear();
-    // Đăng nhập mới thay thế mọi lần resolve hồ sơ đang bay của phiên cũ.
     profileFlightRef.current = null;
     const res = await apiFetch('/api/v1/users/me');
     const profile = userProfileSchema.parse(await res.json());
@@ -243,7 +229,6 @@ export function AuthProvider({ children, initialUser }: { children: ReactNode; i
     [establishSession],
   );
 
-  /** Xin gửi mã OTP đăng nhập (6 số) tới email — bước 1 của luồng OTP. */
   const requestEmailOtp = useCallback(async (email: string): Promise<void> => {
     const { error } = await authClient.emailOtp.sendVerificationOtp({ email, type: 'sign-in' });
     if (error) throw apiErrorFromAuthClient(error);

@@ -36,9 +36,8 @@ describe('CONTENT_SECURITY_POLICY', () => {
     expect(frameSrc).toContain('blob:');
     expect(frameSrc).toContain('https://www.youtube.com');
     expect(frameSrc).toContain('https://player.vimeo.com');
-    // Không có token scheme `https:` đứng riêng (vốn sẽ cho phép nhúng
-    // từ mọi origin https) — kiểm theo token vì 'https:' là chuỗi con
-    // của các host-source hợp lệ ở trên.
+    // Không có token scheme `https:` đứng riêng (vốn sẽ cho phép nhúng từ mọi origin https) — kiểm theo token vì
+    // 'https:' là chuỗi con của các host-source hợp lệ ở trên.
     expect(frameSrc.split(' ')).not.toContain('https:');
   });
 

@@ -1258,7 +1258,6 @@ export const enResources = {
     sharedExamBank: 'Shared exam bank',
     sharedMatrixBank: 'Shared matrix bank',
     comingSoon: 'Not built yet — waiting for the Quiz matrix foundation.',
-    // MB-1 (issue #111): ngân hàng ma trận.
     matrixBank: 'Matrix bank',
     myMatrixBank: 'My matrices',
     myMatrixBankDescription:
@@ -1426,7 +1425,6 @@ export const enResources = {
     examPinsTitle: 'Pins of this exam',
     matrixCv7991Note: 'Matrix per CV 7991 specification (3 levels by default: Know / Understand / Apply).',
     matrixIncludeAdvanced: 'Add the Advanced application level',
-    // I-3 (issue #233): wizard nhập ma trận 5 bước từ file.
     matrixImport: 'Import matrix from file',
     matrixImportFromFile: 'Import from file',
     matrixImportStep1: '1. Choose subject and download template',

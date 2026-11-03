@@ -5,26 +5,17 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@lms/ui/components/chart';
 import { ToggleGroup, ToggleGroupItem } from '@lms/ui/components/toggle-group';
 
-/** Một điểm dữ liệu của biểu đồ: trục hoành là nhãn, giá trị nằm ở khoá `value`. */
 export interface ChartPoint {
   label: string;
   value: number;
 }
 
-/** Một lựa chọn khoảng hiển thị: giữ `count` điểm cuối của chuỗi. */
 export interface ChartRange {
   value: string;
   label: string;
   count: number;
 }
 
-/**
- * Biểu đồ vùng tương tác theo block dashboard-01 (Recharts AreaChart trong
- * ChartContainer, có chuyển khoảng hiển thị ở góc phải header). Chuỗi số
- * được truyền từ trang gọi — là dữ liệu thật của API (người dùng mới theo
- * tuần, phân bố điểm, sự kiện theo ngày); khi chuỗi rỗng component hiện
- * dòng trạng thái trống đã dịch thay vì vẽ biểu đồ giả.
- */
 export function ChartAreaInteractive({
   title,
   description,

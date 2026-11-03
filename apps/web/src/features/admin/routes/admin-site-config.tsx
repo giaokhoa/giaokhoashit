@@ -25,9 +25,6 @@ import { buildSsrLoaderData, serverQueryFn, type SsrLoaderData } from '#lib/ssr-
  * thì cả hai prefetch đều lỗi 403 phía server → không query nào lọt
  * vào state, trang tự fetch lại và hiện thông báo không có quyền như
  * trước SL-1. Không có cookie phiên thì không gọi API nào.
- *
- * @param request - Request đang phục vụ (nguồn cookie phiên).
- * @returns Dehydrated state cho HydrationBoundary ở root.
  */
 export async function loader({ request }: { request: Request }): Promise<SsrLoaderData> {
   return buildSsrLoaderData(request, async (queryClient, req) => {
@@ -54,7 +51,6 @@ const KNOWN_ENUM_OPTIONS: Record<string, readonly string[]> = {
   'core/lang': ['vi', 'en'],
 };
 
-/** Khoá ghép của một setting trong state bản nháp của trang. */
 function settingKey(setting: SiteSetting): string {
   return `${setting.component}/${setting.name}`;
 }
@@ -76,36 +72,16 @@ const NOTIFICATION_POLICY_COMPONENT = 'notifications';
  */
 const NOTIFICATION_MANDATORY_PROVIDERS = new Set(['enrol_expiry_warning', 'admin_announcement']);
 
-/** Tên provider của một setting chính sách thông báo; null nếu setting không thuộc họ này. */
 function notificationProviderOf(setting: SiteSetting): string | null {
   if (setting.component !== NOTIFICATION_POLICY_COMPONENT) return null;
   const match = /^provider_(.+)_enabled$/.exec(setting.name);
   return match ? match[1]! : null;
 }
 
-/** Đưa một giá trị JSON về dạng hiển thị ngắn cho huy hiệu/audit. */
 function formatValue(value: unknown): string {
   return typeof value === 'string' ? value : (JSON.stringify(value) ?? '');
 }
 
-/**
- * Trang cấu hình site (quản trị): bảng setting nhóm theo component từ
- * GET /api/v1/site-config, mỗi dòng một editor theo `type` đã đăng ký
- * (boolean → checkbox, number → ô số gửi dạng number, enum đã biết options
- * → select, còn lại → ô văn bản), Lưu qua PUT, Đặt lại qua DELETE chỉ khi
- * setting đang có ghi đè (`source = 'database'`). Cuối trang là danh sách
- * vết thay đổi gần nhất từ GET /api/v1/site-config/audit. API khoá mọi
- * endpoint bằng capability `site:config`: bị 403 thì trang hiện
- * thông báo không có quyền thay vì sập.
- *
- * Dữ liệu qua TanStack Query (features/admin/queries/site-config, F-01): bảng setting và
- * audit là hai query; Lưu/Đặt lại là mutation làm mới cả hai. Bản nháp của
- * trang chỉ giữ phần người dùng ĐÃ sửa so với giá trị server — giá trị
- * hiển thị của dòng chưa sửa suy thẳng từ query nên sau khi lưu/đặt lại
- * (query được làm mới) dòng tự về giá trị server mới, không cần nạp lại
- * toàn trang như trước. Từ lát SL-1 (#7), loader của route prefetch cả
- * hai query phía server (khi có cookie phiên) và trang hydrate từ cache.
- */
 export function AdminSiteConfigPage() {
   const { t } = useTranslation('app');
   const [drafts, setDrafts] = useState<Record<string, string | boolean>>({});
@@ -122,14 +98,12 @@ export function AdminSiteConfigPage() {
     settingsQuery.error instanceof ApiError && settingsQuery.error.problem.status === 403;
   const error = settingsQuery.isError && !forbidden ? t('siteConfigLoadFailed') : null;
 
-  /** Giá trị đang hiển thị của một dòng: bản nháp nếu người dùng đã sửa, không thì giá trị server. */
   function draftOf(setting: SiteSetting): string | boolean {
     const key = settingKey(setting);
     if (key in drafts) return drafts[key]!;
     return typeof setting.value === 'boolean' ? setting.value : formatValue(setting.value);
   }
 
-  /** Bỏ bản nháp của một setting sau khi lưu/đặt lại thành công — dòng về giá trị server mới. */
   function clearDraft(setting: SiteSetting) {
     const key = settingKey(setting);
     setDrafts((prev) => {
@@ -140,7 +114,6 @@ export function AdminSiteConfigPage() {
     });
   }
 
-  /** Lưu một setting qua PUT với giá trị đã ép đúng kiểu đã đăng ký (number gửi dạng number, boolean dạng boolean). */
   function save(setting: SiteSetting) {
     const draft = draftOf(setting);
     const value: unknown =
@@ -158,7 +131,6 @@ export function AdminSiteConfigPage() {
     );
   }
 
-  /** Xoá ghi đè của một setting qua DELETE để nó trở về giá trị mặc định trong code. */
   function reset(setting: SiteSetting) {
     setMessage(null);
     resetMutation.mutate(
@@ -337,7 +309,6 @@ export function AdminSiteConfigPage() {
   );
 }
 
-/** Export mặc định cho route module React Router framework mode (xem src/routes.ts). */
 export default AdminSiteConfigPage;
 
 // Biên lỗi + tiêu đề theo route (cụm khung SSR #146, từ rà soát #133).

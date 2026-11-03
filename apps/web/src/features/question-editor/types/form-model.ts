@@ -1,13 +1,3 @@
-/**
- * Mô hình form của màn soạn câu hỏi (tách cấu trúc từ
- * `pages/question-editor.tsx` theo đợt A của issue #223): tiện ích
- * tài liệu rich text và mô hình trạng thái form của editor — lắp
- * form từ view của câu có sẵn (`editorFormFromView`), form rỗng
- * (`emptyEditorForm`) và đóng gói payload tạo/sửa
- * (`editorFormContent`). Toàn bộ là logic thuần: không JSX, không
- * gọi API; trang soạn và các khối giao diện của nó dùng chung mô
- * hình này.
- */
 import type { QuestionView, RichTextDocument } from '@lms/contracts';
 import { extractRichTextPlainText } from '@lms/contracts';
 import {
@@ -23,21 +13,14 @@ import {
 import { QTYPES, plainText } from '#features/questions/utils/shared';
 import type { OptionsRecord, Qtype } from '#features/questions/utils/shared';
 
-// ---------------------------------------------------------------------------
-// Tiện ích tài liệu rich text
-// ---------------------------------------------------------------------------
-
 export type Doc = RichTextDocument;
 
-/** Tài liệu rỗng chuẩn: một doc chứa đúng một paragraph rỗng. */
 export const emptyDoc = (): Doc => ({ type: 'doc', content: [{ type: 'paragraph' }] });
 
-/** Tài liệu một paragraph từ chuỗi thuần (chỉ dùng cho dữ liệu cũ dạng chuỗi). */
 function docFromText(text: string): Doc {
   return text ? { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] } : emptyDoc();
 }
 
-/** Ép giá trị options (có thể là tài liệu, chuỗi thuần, hoặc rác) về tài liệu. */
 function asDoc(value: unknown): Doc | undefined {
   if (typeof value === 'string') return value ? docFromText(value) : undefined;
   if (value && typeof value === 'object' && (value as { type?: unknown }).type === 'doc') {
@@ -46,7 +29,6 @@ function asDoc(value: unknown): Doc | undefined {
   return undefined;
 }
 
-/** Tài liệu có nội dung thật (chữ, hoặc node phi văn bản như ảnh/công thức) hay không. */
 export function docHasContent(doc: Doc | null | undefined): boolean {
   if (!doc) return false;
   if (extractRichTextPlainText(doc).trim() !== '') return true;
@@ -55,7 +37,6 @@ export function docHasContent(doc: Doc | null | undefined): boolean {
   );
 }
 
-/** Bỏ qua tài liệu rỗng khi dựng payload (trường tuỳ chọn không gửi doc rỗng). */
 function docOrUndefined(doc: Doc | undefined): Doc | undefined {
   return docHasContent(doc) ? doc : undefined;
 }
@@ -64,10 +45,6 @@ function docOrUndefined(doc: Doc | undefined): Doc | undefined {
 export function entryStatus(view: QuestionView | null | undefined): string | undefined {
   return (view?.entry as { status?: string } | undefined)?.status;
 }
-
-// ---------------------------------------------------------------------------
-// Mô hình form
-// ---------------------------------------------------------------------------
 
 /**
  * Trạng thái form của màn soạn. Ranh giới dữ liệu theo mô hình port
@@ -90,10 +67,8 @@ export interface QuestionEditorFormState {
   qtype: Qtype;
   questionText: Doc;
   generalFeedback: Doc | undefined;
-  /** Hướng dẫn (guidance) — gợi ý cách làm cho học sinh, phía đáp án. */
   guidance: Doc | undefined;
   stimulusId: string;
-  // multichoice: tài liệu thống nhất + metadata ngoài tài liệu
   mcDocument: MultipleChoiceDocumentJson;
   mcCorrectChoiceId: string | undefined;
   mcChoiceFeedbacks: Record<string, Doc | undefined>;
@@ -102,20 +77,16 @@ export interface QuestionEditorFormState {
   mcShowStandardInstruction: boolean;
   mcCorrectFeedback: Doc | undefined;
   mcIncorrectFeedback: Doc | undefined;
-  // truefalse TF-A: tài liệu thống nhất (thân + 4 mệnh đề) + đáp án theo mệnh đề
   tfDocument: TrueFalseDocumentJson;
   tfAnswers: Record<string, boolean>;
-  // shortanswer: đáp án là mẫu khớp nên giữ chuỗi thuần; mọi mẫu đều được chấp nhận
   saUseCase: boolean;
   saNumericAnswer: boolean;
   saNumericMaxLength: string;
   saNumericAllowSign: boolean;
   saNumericAllowDecimal: boolean;
-  // Mỗi đáp án mang `id` phía client ổn định cho key/id của dòng
-  // đáp án (danh sách có lên/xuống + xoá nên không dùng index làm
-  // key); payload gửi API chỉ gồm `text`, không mang trường này.
+  // Mỗi đáp án mang `id` phía client ổn định cho key/id của dòng đáp án (danh sách có lên/xuống + xoá nên không dùng
+  // index làm key); payload gửi API chỉ gồm `text`, không mang trường này.
   saAnswers: { id: string; text: string }[];
-  // essay
   essayResponseFormat: string;
   essayResponseRequired: boolean;
   essayResponseFieldLines: string;
@@ -123,7 +94,6 @@ export interface QuestionEditorFormState {
   essayMaxWords: string;
   essayGraderInfo: Doc | undefined;
   essayResponseTemplate: Doc | undefined;
-  /** Lời giải mẫu của tự luận (solution.answer ở phía đáp án). */
   essaySolution: Doc | undefined;
 }
 
@@ -179,8 +149,6 @@ export function editorFormFromView(
   form.questionText = view.latestVersion.questionText ?? emptyDoc();
   form.generalFeedback = view.latestVersion.generalFeedback ?? undefined;
   form.stimulusId = view.latestVersion.stimulusId ?? view.stimulus?.id ?? '';
-  // Hướng dẫn nằm ở bản ghi phía đáp án của phiên bản (answerKey),
-  // không còn ở phiên bản — nạp thẳng từ đó.
   form.guidance = view.answerKey?.guidance ?? undefined;
 
   if (qtype === 'multichoice') {
@@ -189,9 +157,6 @@ export function editorFormFromView(
     form.mcShowStandardInstruction = options.showStandardInstruction !== false;
     form.mcCorrectFeedback = asDoc(options.correctFeedback);
     form.mcIncorrectFeedback = asDoc(options.incorrectFeedback);
-    // Lắp thân câu + các dòng answers thành tài liệu thống nhất:
-    // id của choice = id của dòng answers, đáp án đúng = dòng mang
-    // isCorrect, phản hồi theo lựa chọn vào map theo id choice.
     const answers = [...(view.answers ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
     form.mcDocument = composeMultipleChoiceDocument(view.latestVersion.questionText, answers);
     form.mcCorrectChoiceId = answers.find((a) => a.isCorrect)?.id;
@@ -201,9 +166,6 @@ export function editorFormFromView(
   }
 
   if (qtype === 'truefalse') {
-    // TF-A: thân câu đã lưu CHÍNH LÀ tài liệu soạn (thân + danh sách
-    // mệnh đề trong cùng một tài liệu); đáp án từng mệnh đề nạp từ
-    // phía đáp án của version (answerKey.solution dạng {answers}).
     form.tfDocument = composeTrueFalseDocument(view.latestVersion.questionText);
     const solution = view.answerKey?.solution;
     form.tfAnswers =
@@ -240,8 +202,6 @@ export function editorFormFromView(
     form.essayMaxWords = typeof options.maxWordLimit === 'number' ? String(options.maxWordLimit) : '';
     form.essayGraderInfo = asDoc(options.graderInfo);
     form.essayResponseTemplate = asDoc(options.responseTemplate);
-    // Lời giải mẫu của tự luận nằm ở phía đáp án (answerKey.solution
-    // dạng {answer}) — khác graderInfo là thông tin cho người chấm.
     const solution = view.answerKey?.solution;
     form.essaySolution = solution && 'answer' in solution ? (solution.answer as Doc) : undefined;
   }
@@ -318,9 +278,8 @@ export function editorFormContent(form: QuestionEditorFormState): Record<string,
       ...(generalFeedback ? { generalFeedback } : {}),
       ...(guidance ? { guidance } : {}),
       solution: {
-        // Chỉ gửi các mệnh đề ĐÃ chọn Đ/S: mệnh đề chưa chọn làm
-        // payload thiếu phủ tập mệnh đề và bị API từ chối với lỗi rõ
-        // ràng — tuyệt đối không mặc định "Sai" cho mệnh đề chưa chọn.
+        // Chỉ gửi các mệnh đề ĐÃ chọn Đ/S: mệnh đề chưa chọn làm payload thiếu phủ tập mệnh đề và bị API từ chối với
+        // lỗi rõ ràng — tuyệt đối không mặc định "Sai" cho mệnh đề chưa chọn.
         answers: statements
           .filter((statement) => typeof form.tfAnswers[statement.attrs.id] === 'boolean')
           .map((statement) => ({
@@ -350,7 +309,6 @@ export function editorFormContent(form: QuestionEditorFormState): Record<string,
     };
   }
 
-  // essay
   const minWordLimit = numberOrUndefined(form.essayMinWords);
   const maxWordLimit = numberOrUndefined(form.essayMaxWords);
   const graderInfo = docOrUndefined(form.essayGraderInfo);

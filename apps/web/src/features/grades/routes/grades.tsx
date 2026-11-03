@@ -22,30 +22,14 @@ import {
 import { StudentGradesCard } from '../components/student-grades-card';
 import { VneduExportCard } from '../components/vnedu-export-card';
 
-/**
- * Trang Điểm theo bài của một khoá (issue #224 — thay trang Sổ điểm
- * tổng hợp): học sinh xem điểm của TỪNG BÀI của mình (chỉ bài đã công
- * bố mới hiện điểm); giáo viên xem lưới CHỈ-ĐỌC học sinh × các bài,
- * quản trị mục điểm + công bố theo bài, nhập điểm và xuất vnEdu từ các
- * bài đã công bố. Không còn điểm tổng khoá, hạng mục, thang chữ,
- * scales/outcomes hay sổ VN ở bất kỳ bề mặt nào.
- *
- * Khu quản trị chỉ render cho staff của khoá (grade:viewall tại
- * context khoá hoặc quản trị hệ thống) qua `usePermissions()`. Lưu ý
- * các endpoint sửa/xoá item và nhập điểm KHÔNG mang tiền tố courseId
- * (PATCH/DELETE /grade-items/:id, POST
- * /grade-items/:itemId/grades) — đúng controller phía API.
- */
 export function GradebookPage() {
   const { t, i18n } = useTranslation('app');
   const { id } = useParams();
   const courseId = id ?? '';
   const perms = usePermissions();
-  // Điểm theo bài + lưới lớp đọc qua TanStack với ĐÚNG khoá
-  // `courseAccess` và fetcher dùng chung ở `src/hooks/use-courses-grade-data.ts`
-  // (F-03, rà soát #133): bề mặt nào mở trước thì bề mặt sau đọc cache,
-  // không tốn request thêm. Provider KHÔNG tải dữ liệu này khi nạp app
-  // (F-02) — trang này là một trong các bề mặt tải lười nó.
+  // Điểm theo bài + lưới lớp đọc qua TanStack với ĐÚNG khoá `courseAccess` và fetcher dùng chung ở
+  // `src/hooks/use-courses-grade-data.ts` (F-03, rà soát #133): bề mặt nào mở trước thì bề mặt sau đọc cache, không tốn
+  // request thêm. Provider KHÔNG tải dữ liệu này khi nạp app (F-02) — trang này là một trong các bề mặt tải lười nó.
   const gradeDataQuery = useCourseGradeData(courseId);
   const book = gradeDataQuery.data?.gradebook ?? null;
   const report = gradeDataQuery.data?.report ?? null;
@@ -56,7 +40,6 @@ export function GradebookPage() {
   const [gradeValue, setGradeValue] = useState('');
   const [gradeFeedback, setGradeFeedback] = useState('');
 
-  /** Staff của khoá này hay không: teaching của khoá hoặc quản trị hệ thống. */
   const courseAccess = perms.courses.find((c) => c.course.id === courseId);
   const isStaff =
     perms.canAdminister ||
@@ -69,7 +52,6 @@ export function GradebookPage() {
   const [itemEdits, setItemEdits] = useState<Record<string, GradeItemEdit>>({});
   const [adminMessage, setAdminMessage] = useState<string | null>(null);
   const [vneduKinds, setVneduKinds] = useState<Record<string, VneduColumnKind>>({});
-  /** Mốc tập id bài đã áp gợi ý vnEdu gần nhất — dùng bởi khối điều chỉnh state ngay trong render ở dưới. */
   const [prevItemsIdKey, setPrevItemsIdKey] = useState('');
   const [vneduSemester, setVneduSemester] = useState('1');
   const [vneduSchoolYear, setVneduSchoolYear] = useState('');
@@ -82,9 +64,6 @@ export function GradebookPage() {
   const [historyError, setHistoryError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
-  // Thao tác ghi điểm/mục điểm qua các đột biến của
-  // features/grades/queries/course-grade (F-01 của rà soát #133): đột biến tự làm
-  // mới đúng khoá dùng chung courseAccess sau khi ghi thành công.
   const submitGradeMutation = useSubmitGrade(courseId);
   const createItemMutation = useCreateGradeItem(courseId);
   const updateItemMutation = useUpdateGradeItem(courseId);
@@ -92,19 +71,12 @@ export function GradebookPage() {
   const postingPolicyMutation = useSetGradePostingPolicy(courseId);
   const publishedMutation = useSetGradeItemPublished(courseId);
 
-  // Lỗi "tải được dữ kiện nhưng không có sổ điểm" suy ngay khi
-  // render từ dữ kiện query — không chép qua effect vào state như
-  // bản cũ; `error` trong state chỉ còn giữ lỗi của thao tác ghi.
   const gradebookError = gradeDataQuery.data && !gradeDataQuery.data.gradebook ? t('gradebookLoadFailed') : null;
 
-  // Gợi ý ánh xạ vnEdu mặc định theo tên bài mỗi khi TẬP id
-  // của danh sách bài đổi: điều chỉnh state ngay trong lúc
-  // render (khuôn React khuyến nghị cho state suy từ dữ kiện
-  // thay vì dùng effect) — giữ nguyên mốc kích hoạt của effect
-  // cũ (chuỗi id nối), giữ loại cột giáo viên đã chọn cho các
-  // bài còn hiện diện và chỉ đoán cho bài mới xuất hiện; không
-  // còn mảng phụ thuộc dạng biểu thức mà lint không kiểm chứng
-  // tĩnh được.
+  // Gợi ý ánh xạ vnEdu mặc định theo tên bài mỗi khi TẬP id của danh sách bài đổi: điều chỉnh state ngay trong lúc
+  // render (khuôn React khuyến nghị cho state suy từ dữ kiện thay vì dùng effect) — giữ nguyên mốc kích hoạt của effect
+  // cũ (chuỗi id nối), giữ loại cột giáo viên đã chọn cho các bài còn hiện diện và chỉ đoán cho bài mới xuất hiện;
+  // không còn mảng phụ thuộc dạng biểu thức mà lint không kiểm chứng tĩnh được.
   const itemsIdKey = items.map((i) => i.id).join(',');
   if (itemsIdKey !== prevItemsIdKey) {
     setPrevItemsIdKey(itemsIdKey);
@@ -115,7 +87,6 @@ export function GradebookPage() {
     });
   }
 
-  /** Nhập/sửa điểm một bài cho một học sinh (POST /grade-items/:itemId/grades). */
   async function submitGrade(event: FormEvent) {
     event.preventDefault();
     setMessage(null);
@@ -133,7 +104,6 @@ export function GradebookPage() {
     }
   }
 
-  /** Tạo mục điểm nhập tay mới cho một bài/đợt riêng của khoá. */
   async function createItem(event: FormEvent) {
     event.preventDefault();
     setAdminMessage(null);
@@ -146,7 +116,6 @@ export function GradebookPage() {
     }
   }
 
-  /** Lưu sửa tên/thang điểm của một mục (PATCH /grade-items/:id). */
   async function saveItemEdit(item: GradeItem) {
     const edit = itemEdits[item.id];
     if (!edit) return;
@@ -163,7 +132,6 @@ export function GradebookPage() {
     }
   }
 
-  /** Xoá một mục điểm và mọi điểm của nó (DELETE /grade-items/:id). */
   async function deleteItem(item: GradeItem) {
     if (!window.confirm(t('confirmDeleteGradeItem', { name: item.itemName }))) return;
     setAdminMessage(null);
@@ -175,7 +143,6 @@ export function GradebookPage() {
     }
   }
 
-  /** Đặt chính sách công bố của một bài (PUT /grade-items/:id/posting-policy). */
   async function setPostingPolicy(item: GradeItem, policy: 'auto' | 'manual') {
     setAdminMessage(null);
     try {
@@ -186,7 +153,6 @@ export function GradebookPage() {
     }
   }
 
-  /** Công bố / thu hồi công bố điểm của một bài (POST .../publish | .../unpublish). */
   async function setPublished(item: GradeItem, published: boolean) {
     setAdminMessage(null);
     try {
@@ -197,14 +163,6 @@ export function GradebookPage() {
     }
   }
 
-  /**
-   * Xuất Excel vnEdu qua POST /courses/:courseId/grade-exports (body
-   * mang trường provider: 'vnedu' để chọn nhà cung cấp xuất)
-   * (issue #53; nguồn đổi ở #224): chỉ các bài ĐÃ CÔNG BỐ mới được
-   * chọn; giáo viên xác nhận ánh xạ bài → loại cột kèm học kỳ, năm
-   * học, môn và lớp (để trống thì server lấy mặc định từ khoá học).
-   * Ánh xạ chưa hợp lệ thì chặn ngay tại giao diện.
-   */
   async function downloadGradesVnedu(event: FormEvent) {
     event.preventDefault();
     setVneduMessage(null);
@@ -246,13 +204,6 @@ export function GradebookPage() {
     }
   }
 
-  /**
-   * Xem lịch sử điểm của một học viên trên một mục điểm qua
-   * GET /grade-items/:itemId/users/:userId/history. Đọc theo
-   * yêu cầu nên đi qua fetchQuery của TanStack (vẫn vào bộ nhớ đệm
-   * theo khoá factory) mà giữ nhịp xoá kết quả cũ/hiện lỗi tại chỗ
-   * của bản thủ công.
-   */
   async function loadHistory(event: FormEvent) {
     event.preventDefault();
     setHistoryError(null);
@@ -298,15 +249,15 @@ export function GradebookPage() {
         </ErrorAlert>
       )}
 
-      {/* Điểm của chính người dùng: từng bài một, kèm trạng thái công bố. */}
+      {}
       <StudentGradesCard activities={myActivities} locale={i18n.language} />
 
       {isStaff && report && (
         <>
-          {/* Lưới chỉ-đọc học sinh × các bài cho giáo viên. */}
+          {}
           <ClassGradesGridCard report={report} locale={i18n.language} />
 
-          {/* Quản trị mục điểm + công bố theo bài. */}
+          {}
           <GradeItemsAdminCard
             items={items}
             publications={report.publications}
@@ -324,7 +275,7 @@ export function GradebookPage() {
             onSetPublished={setPublished}
           />
 
-          {/* Nhập điểm + lịch sử điểm. */}
+          {}
           <EnterGradeCard
             items={items}
             rows={report.rows}
@@ -346,7 +297,7 @@ export function GradebookPage() {
             onLoadHistory={loadHistory}
           />
 
-          {/* Xuất vnEdu từ các bài đã công bố. */}
+          {}
           <VneduExportCard
             items={items}
             publications={report.publications}

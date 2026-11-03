@@ -54,13 +54,6 @@ async function parseProblem(res: Response): Promise<ApiError> {
   );
 }
 
-/**
- * Chuẩn hoá lỗi từ client Better Auth (hình `{ status, code, message }`
- * của better-fetch) về ApiError/Problem Details để các bề mặt hiển thị
- * lỗi dùng chung một đường như lỗi của API nghiệp vụ. `detail` mang
- * message gốc của server (ví dụ "Invalid username or password") — đó
- * là thông điệp đã được phía auth kiểm soát cho người dùng cuối.
- */
 export function apiErrorFromAuthClient(error: { status?: number; code?: string; message?: string }): ApiError {
   const status = error.status ?? 400;
   const message = error.message ?? 'Yêu cầu thất bại';
@@ -77,9 +70,8 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   const headers = new Headers(init.headers);
   // FormData phải để trình duyệt tự đặt Content-Type multipart kèm boundary — ép JSON sẽ làm hỏng mọi tải lên.
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  // Cookie phiên đi kèm tường minh: cùng nguồn trình duyệt vốn đã gửi,
-  // khai rõ để các môi trường nhúng (test, iframe cùng nguồn) giữ đúng
-  // một hành vi.
+  // Cookie phiên đi kèm tường minh: cùng nguồn trình duyệt vốn đã gửi, khai rõ để các môi trường nhúng (test, iframe
+  // cùng nguồn) giữ đúng một hành vi.
   return fetch(path, { ...init, headers, credentials: 'same-origin' });
 }
 
