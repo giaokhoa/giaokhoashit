@@ -16,7 +16,14 @@
 //     SSO và brute force (nghiệm thu 3);
 //   - refresh token rotation + phát hiện tái dùng, thời lượng phiên
 //     theo cấu hình, đổi khoá ký, và diễn tập khôi phục mẫu sau khi
-//     cấu hình bị sửa lệch (nghiệm thu 4).
+//     cấu hình bị sửa lệch (nghiệm thu 4);
+//   - hoà giải ánh xạ vai hai chiều: mapping ngoài mẫu dựng sẵn
+//     trên client scope roles bị gỡ khi chạy lại bộ cấp phát và
+//     token không còn phát vai thừa;
+//   - MFA ở realm master: tài khoản tương tác chưa khai báo TOTP
+//     không hoàn tất được đăng nhập, hoàn tất khai báo thì vào
+//     được và lần sau bị hỏi OTP; tài khoản tự động hoá gọi Admin
+//     API tách riêng nên không bị gắn required action.
 //
 // Mọi kiểm tra in một dòng tiếng Việt ĐẠT/KHÔNG ĐẠT/BỎ QUA kèm mô tả
 // hành vi; tiến trình thoát khác 0 nếu có kiểm tra KHÔNG ĐẠT. Bí mật
@@ -254,8 +261,13 @@ function pkce() {
 // ---------------------------------------------------------------------------
 
 let cachedAdminToken = null;
+let adminTokenExpiresAt = 0;
 async function adminToken() {
-  if (cachedAdminToken) return cachedAdminToken;
+  // Token quản trị của realm master chỉ sống 60 giây (đã đo trên
+  // binary 26.8.1) trong khi toàn bộ harness chạy nhiều phút: phải
+  // xin token mới khi token đã cache sắp hết hạn, cùng cách bộ cấp
+  // phát xử lý, thay vì dùng một token cho cả lượt chạy.
+  if (cachedAdminToken && Date.now() < adminTokenExpiresAt - 5_000) return cachedAdminToken;
   const res = await http(null, "POST", `${baseUrl}/realms/master/protocol/openid-connect/token`, {
     form: {
       client_id: "admin-cli",
@@ -265,7 +277,9 @@ async function adminToken() {
     },
   });
   if (res.status !== 200) throw new Error(`Lấy token quản trị thất bại: HTTP ${res.status}`);
-  cachedAdminToken = JSON.parse(res.text).access_token;
+  const data = JSON.parse(res.text);
+  cachedAdminToken = data.access_token;
+  adminTokenExpiresAt = Date.now() + (data.expires_in ?? 60) * 1000;
   return cachedAdminToken;
 }
 
@@ -493,6 +507,36 @@ async function loginTenantUser(realm, tenant, username, password, { acrValues, o
     onPage,
   );
   return { result, jar, verifier, redirectUri, otpState };
+}
+
+
+// Đăng nhập một tài khoản realm master qua client Admin Console
+// (security-admin-console) — bề mặt tương tác của quản trị
+// Keycloak. Tuỳ chọn enrollOtp=false mô phỏng người dùng dừng ở
+// trang khai báo TOTP mà không hoàn tất: harness trả về trang đó
+// để pha kiểm chứng khẳng định đăng nhập không hoàn tất được.
+async function loginMasterUser(username, password, { otpState: givenOtpState, enrollOtp = true } = {}) {
+  const jar = newJar();
+  const { challenge } = pkce();
+  const redirectUri = `${baseUrl}/admin/master/console/`;
+  const otpState = givenOtpState || { secret: null };
+  const baseOnPage = standardOnPage({ username, password, otpState });
+  let sawOtpPage = false;
+  const onPage = async (page) => {
+    if (page.kind === "otp") sawOtpPage = true;
+    if (page.kind === "otp-setup") {
+      if (!enrollOtp) return null;
+      return handleOtpSetup(jar, page, otpState);
+    }
+    return baseOnPage(page);
+  };
+  const result = await driveFlow(
+    jar,
+    authorizeUrl("master", { clientId: "security-admin-console", redirectUri, challenge }),
+    redirectUri,
+    onPage,
+  );
+  return { result, jar, otpState, sawOtpPage };
 }
 
 // ---------------------------------------------------------------------------
@@ -1251,6 +1295,232 @@ async function phaseRollback() {
   );
 }
 
+async function phaseScopeRoleMappingDrift() {
+  section("Hoà giải ánh xạ vai hai chiều — mapping ngoài mẫu trên scope roles bị gỡ khi chạy lại");
+  const realm = tenantA.realm;
+  const extraRoleName = "vai-ngoai-mau-kiem-chung";
+
+  // Dựng drift phía realm role (tenant): vai lạ được tạo, ánh xạ
+  // vào scope roles và gán cho thành viên.
+  const { data: scopesA } = await api("GET", `/admin/realms/${realm}/client-scopes`);
+  const rolesScopeA = (scopesA || []).find((s) => s.name === "roles");
+  await api("POST", `/admin/realms/${realm}/roles`, {
+    name: extraRoleName,
+    description: "Vai ngoài mẫu do bộ kiểm chứng dựng để thử hoà giải drift",
+  });
+  const { data: extraRole } = await api("GET", `/admin/realms/${realm}/roles/${extraRoleName}`);
+  await api(
+    "POST",
+    `/admin/realms/${realm}/client-scopes/${rolesScopeA.id}/scope-mappings/realm`,
+    [extraRole],
+  );
+  await assignRealmRole(realm, users.member.id, extraRoleName);
+
+  // Dựng drift phía client role (giaokhoa): client role lạ của
+  // platform-api được ánh xạ vào scope roles.
+  const extraClientRoleName = "platform-extra-kiem-chung";
+  const platformApiId = await clientInternalId(platform.realm, "platform-api");
+  const { data: scopesP } = await api("GET", `/admin/realms/${platform.realm}/client-scopes`);
+  const rolesScopeP = (scopesP || []).find((s) => s.name === "roles");
+  await api("POST", `/admin/realms/${platform.realm}/clients/${platformApiId}/roles`, {
+    name: extraClientRoleName,
+    description: "Client role ngoài mẫu do bộ kiểm chứng dựng để thử hoà giải drift",
+  });
+  const { data: extraClientRole } = await api(
+    "GET",
+    `/admin/realms/${platform.realm}/clients/${platformApiId}/roles/${extraClientRoleName}`,
+  );
+  await api(
+    "POST",
+    `/admin/realms/${platform.realm}/client-scopes/${rolesScopeP.id}/scope-mappings/clients/${platformApiId}`,
+    [extraClientRole],
+  );
+
+  const { data: driftMappings } = await api(
+    "GET",
+    `/admin/realms/${realm}/client-scopes/${rolesScopeA.id}/scope-mappings`,
+  );
+  check(
+    "Drift dựng thành công: scope roles của tenant mang thêm vai ngoài mẫu trước khi hoà giải",
+    (driftMappings?.realmMappings || []).some((r) => r.name === extraRoleName),
+  );
+
+  const driftLogin = await loginTenantUser(realm, tenantA, "hv-kiem-chung", pw("hv-kiem-chung"));
+  const driftTokens = await exchangeCode(realm, {
+    clientId: "lms-web",
+    secret: webSecret(realm),
+    code: driftLogin.result.code,
+    redirectUri: driftLogin.redirectUri,
+    verifier: driftLogin.verifier,
+  });
+  const driftRoles = driftTokens.data?.access_token
+    ? decodeJwt(driftTokens.data.access_token).payload.realm_access?.roles || []
+    : [];
+  check(
+    "Khi drift còn hiệu lực, token của thành viên mang vai ngoài mẫu",
+    driftRoles.includes(extraRoleName),
+    `roles: ${driftRoles.join(", ")}`,
+  );
+
+  let restoreOk = true;
+  try {
+    runProvision();
+  } catch {
+    restoreOk = false;
+  }
+  check("Chạy lại bộ cấp phát trên realm đang có drift không lỗi", restoreOk);
+
+  const { data: healedMappings } = await api(
+    "GET",
+    `/admin/realms/${realm}/client-scopes/${rolesScopeA.id}/scope-mappings`,
+  );
+  const healedRealmNames = (healedMappings?.realmMappings || []).map((r) => r.name);
+  check(
+    "Sau hoà giải, ánh xạ realm role trên scope roles chỉ còn đúng ba vai chính",
+    !healedRealmNames.includes(extraRoleName) &&
+      ["tenant-admin", "tenant-teacher", "tenant-member"].every((n) => healedRealmNames.includes(n)),
+    `mappings: ${healedRealmNames.join(", ")}`,
+  );
+  const { data: healedPlatform } = await api(
+    "GET",
+    `/admin/realms/${platform.realm}/client-scopes/${rolesScopeP.id}/scope-mappings`,
+  );
+  const healedClientNames = (healedPlatform?.clientMappings?.["platform-api"]?.mappings || []).map(
+    (r) => r.name,
+  );
+  check(
+    "Sau hoà giải, ánh xạ client role trên scope roles của giaokhoa chỉ còn platform-admin",
+    JSON.stringify(healedClientNames) === JSON.stringify(["platform-admin"]),
+    `mappings: ${healedClientNames.join(", ")}`,
+  );
+
+  const healedLogin = await loginTenantUser(realm, tenantA, "hv-kiem-chung", pw("hv-kiem-chung"));
+  const healedTokens = await exchangeCode(realm, {
+    clientId: "lms-web",
+    secret: webSecret(realm),
+    code: healedLogin.result.code,
+    redirectUri: healedLogin.redirectUri,
+    verifier: healedLogin.verifier,
+  });
+  const healedRoles = healedTokens.data?.access_token
+    ? decodeJwt(healedTokens.data.access_token).payload.realm_access?.roles || []
+    : [];
+  check(
+    "Token cấp sau hoà giải không còn vai ngoài mẫu, vẫn giữ vai chính tenant-member",
+    !healedRoles.includes(extraRoleName) && healedRoles.includes("tenant-member"),
+    `roles: ${healedRoles.join(", ")}`,
+  );
+
+  // Dọn drift còn sót: gỡ gán vai khỏi thành viên và xoá hai vai lạ.
+  await api("DELETE", `/admin/realms/${realm}/users/${users.member.id}/role-mappings/realm`, [extraRole]);
+  await api("DELETE", `/admin/realms/${realm}/roles/${extraRoleName}`);
+  await api(
+    "DELETE",
+    `/admin/realms/${platform.realm}/clients/${platformApiId}/roles/${extraClientRoleName}`,
+  );
+}
+
+async function phaseMasterMfa() {
+  section("Realm master — MFA bắt buộc cho tài khoản tương tác, tài khoản tự động hoá tách riêng");
+  const operatorName = "van-hanh-master-kiem-chung";
+
+  // Dọn tài khoản kiểm chứng còn sót từ lần chạy trước trên cùng
+  // instance (bộ kiểm chứng phải chạy lại được trên máy dev).
+  const { data: leftovers } = await api(
+    "GET",
+    `/admin/realms/master/users?username=${operatorName}&exact=true`,
+  );
+  if (leftovers?.[0]) await api("DELETE", `/admin/realms/master/users/${leftovers[0].id}`);
+
+  const operator = await createUser("master", operatorName, testPassword());
+  const { data: adminRole } = await api("GET", "/admin/realms/master/roles/admin");
+  const assign = await api(
+    "POST",
+    `/admin/realms/master/users/${operator.id}/role-mappings/realm`,
+    [adminRole],
+  );
+  check(
+    "Tạo được tài khoản vận hành tương tác thuộc realm master với vai admin",
+    assign.status === 204,
+    `HTTP ${assign.status}`,
+  );
+
+  let provisionOk = true;
+  try {
+    runProvision();
+  } catch {
+    provisionOk = false;
+  }
+  check("Chạy lại bộ cấp phát sau khi có tài khoản master tương tác chạy thành công", provisionOk);
+
+  const { data: masterRep } = await api("GET", "/admin/realms/master");
+  check(
+    "Realm master dùng flow trình duyệt lms-master-browser cho đăng nhập tương tác",
+    masterRep?.browserFlow === "lms-master-browser",
+    `browserFlow: ${masterRep?.browserFlow}`,
+  );
+  const { data: operatorAfter } = await api("GET", `/admin/realms/master/users/${operator.id}`);
+  check(
+    "Bộ cấp phát gắn yêu cầu khai báo TOTP cho tài khoản tương tác master chưa có OTP",
+    (operatorAfter?.requiredActions || []).includes("CONFIGURE_TOTP"),
+    `requiredActions: ${(operatorAfter?.requiredActions || []).join(", ")}`,
+  );
+  const { data: callerList } = await api(
+    "GET",
+    `/admin/realms/master/users?username=${encodeURIComponent(adminUser)}&exact=true`,
+  );
+  const { data: caller } = callerList?.[0]
+    ? await api("GET", `/admin/realms/master/users/${callerList[0].id}`)
+    : { data: null };
+  check(
+    "Tài khoản tự động hoá gọi Admin API không bị gắn required action nào",
+    !(caller?.requiredActions || []).includes("CONFIGURE_TOTP"),
+    `requiredActions: ${(caller?.requiredActions || []).join(", ")}`,
+  );
+  const grant = await http(null, "POST", `${baseUrl}/realms/master/protocol/openid-connect/token`, {
+    form: {
+      client_id: "admin-cli",
+      grant_type: "password",
+      username: adminUser,
+      "password": adminPass,
+    },
+  });
+  check(
+    "Sau lớp phủ master, tài khoản tự động hoá vẫn lấy được token qua password grant",
+    grant.status === 200,
+    `HTTP ${grant.status}`,
+  );
+
+  // Chưa khai báo TOTP và không hoàn tất khai báo: đăng nhập kẹt ở
+  // trang khai báo, không về được đích.
+  const blocked = await loginMasterUser(operatorName, pw(operatorName), { enrollOtp: false });
+  check(
+    "Tài khoản master chưa khai báo TOTP không hoàn tất được đăng nhập nếu chưa đăng ký MFA",
+    blocked.result.outcome === "page" && blocked.result.kind === "otp-setup",
+    `kết quả: ${blocked.result.outcome}/${blocked.result.kind || ""}`,
+  );
+
+  // Hoàn tất khai báo giữa chừng thì đăng nhập xong; lần đăng nhập
+  // sau bị hỏi mã OTP vì flow master bắt OTP vô điều kiện.
+  const enrolled = await loginMasterUser(operatorName, pw(operatorName));
+  check(
+    "Tài khoản master hoàn tất khai báo TOTP thì đăng nhập xong",
+    enrolled.result.outcome === "redirect" &&
+      Boolean(enrolled.result.code) &&
+      Boolean(enrolled.otpState.secret),
+    `kết quả: ${enrolled.result.outcome}/${enrolled.result.kind || ""}`,
+  );
+  const secondLogin = await loginMasterUser(operatorName, pw(operatorName), {
+    otpState: enrolled.otpState,
+  });
+  check(
+    "Lần đăng nhập sau của tài khoản master bắt buộc nhập mã OTP và đăng nhập xong",
+    secondLogin.sawOtpPage &&
+      secondLogin.result.outcome === "redirect" &&
+      Boolean(secondLogin.result.code),
+    `thấy trang OTP: ${secondLogin.sawOtpPage}, kết quả: ${secondLogin.result.outcome}`,
+  );
+}
 // Mật khẩu kiểm chứng giữ trong bộ nhớ theo username (không in ra log).
 const _passwords = new Map();
 function pw(username) {
@@ -1271,6 +1541,8 @@ async function main() {
   await phaseKeyRotation();
   await phaseCrossTenant();
   await phaseRollback();
+  await phaseScopeRoleMappingDrift();
+  await phaseMasterMfa();
   console.log(`\nTổng kết: ${passed} ĐẠT, ${failed} KHÔNG ĐẠT, ${skipped} BỎ QUA`);
   if (failed > 0) process.exit(1);
 }
