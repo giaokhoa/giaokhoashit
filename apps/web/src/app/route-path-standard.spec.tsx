@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import routesConfig from './routes';
 
 /**
- * Spec khoá bản đồ route của lát R2–R4 (chuẩn đường dẫn #221) trên
- * CHÍNH bảng route thật của app (`src/app/routes.ts`):
+ * Spec khoá bản đồ route của lát R2–R4 (chuẩn đường dẫn #221) trên CHÍNH bảng route thật của app
+ * (`src/app/routes.ts`):
  *
  * - R2: khu vực phụ huynh có gốc `/guardian` và path theo từng con
  *   `/guardian/students/:studentId` — đối tượng chính của khu vực
@@ -23,7 +23,6 @@ import routesConfig from './routes';
  *   tham số không phải định danh của tài nguyên đứng trước nó).
  */
 
-/** Mọi (path, route module) đã khai trong bảng route thật (layout Shell + các route ngoài vỏ). */
 const ALL_ROUTES: Array<{ path: string; file: string }> = (() => {
   const collected: Array<{ path: string; file: string }> = [];
   const walk = (entries: unknown) => {
@@ -37,10 +36,8 @@ const ALL_ROUTES: Array<{ path: string; file: string }> = (() => {
   return collected;
 })();
 
-/** Mọi path đã khai trong bảng route thật. */
 const ALL_PATHS: string[] = ALL_ROUTES.map((route) => route.path);
 
-/** Ánh xạ tài nguyên → tên tham số định danh của chính nó trong họ admin/curriculum. */
 const RESOURCE_PARAM: Record<string, string> = {
   subjects: ':subjectId',
   curricula: ':curriculumId',
@@ -48,7 +45,10 @@ const RESOURCE_PARAM: Record<string, string> = {
   outcomes: ':outcomeId',
 };
 
-/** Bản đồ rà soát R4: toàn bộ họ admin/curriculum tại thời điểm duyệt lát — path nào lệch danh sách này là thay đổi chưa qua rà soát. */
+/**
+ * Bản đồ rà soát R4: toàn bộ họ admin/curriculum tại thời điểm duyệt lát — path nào lệch danh sách này là thay đổi
+ * chưa qua rà soát.
+ */
 const EXPECTED_CURRICULUM_PATHS = [
   'admin/curriculum',
   'admin/curriculum/curricula/:curriculumId',
@@ -97,21 +97,15 @@ describe('Bản đồ route của lát R2–R4 (chuẩn đường dẫn #221)', 
     for (const path of family) {
       const segments = path.replace('admin/curriculum/', '').split('/');
       const paramSegments = segments.filter((segment) => segment.startsWith(':'));
-      // Mọi segment tham số đều là định danh của chính tài nguyên
-      // đứng ngay trước nó (subjects→:subjectId, nodes→:nodeId…).
       segments.forEach((segment, index) => {
         if (segment.startsWith(':')) {
           expect(RESOURCE_PARAM[segments[index - 1]!]).toBe(segment);
         }
       });
       if (segments[segments.length - 1] === 'new') {
-        // Hình dạng (a) TẠO: tối đa một tham số — định danh của cha
-        // trực tiếp; segment ngay trước 'new' là tên tài nguyên con.
         expect(paramSegments.length).toBeLessThanOrEqual(1);
         expect(Object.keys(RESOURCE_PARAM)).toContain(segments[segments.length - 2]);
       } else {
-        // Hình dạng (b) SỬA/CHI TIẾT: đúng một tham số là định danh
-        // của tài nguyên chính, không lồng theo cha nào khác.
         expect(paramSegments.length).toBe(1);
       }
     }

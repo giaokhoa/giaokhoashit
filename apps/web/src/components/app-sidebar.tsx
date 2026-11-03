@@ -40,14 +40,12 @@ import {
 import { usePermissions } from '#lib/permissions';
 import '#config/i18n';
 
-/** Khoá localStorage lưu các nhóm điều hướng đang mở (hồ sơ UI/UX §4.3). */
 const OPEN_GROUPS_STORAGE_KEY = 'lms:sidebar:open-groups';
 
 /**
- * Đọc lười danh sách nhóm đang mở đã lưu ở lần render đầu tiên, theo
- * đúng mẫu `readSidebarDefaultOpen` của shell: giá trị hỏng/không phải
- * mảng chuỗi thì coi như chưa lưu gì. Nhóm chứa route đang xem luôn mở
- * bất kể giá trị đã lưu — quy tắc đó nằm ở NavMain, không ở đây.
+ * Đọc lười danh sách nhóm đang mở đã lưu ở lần render đầu tiên, theo đúng mẫu `readSidebarDefaultOpen` của shell: giá
+ * trị hỏng/không phải mảng chuỗi thì coi như chưa lưu gì. Nhóm chứa route đang xem luôn mở bất kể giá trị đã lưu — quy
+ * tắc đó nằm ở NavMain, không ở đây.
  */
 function readStoredOpenGroups(): string[] {
   if (typeof window === 'undefined') return [];
@@ -62,9 +60,8 @@ function readStoredOpenGroups(): string[] {
 }
 
 /**
- * Sidebar điều hướng của khu vực đã đăng nhập, LỌC THEO QUYỀN THẬT của
- * người đang đăng nhập (hồ sơ UI/UX §4 — cây nhóm thay cho 3 nhóm phẳng
- * của khung dashboard-01 trước đây):
+ * Sidebar điều hướng của khu vực đã đăng nhập, LỌC THEO QUYỀN THẬT của người đang đăng nhập (hồ sơ UI/UX §4 — cây nhóm
+ * thay cho 3 nhóm phẳng của khung dashboard-01 trước đây):
  *
  * - 5 mục trực tiếp (Tổng quan, Khoá học, Lịch, Tin nhắn, Thông
  *   báo): các trang mọi người dùng đăng nhập đều tự phục vụ được.
@@ -124,9 +121,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation(['app', 'dashboard']);
   const perms = usePermissions();
 
-  // Số thông báo chưa đọc cho huy hiệu ở mục Thông báo: REST cho số
-  // ngay khi mở trang, stream SSE giữ số đó luôn mới trong cache.
-  // Đang tải hoặc lỗi truy vấn ban đầu thì coi như 0 (không hiện huy hiệu).
   useNotificationUnreadStream();
   const unreadQuery = useQuery({
     queryKey: queryKeys.notificationUnreadCount,
@@ -134,9 +128,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   });
   const unreadNotifications = unreadQuery.data?.unread ?? 0;
 
-  // Số conversation tin nhắn chưa đọc cho huy hiệu ở mục Tin nhắn
-  // (lát M1, issue #204): làm tươi mỗi 30 giây và khi cửa sổ được
-  // focus lại; đang tải hoặc lỗi thì coi như 0 (không hiện huy hiệu).
   const messageUnreadQuery = useQuery({
     queryKey: queryKeys.messageUnreadCount,
     queryFn: () => apiJson<{ conversations: number; notifications: number }>('/api/v1/messages/unread-count'),
@@ -145,17 +136,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   });
   const unreadConversations = messageUnreadQuery.data?.conversations ?? 0;
 
-  // Mục "Phụ huynh" (PH-1, issue #130) chỉ hiện khi tài khoản có ít
-  // nhất một liên kết giám hộ đang hiệu lực — người dùng thường không
-  // thấy bề mặt này.
+  // Mục "Phụ huynh" (PH-1, issue #130) chỉ hiện khi tài khoản có ít nhất một liên kết giám hộ đang hiệu lực — người
+  // dùng thường không thấy bề mặt này.
   const guardianQuery = useQuery({
     queryKey: queryKeys.guardianMyStudents,
     queryFn: () => apiJson<{ student: { id: string } }[]>('/api/v1/guardian-links/mine/students'),
   });
   const hasGuardianChildren = (guardianQuery.data?.length ?? 0) > 0;
 
-  // Trạng thái mở của các nhóm collapse: đọc lười từ localStorage ở
-  // lần render đầu, ghi lại mỗi lần người dùng thu/mở một nhóm.
   const [openGroups, setOpenGroups] = React.useState<string[]>(readStoredOpenGroups);
   const handleOpenGroupChange = React.useCallback((groupId: string, open: boolean) => {
     setOpenGroups((prev) => {
@@ -163,8 +151,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       try {
         window.localStorage.setItem(OPEN_GROUPS_STORAGE_KEY, JSON.stringify(next));
       } catch {
-        // localStorage có thể bị chặn (chế độ riêng tư…) — trạng thái
-        // vẫn sống trong bộ nhớ cho phiên hiện tại, chỉ không bền qua F5.
+        // localStorage có thể bị chặn (chế độ riêng tư…) — trạng thái vẫn sống trong bộ nhớ cho phiên hiện tại, chỉ
+        // không bền qua F5.
       }
       return next;
     });
@@ -180,12 +168,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ...(hasGuardianChildren
       ? [{ title: t('app:navGuardian'), url: '/guardian', icon: IconUsers }]
       : []),
-    // Mục "Liên kết phụ huynh" (gói kích hoạt phụ huynh): bề mặt
-    // quản lý liên kết giám hộ — chỉ hiện khi người dùng có
-    // capability guardian:manage (cờ canManageGuardians từ ảnh chụp
-    // quyền), theo cùng khuôn có điều kiện của mục "Phụ huynh" ở
-    // trên; người không có quyền không render mục này, và API vẫn
-    // thực thi quyền thật ở mọi endpoint quản lý.
+    // Mục "Liên kết phụ huynh" (gói kích hoạt phụ huynh): bề mặt quản lý liên kết giám hộ — chỉ hiện khi người dùng có
+    // capability guardian:manage (cờ canManageGuardians từ ảnh chụp quyền), theo cùng khuôn có điều kiện của mục "Phụ
+    // huynh" ở trên; người không có quyền không render mục này, và API vẫn thực thi quyền thật ở mọi endpoint quản lý.
     ...(perms.canManageGuardians
       ? [{ title: t('app:navGuardianLinks'), url: '/admin/guardian-links', icon: IconUsers }]
       : []),
@@ -230,9 +215,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             toggleLabel: t('app:navExpandGroup', { name: t('app:navMyMatrices') }),
             children: [],
           },
-          // Xem bảng chương trình GDPT theo mẫu Bộ (issue #161, lát
-          // T2): cùng cụm bề mặt soạn học liệu của giáo viên; trang
-          // đích tự gác quyền đọc theo khoá giáo viên đang dạy.
+          // Xem bảng chương trình GDPT theo mẫu Bộ (issue #161, lát T2): cùng cụm bề mặt soạn học liệu của giáo viên;
+          // trang đích tự gác quyền đọc theo khoá giáo viên đang dạy.
           { title: t('app:navTeacherProgramme'), url: '/curriculum', icon: IconNotebook },
         ]
       : []),
@@ -254,9 +238,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 : []),
             ],
           },
-          // Nhóm vai trò & quyền: mục Vai trò rời khỏi nhóm Người dùng
-          // & quyền để đứng chung với trang Quyền độc lập, Vai trò
-          // trước rồi Quyền sau; chỉ quản trị site mới thấy nhóm này.
+          // Nhóm vai trò & quyền: mục Vai trò rời khỏi nhóm Người dùng & quyền để đứng chung với trang Quyền độc lập,
+          // Vai trò trước rồi Quyền sau; chỉ quản trị site mới thấy nhóm này.
           ...(perms.canAdminister
             ? [
                 {

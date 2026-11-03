@@ -10,7 +10,6 @@ import { CommandPalette } from '#components/command-palette';
 import { NotificationBell } from '#features/notifications/components/notification-bell';
 import '#config/i18n';
 
-/** Ánh xạ tiền tố đường dẫn → khoá i18n của tiêu đề trang, cho header trên cùng. */
 const TITLE_KEYS: { prefix: string; key: string; ns: 'app' | 'dashboard' }[] = [
   { prefix: '/admin/users', key: 'navUsers', ns: 'app' },
   { prefix: '/admin/tenants', key: 'navTenants', ns: 'app' },
@@ -43,14 +42,11 @@ const TITLE_KEYS: { prefix: string; key: string; ns: 'app' | 'dashboard' }[] = [
 ];
 
 /**
- * Ô tìm kiếm nội dung ở GIỮA header (chốt 23:52 ngày
- * 26/10/2026, issue #303 — khuôn Facebook/YouTube: header ba vùng,
- * ô tìm kiếm nằm giữa). Đây là đường vào trang kết quả tìm kiếm
- * toàn cục đầy đủ. Bề mặt mở bằng Ctrl/Cmd+K (xem
- * command-palette.tsx) là bề mặt hợp nhất theo chốt gộp tìm kiếm
- * ngày 27/10/2026 — nhóm "Nội dung" của nó dùng chung cùng API
- * /search với trang kết quả — nhưng ô giữa GIỮ NGUYÊN vai trò và
- * hành vi: gõ tại chỗ không gọi API, Enter mới sang trang kết quả.
+ * Ô tìm kiếm nội dung ở GIỮA header (chốt 23:52 ngày 26/10/2026, issue #303 — khuôn Facebook/YouTube: header ba vùng,
+ * ô tìm kiếm nằm giữa). Đây là đường vào trang kết quả tìm kiếm toàn cục đầy đủ. Bề mặt mở bằng Ctrl/Cmd+K (xem
+ * command-palette.tsx) là bề mặt hợp nhất theo chốt gộp tìm kiếm ngày 27/10/2026 — nhóm "Nội dung" của nó dùng chung
+ * cùng API /search với trang kết quả — nhưng ô giữa GIỮ NGUYÊN vai trò và hành vi: gõ tại chỗ không gọi API, Enter mới
+ * sang trang kết quả.
  *
  * Flow:
  * 1. Người dùng gõ vào ô (trạng thái chữ sống cục bộ trong component
@@ -70,13 +66,13 @@ function HeaderSearch() {
   const { t } = useTranslation(['platform']);
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
-  // Từ khoá chuẩn theo URL khi đang ở trang kết quả; null = không ở
-  // /search (không đồng bộ gì, giữ chữ người dùng đang gõ dở).
+  // Từ khoá chuẩn theo URL khi đang ở trang kết quả; null = không ở /search (không đồng bộ gì, giữ chữ người dùng đang
+  // gõ dở).
   const urlKeyword = pathname === '/search' ? (new URLSearchParams(search).get('q') ?? '') : null;
   const [keyword, setKeyword] = useState(urlKeyword ?? '');
 
-  // URL là nguồn sự thật khi ở /search: q đổi (gửi lại từ chính ô
-  // này, đi từ bảng lệnh, hay dán link) thì ô phải khớp theo.
+  // URL là nguồn sự thật khi ở /search: q đổi (gửi lại từ chính ô này, đi từ bảng lệnh, hay dán link) thì ô phải khớp
+  // theo.
   useEffect(() => {
     if (urlKeyword !== null) setKeyword(urlKeyword);
   }, [urlKeyword]);
@@ -105,8 +101,7 @@ function HeaderSearch() {
 }
 
 /**
- * Header trên cùng của khu vực đã đăng nhập (khung block
- * dashboard-01), bố cục BA VÙNG theo chốt 23:52 ngày 26/10/2026
+ * Header trên cùng của khu vực đã đăng nhập (khung block dashboard-01), bố cục BA VÙNG theo chốt 23:52 ngày 26/10/2026
  * (issue #303, khuôn Facebook/YouTube):
  *
  * - VÙNG TRÁI: nút thu/mở sidebar + tiêu đề trang hiện tại (tra
@@ -123,9 +118,8 @@ function HeaderSearch() {
  *   tại đây để đăng ký phím tắt toàn cục và lớp phủ, nhưng không
  *   render gì khi đang đóng.
  *
- * Site chỉ dành cho người Việt nên không có bộ chọn ngôn ngữ trên
- * giao diện — i18n chỉ quản lý chuỗi tập trung, locale cố định
- * tiếng Việt.
+ * Site chỉ dành cho người Việt nên không có bộ chọn ngôn ngữ trên giao diện — i18n chỉ quản lý chuỗi tập trung, locale
+ * cố định tiếng Việt.
  */
 export function SiteHeader() {
   const { t } = useTranslation(['app', 'dashboard']);
@@ -137,23 +131,21 @@ export function SiteHeader() {
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-all ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-2 pr-4 pl-3 lg:px-6">
-        {/* Vùng trái: nút mở sidebar + tiêu đề trang. min-w-0 +
-            truncate để tiêu đề dài tự cắt thay vì đẩy vùng giữa. */}
+        {/* Vùng trái: nút mở sidebar + tiêu đề trang. min-w-0 + truncate để tiêu đề dài tự cắt thay vì đẩy vùng giữa.
+            */}
         <div className="flex min-w-0 items-center gap-1 lg:gap-2">
           <SidebarTrigger />
           <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
           <h1 className="truncate text-base font-medium">{match ? t(`${match.ns}:${match.key}`) : 'LMS'}</h1>
         </div>
-        {/* Vùng giữa: ô tìm kiếm chiếm phần linh hoạt còn lại và căn
-            giữa trong phần đó; max-w-xl giữ ô không bè ra quá rộng
-            trên màn hình lớn, min-w-0 cho phép co khi hẹp. */}
+        {/* Vùng giữa: ô tìm kiếm chiếm phần linh hoạt còn lại và căn giữa trong phần đó; max-w-xl giữ ô không bè ra
+            quá rộng trên màn hình lớn, min-w-0 cho phép co khi hẹp. */}
         <div className="flex min-w-0 flex-1 justify-center px-1 lg:px-4">
           <div className="w-full max-w-xl min-w-0">
             <HeaderSearch />
           </div>
         </div>
-        {/* Vùng phải: chuông thông báo, shrink-0 để không bị vùng
-            giữa ép méo. CommandPalette mount tại đây chỉ để giữ
+        {/* Vùng phải: chuông thông báo, shrink-0 để không bị vùng giữa ép méo. CommandPalette mount tại đây chỉ để giữ
             phím tắt Ctrl/Cmd+K toàn cục — không còn nút mở riêng. */}
         <div className="flex shrink-0 items-center gap-1 lg:gap-2">
           <CommandPalette />

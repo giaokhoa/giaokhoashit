@@ -13,16 +13,12 @@ import * as quizPaperRoute from '#features/quizzes/routes/quiz-paper';
 import * as teacherCurriculumRoute from '#features/curriculum/routes/teacher-curriculum';
 
 /**
- * Spec gác F-07/F-08 (rà soát #133) cho 10 page module đăng ký trực
- * tiếp làm route module trong shell — cụm lớp (classes / class-new /
- * class-join / class-detail / class-edit / class-public) và 4 trang
- * đơn (grades / guardian / quiz-paper / teacher-curriculum) — bằng
- * CHÍNH các page module thật, theo cùng khuôn với
- * `routes/platform-routes.spec.tsx` của lát #133-A: trước spec này,
- * 10 module trên chưa xuất `ErrorBoundary`/`meta()` và không spec nào
- * gọi `meta()` của module thật, nên một khoá tiêu đề gõ sai vẫn qua
- * được typecheck (các helper của `lib/route-meta.ts` nhận chuỗi tự
- * do) và chỉ lộ khi rà tay.
+ * Spec gác F-07/F-08 (rà soát #133) cho 10 page module đăng ký trực tiếp làm route module trong shell — cụm lớp
+ * (classes / class-new / class-join / class-detail / class-edit / class-public) và 4 trang đơn (grades / guardian /
+ * quiz-paper / teacher-curriculum) — bằng CHÍNH các page module thật, theo cùng khuôn với
+ * `routes/platform-routes.spec.tsx` của lát #133-A: trước spec này, 10 module trên chưa xuất `ErrorBoundary`/`meta()`
+ * và không spec nào gọi `meta()` của module thật, nên một khoá tiêu đề gõ sai vẫn qua được typecheck (các helper của
+ * `lib/route-meta.ts` nhận chuỗi tự do) và chỉ lộ khi rà tay.
  *
  * Với từng page module, spec khẳng định hai điểm của nghiệm thu lát
  * hoàn tất F-07/F-08:
