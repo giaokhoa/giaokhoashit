@@ -746,13 +746,162 @@ async function provisionRealm(rep, kind, webClientId, webSecretEnvName) {
   await reconcileFlows(rep);
 }
 
-// Lớp phủ cho realm master: cùng tham số chống brute force và cờ sự
-// kiện như các realm khác, cộng bắt tài khoản vận hành khai báo qua
-// KC_MASTER_OPERATOR_USERNAME (mặc định: chính tài khoản đang gọi API)
-// phải hoàn tất khai báo TOTP. Đây là tài khoản quản trị Keycloak
-// thuần, tách khỏi tài khoản nền tảng và tài khoản tenant.
+// ---------------------------------------------------------------------------
+// Lớp phủ cho realm master — MFA bắt buộc cho đăng nhập tương tác
+// ---------------------------------------------------------------------------
+//
+// Realm master không có mẫu import (nó ra đời cùng bản Keycloak),
+// nên lớp phủ này áp bằng Admin REST API thuần:
+//
+// - Cùng tham số chống brute force và cờ sự kiện như các realm
+//   khác.
+// - Flow trình duyệt riêng "lms-master-browser" (cùng cấu trúc
+//   flow platform-browser đã kiểm chứng ở realm giaokhoa: cookie
+//   ALTERNATIVE, subflow form chứa mật khẩu REQUIRED rồi OTP
+//   REQUIRED) và đặt làm browserFlow của realm. OTP REQUIRED vô
+//   điều kiện nghĩa là mọi đăng nhập trình duyệt vào master đều
+//   phải qua yếu tố thứ hai: chưa có credential OTP thì
+//   authenticator tự kích hoạt required action khai báo TOTP và
+//   đăng nhập không thể hoàn tất trước khi khai báo xong; đã có
+//   thì bị hỏi mã OTP. Flow này chỉ tác động đăng nhập tương tác:
+//   các lượt cấp token qua endpoint token (password grant của bộ
+//   cấp phát qua admin-cli) không đi qua browser flow.
+// - Gắn thêm required action CONFIGURE_TOTP cho mọi tài khoản
+//   master chưa có credential OTP, trừ đúng một tài khoản: tài
+//   khoản đang gọi Admin API (KC_ADMIN_USERNAME). Đây là sự tách
+//   bạch theo thiết kế giữa tài khoản tự động hoá (chỉ gọi API,
+//   không đăng nhập tương tác) và tài khoản vận hành tương tác
+//   (người dùng Admin Console): Keycloak từ chối cấp token cho
+//   tài khoản còn required action chưa hoàn tất, nên gắn yêu cầu
+//   cho chính tài khoản gọi API sẽ tự khoá đường cấp phát; mọi
+//   tài khoản còn lại đều bị bắt buộc MFA mà không cần khai báo
+//   thêm biến môi trường nào.
+//
+// Flow được tạo TỪNG BƯỚC bằng các endpoint chính thức (tạo flow,
+// thêm từng execution, đặt requirement bằng PUT từng bản ghi
+// execution nguyên trạng đọc từ GET — đã kiểm chứng trên binary
+// 26.8.1; gửi cả danh sách executions trong một PUT bị lỗi 400).
+// Nếu flow đã tồn tại mà lệch cấu trúc, bộ cấp phát báo lỗi và
+// không tự viết lại flow đang chạy, cùng kỷ luật với
+// reconcileFlows của các realm có mẫu.
+
+const MASTER_BROWSER_FLOW = "lms-master-browser";
+const MASTER_BROWSER_FORMS = "lms-master-browser forms";
+
+// Chữ ký đích của flow: [mức lồng, định danh execution, requirement].
+// Execution dạng subflow mang định danh "flow:<alias của subflow>".
+const MASTER_FLOW_SIGNATURE = [
+  [0, "auth-cookie", "ALTERNATIVE"],
+  [0, `flow:${MASTER_BROWSER_FORMS}`, "ALTERNATIVE"],
+  [1, "auth-username-password-form", "REQUIRED"],
+  [1, "auth-otp-form", "REQUIRED"],
+];
+
+function masterFlowKey(e) {
+  return e.authenticationFlow ? `flow:${e.displayName}` : e.providerId;
+}
+
+function masterFlowElements(execs) {
+  return (execs || [])
+    .map((e) => `${e.level}|${masterFlowKey(e)}`)
+    .sort()
+    .join(";");
+}
+
+async function ensureMasterBrowserFlow() {
+  const execsPath = `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FLOW)}/executions`;
+  const first = await api("GET", execsPath);
+  if (first.status === 404) {
+    const created = await api("POST", "/admin/realms/master/authentication/flows", {
+      alias: MASTER_BROWSER_FLOW,
+      description:
+        "Flow trình duyệt của realm master: mật khẩu và OTP bắt buộc cho mọi đăng nhập tương tác",
+      providerId: "basic-flow",
+      topLevel: true,
+      builtIn: false,
+    });
+    if (created.status !== 201) {
+      fail(`tạo flow ${MASTER_BROWSER_FLOW} cho realm master trả HTTP ${created.status}`);
+      return false;
+    }
+    const steps = [
+      [
+        `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FLOW)}/executions/execution`,
+        { provider: "auth-cookie" },
+      ],
+      [
+        `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FLOW)}/executions/flow`,
+        {
+          alias: MASTER_BROWSER_FORMS,
+          type: "basic-flow",
+          description: "Form đăng nhập của realm master: mật khẩu rồi OTP",
+        },
+      ],
+      [
+        `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FORMS)}/executions/execution`,
+        { provider: "auth-username-password-form" },
+      ],
+      [
+        `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FORMS)}/executions/execution`,
+        { provider: "auth-otp-form" },
+      ],
+    ];
+    for (const [path, body] of steps) {
+      const res = await api("POST", path, body);
+      if (res.status !== 201) {
+        fail(`dựng flow ${MASTER_BROWSER_FLOW}: POST ${path} trả HTTP ${res.status}`);
+        return false;
+      }
+    }
+    ok(`đã tạo flow ${MASTER_BROWSER_FLOW} cho realm master (mật khẩu + OTP bắt buộc)`);
+  } else if (first.status !== 200) {
+    fail(`đọc flow ${MASTER_BROWSER_FLOW} của realm master trả HTTP ${first.status}`);
+    return false;
+  }
+
+  const wantedElements = MASTER_FLOW_SIGNATURE.map(([level, key]) => `${level}|${key}`)
+    .sort()
+    .join(";");
+  let { data: execs } = await api("GET", execsPath);
+  if (masterFlowElements(execs) !== wantedElements) {
+    fail(
+      `flow ${MASTER_BROWSER_FLOW} của realm master lệch mẫu về cấu trúc execution — bộ cấp phát không tự viết lại flow đang chạy; hãy xử lý tay theo keycloak/README.md`,
+    );
+    return false;
+  }
+  // Đặt requirement còn lệch: PUT từng bản ghi execution nguyên
+  // trạng đọc từ GET, chỉ thay trường requirement.
+  const wantedRequirement = new Map(
+    MASTER_FLOW_SIGNATURE.map(([level, key, req]) => [`${level}|${key}`, req]),
+  );
+  for (const e of execs || []) {
+    const target = wantedRequirement.get(`${e.level}|${masterFlowKey(e)}`);
+    if (!target || e.requirement === target) continue;
+    const put = await api(
+      "PUT",
+      `/admin/realms/master/authentication/flows/${encodeURIComponent(MASTER_BROWSER_FLOW)}/executions`,
+      { ...e, requirement: target },
+    );
+    if (put.status !== 204) {
+      fail(`đặt requirement ${target} cho execution ${e.displayName} của flow master trả HTTP ${put.status}`);
+      return false;
+    }
+  }
+  ({ data: execs } = await api("GET", execsPath));
+  const signatureOk = (execs || []).every(
+    (e) => wantedRequirement.get(`${e.level}|${masterFlowKey(e)}`) === e.requirement,
+  );
+  if (!signatureOk) {
+    fail(`flow ${MASTER_BROWSER_FLOW} của realm master chưa đạt đúng requirement theo mẫu sau khi đặt`);
+    return false;
+  }
+  ok(`flow ${MASTER_BROWSER_FLOW} của realm master khớp mẫu (OTP bắt buộc sau mật khẩu)`);
+  return true;
+}
+
 async function applyMasterOverlay() {
   console.log("Realm master (lớp phủ vận hành):");
+  const flowReady = await ensureMasterBrowserFlow();
   const { data: master } = await api("GET", "/admin/realms/master");
   const wanted = {
     bruteForceProtected: true,
@@ -769,53 +918,48 @@ async function applyMasterOverlay() {
     adminEventsEnabled: true,
     adminEventsDetailsEnabled: false,
   };
+  // Chỉ trỏ browserFlow về flow MFA khi flow đã bảo đảm đúng mẫu,
+  // tránh để realm master trỏ vào một flow chưa sẵn sàng.
+  if (flowReady) wanted.browserFlow = MASTER_BROWSER_FLOW;
   const updated = { ...master, ...wanted };
   const { status } = await api("PUT", "/admin/realms/master", updated);
-  if (status === 204) ok("đã áp tham số brute force và sự kiện cho realm master");
+  if (status === 204) ok("đã áp tham số brute force, sự kiện và browser flow MFA cho realm master");
   else fail(`PUT realm master trả HTTP ${status}`);
 
-  const operator = process.env.KC_MASTER_OPERATOR_USERNAME || "";
-  if (!operator) {
-    note(
-      "chưa khai báo KC_MASTER_OPERATOR_USERNAME: bỏ qua bước gắn yêu cầu TOTP cho tài khoản vận hành master (khai báo biến này trỏ tới tài khoản người vận hành, khác tài khoản gọi API)",
-    );
-    return;
+  // Gắn CONFIGURE_TOTP cho mọi tài khoản tương tác chưa có
+  // credential OTP, trừ tài khoản đang gọi Admin API (xem khối
+  // giải thích ở đầu mục này).
+  const { data: users } = await api("GET", "/admin/realms/master/users?first=0&max=1000");
+  let covered = 0;
+  for (const entry of users || []) {
+    if ((entry.username || "").toLowerCase() === adminUser.toLowerCase()) continue;
+    const { data: user } = await api("GET", `/admin/realms/master/users/${entry.id}`);
+    if (!user) continue;
+    const { data: creds } = await api("GET", `/admin/realms/master/users/${user.id}/credentials`);
+    if ((creds || []).some((c) => c.type === "otp")) {
+      covered += 1;
+      continue;
+    }
+    const actions = new Set(user.requiredActions || []);
+    if (actions.has("CONFIGURE_TOTP")) {
+      covered += 1;
+      continue;
+    }
+    actions.add("CONFIGURE_TOTP");
+    const put = await api("PUT", `/admin/realms/master/users/${user.id}`, {
+      ...user,
+      requiredActions: [...actions],
+    });
+    if (put.status === 204) {
+      covered += 1;
+      ok(`đã gắn yêu cầu khai báo TOTP cho tài khoản master ${user.username}`);
+    } else {
+      fail(`gắn CONFIGURE_TOTP cho tài khoản master ${user.username} trả HTTP ${put.status}`);
+    }
   }
-  if (operator === adminUser) {
-    note(
-      "KC_MASTER_OPERATOR_USERNAME trùng tài khoản gọi API: bỏ qua gắn CONFIGURE_TOTP — gắn yêu cầu này sẽ khoá chính đường gọi Admin API cho tới khi một người hoàn tất khai báo TOTP qua trình duyệt",
-    );
-    return;
-  }
-  const { data: users } = await api(
-    "GET",
-    `/admin/realms/master/users?username=${encodeURIComponent(operator)}&exact=true`,
+  note(
+    `realm master: ${covered} tài khoản tương tác đã nằm trong diện bắt buộc MFA; tài khoản gọi Admin API (${adminUser}) tách riêng cho tự động hoá nên không gắn required action`,
   );
-  const user = Array.isArray(users) ? users[0] : null;
-  if (!user) {
-    fail(`không tìm thấy tài khoản vận hành ${operator} trong realm master`);
-    return;
-  }
-  const actions = new Set(user.requiredActions || []);
-  if (actions.has("CONFIGURE_TOTP")) {
-    ok(`tài khoản vận hành ${operator} đã mang yêu cầu khai báo TOTP`);
-    return;
-  }
-  // Chỉ gắn yêu cầu khi tài khoản chưa có credential OTP: đã có rồi
-  // thì flow đăng nhập của master tự bắt nhập OTP, gắn thêm yêu cầu
-  // khai báo lại là thừa.
-  const { data: creds } = await api("GET", `/admin/realms/master/users/${user.id}/credentials`);
-  if ((creds || []).some((c) => c.type === "otp")) {
-    ok(`tài khoản vận hành ${operator} đã có credential OTP`);
-    return;
-  }
-  actions.add("CONFIGURE_TOTP");
-  const put = await api("PUT", `/admin/realms/master/users/${user.id}`, {
-    ...user,
-    requiredActions: [...actions],
-  });
-  if (put.status === 204) ok(`đã gắn yêu cầu khai báo TOTP cho tài khoản vận hành ${operator}`);
-  else fail(`gắn CONFIGURE_TOTP cho ${operator} trả HTTP ${put.status}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -869,7 +1013,7 @@ async function main() {
           `${job.rep.identityProviders?.length || 0} IdP sau lọc theo môi trường`,
       );
     }
-    console.log("DRY-RUN realm master: lớp phủ brute force + TOTP cho tài khoản vận hành");
+    console.log("DRY-RUN realm master: lớp phủ brute force + flow trình duyệt bắt OTP + CONFIGURE_TOTP cho mọi tài khoản tương tác trừ tài khoản gọi API");
     return;
   }
 
