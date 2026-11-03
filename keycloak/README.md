@@ -81,25 +81,24 @@ của tính năng Organizations); các scope của mẫu được hoà giải ng
 
 Realm đã tồn tại: bộ cấp phát hoà giải từng nhóm, không xoá dữ kiện vận hành (người dùng, phiên, bí mật):
 
-1. Các trường vô hướng của realm mà mẫu quản (các cờ Organizations/FGAP, đăng ký, scope mặc định) được phủ từ mẫu lên
-   bản hiện tại rồi PUT. Mọi tuỳ chọn không khai trong mẫu (thời hạn token, brute force, OTP...) không bị chạm tới.
-2. Required action được tạo hoặc cập nhật theo alias.
-3. Realm role: tạo nếu thiếu; nếu một vai chính bị đặt thành composite thì gỡ composite — không vai chính nào được
+1. Các trường vô hướng của realm mà mẫu quản (các cờ Organizations/FGAP) được phủ từ mẫu lên bản hiện tại rồi PUT.
+   Mọi tuỳ chọn không khai trong mẫu (thời hạn token, brute force, OTP, các cờ đăng nhập, required action...) không
+   bị chạm tới.
+2. Realm role: tạo nếu thiếu; nếu một vai chính bị đặt thành composite thì gỡ composite — không vai chính nào được
    gộp vai chính khác.
-4. Vai mặc định của realm (`default-roles-giaokhoa`) bị gỡ `offline_access` nếu có (offline access tắt theo mặc định).
-5. Client scope: tạo nếu thiếu, PUT theo mẫu nếu đã có.
-6. Client: tạo nếu thiếu; nếu đã có thì phủ các trường của mẫu lên bản hiện tại rồi PUT, loại trường bí mật trừ khi
+3. Client scope: tạo nếu thiếu, PUT theo mẫu nếu đã có.
+4. Client: tạo nếu thiếu; nếu đã có thì phủ các trường của mẫu lên bản hiện tại rồi PUT, loại trường bí mật trừ khi
    biến môi trường tương ứng cung cấp giá trị.
-7. Gán client scope cho từng client được hoà giải về đúng tập của mẫu (cả tập default lẫn optional).
-8. Ánh xạ vai lên client scope `roles` được hoà giải hai chiều về đúng tập của mẫu: thiếu thì ánh xạ thêm, ánh xạ
+5. Gán client scope cho từng client được hoà giải về đúng tập của mẫu (cả tập default lẫn optional).
+6. Ánh xạ vai lên client scope `roles` được hoà giải hai chiều về đúng tập của mẫu: thiếu thì ánh xạ thêm, ánh xạ
    ngoài mẫu (realm role hoặc client role lạ đã có sẵn trên scope) thì bị gỡ (xem mục Mẫu realm giaokhoa).
-9. Organization theo cấu hình: tạo nếu thiếu theo alias, cập nhật tên nếu lệch; không xoá Organization ngoài cấu
+7. Organization theo cấu hình: tạo nếu thiếu theo alias, cập nhật tên nếu lệch; không xoá Organization ngoài cấu
    hình.
-10. Scope `organization` được gắn làm scope mặc định cho `lms-web` và `lms-api` **sau khi** Organization đã có, và
-    bộ cấp phát đọc lại để kiểm chứng thay vì tin mã trạng thái (xem mục Ghi chú hành vi).
-11. Bộ permission FGAP cho admin của từng trung tâm được hoà giải theo mẫu ở mục Organization và FGAP: với mỗi
-    Organization, realm role, role policy và permission `-organizations` được tạo nếu thiếu, sửa nếu lệch; cặp dùng
-    chung toàn realm cho Users (`org-admin-users-policy` và `org-admin-users`) cũng được hoà giải.
+8. Scope `organization` được gắn làm scope mặc định cho `lms-web` và `lms-api` **sau khi** Organization đã có, và
+   bộ cấp phát đọc lại để kiểm chứng thay vì tin mã trạng thái (xem mục Ghi chú hành vi).
+9. Bộ permission FGAP cho admin của từng trung tâm được hoà giải theo mẫu ở mục Organization và FGAP: với mỗi
+   Organization, realm role, role policy và permission `-organizations` được tạo nếu thiếu, sửa nếu lệch; cặp dùng
+   chung toàn realm cho Users (`org-admin-users-policy` và `org-admin-users`) cũng được hoà giải.
 
 ## Mẫu realm giaokhoa
 
@@ -128,7 +127,9 @@ Realm đã tồn tại: bộ cấp phát hoà giải từng nhóm, không xoá d
   `organization` kèm mapper `oidc-organization-membership-mapper`. Bộ cấp phát gắn scope này làm scope mặc định cho
   `lms-web` và `lms-api`; token của một thành viên vì vậy mang claim `organization` chứa alias của các Organization
   người đó thuộc về.
-- **Đăng ký và mặc định**: tự đăng ký tắt; Remember Me tắt. Realm bật Organizations và Admin Permissions (FGAP v2);
+- **Mặc định của Keycloak**: mẫu chỉ khai cấu trúc. Các tuỳ chọn ngoài cấu trúc (các cờ đăng nhập như đăng ký,
+  Remember Me, đặt lại mật khẩu; required action; vai mặc định của realm) giữ nguyên mặc định của Keycloak — không
+  khai trong mẫu và không bị bộ cấp phát hoà giải. Realm bật Organizations và Admin Permissions (FGAP v2);
   Authorization Services cho client (`lms-api` là resource server thuần, quyết quyền nghiệp vụ nằm ở API) không
   thuộc mẫu này.
 

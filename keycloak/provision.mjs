@@ -178,22 +178,7 @@ function buildRepresentation(values) {
 // client KHÔNG nằm ở đây: chúng có endpoint riêng chuẩn hơn. Mọi tuỳ
 // chọn còn lại của Keycloak (thời hạn token, brute force, OTP...) để
 // mặc định, không khai trong mẫu nên cũng không hoà giải tại đây.
-const MANAGED_SCALAR_KEYS = [
-  "displayName",
-  "enabled",
-  "organizationsEnabled",
-  "adminPermissionsEnabled",
-  "registrationAllowed",
-  "registrationEmailAsUsername",
-  "loginWithEmailAllowed",
-  "duplicateEmailsAllowed",
-  "editUsernameAllowed",
-  "resetPasswordAllowed",
-  "rememberMe",
-  "verifyEmail",
-  "defaultDefaultClientScopes",
-  "defaultOptionalClientScopes",
-];
+const MANAGED_SCALAR_KEYS = ["displayName", "enabled", "organizationsEnabled", "adminPermissionsEnabled"];
 
 async function reconcileScalars(rep) {
   const realm = rep.realm;
@@ -217,58 +202,6 @@ async function reconcileScalars(rep) {
   const { status } = await api("PUT", `/admin/realms/${realm}`, updated);
   if (status === 204) ok(`realm ${realm}: đã đồng bộ các trường scalar theo mẫu`);
   else fail(`realm ${realm}: PUT scalar trả HTTP ${status}`);
-}
-
-async function reconcileRequiredActions(rep) {
-  const realm = rep.realm;
-  if (!Array.isArray(rep.requiredActions)) return;
-  const { data: existing } = await api(
-    "GET",
-    `/admin/realms/${realm}/authentication/required-actions`,
-  );
-  const byAlias = new Map((existing || []).map((a) => [a.alias, a]));
-  for (const action of rep.requiredActions) {
-    const found = byAlias.get(action.alias);
-    if (!found) {
-      const { status } = await api(
-        "POST",
-        `/admin/realms/${realm}/authentication/required-actions/register`,
-        action,
-      );
-      if (status !== 201) fail(`realm ${realm}: tạo required action ${action.alias} trả HTTP ${status}`);
-    } else if (
-      found.enabled !== action.enabled ||
-      found.defaultAction !== action.defaultAction ||
-      found.priority !== action.priority
-    ) {
-      const { status } = await api(
-        "PUT",
-        `/admin/realms/${realm}/authentication/required-actions/${action.alias}`,
-        { ...found, ...action },
-      );
-      if (status !== 204) fail(`realm ${realm}: cập nhật required action ${action.alias} trả HTTP ${status}`);
-    }
-  }
-  ok(`realm ${realm}: required actions khớp mẫu`);
-}
-
-// Gỡ offline_access khỏi composite default-roles-<realm>: offline
-// access tắt theo mặc định ở mọi realm.
-async function stripOfflineAccessFromDefaultRoles(realm) {
-  const name = `default-roles-${realm}`;
-  const { status, data } = await api(
-    "GET",
-    `/admin/realms/${realm}/roles/${name}/composites`,
-  );
-  if (status !== 200 || !Array.isArray(data)) return;
-  const offline = data.filter((r) => r.name === "offline_access");
-  if (offline.length === 0) {
-    ok(`realm ${realm}: default-roles không chứa offline_access`);
-    return;
-  }
-  const del = await api("DELETE", `/admin/realms/${realm}/roles/${name}/composites`, offline);
-  if (del.status === 204) ok(`realm ${realm}: đã gỡ offline_access khỏi ${name}`);
-  else fail(`realm ${realm}: gỡ offline_access khỏi ${name} trả HTTP ${del.status}`);
 }
 
 async function reconcileRealmRoles(rep) {
@@ -668,9 +601,7 @@ async function provisionRealm(rep, organizations) {
     note(`realm ${realm} đã tồn tại — chuyển sang đối chiếu`);
   }
   await reconcileScalars(rep);
-  await reconcileRequiredActions(rep);
   await reconcileRealmRoles(rep);
-  await stripOfflineAccessFromDefaultRoles(realm);
   await reconcileClientScopes(rep);
   await reconcileClients(rep);
   await reconcileScopeRoleMappings(rep);
