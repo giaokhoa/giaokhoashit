@@ -306,19 +306,6 @@ trình hiện tại trong tài liệu này.
    trò chuyện ChatGPT dùng để review PR đó phải được xoá. Lớp
    ChatGPT là review độc lập bên ngoài, không thay thế kiểm
    chứng tại nguồn của đội review nội bộ.
-6. **Review hậu merge.** Ngay sau khi một PR được merge, điều
-   phối cử thêm một đội review độc lập nữa — khác cả đội thi
-   công lẫn đội review nội bộ của PR đó — chấm lại thay đổi
-   đã vào `main` tại nguồn trong điều kiện chấm mù (chưa xem
-   phán quyết của hai lớp), sau đó mới đối chiếu với các
-   comment của hai lớp trên PR và phân loại từng lỗi: cả hai
-   lớp cùng bắt được; chỉ lớp nội bộ bắt được; chỉ lớp
-   ChatGPT bắt được; chỉ đội hậu merge bắt được (lỗi lọt cả
-   hai lớp). Nếu có lỗi lọt cả hai lớp, việc sửa mở theo đúng
-   flow hai lớp như một PR thường. Kết quả đối chiếu được báo
-   cáo lại theo chỉ dẫn của điều phối từng lượt: đăng comment
-   lên PR đã merge hoặc ghi vào issue liên quan.
-
 ### Đóng issue
 
 1. Issue chỉ đóng bằng cơ chế tự đóng qua dòng `Closes #<số
