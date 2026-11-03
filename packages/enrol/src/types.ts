@@ -126,6 +126,14 @@ export interface TenantMembershipRow {
   tenantId: string;
   userId: string;
   status: string;
+  /**
+   * Vai chính duy nhất của membership (issue #5) — tập đóng
+   * admin | teacher | member; `null` chỉ ở các dòng lịch sử có
+   * trước migration cộng cột.
+   */
+  primaryRole: string | null;
+  /** Phiên bản đồng bộ của dòng membership (issue #5). */
+  version: number;
   joinedAt: Date;
   endedAt: Date | null;
 }
@@ -137,6 +145,8 @@ export interface TenantMembershipRow {
  * `@lms/db` — hai bảng này là cùng một dữ kiện ở cả hai phía.
  */
 export type { EnrolRow as EnrolInstanceRow, UserEnrolmentRow } from '@lms/db/repositories/enrol';
+/** Vai chính của membership — định nghĩa gốc ở repository tenant của `@lms/db` (issue #5). */
+export type { TenantPrimaryRole } from '@lms/db/repositories/tenants';
 
 // ---------------------------------------------------------------------------
 // Danh sách cột đọc (dùng chung cho select và returning — khuôn G5:
@@ -182,6 +192,8 @@ export const TENANT_MEMBERSHIP_COLUMNS = [
   'tenant_id as tenantId',
   'user_id as userId',
   'status',
+  'primary_role as primaryRole',
+  'version',
   'joined_at as joinedAt',
   'ended_at as endedAt',
 ] as const;
