@@ -88,8 +88,8 @@ export type WorkerEmailFrequency = 'immediate' | 'daily' | 'off';
  *   thông báo của issue #520 thuộc diện này: nội dung của chúng chỉ gồm dữ kiện người nhận tự thấy — tên khoá/hoạt
  *   động, số lượng công việc của chính họ — và tuyệt đối không chứa điểm số hay nội dung tin nhắn).
  *
- * Có mặt trong sổ này có nghĩa: provider có kênh email mà worker phát trọn qua
- * {@link NotificationDeliveryService.notify}.
+ * Có mặt trong sổ này có nghĩa: provider có kênh email mà worker phát trọn qua {@link
+ * NotificationDeliveryService.notify}.
  */
 export interface WorkerNotifyProviderLaw {
   defaultEmailFrequency: Exclude<WorkerEmailFrequency, 'off'>;
@@ -373,9 +373,8 @@ export class NotificationDeliveryService implements OnModuleDestroy {
   }
 
   /**
-   * Nội dung kênh NGOÀI theo luật C-5 (xem
-   * {@link WORKER_NOTIFY_PROVIDERS}) — cùng luật
-   * `resolveExternalContent` phía API:
+   * Nội dung kênh NGOÀI theo luật C-5 (xem {@link WORKER_NOTIFY_PROVIDERS}) — cùng luật `resolveExternalContent` phía
+   * API:
    * - Provider khai báo `'original-ok'`: bản tối thiểu hoá của nơi phát cho trường nào có truyền, nội dung gốc cho
    *   trường còn lại — registry đã xác nhận nội dung gốc của các provider này an toàn cho kênh ngoài.
    * - Provider thuộc diện `'minimized'`: kênh ngoài chỉ mang cặp nội dung đã tối thiểu hoá do nơi phát truyền vào,
@@ -403,13 +402,12 @@ export class NotificationDeliveryService implements OnModuleDestroy {
   }
 
   /**
-   * Phát TRỌN một thông báo cho sự kiện mà worker là nơi phát — bản
-   * đầy đủ của `MessagingService.notify()` phía API, dùng chung cho
-   * cả đợt chuyển consumer sang worker (xem docblock của class):
+   * Phát TRỌN một thông báo cho sự kiện mà worker là nơi phát — bản đầy đủ của `MessagingService.notify()` phía API,
+   * dùng chung cho cả đợt chuyển consumer sang worker (xem docblock của class):
    *
    * Luồng (đúng thứ tự luật của notify() phía API):
-   *  1. Provider không có trong {@link WORKER_PROVIDERS} → trả
-   *     `skipped: 'unknown-provider'`, không lưu gì, không sự kiện.
+   *  1. Provider không có trong {@link WORKER_PROVIDERS} → trả `skipped: 'unknown-provider'`, không lưu gì, không sự
+   *     kiện.
    *  2. Nửa kênh trong-app qua chính {@link deliverInApp} (đình chỉ / NB-7 / tuỳ chọn popup / ghi dòng + dispatch log +
    *     tín hiệu chưa đọc). Kết quả 'skipped-suspended' / 'skipped-admin- disabled' của nửa này là điểm dừng sớm như
    *     phía API: không kênh ngoài, không sự kiện `notification_created`. Ghi đè tắt tiếng theo khoá NB-4 áp khi nơi

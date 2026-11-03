@@ -167,9 +167,8 @@ export class OutboxRelayScheduler {
    *
    * @param limit Số dòng tối đa xử lý trong lượt này (mặc định 50).
    * @returns Số dòng đã được đóng dấu trong lượt này.
-   * @throws Lỗi của bước phát (đẩy job) hoặc của bước đóng dấu ở bất
-   * kỳ dòng nào: lượt dừng ngay tại dòng đó, dòng gây lỗi và các
-   * dòng sau nó chưa được đóng dấu và sẽ được xử lý lại ở lượt sau.
+   * @throws Lỗi của bước phát (đẩy job) hoặc của bước đóng dấu ở bất kỳ dòng nào: lượt dừng ngay tại dòng đó, dòng gây
+   * lỗi và các dòng sau nó chưa được đóng dấu và sẽ được xử lý lại ở lượt sau.
    */
   async publishPending(limit = 50): Promise<number> {
     return this.publishPendingFrom(this.spaceDb.routedKysely, limit);
@@ -180,15 +179,11 @@ export class OutboxRelayScheduler {
    * trung tâm ở kho riêng (xem mô tả lớp) với trần đồng thời
    * `SPACE_SWEEP_CONCURRENCY`.
    *
-   * @param limitPerCentre Số dòng tối đa xử lý cho MỘT trung tâm
-   * trong lượt này (mặc định 50, như lượt kho chung).
-   * @returns Số dòng đã đóng dấu trên mọi trung tâm, danh sách
-   * slug của các trung tâm mà lượt của chúng lỗi (lượt của một
-   * trung tâm lỗi không chặn các trung tâm còn lại), và thông
-   * điệp lỗi đọc sổ (`registryError`) khi không đọc được sổ đăng
-   * ký — trường này chỉ xuất hiện ở đường lỗi đọc sổ, để nhịp
-   * relay ghi `task_log` failed phân biệt được với nhịp không có
-   * trung tâm nào.
+   * @param limitPerCentre Số dòng tối đa xử lý cho MỘT trung tâm trong lượt này (mặc định 50, như lượt kho chung).
+   * @returns Số dòng đã đóng dấu trên mọi trung tâm, danh sách slug của các trung tâm mà lượt của chúng lỗi (lượt của
+   * một trung tâm lỗi không chặn các trung tâm còn lại), và thông điệp lỗi đọc sổ (`registryError`) khi không đọc được
+   * sổ đăng ký — trường này chỉ xuất hiện ở đường lỗi đọc sổ, để nhịp relay ghi `task_log` failed phân biệt được với
+   * nhịp không có trung tâm nào.
    */
   async publishPendingForCentres(
     limitPerCentre = 50,
@@ -301,10 +296,10 @@ export class OutboxRelayScheduler {
    * dấu: phát lại ở nhịp sau an toàn ở các đích đã nhận nhờ `jobId` bằng id dòng outbox (BullMQ trả lại job đã có thay
    * vì tạo job thứ hai), nên bất biến "đóng dấu chỉ sau khi phát thành công" giữ nguyên cả khi fan-out nhiều đích.
    *
-   * @param row Dòng outbox đang phát (chưa có `publishedAt` tại thời
-   * điểm hàm chạy — job được đẩy trong khi dòng còn chưa có dấu).
-   * @param spaceSlug Slug của trung tâm mà tenant của dòng thuộc
-   * về, đã suy ra cho cả lô (null khi không xác định được).
+   * @param row Dòng outbox đang phát (chưa có `publishedAt` tại thời điểm hàm chạy — job được đẩy trong khi dòng còn
+   * chưa có dấu).
+   * @param spaceSlug Slug của trung tâm mà tenant của dòng thuộc về, đã suy ra cho cả lô (null khi không xác định
+   * được).
    */
   private async dispatchRow(row: OutboxRow, spaceSlug: string | null): Promise<void> {
     const route = this.routes[row.type];

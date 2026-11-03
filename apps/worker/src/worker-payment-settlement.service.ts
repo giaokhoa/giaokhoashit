@@ -316,8 +316,7 @@ export class WorkerPaymentSettlementService implements PaymentSettlementPort {
   }
 
   /**
-   * Khâu xác nhận chi dùng chung cho xác nhận TAY và xác nhận TỰ
-   * ĐỘNG qua sự kiện `debit` — cùng khuôn với
+   * Khâu xác nhận chi dùng chung cho xác nhận TAY và xác nhận TỰ ĐỘNG qua sự kiện `debit` — cùng khuôn với
    * `PaymentsService.applyRefundSettlement` phía API:
    *
    * 1. Đọc lại dòng hoàn DƯỚI khoá: đã `settled` (lượt đua thắng đã ghi) thì trả nguyên dòng đó, không ghi thêm; không
@@ -331,8 +330,7 @@ export class WorkerPaymentSettlementService implements PaymentSettlementPort {
    *    huỷ, chưa ghi gì, gọi lại được. Chưa đạt thì ghi mà không đình chỉ. Đình chỉ ghi BẰNG CHÍNH transaction này —
    *    mọi bước ghi sổ sau đó mà lỗi, transaction rollback thì đình chỉ cũng bị huỷ theo, không còn trạng thái "đã đình
    *    chỉ nhưng chưa ghi hoàn".
-   * 4. Ghi dòng hoàn `settled` (+ lật khoản thu `refunded` khi đạt
-   *    100%) trong cùng transaction rồi commit.
+   * 4. Ghi dòng hoàn `settled` (+ lật khoản thu `refunded` khi đạt 100%) trong cùng transaction rồi commit.
    *
    * Hoàn một phần: không đình chỉ, khoản thu giữ `succeeded`.
    */

@@ -56,9 +56,9 @@ const DISTRIBUTION_RETRY_DELAY_MS = 5_000;
  * thử mặc định. Vì vậy processor bắt lỗi phân phối, hoãn job bằng `moveToDelayed` và ném `DelayedError` — đúng pattern
  * hoãn chính thức của BullMQ mà các processor tiền lệ của đợt chuyển đổi (thư xác thực, thông báo sự kiện) đã dùng:
  * lượt hoãn không tính là lần thử thất bại, không đốt số lần thử của job, và trạng thái thử lại neo ở chính job trong
- * Redis (bền qua khởi động lại của worker) chứ không nằm ở bộ nhớ tiến trình. Chu trình hoãn lặp lại sau mỗi
- * {@link DISTRIBUTION_RETRY_DELAY_MS} cho tới khi phân phối thành công và dấu được ghi như bình thường; mỗi lượt hoãn
- * đều ghi log lỗi kèm `outboxId` để vận hành nhìn thấy job đang chờ phục hồi.
+ * Redis (bền qua khởi động lại của worker) chứ không nằm ở bộ nhớ tiến trình. Chu trình hoãn lặp lại sau mỗi {@link
+ * DISTRIBUTION_RETRY_DELAY_MS} cho tới khi phân phối thành công và dấu được ghi như bình thường; mỗi lượt hoãn đều ghi
+ * log lỗi kèm `outboxId` để vận hành nhìn thấy job đang chờ phục hồi.
  *
  * Ranh giới phục hồi còn lại, ghi rõ để không hiểu nhầm phạm vi:
  * - Nếu hạ tầng hàng đợi sập tới mức chính thao tác `moveToDelayed` cũng không thực hiện được (ví dụ Redis chứa hàng

@@ -9,10 +9,11 @@ import {
 } from '../../support/ordinary-worker-module';
 
 /**
- * Các job enrol & completion của worker. Oracles nghiệp vụ: ngữ nghĩa hết hạn ghi danh từ enrol/tests/enrollib_test.php
- * + report §2#5 (hết hạn ⇒ không còn active), và reaggregation của completion từ lib/tests/completionlib_test.php
- * ::test_aggregate_completions (thay đổi criteria ⇒ tính lại có kiểm soát). Các dòng được chèn trực tiếp vì schema API
- * chuẩn sở hữu việc tạo; các processor được kiểm thử vận hành trên góc nhìn của worker về cùng các bảng đó.
+ * Các job enrol & completion của worker. Oracles nghiệp vụ: ngữ nghĩa hết hạn
+ * ghi danh từ enrol/tests/enrollib_test.php + report §2#5 (hết hạn ⇒ không còn active), và reaggregation của completion
+ * từ lib/tests/completionlib_test.php ::test_aggregate_completions (thay đổi criteria ⇒ tính lại có kiểm soát). Các
+ * dòng được chèn trực tiếp vì schema API chuẩn sở hữu việc tạo; các processor được kiểm thử vận hành trên góc nhìn của
+ * worker về cùng các bảng đó.
  *
  * Từ lát 2 của issue #294, spec này boot WorkerModule qua harness role thường (`test/ordinary-worker-module.ts`):
  * module chạy bằng role NOSUPERUSER/NOBYPASSRLS như production, fixture và đọc kiểm chứng đi qua kết nối quản trị của

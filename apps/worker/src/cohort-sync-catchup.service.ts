@@ -119,14 +119,10 @@ export class CohortSyncCatchupService implements OnModuleInit, OnModuleDestroy {
    * Rút cạn tồn đọng theo watermark cũ và phát bù thành job,
    * tự thử lại có backoff cho tới khi rút cạn trọn vẹn.
    *
-   * @returns Số job đã phát trong lần thử hoàn tất: 0 khi
-   * không có khoá watermark cũ (hệ mới tinh, hoặc chuyển tiếp
-   * đã hoàn tất ở một lần khởi động trước), 0 khi tồn đọng
-   * rỗng, và 0 khi vòng thử bị dừng vì module đang bị huỷ.
-   * Các dòng đã phát ở một lần thử dở dang được phát lại ở lần
-   * thử kế tiếp và được BullMQ trả về job đã có theo `jobId`,
-   * nên con số này đếm theo lần thử hoàn tất, không cộng dồn
-   * qua các lần thử.
+   * @returns Số job đã phát trong lần thử hoàn tất: 0 khi không có khoá watermark cũ (hệ mới tinh, hoặc chuyển tiếp đã
+   * hoàn tất ở một lần khởi động trước), 0 khi tồn đọng rỗng, và 0 khi vòng thử bị dừng vì module đang bị huỷ. Các dòng
+   * đã phát ở một lần thử dở dang được phát lại ở lần thử kế tiếp và được BullMQ trả về job đã có theo `jobId`, nên con
+   * số này đếm theo lần thử hoàn tất, không cộng dồn qua các lần thử.
    */
   async drainLegacyBacklog(): Promise<number> {
     return tenantAls.run({ platform: true }, () => this.drainWithRetry());
@@ -138,8 +134,7 @@ export class CohortSyncCatchupService implements OnModuleInit, OnModuleDestroy {
    * trước lần thử kế tiếp — tồn đọng không bao giờ kẹt lặng lẽ trong lúc tiến trình còn sống. Vòng chỉ dừng hẳn khi
    * module đang bị huỷ.
    *
-   * @returns Số job đã phát trong lần thử hoàn tất (0 khi bị
-   * dừng vì module đang bị huỷ).
+   * @returns Số job đã phát trong lần thử hoàn tất (0 khi bị dừng vì module đang bị huỷ).
    */
   private async drainWithRetry(): Promise<number> {
     let attempt = 0;
@@ -178,8 +173,7 @@ export class CohortSyncCatchupService implements OnModuleInit, OnModuleDestroy {
    * khoá không phải số (dữ kiện hỏng cố định, thử lại không sửa được: ghi log mức warn và giữ nguyên khoá, giữ đúng
    * hành vi trước đây).
    *
-   * @param onProgress Báo số job đã phát sau mỗi job, để tầng
-   * gọi ghi được con số thật của lần thử khi nó dừng vì lỗi.
+   * @param onProgress Báo số job đã phát sau mỗi job, để tầng gọi ghi được con số thật của lần thử khi nó dừng vì lỗi.
    * @returns Số job đã phát trong lần thử này.
    */
   private async drainAttempt(onProgress: (enqueued: number) => void): Promise<number> {
@@ -200,8 +194,7 @@ export class CohortSyncCatchupService implements OnModuleInit, OnModuleDestroy {
    * Rút cạn các dòng trên `watermark` và xoá khoá cũ khi xong.
    *
    * @param watermark Giá trị `seq` đã lưu của consumer cũ.
-   * @param onProgress Báo số job đã phát sau mỗi job, để tầng
-   * gọi giữ được con số thật khi lượt rút cạn dừng vì lỗi.
+   * @param onProgress Báo số job đã phát sau mỗi job, để tầng gọi giữ được con số thật khi lượt rút cạn dừng vì lỗi.
    * @returns Tổng số job đã phát bù trong lượt này.
    */
   private async drainFromWatermark(

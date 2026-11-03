@@ -240,35 +240,24 @@ export class AuthMailProcessor extends WorkerHost {
   /**
    * Xử lý MỘT job mail auth.
    *
-   * @param job Job do relay phát: `job.data` là toàn bộ dòng outbox
-   * đã chuẩn hoá; định danh chống trùng là `job.data.outboxId`.
-   * @param token Token khoá job do worker của BullMQ cấp (NestJS
-   * truyền qua `WorkerHost.process`) — cần cho thao tác hoãn job
-   * `moveToDelayed`; các lượt gọi trực tiếp không qua worker (test)
-   * bỏ qua tham số này.
+   * @param job Job do relay phát: `job.data` là toàn bộ dòng outbox đã chuẩn hoá; định danh chống trùng là
+   * `job.data.outboxId`.
+   * @param token Token khoá job do worker của BullMQ cấp (NestJS truyền qua `WorkerHost.process`) — cần cho thao tác
+   * hoãn job `moveToDelayed`; các lượt gọi trực tiếp không qua worker (test) bỏ qua tham số này.
    * @returns Kết quả xử lý theo {@link AuthMailProcessResult}.
-   * @throws `DelayedError` của BullMQ khi một lượt xử lý khác đang
-   * giữ lease của sự kiện: đây là TÍN HIỆU HẸN THỬ LẠI, không phải
-   * lỗi nghiệp vụ — job được hoãn {@link PROCESSING_RETRY_DELAY_MS}
-   * bằng `moveToDelayed` (khi có token của worker) trước khi lỗi
-   * được ném, nên lần hoãn không tính là lần thử thất bại và không
-   * đốt số lần thử của job; job TUYỆT ĐỐI không kết thúc như đã xử
-   * lý trong tình huống này, vì chưa biết lượt giữ lease có gửi
-   * thành công hay không.
-   * @throws Lỗi của transport Resend — ném ra để BullMQ thử lại
-   * job theo chính sách mặc định, nhưng CHỈ sau khi đã nhả lease
-   * (kiểm tra chủ), nên lần thử lại chiếm lại được lease và gửi
-   * được (không bị lease của lần lỗi chặn).
-   * @throws Lỗi Redis khi kiểm tra dấu ĐÃ GỬI (lần đọc nhanh
-   * trước khi chiếm lease, hoặc lần đọc lại trong lúc giữ
-   * lease) hoặc chiếm lease — ném ra TRƯỚC khi bất kỳ mail nào
-   * được gửi ở lần xử lý đó; riêng lần đọc lại lỗi thì lease
+   * @throws `DelayedError` của BullMQ khi một lượt xử lý khác đang giữ lease của sự kiện: đây là TÍN HIỆU HẸN THỬ LẠI,
+   * không phải lỗi nghiệp vụ — job được hoãn {@link PROCESSING_RETRY_DELAY_MS} bằng `moveToDelayed` (khi có token của
+   * worker) trước khi lỗi được ném, nên lần hoãn không tính là lần thử thất bại và không đốt số lần thử của job; job
+   * TUYỆT ĐỐI không kết thúc như đã xử lý trong tình huống này, vì chưa biết lượt giữ lease có gửi thành công hay
+   * không.
+   * @throws Lỗi của transport Resend — ném ra để BullMQ thử lại job theo chính sách mặc định, nhưng CHỈ sau khi đã nhả
+   * lease (kiểm tra chủ), nên lần thử lại chiếm lại được lease và gửi được (không bị lease của lần lỗi chặn).
+   * @throws Lỗi Redis khi kiểm tra dấu ĐÃ GỬI (lần đọc nhanh trước khi chiếm lease, hoặc lần đọc lại trong lúc giữ
+   * lease) hoặc chiếm lease — ném ra TRƯỚC khi bất kỳ mail nào được gửi ở lần xử lý đó; riêng lần đọc lại lỗi thì lease
    * được nhả (kiểm tra chủ) trước khi ném.
-   * @throws Lỗi Redis khi ghi dấu ĐÃ GỬI sau khi transport đã nhận
-   * mail — lease được nhả trước khi ném, lần thử lại gửi lại từ
-   * đầu; đây là đường duy nhất có thể sinh mail trùng (transport
-   * đã nhận nhưng dấu chưa đứng), đúng giới hạn at-least-once đã
-   * ghi ở đầu file.
+   * @throws Lỗi Redis khi ghi dấu ĐÃ GỬI sau khi transport đã nhận mail — lease được nhả trước khi ném, lần thử lại gửi
+   * lại từ đầu; đây là đường duy nhất có thể sinh mail trùng (transport đã nhận nhưng dấu chưa đứng), đúng giới hạn
+   * at-least-once đã ghi ở đầu file.
    */
   async process(job: Job<OutboxEventJobData>, token?: string): Promise<AuthMailProcessResult> {
     // Job chạy trong phiên đúng với trung tâm mà sự kiện thuộc về qua `SpaceJobRunner` (issue #582) — cùng một đường

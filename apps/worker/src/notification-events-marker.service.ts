@@ -69,8 +69,7 @@ export class NotificationEventsMarker implements OnModuleDestroy {
    * Chiếm lease "đang xử lý" cho sự kiện bằng SET NX nguyên tử.
    *
    * @param outboxId Id dòng outbox của sự kiện.
-   * @returns Token của lease khi chiếm được; null khi một lượt chạy
-   * khác đang giữ lease chưa hết hạn.
+   * @returns Token của lease khi chiếm được; null khi một lượt chạy khác đang giữ lease chưa hết hạn.
    */
   async claimProcessing(outboxId: string): Promise<string | null> {
     const token = randomUUID();
