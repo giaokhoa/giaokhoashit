@@ -528,6 +528,15 @@ async function reconcileClientRoles(rep) {
 // đúng tập vai được phép xuất hiện trong token: ba vai chính ở realm
 // tenant; client role platform-admin ở realm giaokhoa. Đây là chốt
 // "role scope giới hạn ở mức cần thiết" của việc con 3.
+//
+// Tập ánh xạ trên scope "roles" là nguồn sự thật khép kín của mẫu
+// (như bộ scope gán cho client): hoà giải cả hai chiều — thiếu thì
+// ánh xạ thêm, thừa ngoài mẫu thì gỡ — để một realm đã có sẵn ánh
+// xạ lạ không tiếp tục phát vai ngoài tập cho phép vào token khi
+// chạy lại bộ cấp phát. Lưu ý định dạng trả về của Keycloak 26.8.1
+// (đã kiểm chứng trên binary thật): bản ghi scope-mappings dùng
+// trường "realmMappings" và "clientMappings" (khoá theo clientId,
+// mỗi mục có mảng "mappings").
 async function reconcileScopeRoleMappings(rep, kind) {
   const realm = rep.realm;
   const { data: scopes } = await api("GET", `/admin/realms/${realm}/client-scopes`);
@@ -540,39 +549,78 @@ async function reconcileScopeRoleMappings(rep, kind) {
     "GET",
     `/admin/realms/${realm}/client-scopes/${rolesScope.id}/scope-mappings`,
   );
-  if (kind === "tenant") {
-    const have = new Set((mappings?.realm || []).map((r) => r.name));
-    for (const role of rep.roles?.realm || []) {
-      if (have.has(role.name)) continue;
-      const { data: roleRep } = await api("GET", `/admin/realms/${realm}/roles/${role.name}`);
+
+  // Tập đích theo loại realm: tenant chỉ ánh xạ ba vai chính và
+  // không ánh xạ client role nào; giaokhoa chỉ ánh xạ các client
+  // role của mẫu (platform-admin) và không ánh xạ realm role nào.
+  const wantedRealmRoles = kind === "tenant" ? rep.roles?.realm || [] : [];
+  const wantedClientRoles = kind === "platform" ? rep.roles?.client || {} : {};
+
+  const currentRealmMappings = mappings?.realmMappings || [];
+  const wantedRealmNames = new Set(wantedRealmRoles.map((r) => r.name));
+  for (const extra of currentRealmMappings) {
+    if (wantedRealmNames.has(extra.name)) continue;
+    const del = await api(
+      "DELETE",
+      `/admin/realms/${realm}/client-scopes/${rolesScope.id}/scope-mappings/realm`,
+      [extra],
+    );
+    if (del.status === 204) ok(`realm ${realm}: đã gỡ ánh xạ realm role ${extra.name} ngoài mẫu khỏi scope roles`);
+    else fail(`realm ${realm}: gỡ ánh xạ realm role ${extra.name} khỏi scope roles trả HTTP ${del.status}`);
+  }
+  const haveRealmNames = new Set(currentRealmMappings.map((r) => r.name));
+  for (const role of wantedRealmRoles) {
+    if (haveRealmNames.has(role.name)) continue;
+    const { data: roleRep } = await api("GET", `/admin/realms/${realm}/roles/${role.name}`);
+    const posted = await api(
+      "POST",
+      `/admin/realms/${realm}/client-scopes/${rolesScope.id}/scope-mappings/realm`,
+      [roleRep],
+    );
+    if (posted.status === 204) ok(`realm ${realm}: đã ánh xạ vai ${role.name} vào scope roles`);
+    else fail(`realm ${realm}: ánh xạ vai ${role.name} vào scope roles trả HTTP ${posted.status}`);
+  }
+
+  const currentClientMappings = mappings?.clientMappings || {};
+  const clientIds = new Set([
+    ...Object.keys(currentClientMappings),
+    ...Object.keys(wantedClientRoles),
+  ]);
+  for (const clientId of clientIds) {
+    const internalId = await findClientInternalId(realm, clientId);
+    if (!internalId) {
+      if ((wantedClientRoles[clientId] || []).length > 0) {
+        fail(`realm ${realm}: không thấy client ${clientId} để ánh xạ client role vào scope roles`);
+      }
+      continue;
+    }
+    const current = currentClientMappings[clientId]?.mappings || [];
+    const wantedRoles = wantedClientRoles[clientId] || [];
+    const wantedNames = new Set(wantedRoles.map((r) => r.name));
+    for (const extra of current) {
+      if (wantedNames.has(extra.name)) continue;
+      const del = await api(
+        "DELETE",
+        `/admin/realms/${realm}/client-scopes/${rolesScope.id}/scope-mappings/clients/${internalId}`,
+        [extra],
+      );
+      if (del.status === 204) ok(`realm ${realm}: đã gỡ ánh xạ client role ${extra.name} ngoài mẫu của ${clientId} khỏi scope roles`);
+      else fail(`realm ${realm}: gỡ ánh xạ client role ${extra.name} của ${clientId} khỏi scope roles trả HTTP ${del.status}`);
+    }
+    const haveNames = new Set(current.map((r) => r.name));
+    for (const role of wantedRoles) {
+      if (haveNames.has(role.name)) continue;
+      const { data: roleRep } = await api(
+        "GET",
+        `/admin/realms/${realm}/clients/${internalId}/roles/${role.name}`,
+      );
       const posted = await api(
         "POST",
-        `/admin/realms/${realm}/client-scopes/${rolesScope.id}/scope-mappings/realm`,
+        `/admin/realms/${realm}/client-scopes/${rolesScope.id}/scope-mappings/clients/${internalId}`,
         [roleRep],
       );
-      if (posted.status === 204) ok(`realm ${realm}: đã ánh xạ vai ${role.name} vào scope roles`);
-      else fail(`realm ${realm}: ánh xạ vai ${role.name} vào scope roles trả HTTP ${posted.status}`);
-    }
-  }
-  if (kind === "platform") {
-    for (const [clientId, roles] of Object.entries(rep.roles?.client || {})) {
-      const internalId = await findClientInternalId(realm, clientId);
-      if (!internalId) continue;
-      const have = new Set((mappings?.client?.[clientId] || []).map((r) => r.name));
-      for (const role of roles) {
-        if (have.has(role.name)) continue;
-        const { data: roleRep } = await api(
-          "GET",
-          `/admin/realms/${realm}/clients/${internalId}/roles/${role.name}`,
-        );
-        const posted = await api(
-          "POST",
-          `/admin/realms/${realm}/client-scopes/${rolesScope.id}/scope-mappings/clients/${internalId}`,
-          [roleRep],
-        );
-        if (posted.status === 204) ok(`realm ${realm}: đã ánh xạ client role ${role.name} vào scope roles`);
-        else fail(`realm ${realm}: ánh xạ client role ${role.name} trả HTTP ${posted.status}`);
-      }
+      if (posted.status === 204) ok(`realm ${realm}: đã ánh xạ client role ${role.name} vào scope roles`);
+      else fail(`realm ${realm}: ánh xạ client role ${role.name} vào scope roles trả HTTP ${posted.status}`);
     }
   }
   ok(`realm ${realm}: ánh xạ vai của scope roles khớp mẫu`);
