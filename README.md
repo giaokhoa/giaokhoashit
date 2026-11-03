@@ -175,7 +175,7 @@ danh, điểm mẫu (student1 = 8.5, student2 = 6.5 ở "Bài kiểm tra 1"), hu
 hiệu "Huy hiệu khởi đầu" đã trao cho student1, và một sự kiện lịch của
 khoá học vào 09:00 ngày mai.
 
-> **Mô hình xác thực và quyền (đích):** Keycloak 26.7.5 là hệ xác
+> **Mô hình xác thực và quyền (đích):** Keycloak 26.8.1 là hệ xác
 > thực duy nhất theo hợp đồng ở `docs/keycloak-auth-contract.md` —
 > mỗi trung tâm một realm, tài khoản mẫu ở trên thuộc realm của
 > trung tâm chứa dữ liệu mẫu (không phải tài khoản platform), phụ

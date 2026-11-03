@@ -15,7 +15,7 @@ khai theo hợp đồng này không cần nguồn nào ngoài repo.
 
 ## 1. Nguyên tắc nền
 
-1. **Keycloak 26.7.5 nguyên bản là hệ xác thực duy nhất** cho web,
+1. **Keycloak 26.8.1 nguyên bản là hệ xác thực duy nhất** cho web,
    API và MCP. Không viết Keycloak SPI, custom authenticator hay
    JavaScript tuỳ biến trong Keycloak; không port logic xác thực cũ
    sang nơi khác.
@@ -62,7 +62,7 @@ Host đã xác minh
 | --- | --- | --- |
 | Một realm cho mỗi tenant (trung tâm) | Thành viên của đúng trung tâm đó: quản trị trung tâm, giáo viên, học viên, phụ huynh (tài khoản đăng nhập) | Không có quyền ở tenant khác |
 | `giaokhoa` | Chỉ tài khoản quản trị platform | Không thuộc trung tâm nào; không có quyền ngầm trong bất kỳ tenant nào |
-| `master` | Chỉ quản trị Keycloak itself | Chỉ quản trị Keycloak; không có quyền nghiệp vụ LMS |
+| `master` | Chỉ quản trị chính Keycloak | Chỉ quản trị Keycloak; không có quyền nghiệp vụ LMS |
 
 - Tài khoản giáo viên/học viên demo phục vụ review thuộc **realm
   của trung tâm** chứa dữ liệu demo, không thuộc realm `giaokhoa`
