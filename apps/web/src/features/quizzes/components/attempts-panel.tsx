@@ -20,7 +20,8 @@ export function AttemptsPanel({ courseId, quizId, data, myRegrades, actionError,
   const { t } = useTranslation('app');
   const navigate = useNavigate();
   const { quiz, permissions } = data;
-  // Cửa sổ/giới hạn hiện theo cài đặt HIỆU LỰC của chính người xem (API đã hợp nhất ghi đè) — học sinh thuộc diện ghi đè thấy đúng giờ của mình, không phải giờ chung của đề.
+  // Cửa sổ/giới hạn hiện theo cài đặt HIỆU LỰC của chính người xem (API đã hợp nhất ghi đè) — học sinh thuộc diện ghi
+  // đè thấy đúng giờ của mình, không phải giờ chung của đề.
   const eff = data.effective;
   const hasOwnOverride =
     eff.timeOpen !== quiz.timeOpen ||

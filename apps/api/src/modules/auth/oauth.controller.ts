@@ -19,7 +19,10 @@ import { OAuthFlowException, OAuthService } from './oauth.service';
 export class OAuthController {
   constructor(private readonly oauth: OAuthService, private readonly config: ConfigService) {}
 
-  /** URL callback tuyệt đối của issuer theo origin của request hiện tại — redirect_uri phải khớp nguyên vẹn giữa bước authorize và bước đổi code nên nó được nhúng vào state đã ký. */
+  /**
+   * URL callback tuyệt đối của issuer theo origin của request hiện tại — redirect_uri phải khớp nguyên vẹn giữa bước
+   * authorize và bước đổi code nên nó được nhúng vào state đã ký.
+   */
   private callbackUrl(req: Request, issuer: string): string {
     return `${req.protocol}://${req.get('host')}/api/v1/auth/oauth/${issuer}/callback`;
   }
@@ -33,7 +36,8 @@ export class OAuthController {
   @Public()
   @Get('providers')
   /**
-   * GET /auth/oauth/providers — issuer dựng sẵn nào đang bật (trang login chỉ hiện nút của issuer đã bật, đúng hành vi Moodle).
+   * GET /auth/oauth/providers — issuer dựng sẵn nào đang bật (trang login chỉ hiện nút của issuer đã bật, đúng hành vi
+   * Moodle).
    */
   async providers() {
     return { providers: this.oauth.listProviders() };
@@ -47,7 +51,8 @@ export class OAuthController {
 
   @Get(':issuer/link')
   /**
-   * GET /auth/oauth/:issuer/link — URL authorize cho luồng liên kết: user đang đăng nhập gắn thêm tài khoản provider vào tài khoản của mình.
+   * GET /auth/oauth/:issuer/link — URL authorize cho luồng liên kết: user đang đăng nhập gắn thêm tài khoản provider
+   * vào tài khoản của mình.
    */
   async link(@Param('issuer', { schema: oauthIssuerSchema }) issuer: OAuthIssuerParam, @CurrentUser() actor: AuthenticatedUser, @Req() req: Request) {
     return { authorizeUrl: await this.oauth.buildAuthorizeUrl(issuer, this.callbackUrl(req, issuer), actor.id) };
@@ -125,7 +130,8 @@ export class OAuthController {
 
   @Delete('links/:linkId')
   /**
-   * DELETE /auth/oauth/links/:linkId — gỡ một liên kết của chính người gọi; bị chặn khi đó là đường đăng nhập duy nhất của tài khoản chưa có mật khẩu.
+   * DELETE /auth/oauth/links/:linkId — gỡ một liên kết của chính người gọi; bị chặn khi đó là đường đăng nhập duy nhất
+   * của tài khoản chưa có mật khẩu.
    */
   async unlink(@Param('linkId', { schema: uuidIdSchema }) linkId: string, @CurrentUser() actor: AuthenticatedUser) {
     await this.oauth.unlink(actor.id, linkId);

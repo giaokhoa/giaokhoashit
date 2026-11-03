@@ -89,8 +89,8 @@ export class ProgramImportService {
         datasetKey: def.key,
         subjectName: def.subjectName,
         slug: def.slug,
-        // Khối trình bày ở trạng thái: chỉ các khối có bản ghi gắn khối tường minh (bản ghi theo cấp grade=null không liệt kê ở
-        // đây).
+        // Khối trình bày ở trạng thái: chỉ các khối có bản ghi gắn khối tường minh (bản ghi theo cấp grade=null không
+        // liệt kê ở đây).
         grades: [...new Set(file.records.map((r) => r.grade))].filter((g): g is number => g !== null).sort((a, b) => a - b),
         totalRecords: file.records.length,
         importedRecords: rows.length,
@@ -121,7 +121,10 @@ export class ProgramImportService {
     return this.runGuarded(def, sys.id, loadProgramDataset(def));
   }
 
-  /** Entry nội bộ như trên nhưng nạp từ một bản dataset đã đọc sẵn (kiểm chứng đính chính dùng bản sao đã sửa trong bộ nhớ). */
+  /**
+   * Entry nội bộ như trên nhưng nạp từ một bản dataset đã đọc sẵn (kiểm chứng đính chính dùng bản sao đã sửa trong bộ
+   * nhớ).
+   */
   async importDatasetFileInternal(datasetKey: string, file: ProgramDatasetFile): Promise<ProgramImportResult> {
     const def = this.defOr404(datasetKey);
     const sys = await this.contexts.ensureSystemContext();
@@ -160,8 +163,8 @@ export class ProgramImportService {
     if (file.records.length === 0) {
       throw new BadRequestException({ message: `Program dataset ${def.key} has no records`, code: 'curriculum.program_dataset_empty' });
     }
-    // Môn đích ở context hệ thống: tìm theo slug (khoá tự nhiên), chưa có thì tạo với id xác định; đã có với id khác thì
-    // hội tụ giữ id đó.
+    // Môn đích ở context hệ thống: tìm theo slug (khoá tự nhiên), chưa có thì tạo với id xác định; đã có với id khác
+    // thì hội tụ giữ id đó.
     let subject = await this.repo.getSubjectBySlug(def.slug);
     if (!subject) {
       subject = await this.repo.insertSubject({
@@ -172,8 +175,8 @@ export class ProgramImportService {
         position: PROGRAM_DATASETS.indexOf(def) + 1,
       });
     }
-    // Chương trình theo khối: tìm theo cặp (môn, khối), chưa có thì tạo với id xác định. Khối xét theo khối HIỆU LỰC của
-    // bản ghi (bản ghi theo cấp grade=null neo vào khối đầu của cấp — xem programRecordEffectiveGrade).
+    // Chương trình theo khối: tìm theo cặp (môn, khối), chưa có thì tạo với id xác định. Khối xét theo khối HIỆU LỰC
+    // của bản ghi (bản ghi theo cấp grade=null neo vào khối đầu của cấp — xem programRecordEffectiveGrade).
     const curricula = new Map<number, string>();
     for (const row of await this.repo.listCurricula(subject.id)) curricula.set(row.grade, row.id);
     for (const grade of new Set(file.records.map((r) => programRecordEffectiveGrade(file.records, r)))) {
@@ -208,19 +211,20 @@ export class ProgramImportService {
       const curriculumId = curricula.get(grade)!;
       const index = await indexFor(curriculumId);
       const parent = await this.ensureAncestors(index, curriculumId, def.slug, grade, record);
-      // Đường tổ tiên có thể rỗng (dataset không mang bậc cấu trúc nào, ví dụ Âm nhạc): node lesson nằm ngay ở gốc cây của
-      // khối.
+      // Đường tổ tiên có thể rỗng (dataset không mang bậc cấu trúc nào, ví dụ Âm nhạc): node lesson nằm ngay ở gốc cây
+      // của khối.
       const parentId = parent?.id ?? null;
-      // Tựa node: nguyên văn content; bản ghi requirement content rỗng thì suy xuống topic/section (xem programRecordTitle).
+      // Tựa node: nguyên văn content; bản ghi requirement content rỗng thì suy xuống topic/section (xem
+      // programRecordTitle).
       const title = programRecordTitle(record);
       const hash = programRecordHash(record);
       const entries = programRecordOutcomeDocs(record);
       const reg = await this.repo.getProgramRecord(def.key, record.id);
       if (reg && reg.contentHash === hash) {
-        // Đã khớp nguyên văn theo hash — nhưng phải loại trừ ca bản ghi vừa QUAY LẠI sau khi bị rút cả bản ghi: các dòng của nó
-        // đang ở trạng thái đã rút trong khi nguyên văn của chúng nằm trong dataset hiện tại; ca này phải rơi xuống
-        // nhánh diff để P4 hồi sinh đúng các dòng đó. Trạng thái ổn định (dòng đã rút vì bị bỏ khỏi dataset, nguyên văn
-        // không còn trong bản ghi) thì giữ đường nhanh bỏ qua như cũ.
+        // Đã khớp nguyên văn theo hash — nhưng phải loại trừ ca bản ghi vừa QUAY LẠI sau khi bị rút cả bản ghi: các
+        // dòng của nó đang ở trạng thái đã rút trong khi nguyên văn của chúng nằm trong dataset hiện tại; ca này phải
+        // rơi xuống nhánh diff để P4 hồi sinh đúng các dòng đó. Trạng thái ổn định (dòng đã rút vì bị bỏ khỏi dataset,
+        // nguyên văn không còn trong bản ghi) thì giữ đường nhanh bỏ qua như cũ.
         const managed = await this.repo.listDatasetManagedOutcomes(reg.nodeId);
         const entryTexts = new Set(entries.map((e) => e.text));
         const revivable = managed.some((o) => o.retiredAt !== null && entryTexts.has(programOutcomeDocText(o.content)));
@@ -281,9 +285,9 @@ export class ProgramImportService {
       updated += 1;
       outcomesWritten += diff.writes.length;
     }
-    // Bản ghi đã biến mất khỏi dataset (Bộ rút khỏi chương trình): node GIỮ NGUYÊN trong DB theo luật không-xoá và đếm vào
-    // orphanedNodes; mọi dòng hiện hành thuộc diện dataset quản của node chuyển sang ĐÃ RÚT (P5 áp cho cả bản ghi) để
-    // pool và bản đặc tả thôi đếm chúng, liên kết trỏ vào chúng còn nguyên và tra theo id vẫn ra. Bản ghi quay lại ở
+    // Bản ghi đã biến mất khỏi dataset (Bộ rút khỏi chương trình): node GIỮ NGUYÊN trong DB theo luật không-xoá và đếm
+    // vào orphanedNodes; mọi dòng hiện hành thuộc diện dataset quản của node chuyển sang ĐÃ RÚT (P5 áp cho cả bản ghi)
+    // để pool và bản đặc tả thôi đếm chúng, liên kết trỏ vào chúng còn nguyên và tra theo id vẫn ra. Bản ghi quay lại ở
     // lần nạp sau sẽ hồi sinh từng dòng theo nguyên văn ở P4.
     const fileIds = new Set(file.records.map((r) => r.id));
     let orphanedNodes = 0;
@@ -335,7 +339,8 @@ export class ProgramImportService {
     };
   }
 
-  /** Áp toàn bộ lệnh ghi YCCĐ của một bản ghi trong transaction của nó theo thứ tự an toàn với partial unique index "một
+  /**
+   * Áp toàn bộ lệnh ghi YCCĐ của một bản ghi trong transaction của nó theo thứ tự an toàn với partial unique index "một
    * ô (node, vị trí) hiện hành duy nhất":
    * - Pha A: mọi lệnh update có đổi vị trí được dời tạm tới dải vị trí cao riêng (≥ 1.000.000) — tránh hai dòng hoán
    * đổi vị trí cho nhau va vào index giữa chừng.
@@ -422,8 +427,8 @@ export class ProgramImportService {
       }
     });
 
-    // P2 — khớp theo nguyên văn cho phần còn lại (ca xô lệch thuần): nhóm trùng ghép theo thứ tự vị trí tăng dần ở cả hai
-    // phía.
+    // P2 — khớp theo nguyên văn cho phần còn lại (ca xô lệch thuần): nhóm trùng ghép theo thứ tự vị trí tăng dần ở cả
+    // hai phía.
     const groupByText = <T extends { text: string }>(items: T[]): Map<string, T[]> => {
       const map = new Map<string, T[]>();
       for (const item of items) map.set(item.text, [...(map.get(item.text) ?? []), item]);
@@ -450,7 +455,8 @@ export class ProgramImportService {
         const row = sortedRows[i]!;
         takenEntries.add(entry.idx);
         takenRows.add(row.id);
-        // Vị trí khác nhau là chắc chắn (bằng nhau + cùng văn thì P1 đã ghép) — chỉ sửa cột position, giữ id và mọi liên kết.
+        // Vị trí khác nhau là chắc chắn (bằng nhau + cùng văn thì P1 đã ghép) — chỉ sửa cột position, giữ id và mọi
+        // liên kết.
         writes.push({ kind: 'update', id: row.id, patch: { position: entry.position } });
         changes.push({ recordId, position: entry.position, kind: 'moved', newText: entry.text });
       }
@@ -464,9 +470,9 @@ export class ProgramImportService {
       takenEntries.add(idx);
       takenRows.add(row.id);
       writes.push({ kind: 'update', id: row.id, patch: { content: entry.doc } });
-      // P6 — gắn cờ nghi lệch: văn mới trùng văn cũ của một dòng current KHÁC, hoặc văn cũ của dòng này xuất hiện ở một vị
-      // trí khác trong dataset mới (dòng mang văn đó đã không được P2 ghép về chính dòng này — nó còn đứng ở đây chính
-      // là bằng chứng).
+      // P6 — gắn cờ nghi lệch: văn mới trùng văn cũ của một dòng current KHÁC, hoặc văn cũ của dòng này xuất hiện ở một
+      // vị trí khác trong dataset mới (dòng mang văn đó đã không được P2 ghép về chính dòng này — nó còn đứng ở đây
+      // chính là bằng chứng).
       const rowText = programOutcomeDocText(row.content);
       const shiftSuspected =
         current.some((o) => o.id !== row.id && programOutcomeDocText(o.content) === entry.text) ||
@@ -523,9 +529,10 @@ export class ProgramImportService {
     return { writes, changes };
   }
 
-  /** Tìm-tạo đường tổ tiên (mạch → section → topic) của một bản ghi trong cây của chương trình. Node tổ tiên chưa có được
-   * tạo với id xác định theo đường tổ tiên đầy đủ; node đã có (kể cả do admin tạo tay với id khác) thì hội tụ dùng lại.
-   * Trả null khi bản ghi không mang bậc cấu trúc nào — node lesson của nó nằm ở gốc cây.
+  /**
+   * Tìm-tạo đường tổ tiên (mạch → section → topic) của một bản ghi trong cây của chương trình. Node tổ tiên chưa có
+   * được tạo với id xác định theo đường tổ tiên đầy đủ; node đã có (kể cả do admin tạo tay với id khác) thì hội tụ dùng
+   * lại. Trả null khi bản ghi không mang bậc cấu trúc nào — node lesson của nó nằm ở gốc cây.
    */
   private async ensureAncestors(
     index: TreeIndex,

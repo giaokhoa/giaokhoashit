@@ -26,7 +26,8 @@ export class GuardianLinksController {
 
   @Get()
   /**
-   * GET /guardian-links?guardianUserId=&studentUserId=&status= — liệt kê liên kết (người quản lý, hoặc chính chủ khi lọc theo mình).
+   * GET /guardian-links?guardianUserId=&studentUserId=&status= — liệt kê liên kết (người quản lý, hoặc chính chủ khi
+   * lọc theo mình).
    */
   async list(@Query('guardianUserId') guardianUserId: string | undefined, @Query('studentUserId') studentUserId: string | undefined, @Query('status') status: string | undefined, @CurrentUser() actor: AuthenticatedUser) {
     return this.guardians.listLinks(actor.id, { guardianUserId, studentUserId, status });
@@ -108,8 +109,9 @@ export class GuardianController {
   }
 
   @Get('students/:studentId/digest-preference')
-  /** GET /guardian/students/:studentId/digest-preference — tần suất digest PH-2 hiện hành của chính phụ huynh cho con này
-   * (mặc định weekly khi chưa đặt). Qua cổng liên kết như mọi bề mặt phụ huynh.
+  /**
+   * GET /guardian/students/:studentId/digest-preference — tần suất digest PH-2 hiện hành của chính phụ huynh cho con
+   * này (mặc định weekly khi chưa đặt). Qua cổng liên kết như mọi bề mặt phụ huynh.
    */
   async digestPreference(@Param('studentId', { schema: uuidIdSchema }) studentId: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.digests.getPreference(actor.id, studentId);

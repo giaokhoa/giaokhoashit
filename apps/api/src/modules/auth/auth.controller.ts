@@ -56,7 +56,8 @@ export class AuthController {
 
   @Get('mfa/status')
   /**
-   * GET /auth/mfa/status — trạng thái MFA TOTP của chính user (đã bật hay chưa) để giao diện hồ sơ hiển thị đúng; không lộ secret.
+   * GET /auth/mfa/status — trạng thái MFA TOTP của chính user (đã bật hay chưa) để giao diện hồ sơ hiển thị đúng; không
+   * lộ secret.
    */
   async mfaStatus(@CurrentUser() actor: AuthenticatedUser) {
     return { enabled: await this.auth.isMfaEnabled(actor.id) };
@@ -144,7 +145,8 @@ export class AuthController {
 
   @Post('switch-tenant/:tenantId')
   /**
-   * POST /auth/switch-tenant/:tenantId — chuyển tenant trong phiên: thu hồi family hiện tại, cấp cặp token mới mang claim `tid` của tenant đích.
+   * POST /auth/switch-tenant/:tenantId — chuyển tenant trong phiên: thu hồi family hiện tại, cấp cặp token mới mang
+   * claim `tid` của tenant đích.
    */
   async switchTenant(
     @Param('tenantId', { schema: uuidIdSchema }) tenantId: string,

@@ -126,13 +126,13 @@ export async function runFleetRestoreTest(options: FleetRestoreTestOptions = {})
     const tempDatabase = `lms_restore_test_${space.slug.replace(/[^a-z0-9]+/gi, '_').toLowerCase()}_${runId.replace(/\D/g, '').slice(0, 14)}`;
     writeFileSync(plainPath, plain);
     const admin = new Client({ connectionString: retargetUrl(adminUrl, 'postgres') });
-    // Cờ mở kết nối thật: các thao tác dọn trên client quản trị ở khối finally chỉ được chạy khi kết nối đã mở thành công —
-    // trên một client chưa từng kết nối, truy vấn của pg nằm mãi trong hàng đợi không bao giờ được xử lý, nên "cố dọn"
-    // ở đường kết nối hỏng sẽ treo chính lượt kiểm thử thay vì dọn được gì.
+    // Cờ mở kết nối thật: các thao tác dọn trên client quản trị ở khối finally chỉ được chạy khi kết nối đã mở thành
+    // công — trên một client chưa từng kết nối, truy vấn của pg nằm mãi trong hàng đợi không bao giờ được xử lý, nên
+    // "cố dọn" ở đường kết nối hỏng sẽ treo chính lượt kiểm thử thay vì dọn được gì.
     let adminConnected = false;
-    // Từ đây trở đi, toàn bộ đoạn khôi phục (mở kết nối quản trị, tạo database tạm, khôi phục, kiểm tra) nằm trong MỘT khối
-    // try/catch/finally duy nhất: lỗi vận hành nào thoát ra khỏi đoạn này cũng được ghi nhận THẤT BẠI vào registry ở
-    // catch, và khối finally bảo đảm dọn client quản trị cùng tệp dump thô trung gian ở mọi đường ra.
+    // Từ đây trở đi, toàn bộ đoạn khôi phục (mở kết nối quản trị, tạo database tạm, khôi phục, kiểm tra) nằm trong MỘT
+    // khối try/catch/finally duy nhất: lỗi vận hành nào thoát ra khỏi đoạn này cũng được ghi nhận THẤT BẠI vào registry
+    // ở catch, và khối finally bảo đảm dọn client quản trị cùng tệp dump thô trung gian ở mọi đường ra.
     try {
       await admin.connect();
       adminConnected = true;
@@ -167,10 +167,10 @@ export async function runFleetRestoreTest(options: FleetRestoreTestOptions = {})
             totalRows,
           });
         }
-        // Kiểm tra khói ở mức dữ kiện trên tài khoản quản trị gieo sẵn của kho: cột điều kiện chỉ gồm các cột thật sự có trong
-        // bảng users của bản khôi phục (username luôn có; các cột đánh dấu xoá mềm tuỳ thế hệ schema). Kiểm tra khói
-        // đang bật mà bản khôi phục không có bảng users thì THẤT BẠI tường minh — không có bảng đó thì không đối chiếu
-        // được gì, cho qua lặng lẽ là báo xanh giả.
+        // Kiểm tra khói ở mức dữ kiện trên tài khoản quản trị gieo sẵn của kho: cột điều kiện chỉ gồm các cột thật sự
+        // có trong bảng users của bản khôi phục (username luôn có; các cột đánh dấu xoá mềm tuỳ thế hệ schema). Kiểm
+        // tra khói đang bật mà bản khôi phục không có bảng users thì THẤT BẠI tường minh — không có bảng đó thì không
+        // đối chiếu được gì, cho qua lặng lẽ là báo xanh giả.
         if (env.FLEET_SMOKE_CHECK !== 'off') {
           if (!tables.includes('users')) {
             return await fail(
@@ -205,22 +205,22 @@ export async function runFleetRestoreTest(options: FleetRestoreTestOptions = {})
         await check.end();
       }
     } catch (error) {
-      // Mọi lỗi vận hành thoát ra từ đoạn khôi phục — kết nối quản trị hỏng ngay từ đầu, tạo database tạm hỏng, hay một bước
-      // khôi phục/kiểm tra văng lỗi chưa qua fail() ở trong — đều là sự cố của chính lượt kiểm thử này: ghi nhận THẤT
-      // BẠI vào registry thay vì để ngoại lệ thoát thẳng, vì registry mất dấu một lượt hỏng thì lịch giám sát và vòng
-      // xoay chọn kho đều tưởng kho này chưa từng được kiểm.
+      // Mọi lỗi vận hành thoát ra từ đoạn khôi phục — kết nối quản trị hỏng ngay từ đầu, tạo database tạm hỏng, hay một
+      // bước khôi phục/kiểm tra văng lỗi chưa qua fail() ở trong — đều là sự cố của chính lượt kiểm thử này: ghi nhận
+      // THẤT BẠI vào registry thay vì để ngoại lệ thoát thẳng, vì registry mất dấu một lượt hỏng thì lịch giám sát và
+      // vòng xoay chọn kho đều tưởng kho này chưa từng được kiểm.
       return await fail(error instanceof Error ? error.message : String(error), { tempDatabase });
     } finally {
-      // Database tạm luôn bị xoá, kể cả khi khôi phục/kiểm tra hỏng: giữ lại là rò rỉ tài nguyên và dữ kiện của cụm. Việc dọn
-      // phía kết nối chỉ chạy khi kết nối quản trị đã mở thành công (xem cờ adminConnected ở trên); lỗi của từng thao
-      // tác dọn được bọc riêng để bước xoá tệp dump thô trung gian ở cuối khối này luôn tới được: tệp thô không bao giờ
-      // được ở lại trên đĩa sau khi lượt kiểm thử đã xong, ở mọi đường ra.
+      // Database tạm luôn bị xoá, kể cả khi khôi phục/kiểm tra hỏng: giữ lại là rò rỉ tài nguyên và dữ kiện của cụm.
+      // Việc dọn phía kết nối chỉ chạy khi kết nối quản trị đã mở thành công (xem cờ adminConnected ở trên); lỗi của
+      // từng thao tác dọn được bọc riêng để bước xoá tệp dump thô trung gian ở cuối khối này luôn tới được: tệp thô
+      // không bao giờ được ở lại trên đĩa sau khi lượt kiểm thử đã xong, ở mọi đường ra.
       if (adminConnected) {
         try {
           await admin.query(`DROP DATABASE IF EXISTS ${quoteIdentifier(tempDatabase)}`);
         } catch {
-          // Xoá không thành thì để lỗi gốc của lượt kiểm thử đứng trước; database tạm mang tên có mốc lượt chạy nên đội vận hành
-          // truy được và xoá tay.
+          // Xoá không thành thì để lỗi gốc của lượt kiểm thử đứng trước; database tạm mang tên có mốc lượt chạy nên đội
+          // vận hành truy được và xoá tay.
         }
         try {
           await admin.end();

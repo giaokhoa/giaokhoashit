@@ -50,7 +50,8 @@ export class ExamPinsController {
   }
   @Patch(':pinId')
   /**
-   * PATCH /exam-pins/:pinId — sửa cấu hình tổ chức của pin (quiz:manage); đổi examVersionId/variantCount bị khoá khi đã có lượt thật.
+   * PATCH /exam-pins/:pinId — sửa cấu hình tổ chức của pin (quiz:manage); đổi examVersionId/variantCount bị khoá khi đã
+   * có lượt thật.
    */
   async update(@Param('pinId', { schema: uuidIdSchema }) pinId: string, @Body({ schema: updateExamPinSchema }) dto: UpdateExamPinDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.quiz.updatePin(actor.id, pinId, dto);
@@ -76,8 +77,9 @@ export class ExamPinsController {
     return this.quiz.applyPinVersionUpdate(actor.id, pinId, dto.toExamVersionId);
   }
   @Post(':pinId/regrades')
-  /** POST /exam-pins/:pinId/regrades — chấm lại theo đáp án một câu của pin (quiz:grade): `dryRun: true` chỉ trả điểm đổi
-   * của từng học sinh, `dryRun: false` áp thật và ghi log (issue #254).
+  /**
+   * POST /exam-pins/:pinId/regrades — chấm lại theo đáp án một câu của pin (quiz:grade): `dryRun: true` chỉ trả điểm
+   * đổi của từng học sinh, `dryRun: false` áp thật và ghi log (issue #254).
    */
   async regrade(@Param('pinId', { schema: uuidIdSchema }) pinId: string, @Body({ schema: regradePinQuestionSchema }) dto: RegradePinQuestionDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.quiz.regradePinQuestion(actor.id, pinId, dto);

@@ -54,7 +54,8 @@ function makeWorld() {
     { id: COURSE_ID, contextLevel: 50, instanceId: 'course-1', path: `/${SYSTEM_ID}/${COURSE_ID}`, depth: 2, version: 1 } as ContextRow,
   ];
   const roles = new Map<string, { id: string; shortName: string; archetype?: string }>([
-        // ROLE_ID là role tuỳ biến KHÔNG có archetype: từ issue #545 role có archetype là role dựng sẵn và bị chặn xoá ở
+        // ROLE_ID là role tuỳ biến KHÔNG có archetype: từ issue #545 role có archetype là role dựng sẵn và bị chặn xoá
+        // ở
     // tầng service, nên một ca kiểm đường xoá hợp lệ phải dùng role không archetype.
     [ROLE_ID, { id: ROLE_ID, shortName: 'gradeeditor' }],
     [USER_ROLE_ID, { id: USER_ROLE_ID, shortName: 'user', archetype: 'user' }],
@@ -172,7 +173,8 @@ describe('Thu hồi quyền phải vô hiệu hoá cache đánh giá ngay (unass
     expect((deleteError as { response?: { code?: string } }).response?.code).toBe('access.role_has_assignments');
     await expect(evaluator.hasCapability(USER_ID, CAPABILITY, COURSE_ID)).resolves.toBe(true);
 
-        // Gỡ hết gán rồi xoá: lần xoá hợp lệ phải bump version của context hệ thống — nơi override của role vừa xoá từng
+        // Gỡ hết gán rồi xoá: lần xoá hợp lệ phải bump version của context hệ thống — nơi override của role vừa xoá
+        // từng
     // nằm (gán/gỡ ở context khoá không bump context hệ thống, nên mức tăng này chỉ có thể đến từ chính đường xoá).
     await rolesService.unassignRole(assignment.id);
     const systemVersionBeforeDelete = contexts.find((c) => c.id === SYSTEM_ID)!.version;

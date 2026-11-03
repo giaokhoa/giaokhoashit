@@ -12,7 +12,8 @@ import { AnalyticsService } from './analytics.service';
   imports: [AccessModule, CoursesModule, EnrolModule, SpaceRoutingModule],
   controllers: [AnalyticsController],
   providers: [
-        // Repository của package @lms/db chạy trên handle Kysely đã định tuyến theo không gian (issue #648) — cùng khuôn
+        // Repository của package @lms/db chạy trên handle Kysely đã định tuyến theo không gian (issue #648) — cùng
+        // khuôn
     // lắp ráp với repository control plane của pilot.
     {
       provide: AnalyticsRepository,

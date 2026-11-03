@@ -22,7 +22,9 @@ export const BADGE_STATUS = { INACTIVE: 0, ACTIVE: 1, RETIRED: 2, ARCHIVED: 3, D
 export const CRITERIA_AGGREGATION = { ALL: 1, ANY: 2 } as const;
 export const LEAF_TYPES = ['coursecompletion', 'activitycompletion', 'competency', 'badge', 'manual', 'cohort', 'profile'] as const;
 
-/** Các trường hồ sơ chuẩn mà lá `profile` đọc trực tiếp từ bản ghi user (ngoài ra lá nhận custom field theo shortName). */
+/**
+ * Các trường hồ sơ chuẩn mà lá `profile` đọc trực tiếp từ bản ghi user (ngoài ra lá nhận custom field theo shortName).
+ */
 const PROFILE_STANDARD_FIELDS = ['username', 'email', 'firstName', 'lastName'] as const;
 
 export interface CriteriaInput {
@@ -297,7 +299,8 @@ export class BadgesService implements OnModuleInit {
         if (!courseId) return false;
         const completion = await this.completion.getCourseCompletion(userId, courseId).catch(() => undefined);
         if (completion?.status !== 'complete') return false;
-                // By-date (Moodle award_badge "course completion by-date"): khi lá khai `byDate`, chỉ tính khi thời điểm hoàn
+                // By-date (Moodle award_badge "course completion by-date"): khi lá khai `byDate`, chỉ tính khi thời
+                // điểm hoàn
         // thành ≤ ngày cắt đó — hoàn thành sau ngày cắt thì KHÔNG đạt dù trạng thái là complete.
         const byDate = typeof params.byDate === 'string' ? params.byDate : undefined;
         if (byDate !== undefined) {
@@ -419,7 +422,8 @@ export class BadgesService implements OnModuleInit {
       subject: this.i18n.t('platform.badgeAwardedSubject', { args: { name: badgeRow.name } }),
       body: this.i18n.t('platform.badgeAwardedBody', { args: { name: badgeRow.name, issuer: badgeRow.issuerName } }),
       contextUrl: `/badges/${badgeId}`,
-            // #174-A: gắn khoá nguồn để notify() áp ghi đè tắt tiếng theo khoá (NB-4) — xem TSDoc của issueBadge. Huy hiệu
+            // #174-A: gắn khoá nguồn để notify() áp ghi đè tắt tiếng theo khoá (NB-4) — xem TSDoc của issueBadge. Huy
+            // hiệu
       // cấp site không gắn khoá thì giữ undefined như hành vi trước NB-4.
       courseId: badgeRow.courseId ?? undefined,
     }).catch(() => undefined);

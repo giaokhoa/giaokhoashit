@@ -9,7 +9,10 @@ import { ContextsService } from './contexts.service';
 import { CAPABILITY_DEFINITIONS, CONTEXT_LEVELS } from './domain/capabilities';
 import { aggregateRoleResults, evaluateSingleRole, type RoleOverridePoint } from './domain/permission';
 
-/** Kết quả cổng tenant: `allowed=false` = chặn tuyệt đối; `assignmentScope` = tập context mà gán vai được tính (null = không thu hẹp). */
+/**
+ * Kết quả cổng tenant: `allowed=false` = chặn tuyệt đối; `assignmentScope` = tập context mà gán vai được tính (null =
+ * không thu hẹp).
+ */
 interface TenantGate {
   allowed: boolean;
   assignmentScope: Set<string> | null;
@@ -51,7 +54,8 @@ export class PermissionEvaluator {
     private readonly contexts: ContextsService,
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
     @Inject(ConfigService) config: ConfigService,
-        // Khung định tuyến kho theo trung tâm — nguồn danh tính kho riêng của ngữ cảnh hiện tại cho khoá cache `siteadmins`
+        // Khung định tuyến kho theo trung tâm — nguồn danh tính kho riêng của ngữ cảnh hiện tại cho khoá cache
+        // `siteadmins`
     // (xem `siteAdminsCacheKey`). Tuỳ chọn ở tầng dựng để các spec dựng evaluator trực tiếp không phải dựng cả khung
     // định tuyến: khi vắng mặt, evaluator suy khoá như trước — mọi ngữ cảnh đều theo danh tính kho chung của tiến
     // trình.
@@ -100,7 +104,8 @@ export class PermissionEvaluator {
   async isSiteAdmin(userId: string): Promise<boolean> {
     const raw = await this.siteAdminsConfig();
     if (Array.isArray(raw) && raw.map((v) => String(v)).includes(userId)) return true;
-        // Ngữ cảnh kho riêng mới cần lớp phủ platform: danh tính kho của ngữ cảnh do khung định tuyến báo (không phải kho
+        // Ngữ cảnh kho riêng mới cần lớp phủ platform: danh tính kho của ngữ cảnh do khung định tuyến báo (không phải
+        // kho
     // chung) thì tra thêm danh sách platform; ngữ cảnh kho chung dừng ở danh sách vừa đọc — không có chiều rò ngược.
     if (this.spaceDb?.currentContextDatabaseName() !== undefined) {
       return this.isPlatformSiteAdmin(userId);
@@ -177,7 +182,8 @@ export class PermissionEvaluator {
     // hoặc path không có context tenant.
     if (!info) return { allowed: false, assignmentScope: null };
     if (info.kind !== 'school' && info.kind !== 'center') return { allowed: true, assignmentScope: null };
-        // Tenant đã khoá (suspended) hoặc lưu trữ (archived) thì không ai còn quyền trong cây của nó — kể cả thành viên.
+        // Tenant đã khoá (suspended) hoặc lưu trữ (archived) thì không ai còn quyền trong cây của nó — kể cả thành
+        // viên.
     if (info.status !== 'active') return { allowed: false, assignmentScope: null };
     const status = await this.membershipStatus(tenantCtx, userId);
     if (status !== 'active') return { allowed: false, assignmentScope: null };
@@ -254,14 +260,16 @@ export class PermissionEvaluator {
    * do + audit). Ngoài cây tenant (context hệ thống, tenant-zero) lối tắt giữ nguyên như cũ.
    */
   async hasCapability(userId: string, capability: string, contextId: string, opts?: { isGuest?: boolean }): Promise<boolean> {
-        // Hai phép đọc context/path mở đầu là phần duy nhất luôn xuống DB trước các tầng cache: chúng dựng dấu version của
+        // Hai phép đọc context/path mở đầu là phần duy nhất luôn xuống DB trước các tầng cache: chúng dựng dấu version
+        // của
     // path — chính khoá vô hiệu hoá của cache kết quả (mọi thay đổi dữ kiện quyền đều bump version của context liên
     // quan) — nên dấu phải luôn lấy từ dữ kiện DB hiện hành, không qua cache.
     const target = await this.contexts.getContext(contextId);
     const pathContexts = await this.contexts.getPathContexts(target);
     const stamp = this.contexts.pathVersionStamp(pathContexts);
     const cacheKey = `access:${userId}:${capability}:${contextId}:${stamp}:${opts?.isGuest ? 'g' : 'u'}`;
-        // Cache kết quả được tra TRƯỚC mọi truy vấn DB còn lại của đường đánh giá. Cổng tenant và lối tắt site admin vẫn áp
+        // Cache kết quả được tra TRƯỚC mọi truy vấn DB còn lại của đường đánh giá. Cổng tenant và lối tắt site admin
+        // vẫn áp
     // ở lượt này trước khi kết quả cache được dùng — thứ tự ra quyết định không đổi — nhưng dữ kiện của chúng cũng tra
     // cache trước (dữ kiện cổng theo version của context tenant, cấu hình site admin ghi xuyên khi đổi), nên ở lượt
     // cache ấm, tầng dữ liệu đánh giá (gán vai, override), dữ kiện cổng và cấu hình đều không bị hỏi lại.
@@ -393,7 +401,8 @@ export class PermissionEvaluator {
       }
       const info = gateInfoByTenant.get(tenantCtx.instanceId);
       if (!info) {
-                // Cùng quy tắc fail-closed với `tenantGate`: dữ kiện cổng đã đọc ở ngữ cảnh platform nên vắng mặt trong map
+                // Cùng quy tắc fail-closed với `tenantGate`: dữ kiện cổng đã đọc ở ngữ cảnh platform nên vắng mặt trong
+                // map
         // nghĩa là không xác minh được tenant của đích → chặn tuyệt đối, không cho qua không thu hẹp như nhánh tenant
         // `platform` ở dưới.
         gateByTarget.set(target.id, { allowed: false, assignmentScope: null });
@@ -487,7 +496,8 @@ export class PermissionEvaluator {
    * (teacher/manager/…) vẫn cho họ vào.
    */
   /**
-   * Như hasCapability nhưng chỉ tính gán role thật, bỏ qua lối tắt site admin — dùng cho các luồng cần phân biệt (vd login-as).
+   * Như hasCapability nhưng chỉ tính gán role thật, bỏ qua lối tắt site admin — dùng cho các luồng cần phân biệt (vd
+   * login-as).
    */
   async hasCapabilityFromRealAssignment(
     userId: string,

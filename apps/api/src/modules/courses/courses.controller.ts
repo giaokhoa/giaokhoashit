@@ -75,8 +75,8 @@ export class CoursesController {
   }
   @Get(':id')
   async get(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() viewer: AuthenticatedUser) {
-    // Việc liệt kê danh tính của một khoá học mở cho người đã ghi danh/nhân sự qua cổng nội dung; metadata trần của khoá
-    // học bị ẩn vẫn phải đi qua assertCourseAccess.
+    // Việc liệt kê danh tính của một khoá học mở cho người đã ghi danh/nhân sự qua cổng nội dung; metadata trần của
+    // khoá học bị ẩn vẫn phải đi qua assertCourseAccess.
     const course = await this.courses.assertCourseAccess(viewer.id, id);
     return { ...course, contextId: await this.courses.courseContextId(id), customFields: await this.courses.getCourseCustomFields(id), formatOptions: await this.courses.getFormatOptions(id) };
   }
@@ -91,8 +91,9 @@ export class CoursesController {
     return this.courses.applyCurriculumFrame(actor.id, id, dto);
   }
   @Post(':id/book-frame')
-  /** POST /courses/:id/book-frame — nạp khung SGK vào khoá (bản sao có neo kép: mục bài truy về SGK và YCCĐ chương trình,
-   * K0b).
+  /**
+   * POST /courses/:id/book-frame — nạp khung SGK vào khoá (bản sao có neo kép: mục bài truy về SGK và YCCĐ chương
+   * trình, K0b).
    */
   async applyBookFrame(@Param('id', { schema: uuidIdSchema }) id: string, @Body({ schema: applyBookFrameSchema }) dto: ApplyBookFrameDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.courses.applyBookFrame(actor.id, id, dto);
@@ -129,7 +130,8 @@ export class CoursesController {
   }
   @Post(':id/sections/:sectionId/duplicate')
   @UseInterceptors(DeprecatedRouteAliasInterceptor)
-  /** POST /courses/:id/sections/:sectionId/duplicate — alias cũ của POST /courses/:id/sections/:sectionId/copy: uỷ quyền
+  /**
+   * POST /courses/:id/sections/:sectionId/duplicate — alias cũ của POST /courses/:id/sections/:sectionId/copy: uỷ quyền
    * nguyên vẹn cho handler canonical; response mang header Deprecation/Sunset và lượt gọi được ghi log alias có cấu
    * trúc (căn cứ điều kiện gỡ alias: 0 lượt gọi trong 14 ngày).
    */

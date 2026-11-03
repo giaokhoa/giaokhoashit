@@ -111,7 +111,8 @@ describe('Cổng tái xác thực khi thiết lập TotpService', () => {
     const code = await thrownErrorCode(() => service.setup(USER_ID, USERNAME));
 
     expect(code).toBe('auth.mfa_reauth_required');
-        // Factor cũ nguyên vẹn: cùng bản ghi đã mã hoá, vẫn đang bật, mã của authenticator hiện tại vẫn kiểm chứng được.
+        // Factor cũ nguyên vẹn: cùng bản ghi đã mã hoá, vẫn đang bật, mã của authenticator hiện tại vẫn kiểm chứng
+        // được.
     expect(storedRow()).toEqual(before);
     expect(await service.isEnabled(USER_ID)).toBe(true);
     expect(await service.verifyForUser(USER_ID, await currentCode(activeSecret))).toBe(true);

@@ -59,15 +59,17 @@ export class GradesService implements OnModuleInit {
     this.courses.registerGradeProvider(async (userId, courseId) => this.gradePercentagesForUser(userId, courseId));
     this.completion.registerGradeEvaluator(async (cmId, userId) => this.evaluateCmGrade(cmId, userId));
     this.completion.registerCourseGradeChecker(async (courseId, userId) => this.courseGradePassed(courseId, userId));
-    // Dữ liệu điểm là một họ "dữ liệu liên quan" quyết định giữ/xoá dòng ghi danh khi gỡ ghi danh: họ đó nay được truy vấn
-    // trực tiếp ở tầng dữ liệu dùng chung (@lms/enrol) thay cho probe đăng ký lúc khởi tạo tiến trình như trước đây.
+    // Dữ liệu điểm là một họ "dữ liệu liên quan" quyết định giữ/xoá dòng ghi danh khi gỡ ghi danh: họ đó nay được truy
+    // vấn trực tiếp ở tầng dữ liệu dùng chung (@lms/enrol) thay cho probe đăng ký lúc khởi tạo tiến trình như trước
+    // đây.
   }
 
   private async requireCap(actorId: string, capability: string, courseId: string): Promise<void> {
     await this.evaluator.requireCapability(actorId, capability, await this.courses.courseContextId(courseId));
   }
 
-  /** Kiểm tra idNumber không trùng với item khác trong cùng khoá học (idNumber là định danh duy nhất của item trong khoá
+  /**
+   * Kiểm tra idNumber không trùng với item khác trong cùng khoá học (idNumber là định danh duy nhất của item trong khoá
    * khi không null).
    */
   private async assertIdnumberFree(courseId: string, idNumber: string | null | undefined, selfItemId?: string): Promise<void> {
@@ -311,7 +313,9 @@ export class GradesService implements OnModuleInit {
     return false;
   }
 
-  /** Giá trị của lá 'grade' trong Availability: phần trăm (0-100) được khoá theo id của grade-item VÀ theo id của cm. */
+  /**
+   * Giá trị của lá 'grade' trong Availability: phần trăm (0-100) được khoá theo id của grade-item VÀ theo id của cm.
+   */
   async gradePercentagesForUser(userId: string, courseId: string): Promise<Record<string, number>> {
     const items = await this.repo.listItems(courseId);
     const grades = await this.repo.listGradesForCourse(courseId, userId);
@@ -383,7 +387,10 @@ export class GradesService implements OnModuleInit {
     return (await this.repo.getItem(itemId))!;
   }
 
-  /** Công bố / rút công bố điểm của một item cho mọi học sinh (grade:publish tại context khoá); ghi vết vào grade_publications + event_log qua outbox. */
+  /**
+   * Công bố / rút công bố điểm của một item cho mọi học sinh (grade:publish tại context khoá); ghi vết vào
+   * grade_publications + event_log qua outbox.
+   */
   async setItemPublication(actorId: string, itemId: string, action: 'publish' | 'unpublish', note?: string): Promise<GradePublicationState> {
     const item = await this.getItem(itemId);
     await this.requireCap(actorId, 'grade:publish', item.courseId);
@@ -434,8 +441,9 @@ export class GradesService implements OnModuleInit {
     };
   }
 
-  /** Điểm theo bài ĐÃ CÔNG BỐ của một học sinh — bề mặt phụ huynh có liên kết giám hộ (GuardiansService kiểm tra liên kết
-   * trước khi gọi): ẩn như phía học sinh tự xem (item/điểm ẩn bị loại, điểm của item manual chưa công bố bị che).
+  /**
+   * Điểm theo bài ĐÃ CÔNG BỐ của một học sinh — bề mặt phụ huynh có liên kết giám hộ (GuardiansService kiểm tra liên
+   * kết trước khi gọi): ẩn như phía học sinh tự xem (item/điểm ẩn bị loại, điểm của item manual chưa công bố bị che).
    */
   async listPublishedActivityGrades(courseId: string, targetUserId: string): Promise<ActivityGradeView[]> {
     return this.buildActivityGradeViews(courseId, targetUserId, { maskUnpublished: true, hideHidden: true });
@@ -488,8 +496,9 @@ export class GradesService implements OnModuleInit {
     return { courseId, items, publications, rows };
   }
 
-  /** Năm học mặc định cho bảng xuất vnEdu: năm học VN bắt đầu tháng 8 (tháng 8–12 thuộc năm học bắt đầu năm đó, tháng 1–7
-   * thuộc năm học bắt đầu năm trước).
+  /**
+   * Năm học mặc định cho bảng xuất vnEdu: năm học VN bắt đầu tháng 8 (tháng 8–12 thuộc năm học bắt đầu năm đó, tháng
+   * 1–7 thuộc năm học bắt đầu năm trước).
    */
   private defaultVneduSchoolYear(now = new Date()): string {
     const startYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;

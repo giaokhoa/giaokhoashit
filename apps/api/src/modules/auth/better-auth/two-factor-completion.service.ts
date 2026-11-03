@@ -91,7 +91,8 @@ export class TwoFactorCompletionService {
     spaceDb: SpaceDatabaseService,
     private readonly betterAuth: BetterAuthService,
     private readonly bridge: CredentialBridgeService,
-        // Cùng khuôn phụ thuộc với BetterAuthService: AuthModule xuất TotpService qua vòng forwardRef; thiếu phụ thuộc (chỉ
+        // Cùng khuôn phụ thuộc với BetterAuthService: AuthModule xuất TotpService qua vòng forwardRef; thiếu phụ thuộc
+        // (chỉ
     // xảy ra khi module bị dựng dở) thì mọi verify bị từ chối fail-closed ở completeTotp thay vì cho qua.
     @Optional()
     @Inject(forwardRef(() => TotpService))
@@ -120,7 +121,8 @@ export class TwoFactorCompletionService {
     try {
       valid = await this.totp.verifyForUser(challenge.userId, code);
     } catch {
-            // Lỗi ở tầng kiểm mã (không phải mã sai): trả lại ngân sách của lần thử này như semantics `restore()` của plugin,
+            // Lỗi ở tầng kiểm mã (không phải mã sai): trả lại ngân sách của lần thử này như semantics `restore()` của
+            // plugin,
       // rồi fail-closed — không kết luận được thì không cấp phiên.
       await this.rearmAttempts(challenge, challenge.attempts);
       throw new TwoFactorCompletionError(500, 'mfa_status_unavailable', 'Could not verify multi-factor authentication status');

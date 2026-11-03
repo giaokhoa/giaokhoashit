@@ -641,7 +641,6 @@ export class PaymentsRepository {
     return row?.total ?? 0;
   }
 
-  // --- Vòng đời hoàn tiền (lát 3, issue #189) ------------------------------
   async getRefund(id: string, tx?: DbTx): Promise<RefundRow | undefined> {
     const db = tx ?? this.db;
     return db.selectFrom('payment_refunds').select(REFUND_COLUMNS).where('id', '=', id).executeTakeFirst();
@@ -832,7 +831,6 @@ export class PaymentsRepository {
       .executeTakeFirst();
   }
 
-  // --- Hàng đợi needs_review (lát 3, issue #189) ---------------------------
   /** Mọi khoản thu đang chờ xử lý tay thuộc các tenant cho trước (phạm vi hàng đợi của người xem). */
   async listNeedsReviewPayments(tenantIds: string[]): Promise<PaymentRow[]> {
     if (tenantIds.length === 0) return [];
@@ -884,7 +882,6 @@ export class PaymentsRepository {
       .executeTakeFirst();
   }
 
-  // --- VietQR / SePay (lát 1, issue #189) -----------------------------------
   /** Số thứ tự tiếp theo cho mã thanh toán — sequence chỉ tăng, mã không tái sử dụng. */
   async nextPaymentCodeValue(): Promise<number> {
     const result = await sql<{ v: number }>`select nextval('payment_code_seq')::int as v`.execute(this.db);
@@ -997,7 +994,6 @@ export class PaymentsRepository {
       .execute();
   }
 
-  // --- Quyền lợi gói (lát 2, issue #189) ------------------------------------
   async insertEntitlement(input: EntitlementInsert): Promise<EntitlementRow> {
     return this.db
       .insertInto('plan_entitlements')
@@ -1071,7 +1067,6 @@ export class PaymentsRepository {
       .execute();
   }
 
-  // --- Coupon giảm giá mua gói (phần còn lại của lát 2, issue #189) --------
   async insertCoupon(input: CouponInsert): Promise<CouponRow> {
     return this.db
       .insertInto('payment_coupons')

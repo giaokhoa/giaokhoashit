@@ -47,32 +47,30 @@ export function buildProxyHeaders(incomingHeaders, remoteAddress, apiHost) {
 }
 
 /**
- * Dựng các dòng của đầu request upgrade (WebSocket của socket.io) mà
- * đường hầm TCP trong prod-server.mjs ghi thẳng về API nội bộ.
+ * Dựng các dòng của đầu request upgrade (WebSocket của socket.io) mà đường hầm TCP trong prod-server.mjs ghi thẳng về
+ * API nội bộ.
  *
- * Bất biến địa chỉ ở đầu file áp cho cả đường này: dòng Host mang
- * GIÁ TRỊ GỐC của client — socket auth ở API phân giải trung tâm
- * theo Host của chính request upgrade bắt tay (client của hệ mở
- * transport websocket ngay từ request đầu tiên), nên ghi đè Host
- * bằng origin nội bộ thì phiên của trung tâm kho riêng bị tra ở kho
- * chung còn phiên kho chung lại được chấp nhận tại địa chỉ trung
- * tâm đó (điểm B1 của PR #634). `apiHost` chỉ còn là dòng dự phòng
- * khi request gốc hoàn toàn không mang Host. Phần X-Forwarded-For
- * giữ nguyên từng ký tự hành vi hiện hành của đường hầm: nối IP
- * của chặng này vào chuỗi đã có ngay tại dòng header đó, và thêm
- * một dòng mới từ IP của chặng này khi request chưa mang header
- * này (điều kiện xét trên `headers` đã chuẩn hoá của node:http như
- * cách đường hầm vẫn xét). Mọi header còn lại chuyển nguyên văn,
- * giữ nguyên thứ tự và tên như client đã gửi.
+ * Bất biến địa chỉ ở đầu file áp cho cả đường này: dòng Host mang GIÁ TRỊ GỐC của client — socket auth ở API phân giải
+ * trung tâm theo Host của chính request upgrade bắt tay (client của hệ mở transport websocket ngay từ request đầu
+ * tiên), nên ghi đè Host bằng origin nội bộ thì phiên của trung tâm kho riêng bị tra ở kho chung còn phiên kho chung
+ * lại được chấp nhận tại địa chỉ trung tâm đó (điểm B1 của PR #634). `apiHost` chỉ còn là dòng dự phòng khi request gốc
+ * hoàn toàn không mang Host. Phần X-Forwarded-For giữ nguyên từng ký tự hành vi hiện hành của đường hầm: nối IP của
+ * chặng này vào chuỗi đã có ngay tại dòng header đó, và thêm một dòng mới từ IP của chặng này khi request chưa mang
+ * header này (điều kiện xét trên `headers` đã chuẩn hoá của node:http như cách đường hầm vẫn xét). Mọi header còn lại
+ * chuyển nguyên văn, giữ nguyên thứ tự và tên như client đã gửi.
  *
  * @param method - Method của request gốc (req.method).
  * @param url - URL của request gốc (req.url, gồm cả query string của handshake socket.io).
  * @param httpVersion - Phiên bản HTTP của request gốc (req.httpVersion).
- * @param rawHeaders - Mảng header thô của request gốc (req.rawHeaders: tên, giá trị xen kẽ, giữ nguyên hoa thường và thứ tự).
- * @param headers - Header đã chuẩn hoá của request gốc (req.headers, khoá chữ thường) — chỉ dùng để xét request đã mang X-Forwarded-For hay chưa.
+ * @param rawHeaders - Mảng header thô của request gốc (req.rawHeaders: tên, giá trị xen kẽ, giữ nguyên hoa thường và
+                       thứ tự).
+ * @param headers - Header đã chuẩn hoá của request gốc (req.headers, khoá chữ thường) — chỉ dùng để xét request đã mang
+                    X-Forwarded-For hay chưa.
  * @param remoteAddress - IP của chặng kết nối tới prod-server (req.socket.remoteAddress).
- * @param apiHost - Host của origin API nội bộ (apiOrigin.host) — chỉ còn là giá trị dự phòng khi request gốc không mang Host.
- * @returns Các dòng của đầu request (chưa kèm dòng trống kết thúc đầu request): dòng request đầu tiên rồi tới từng dòng header.
+ * @param apiHost - Host của origin API nội bộ (apiOrigin.host) — chỉ còn là giá trị dự phòng khi request gốc không mang
+                    Host.
+ * @returns Các dòng của đầu request (chưa kèm dòng trống kết thúc đầu request): dòng request đầu tiên rồi tới từng dòng
+            header.
  */
 export function buildUpgradeRequestLines({ method, url, httpVersion, rawHeaders, headers, remoteAddress, apiHost }) {
   const lines = [`${method} ${url} HTTP/${httpVersion}`];

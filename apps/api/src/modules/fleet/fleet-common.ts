@@ -95,7 +95,9 @@ export function isBackupOverdue(lastBackupAt: Date | null, now: Date, maxAgeHour
   return now.getTime() - lastBackupAt.getTime() > maxAgeHours * 3_600_000;
 }
 
-/** Mã lượt chạy của đội kho: `fleet-<mốc UTC nén>-<4 ký tự hex>` — gắn vào tên tệp sao lưu chốt và nhật ký lượt chạy. */
+/**
+ * Mã lượt chạy của đội kho: `fleet-<mốc UTC nén>-<4 ký tự hex>` — gắn vào tên tệp sao lưu chốt và nhật ký lượt chạy.
+ */
 export function newFleetRunId(at: Date): string {
   return `fleet-${at.toISOString().replace(/\D/g, '').slice(0, 14)}-${randomBytes(2).toString('hex')}`;
 }
@@ -347,8 +349,8 @@ export async function dumpDatabaseToFile(options: {
   try {
     await runPgTool('pg_dump', options.url, ['-Fc', '-f', plainPath], env);
   } catch (error) {
-    // Dump hỏng giữa chừng để lại một tệp dở trên đĩa: xoá ngay để không lượt chọn bản sao lưu nào về sau nhầm nó là một
-    // bản hoàn chỉnh (tệp băm chưa từng được ghi cho nó, nhưng dọn tận gốc vẫn hơn dựa vào một cổng kiểm duy nhất).
+    // Dump hỏng giữa chừng để lại một tệp dở trên đĩa: xoá ngay để không lượt chọn bản sao lưu nào về sau nhầm nó là
+    // một bản hoàn chỉnh (tệp băm chưa từng được ghi cho nó, nhưng dọn tận gốc vẫn hơn dựa vào một cổng kiểm duy nhất).
     if (existsSync(plainPath)) unlinkSync(plainPath);
     throw error;
   }
@@ -360,8 +362,8 @@ export async function dumpDatabaseToFile(options: {
     writeFileSync(`${finalPath}.sha256`, `${digest}\n`);
     return { path: finalPath, encrypted: true, sha256: digest };
   } catch (error) {
-    // Bước ghi tệp mã hoá/băm hỏng giữa chừng: xoá cả tệp mã hoá dở — thiếu tệp băm đi kèm thì nó vốn không dùng được, giữ
-    // lại chỉ khiến thư mục sao lưu mang một bản trông như hoàn chỉnh.
+    // Bước ghi tệp mã hoá/băm hỏng giữa chừng: xoá cả tệp mã hoá dở — thiếu tệp băm đi kèm thì nó vốn không dùng được,
+    // giữ lại chỉ khiến thư mục sao lưu mang một bản trông như hoàn chỉnh.
     if (existsSync(finalPath)) unlinkSync(finalPath);
     throw error;
   } finally {

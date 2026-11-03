@@ -115,7 +115,8 @@ export class ControlPlaneRegistryService {
     if (await this.repo.findSpaceBySlug(dto.slug)) {
       throw new ConflictException({ message: `Space slug ${dto.slug} is already registered`, code: 'control_plane.slug_taken' });
     }
-        // Lớp kiểm tra trùng databaseName ở tầng ứng dụng (issue #583, ghi chú điều phối 6528534235 — điểm P1-2b từ review
+        // Lớp kiểm tra trùng databaseName ở tầng ứng dụng (issue #583, ghi chú điều phối 6528534235 — điểm P1-2b từ
+        // review
     // PR #594): một tên database không được hai dòng đăng ký cùng dùng, KỂ CẢ khi một trong hai là hàng shared — đường
     // cấp phát kho dedicated mang tên trùng kho chung sẽ khiến trung tâm mới trỏ thẳng vào kho chung thay vì kho riêng
     // của nó. Chỉ số duy nhất riêng phần trên database (chỉ phủ hàng dedicated) là chốt chặn cho cuộc đua
@@ -148,7 +149,8 @@ export class ControlPlaneRegistryService {
         return row;
       });
     } catch (error) {
-            // Chốt chặn cho cuộc đua dedicated-vs-dedicated: hai lượt tạo đồng thời cùng databaseName đều qua được kiểm tra
+            // Chốt chặn cho cuộc đua dedicated-vs-dedicated: hai lượt tạo đồng thời cùng databaseName đều qua được kiểm
+            // tra
       // ngoài transaction, lượt sau vấp chỉ số duy nhất riêng phần trong transaction — ánh xạ thành 409 cùng mã với
       // kiểm tra ngoài thay vì để lỗi 500 rò ra ngoài. Mã 23505 một mình chưa đủ: chỉ khi tên ràng buộc là chỉ số
       // dedicated mới là va chạm này; các vi phạm unique khác (ví dụ slug) giữ nguyên hành vi cũ qua nhánh
@@ -158,7 +160,8 @@ export class ControlPlaneRegistryService {
       }
       throw error;
     }
-        // Sổ vừa có dòng mới: báo khung định tuyến (issue #581) vô hiệu hoá đệm của slug này — phát SAU khi transaction đã
+        // Sổ vừa có dòng mới: báo khung định tuyến (issue #581) vô hiệu hoá đệm của slug này — phát SAU khi transaction
+        // đã
     // commit để bên nghe đọc lại được giá trị mới.
     emitSpaceRegistryChanged(created.slug);
     return this.toRegistration(created);
@@ -194,7 +197,8 @@ export class ControlPlaneRegistryService {
             throw new ConflictException({ message: `Database name ${dto.databaseName} is already registered`, code: 'control_plane.database_name_taken' });
           }
         }
-                // Kiểm tra trùng tên theo tổ hợp hiệu lực sau cập nhật: chỉ đổi `storageMode` sang `dedicated` mà giữ nguyên
+                // Kiểm tra trùng tên theo tổ hợp hiệu lực sau cập nhật: chỉ đổi `storageMode` sang `dedicated` mà giữ
+                // nguyên
         // tên cũng phải bắt, vì dòng đang giữ tên đó có thể vẫn là `shared` nên chỉ số duy nhất riêng phần không chặn
         // được va chạm. Kiểm tra đổi tên ở trên vẫn giữ nguyên để ca đổi tên ở chế độ `shared` cũng bị chặn như trước.
         // Cả hai điểm đều dùng tra cứu loại trừ dòng đang sửa NGAY TRONG TRUY VẤN: tra cứu `LIMIT 1` không loại trừ có
@@ -248,7 +252,8 @@ export class ControlPlaneRegistryService {
       changedSlug = row.slug;
       return row;
     });
-        // Chỉ phát sự kiện khi trạng thái thật sự đổi (đổi về chính trạng thái hiện tại là thao tác rỗng — sổ không đổi,
+        // Chỉ phát sự kiện khi trạng thái thật sự đổi (đổi về chính trạng thái hiện tại là thao tác rỗng — sổ không
+        // đổi,
     // đệm định tuyến không cần vô hiệu hoá).
     if (changedSlug) emitSpaceRegistryChanged(changedSlug);
     return this.toRegistration(updated);
@@ -319,7 +324,8 @@ export class ControlPlaneRegistryService {
       throw new NotFoundException({ message: `Space registration ${spaceId} not found`, code: 'control_plane.space_not_found' });
     }
     const row = await this.repo.transaction(async (tx) => {
-            // Khoá dòng đăng ký trước (nối tiếp các thao tác ghi của không gian), rồi mới đọc trạng thái schema hiện tại để
+            // Khoá dòng đăng ký trước (nối tiếp các thao tác ghi của không gian), rồi mới đọc trạng thái schema hiện
+            // tại để
       // hợp nhất — thứ tự khoá thống nhất với các đường ghi khác.
       await this.repo.findSpaceByIdForUpdate(spaceId, tx);
       const existing = await this.repo.findSchemaRegistry(spaceId, tx);
@@ -371,7 +377,8 @@ export class ControlPlaneRegistryService {
     }
     let versionChanged = false;
     const run = await this.repo.transaction(async (tx) => {
-            // Khoá dòng đăng ký trước (nối tiếp các thao tác ghi của không gian), rồi mới chèn lượt chạy và đọc trạng thái
+            // Khoá dòng đăng ký trước (nối tiếp các thao tác ghi của không gian), rồi mới chèn lượt chạy và đọc trạng
+            // thái
       // registry để hợp nhất — thứ tự khoá thống nhất với `updateSchemaRegistry`.
       await this.repo.findSpaceByIdForUpdate(spaceId, tx);
       const saved = await this.repo.insertMigrationRun(
@@ -472,7 +479,8 @@ export class ControlPlaneRegistryService {
       if (inserted) created += 1;
       await this.repo.ensureSchemaRegistry(row.id, SHARED_DATABASE_SCHEMA_VERSION);
     }
-        // Dòng đăng ký có thể vừa được tạo ở lượt gieo này: báo khung định tuyến vô hiệu hoá đệm của các slug vừa gieo để
+        // Dòng đăng ký có thể vừa được tạo ở lượt gieo này: báo khung định tuyến vô hiệu hoá đệm của các slug vừa gieo
+        // để
     // lần phân giải sau đọc đúng dòng hiện có trên sổ.
     for (const space of spaces) emitSpaceRegistryChanged(space.slug);
     if (created > 0) this.logger.log(`Seeded ${created} existing space registration(s) into the control plane registry`);

@@ -76,7 +76,8 @@ export class CourseGradeExportsController {
    * cầu (issue #342). Nguồn (issue #224): chỉ các bài ĐÃ CÔNG BỐ mới được xuất; bài chưa công bố bị từ chối.
    */
   async exportGrades(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @Body({ schema: exportGradesSchema }) dto: ExportGradesDto, @CurrentUser() actor: AuthenticatedUser, @Res() res: Response) {
-    // Tách trường `provider` ra khỏi payload: phần còn lại giữ đúng khuôn vnEdu và truyền nguyên vào service xuất vnEdu.
+    // Tách trường `provider` ra khỏi payload: phần còn lại giữ đúng khuôn vnEdu và truyền nguyên vào service xuất
+    // vnEdu.
     const { provider: _provider, ...rest } = dto;
     const { filename, buffer } = await this.grades.exportGradesVnedu(actor.id, courseId, rest);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

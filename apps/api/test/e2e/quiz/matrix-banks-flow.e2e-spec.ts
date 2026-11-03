@@ -193,7 +193,8 @@ describe('Ngân hàng ma trận MB-1 (issue #111)', () => {
     expect(listed).toBeTruthy();
     expect(listed!.isTemplate).toBe(true);
 
-    // Copy về bank cá nhân (đích mặc định): danh tính mới, derived_from = mẫu, ready (quy tắc hoàn thiện: sao chép vào bank hạ cánh ready), không phải mẫu, đủ 2 ô.
+    // Copy về bank cá nhân (đích mặc định): danh tính mới, derived_from = mẫu, ready (quy tắc hoàn thiện: sao chép vào
+    // bank hạ cánh ready), không phải mẫu, đủ 2 ô.
     const copyRes = await http(app).post(`/api/v1/exam-matrices/${tpl.id}/copy`).set(bearer(team.member.token)).send({});
     expect(copyRes.status, JSON.stringify(copyRes.body)).toBe(201);
     const copy = copyRes.body as MatrixBody;

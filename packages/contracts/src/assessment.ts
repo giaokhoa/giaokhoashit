@@ -705,7 +705,6 @@ export const submitQuestionResponseSchema = z.strictObject({
 });
 export type SubmitQuestionResponse = z.infer<typeof submitQuestionResponseSchema>;
 
-// --- Quiz (mod_quiz) -----------------------------------------------------------
 
 /** Cách tính điểm bài khi học sinh có nhiều lượt làm (Moodle quiz grade method). */
 export const QUIZ_GRADE_METHODS = ['highest', 'average', 'first', 'last'] as const;
@@ -1008,9 +1007,6 @@ export const gradeQuizQuestionSchema = z.strictObject({
 });
 export type GradeQuizQuestion = z.infer<typeof gradeQuizQuestionSchema>;
 
-// ---------------------------------------------------------------------------
-// Ma trận đề + bản đặc tả (Quiz Chặng 3, issue #30)
-// ---------------------------------------------------------------------------
 
 /** Bộ mức nhận thức trên cặp câu×YCCĐ (Curriculum Chặng 2): Biết / Hiểu / Vận dụng / Vận dụng cao. */
 export const COGNITIVE_LEVELS = ['biet', 'hieu', 'van_dung', 'van_dung_cao'] as const;
@@ -1665,7 +1661,6 @@ export const createTeacherCommentBankEntrySchema = z.strictObject({
   category: z.enum(ASSIGN_COMMENT_BANK_CATEGORIES).nullable().optional(),
 });
 export type CreateTeacherCommentBankEntry = z.infer<typeof createTeacherCommentBankEntrySchema>;
-// --- Ngân hàng câu hỏi chung (feat issue #70: QB-1 → QB-4) ---------------------
 
 /** Năm scope của một bank câu hỏi: cá nhân / tổ chuyên môn / trường / khoá / platform (Ngân hàng hệ thống — TENANT-0, #168; bank platform chỉ platform tạo, tenant_id = NULL). */
 export const QUESTION_BANK_SCOPES = ['personal', 'team', 'school', 'course', 'platform'] as const;
@@ -1761,7 +1756,6 @@ export const createGuardianLinkSchema = z.strictObject({
   note: z.string().max(500).optional(),
 });
 export type CreateGuardianLink = z.infer<typeof createGuardianLinkSchema>;
-// --- Ngân hàng đề (feat issue #113: EB-1) ---------------------------------------
 
 /** Dạng tồn tại DUY NHẤT của một đề: snapshot — bản chụp câu cụ thể, ghim version (dạng recipe/công thức đã bỏ hẳn, chốt 26/10). */
 export const EXAM_PAPER_KINDS = ['snapshot'] as const;
@@ -2085,7 +2079,6 @@ export const swapExamSlotSchema = z.strictObject({
 });
 export type SwapExamSlot = z.infer<typeof swapExamSlotSchema>;
 
-// --- Bộ hồ sơ duyệt đề (feat issue #165: EB-3) ----------------------------------
 
 /**
  * Trạng thái vòng đời của một BỘ HỒ SƠ duyệt đề: `draft` (giáo viên
@@ -2164,7 +2157,6 @@ export const examDossierViewSchema = z.object({
   updatedAt: z.string(),
 });
 export type ExamDossierView = z.infer<typeof examDossierViewSchema>;
-// ---------------------------------------------------------------------------
 // Chấm bài giấy bằng camera (CAM-0, issue #112): phiếu trả lời in từ quiz,
 // OMR xác định phía server, hai hàng chờ (gán định danh / xác nhận ca mơ hồ)
 // và attempt "thi giấy" chảy vào Quiz. OMR chỉ trả "ô nào được tô" — việc

@@ -130,8 +130,8 @@ export class GuardianViewService {
 
     const dueThisWeek = items.filter((i) => i.inWeek);
     const overdue = items.filter((i) => i.status === 'overdue');
-    // Danh sách hiển thị: việc của tuần này + mọi việc quá hạn chưa nộp (quá hạn thuộc tuần này đã nằm trong nhóm tuần —
-    // không trùng).
+    // Danh sách hiển thị: việc của tuần này + mọi việc quá hạn chưa nộp (quá hạn thuộc tuần này đã nằm trong nhóm tuần
+    // — không trùng).
     const listed = [...dueThisWeek, ...overdue.filter((i) => !i.inWeek)];
     listed.sort((a, b) => {
       const groupA = a.status === 'overdue' ? 0 : 1;
@@ -161,8 +161,8 @@ export class GuardianViewService {
     const enrolled = new Set(courseIds);
     const out: GuardianAnnouncementView[] = [];
     for (const row of rows) {
-      // Thông báo điểm bị loại: dù nội dung không chứa điểm số, sự tồn tại của nó ám chỉ một điểm (có thể chưa công bố) —
-      // cổng công bố của PH-0 phải tuyệt đối trên bề mặt phụ huynh.
+      // Thông báo điểm bị loại: dù nội dung không chứa điểm số, sự tồn tại của nó ám chỉ một điểm (có thể chưa công bố)
+      // — cổng công bố của PH-0 phải tuyệt đối trên bề mặt phụ huynh.
       if (row.eventType === 'grade_updated') continue;
       const match = row.contextUrl?.match(/^\/courses\/([0-9a-fA-F-]{36})(?:\/|$)/);
       if (!match) continue;
@@ -210,8 +210,8 @@ export class GuardianViewService {
 
     const courses: GuardianCourseResultsView[] = [];
     for (const courseId of courseIds) {
-      // Điểm theo từng bài ĐÃ CÔNG BỐ (cổng PH-0 như học sinh tự xem) — mô hình điểm theo bài (issue #224): không còn kết quả
-      // kỳ/năm của Sổ điểm VN và không còn điểm tổng khoá.
+      // Điểm theo từng bài ĐÃ CÔNG BỐ (cổng PH-0 như học sinh tự xem) — mô hình điểm theo bài (issue #224): không còn
+      // kết quả kỳ/năm của Sổ điểm VN và không còn điểm tổng khoá.
       const views = await this.grades.listPublishedActivityGrades(courseId, studentId);
       const activities = views
         .filter((v) => v.grade !== null)

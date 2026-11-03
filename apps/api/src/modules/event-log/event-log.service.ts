@@ -55,7 +55,8 @@ export class EventLogService {
       {
         userId: query.userId, relatedUserId: query.relatedUserId, courseId: query.courseId,
         contextId: query.contextId, component: query.component, eventType: query.eventType,
-        // Mốc thời gian trên đường truyền là chuỗi ISO 8601 (xem DTO) — chuyển sang Date tại biên service cho repository.
+        // Mốc thời gian trên đường truyền là chuỗi ISO 8601 (xem DTO) — chuyển sang Date tại biên service cho
+        // repository.
         from: query.from ? new Date(query.from) : undefined,
         to: query.to ? new Date(query.to) : undefined,
       },
@@ -69,8 +70,8 @@ export class EventLogService {
     const payload = (row.payload ?? null) as Record<string, unknown> | null;
     return {
       id: row.id,
-      // seq là cột int8: qua Kysely nó đọc về là chuỗi (luật int8 của package @lms/db) — chuyển lại thành số tại biên này để
-      // giữ nguyên hợp đồng `seq: number` của view/API.
+      // seq là cột int8: qua Kysely nó đọc về là chuỗi (luật int8 của package @lms/db) — chuyển lại thành số tại biên
+      // này để giữ nguyên hợp đồng `seq: number` của view/API.
       seq: Number(row.seq),
       eventType: row.eventType,
       component: payloadString(payload, 'component'),

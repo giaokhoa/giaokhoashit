@@ -65,7 +65,10 @@ export interface CalcItemInput {
 
 export interface CategoryCalcInput {
   aggregation: AggregationStrategy;
-  /** Khoảng của category đối với các chiến lược không phải natural (mặc định của Moodle là 0..100). Đối với natural, max được suy ra. */
+  /**
+   * Khoảng của category đối với các chiến lược không phải natural (mặc định của Moodle là 0..100). Đối với natural, max
+   * được suy ra.
+   */
   gradeMin: number;
   gradeMax: number;
   dropLow?: number;
@@ -117,7 +120,8 @@ interface Prepared {
 }
 
 /**
- * Trọng số “tự nhiên” của Moodle: mỗi item đóng góp tỉ lệ theo (gradeMax - gradeMin) của nó sau khi chuẩn hoá, extra credit không làm tăng mẫu số.
+ * Trọng số “tự nhiên” của Moodle: mỗi item đóng góp tỉ lệ theo (gradeMax - gradeMin) của nó sau khi chuẩn hoá, extra
+ * credit không làm tăng mẫu số.
  */
 export function naturalWeights(items: CalcItemInput[]): Record<string, number> {
   const nonExtra = items.filter((i) => !i.extraCredit);
@@ -131,7 +135,8 @@ export function naturalWeights(items: CalcItemInput[]): Record<string, number> {
   for (const i of rest) {
     weights[i.itemId] = restRange > 0 ? (remaining * Math.max(0, i.gradeMax - i.gradeMin)) / restRange : (rest.length ? remaining / rest.length : 0);
   }
-  // Các item extra-credit nhận một trọng số mang tính thông tin tỉ lệ theo khoảng của các item không phải extra (không thuộc phần 100%).
+  // Các item extra-credit nhận một trọng số mang tính thông tin tỉ lệ theo khoảng của các item không phải extra (không
+  // thuộc phần 100%).
   const nonExtraRange = nonExtra.reduce((s, i) => s + Math.max(0, i.gradeMax - i.gradeMin), 0);
   for (const i of items) {
     if (i.extraCredit) {
@@ -186,7 +191,8 @@ export function calculateCategory(input: CategoryCalcInput): CategoryCalcResult 
   }
 
   const nonExtraAll = input.items.filter((i) => !i.excluded && !i.extraCredit);
-  // Max cấu trúc cho natural/sum: tổng của (max-min) của mọi item không phải extra (các item bị loại vì trống vẫn xác định thang).
+  // Max cấu trúc cho natural/sum: tổng của (max-min) của mọi item không phải extra (các item bị loại vì trống vẫn xác
+  // định thang).
   const structuralRange = nonExtraAll.reduce((s, i) => s + Math.max(0, i.gradeMax - i.gradeMin), 0);
 
   let weights: Record<string, number> = {};

@@ -94,7 +94,8 @@ export class FilesService {
     });
   }
 
-  /** Thay các node ảnh trong một tài liệu rich text (hoặc cấu trúc lồng nhau bất kỳ chứa tài liệu) có `src` là định danh
+  /**
+   * Thay các node ảnh trong một tài liệu rich text (hoặc cấu trúc lồng nhau bất kỳ chứa tài liệu) có `src` là định danh
    * bền của file câu hỏi bằng URL ký còn hạn. CHỈ dùng ở các bề mặt đã tự gác quyền đọc câu hỏi cho người xem (chi tiết
    * câu hỏi cho người đọc, view bài làm) — hàm này KHÔNG tự kiểm files:view tại context của file, vì người đọc hợp lệ
    * của một câu (học sinh đang làm bài) không có quyền tại context bank của giáo viên; cổng của bề mặt phục vụ thay thế
@@ -222,9 +223,11 @@ export class FilesService {
     await this.evaluator.requireCapability(actor.id, 'files:upload', contextId, { isGuest: actor.username === 'guest' });
   }
 
-  /** Cấp URL đã ký có kiểm tra capability: việc kiểm tra diễn ra TẠI ĐÂY (phía server), chữ ký chỉ vận chuyển kết quả trong thời gian ngắn.
-   * Bản thân việc cấp được uỷ quyền cho FileSigningService, service này trả về URL presigned của S3 khi
-   * adapter lưu trữ hỗ trợ (driver=s3) và trả về URL API kiểu HMAC trong trường hợp còn lại (driver=local, không đổi). */
+  /**
+   * Cấp URL đã ký có kiểm tra capability: việc kiểm tra diễn ra TẠI ĐÂY (phía server), chữ ký chỉ vận chuyển kết quả
+   * trong thời gian ngắn. Bản thân việc cấp được uỷ quyền cho FileSigningService, service này trả về URL presigned của
+   * S3 khi
+   */
   async createSignedUrl(fileId: string, userId: string, isGuest = false): Promise<{ url: string; expiresAt: number }> {
     const file = await this.getFile(fileId);
     await this.evaluator.requireCapability(userId, 'files:view', file.contextId, { isGuest });

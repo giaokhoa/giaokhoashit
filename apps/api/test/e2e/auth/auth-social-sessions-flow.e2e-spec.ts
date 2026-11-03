@@ -24,10 +24,16 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
  * callback, khớp/tạo tài khoản, đăng nhập liên kết, bàn giao (handoff), phiên — đều chạy thật.
  */
 
-/** Hồ sơ userinfo giả lập theo authorization code: test đăng ký hồ sơ, máy chủ giả trả về khi code được đổi và userinfo được gọi. */
+/**
+ * Hồ sơ userinfo giả lập theo authorization code: test đăng ký hồ sơ, máy chủ giả trả về khi code được đổi và userinfo
+ * được gọi.
+ */
 const profilesByCode = new Map<string, Record<string, unknown>>();
 
-/** Máy chủ giả lập provider: POST /token đổi code → access token suy từ code; GET /userinfo trả hồ sơ đã đăng ký cho code đó. */
+/**
+ * Máy chủ giả lập provider: POST /token đổi code → access token suy từ code; GET /userinfo trả hồ sơ đã đăng ký cho
+ * code đó.
+ */
 function startMockProvider(): Promise<{ server: Server; baseUrl: string }> {
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
@@ -228,7 +234,8 @@ describe('Đợt xác thực: đăng nhập social OAuth2, luồng phiên MFA, p
   });
 
   it('người đã đăng nhập có thể liên kết tài khoản facebook, và huỷ liên kết tôn trọng quy tắc phương thức đăng nhập cuối', async () => {
-    // User có mật khẩu liên kết Facebook (email provider khác email tài khoản vẫn được — chính user chứng minh sở hữu qua authorize).
+    // User có mật khẩu liên kết Facebook (email provider khác email tài khoản vẫn được — chính user chứng minh sở hữu
+    // qua authorize).
     const user = await createUserViaApi(app, admin);
     const session = await login(app, user.username, STRONG_PASSWORD);
     profilesByCode.set('facebook-link', {

@@ -39,7 +39,8 @@ describe('BadgesService.issueBadge — thông báo badge_awarded tôn trọng t�
     const notifyOutbox = { enqueueStandalone: vi.fn(async () => undefined) };
     const siteConfig = { getValue: vi.fn(async () => undefined) };
     const sendThrottle = { consume: vi.fn(async () => undefined) };
-        // Tham số thứ 11 là I18n (luật C-5, issue #219): spec này phát qua provider badge_awarded ('original-ok') nên không
+        // Tham số thứ 11 là I18n (luật C-5, issue #219): spec này phát qua provider badge_awarded ('original-ok') nên
+        // không
     // đi đường bản tóm tắt mặc định — stub rỗng là đủ.
     const messaging = new MessagingService(
       messagingRepo as never, users as never, {} as never, {} as never, notifyOutbox as never,

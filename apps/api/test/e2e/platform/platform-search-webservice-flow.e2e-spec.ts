@@ -67,7 +67,8 @@ describe('Dịch vụ platform: kiểm tra lại quyền tìm kiếm, token webs
     expect(stale.status).toBeLessThan(300);
     const res2 = await http(app).get(`/api/v1/search?q=StaleSecretCourse`).set('Authorization', `Bearer ${blockedToken}`);
     expect((res2.body as unknown[]).length).toBe(0);
-    // Admin (site admin bypass có chủ đích) vẫn thấy tài liệu stale vì area fetch trả null? — re-check bản ghi gốc: itemId không tồn tại nên admin cũng không thấy.
+    // Admin (site admin bypass có chủ đích) vẫn thấy tài liệu stale vì area fetch trả null? — re-check bản ghi gốc:
+    // itemId không tồn tại nên admin cũng không thấy.
     const resAdmin = await http(app).get(`/api/v1/search?q=StaleSecretCourse`).set('Authorization', `Bearer ${admin}`);
     expect((resAdmin.body as unknown[]).length).toBe(0);
     void student;

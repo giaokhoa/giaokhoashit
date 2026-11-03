@@ -48,7 +48,9 @@ export const AGGREGATION_ANY = 2;
  */
 export class CompletionService implements OnModuleInit {
   private readonly logger = new Logger(CompletionService.name);
-  /** Do GradesModule đăng ký: trạng thái điểm của cm (0 incomplete / 1 complete / 2 pass / 3 fail), null = chưa có điểm. */
+  /**
+   * Do GradesModule đăng ký: trạng thái điểm của cm (0 incomplete / 1 complete / 2 pass / 3 fail), null = chưa có điểm.
+   */
   private gradeEvaluator?: (cmId: string, userId: string) => Promise<number | null>;
   /** Do GradesModule đăng ký: kiểm tra tiêu chí 'grade' của khoá học. */
   private courseGradeChecker?: (courseId: string, userId: string) => Promise<boolean>;
@@ -160,7 +162,10 @@ export class CompletionService implements OnModuleInit {
     // sự kiện đó qua mốc seq riêng để gọi reaggregateCourseCompletion.
   }
 
-  /** Tính trạng thái nội bộ từ các tiêu chí đã khai báo của cm (internal_get_state của completionlib Moodle, tập con hoạt động). */
+  /**
+   * Tính trạng thái nội bộ từ các tiêu chí đã khai báo của cm (internal_get_state của completionlib Moodle, tập con
+   * hoạt động).
+   */
   async computeCmState(cmId: string, userId: string): Promise<number> {
     const cm = await this.courses.getCm(cmId);
     const row = await this.repo.getCmCompletion(cmId, userId);
@@ -212,7 +217,8 @@ export class CompletionService implements OnModuleInit {
     const cm = await this.courses.getCm(cmId).catch(() => undefined);
     if (cm && cm.completion !== 0) {
       const existing = await this.repo.getCmCompletion(cmId, userId);
-      // Đánh dấu thủ công là có thẩm quyền cho tới khi đổi lại; chỉ tự làm mới các cm không thủ công hoặc cập nhật chỉ theo lượt xem.
+      // Đánh dấu thủ công là có thẩm quyền cho tới khi đổi lại; chỉ tự làm mới các cm không thủ công hoặc cập nhật chỉ
+      // theo lượt xem.
       if (!cm.completionManual) {
         await this.repo.upsertCmCompletion({ courseModuleId: cmId, userId: userId, completionState: state, viewed: existing?.viewed ?? false, overrideBy: existing?.overrideBy ?? null });
       }
@@ -415,7 +421,8 @@ export class CompletionService implements OnModuleInit {
       } else if (c.criteriaType === 'self' || c.criteriaType === 'role') {
         results.push(markedCriteria.has(c.id));
       } else if (c.criteriaType === 'course' && c.courseInstance) {
-                // Tiên quyết: đọc completion ĐÃ LƯU của khoá tiên quyết (không bao giờ đánh giá đệ quy — các khoá phụ thuộc
+                // Tiên quyết: đọc completion ĐÃ LƯU của khoá tiên quyết (không bao giờ đánh giá đệ quy — các khoá phụ
+                // thuộc
         // được tổng hợp lại khi tiên quyết chuyển sang hoàn thành, xem bên dưới).
         const prereq = await this.repo.getCourseCompletion(userId, c.courseInstance);
         results.push(prereq?.status === 'complete');
@@ -519,7 +526,10 @@ export class CompletionService implements OnModuleInit {
     return this.repo.hasAnyCmCompletion(userId, cms.map((c) => c.id));
   }
 
-  /** Tính lại hàng loạt cho worker (worker chạy bản sao của chính nó; đây là bản song sinh phía API dùng bởi test/kích hoạt thủ công). */
+  /**
+   * Tính lại hàng loạt cho worker (worker chạy bản sao của chính nó; đây là bản song sinh phía API dùng bởi test/kích
+   * hoạt thủ công).
+   */
   async recalculateCourse(courseId: string): Promise<{ courseId: string; users: number }> {
     const enrolments = await this.enrol.listEnrolmentsForCourse(courseId);
     const userIds = [...new Set(enrolments.map((e) => e.userId))];

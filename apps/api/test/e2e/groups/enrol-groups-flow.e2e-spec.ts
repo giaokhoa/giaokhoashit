@@ -293,7 +293,8 @@ describe('Ghi danh và nhóm/cohort', () => {
     const selfInstance = await createEnrolInstance(app, admin, course.id, { method: 'self' });
     const manualInstance = await createEnrolInstance(app, admin, course.id, { method: 'manual' });
 
-    // Học viên được ghi danh thủ công không thể tự huỷ ghi danh: ghi danh đó không thuộc quyền của họ để kết thúc qua endpoint này.
+    // Học viên được ghi danh thủ công không thể tự huỷ ghi danh: ghi danh đó không thuộc quyền của họ để kết thúc qua
+    // endpoint này.
     const other = await createUserViaApi(app, admin);
     await enrolUser(app, admin, course.id, manualInstance.id, other.id);
     const otherLogin = await login(app, other.username, STRONG_PASSWORD);

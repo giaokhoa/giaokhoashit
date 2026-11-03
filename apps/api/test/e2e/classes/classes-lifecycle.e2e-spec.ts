@@ -63,7 +63,10 @@ describe('Vòng đời lớp (CLASS-0, #184)', () => {
     return res.body as never;
   };
 
-  /** Trạng thái ghi danh của một user trên instance cohort của một khoá: 0 ACTIVE, 1 SUSPENDED, 2 WITHDRAWN, undefined = chưa có dòng. */
+  /**
+   * Trạng thái ghi danh của một user trên instance cohort của một khoá: 0 ACTIVE, 1 SUSPENDED, 2 WITHDRAWN, undefined =
+   * chưa có dòng.
+   */
   async function cohortUeStatus(courseId: string, userId: string): Promise<number | undefined> {
     const rows = await pg.query<{ status: number }>(
       `select ue.status from user_enrolments ue join enrol e on e.id = ue.enrol_id
@@ -259,7 +262,8 @@ describe('Vòng đời lớp (CLASS-0, #184)', () => {
 
     await must(await http(app).delete(`/api/v1/classes/${classId}/roster/${student2Id}`).set(auth(teacher)), 'remove student2');
     const statusC2 = await cohortUeStatus(course2, student2Id);
-    // unenrolInternal: còn dữ liệu liên quan thì WITHDRAWN (2), chưa có gì thì xoá dòng (undefined) — cả hai đều là "đã rút hẳn".
+    // unenrolInternal: còn dữ liệu liên quan thì WITHDRAWN (2), chưa có gì thì xoá dòng (undefined) — cả hai đều là "đã
+    // rút hẳn".
     expect([2, undefined]).toContain(statusC2);
     expect(await cohortUeStatus(course1, student1Id)).toBe(0);
   });

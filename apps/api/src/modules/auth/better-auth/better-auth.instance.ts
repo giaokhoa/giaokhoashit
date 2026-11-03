@@ -97,7 +97,10 @@ export const MCP_OAUTH_SCOPES = [
   'lms.banks.contribute',
 ] as const;
 
-/** TTL (giây) của access token cho resource `/mcp` — JWT đã phát không thu hồi server-side được (RFC 7009) nên TTL ngắn là đường bù đã chốt ở addendum. */
+/**
+ * TTL (giây) của access token cho resource `/mcp` — JWT đã phát không thu hồi server-side được (RFC 7009) nên TTL ngắn
+ * là đường bù đã chốt ở addendum.
+ */
 export const MCP_ACCESS_TOKEN_TTL_SECONDS = 3600;
 
 export interface BetterAuthMcpAsConfig {
@@ -127,7 +130,10 @@ export interface BetterAuthSocialConfig {
 }
 
 export interface BetterAuthFactoryDeps {
-  /** Handle Kysely định tuyến theo trung tâm (facade `routedKysely` của khung; dùng chung pool kết nối, không mở pool riêng). */
+  /**
+   * Handle Kysely định tuyến theo trung tâm (facade `routedKysely` của khung; dùng chung pool kết nối, không mở pool
+   * riêng).
+   */
   db: CentreDb;
   secret: string;
   baseURL: string;
@@ -300,11 +306,13 @@ export function createBetterAuth(deps: BetterAuthFactoryDeps) {
       },
       accountLinking: {
         enabled: true,
-                // ĐÃ CHỐT trong kế hoạch GĐ2: Facebook KHÔNG vào trustedProviders — và theo source 1.7.12, Facebook luôn trả
+                // ĐÃ CHỐT trong kế hoạch GĐ2: Facebook KHÔNG vào trustedProviders — và theo source 1.7.12, Facebook
+                // luôn trả
         // emailVerified=false (cả đường id_token lẫn userinfo) nên không bao giờ tự liên kết theo email; chỉ Google (có
         // xác thực email của chính Google) mới liên kết ngầm.
         trustedProviders: [],
-                // Mặc định của Better Auth còn đòi email phía tài khoản local đã xác thực, trong khi MỌI tài khoản do cầu
+                // Mặc định của Better Auth còn đòi email phía tài khoản local đã xác thực, trong khi MỌI tài khoản do
+                // cầu
         // nối/admin tạo đều có email_verified=false — giữ mặc định thì luật liên kết theo email chết lặng lẽ. Cổng gác
         // đúng theo kế hoạch là xác thực email PHÍA PROVIDER, nên tắt điều kiện local.
         requireLocalEmailVerified: false,
@@ -318,7 +326,8 @@ export function createBetterAuth(deps: BetterAuthFactoryDeps) {
       },
     },
     hooks: {
-            // Chuỗi after-hook DUY NHẤT của instance: `hooks.after` của 1.7.12 chỉ nhận MỘT handler (dispatch bọc nó bằng
+            // Chuỗi after-hook DUY NHẤT của instance: `hooks.after` của 1.7.12 chỉ nhận MỘT handler (dispatch bọc nó
+            // bằng
       // matcher luôn đúng — đã đối chiếu dist), nên cả ba khâu after phải chuỗi vào đây qua composeAfterHooks — không
       // phía nào ghi đè phía nào: (1) lockout ghi attempt (điểm 2.4, dựa trên đáp ứng gốc của endpoint); (2) cổng MFA
       // của mọi đường đăng nhập (tự đi qua ở mọi đường không cấp phiên mới; ném redirect cho đường callback, trả JSON
@@ -326,12 +335,14 @@ export function createBetterAuth(deps: BetterAuthFactoryDeps) {
       // Ba khâu tác động ba tập đường rời nhau nên thứ tự không đổi semantics của nhau.
       ...(lockoutHookSet?.before ? { before: lockoutHookSet.before } : {}),
       after: composeAfterHooks(lockoutHookSet?.after, createAuthMiddleware(async (ctx) => {
-                // Cổng MFA có thể trả đáp ứng thay thế (JSON twoFactorRedirect cho đường sign-in) — gọi qua invokeChainedHook
+                // Cổng MFA có thể trả đáp ứng thay thế (JSON twoFactorRedirect cho đường sign-in) — gọi qua
+                // invokeChainedHook
         // để header của cổng (cookie chờ, xoá cookie phiên) được hợp nhất, rồi truyền đáp ứng thay thế ra ngoài ngay,
         // không chạy khâu sau trên một đáp ứng đã bị thay.
         const gateResult = await invokeChainedHook(mfaGate, ctx);
         if (gateResult !== undefined) return gateResult;
-                // Đồng bộ ngược hash trong cửa sổ bake (xem `legacyPasswordSync` ở deps): hai endpoint đổi/đặt mật khẩu của
+                // Đồng bộ ngược hash trong cửa sổ bake (xem `legacyPasswordSync` ở deps): hai endpoint đổi/đặt mật khẩu
+                // của
         // chính user mang phiên trong context — sau khi endpoint chạy, hash hiện hành đã nằm ở dòng credential, service
         // chép nó về users.password_hash. Endpoint lỗi (sai mật khẩu hiện tại…) thì hash không đổi, lần chép này là
         // no-op vô hại — cơ chế đồng bộ theo trạng thái, không theo sự kiện thành công.
@@ -358,7 +369,8 @@ export function createBetterAuth(deps: BetterAuthFactoryDeps) {
       // Thu hồi mọi phiên còn lại khi đặt lại mật khẩu (chốt trong issue;
       // luồng reset thi công ở Giai đoạn 2, cấu hình đặt sẵn từ nền này).
       revokeSessionsOnPasswordReset: true,
-            // Chặng 2.5 (lát BA-2): callback gửi mail reset CHỈ ghi yêu cầu vào outbox qua cổng mail (AuthMailService lo phần
+            // Chặng 2.5 (lát BA-2): callback gửi mail reset CHỈ ghi yêu cầu vào outbox qua cổng mail (AuthMailService
+            // lo phần
       // đó) — không gửi đồng bộ trong request như khuyến nghị chống timing attack của Better Auth. Chưa nối cổng mail
       // thì không khai callback này: endpoint reset tự từ chối thay vì nhận yêu cầu rồi để mất.
       ...(deps.authMail
@@ -375,7 +387,8 @@ export function createBetterAuth(deps: BetterAuthFactoryDeps) {
             },
           }
         : {}),
-            // Đồng bộ ngược hash trong cửa sổ bake (xem `legacyPasswordSync` ở deps): callback này của 1.7.12 chạy SAU khi
+            // Đồng bộ ngược hash trong cửa sổ bake (xem `legacyPasswordSync` ở deps): callback này của 1.7.12 chạy SAU
+            // khi
       // mật khẩu mới đã ghi vào credential — ở cả endpoint reset bằng link lẫn đường reset bằng email OTP của plugin
       // (cả hai đều gọi onPasswordReset, đã đối chiếu dist) — nên một điểm nối phủ đủ mọi đường reset; service tự đọc
       // hash hiện hành từ dòng credential rồi chép về users.password_hash.
@@ -412,14 +425,16 @@ export function createBetterAuth(deps: BetterAuthFactoryDeps) {
       // `user_totp` — chi tiết ở đầu file của hai nơi đó. Lát BA-2 (issue #7 chặng 2.5): đăng nhập bằng email OTP —
       // plugin dựng từ factory trong module mail, mã gửi qua cổng mail (outbox → Resend).
       ...(deps.authMail ? [createEmailOtpPlugin(deps.authMail)] : []),
-            // Chỉ compose khi cờ MCP_AS_ENABLED bật (service truyền mcpAs). CIMD (client_id là URL tài liệu metadata, hồ sơ
+            // Chỉ compose khi cờ MCP_AS_ENABLED bật (service truyền mcpAs). CIMD (client_id là URL tài liệu metadata,
+            // hồ sơ
       // mcp-2026-07-28) là đường đăng ký chính; DCR để lại cho client legacy nên bật tường minh cả ba tuỳ chọn theo
       // addendum §2.
       ...(mcpAs
         ? [
             jwt({
               disableSettingJwtHeader: true,
-                            // Ánh xạ jwks → cột snake_case (issue #654, D2): schema gốc của plugin jwt không khai fieldName nên
+                            // Ánh xạ jwks → cột snake_case (issue #654, D2): schema gốc của plugin jwt không khai
+                            // fieldName nên
               // adapter hỏi đúng tên field; bảng vật lý dùng snake_case nên override tại đây qua `mergeSchema` (cùng cơ
               // chế như schema của plugin oauth-provider). Không override thì lần dùng đầu tiên của JWKS ném lỗi cột
               // không tồn tại (adapter bật validateSchema mặc định nên lỗi lộ ngay, không truy vấn sai lặng lẽ).
@@ -438,14 +453,16 @@ export function createBetterAuth(deps: BetterAuthFactoryDeps) {
               loginPage: mcpAs.loginPage,
               consentPage: mcpAs.consentPage,
               resource: mcpAs.resource,
-                            // Scope của AS = 4 scope quyền của resource + scope giao thức `offline_access` (plugin bắt scope này nằm
+                            // Scope của AS = 4 scope quyền của resource + scope giao thức `offline_access` (plugin bắt
+                            // scope này nằm
               // trong danh sách của AS thì client mới đăng ký/ xin được nó; metadata của RESOURCE tự lọc các scope
               // phía-AS ra nên PRM vẫn chỉ quảng bá 4 scope quyền).
               scopes: [...MCP_OAUTH_SCOPES, 'offline_access'],
               resources: [
                 {
                   identifier: mcpAs.resource,
-                                    // CỐ Ý không ghim allowedScopes cho resource: plugin tính effectiveScopes bằng phép giao với
+                                    // CỐ Ý không ghim allowedScopes cho resource: plugin tính effectiveScopes bằng phép
+                                    // giao với
                   // allowedScopes, làm scope giao thức offline_access bị tước khỏi scope LƯU trên refresh token → ở
                   // grant refresh, plugin không còn căn cứ cấp token xoay vòng (kiểm chứng dist + DB ở e2e MCP-1:
                   // refresh chỉ trả access token mới, token cũ không bị thu hồi). Bỏ allowedScopes thì trần scope của
@@ -455,18 +472,21 @@ export function createBetterAuth(deps: BetterAuthFactoryDeps) {
                   accessTokenTtl: MCP_ACCESS_TOKEN_TTL_SECONDS,
                 },
               ],
-                            // JWT đã phát không thu hồi được → KHÔNG cho cửa sổ ân hạn tái dùng refresh token (mặc định plugin là
+                            // JWT đã phát không thu hồi được → KHÔNG cho cửa sổ ân hạn tái dùng refresh token (mặc định
+                            // plugin là
               // 30s): refresh cũ dùng lại là bị chặn ngay (addendum §2).
               refreshTokenReuseInterval: 0,
               allowDynamicClientRegistration: true,
               allowUnauthenticatedClientRegistration: true,
               clientRegistrationDefaultApplicationType: 'infer',
-                            // `offline_access` là scope GIAO THỨC phía AS, không phải scope quyền của resource /mcp: plugin chỉ cho
+                            // `offline_access` là scope GIAO THỨC phía AS, không phải scope quyền của resource /mcp:
+                            // plugin chỉ cho
               // client đăng ký scope này khi AS khai tường minh tại đây, và chỉ cấp refresh token khi authorize xin nó
               // (cơ chế oauth-provider 1.7.12 — kiểm chứng trong dist + e2e mcp-as-oauth; thiếu khai này thì DCR của
               // client xin phiên dài chết invalid_scope ngay).
               clientRegistrationAllowedScopes: ['offline_access'],
-                            // Cơ chế chính thức: plugin oauth-provider đọc `opts.schema?.<model>.modelName/fields` qua `mergeSchema`
+                            // Cơ chế chính thức: plugin oauth-provider đọc `opts.schema?.<model>.modelName/fields` qua
+                            // `mergeSchema`
               // (chỉ override field đã có trong schema gốc). Bảng vật lý có tiền tố `oauth_` + tên cột snake_case;
               // `usePlural` không dùng được vì nó số nhiều hoá cả `session` → `sessions`. Bảng `jwks` của plugin jwt
               // được override riêng tại khối `jwt()` bên dưới (không thuộc schema của plugin oauth-provider).
@@ -583,7 +603,8 @@ export function createBetterAuth(deps: BetterAuthFactoryDeps) {
           ]
         : []),
     ],
-        // Đồng bộ ngược trong cửa sổ bake (xem `legacyPasswordSync` ở deps): database hook chỉ nối ở chiều TẠO credential —
+        // Đồng bộ ngược trong cửa sổ bake (xem `legacyPasswordSync` ở deps): database hook chỉ nối ở chiều TẠO
+        // credential —
     // hook create.after nhận đúng bản ghi vừa tạo nên biết chắc user. Các đường CẬP NHẬT mật khẩu (change-password,
     // reset) nối ở tầng endpoint/callback như ghi ở deps, KHÔNG nối ở database hook update: `updatePassword` của 1.7.12
     // đi qua updateMany mà adapter trả số dòng bị ảnh hưởng — hook update.after sẽ nhận một con số và im lặng không làm
@@ -604,7 +625,8 @@ export function createBetterAuth(deps: BetterAuthFactoryDeps) {
         }
       : {}),
     session: {
-            // Ánh xạ session → cột snake_case (issue #654, D2): cùng khối với cookieCache — KHÔNG tách thành khối `session`
+            // Ánh xạ session → cột snake_case (issue #654, D2): cùng khối với cookieCache — KHÔNG tách thành khối
+            // `session`
       // riêng vì khóa trùng trong object literal sẽ bị khối sau ghi đè (khuyết tật đã bắt tại e2e: adapter báo thiếu
       // cột session.expiresAt…).
       fields: {
@@ -619,7 +641,8 @@ export function createBetterAuth(deps: BetterAuthFactoryDeps) {
     },
     advanced: {
       disableOriginCheck: false,
-            // BA-1 (chốt blocker của BA-2, comment 6405565755 trên #7): `generateId: "uuid"` thay cho `false` trước đây. Đã
+            // BA-1 (chốt blocker của BA-2, comment 6405565755 trên #7): `generateId: "uuid"` thay cho `false` trước
+            // đây. Đã
       // đối chiếu mã nguồn 1.7.12 (`@better-auth/core` get-id-field + adapter Kysely `dist/index.mjs`):
       // - id tất định (SHA-256 của identifier) chỉ định dạng thành UUID khi generateId là "uuid" — với `false` nó thành
       //   chuỗi base64url và Postgres ném 22P02 khi chèn vào cột `verification.id` kiểu uuid (đường

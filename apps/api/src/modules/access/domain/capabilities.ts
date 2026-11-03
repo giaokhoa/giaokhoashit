@@ -10,7 +10,10 @@ import { CAP_ALLOW } from './permission';
 
 const ALL_STAFF = { manager: CAP_ALLOW, coursecreator: CAP_ALLOW, editingteacher: CAP_ALLOW, teacher: CAP_ALLOW };
 
-/** Registry capability — các định nghĩa nằm trong code (giống db/access.php của Moodle), các dòng được đồng bộ vào `capabilities`. */
+/**
+ * Registry capability — các định nghĩa nằm trong code (giống db/access.php của Moodle), các dòng được đồng bộ vào
+ * `capabilities`.
+ */
 export const CAPABILITY_DEFINITIONS: CapabilityDefinition[] = [
   { name: 'site:config', capType: 'write', contextLevel: 10, component: 'core', archetypes: { manager: CAP_ALLOW } },
     // Multi-tenant (TENANT-0, #168): `tenant:manage` tại context HỆ THỐNG là quyền của tầng platform (tạo tenant,
@@ -40,7 +43,8 @@ export const CAPABILITY_DEFINITIONS: CapabilityDefinition[] = [
   { name: 'course:viewhiddenactivities', capType: 'read', contextLevel: 50, component: 'core_course', archetypes: { manager: CAP_ALLOW, editingteacher: CAP_ALLOW, teacher: CAP_ALLOW } },
   { name: 'course:manageactivities', capType: 'write', contextLevel: 50, component: 'core_course', archetypes: { manager: CAP_ALLOW, editingteacher: CAP_ALLOW } },
   { name: 'course:managegroups', capType: 'write', contextLevel: 50, component: 'core_group', archetypes: { manager: CAP_ALLOW, editingteacher: CAP_ALLOW } },
-    // Lớp học hạng nhất (issue #184, CLASS-0): capability tại context LỚP (CLASS=45, giữa coursecat 40 và course 50). Ba
+    // Lớp học hạng nhất (issue #184, CLASS-0): capability tại context LỚP (CLASS=45, giữa coursecat 40 và course 50).
+    // Ba
   // quyền kiểu Azota là class:manageroster (quản lý danh sách học sinh), class:assignwork (giao bài/tạo khoá trong
   // lớp), class:grade (xem + chấm bài trong lớp); cấp cho đồng GV qua 3 vai hệ thống classassigner/classgrader/
   // classrostermanager gán TẠI context lớp (override đặt tại context lớp lúc tạo lớp — khuôn qbankmember/qbanklead),
@@ -64,7 +68,8 @@ export const CAPABILITY_DEFINITIONS: CapabilityDefinition[] = [
   { name: 'grade:manage', capType: 'write', contextLevel: 50, component: 'core_grades', archetypes: { manager: CAP_ALLOW, editingteacher: CAP_ALLOW } },
   { name: 'grade:edit', capType: 'write', contextLevel: 50, component: 'core_grades', archetypes: { manager: CAP_ALLOW, editingteacher: CAP_ALLOW, teacher: CAP_ALLOW } },
   { name: 'grade:viewall', capType: 'read', contextLevel: 50, component: 'core_grades', archetypes: { manager: CAP_ALLOW, editingteacher: CAP_ALLOW, teacher: CAP_ALLOW } },
-    // Công bố điểm/lời phê + kết quả (PH-0, issue #116): giáo viên giữ chốt công bố theo đúng Canvas posting policy + TT
+    // Công bố điểm/lời phê + kết quả (PH-0, issue #116): giáo viên giữ chốt công bố theo đúng Canvas posting policy +
+    // TT
   // 22 Đ.20 — tách khỏi grade:edit để trường có thể giao quyền chấm và quyền công bố khác nhau.
   { name: 'grade:publish', capType: 'write', contextLevel: 50, component: 'core_grades', archetypes: { manager: CAP_ALLOW, editingteacher: CAP_ALLOW, teacher: CAP_ALLOW } },
     // Quản lý liên kết giám hộ PH–HS (PH-0, issue #116): trường xác lập theo hồ sơ đã xác minh; service kiểm capability
@@ -96,7 +101,8 @@ export const CAPABILITY_DEFINITIONS: CapabilityDefinition[] = [
   { name: 'matrix:copy', capType: 'read', contextLevel: 50, component: 'core_matrix', archetypes: { manager: CAP_ALLOW, editingteacher: CAP_ALLOW, teacher: CAP_ALLOW } },
   { name: 'matrix:share', capType: 'write', contextLevel: 50, component: 'core_matrix', archetypes: { manager: CAP_ALLOW, editingteacher: CAP_ALLOW, teacher: CAP_ALLOW } },
   { name: 'matrix:moderate', capType: 'write', contextLevel: 50, component: 'core_matrix', archetypes: { manager: CAP_ALLOW, editingteacher: CAP_ALLOW } },
-    // Ngân hàng đề (feat issue #113, EB-1): bộ capability của lớp bank đề, song song bộ question:* của QB — mọi cổng đều
+    // Ngân hàng đề (feat issue #113, EB-1): bộ capability của lớp bank đề, song song bộ question:* của QB — mọi cổng
+    // đều
   // đánh giá TẠI context của bank đề (một nguồn quyền duy nhất là bank, research G.2/E-8). Đợt đồng bộ khuôn ngân hàng
   // (issue #228, lát S3) chuẩn hoá tên về cùng khuôn use/add/edit/copy/share/moderate: use = vào được bank đề + xem đề
   // ready (trước đây là exam:view); add = tạo đề mới (tạo tay, sinh từ ma trận, copy vào bank đích); edit = sửa đề của

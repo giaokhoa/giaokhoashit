@@ -90,7 +90,10 @@ function generateJoinCode(): string {
   return Array.from(bytes, (b) => JOIN_CODE_ALPHABET[b % JOIN_CODE_ALPHABET.length]).join('');
 }
 
-/** Hình dạng lớp ở bề mặt API; `joinCode` chỉ lộ cho người có quyền quản roster (bí mật như enrolment_key). Học phí (`fee*`, CLASS-3) là thông tin gói công khai của lớp nên đi kèm mọi hình dạng lớp. */
+/**
+ * Hình dạng lớp ở bề mặt API; `joinCode` chỉ lộ cho người có quyền quản roster (bí mật như enrolment_key). Học phí
+ * (`fee*`, CLASS-3) là thông tin gói công khai của lớp nên đi kèm mọi hình dạng lớp.
+ */
 export function toClassDto(row: ClassRow, canSeeJoinCode: boolean): ClassView {
   return {
     id: row.id,
@@ -198,14 +201,20 @@ export class ClassesService implements OnModuleInit {
     return row;
   }
 
-  /** Người xem thấy được mã tham gia khi có quyền quản roster của lớp (hoặc là chủ lớp / quản trị tenant). `knownCtxId` cho phép nơi gọi đã tra context lớp rồi dùng lại, tránh tra trùng. */
+  /**
+   * Người xem thấy được mã tham gia khi có quyền quản roster của lớp (hoặc là chủ lớp / quản trị tenant). `knownCtxId`
+   * cho phép nơi gọi đã tra context lớp rồi dùng lại, tránh tra trùng.
+   */
   private async canSeeJoinCode(actorId: string, row: ClassRow, knownCtxId?: string): Promise<boolean> {
     if (actorId === row.ownerId) return true;
     const ctxId = knownCtxId ?? (await this.classContextId(row.id));
     return this.evaluator.hasCapability(actorId, 'class:manageroster', ctxId);
   }
 
-  /** Quyền xem lớp: capability `class:view` tại context lớp, HOẶC là thành viên roster (học sinh xem lớp của mình), HOẶC chủ lớp. */
+  /**
+   * Quyền xem lớp: capability `class:view` tại context lớp, HOẶC là thành viên roster (học sinh xem lớp của mình), HOẶC
+   * chủ lớp.
+   */
   private async canViewClass(actorId: string, row: ClassRow): Promise<boolean> {
     if (actorId === row.ownerId) return true;
     const ctxId = await this.classContextId(row.id);
@@ -287,7 +296,8 @@ export class ClassesService implements OnModuleInit {
     // thường.
     await this.ensureClassRoles();
 
-        // Điểm nối C-8/B đã được hấp thụ ở đợt access (#651): `roles.assignRole` nay có biến thể Kysely kèm toàn bộ side
+        // Điểm nối C-8/B đã được hấp thụ ở đợt access (#651): `roles.assignRole` nay có biến thể Kysely kèm toàn bộ
+        // side
     // effect nên giao dịch tạo lớp mở phía Kysely qua `ClassesRepository.transaction` — cohort nền qua
     // GroupsRepository, dòng lớp qua ClassesRepository, nối context cho cohort qua GroupsRepository — và outbox qua
     // `enqueueKysely` trong cùng transaction.
@@ -339,7 +349,11 @@ export class ClassesService implements OnModuleInit {
     }
   }
 
-  /** Vật chất hoá bộ capability của 4 vai tại đúng context lớp này (gọi lúc tạo lớp, bên trong transaction của `createClass`). Hàm này KHÔNG tự đảm bảo vai: bên gọi phải đã chạy `ensureClassRoles` trước khi mở transaction — vai là dữ kiện toàn cục dùng chung, xem ghi chú ở `createClass`. */
+  /**
+   * Vật chất hoá bộ capability của 4 vai tại đúng context lớp này (gọi lúc tạo lớp, bên trong transaction của
+   * `createClass`). Hàm này KHÔNG tự đảm bảo vai: bên gọi phải đã chạy `ensureClassRoles` trước khi mở transaction —
+   * vai là dữ kiện toàn cục dùng chung, xem ghi chú ở `createClass`.
+   */
   private async applyClassRoleGrants(classContextId: string, modifierId: string, tx?: CentreTx): Promise<void> {
     for (const [shortName, caps] of Object.entries(CLASS_ROLE_GRANTS)) {
       const role = await this.roles.getRoleByShortname(shortName);
@@ -436,7 +450,8 @@ export class ClassesService implements OnModuleInit {
     const canManageRoster = isOwner || (await this.evaluator.hasCapability(actorId, 'class:manageroster', ctxId));
     const canShare = isOwner || (await this.evaluator.hasCapability(actorId, 'class:share', ctxId));
 
-        // Đồng GV = được gán TAY (component rỗng) ít nhất một trong 3 vai lớp tại đúng context lớp này — cùng khuôn liệt kê
+        // Đồng GV = được gán TAY (component rỗng) ít nhất một trong 3 vai lớp tại đúng context lớp này — cùng khuôn
+        // liệt kê
     // của listStaff; các dòng gán do ghi danh cấp không phải vai lớp nên không lẫn vào.
     const staffRoleIds = new Set<string>();
     for (const shortName of [CLASS_ASSIGNER_ROLE, CLASS_GRADER_ROLE, CLASS_ROSTER_MANAGER_ROLE]) {
@@ -473,7 +488,10 @@ export class ClassesService implements OnModuleInit {
     };
   }
 
-  /** Sửa lớp; đổi `onLeave` thì đẩy xuống mọi instance cohort hiện có của lớp; xoay mã tham gia làm mã cũ mất hiệu lực ngay. Đặt/đổi học phí gói lớp (CLASS-3) cũng qua đường này — cùng cổng `class:update` tại context lớp. */
+  /**
+   * Sửa lớp; đổi `onLeave` thì đẩy xuống mọi instance cohort hiện có của lớp; xoay mã tham gia làm mã cũ mất hiệu lực
+   * ngay. Đặt/đổi học phí gói lớp (CLASS-3) cũng qua đường này — cùng cổng `class:update` tại context lớp.
+   */
   async updateClass(actorId: string, id: string, input: UpdateClass): Promise<ClassView> {
     const row = await this.getClassRow(id);
     const ctxId = await this.classContextId(id);
@@ -506,7 +524,8 @@ export class ClassesService implements OnModuleInit {
     // claimJoinCodeForClass): va chạm toàn hệ bị chặn ở đây, trước khi bất kỳ dữ kiện nào của lớp thay đổi.
     const claimedSpaceSlug = patch.joinCode ? await this.claimJoinCodeForClass(row, patch.joinCode) : null;
     if (Object.keys(patch).length) await this.repo.updateClass(id, patch);
-        // Cập nhật xong: mã cũ (nếu có và khác mã mới) không còn lớp nào giữ — gỡ mục thư mục của nó để mã hết hiệu lực ở
+        // Cập nhật xong: mã cũ (nếu có và khác mã mới) không còn lớp nào giữ — gỡ mục thư mục của nó để mã hết hiệu lực
+        // ở
     // mọi đường phân giải, khớp hiệu lực tức thì của việc xoay mã.
     if (claimedSpaceSlug && row.joinCode && row.joinCode !== patch.joinCode) {
       await this.removeJoinCodeDirectoryEntry(row);
@@ -558,7 +577,8 @@ export class ClassesService implements OnModuleInit {
       payload: { classId: id, tenantId: row.tenantId, actorId },
       tenantId: row.tenantId,
     });
-        // Lớp ở kho riêng bị xoá thì mã tham gia của nó cũng rời thư mục (thiết kế C1): mã không còn trỏ vào một không gian
+        // Lớp ở kho riêng bị xoá thì mã tham gia của nó cũng rời thư mục (thiết kế C1): mã không còn trỏ vào một không
+        // gian
     // cho một lớp không tồn tại, và được giải phóng cho tính duy nhất toàn hệ.
     await this.removeJoinCodeDirectoryEntry(row);
   }
@@ -629,7 +649,9 @@ export class ClassesService implements OnModuleInit {
     return this.repo.listCoursesInClass(classId);
   }
 
-  /** Cổng quản roster dùng chung cho các đường nạp: lớp chưa lưu trữ + capability `class:manageroster` tại context lớp. */
+  /**
+   * Cổng quản roster dùng chung cho các đường nạp: lớp chưa lưu trữ + capability `class:manageroster` tại context lớp.
+   */
   private async requireRosterManager(actorId: string, row: ClassRow): Promise<void> {
     if (row.status === 'archived') {
       throw new BadRequestException({ message: 'Class is archived; roster is frozen', code: 'class.archived' });
@@ -651,7 +673,10 @@ export class ClassesService implements OnModuleInit {
     return { firstName: tokens[tokens.length - 1]!, lastName: tokens.slice(0, -1).join(' ') };
   }
 
-  /** Mật khẩu tạm cho tài khoản học sinh mới tạo qua roster: đủ 4 lớp ký tự theo chính sách mặc định, buộc đổi ở lần đăng nhập đầu (forcePasswordChange). */
+  /**
+   * Mật khẩu tạm cho tài khoản học sinh mới tạo qua roster: đủ 4 lớp ký tự theo chính sách mặc định, buộc đổi ở lần
+   * đăng nhập đầu (forcePasswordChange).
+   */
   private generateTemporaryPassword(): string {
     const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     const bytes = randomBytes(12);
@@ -701,7 +726,10 @@ export class ClassesService implements OnModuleInit {
     return { user: created, created: true, temporaryPassword };
   }
 
-  /** Nạp một học sinh theo định danh vào lớp đã qua cổng quản roster; trả kết quả kèm mật khẩu tạm khi vừa tạo tài khoản. */
+  /**
+   * Nạp một học sinh theo định danh vào lớp đã qua cổng quản roster; trả kết quả kèm mật khẩu tạm khi vừa tạo tài
+   * khoản.
+   */
   private async addStudentByIdentity(row: ClassRow, actorId: string, input: RosterStudentIdentity): Promise<AddRosterStudentResult> {
     const { user, created, temporaryPassword } = await this.resolveStudentAccount(input);
     const already = await this.groups.isCohortMember(row.cohortId, user.id);
@@ -756,7 +784,10 @@ export class ClassesService implements OnModuleInit {
     return { total: rows.length, added, created, alreadyMembers, failed, results };
   }
 
-  /** Đọc một file Excel roster (sheet đầu tiên) thành các dòng định danh: tự nhận diện hàng tiêu đề theo từ khoá cột (Họ tên | SĐT | Email | Ngày sinh), thiếu tiêu đề thì đọc theo đúng thứ tự cột đó. */
+  /**
+   * Đọc một file Excel roster (sheet đầu tiên) thành các dòng định danh: tự nhận diện hàng tiêu đề theo từ khoá cột (Họ
+   * tên | SĐT | Email | Ngày sinh), thiếu tiêu đề thì đọc theo đúng thứ tự cột đó.
+   */
   async parseRosterWorkbook(buffer: Buffer): Promise<RosterStudentIdentity[]> {
     const ExcelJS = await import('exceljs');
     const wb = new ExcelJS.Workbook();
@@ -816,7 +847,10 @@ export class ClassesService implements OnModuleInit {
     return out;
   }
 
-  /** File mẫu roster .xlsx cho GV tải về: đúng 4 cột kiểu Azota (Họ tên | Số điện thoại | Email | Ngày sinh) + một dòng ví dụ. */
+  /**
+   * File mẫu roster .xlsx cho GV tải về: đúng 4 cột kiểu Azota (Họ tên | Số điện thoại | Email | Ngày sinh) + một dòng
+   * ví dụ.
+   */
   async buildRosterTemplateWorkbook(): Promise<{ filename: string; buffer: Buffer }> {
     const ExcelJS = await import('exceljs');
     const wb = new ExcelJS.Workbook();
@@ -958,7 +992,8 @@ export class ClassesService implements OnModuleInit {
 
   async previewJoin(joinCode: string): Promise<{ classId: string; name: string; schoolYear: string | null; ownerName: string }> {
     const { row, spaceSlug } = await this.resolveClassByJoinCode(joinCode);
-        // Chủ lớp của một lớp ở kho riêng cũng chỉ tồn tại ở kho đích: đọc hồ sơ chủ lớp tại đúng kho của lớp, không đọc
+        // Chủ lớp của một lớp ở kho riêng cũng chỉ tồn tại ở kho đích: đọc hồ sơ chủ lớp tại đúng kho của lớp, không
+        // đọc
     // kho chung (ở đó hoặc không có tài khoản này, hoặc là một tài khoản khác hẳn cùng định danh).
     const owner = spaceSlug
       ? await tenantAls.run({ platform: true }, () =>
@@ -1012,7 +1047,8 @@ export class ClassesService implements OnModuleInit {
       return { outcome: 'pending' as const, class: view };
     };
     if (spaceSlug) {
-            // Mọi truy vấn của thân luồng đi qua facade Kysely của khung định tuyến: mở phiên theo trung tâm để kho của lớp
+            // Mọi truy vấn của thân luồng đi qua facade Kysely của khung định tuyến: mở phiên theo trung tâm để kho của
+            // lớp
       // được chuẩn bị và ngữ cảnh mang slug của nó.
       return tenantAls.run({ platform: true }, () =>
         this.spaceDb.withSpaceKysely(spaceSlug, body),
@@ -1035,7 +1071,8 @@ export class ClassesService implements OnModuleInit {
     if (!this.directory.isConfigured()) return null;
     const target = await this.tenants.spaceTargetForTenant(row.tenantId);
     if (!target?.dedicated) {
-            // Lớp ở kho chung (hoặc không phân giải được đích): chỉ kiểm tra, tuyệt đối không đăng ký — mã đã có trong thư
+            // Lớp ở kho chung (hoặc không phân giải được đích): chỉ kiểm tra, tuyệt đối không đăng ký — mã đã có trong
+            // thư
       // mục thuộc về một không gian khác nên phải từ chối trước khi lớp đổi mã, nếu không đường phân giải ưu tiên thư
       // mục sẽ trỏ mã về lớp kho riêng đó và che lớp kho chung này.
       const entry = await this.directory.findJoinCodeDirectory(joinCode);

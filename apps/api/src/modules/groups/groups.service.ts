@@ -129,7 +129,8 @@ export class GroupsService implements OnModuleInit {
     return this.evaluator.hasCapability(actorId, 'course:managegroups', ctxId);
   }
 
-  /** Chế độ nhóm hiệu lực cho một bề mặt của khoá học: khi khoá bật `groupModeForce`, chế độ của khoá thắng tuyệt đối và
+  /**
+   * Chế độ nhóm hiệu lực cho một bề mặt của khoá học: khi khoá bật `groupModeForce`, chế độ của khoá thắng tuyệt đối và
    * groupMode riêng của course module bị bỏ qua; ngược lại groupMode của cm (khác 0 = "inherit") được ưu tiên, cuối
    * cùng mới tới chế độ của khoá.
    */
@@ -172,9 +173,10 @@ export class GroupsService implements OnModuleInit {
     return this.repo.listGroups(courseId);
   }
 
-  /** Thêm thành viên (kiểm capability). Luật nghiệp vụ GN-2 (issue #234): chỉ xếp được người đang ghi danh HIỆU LỰC trong
-   * khoá của nhóm — người chưa ghi danh, đã rút hẳn, đang bị đình chỉ hoặc ngoài cửa sổ ghi danh đều bị từ chối bằng
-   * 400 `group.member_not_enrolled`, để nhóm không chứa "thành viên ma" không thuộc khoá. Đường nội bộ
+  /**
+   * Thêm thành viên (kiểm capability). Luật nghiệp vụ GN-2 (issue #234): chỉ xếp được người đang ghi danh HIỆU LỰC
+   * trong khoá của nhóm — người chưa ghi danh, đã rút hẳn, đang bị đình chỉ hoặc ngoài cửa sổ ghi danh đều bị từ chối
+   * bằng 400 `group.member_not_enrolled`, để nhóm không chứa "thành viên ma" không thuộc khoá. Đường nội bộ
    * `addMemberInternal` (enrol/cohort sync) KHÔNG qua cổng này vì luôn đi kèm một thao tác ghi danh của hệ thống.
    */
   async addMember(actorId: string, groupId: string, userId: string): Promise<void> {
@@ -298,8 +300,8 @@ export class GroupsService implements OnModuleInit {
       if (!ctx) throw new NotFoundException({ message: `No context for category ${input.categoryId}`, code: 'cohort.category_context_missing' });
       return ctx.id;
     }
-    // Cohort không gắn category neo vào context TENANT của tenant sở hữu (không còn neo thẳng hệ thống) để cổng membership
-    // + phạm vi vai của tenant áp được lên cohort và các bank tổ bám vào nó (TENANT-0, #168).
+    // Cohort không gắn category neo vào context TENANT của tenant sở hữu (không còn neo thẳng hệ thống) để cổng
+    // membership + phạm vi vai của tenant áp được lên cohort và các bank tổ bám vào nó (TENANT-0, #168).
     return (await this.contexts.ensureTenantContext(tenantId)).id;
   }
 
@@ -367,7 +369,8 @@ export class GroupsService implements OnModuleInit {
     const rows = await this.repo.listCohortMembers(cohortId);
     return rows.map((r) => ({ userId: r.userId, timeAdded: r.timeAdded }));
   }
-  /** Cổng xem cohort cho các đường đọc dữ liệu thành viên: đạt khi có `cohort:view` hoặc `cohort:manage` tại context của
+  /**
+   * Cổng xem cohort cho các đường đọc dữ liệu thành viên: đạt khi có `cohort:view` hoặc `cohort:manage` tại context của
    * cohort (site admin được PermissionEvaluator tính là có cả hai). Không đạt thì ném đúng 404 `cohort.not_found` như
    * khi cohort vắng.
    */
@@ -384,11 +387,11 @@ export class GroupsService implements OnModuleInit {
   async addCohortMember(actorId: string, cohortId: string, userId: string): Promise<void> {
     const cohortRow = await this.getCohort(cohortId);
     await this.evaluator.requireCapability(actorId, 'cohort:manage', cohortRow.contextId);
-    // Chốt TÁCH VAI — funnel 2 (RoleSeparationService giữ định nghĩa dùng chung): vào cohort của một lớp đồng nghĩa được
-    // ghi danh học viên vào mọi khoá của lớp đó, nên người đang DẠY bất kỳ khoá nào thuộc lớp/cohort này bị từ chối tại
-    // đây với mã `access.role_context_conflict`, TRƯỚC khi dòng thành viên được tạo (và trước khi sự kiện đồng bộ phát
-    // ra). Mọi đường roster của lớp — theo userId, khớp email/số điện thoại, nhập Excel — đều đi qua điểm vào này hoặc
-    // điểm vào hệ thống bên dưới.
+    // Chốt TÁCH VAI — funnel 2 (RoleSeparationService giữ định nghĩa dùng chung): vào cohort của một lớp đồng nghĩa
+    // được ghi danh học viên vào mọi khoá của lớp đó, nên người đang DẠY bất kỳ khoá nào thuộc lớp/cohort này bị từ
+    // chối tại đây với mã `access.role_context_conflict`, TRƯỚC khi dòng thành viên được tạo (và trước khi sự kiện đồng
+    // bộ phát ra). Mọi đường roster của lớp — theo userId, khớp email/số điện thoại, nhập Excel — đều đi qua điểm vào
+    // này hoặc điểm vào hệ thống bên dưới.
     await this.roleSeparation.assertCohortMembershipAllowed(userId, cohortId);
     const added = await this.repo.addCohortMember(cohortId, userId);
     if (!added) return;
@@ -413,23 +416,25 @@ export class GroupsService implements OnModuleInit {
   async emitCohortMemberRemoved(cohortId: string, userId: string): Promise<void> {
     await this.emitter.emitAsync('cohort_member_removed', { cohortId, userId });
   }
-  /** Thêm thành viên cohort theo đường HỆ THỐNG (không gác capability của một actor cụ thể): dùng cho luồng mà quyết định
-   * cho vào đã được gác ở tầng nghiệp vụ phía trên — hiện là tự báo danh vào lớp được duyệt / tự vào thẳng theo luật
-   * lớp (ClassesService, issue #184 CLASS-1): người xin vào là học sinh, vốn không có `cohort:manage`. Phát đúng cùng
-   * cặp sự kiện như `addCohortMember` để cohort sync vật chất hoá ghi danh như mọi đường roster khác.
+  /**
+   * Thêm thành viên cohort theo đường HỆ THỐNG (không gác capability của một actor cụ thể): dùng cho luồng mà quyết
+   * định cho vào đã được gác ở tầng nghiệp vụ phía trên — hiện là tự báo danh vào lớp được duyệt / tự vào thẳng theo
+   * luật lớp (ClassesService, issue #184 CLASS-1): người xin vào là học sinh, vốn không có `cohort:manage`. Phát đúng
+   * cùng cặp sự kiện như `addCohortMember` để cohort sync vật chất hoá ghi danh như mọi đường roster khác.
    */
   async addCohortMemberInternal(cohortId: string, userId: string): Promise<void> {
     await this.getCohort(cohortId);
-    // Chốt TÁCH VAI — funnel 2, điểm vào hệ thống: cùng kiểm tra như addCohortMember (đường này phục vụ tham gia lớp bằng
-    // mã và kích hoạt sau thanh toán gói lớp — người xin vào vẫn không được là giáo viên của chính lớp/khoá đích).
+    // Chốt TÁCH VAI — funnel 2, điểm vào hệ thống: cùng kiểm tra như addCohortMember (đường này phục vụ tham gia lớp
+    // bằng mã và kích hoạt sau thanh toán gói lớp — người xin vào vẫn không được là giáo viên của chính lớp/khoá đích).
     await this.roleSeparation.assertCohortMembershipAllowed(userId, cohortId);
     const added = await this.repo.addCohortMember(cohortId, userId);
     if (!added) return;
     await this.outbox.enqueueStandalone({ aggregate: 'cohort', type: 'cohort_member_added', payload: { cohortId, userId } });
     await this.emitter.emitAsync('cohort_member_added', { cohortId, userId });
   }
-  /** Gỡ thành viên cohort theo đường HỆ THỐNG — đối tác của `addCohortMemberInternal`, dùng cho luồng mà quyết định gỡ đã
-   * được gác ở tầng nghiệp vụ phía trên: hoàn tiền học phí lớp (CLASS-3, issue #184) — lệnh hoàn đã gác bằng
+  /**
+   * Gỡ thành viên cohort theo đường HỆ THỐNG — đối tác của `addCohortMemberInternal`, dùng cho luồng mà quyết định gỡ
+   * đã được gác ở tầng nghiệp vụ phía trên: hoàn tiền học phí lớp (CLASS-3, issue #184) — lệnh hoàn đã gác bằng
    * `payment:manageaccounts` ở PaymentsService, người bị gỡ là học sinh vốn không giữ `cohort:manage`. Phát đúng cùng
    * cặp sự kiện như `removeCohortMember` để cohort sync đình chỉ/rút ghi danh ở mọi khoá theo chế độ rời của từng
    * instance. Không phải thành viên thì im lặng bỏ qua (idempotent — tiêu thụ lặp sự kiện hoàn tiền không phát sự kiện
@@ -444,8 +449,8 @@ export class GroupsService implements OnModuleInit {
   async removeCohortMemberInternal(cohortId: string, userId: string, tx?: CentreTx): Promise<boolean> {
     await this.getCohort(cohortId);
     if (tx) {
-      // Điểm nối C-8/C (đã đóng ở #656): bên gọi truyền transaction Kysely của settle hoàn tiền (DL-10) — lệnh xoá chạy qua
-      // repository Kysely của cụm với đúng transaction đó và dòng outbox ghi bằng `enqueueKysely`.
+      // Điểm nối C-8/C (đã đóng ở #656): bên gọi truyền transaction Kysely của settle hoàn tiền (DL-10) — lệnh xoá chạy
+      // qua repository Kysely của cụm với đúng transaction đó và dòng outbox ghi bằng `enqueueKysely`.
       const removed = await this.repo.removeCohortMember(cohortId, userId, tx);
       if (!removed) return false;
       await this.outbox.enqueueKysely(tx, { aggregate: 'cohort', type: 'cohort_member_removed', payload: { cohortId, userId } });

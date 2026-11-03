@@ -43,7 +43,8 @@ export class GradeItemsController {
   }
   @Post(':itemId/unpublish')
   /**
-   * POST /grade-items/:itemId/unpublish — rút công bố điểm của bài (học sinh mất quyền thấy điểm cho tới khi công bố lại).
+   * POST /grade-items/:itemId/unpublish — rút công bố điểm của bài (học sinh mất quyền thấy điểm cho tới khi công bố
+   * lại).
    */
   async unpublishItem(@Param('itemId', { schema: uuidIdSchema }) itemId: string, @Body({ schema: gradePublicationActionSchema }) dto: GradePublicationActionDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.grades.setItemPublication(actor.id, itemId, 'unpublish', dto.note);

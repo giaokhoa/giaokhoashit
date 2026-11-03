@@ -32,7 +32,8 @@ export class SiteConfigController {
 
   @Get('tenant-settings')
   /**
-   * GET /site-config/tenant-settings — setting tenant được ghi đè (scope tenant|both) kèm giá trị hiệu lực cho tenant hiệu lực.
+   * GET /site-config/tenant-settings — setting tenant được ghi đè (scope tenant|both) kèm giá trị hiệu lực cho tenant
+   * hiệu lực.
    */
   async listTenantSettings(@CurrentUser() actor: AuthenticatedUser) {
     return this.tenantConfig.listForTenant(actor.id, this.activeTenantId());

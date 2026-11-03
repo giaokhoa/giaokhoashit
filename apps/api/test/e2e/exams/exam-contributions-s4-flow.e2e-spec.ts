@@ -267,13 +267,15 @@ describe('Exam contributions S4 (issue #228): QB-4 đầy đủ cho đề + ch�
       const inBankBefore = await http(app).get(`/api/v1/exams/banks/${schoolBank.id}/exams`).set(bearer(admin));
       expect((inBankBefore.body as { derivedFromExamId: string | null }[]).some((p) => p.derivedFromExamId === official.paper.id)).toBe(false);
 
-      // Người không có exam:moderate tại context hệ thống không qua được cổng cấp 2 — đường alias cũ giữ nguyên mã lỗi này.
+      // Người không có exam:moderate tại context hệ thống không qua được cổng cấp 2 — đường alias cũ giữ nguyên mã lỗi
+      // này.
       const ownerBoard = await http(app).post(`/api/v1/exams/banks/${schoolBank.id}/contributions/${contribution.id}/board-approve`)
         .set(bearer(owner.token)).send({});
       expect(ownerBoard.status).toBe(403);
       expect((ownerBoard.body as { code?: string }).code).toBe('exam.contribution_board_forbidden');
 
-      // Ban giám hiệu (site admin) duyệt cấp 2 qua đường canonical hợp nhất `approve` → chốt: bản ghim vào bank ở ready.
+      // Ban giám hiệu (site admin) duyệt cấp 2 qua đường canonical hợp nhất `approve` → chốt: bản ghim vào bank ở
+      // ready.
       const board = await http(app).post(`/api/v1/exams/banks/${schoolBank.id}/contributions/${contribution.id}/approve`)
         .set(bearer(admin)).send({});
       expect(board.status, JSON.stringify(board.body)).toBe(201);

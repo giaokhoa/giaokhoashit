@@ -30,13 +30,13 @@ export const GRADE_FORMULA_CORPUS_GRADES: Record<string, number | null> = {
 const G = GRADE_FORMULA_CORPUS_GRADES;
 
 export const GRADE_FORMULA_CORPUS: readonly GradeFormulaCorpusCase[] = [
-  // --- 4 hàm tổng hợp gốc ---
+  // 4 hàm tổng hợp gốc
   { name: 'sum cơ bản', formula: '=sum([[a]],[[b]])', grades: G, expected: 140 },
   { name: 'sum có trọng số (ví dụ MoodleDocs)', formula: '=sum([[a]]*0.3,[[b]]*0.6,[[c]]*0.1)', grades: G, expected: 70 },
   { name: 'average', formula: '=average([[a]],[[b]],[[c]])', grades: G, expected: 80 },
   { name: 'min', formula: '=min([[a]],[[b]],[[c]])', grades: G, expected: 60 },
   { name: 'max với hằng số', formula: '=max([[a]],[[b]],100)', grades: G, expected: 100 },
-  // --- 5 hàm từng chỉ có ở phía api (ca phân kỳ 11.1) ---
+  // 5 hàm từng chỉ có ở phía api (ca phân kỳ 11.1)
   { name: 'power', formula: '=power([[a]],2)', grades: G, expected: 6400 },
   { name: 'power NaN (cơ số âm, mũ phân số) → null', formula: '=power(-1,0.5)', grades: G, expected: null },
   { name: 'round nửa ra xa số 0', formula: '=round(2.5)', grades: G, expected: 3 },
@@ -50,17 +50,17 @@ export const GRADE_FORMULA_CORPUS: readonly GradeFormulaCorpusCase[] = [
   { name: 'if nhánh sai', formula: '=if(0, [[a]], [[b]])', grades: G, expected: 60 },
   { name: 'if điều kiện trống → null', formula: '=if([[empty]], 1, 0)', grades: G, expected: null },
   { name: 'if lười: nhánh không chọn trống không ảnh hưởng', formula: '=if(1, [[a]], [[empty]])', grades: G, expected: 80 },
-  // --- so sánh + số học + truyền null ---
+  // so sánh + số học + truyền null
   { name: 'so sánh > cho 1', formula: '=[[a]]>50', grades: G, expected: 1 },
   { name: 'so sánh != cho 1', formula: '=[[a]]!=[[b]]', grades: G, expected: 1 },
   { name: 'chia 0 → null', formula: '=[[a]]/0', grades: G, expected: null },
   { name: 'hàm bỏ qua đối số trống', formula: '=sum([[empty]],[[a]])', grades: G, expected: 80 },
   { name: 'phép hai ngôi với toán hạng trống → null', formula: '=[[empty]]+[[a]]', grades: G, expected: null },
-  // --- lồng nhau xuyên nhóm hàm ---
+  // lồng nhau xuyên nhóm hàm
   { name: 'lồng average(sum(...))', formula: '=average(sum([[a]],[[b]]), [[c]])', grades: G, expected: 120 },
   { name: 'lồng sum(if(power), round)', formula: '=sum(if([[a]]>50, power(2,3), 0), round(9.6))', grades: G, expected: 18 },
   { name: 'lồng max(power, mod, round(pi()))', formula: '=max(power(2,3), mod(17,5), round(pi()))', grades: G, expected: 8 },
-  // --- lỗi arity: phải bị từ chối lúc phân tích ở MỌI phía ---
+  // lỗi arity: phải bị từ chối lúc phân tích ở MỌI phía
   { name: 'arity: power thiếu mũ', formula: '=power(1)', grades: G, expected: 'error:syntax' },
   { name: 'arity: power thừa đối số', formula: '=power(1,2,3)', grades: G, expected: 'error:syntax' },
   { name: 'arity: if thiếu nhánh', formula: '=if(1,2)', grades: G, expected: 'error:syntax' },
@@ -68,7 +68,7 @@ export const GRADE_FORMULA_CORPUS: readonly GradeFormulaCorpusCase[] = [
   { name: 'arity: pi có đối số', formula: '=pi(1)', grades: G, expected: 'error:syntax' },
   { name: 'arity: round rỗng', formula: '=round()', grades: G, expected: 'error:syntax' },
   { name: 'arity: sum rỗng', formula: '=sum()', grades: G, expected: 'error:syntax' },
-  // --- hàm lạ + cú pháp cấm ---
+  // hàm lạ + cú pháp cấm
   { name: 'hàm không hỗ trợ (sqrt)', formula: '=sqrt(4)', grades: G, expected: 'error:unknown_function' },
   { name: 'chuỗi so sánh bị cấm', formula: '=1<2<3', grades: G, expected: 'error:syntax' },
 ];

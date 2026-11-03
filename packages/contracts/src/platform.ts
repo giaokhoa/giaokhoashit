@@ -13,7 +13,6 @@ export const searchDocumentSchema = z.object({
 });
 export type SearchDocument = z.infer<typeof searchDocumentSchema>;
 
-/* ---- Dịch vụ web ---- */
 export const externalServiceSchema = z.object({
   id: uuidIdSchema,
   name: z.string(),
@@ -31,7 +30,6 @@ export const externalTokenCreatedSchema = z.object({
 });
 export type ExternalTokenCreated = z.infer<typeof externalTokenCreatedSchema>;
 
-/* ---- Backup ---- */
 export const BACKUP_FORMAT_VERSION = 1;
 export const BACKUP_SCOPES = ['course', 'site'] as const;
 export const backupJobSchema = z.object({
@@ -175,9 +173,9 @@ export const privacyRequestSchema = z.object({
 });
 export type PrivacyRequest = z.infer<typeof privacyRequestSchema>;
 
-/* ---- Request payload schemas (Zod là nguồn sự thật duy nhất cho
+/* Request payload schemas (Zod là nguồn sự thật duy nhất cho
  * validation: API kiểm chứng qua Standard Schema và form phía React
- * dùng cùng một schema, không định nghĩa bộ validation riêng) ---- */
+ * dùng cùng một schema, không định nghĩa bộ validation riêng) */
 
 export const searchIndexItemSchema = z.strictObject({
   area: z.string().min(1),

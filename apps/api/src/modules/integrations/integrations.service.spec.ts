@@ -107,8 +107,8 @@ describe('IntegrationsService.callFunction — trạng thái tài khoản chủ 
     await expect(call(service)).rejects.toBeInstanceOf(UnauthorizedException);
     setOwnerState({ suspended: false, deleted: false });
     await expect(call(service)).resolves.toEqual([{ id: 'course-1' }]);
-    // Trong suốt quá trình đình chỉ → gỡ đình chỉ, dòng token không hề bị đánh dấu thu hồi: điểm kiểm chỉ đọc trạng thái
-    // chủ, không ghi lên token.
+    // Trong suốt quá trình đình chỉ → gỡ đình chỉ, dòng token không hề bị đánh dấu thu hồi: điểm kiểm chỉ đọc trạng
+    // thái chủ, không ghi lên token.
     expect(tokenRow.revoked).toBe(false);
     for (const [, patch] of updateToken.mock.calls) {
       expect(patch).not.toMatchObject({ revoked: true });

@@ -43,7 +43,8 @@ export class EnrolController {
   }
   @Post('instances/:instanceId/self-enrol')
   /**
-   * POST /courses/:courseId/enrol/instances/:instanceId/self-enrol — tự ghi danh (có thể cần khoá ghi danh của instance hoặc của một nhóm).
+   * POST /courses/:courseId/enrol/instances/:instanceId/self-enrol — tự ghi danh (có thể cần khoá ghi danh của instance
+   * hoặc của một nhóm).
    */
   async selfEnrol(@Param('instanceId', { schema: uuidIdSchema }) instanceId: string, @Body({ schema: selfEnrolSchema }) dto: SelfEnrolDto, @CurrentUser() actor: AuthenticatedUser) {
     return this.enrol.selfEnrol(actor.id, instanceId, dto.enrolmentKey);

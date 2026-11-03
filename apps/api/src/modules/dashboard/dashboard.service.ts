@@ -42,7 +42,8 @@ export class DashboardService {
     return teaching;
   }
 
-  /** Khoá một người dùng đang ghi danh hiệu lực kèm tên hiển thị — điểm vào dùng chung cho dashboard của chính chủ và bề
+  /**
+   * Khoá một người dùng đang ghi danh hiệu lực kèm tên hiển thị — điểm vào dùng chung cho dashboard của chính chủ và bề
    * mặt phụ huynh (PH-1 đọc dữ liệu của CON qua đúng tập khoá ghi danh này).
    */
   async enrolledCoursesFor(userId: string): Promise<{ courseIds: string[]; names: Map<string, string> }> {
@@ -191,8 +192,8 @@ export class DashboardService {
       for (const row of rows) {
         // Cổng công bố PH-0: chưa công bố thì loại hoàn toàn khỏi payload.
         if (!(states.get(row.itemId)?.published ?? true)) continue;
-        // Thời điểm hiệu lực: item manual lấy mốc công bố nếu công bố muộn hơn lần sửa điểm (điểm chấm trước, công bố sau vẫn
-        // là mới tại thời điểm công bố).
+        // Thời điểm hiệu lực: item manual lấy mốc công bố nếu công bố muộn hơn lần sửa điểm (điểm chấm trước, công bố
+        // sau vẫn là mới tại thời điểm công bố).
         const pub = latestPubByItem.get(row.itemId);
         const effectiveAt = pub && pub.action === 'publish' && pub.createdAt > row.updatedAt
           ? pub.createdAt
@@ -216,8 +217,9 @@ export class DashboardService {
     return results;
   }
 
-  /** Hàng đợi chấm gộp theo khoá cho giáo viên: bài C2 chưa trả bài cho attempt hiện tại + lượt quiz chờ chấm tay + phiếu
-   * giấy CAM-0 chờ xử lý (needs_review/needs_identity, issue #187). Ba loại đếm TÁCH BẠCH ở ba trường *Pending;
+  /**
+   * Hàng đợi chấm gộp theo khoá cho giáo viên: bài C2 chưa trả bài cho attempt hiện tại + lượt quiz chờ chấm tay +
+   * phiếu giấy CAM-0 chờ xử lý (needs_review/needs_identity, issue #187). Ba loại đếm TÁCH BẠCH ở ba trường *Pending;
    * pendingCount là tổng cả ba.
    */
   private async buildGradingQueue(

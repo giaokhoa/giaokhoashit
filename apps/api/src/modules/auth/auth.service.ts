@@ -77,7 +77,10 @@ export type LoginAsOutcome =
   | { mode: 'legacy'; user: UserRow; tokens: TokenPair; tenantId: string }
   | { mode: 'better-auth'; user: UserRow; tenantId: string; baSession: { signedCookieValue: string; expiresAt: Date } };
 
-/** Định danh các phiên "hiện tại" theo ngữ cảnh của người gọi: `familyId` là `sid` trong access token, `webSessionId` là id phiên trong cookie. */
+/**
+ * Định danh các phiên "hiện tại" theo ngữ cảnh của người gọi: `familyId` là `sid` trong access token, `webSessionId` là
+ * id phiên trong cookie.
+ */
 export interface CurrentSessionRefs { familyId?: string; webSessionId?: string }
 
 /** Một phiên đang hoạt động trong danh sách quản lý phiên của chính user (report_usersessions). */
@@ -490,7 +493,8 @@ export class AuthService {
       if (spaceTenant.status !== 'active') {
         throw new UnauthorizedException({ message: `Tenant ${spaceTenant.slug} is ${spaceTenant.status}`, code: 'tenant.not_active' });
       }
-            // Tenant kiểu platform là không gian công cộng — mọi tài khoản đã đăng nhập đều thuộc về nó, theo đúng quy định
+            // Tenant kiểu platform là không gian công cộng — mọi tài khoản đã đăng nhập đều thuộc về nó, theo đúng quy
+            // định
       // của `resolveSwitchTarget` — nên không gác bằng membership; tenant trung tâm/trường học thì membership còn hiệu
       // lực trong kho là điều kiện giữ phiên.
       if (spaceTenant.kind !== 'platform') {
@@ -547,7 +551,8 @@ export class AuthService {
    * luôn tính theo cây của tenant hiệu lực, không mang vai từ tenant này sang tenant khác.
    */
   async switchTenant(user: UserRow, tenantId: string, currentFamilyId?: string, client?: SessionClientInfo): Promise<TokenPair> {
-        // Đường kho riêng (issue #584): phiên của trung tâm ở kho riêng không có khái niệm chuyển tenant — tài khoản của
+        // Đường kho riêng (issue #584): phiên của trung tâm ở kho riêng không có khái niệm chuyển tenant — tài khoản
+        // của
     // trung tâm đó không tồn tại ở trung tâm khác nên không có đích chuyển hợp lệ. Chặn tại service (không chỉ tại
     // controller) vì mọi đường vào switch đều phải qua đây.
     if (await this.requestDedicatedSpace()) {

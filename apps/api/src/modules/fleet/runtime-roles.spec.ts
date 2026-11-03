@@ -55,8 +55,8 @@ describe('Cấp phát role runtime và role migration (helper thuần)', () => {
     expect(query).toContain('ALTER TYPE %I.%I OWNER TO %I');
     expect(query).toContain("t.typtype IN ('e', 'd')");
     expect(query).toContain('ALTER SCHEMA %I OWNER TO %I');
-    // Schema hệ thống bị loại ở mọi lớp — đây là lý do không dùng REASSIGN OWNED (superuser gốc sở hữu đối tượng hệ thống
-    // bắt buộc trong mọi database nên lệnh đó luôn bị từ chối).
+    // Schema hệ thống bị loại ở mọi lớp — đây là lý do không dùng REASSIGN OWNED (superuser gốc sở hữu đối tượng hệ
+    // thống bắt buộc trong mọi database nên lệnh đó luôn bị từ chối).
     expect(query).toContain(`ns.nspname NOT IN ('pg_catalog', 'information_schema')`);
     expect(query).toContain(`'postgres'`);
     expect(query).toContain(`'lms_migrator'`);

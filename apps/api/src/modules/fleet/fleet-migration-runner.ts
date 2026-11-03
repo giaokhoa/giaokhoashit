@@ -52,7 +52,10 @@ import { FleetRegistryWriter } from './fleet-registry-writer';
 /** Tuỳ chọn của một lượt chạy runner; mặc định đọc từ biến môi trường của tiến trình. */
 export type FleetMigrationOptions = {
   env?: NodeJS.ProcessEnv;
-  /** Thư mục chứa các thư mục migration nghiệp vụ; mặc định `FLEET_MIGRATIONS_DIR` hoặc thư mục carrier trong package `@lms/db`. */
+  /**
+   * Thư mục chứa các thư mục migration nghiệp vụ; mặc định `FLEET_MIGRATIONS_DIR` hoặc thư mục carrier trong package
+   * `@lms/db`.
+   */
   migrationsDir?: string;
   /** Thư mục gốc chứa các bản sao lưu theo kho; mặc định `FLEET_BACKUP_DIR` (bắt buộc có). */
   backupDir?: string;
@@ -116,8 +119,8 @@ async function migrateSpace(
   try {
     const url = resolveSpaceConnectionUrl(space, env);
 
-    // Bước thăm dò: đọc TOÀN TẬP migration đã áp trong kho (căn cứ quyết định còn thiếu gì) và phiên bản mới nhất (để ghi
-    // fromVersion cho nhật ký lượt chạy).
+    // Bước thăm dò: đọc TOÀN TẬP migration đã áp trong kho (căn cứ quyết định còn thiếu gì) và phiên bản mới nhất (để
+    // ghi fromVersion cho nhật ký lượt chạy).
     const probe = new Client({ connectionString: url });
     let applied: string[];
     try {
@@ -139,8 +142,8 @@ async function migrateSpace(
       return { slug: space.slug, outcome: 'skipped' };
     }
 
-    // Điểm khôi phục riêng của kho: bản chốt gắn mã lượt chạy. Chụp hỏng thì dừng kho này tại đây — không áp migration khi
-    // không có điểm quay lui. Bản chốt chụp qua kết nối quản trị của cụm khi được cấu hình (xem
+    // Điểm khôi phục riêng của kho: bản chốt gắn mã lượt chạy. Chụp hỏng thì dừng kho này tại đây — không áp migration
+    // khi không có điểm quay lui. Bản chốt chụp qua kết nối quản trị của cụm khi được cấu hình (xem
     // `resolveDumpConnectionUrl`): schema nghiệp vụ áp FORCE ROW LEVEL SECURITY cả với chủ sở hữu nên role migration tự
     // nó không xuất được bản sao đầy đủ.
     try {
@@ -162,10 +165,10 @@ async function migrateSpace(
 
     const pool = new Pool({ connectionString: url });
     try {
-      // Áp bằng trình tự dùng chung của bộ máy migration `@lms/db` (shim tiền-migration + `migrateToLatest()` + tự kiểm lỗi —
-      // xem `apply.ts` của package): cùng một trình tự với CLI migrate của compose và runner cấp phát. Riêng runner đội
-      // kho bật `allowUnorderedMigrations`: kho đã có migration mới nhất mà thiếu migration cũ thì áp đúng phần thiếu,
-      // không kẹt cả đợt vì một kho lệch nhịp.
+      // Áp bằng trình tự dùng chung của bộ máy migration `@lms/db` (shim tiền-migration + `migrateToLatest()` + tự kiểm
+      // lỗi — xem `apply.ts` của package): cùng một trình tự với CLI migrate của compose và runner cấp phát. Riêng
+      // runner đội kho bật `allowUnorderedMigrations`: kho đã có migration mới nhất mà thiếu migration cũ thì áp đúng
+      // phần thiếu, không kẹt cả đợt vì một kho lệch nhịp.
       const db = createCentreKysely(pool);
       await applyStoreMigrations(db, 'centre', context.migrationsDir, { allowUnorderedMigrations: true });
       steps.push({ name: 'apply-migrations', status: 'success' });
@@ -177,8 +180,8 @@ async function migrateSpace(
       await pool.end();
     }
 
-    // Đối chiếu lại bằng sự thật trong database của kho, không tin mỗi việc bộ máy migration không ném lỗi: toàn tập đã áp
-    // phải phủ đủ bộ cục bộ và phiên bản mới nhất phải là đích.
+    // Đối chiếu lại bằng sự thật trong database của kho, không tin mỗi việc bộ máy migration không ném lỗi: toàn tập đã
+    // áp phải phủ đủ bộ cục bộ và phiên bản mới nhất phải là đích.
     const verify = new Client({ connectionString: url });
     let stillMissing: string[];
     let reached: string | null;

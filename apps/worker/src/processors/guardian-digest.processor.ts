@@ -32,7 +32,9 @@ const SUBMITTED_ATTEMPT_STATES = ['needsgrading', 'finished'];
 
 type Frequency = 'weekly' | 'daily' | 'off';
 
-/** Dòng liên kết tối thiểu mà `sweepLink` cần — đúng các cột select ở `sweep`, không phải toàn bộ dòng guardian_links. */
+/**
+ * Dòng liên kết tối thiểu mà `sweepLink` cần — đúng các cột select ở `sweep`, không phải toàn bộ dòng guardian_links.
+ */
 interface GuardianLinkRow {
   guardianUserId: string;
   studentUserId: string;
@@ -85,7 +87,8 @@ function weekStartUtc(now: Date): Date {
  */
 @Processor('guardian-digests')
 /**
- * Xử lý job quét digest phụ huynh: chốt các lượt digest/đẩy quá hạn đến hạn và phát sự kiện outbox cho nửa tiêu thụ phía worker tổng hợp + gửi.
+ * Xử lý job quét digest phụ huynh: chốt các lượt digest/đẩy quá hạn đến hạn và phát sự kiện outbox cho nửa tiêu thụ
+ * phía worker tổng hợp + gửi.
  */
 export class GuardianDigestProcessor extends WorkerHost {
   constructor(private readonly spaceDb: SpaceDatabaseService, private readonly taskLog: TaskLogService) { super(); }

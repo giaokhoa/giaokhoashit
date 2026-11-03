@@ -174,8 +174,8 @@ export async function buildProgramDumpSql(db: CentreDb, opts?: { datasetKey?: st
       [r.id, r.curriculumId, r.parentId, r.title, r.kind, r.position, r.durationPeriods, r.durationPercent, r.createdAt, r.updatedAt]));
   }
   for (const r of outcomeRows) {
-    // Cột content nay là tài liệu Tiptap (jsonb): sqlLiteral render đối tượng thành literal `'...json...'::jsonb`, restore
-    // vào cột jsonb nguyên văn, giữ cấu trúc cha–con của tài liệu.
+    // Cột content nay là tài liệu Tiptap (jsonb): sqlLiteral render đối tượng thành literal `'...json...'::jsonb`,
+    // restore vào cột jsonb nguyên văn, giữ cấu trúc cha–con của tài liệu.
     lines.push(insertStatement('learning_outcomes',
       ['id', 'tenant_id', 'node_id', 'content', 'position', 'source_kind', 'source_ref', 'derived_from_id', 'retired_at', 'created_at', 'updated_at'],
       [r.id, r.tenantId, r.nodeId, r.content, r.position, r.sourceKind, r.sourceRef, r.derivedFromId, r.retiredAt, r.createdAt, r.updatedAt]));
@@ -227,11 +227,11 @@ export async function restoreProgramDumpSql(
     const subjectIdsBefore = anchorContextId
       ? new Set((await tx.selectFrom('subjects').select(['id']).execute()).map((r) => r.id))
       : null;
-    // Thử nghiệm T-12 (chốt tại issue #646): toàn bộ artifact là một script nhiều câu lệnh KHÔNG tham số (mọi giá trị là
-    // literal trong văn bản) — `sql.raw` của Kysely biên dịch nó thành đúng một truy vấn không tham số, và driver `pg`
-    // khi không có tham số thì dùng giao thức truy vấn đơn giản nên cả script chạy trong transaction này; lỗi ở bất kỳ
-    // câu nào giữa script làm transaction huỷ và rollback sạch mọi câu đã chạy trước đó. Hành vi được khoá bằng spec
-    // tích hợp chạy artifact thật trên database thật (gồm ca cố ý gây lỗi giữa script).
+    // Thử nghiệm T-12 (chốt tại issue #646): toàn bộ artifact là một script nhiều câu lệnh KHÔNG tham số (mọi giá trị
+    // là literal trong văn bản) — `sql.raw` của Kysely biên dịch nó thành đúng một truy vấn không tham số, và driver
+    // `pg` khi không có tham số thì dùng giao thức truy vấn đơn giản nên cả script chạy trong transaction này; lỗi ở
+    // bất kỳ câu nào giữa script làm transaction huỷ và rollback sạch mọi câu đã chạy trước đó. Hành vi được khoá bằng
+    // spec tích hợp chạy artifact thật trên database thật (gồm ca cố ý gây lỗi giữa script).
     await sql.raw(dumpSql).execute(tx);
     if (anchorContextId && subjectIdsBefore) {
       const restoredIds = (await tx.selectFrom('subjects').select(['id']).execute())

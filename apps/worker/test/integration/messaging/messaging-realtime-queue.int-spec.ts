@@ -121,7 +121,6 @@ describe('Worker — phân phối realtime messaging qua hàng đợi (issue #52
     await new Promise((resolve) => { setTimeout(resolve, ms); });
   }
 
-  // --- fixture -----------------------------------------------------
 
   async function makeUser(id: string): Promise<void> {
     await sql`insert into users (id, username, email, first_name, last_name, suspended, deleted) values (${id}, ${`u521-${id.slice(-8)}`}, ${`u521-${id.slice(-8)}@x.io`}, 'An', 'Nguyễn', false, false) on conflict (id) do nothing`.execute(db);

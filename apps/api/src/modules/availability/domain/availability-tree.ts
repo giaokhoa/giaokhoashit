@@ -24,7 +24,8 @@
 export type AvailabilityOp = '&' | '|' | '!&' | '!|';
 
 /**
- * Điều kiện lá của cây availability: type là loại điều kiện (date, grade, profile, completion, group, grouping…), phần còn lại là tham số của điều kiện.
+ * Điều kiện lá của cây availability: type là loại điều kiện (date, grade, profile, completion, group, grouping…), phần
+ * còn lại là tham số của điều kiện.
  */
 export interface AvailabilityLeaf {
   type: string;
@@ -55,7 +56,8 @@ export interface LeafResult {
 }
 
 /**
- * Kết quả đánh giá toàn cây: available tổng thể, và failedDescriptions — danh sách mô tả các điều kiện lá chưa đạt ở các nút AND có show=true (để giao diện giải thích vì sao bị khoá).
+ * Kết quả đánh giá toàn cây: available tổng thể, và failedDescriptions — danh sách mô tả các điều kiện lá chưa đạt ở
+ * các nút AND có show=true (để giao diện giải thích vì sao bị khoá).
  */
 export interface TreeEvaluation {
   available: boolean;
@@ -71,8 +73,8 @@ export interface TreeEvaluation {
 const OPS: AvailabilityOp[] = ['&', '|', '!&', '!|'];
 
 /**
- * Phân tích JSON cây availability từ chuỗi/object thô; trả null khi rỗng hoặc không hợp lệ để tầng trên coi như không có điều kiện.
- * Đối chiếu Moodle: availability/classes/tree.php và condition classes tương ứng.
+ * Phân tích JSON cây availability từ chuỗi/object thô; trả null khi rỗng hoặc không hợp lệ để tầng trên coi như không
+ * có điều kiện. Đối chiếu Moodle: availability/classes/tree.php và condition classes tương ứng.
  */
 export function parseAvailabilityTree(raw: unknown): AvailabilityNode | null {
   if (raw === null || raw === undefined) return null;
@@ -120,7 +122,8 @@ export async function evaluateTree(
   }
   const available = node.c.length === 0 ? (node.op === '&' || node.op === '|') : aggregate(node.op, values);
 
-    // Ẩn thông tin: một con không đạt mà showc của nó là false sẽ ẩn mọi thứ. Với các op phủ định, một con "góp phần gây
+    // Ẩn thông tin: một con không đạt mà showc của nó là false sẽ ẩn mọi thứ. Với các op phủ định, một con "góp phần
+    // gây
   // không đạt" khi nó khả dụng (chính thành công của con làm NOT-AND/NOT-OR không đạt).
   let informationHidden = false;
   if (!available) {

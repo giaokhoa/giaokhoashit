@@ -57,9 +57,10 @@ export type EnrolMethod = (typeof ENROL_METHODS)[number];
  * truy vấn dữ liệu liên quan dùng chung ở tầng dữ liệu, khớp hành vi Moodle).
  */
 export class EnrolService implements OnModuleInit {
-  /** Bề mặt vật chất hoá cohort dùng chung (`@lms/enrol`): funnel ghi danh lõi, đường gỡ ghi danh lõi và hai điểm vào vật
-   * chất hoá theo sự kiện thành viên cohort sống ở tầng dữ liệu dùng chung để tiến trình khác (worker) gọi được cùng
-   * một định nghĩa. Service này dựng bề mặt bằng tay cầm Kysely đã định tuyến của API (D5 #657 — cùng handle
+  /**
+   * Bề mặt vật chất hoá cohort dùng chung (`@lms/enrol`): funnel ghi danh lõi, đường gỡ ghi danh lõi và hai điểm vào
+   * vật chất hoá theo sự kiện thành viên cohort sống ở tầng dữ liệu dùng chung để tiến trình khác (worker) gọi được
+   * cùng một định nghĩa. Service này dựng bề mặt bằng tay cầm Kysely đã định tuyến của API (D5 #657 — cùng handle
    * `routedKysely` mà repository enrol dùng), bộ điều hợp outbox Kysely của API (xem dưới) và cổng ngữ cảnh platform
    * của API, rồi dịch lỗi của bề mặt (mang mã kỹ thuật) về exception HTTP mang cùng mã và thông điệp như trước khi
    * trích xuất. Phần thuộc về tiến trình API ở lại đây: kiểm capability của người thao tác, tin nhắn chào mừng, và các
@@ -82,11 +83,11 @@ export class EnrolService implements OnModuleInit {
   ) {
     this.materialization = new CohortMaterializationSurface({
       db: spaceDb.routedKysely,
-      // Bộ điều hợp cổng outbox của bề mặt sang đường ghi Kysely của `OutboxService` (biến thể `enqueueKysely`, chuẩn từ PR
-      // #672): cùng ngữ nghĩa phân giải tenant qua ALS như đường cũ trước chuyển đổi, chỉ khác handle transaction. Mọi
-      // đường ghi outbox còn lại của service này cũng đi qua biến thể Kysely (vd `setSuspended` gọi thẳng
-      // `enqueueKysely` bằng transaction của bên gọi — điểm nối C-8/C đã đóng ở PR #683), không còn đường ghi bộ máy cũ
-      // nào trong service.
+      // Bộ điều hợp cổng outbox của bề mặt sang đường ghi Kysely của `OutboxService` (biến thể `enqueueKysely`, chuẩn
+      // từ PR #672): cùng ngữ nghĩa phân giải tenant qua ALS như đường cũ trước chuyển đổi, chỉ khác handle
+      // transaction. Mọi đường ghi outbox còn lại của service này cũng đi qua biến thể Kysely (vd `setSuspended` gọi
+      // thẳng `enqueueKysely` bằng transaction của bên gọi — điểm nối C-8/C đã đóng ở PR #683), không còn đường ghi bộ
+      // máy cũ nào trong service.
       outbox: {
         enqueue: (tx, input) => this.outbox.enqueueKysely(tx, input),
         enqueueStandalone: (input) => spaceDb.routedKysely.transaction().execute((trx) => this.outbox.enqueueKysely(trx, input)),
@@ -179,7 +180,8 @@ export class EnrolService implements OnModuleInit {
     }
     return instance;
   }
-  /** Đảm bảo khoá thuộc lớp có đúng một instance cohort trỏ vào backing cohort của lớp (issue #184, CLASS-0) — đường nội
+  /**
+   * Đảm bảo khoá thuộc lớp có đúng một instance cohort trỏ vào backing cohort của lớp (issue #184, CLASS-0) — đường nội
    * bộ KHÔNG kiểm capability (việc tạo instance là hệ quả máy móc của việc tạo khoá trong lớp, quyền đã chốt ở cổng tạo
    * khoá). Idempotent: đã có instance cohort cho đúng (khoá, cohort) thì dùng lại (chỉ bổ sung group đích / chế độ rời
    * lớp khi lớp đã đổi), chưa có thì tạo mới và backfill ngay toàn bộ roster hiện có — đúng ngữ nghĩa tạo instance
@@ -223,7 +225,8 @@ export class EnrolService implements OnModuleInit {
     if (await this.canManageEnrol(viewerId, courseId)) return rows;
     return rows.map((row) => this.hideInstanceKey(row));
   }
-  /** Cập nhật instance. Đổi role (`roleShortname`) trên instance — oracle Behat enrol/cohort "Editing a cohort enrolment
+  /**
+   * Cập nhật instance. Đổi role (`roleShortname`) trên instance — oracle Behat enrol/cohort "Editing a cohort enrolment
    * method's role should change participants' role": role của mọi thành viên ĐÃ ghi danh qua instance này (trừ ghi danh
    * đã rút) được gán lại — gỡ assignment role cũ do instance cấp tại context khoá học, cấp role mới; enrolment và trạng
    * thái ghi danh giữ nguyên. `enrolmentKey: null` xoá khoá ghi danh.
@@ -257,8 +260,9 @@ export class EnrolService implements OnModuleInit {
     return this.getInstance(id);
   }
 
-  /** Gán lại role cho các thành viên đã ghi danh qua instance sau khi instance đổi role: gỡ assignment role cũ (đúng role
-   * instance từng cấp, tại context khoá học) rồi cấp role mới cho từng người; không đụng tới bản ghi ghi danh.
+  /**
+   * Gán lại role cho các thành viên đã ghi danh qua instance sau khi instance đổi role: gỡ assignment role cũ (đúng
+   * role instance từng cấp, tại context khoá học) rồi cấp role mới cho từng người; không đụng tới bản ghi ghi danh.
    */
   private async reassignEnrolledRoles(instance: EnrolRow, newRoleId: string, modifierId: string): Promise<void> {
     const courseCtxId = await this.courses.courseContextId(instance.courseId);
@@ -266,8 +270,8 @@ export class EnrolService implements OnModuleInit {
     for (const ue of enrolments) {
       if (ue.status === ENROL_WITHDRAWN) continue;
       if (instance.roleId) {
-        // Chỉ gỡ dòng do CHÍNH instance này cấp (khớp component/itemId) — dòng cùng role của instance khác hoặc gán tay giữ
-        // nguyên (#157).
+        // Chỉ gỡ dòng do CHÍNH instance này cấp (khớp component/itemId) — dòng cùng role của instance khác hoặc gán tay
+        // giữ nguyên (#157).
         const assignments = await this.roles.listAssignments({ userId: ue.userId, contextId: courseCtxId });
         for (const a of assignments as EnrolAssignmentRow[]) {
           if (isInstanceAssignment(a, instance)) await this.roles.unassignRole(a.id, modifierId, { allowEnrolManaged: true });
@@ -298,7 +302,8 @@ export class EnrolService implements OnModuleInit {
     return userEnrolment;
   }
 
-  /** Ghi danh một thành viên cohort qua đường đồng bộ hàng loạt (backfill khi tạo/khôi phục instance cohort, listener sự
+  /**
+   * Ghi danh một thành viên cohort qua đường đồng bộ hàng loạt (backfill khi tạo/khôi phục instance cohort, listener sự
    * kiện cohort): một thành viên vi phạm chốt tách vai bị BỎ QUA riêng lẻ — vòng lặp đồng bộ không được hỏng vì một
    * thành viên, và các caller trực tiếp một người (ghi danh tay, tự ghi danh, thanh toán) vẫn nhận lỗi tường minh từ
    * `enrolUserInternal`. Mọi lỗi khác ngoài xung đột vai đều nổi lên như cũ.
@@ -311,8 +316,9 @@ export class EnrolService implements OnModuleInit {
     }
   }
 
-  /** Gửi tin nhắn chào mừng qua MessagingModule (provider `enrol_welcome`) khi một ghi danh MỚI thành công — chỉ cho self
-   * + manual và chỉ khi instance bật `sendWelcomeMessage` (mặc định lúc tạo: self bật, manual tắt, đúng mặc định
+  /**
+   * Gửi tin nhắn chào mừng qua MessagingModule (provider `enrol_welcome`) khi một ghi danh MỚI thành công — chỉ cho
+   * self + manual và chỉ khi instance bật `sendWelcomeMessage` (mặc định lúc tạo: self bật, manual tắt, đúng mặc định
    * Moodle). Nội dung tuỳ biến của instance được dùng nguyên văn (token `{coursename}`/`{course}` được thay bằng tên
    * khoá); không có nội dung tuỳ biến thì dùng mẫu i18n `platform.enrolWelcome*`. Gửi chào mừng là hiệu ứng phụ: lỗi
    * gửi không bao giờ làm hỏng ghi danh, và việc kích hoạt lại một ghi danh đã có không gửi lại tin nhắn. Quyết định
@@ -433,9 +439,9 @@ export class EnrolService implements OnModuleInit {
     if (!suspended && ue.status !== ENROL_ACTIVE && await this.roleSeparation.isLearnerGrantRole(instance.roleId)) {
       await this.roleSeparation.assertLearnerEnrolmentAllowed(userId, instance.courseId);
     }
-    // modifierId = người thao tác: VẾT phân biệt đình chỉ THỦ CÔNG theo khoá với đình chỉ do hệ thống đồng bộ áp (job đối
-    // soát class-enrol-reconcile chỉ tôn trọng/không kích hoạt lại đúng các dòng mang vết người này — issue #184, ca
-    // "miễn môn").
+    // modifierId = người thao tác: VẾT phân biệt đình chỉ THỦ CÔNG theo khoá với đình chỉ do hệ thống đồng bộ áp (job
+    // đối soát class-enrol-reconcile chỉ tôn trọng/không kích hoạt lại đúng các dòng mang vết người này — issue #184,
+    // ca "miễn môn").
     const eventInput = {
       aggregate: 'enrol', type: suspended ? 'user_enrolment_suspended' : 'user_enrolment_reactivated',
       payload: { courseId: instance.courseId, userId, instanceId, actorId },
@@ -457,10 +463,11 @@ export class EnrolService implements OnModuleInit {
     return (await this.repo.getUserEnrolment(instanceId, userId))!;
   }
 
-  /** Unenrol: gỡ gán role do ghi danh cấp và phát user_unenrolled. Dòng UE bị rút MỀM (status=2) khi user có dữ liệu liên
-   * quan (completion/điểm) trong khoá học — quyết định theo truy vấn dữ liệu liên quan dùng chung ở tầng dữ liệu; khi
-   * không có dữ liệu thì dòng bị xoá cứng, đúng sự phân chia của Moodle giữa dữ liệu tham gia hiển thị (được giữ) và
-   * tham gia vô hình (bị dọn).
+  /**
+   * Unenrol: gỡ gán role do ghi danh cấp và phát user_unenrolled. Dòng UE bị rút MỀM (status=2) khi user có dữ liệu
+   * liên quan (completion/điểm) trong khoá học — quyết định theo truy vấn dữ liệu liên quan dùng chung ở tầng dữ liệu;
+   * khi không có dữ liệu thì dòng bị xoá cứng, đúng sự phân chia của Moodle giữa dữ liệu tham gia hiển thị (được giữ)
+   * và tham gia vô hình (bị dọn).
    */
   async unenrolUser(actorId: string, instanceId: string, userId: string): Promise<{ withdrawn: boolean }> {
     const instance = await this.getInstance(instanceId);
@@ -504,7 +511,8 @@ export class EnrolService implements OnModuleInit {
     return false;
   }
 
-  /** Cổng xem danh sách ghi danh của khoá học qua API (issue #44): chỉ cho (a) người thuộc khoá — ghi danh đang hiệu lực
+  /**
+   * Cổng xem danh sách ghi danh của khoá học qua API (issue #44): chỉ cho (a) người thuộc khoá — ghi danh đang hiệu lực
    * hoặc được gán vai tại context khoá (giáo viên phụ trách không qua ghi danh), hoặc (b) người có capability
    * `enrol:manage` tại context khoá (site admin đạt qua PermissionEvaluator). Người ngoài nhận 404 với đúng mã/thông
    * điệp như khoá không tồn tại (`course.not_found`) để không lộ khoá có tồn tại.
@@ -521,8 +529,9 @@ export class EnrolService implements OnModuleInit {
     throw new NotFoundException({ message: `Course ${courseId} not found`, code: 'course.not_found' });
   }
 
-  /** Ghi danh của khoá học. Khi truyền `viewerId` (đường API) thì áp cổng `requireListEnrolmentsAccess`; khi không truyền
-   * (đường nội bộ tin cậy — analytics/completion/grades) bản ghi được trả nguyên vẹn, cùng mẫu
+  /**
+   * Ghi danh của khoá học. Khi truyền `viewerId` (đường API) thì áp cổng `requireListEnrolmentsAccess`; khi không
+   * truyền (đường nội bộ tin cậy — analytics/completion/grades) bản ghi được trả nguyên vẹn, cùng mẫu
    * `listInstances(courseId, viewerId?)`.
    */
   async listEnrolmentsForCourse(courseId: string, viewerId?: string): Promise<(UserEnrolmentRow & { enrolMethod: string })[]> {

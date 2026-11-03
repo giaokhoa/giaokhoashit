@@ -166,7 +166,8 @@ describe('Dịch vụ platform: tương đương backup→restore, luỹ đẳng
     const enrolments = await http(app).get(`/api/v1/courses/${course.id}/enrolments`).set('Authorization', `Bearer ${admin}`);
     const mine = (enrolments.body as { userId: string }[]).filter((e) => e.userId === buyer.id);
     expect(mine).toHaveLength(1);
-    // Replay webhook cùng external tx ⇒ duplicate, enrolment vẫn đúng 1, outbox payment_succeeded chỉ 1 (kiểm qua số enrolment + duplicate flag).
+    // Replay webhook cùng external tx ⇒ duplicate, enrolment vẫn đúng 1, outbox payment_succeeded chỉ 1 (kiểm qua số
+    // enrolment + duplicate flag).
     const replay = await http(app).post('/api/v1/payments/webhook').set('x-payment-webhook-secret', process.env.PAYMENT_WEBHOOK_SECRET ?? '').send({ gateway: 'manual', externalTransactionId: txId, paymentId: payment.body.id, status: 'succeeded' });
     expect(replay.body.duplicate).toBe(true);
     const enrolments2 = await http(app).get(`/api/v1/courses/${course.id}/enrolments`).set('Authorization', `Bearer ${admin}`);
@@ -388,7 +389,8 @@ describe('Dịch vụ platform: tương đương backup→restore, luỹ đẳng
       { statementId: 's3', value: false },
       { statementId: 's4', value: true },
     ]);
-    // Badges: badge mới thuộc khoá mới; criteria của B trỏ đúng khoá/cm/badge mới, competency giữ nguyên (thực thể site dùng chung).
+    // Badges: badge mới thuộc khoá mới; criteria của B trỏ đúng khoá/cm/badge mới, competency giữ nguyên (thực thể site
+    // dùng chung).
     const newBadgeAId = mapOf('badge', badgeA.body.id)?.newId;
     const newBadgeBId = mapOf('badge', badgeB.body.id)?.newId;
     expect(newBadgeAId).toBeTruthy();
@@ -401,7 +403,8 @@ describe('Dịch vụ platform: tương đương backup→restore, luỹ đẳng
     expect(leaves.find((l) => l.criteriaType === 'activitycompletion')?.params.cmId).toBe(mapOf('cm', cm.id)?.newId);
     expect(leaves.find((l) => l.criteriaType === 'competency')?.params.competencyId).toBe(comp.body.id);
     expect(leaves.find((l) => l.criteriaType === 'badge')?.params.badgeId).toBe(newBadgeAId);
-    // Calendar: mọi sự kiện khôi phục thuộc khoá mới; sự kiện nhóm trỏ nhóm mới; chuỗi lặp nối lại repeatId mới; subscription có mapping.
+    // Calendar: mọi sự kiện khôi phục thuộc khoá mới; sự kiện nhóm trỏ nhóm mới; chuỗi lặp nối lại repeatId mới;
+    // subscription có mapping.
     const newGroupId = mapOf('group', group.id)?.newId;
     for (const oldEventId of [courseEv.body.event.id, groupEv.body.event.id, seriesRootId]) {
       const mapping = mapOf('calendar_event', oldEventId);

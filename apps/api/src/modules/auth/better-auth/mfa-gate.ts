@@ -47,7 +47,10 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { deleteSessionCookie } from 'better-auth/cookies';
 
-/** Tên cookie chờ bước hai (constant trong dist của plugin twoFactor; endpoint hoàn tất ở tầng Nest đọc lại đúng tên này qua createAuthCookie của instance). */
+/**
+ * Tên cookie chờ bước hai (constant trong dist của plugin twoFactor; endpoint hoàn tất ở tầng Nest đọc lại đúng tên này
+ * qua createAuthCookie của instance).
+ */
 const TWO_FACTOR_COOKIE_NAME = 'two_factor';
 /** Tên cookie tin cậy thiết bị của plugin twoFactor. */
 const TRUST_DEVICE_COOKIE_NAME = 'trust_device';
@@ -62,14 +65,20 @@ const TRUST_DEVICE_MAX_AGE_SECONDS = 720 * 60 * 60;
  */
 const SIGN_IN_GATE_PATHS: ReadonlySet<string> = new Set(['/sign-in/username', '/sign-in/email', '/sign-in/email-otp']);
 
-/** Chuỗi ngẫu nhiên không đoán được cho identifier (plugin dùng generateRandomString alphanumeric; ở đây base64url cùng độ dài ký tự). */
+/**
+ * Chuỗi ngẫu nhiên không đoán được cho identifier (plugin dùng generateRandomString alphanumeric; ở đây base64url cùng
+ * độ dài ký tự).
+ */
 function randomIdentifier(length: number): string {
   return randomBytes(Math.ceil((length * 3) / 4))
     .toString('base64url')
     .slice(0, length);
 }
 
-/** HMAC-SHA256 dạng base64url không đệm — đúng thuật toán `createHMAC("SHA-256", "base64urlnopad")` mà plugin dùng cho cookie trust device. */
+/**
+ * HMAC-SHA256 dạng base64url không đệm — đúng thuật toán `createHMAC("SHA-256", "base64urlnopad")` mà plugin dùng cho
+ * cookie trust device.
+ */
 function hmacSha256Base64Url(key: string, data: string): string {
   return createHmac('sha256', key).update(data).digest('base64url');
 }
@@ -134,7 +143,10 @@ export interface MfaGateDeps {
   isMfaEnabled?: (userId: string) => Promise<boolean>;
 }
 
-/** Đích redirect sau khi cổng kích hoạt ở đường callback: callbackURL gốc của client + cờ báo phía web mở bước hai; không đọc được thì về trang đăng nhập cùng cờ. */
+/**
+ * Đích redirect sau khi cổng kích hoạt ở đường callback: callbackURL gốc của client + cờ báo phía web mở bước hai;
+ * không đọc được thì về trang đăng nhập cùng cờ.
+ */
 function twoFactorRedirectTarget(ctx: GateContext): string {
   const location = locationOf(ctx.context.returned);
   const fallback = `${ctx.context.baseURL}/login`;
@@ -168,7 +180,8 @@ export function createMfaGateHook(deps: MfaGateDeps = {}) {
     try {
       mfaEnabled = await deps.isMfaEnabled(user.id);
     } catch (err) {
-            // FAIL-CLOSED: không xác minh được trạng thái MFA thì phiên vừa tạo không được sống — huỷ ở cả hai tầng như khi
+            // FAIL-CLOSED: không xác minh được trạng thái MFA thì phiên vừa tạo không được sống — huỷ ở cả hai tầng như
+            // khi
       // cổng kích hoạt (cookie trên response + dòng session), ghi log, rồi ném lỗi dừng đăng nhập. Cho đăng nhập đi qua
       // ở đây sẽ là bỏ qua bước hai lặng lẽ mỗi khi tra cứu lỗi.
       ctx.context.logger?.error(

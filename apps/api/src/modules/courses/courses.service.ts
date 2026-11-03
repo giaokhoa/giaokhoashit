@@ -216,8 +216,8 @@ export class CoursesService {
     let parentCtxId: string;
     let tenantId: string;
     if (parent === null) {
-      // Danh mục gốc sống trong không gian của tenant hiệu lực: context của nó neo dưới context tenant (không còn neo thẳng
-      // hệ thống).
+      // Danh mục gốc sống trong không gian của tenant hiệu lực: context của nó neo dưới context tenant (không còn neo
+      // thẳng hệ thống).
       tenantId = await this.effectiveTenantId();
       parentCtxId = (await this.contexts.ensureTenantContext(tenantId)).id;
     } else {
@@ -357,9 +357,9 @@ export class CoursesService {
   }): Promise<CourseRow> {
     const category = await this.getCategory(input.category);
     const categoryCtxId = await this.categoryContextId(category.id);
-    // Lớp học hạng nhất (issue #184): khoá tạo TRONG lớp thì capability `course:create` đánh giá tại context LỚP (cha của
-    // context khoá) thay cho context danh mục — quyền tại lớp (chủ lớp / vai classassigner) là căn cứ; danh mục lùi về
-    // phân loại hành chính. Không có lớp thì giữ nguyên cổng danh mục như trước.
+    // Lớp học hạng nhất (issue #184): khoá tạo TRONG lớp thì capability `course:create` đánh giá tại context LỚP (cha
+    // của context khoá) thay cho context danh mục — quyền tại lớp (chủ lớp / vai classassigner) là căn cứ; danh mục lùi
+    // về phân loại hành chính. Không có lớp thì giữ nguyên cổng danh mục như trước.
     let classRef: { classId: string; contextId: string } | undefined;
     if (input.classId) {
       if (!this.classHook) {
@@ -368,17 +368,19 @@ export class CoursesService {
       classRef = await this.classHook.resolveClass(input.classId, category.tenantId);
       await this.evaluator.requireCapability(actorId, 'course:create', classRef.contextId);
     } else {
-      // Lớp học hạng nhất (issue #184 — điều kiện cứng ở cửa sổ đóng gói CLASS-0, PR #200): một khoá dạy thật PHẢI thuộc đúng
-      // một lớp. createCourse luôn tạo khoá dạy thật (is_template=false; khoá mẫu được đánh dấu sau qua updateCourse)
-      // nên thiếu classId là từ chối sạch 4xx tại đây — lưới cứng ở DB là CHECK course_class_required_check. Đường khôi
-      // phục backup (mode=new) gọi createCourse không kèm lớp cũng bị chặn ở chính cổng này.
+      // Lớp học hạng nhất (issue #184 — điều kiện cứng ở cửa sổ đóng gói CLASS-0, PR #200): một khoá dạy thật PHẢI
+      // thuộc đúng một lớp. createCourse luôn tạo khoá dạy thật (is_template=false; khoá mẫu được đánh dấu sau qua
+      // updateCourse) nên thiếu classId là từ chối sạch 4xx tại đây — lưới cứng ở DB là CHECK
+      // course_class_required_check. Đường khôi phục backup (mode=new) gọi createCourse không kèm lớp cũng bị chặn ở
+      // chính cổng này.
       throw new BadRequestException({ message: 'A course must belong to a class: classId is required', code: 'course.class_required' });
     }
     if (input.subjectId != null) await this.assertSubjectExists(input.subjectId);
-    // Điểm chặn SLOT GÓI GIÁO VIÊN (issue #189 — đặc tả slot đã duyệt): tạo khoá là thời điểm đếm slot của gói giáo viên —
-    // khi khoá thuộc tenant platform, chủ khoá tương lai (chủ của lớp chứa khoá) bị chặn tạo thêm khoá khi số khoá đang
-    // làm chủ đã bằng hạn mức hiệu lực của gói giáo viên (hạn mức gói / ân hạn / mức nền). Khoá thuộc tenant khách hàng
-    // không qua điểm chặn này. Chặn TRƯỚC khi chèn bản ghi khoá; các khoá đang có của giáo viên không bị đụng tới.
+    // Điểm chặn SLOT GÓI GIÁO VIÊN (issue #189 — đặc tả slot đã duyệt): tạo khoá là thời điểm đếm slot của gói giáo
+    // viên — khi khoá thuộc tenant platform, chủ khoá tương lai (chủ của lớp chứa khoá) bị chặn tạo thêm khoá khi số
+    // khoá đang làm chủ đã bằng hạn mức hiệu lực của gói giáo viên (hạn mức gói / ân hạn / mức nền). Khoá thuộc tenant
+    // khách hàng không qua điểm chặn này. Chặn TRƯỚC khi chèn bản ghi khoá; các khoá đang có của giáo viên không bị
+    // đụng tới.
     await this.planLimits.assertTeacherCourseSlotForNewCourse(category.tenantId, classRef.classId);
     const shortName = input.shortName.trim();
     if (await this.repo.getCourseByShortname(shortName)) {
@@ -404,13 +406,13 @@ export class CoursesService {
       await this.outbox.enqueueKysely(tx, { aggregate: 'course', type: 'course_created', payload: { courseId: row.id, categoryId: category.id, actorId }, tenantId: category.tenantId });
       return row;
     });
-    // Khoá thuộc lớp: context khoá neo dưới context LỚP (thay vì danh mục) để quyền tại lớp chảy xuống khoá qua cây path
-    // (issue #184).
+    // Khoá thuộc lớp: context khoá neo dưới context LỚP (thay vì danh mục) để quyền tại lớp chảy xuống khoá qua cây
+    // path (issue #184).
     await this.contexts.createContext(CONTEXT_LEVELS.COURSE, created.id, classRef?.contextId ?? categoryCtxId);
     // Mọi khoá học bắt đầu với section 0 (general), như Moodle.
     await this.repo.insertSection({ course: created.id, section: 0, name: null, summary: '', visible: true });
-    // Vật chất hoá phía lớp (group "cả lớp" + instance cohort + backfill roster) — hook của module classes; lỗi phải lộ ra,
-    // không nuốt.
+    // Vật chất hoá phía lớp (group "cả lớp" + instance cohort + backfill roster) — hook của module classes; lỗi phải lộ
+    // ra, không nuốt.
     if (classRef) await this.classHook!.onCourseCreated(created);
     if (input.formatOptions) {
       for (const [name, value] of Object.entries(input.formatOptions)) {
@@ -480,7 +482,8 @@ export class CoursesService {
     return prune(tree);
   }
 
-  /** Danh sách khoá mẫu tổ/trường cho đường 5 của wizard tạo khoá (K1). Chỉ người có thể tạo khoá ở ít nhất một danh mục
+  /**
+   * Danh sách khoá mẫu tổ/trường cho đường 5 của wizard tạo khoá (K1). Chỉ người có thể tạo khoá ở ít nhất một danh mục
    * (hoặc quản trị hệ thống) mới thấy mẫu — người không có đường tạo khoá thì danh sách mẫu không có ý nghĩa và trả
    * rỗng.
    */
@@ -737,7 +740,9 @@ export class CoursesService {
   }
 
   /** Kiểm tra availability phía server cho một cm (availability của section VÀ availability của cm đều phải qua). */
-  /** Đánh giá truy cập một cm: hiển thị (show) tách khỏi khả dụng (available) theo semantics availability của Moodle. */
+  /**
+   * Đánh giá truy cập một cm: hiển thị (show) tách khỏi khả dụng (available) theo semantics availability của Moodle.
+   */
   async checkCmAccess(userId: string, cm: CmRow, grades?: Record<string, number>): Promise<{ available: boolean; visible: boolean; failedDescriptions: string[] }> {
     const resolvedGrades = grades ?? (this.gradeProvider ? await this.gradesForAvailability(userId, cm.course) : undefined);
     const ctx: AvailabilityContext = { userId, courseId: cm.course, grades: resolvedGrades };
@@ -746,8 +751,8 @@ export class CoursesService {
       const s = await this.availability.evaluate(section.availability, ctx);
       if (!s.available) return { available: false, visible: s.visible, failedDescriptions: s.failedDescriptions };
     }
-    // Ngày mở theo lịch của section (K1): chưa tới ngày thì học viên không thấy mục con bên trong, trừ người xem được hoạt
-    // động ẩn.
+    // Ngày mở theo lịch của section (K1): chưa tới ngày thì học viên không thấy mục con bên trong, trừ người xem được
+    // hoạt động ẩn.
     if (section?.openAt && section.openAt.getTime() > Date.now()) {
       const canSeeHidden = await this.canViewHiddenActivities(userId, cm.course);
       if (!canSeeHidden) return { available: false, visible: false, failedDescriptions: [] };
@@ -772,8 +777,8 @@ export class CoursesService {
     if (!section.visible && !(await this.canViewHiddenActivities(userId, section.course))) {
       return { available: false, visible: false, failedDescriptions: [] };
     }
-    // Ngày mở theo lịch (K1): section chưa tới ngày mở thì học viên không xem được, người xem được hoạt động ẩn vẫn thấy để
-    // soạn.
+    // Ngày mở theo lịch (K1): section chưa tới ngày mở thì học viên không xem được, người xem được hoạt động ẩn vẫn
+    // thấy để soạn.
     if (section.openAt && section.openAt.getTime() > Date.now() && !(await this.canViewHiddenActivities(userId, section.course))) {
       return { available: false, visible: false, failedDescriptions: [] };
     }
@@ -782,7 +787,8 @@ export class CoursesService {
     return { available: r.available, visible: r.visible, failedDescriptions: r.failedDescriptions };
   }
 
-  /** Nạp khung chương trình vào khoá (K0a — bản sao có neo): mỗi node khung được chọn thành một section mới mang tựa của
+  /**
+   * Nạp khung chương trình vào khoá (K0a — bản sao có neo): mỗi node khung được chọn thành một section mới mang tựa của
    * node và toàn bộ YCCĐ trong subtree của nó, chụp nguyên văn vào neo. `insertAtSection` chèn trước section mang số đó
    * (đẩy các section từ đó xuống cuối đoạn chèn), bỏ trống thì nối cuối outline. Sửa cây chương trình sau đó không đổi
    * các section đã nạp vì chúng đọc từ bản chụp. Nạp lại là IDEMPOTENT theo node: node đã có section neo trong khoá (từ
@@ -897,7 +903,8 @@ export class CoursesService {
     }
   }
 
-  /** Sao chép một course module sang khoá/section đích trong cùng transaction: instance của hoạt động đề (mod_quiz) được
+  /**
+   * Sao chép một course module sang khoá/section đích trong cùng transaction: instance của hoạt động đề (mod_quiz) được
    * nhân bản thành một LẦN GHIM mới vào khoá đích trỏ CÙNG exam + exam version (slots nằm trên version — dùng chung,
    * không chép; KHÔNG chép lượt làm bài; nhóm đích KHÔNG mang theo vì nhóm thuộc khoá nguồn); các component khác hiện
    * không có bảng instance riêng do module sở hữu tạo qua API nên giữ nguyên `instanceId` (thực tế là null). Trả cm mới
@@ -916,8 +923,8 @@ export class CoursesService {
   ): Promise<CmRow> {
     let instanceId = source.instanceId;
     if (source.component === QUIZ_COMPONENT_NAME && source.instanceId) {
-      // Đường ghi trực tiếp trên bảng `exam_pins` trong transaction nhân bản — đã chuyển sang Kysely cùng toàn bộ file này
-      // (điểm 5 của phán quyết C-8, cùng cơ chế với `copyGradeStructure`): bảng đã có trong kiểu sinh của kho trung
+      // Đường ghi trực tiếp trên bảng `exam_pins` trong transaction nhân bản — đã chuyển sang Kysely cùng toàn bộ file
+      // này (điểm 5 của phán quyết C-8, cùng cơ chế với `copyGradeStructure`): bảng đã có trong kiểu sinh của kho trung
       // tâm; cột `variants` là jsonb mang mảng ở tầng cao nhất nên ghi qua xâu hoá + `::jsonb` như mọi ghi jsonb.
       const pin = await tx.selectFrom('exam_pins').selectAll().where('id', '=', source.instanceId).executeTakeFirst();
       if (pin) {
@@ -953,9 +960,9 @@ export class CoursesService {
     if (source.component === QUIZ_COMPONENT_NAME && instanceId && instanceId !== source.instanceId) {
       await tx.updateTable('exam_pins').set({ cm_id: newCm.id }).where('id', '=', instanceId).execute();
     }
-    // Context module cho cm mới (như createCm) — contexts nằm ngoài tx của courses trong luồng tạo thường; ở đây tạo sau
-    // khi tx commit qua danh sách chờ của caller là không khả thi, nên tạo trực tiếp: ContextsService dùng cùng kết nối
-    // DB nền, chấp nhận được.
+    // Context module cho cm mới (như createCm) — contexts nằm ngoài tx của courses trong luồng tạo thường; ở đây tạo
+    // sau khi tx commit qua danh sách chờ của caller là không khả thi, nên tạo trực tiếp: ContextsService dùng cùng kết
+    // nối DB nền, chấp nhận được.
     await this.contexts.createContext(CONTEXT_LEVELS.MODULE, newCm.id, await this.courseContextId(targetCourseId));
     return newCm;
   }
@@ -988,15 +995,16 @@ export class CoursesService {
     return newSection;
   }
 
-  /** Sao chép cấu trúc điểm (chính sách điểm) của khoá nguồn sang khoá đích: scale cấp khoá, outcome, cây category điểm,
+  /**
+   * Sao chép cấu trúc điểm (chính sách điểm) của khoá nguồn sang khoá đích: scale cấp khoá, outcome, cây category điểm,
    * toàn bộ grade item (map lại instance/category/course) — KHÔNG chép điểm của học viên (grade_grades), theo đúng bảng
    * sao chép Re-run của issue #68.
    */
   private async copyGradeStructure(
     tx: CentreTx, sourceCourseId: string, targetCourseId: string, cmMap: Map<string, string>, deltaMs = 0,
   ): Promise<void> {
-    // Điểm 5 của phán quyết C-8: hàm này ghi trực tiếp các bảng grades/completion TRONG transaction của luồng nhân bản và
-    // được chuyển sang Kysely ngay tại đây (các bảng đã có trong kiểu sinh của kho trung tâm) thay vì chờ repository
+    // Điểm 5 của phán quyết C-8: hàm này ghi trực tiếp các bảng grades/completion TRONG transaction của luồng nhân bản
+    // và được chuyển sang Kysely ngay tại đây (các bảng đã có trong kiểu sinh của kho trung tâm) thay vì chờ repository
     // của các nhóm G4/G9 — file này thuộc chính cụm G5 và không chạm file repository của các nhóm đó.
     const sourceItems = await tx.selectFrom('grade_items').selectAll().where('course_id', '=', sourceCourseId).execute();
     for (const item of sourceItems) {
@@ -1039,8 +1047,9 @@ export class CoursesService {
    */
   async duplicateCourse(actorId: string, sourceCourseId: string, input: {
     fullName: string; shortName: string; category?: string; startDate?: string;
-    /** Lớp đích (issue #184): mặc định giữ lớp của khoá nguồn — đây là đường "nhân bản khoá mẫu vào lớp" của wizard; đích
-     * cuối cùng không có lớp (gồm `null` tường minh) bị từ chối `course.class_required`.
+    /**
+     * Lớp đích (issue #184): mặc định giữ lớp của khoá nguồn — đây là đường "nhân bản khoá mẫu vào lớp" của wizard;
+     * đích cuối cùng không có lớp (gồm `null` tường minh) bị từ chối `course.class_required`.
      */
     classId?: string | null;
   }): Promise<CourseRow> {
@@ -1058,10 +1067,10 @@ export class CoursesService {
       classRef = await this.classHook.resolveClass(targetClassId, targetCategory.tenantId);
       await this.evaluator.requireCapability(actorId, 'course:create', classRef.contextId);
     } else {
-      // Bản sao luôn là khoá dạy thật (isTemplate=false ở insert dưới): không có lớp đích — gồm cả `classId: null` tường minh
-      // và nhân bản từ khoá mẫu vốn không lớp — là từ chối sạch 4xx (issue #184, điều kiện cứng đóng gói CLASS-0). Muốn
-      // nhân bản vào lớp thì truyền classId đích; bỏ trống chỉ hợp lệ khi khoá nguồn đã thuộc một lớp (giữ nguyên lớp
-      // nguồn).
+      // Bản sao luôn là khoá dạy thật (isTemplate=false ở insert dưới): không có lớp đích — gồm cả `classId: null`
+      // tường minh và nhân bản từ khoá mẫu vốn không lớp — là từ chối sạch 4xx (issue #184, điều kiện cứng đóng gói
+      // CLASS-0). Muốn nhân bản vào lớp thì truyền classId đích; bỏ trống chỉ hợp lệ khi khoá nguồn đã thuộc một lớp
+      // (giữ nguyên lớp nguồn).
       throw new BadRequestException({ message: 'A duplicated course must belong to a class: classId is required', code: 'course.class_required' });
     }
     const shortName = input.shortName.trim();
@@ -1104,8 +1113,8 @@ export class CoursesService {
         await this.copySectionRow(tx, s, created.id, s.section, deltaMs, cmMap);
       }
       await this.copyGradeStructure(tx, sourceCourseId, created.id, cmMap, deltaMs);
-      // Format options (sectionId map lại theo section mới khi có) — đọc section mới ngay trong transaction để thấy dữ liệu
-      // vừa chèn.
+      // Format options (sectionId map lại theo section mới khi có) — đọc section mới ngay trong transaction để thấy dữ
+      // liệu vừa chèn.
       const sectionMap = new Map<string, string>();
       const newSections = await tx.selectFrom('course_sections').selectAll().where('course', '=', created.id).execute();
       for (const s of ordered) {
@@ -1196,7 +1205,8 @@ export class CoursesService {
     return { sections: createdSections, modules: createdCms };
   }
 
-  /** Nhân bản một section ngay tại outline (K1): bản sao (kèm cm + instance quiz + neo khung) chèn ngay sau section gốc,
+  /**
+   * Nhân bản một section ngay tại outline (K1): bản sao (kèm cm + instance quiz + neo khung) chèn ngay sau section gốc,
    * các section phía sau lùi một số.
    */
   async duplicateSection(actorId: string, sectionId: string): Promise<SectionRow> {
@@ -1210,8 +1220,8 @@ export class CoursesService {
       await this.repo.shiftSections(handle, section.course, section.section + 1, 100000);
       await this.repo.shiftSections(handle, section.course, section.section + 1 + 100000, 1 - 100000);
       created = await this.copySectionRow(tx, section, section.course, section.section + 1, 0, cmMap);
-      // Item điểm 'mod' của các cm gốc trỏ sang cm bản sao (ghi trực tiếp trên `grade_items` trong cùng transaction — cùng cơ
-      // chế điểm 5 của phán quyết C-8 với `copyGradeStructure`).
+      // Item điểm 'mod' của các cm gốc trỏ sang cm bản sao (ghi trực tiếp trên `grade_items` trong cùng transaction —
+      // cùng cơ chế điểm 5 của phán quyết C-8 với `copyGradeStructure`).
       for (const [oldCmId, newCmId] of cmMap) {
         const items = await tx.selectFrom('grade_items').selectAll()
           .where('course_id', '=', section.course)
@@ -1247,8 +1257,8 @@ export class CoursesService {
         .where('sort_order', '>', cm.sortOrder)
         .execute();
       created = await this.copyCmRow(tx, { ...cm, sortOrder: cm.sortOrder + 1 }, cm.course, cm.section, 0, cmMap);
-      // Item điểm 'mod' của cm gốc trỏ sang cm bản sao (ghi trực tiếp trên `grade_items` trong cùng transaction — cùng cơ chế
-      // điểm 5 của phán quyết C-8 với `copyGradeStructure`).
+      // Item điểm 'mod' của cm gốc trỏ sang cm bản sao (ghi trực tiếp trên `grade_items` trong cùng transaction — cùng
+      // cơ chế điểm 5 của phán quyết C-8 với `copyGradeStructure`).
       const items = await tx.selectFrom('grade_items').selectAll()
         .where('course_id', '=', cm.course)
         .where('item_type', '=', 'mod')
@@ -1289,7 +1299,8 @@ export class CoursesService {
     return this.repo.listSections(courseId);
   }
 
-  /** Đổi thứ tự module trong một section bằng danh sách id mới (K1): danh sách phải đủ mọi module của section; sortOrder
+  /**
+   * Đổi thứ tự module trong một section bằng danh sách id mới (K1): danh sách phải đủ mọi module của section; sortOrder
    * gán lại 0..n-1.
    */
   async reorderModules(actorId: string, sectionId: string, moduleIds: string[]): Promise<CmRow[]> {

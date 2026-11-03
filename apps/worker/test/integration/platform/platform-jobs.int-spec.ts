@@ -93,7 +93,8 @@ describe('Dịch vụ platform của worker: backup, reindex tìm kiếm, analyt
     // Ngân hàng câu hỏi ở context của khoá + badge của khoá + sự kiện/subscription của khoá.
     const qCatRows = await sql`insert into question_categories (name, context_id) values (${`wk5-bank-${suffix}`}, ${courseCtxId}) returning id`.execute(db);
     const qCatId = (qCatRows.rows[0] as { id: string }).id;
-    // Câu hỏi không còn cột `name` (mô hình chốt 12:04: nhãn = trích đoạn nội dung) nên fixture chỉ chèn đúng cột còn tồn tại.
+    // Câu hỏi không còn cột `name` (mô hình chốt 12:04: nhãn = trích đoạn nội dung) nên fixture chỉ chèn đúng cột còn
+    // tồn tại.
     const qRows = await sql`insert into question (category, qtype) values (${qCatId}, 'truefalse') returning id`.execute(db);
     const qId = (qRows.rows[0] as { id: string }).id;
     const entryRows = await sql`insert into question_bank_entries (question_category_id, question_id, latest_version) values (${qCatId}, ${qId}, 2) returning id`.execute(db);

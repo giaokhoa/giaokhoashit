@@ -122,7 +122,8 @@ describe('Trang cấu hình site của admin', () => {
     expect(screen.getByText('Sắp hết hạn ghi danh')).toBeInTheDocument();
     expect(screen.getByText('Loại bắt buộc — không tắt được')).toBeInTheDocument();
     const mandatoryBox = screen.getByRole('checkbox', { name: 'Giá trị của notifications/provider_enrol_expiry_warning_enabled' });
-    // Checkbox của bộ UI (Base UI) thể hiện khoá bằng aria-disabled + data-disabled, không phải thuộc tính disabled gốc.
+    // Checkbox của bộ UI (Base UI) thể hiện khoá bằng aria-disabled + data-disabled, không phải thuộc tính disabled
+    // gốc.
     expect(mandatoryBox).toHaveAttribute('aria-disabled', 'true');
     expect(mandatoryBox).toHaveAttribute('data-disabled');
     expect(mandatoryBox).toHaveAttribute('aria-checked', 'true');

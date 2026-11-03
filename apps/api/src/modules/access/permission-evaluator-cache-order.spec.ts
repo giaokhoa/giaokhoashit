@@ -108,7 +108,8 @@ function makeWorld(opts?: { databaseUrl?: string; cacheStore?: Map<string, unkno
     async getConfigValue(key: string) {
       counters.configReads += 1;
       if (key !== 'siteadmins') return undefined;
-            // Lượt đọc ghim platform của evaluator chạy trong ngữ cảnh ALS platform đã lược slug: tầng dữ liệu thật lúc đó
+            // Lượt đọc ghim platform của evaluator chạy trong ngữ cảnh ALS platform đã lược slug: tầng dữ liệu thật lúc
+            // đó
       // đọc kho chung, nên giả lập trả danh sách platform riêng thay vì danh sách của "kho đang được ngữ cảnh đọc" mà
       // các ca thường dùng.
       const store = tenantAls.getStore();
@@ -292,7 +293,8 @@ describe('PermissionEvaluator — thay đổi dữ kiện quyền có hiệu l�
 
 describe('PermissionEvaluator — cô lập cache site admin theo cơ sở dữ liệu khi dùng chung Redis', () => {
   it('tiến trình trên DB trống không thấy danh sách site admin mà tiến trình của DB khác đã ghi xuyên vào Redis chung', async () => {
-        // Đúng hình thù làm CI đỏ ở spec seed-bootstrap: app chính boot trên DB của nó và seed ghi xuyên admin đầu tiên vào
+        // Đúng hình thù làm CI đỏ ở spec seed-bootstrap: app chính boot trên DB của nó và seed ghi xuyên admin đầu tiên
+        // vào
     // Redis dùng chung; app con trên DB trống khác sau đó quyết định việc tạo admin đầu tiên dựa trên danh sách site
     // admin nó đọc được.
     const sharedStore = new Map<string, unknown>();
@@ -329,7 +331,8 @@ describe('PermissionEvaluator — cô lập cache site admin theo cơ sở dữ 
   });
 
   it('cùng một tiến trình phục vụ hai kho: ngữ cảnh kho riêng hợp nhất một chiều với danh sách platform, ngữ cảnh kho chung không bao giờ thấy danh sách kho riêng', async () => {
-        // Mô hình của tiền điều kiện TĐ6 (issue #587): một tiến trình vừa phục vụ kho chung vừa phục vụ một trung tâm kho
+        // Mô hình của tiền điều kiện TĐ6 (issue #587): một tiến trình vừa phục vụ kho chung vừa phục vụ một trung tâm
+        // kho
     // riêng qua handle định tuyến, dùng chung một Redis. Tầng dữ liệu giả lập là một repository duy nhất, nên test hoán
     // đổi danh sách site admin của repository theo "kho đang được ngữ cảnh đọc" để đóng vai hai kho; phần bị kiểm chứng
     // là khoá cache mà evaluator dựng từ danh tính kho của ngữ cảnh — khoá đó phải tự tách hai kho dù cache vật lý là
@@ -348,7 +351,8 @@ describe('PermissionEvaluator — cô lập cache site admin theo cơ sở dữ 
     await expect(evaluator.isSiteAdmin('admin-kho-chung')).resolves.toBe(true);
     const readsAfterSharedPrime = counters.configReads;
 
-        // Chuyển ngữ cảnh sang kho riêng (danh tính kho do khung định tuyến báo): evaluator phải đọc lại từ tầng dữ liệu
+        // Chuyển ngữ cảnh sang kho riêng (danh tính kho do khung định tuyến báo): evaluator phải đọc lại từ tầng dữ
+        // liệu
     // theo khoá của kho riêng — không dùng mục kho chung vừa nạp — và nhận diện admin của kho riêng; đồng thời lớp phủ
     // platform khiến admin kho chung cũng được nhận diện trong ngữ cảnh này.
     contextDatabaseName = 'lms_space_rieng';
@@ -357,7 +361,8 @@ describe('PermissionEvaluator — cô lập cache site admin theo cơ sở dữ 
     expect(counters.configReads).toBeGreaterThan(readsAfterSharedPrime);
     await expect(evaluator.isSiteAdmin('admin-kho-chung')).resolves.toBe(true);
 
-        // Ghi xuyên trong ngữ cảnh kho riêng chỉ chạm mục của kho riêng: quay lại ngữ cảnh kho chung, danh sách hiệu lực
+        // Ghi xuyên trong ngữ cảnh kho riêng chỉ chạm mục của kho riêng: quay lại ngữ cảnh kho chung, danh sách hiệu
+        // lực
     // vẫn là danh sách của kho chung, admin ghi ở kho riêng không rò sang.
     await evaluator.setSiteAdmins(['admin-kho-rieng', 'admin-rieng-hai']);
     contextDatabaseName = undefined;

@@ -153,13 +153,15 @@ export class ContentBankService {
   async canView(userId: string, row: ContentRow): Promise<boolean> {
     if (row.creatorId === userId) return true;
     if (row.scope === 'org' || row.scope === 'school') {
-            // Kho chia sẻ KHÔNG dùng lối tắt editcontent tại context neo (neo ở hệ thống nên mọi vai trò cấp hệ thống sẽ
+            // Kho chia sẻ KHÔNG dùng lối tắt editcontent tại context neo (neo ở hệ thống nên mọi vai trò cấp hệ thống
+            // sẽ
       // lọt): chưa duyệt chỉ tác giả + người duyệt; đã duyệt mới mở cho đúng đối tượng của scope. Site admin vẫn qua
       // được nhờ bypass trong evaluator (canReview).
       if (await this.canReview(userId, row)) return true;
       if (row.reviewStatus !== 'approved') return false;
       if (row.scope === 'org') return row.spaceId ? this.repo.isCohortMember(row.spaceId, userId) : false;
-            // Scope trường đã duyệt + public = công khai trong trường (phân xử điểm mở probe v86, issue #69): mọi người dùng
+            // Scope trường đã duyệt + public = công khai trong trường (phân xử điểm mở probe v86, issue #69): mọi người
+            // dùng
       // ĐÃ ĐĂNG NHẬP đều xem được. Cổng cũ đòi viewcontent tại context hệ thống làm học liệu public không tới được giáo
       // viên/học sinh (họ chỉ có vai ở context khoá/tổ) — vòng đời duyệt vì thế vô nghĩa.
       return row.visibility === 'public';
@@ -267,7 +269,8 @@ export class ContentBankService {
     if (scope === 'org' && input.spaceId) await this.assertOrgMembership(actorId, input.spaceId);
     const contextId = input.contextId ?? (await this.resolveContext(actorId, scope, input.spaceId));
     if (scope === 'personal' && contextId === (await this.personalContextId(actorId))) {
-            // Tạo trong kho cá nhân của CHÍNH MÌNH (đường mặc định của UI, không contextId): cổng riêng theo chủ sở hữu — xem
+            // Tạo trong kho cá nhân của CHÍNH MÌNH (đường mặc định của UI, không contextId): cổng riêng theo chủ sở hữu
+            // — xem
       // assertCanUsePersonalBank. Các đường còn lại (contextId tường minh, scope tổ/trường) giữ cổng capability tại
       // context neo.
       await this.assertCanUsePersonalBank(actorId);
@@ -394,7 +397,8 @@ export class ContentBankService {
       contextId: row.contextId, component: 'core_contentbank', fileArea: 'content', itemId: row.id,
       fileName: input.fileName, data, mimeType: input.mimeType, userId: actorId,
     });
-        // Metadata kỹ thuật tự sinh từ file thật (CB1-B2): định dạng theo đuôi file + dung lượng đúng số byte đã tải lên.
+        // Metadata kỹ thuật tự sinh từ file thật (CB1-B2): định dạng theo đuôi file + dung lượng đúng số byte đã tải
+        // lên.
     const ext = input.fileName.includes('.') ? input.fileName.split('.').pop()!.toLowerCase() : null;
     await this.repo.update(id, { fileId: file.id, sizeBytes: data.length, ...(ext ? { techFormat: ext } : {}) });
     // Thay file của học liệu đã/chờ duyệt → quay về draft chờ duyệt lại.
@@ -503,7 +507,8 @@ export class ContentBankService {
       throw new ForbiddenException({ message: 'Only approved library items can be inserted into a course', code: 'contentbank.not_approved' });
     }
     if (row.resourceType === 'question_set' && !row.fileId) {
-            // Bộ câu hỏi THAM CHIẾU (có category, không có file) sống ở Ngân hàng câu hỏi — không cắm thành tài nguyên khoá.
+            // Bộ câu hỏi THAM CHIẾU (có category, không có file) sống ở Ngân hàng câu hỏi — không cắm thành tài nguyên
+            // khoá.
       // Học liệu nhóm câu hỏi/bài tập có file đính kèm (phiếu bài tập) thì cắm như tài nguyên bình thường.
       throw new BadRequestException({ message: 'Question-set references are used from the question bank, not inserted as course resources', code: 'contentbank.question_set_not_insertable' });
     }

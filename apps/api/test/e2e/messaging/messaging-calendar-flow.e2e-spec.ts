@@ -185,7 +185,8 @@ describe('Nhắn tin và lịch', () => {
 
   it('liên hệ bị chặn không thể gửi: danh sách chặn của người nhận dừng phân phối (api_test test_count_blocked_users)', async () => {
     const { a, b, aToken, bToken } = await twoUsers();
-    // Cổng liên hệ: hai người dùng là liên hệ đã được chấp nhận; danh sách chặn là một luật riêng, mạnh hơn, được kiểm tra trước tại thời điểm gửi.
+    // Cổng liên hệ: hai người dùng là liên hệ đã được chấp nhận; danh sách chặn là một luật riêng, mạnh hơn, được kiểm
+    // tra trước tại thời điểm gửi.
     await befriend({ id: b.id, token: bToken }, { id: a.id, token: aToken });
     const blocked = await http(app).post(`/api/v1/messages/contacts/${a.id}/block`).set('Authorization', `Bearer ${bToken}`).send({});
     expect(blocked.body.blocked).toContain(a.id);
@@ -204,7 +205,8 @@ describe('Nhắn tin và lịch', () => {
 
   it('người nhận bị đình chỉ không nhận cả tin nhắn lẫn thông báo (§2#12 DoD)', async () => {
     const { a, b, aToken, bToken } = await twoUsers();
-    // Cổng liên hệ: hai người dùng trở thành liên hệ đã được chấp nhận trước khi bị đình chỉ, nên luật đình chỉ là thứ chặn việc gửi.
+    // Cổng liên hệ: hai người dùng trở thành liên hệ đã được chấp nhận trước khi bị đình chỉ, nên luật đình chỉ là thứ
+    // chặn việc gửi.
     await befriend({ id: b.id, token: bToken }, { id: a.id, token: aToken });
     await suspendUser(app, admin, b.id);
     const conv = await http(app).post('/api/v1/messages/conversations').set('Authorization', `Bearer ${aToken}`)

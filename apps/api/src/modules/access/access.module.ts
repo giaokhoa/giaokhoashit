@@ -21,7 +21,8 @@ import { RolesService } from './roles.service';
 @Module({
   imports: [
     CacheInfraModule, EventsModule,
-        // SpaceRoutingModule: PermissionEvaluator cần SpaceDatabaseService để lấy danh tính kho của ngữ cảnh hiện tại cho
+        // SpaceRoutingModule: PermissionEvaluator cần SpaceDatabaseService để lấy danh tính kho của ngữ cảnh hiện tại
+        // cho
     // khoá cache `siteadmins` (issue #587, tiền điều kiện TĐ6), và AccessRepository cần handle `routedKysely` của nó
     // (xem provider factory bên dưới). Cạnh này khép vòng module tường minh AccessModule → SpaceRoutingModule →
     // ControlPlaneModule → AccessModule (ControlPlaneModule import module này cho chính
@@ -33,7 +34,8 @@ import { RolesService } from './roles.service';
   controllers: [AccessController],
   providers: [
     {
-            // AccessRepository nay là repository Kysely của `@lms/db` (issue #651): provider dựng bằng factory với handle kho
+            // AccessRepository nay là repository Kysely của `@lms/db` (issue #651): provider dựng bằng factory với
+            // handle kho
       // trung tâm ĐÃ ĐỊNH TUYẾN THEO KHÔNG GIAN (`routedKysely` của SpaceDatabaseService), cùng khuôn với các
       // repository đã chuyển trước đó. Evaluator đọc cổng tenant qua không gian của request nên handle phải là facade
       // định tuyến, không phải handle kho cố định.

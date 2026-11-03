@@ -47,9 +47,9 @@ export interface CreateEventInput {
 @Injectable()
 /**
  * Nghiệp vụ lịch: sự kiện theo phạm vi (site/category/course/group/user), chuỗi lặp RRULE và exception từng occurrence.
- * Đối chiếu Moodle: calendar/classes (calendar_event) và lib.php của calendar.
- * Nguyên tắc hiển thị: user chỉ thấy sự kiện thuộc các phạm vi mình liên quan (khoá học đã enrol, nhóm của mình, sự kiện cá nhân/site);
- * exception thay thế occurrence tương ứng của chuỗi thay vì tạo sự kiện độc lập.
+ * Đối chiếu Moodle: calendar/classes (calendar_event) và lib.php của calendar. Nguyên tắc hiển thị: user chỉ thấy sự
+ * kiện thuộc các phạm vi mình liên quan (khoá học đã enrol, nhóm của mình, sự kiện cá nhân/site); exception thay thế
+ * occurrence tương ứng của chuỗi thay vì tạo sự kiện độc lập.
  */
 export class CalendarService {
   constructor(

@@ -40,7 +40,6 @@ import { PermissionEvaluator } from './permission-evaluator.service';
 // Thế giới dữ kiện: cây context + gán vai + override (phần không thuộc
 // hai bảng cổng thì nạp từ fixture; riêng dữ kiện cổng đi qua
 // AccessRepository THẬT trên tầng dữ liệu mô phỏng RLS).
-// ---------------------------------------------------------------------------
 
 const ctx = (id: string, contextLevel: number, path: string, instanceId: string | null = null): ContextRow =>
   ({ id, contextLevel, instanceId, path, depth: path.split('/').filter(Boolean).length, version: 1 }) as ContextRow;
@@ -112,7 +111,8 @@ function makeRlsDb(): CentreDb {
           return actual === value;
         });
       });
-            // Chiếu đúng các cột đã select, dịch bí danh `x as y` thành khoá y như Kysely làm với danh sách cột có bí danh.
+            // Chiếu đúng các cột đã select, dịch bí danh `x as y` thành khoá y như Kysely làm với danh sách cột có bí
+            // danh.
       return matched.map((row) => {
         const out: Record<string, unknown> = {};
         for (const column of columns) {
@@ -141,7 +141,6 @@ function makeRlsDb(): CentreDb {
 
 // Evaluator trên fixture: dữ kiện cổng do caller cấp (repository thật
 // hoặc bản không xác minh được), phần còn lại từ fixture trong bộ nhớ.
-// ---------------------------------------------------------------------------
 
 interface GateReads {
   getTenantGateInfo(tenantId: string): Promise<{ kind: string; status: string } | undefined>;
@@ -297,7 +296,8 @@ describe('PermissionEvaluator — cổng tenant khi phiên của người gọi 
 });
 
 describe('PermissionEvaluator — fail-closed khi dữ kiện cổng không xác minh được', () => {
-    // Tầng đọc trả về rỗng/undefined cho MỌI tenant: trạng thái "không xác minh được" tại biên của evaluator — đúng trạng
+    // Tầng đọc trả về rỗng/undefined cho MỌI tenant: trạng thái "không xác minh được" tại biên của evaluator — đúng
+    // trạng
   // thái đường đọc cũ tạo ra khi bản ghi bị RLS che, và là trạng thái cổng phải từ chối thay vì cho qua.
   const unverifiableGate: GateReads = {
     async getTenantGateInfo() {

@@ -84,8 +84,9 @@ export class CurriculumService implements OnModuleInit {
     private readonly courses: CoursesService,
   ) {}
 
-  /** Khởi tạo: đăng ký nguồn đơn vị khung cho cơ chế nạp khung vào khoá của Courses (dependency inversion — Courses không
-   * import Curriculum).
+  /**
+   * Khởi tạo: đăng ký nguồn đơn vị khung cho cơ chế nạp khung vào khoá của Courses (dependency inversion — Courses
+   * không import Curriculum).
    */
   onModuleInit(): void {
     this.courses.registerCurriculumFrameProvider({
@@ -93,7 +94,8 @@ export class CurriculumService implements OnModuleInit {
     });
   }
 
-  /** Phân giải context: id đã cho mà đọc được thì dùng nó, còn lại (vắng hoặc lạ) thì về context hệ thống. Vắng id không
+  /**
+   * Phân giải context: id đã cho mà đọc được thì dùng nó, còn lại (vắng hoặc lạ) thì về context hệ thống. Vắng id không
    * còn là lỗi — đường liệt kê môn dùng nhánh này để mặc định về hệ thống.
    */
   private async contextOrSystem(contextId?: string) {
@@ -145,7 +147,10 @@ export class CurriculumService implements OnModuleInit {
     }
     return this.subjectOr404(id);
   }
-  /** Xoá môn học (cascade toàn bộ chương trình bên dưới); còn tham chiếu cứng vào cây/YCCĐ của môn → 409 (xem assertNotReferenced). */
+  /**
+   * Xoá môn học (cascade toàn bộ chương trình bên dưới); còn tham chiếu cứng vào cây/YCCĐ của môn → 409 (xem
+   * assertNotReferenced).
+   */
   async deleteSubject(actorId: string, id: string): Promise<void> {
     const row = await this.subjectOr404(id);
     await this.evaluator.requireCapability(actorId, CURRICULUM_MANAGE, row.contextId);
@@ -225,7 +230,8 @@ export class CurriculumService implements OnModuleInit {
     await this.evaluator.requireCapability(actorId, CURRICULUM_VIEW, subject.contextId);
     return node;
   }
-  /** Sửa node; đổi cha vẫn phải ở trong cùng chương trình, không tự trỏ vào chính mình, và **không tạo vòng cha–con gián
+  /**
+   * Sửa node; đổi cha vẫn phải ở trong cùng chương trình, không tự trỏ vào chính mình, và **không tạo vòng cha–con gián
    * tiếp** (cha mới là hậu duệ của node — sửa ở Chặng 2, mục A.7: trước đây chỉ chặn tự trỏ, vòng gián tiếp làm subtree
    * biến mất khỏi cây đọc).
    */
@@ -262,7 +268,8 @@ export class CurriculumService implements OnModuleInit {
     await this.repo.deleteNode(id);
   }
 
-  /** Cổng đọc cây/môn/chương trình: đạt khi có `curriculum:view` tại context của môn, HOẶC — chỉ khi lời gọi phục vụ nạp
+  /**
+   * Cổng đọc cây/môn/chương trình: đạt khi có `curriculum:view` tại context của môn, HOẶC — chỉ khi lời gọi phục vụ nạp
    * khung cho một khoá cụ thể (`forCourseId`) — có `course:update` tại context của chính khoá đó. Ngoài hai nhánh này
    * vẫn 403 như cũ: giáo viên của khoá khác và người không liên quan không đọc được cây qua nhánh mới.
    */
@@ -356,7 +363,8 @@ export class CurriculumService implements OnModuleInit {
     return (await this.curriculumChainOr404(id)).curriculum;
   }
 
-  /** Đọc THAM CHIẾU cây nội dung trọn vẹn của một chương trình — bản nội bộ của {@link getTree}, cùng khuôn và cùng điều
+  /**
+   * Đọc THAM CHIẾU cây nội dung trọn vẹn của một chương trình — bản nội bộ của {@link getTree}, cùng khuôn và cùng điều
    * kiện dùng như {@link getSubjectReference} (luồng nhập ma trận cần cây để dựng mẫu và đối chiếu Mã ĐVK sau khi đã
    * qua cổng bank của luồng).
    *
@@ -385,8 +393,8 @@ export class CurriculumService implements OnModuleInit {
     const { subject } = await this.nodeChainOr404(input.nodeId);
     await this.evaluator.requireCapability(actorId, CURRICULUM_MANAGE, subject.contextId);
     await this.assertOutcomeSource({ sourceKind: input.sourceKind ?? 'program', derivedFromId: input.derivedFromId ?? null });
-    // Đường ghi tay qua API nhận text thuần: gói mỗi dòng thành một đoạn văn để cột jsonb luôn chứa tài liệu hợp lệ; text
-    // canonical trích lại từ tài liệu đó khớp đúng text đã nhập.
+    // Đường ghi tay qua API nhận text thuần: gói mỗi dòng thành một đoạn văn để cột jsonb luôn chứa tài liệu hợp lệ;
+    // text canonical trích lại từ tài liệu đó khớp đúng text đã nhập.
     return toCurriculumOutcomeView(await this.repo.insertOutcome({
       nodeId: input.nodeId, content: programOutcomeTextToDoc(input.content), position: input.position ?? 1,
       sourceKind: input.sourceKind ?? 'program', sourceRef: input.sourceRef ?? null, derivedFromId: input.derivedFromId ?? null,
@@ -455,7 +463,8 @@ export class CurriculumService implements OnModuleInit {
     grade: number;
   }[]> {
     const limit = Math.min(Math.max(input.limit ?? 20, 1), 50);
-    // Lấy dư ở SQL rồi lọc quyền theo môn: tránh trường hợp trang đầu toàn YCCĐ của môn không đọc được làm cạn kết quả oan.
+    // Lấy dư ở SQL rồi lọc quyền theo môn: tránh trường hợp trang đầu toàn YCCĐ của môn không đọc được làm cạn kết quả
+    // oan.
     const rows = await this.repo.searchOutcomes({
       query: input.query,
       subjectId: input.subjectId,
@@ -506,8 +515,9 @@ export class CurriculumService implements OnModuleInit {
     });
     return toCurriculumOutcomeView((await this.outcomeChainOr404(id)).outcome);
   }
-  /** Số câu hỏi sẵn sàng (ready) đã gắn vào một YCCĐ, theo (mức × dạng) — API khả dụng tối thiểu của Chặng 2 (mục A.6) để
-   * Quiz Chặng 3 đếm ứng viên cho ô ma trận mà không tự truy vấn chéo module.
+  /**
+   * Số câu hỏi sẵn sàng (ready) đã gắn vào một YCCĐ, theo (mức × dạng) — API khả dụng tối thiểu của Chặng 2 (mục A.6)
+   * để Quiz Chặng 3 đếm ứng viên cho ô ma trận mà không tự truy vấn chéo module.
    */
   async getOutcomeQuestionCounts(actorId: string, id: string): Promise<{ outcomeId: string; counts: { cognitiveLevel: string; qtype: string; count: number }[] }> {
     const { subject } = await this.outcomeChainOr404(id);

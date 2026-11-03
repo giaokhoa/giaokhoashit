@@ -25,13 +25,19 @@ interface ProviderProfile {
   /** Định danh chủ thể ổn định phía provider (`sub` của Google, `id` của Facebook). */
   subject: string;
   email: string;
-  /** Provider có khẳng định email đã xác thực không (Google: `email_verified`; Facebook không công bố cờ này — email trả về từ Graph API được coi là đã xác thực, giống issuer dựng sẵn của Moodle). */
+  /**
+   * Provider có khẳng định email đã xác thực không (Google: `email_verified`; Facebook không công bố cờ này — email trả
+   * về từ Graph API được coi là đã xác thực, giống issuer dựng sẵn của Moodle).
+   */
   emailVerified: boolean;
   firstName: string;
   lastName: string;
 }
 
-/** Định nghĩa một issuer dựng sẵn: điểm cuối mặc định (URL thật của provider) + scope xin tối thiểu để lấy email và họ tên. */
+/**
+ * Định nghĩa một issuer dựng sẵn: điểm cuối mặc định (URL thật của provider) + scope xin tối thiểu để lấy email và họ
+ * tên.
+ */
 interface ProviderDefinition {
   authorizeUrl: string;
   tokenUrl: string;
@@ -60,7 +66,10 @@ const PROVIDER_DEFINITIONS: Record<OAuthIssuer, ProviderDefinition> = {
   },
 };
 
-/** Nội dung state OAuth đã ký: chống CSRF, gắn issuer và đích hoàn tất (đăng nhập thường hoặc liên kết cho user đang đăng nhập). */
+/**
+ * Nội dung state OAuth đã ký: chống CSRF, gắn issuer và đích hoàn tất (đăng nhập thường hoặc liên kết cho user đang
+ * đăng nhập).
+ */
 interface OAuthState {
   scope: 'oauth_state';
   issuer: OAuthIssuer;
@@ -123,7 +132,10 @@ export class OAuthService {
     return this.config.get<string>(`${PROVIDER_DEFINITIONS[issuer].envPrefix}_CLIENT_SECRET`);
   }
 
-  /** Issuer có bật không: cả client id lẫn secret đều đã cấu hình (Moodle: issuer chưa bật thì nút đăng nhập không hiện). */
+  /**
+   * Issuer có bật không: cả client id lẫn secret đều đã cấu hình (Moodle: issuer chưa bật thì nút đăng nhập không
+   * hiện).
+   */
   isEnabled(issuer: OAuthIssuer): boolean {
     return Boolean(this.clientId(issuer) && this.clientSecret(issuer));
   }
@@ -163,7 +175,10 @@ export class OAuthService {
     return url.toString();
   }
 
-  /** Kiểm state ở callback: chữ ký, hạn, scope và issuer phải khớp đường dẫn; sai bất cứ điểm nào đều là `auth.oauth_state_invalid`. */
+  /**
+   * Kiểm state ở callback: chữ ký, hạn, scope và issuer phải khớp đường dẫn; sai bất cứ điểm nào đều là
+   * `auth.oauth_state_invalid`.
+   */
   private async verifyState(issuer: OAuthIssuer, stateToken: string): Promise<OAuthState> {
     let payload: OAuthState;
     try {
@@ -177,7 +192,10 @@ export class OAuthService {
     return payload;
   }
 
-  /** Đổi authorization code lấy access token tại token endpoint của provider (gọi HTTP thật; kiểm thử mock ở chính biên này). */
+  /**
+   * Đổi authorization code lấy access token tại token endpoint của provider (gọi HTTP thật; kiểm thử mock ở chính biên
+   * này).
+   */
   private async exchangeCode(issuer: OAuthIssuer, code: string, redirectUri: string): Promise<string> {
     const body = new URLSearchParams({
       grant_type: 'authorization_code',
@@ -198,7 +216,10 @@ export class OAuthService {
     return data.access_token;
   }
 
-  /** Lấy hồ sơ từ userinfo endpoint và chuẩn hoá về một hình dạng chung; thiếu email là lỗi nghiệp vụ riêng (`auth.oauth_email_missing`). */
+  /**
+   * Lấy hồ sơ từ userinfo endpoint và chuẩn hoá về một hình dạng chung; thiếu email là lỗi nghiệp vụ riêng
+   * (`auth.oauth_email_missing`).
+   */
   private async fetchProfile(issuer: OAuthIssuer, accessToken: string): Promise<ProviderProfile> {
     let url = this.endpoint(issuer, 'USERINFO_URL');
     const headers: Record<string, string> = { Accept: 'application/json' };
@@ -274,7 +295,8 @@ export class OAuthService {
     if (linked) {
       user = await this.users.getUser(linked.userId);
     } else if (state.linkUserId) {
-            // User đang đăng nhập xin liên kết: chính họ vừa chứng minh quyền sở hữu tài khoản provider qua luồng authorize,
+            // User đang đăng nhập xin liên kết: chính họ vừa chứng minh quyền sở hữu tài khoản provider qua luồng
+            // authorize,
       // nên liên kết được xác nhận ngay (Moodle: confirmtoken rỗng sau bước xác nhận).
       user = await this.users.getUser(state.linkUserId);
       await this.ensureLink(user, issuer, profile);
@@ -292,7 +314,8 @@ export class OAuthService {
     }
     if (user.deleted || user.suspended) throw new OAuthFlowException('auth.account_inactive');
 
-        // Cổng MFA: trạng thái lấy từ `user_totp` (nguồn duy nhất — xem AuthService.isMfaEnabled). Đã bật MFA thì dừng ở
+        // Cổng MFA: trạng thái lấy từ `user_totp` (nguồn duy nhất — xem AuthService.isMfaEnabled). Đã bật MFA thì dừng
+        // ở
     // challenge đích `oauth`: phiên và mã bàn giao chỉ sinh ở bước hoàn tất sau khi qua verify (completeOAuthMfa),
     // không sinh ở đây trong bất kỳ nhánh khớp tài khoản nào (kể cả nhánh liên kết tường minh của user đang đăng nhập —
     // cổng áp đồng nhất cho mọi callback).

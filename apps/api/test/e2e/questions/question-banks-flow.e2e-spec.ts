@@ -593,7 +593,8 @@ describe('Ngân hàng câu hỏi dùng chung (feat #70)', () => {
 
     // Chống trùng hoàn toàn: câu nội dung y hệt đề xuất lại → 409 trỏ câu đã có.
     const clone = await createQuestion(member.token, memberBank.defaultCategoryId!, 'Câu đóng góp (bản gõ lại)', 'Nội dung câu đóng góp?');
-    // createQuestion dùng cùng thân câu + answers mặc định nên hash nội dung trùng hoàn toàn (hash chỉ phủ nội dung câu, không phủ siêu dữ liệu).
+    // createQuestion dùng cùng thân câu + answers mặc định nên hash nội dung trùng hoàn toàn (hash chỉ phủ nội dung
+    // câu, không phủ siêu dữ liệu).
     const dupPropose = await http(app).post(`/api/v1/question-banks/${bank.id}/contributions`).set(bearer(member.token))
       .send({ questionId: clone.question.id });
     expect(dupPropose.status, JSON.stringify(dupPropose.body)).toBe(409);

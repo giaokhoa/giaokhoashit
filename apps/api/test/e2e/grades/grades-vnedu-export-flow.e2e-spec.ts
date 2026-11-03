@@ -40,7 +40,8 @@ describe('Xuất sổ điểm Excel vnEdu (issue #53)', () => {
     return http(app)
       .post(`/api/v1/courses/${courseId}/grade-exports`)
       .set('Authorization', `Bearer ${token}`)
-      // Path canonical grade-exports khai nhà cung cấp trong thân yêu cầu: provider: 'vnedu', phần còn lại là payload vnEdu như cũ.
+      // Path canonical grade-exports khai nhà cung cấp trong thân yêu cầu: provider: 'vnedu', phần còn lại là payload
+      // vnEdu như cũ.
       .send({ provider: 'vnedu', ...body })
       .buffer(true)
       .parse((res, cb) => {
@@ -54,7 +55,8 @@ describe('Xuất sổ điểm Excel vnEdu (issue #53)', () => {
     return http(app)
       .post(`/api/v1/courses/${courseId}/grade-exports`)
       .set('Authorization', `Bearer ${token}`)
-      // Path canonical grade-exports khai nhà cung cấp trong thân yêu cầu: provider: 'vnedu', phần còn lại là payload vnEdu như cũ.
+      // Path canonical grade-exports khai nhà cung cấp trong thân yêu cầu: provider: 'vnedu', phần còn lại là payload
+      // vnEdu như cũ.
       .send({ provider: 'vnedu', ...body });
   }
 

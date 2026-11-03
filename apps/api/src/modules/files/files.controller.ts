@@ -14,8 +14,8 @@ import { questionImageMetaServerSchema, uploadMetaServerSchema, type QuestionIma
 export class FilesController {
   constructor(private readonly files: FilesService) {}
 
-  // Không có @RequireCapability tại đây: các guard chạy trước khi interceptor multipart phân tích body, nên context đích
-  // được kiểm tra trong handler thay thế.
+  // Không có @RequireCapability tại đây: các guard chạy trước khi interceptor multipart phân tích body, nên context
+  // đích được kiểm tra trong handler thay thế.
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async upload(@UploadedFile() file: { originalname: string; buffer: Buffer; mimetype: string }, @Body({ schema: uploadMetaServerSchema }) meta: UploadMetaDto, @CurrentUser() actor: AuthenticatedUser) {
@@ -54,7 +54,9 @@ export class FilesController {
     return { id: f.id, contentHash: f.contentHash, fileSize: f.fileSize, fileName: f.fileName, contextId: f.contextId, component: f.component, fileArea: f.fileArea, mimeType: f.mimeType };
   }
 
-  /** Xin một URL tải xuống đã ký ngắn hạn — bị từ chối (403 Problem Details) nếu không có capability của context file. */
+  /**
+   * Xin một URL tải xuống đã ký ngắn hạn — bị từ chối (403 Problem Details) nếu không có capability của context file.
+   */
   @Post(':id/signed-url')
   async signedUrl(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.files.createSignedUrl(id, actor.id, actor.username === 'guest');
@@ -71,7 +73,10 @@ export class FilesController {
     return this.files.deleteFile(id, actor);
   }
 
-  /** Tải xuống đã ký: route public DUY NHẤT — việc sở hữu một chữ ký chưa hết hạn (được cấp sau khi kiểm tra capability) chính là thông tin xác thực. */
+  /**
+   * Tải xuống đã ký: route public DUY NHẤT — việc sở hữu một chữ ký chưa hết hạn (được cấp sau khi kiểm tra capability)
+   * chính là thông tin xác thực.
+   */
   @Public()
   @Get(':id/download')
   async download(@Param('id', { schema: uuidIdSchema }) id: string, @Query('sig') sig: string | undefined, @Res() res: Response) {

@@ -70,10 +70,16 @@ export class RolesService {
     private readonly roleSeparation: RoleSeparationService,
   ) {}
 
-  /** Seed có tính idempotent: đồng bộ các định nghĩa capability từ code (định nghĩa không còn trong registry sẽ bị cắt bỏ, cùng với các override role của chúng), tạo các role core chuẩn của Moodle và giá trị mặc định theo archetype của chúng tại context hệ thống. */
   /**
-   * Gieo các role archetype chuẩn của Moodle (manager, coursecreator, editingteacher, teacher, student, guest, user) cùng ma trận quyền mặc định tại context hệ thống; idempotent.
-   * Đồng bộ hai chiều: định nghĩa capability không còn trong sổ đăng ký ở code (vd tên cũ còn tiền tố, đã bỏ từ issue #35) bị xoá khỏi DB cùng mọi override trỏ tới chúng, để hai hệ tên không cùng tồn tại sau seed.
+   * Seed có tính idempotent: đồng bộ các định nghĩa capability từ code (định nghĩa không còn trong registry sẽ bị cắt
+   * bỏ, cùng với các override role của chúng), tạo các role core chuẩn của Moodle và giá trị mặc định theo archetype
+   * của chúng tại context hệ thống.
+   */
+  /**
+   * Gieo các role archetype chuẩn của Moodle (manager, coursecreator, editingteacher, teacher, student, guest, user)
+   * cùng ma trận quyền mặc định tại context hệ thống; idempotent. Đồng bộ hai chiều: định nghĩa capability không còn
+   * trong sổ đăng ký ở code (vd tên cũ còn tiền tố, đã bỏ từ issue #35) bị xoá khỏi DB cùng mọi override trỏ tới chúng,
+   * để hai hệ tên không cùng tồn tại sau seed.
    */
   async seedDefaults(): Promise<void> {
     const system = await this.contexts.ensureSystemContext();
@@ -193,7 +199,8 @@ export class RolesService {
   async assignRole(userId: string, roleId: string, contextId: string, modifierId?: string, source?: AssignmentSource, tx?: CentreTx): Promise<unknown> {
     const roleRow = await this.getRole(roleId);
     await this.contexts.getContext(contextId, tx);
-        // Điểm chặn SLOT GÓI TRUNG TÂM (phần còn lại của lát 2, issue #189 — đặc tả slot đã duyệt): gán một vai trò GIẢNG
+        // Điểm chặn SLOT GÓI TRUNG TÂM (phần còn lại của lát 2, issue #189 — đặc tả slot đã duyệt): gán một vai trò
+        // GIẢNG
     // DẠY tại bất kỳ context nào trong cây của một tenant khách hàng cho một thành viên đang hoạt động mà tài khoản
     // đang hoạt động và CHƯA được đếm là hành động làm tăng số slot của tenant đó — mọi nguồn gán đều qua điểm này (gán
     // tay qua API quản trị, ghi danh cấp vai trò giảng dạy, gán chủ lớp/chủ khoá của các module nghiệp vụ). Đã chạm hạn
@@ -210,7 +217,8 @@ export class RolesService {
     }
     const component = source?.component ?? '';
     const itemId = source?.itemId ?? null;
-        // Chốt TÁCH VAI chiều ngược (RoleSeparationService giữ định nghĩa dùng chung): gán một vai GIẢNG DẠY không do ghi
+        // Chốt TÁCH VAI chiều ngược (RoleSeparationService giữ định nghĩa dùng chung): gán một vai GIẢNG DẠY không do
+        // ghi
     // danh cấp tại context khoá/lớp cho người đang là HỌC VIÊN ĐANG HOẠT ĐỘNG trong khoá bị context đó bao phủ sẽ tạo
     // lẫn vai cùng khoá — từ chối TRƯỚC khi chèn dòng gán, cùng mã lỗi với các chốt ở ba funnel ghi danh. Gán do ghi
     // danh cấp (component = 'enrol') không qua chốt này: đó là hệ quả máy móc của một ghi danh đã được chốt ở funnel
@@ -226,7 +234,8 @@ export class RolesService {
     const row = await this.repo.insertAssignment({ roleId: roleId, userId: userId, contextId: contextId, modifierId: modifierId, component, itemId }, tx);
     await this.contexts.markContextDirty(contextId, tx);
     if (!alreadyAssigned) {
-            // Sự kiện role_assigned (Moodle \core\event\role_assigned) cho logstore — chỉ phát khi gán thật sự mới (gán trùng
+            // Sự kiện role_assigned (Moodle \core\event\role_assigned) cho logstore — chỉ phát khi gán thật sự mới (gán
+            // trùng
       // là no-op). Khi bên gọi đang ở trong một transaction (vd tạo lớp/bank — issue #490), sự kiện được ghi bằng CHÍNH
       // transaction đó để rollback thì sự kiện cũng bị huỷ theo; không có tx thì giữ đường standalone như trước.
       const event = {
@@ -332,12 +341,19 @@ export class RolesService {
       pageSize,
     };
   }
-  /** Các assignment của một người dùng trên một tập context — ví dụ mọi context trên đường tổ tiên của đối tượng đích. Đây là phép tra cứu mà PermissionEvaluator dựa vào: assignment role được kế thừa xuống dưới theo cây context, nên assignment ở tổ tiên có hiệu lực tại lá. */
+  /**
+   * Các assignment của một người dùng trên một tập context — ví dụ mọi context trên đường tổ tiên của đối tượng đích.
+   * Đây là phép tra cứu mà PermissionEvaluator dựa vào: assignment role được kế thừa xuống dưới theo cây context, nên
+   * assignment ở tổ tiên có hiệu lực tại lá.
+   */
   async listAssignmentsInContexts(userId: string, contextIds: string[]): Promise<{ roleId: string; contextId: string }[]> {
     return this.repo.getAssignmentsForUserInContexts(userId, contextIds);
   }
 
-  /** Đặt (hoặc xoá, bằng CAP_INHERIT) một override capability cho một role tại một context; đánh dấu dirty cho toàn bộ cây con. */
+  /**
+   * Đặt (hoặc xoá, bằng CAP_INHERIT) một override capability cho một role tại một context; đánh dấu dirty cho toàn bộ
+   * cây con.
+   */
   async setCapabilityOverride(roleId: string, capability: string, contextId: string, permission: number, modifierId?: string, tx?: CentreTx): Promise<void> {
     if (!VALID_PERMISSIONS.includes(permission)) {
       throw new BadRequestException({ message: `Invalid permission ${permission}`, code: 'access.invalid_permission' });

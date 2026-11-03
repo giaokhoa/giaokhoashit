@@ -309,7 +309,8 @@ export class BackupService {
           const newInstance = mapping.get('enrol', ue.enrolId);
           if (!newInstance) continue;
           const inst = d.instances.find((i) => i.id === ue.enrolId);
-                    // Chốt TÁCH VAI — funnel 3 (RoleSeparationService giữ định nghĩa dùng chung): contributor này ghi thẳng ghi
+                    // Chốt TÁCH VAI — funnel 3 (RoleSeparationService giữ định nghĩa dùng chung): contributor này ghi
+                    // thẳng ghi
           // danh nên không đi qua funnel 1/2. Một ghi danh khôi phục sẽ ở trạng thái ĐANG HOẠT ĐỘNG, qua instance cấp
           // vai học viên, cho người đã có cấp quyền giảng dạy bao phủ chính khoá ĐÍCH là lẫn vai cùng khoá — BỎ QUA
           // riêng ghi danh đó (không tạo bản ghi, không gán vai) và ĐẾM để báo vào chi tiết bước restore; các ghi danh
@@ -327,7 +328,8 @@ export class BackupService {
             enrol_id: newInstance, user_id: ue.userId, status: ue.status, time_start: ue.timeStart, time_end: ue.timeEnd,
           }).onConflict((oc) => oc.doNothing()).returning(USER_ENROLMENTS_COLUMNS).execute();
           if (ueRow) await mapping.map('user_enrolment', ue.id, ueRow.id);
-                    // Ghi danh khôi phục vẫn là gán do enrol cấp: mang truy vết của instance MỚI ở khoá đích để unenrol sau này
+                    // Ghi danh khôi phục vẫn là gán do enrol cấp: mang truy vết của instance MỚI ở khoá đích để unenrol
+                    // sau này
           // gỡ đúng dòng này (issue #157).
           if (inst?.roleId) await this.roles.assignRole(ue.userId, inst.roleId, targetCtx, undefined, { component: ENROL_ASSIGNMENT_COMPONENT, itemId: newInstance }).catch(() => undefined);
         }
@@ -374,7 +376,6 @@ export class BackupService {
         }
       },
     });
-    // --- grades ---------------------------------------------------------------
     this.registerContributor({
       name: 'grades',
       export: async (courseId, anonymize) => {
@@ -385,7 +386,8 @@ export class BackupService {
       },
       import: async (targetCourseId, data, mapping) => {
         if (!targetCourseId) return;
-                // Bản backup cũ có thể mang trường categories/item loại category/course của gradebook tổng hợp đã gỡ (issue
+                // Bản backup cũ có thể mang trường categories/item loại category/course của gradebook tổng hợp đã gỡ
+                // (issue
         // #224) — các phần đó bị BỎ QUA khi khôi phục, chỉ item điểm theo bài (manual/mod) và điểm của chúng được khôi
         // phục.
         const d = data as {
@@ -441,7 +443,8 @@ export class BackupService {
           settings: CourseCompletionSettingsRow | null;
         };
         if (d.settings) {
-                    // Chốt giá trị trước khi vào callback onConflict: thu hẹp kiểu của `d.settings` không giữ qua biên closure.
+                    // Chốt giá trị trước khi vào callback onConflict: thu hẹp kiểu của `d.settings` không giữ qua biên
+                    // closure.
           const settingsMethod = d.settings.method;
           await db.insertInto('course_completion_settings').values({ course: targetCourseId, method: settingsMethod })
             .onConflict((oc) => oc.column('course').doUpdateSet({ method: settingsMethod })).execute();
@@ -545,7 +548,8 @@ export class BackupService {
         const entryIds = entries.map((e) => e.id);
         const versions = entryIds.length ? await db.selectFrom('question_versions').select(QUESTION_VERSIONS_COLUMNS).where('question_bank_entry_id', 'in', entryIds).execute() : [];
         const versionIds = versions.map((v) => v.id);
-                // Nội dung chấm của version (answers + options từng qtype) và ngữ liệu của category đi cùng archive — thiếu
+                // Nội dung chấm của version (answers + options từng qtype) và ngữ liệu của category đi cùng archive —
+                // thiếu
         // chúng thì bản restore mất toàn bộ dữ liệu chấm.
         const stimuliRows = catIds.length ? await db.selectFrom('stimuli').select(STIMULI_COLUMNS).where('category_id', 'in', catIds).execute() : [];
         const answers = versionIds.length ? await db.selectFrom('question_answers').select(QUESTION_ANSWERS_COLUMNS).where('question_version_id', 'in', versionIds).execute() : [];
@@ -688,7 +692,8 @@ export class BackupService {
         }
       },
     });
-        // Định nghĩa badge của khoá (type=2) hoặc mức site (type=1) + toàn bộ criteria; params của criteria được viết lại
+        // Định nghĩa badge của khoá (type=2) hoặc mức site (type=1) + toàn bộ criteria; params của criteria được viết
+        // lại
     // qua mapping (xem remapBadgeCriteriaParams). KHÔNG export badge_issued (lượt đã cấp — assertion là bằng chứng lịch
     // sử của khoá gốc) và badge_manual_award.
     this.registerContributor({
@@ -703,7 +708,8 @@ export class BackupService {
       },
       import: async (targetCourseId, data, mapping, actorId) => {
         const d = data as { badges: BadgeRow[]; criteria: BadgeCriteriaRow[] };
-                // Pha 1: tạo badge trước để tiêu chí `badge` tham chiếu chéo trong cùng archive tra được mapping ở pha 2.
+                // Pha 1: tạo badge trước để tiêu chí `badge` tham chiếu chéo trong cùng archive tra được mapping ở pha
+                // 2.
         for (const b of d.badges ?? []) {
           const [row] = await db.insertInto('badge').values({
             name: b.name, description: b.description, type: targetCourseId ? 2 : b.type,
@@ -726,7 +732,8 @@ export class BackupService {
         }
       },
     });
-        // Sự kiện mức khoá (course + group; group được map qua contributor groups chạy trước) và subscription của khoá; ở
+        // Sự kiện mức khoá (course + group; group được map qua contributor groups chạy trước) và subscription của khoá;
+        // ở
     // phạm vi site là sự kiện eventType='site' + subscription mức site. Chuỗi lặp: repeatId / exceptionOf được nối lại
     // ở pha 2 sau khi mọi sự kiện đã có id mới.
     this.registerContributor({
@@ -886,7 +893,8 @@ export class BackupService {
     if (backup.type !== 'backup' || backup.status !== 'completed' || !backup.archive) {
       throw new BadRequestException({ message: 'Backup job is not a completed backup', code: 'backup.not_completed' });
     }
-        // Cổng đọc tại NGUỒN: mọi đường chép dữ kiện khoá phải qua cùng cổng đọc tại nguồn như các đường đọc — người gọi
+        // Cổng đọc tại NGUỒN: mọi đường chép dữ kiện khoá phải qua cùng cổng đọc tại nguồn như các đường đọc — người
+        // gọi
     // phải có `backup:backupcourse` hoặc `backup:restorecourse` tại context của khoá thuộc job (job site thì tại
     // context hệ thống, nơi đường restore site vốn đã đòi `restorecourse` nên hành vi site không đổi). Biết ID của job
     // không đồng nghĩa có quyền trên dữ kiện của job. Kiểm này chạy TRƯỚC mọi xử lý archive và trước mọi kiểm tra phía

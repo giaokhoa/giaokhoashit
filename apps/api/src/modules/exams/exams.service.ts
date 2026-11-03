@@ -40,7 +40,10 @@ export const EXAM_CAPABILITIES = {
   deploy: 'exam:deploy',
 } as const;
 
-/** Các loại đề thuộc diện ĐỊNH KỲ/THI THỬ — nội dung ready của chúng tại bank trường là tài liệu mật theo nghĩa nghiệp vụ (lớp bảo mật A.3.4, EB-3). */
+/**
+ * Các loại đề thuộc diện ĐỊNH KỲ/THI THỬ — nội dung ready của chúng tại bank trường là tài liệu mật theo nghĩa nghiệp
+ * vụ (lớp bảo mật A.3.4, EB-3).
+ */
 export const PERIODIC_EXAM_KINDS = ['midterm', 'final', 'mock'] as const;
 
 /** Hash cấu trúc của một version đề (chống trùng đóng góp/copy): tên + danh sách question@pinnedVersion:điểm theo vị
@@ -55,7 +58,10 @@ export function examPaperContentHash(version: ExamVersionRow, slots: ExamSlotRow
   return createHash('sha256').update(`${version.name}::${body}`).digest('hex');
 }
 
-/** exam:* cấp cho hai vai bank dùng chung tại context của MỖI bank đề: thành viên = xem + copy; chủ/tổ trưởng = toàn bộ (gồm cả exam:add). */
+/**
+ * exam:* cấp cho hai vai bank dùng chung tại context của MỖI bank đề: thành viên = xem + copy; chủ/tổ trưởng = toàn bộ
+ * (gồm cả exam:add).
+ */
 const MEMBER_EXAM_CAPS = [EXAM_CAPABILITIES.view, EXAM_CAPABILITIES.copy];
 const LEAD_EXAM_CAPS = [
   EXAM_CAPABILITIES.view, EXAM_CAPABILITIES.add, EXAM_CAPABILITIES.edit, EXAM_CAPABILITIES.copy,
@@ -78,7 +84,8 @@ export interface ExamSlotView {
   pinnedVersionNumber: number | null;
   /** Số version ready MỚI NHẤT của câu trong ngân hàng (null khi câu chưa có bản ready nào). */
   latestReadyVersionNumber: number | null;
-  /** Huy hiệu "có bản ready mới" ở bề mặt soạn đề (issue #254): slot đang ghim version cũ hơn bản ready mới nhất của câu
+  /**
+   * Huy hiệu "có bản ready mới" ở bề mặt soạn đề (issue #254): slot đang ghim version cũ hơn bản ready mới nhất của câu
    * — giáo viên thấy được ngay trong lúc soạn; cập nhật vẫn là thao tác tường minh (sửa đề tạo version mới của đề, hoặc
    * cập nhật pin ở cấp lần ghim), không tự trôi.
    */
@@ -109,8 +116,9 @@ export interface ExamView {
     createdBy: string; createdAt: string;
   };
   slots: ExamSlotView[];
-  /** Truy vết nguồn gốc cho UI hiển thị ghi công (null với đề gốc tự soạn): bank nguồn và số version của đề nguồn GHI TẠI
-   * LÚC COPY (không suy lại từ đề nguồn hiện tại — đề nguồn có thể đã chuyển bank hoặc có thêm version sau đó).
+  /**
+   * Truy vết nguồn gốc cho UI hiển thị ghi công (null với đề gốc tự soạn): bank nguồn và số version của đề nguồn GHI
+   * TẠI LÚC COPY (không suy lại từ đề nguồn hiện tại — đề nguồn có thể đã chuyển bank hoặc có thêm version sau đó).
    */
   attribution: { derivedFromExamId: string; originalAuthorId: string | null; sourceBankId: string; derivedFromVersionNumber: number | null } | null;
   capabilities: ExamCapabilitiesView;
@@ -135,7 +143,10 @@ export interface ExamSummary {
   capabilities: ExamCapabilitiesView;
 }
 
-/** Một mốc duyệt trong vết của một đóng góp đề (cấp 1 = moderate tại bank đích; cấp 2 = ban giám hiệu, chỉ có ở đóng góp kèm bộ hồ sơ khi tenant bật cấp 2). */
+/**
+ * Một mốc duyệt trong vết của một đóng góp đề (cấp 1 = moderate tại bank đích; cấp 2 = ban giám hiệu, chỉ có ở đóng góp
+ * kèm bộ hồ sơ khi tenant bật cấp 2).
+ */
 export interface ExamContributionReviewView {
   id: string;
   contributionId: string;
@@ -204,7 +215,10 @@ export class ExamsService {
     }
   }
 
-  /** Lấy bank đề (đồng bộ tư cách thành viên qua QuestionBanksService.getBank) + bảo đảm exam grants; 404 khi bank không tồn tại hoặc không phải bank đề. */
+  /**
+   * Lấy bank đề (đồng bộ tư cách thành viên qua QuestionBanksService.getBank) + bảo đảm exam grants; 404 khi bank không
+   * tồn tại hoặc không phải bank đề.
+   */
   async getExamBank(actorId: string, bankId: string): Promise<QuestionBankRow> {
     const view = await this.banks.getBank(actorId, bankId);
     if (view.bankKind !== 'exam') {
@@ -215,10 +229,11 @@ export class ExamsService {
     return bank;
   }
 
-  /** ⚠️ ĐIỂM SEAM CẤU HÌNH CẤP DUYỆT 2 (ban giám hiệu) — nơi DUY NHẤT trong hệ thống đọc công tắc "đề chính thức vào bank
-   * chung có cần cấp duyệt ban giám hiệu hay không" (khoá `exam/requireboardapproval`, mặc định TẮT). Cả hai máy trạng
-   * thái từng cần công tắc này — bộ hồ sơ (EB-3) và đóng góp kèm bộ hồ sơ (đường đóng góp duy nhất sau khi hấp thụ hồ
-   * sơ) — đều hỏi điểm này; KHÔNG nơi nào khác đọc trực tiếp khoá cấu hình.
+  /**
+   * ⚠️ ĐIỂM SEAM CẤU HÌNH CẤP DUYỆT 2 (ban giám hiệu) — nơi DUY NHẤT trong hệ thống đọc công tắc "đề chính thức vào
+   * bank chung có cần cấp duyệt ban giám hiệu hay không" (khoá `exam/requireboardapproval`, mặc định TẮT). Cả hai máy
+   * trạng thái từng cần công tắc này — bộ hồ sơ (EB-3) và đóng góp kèm bộ hồ sơ (đường đóng góp duy nhất sau khi hấp
+   * thụ hồ sơ) — đều hỏi điểm này; KHÔNG nơi nào khác đọc trực tiếp khoá cấu hình.
    *
    * Công tắc đọc theo TENANT CỦA BANK ĐÍCH (mỗi trung tâm/trường tự quyết có cấp duyệt BGH hay không) qua
    * `TenantConfigService.getEffectiveValue` — giá trị tenant không có thì service tự rơi về giá trị platform rồi mặc
@@ -257,7 +272,8 @@ export class ExamsService {
     await this.evaluator.requireCapability(actorId, EXAM_CAPABILITIES.moderate, bank.contextId);
   }
 
-  /** Version hiện tại của đề khi đề thuộc diện bảo mật A.3.4 — bank TRƯỜNG + đề `ready` + loại định kỳ/thi thử; null khi
+  /**
+   * Version hiện tại của đề khi đề thuộc diện bảo mật A.3.4 — bank TRƯỜNG + đề `ready` + loại định kỳ/thi thử; null khi
    * không thuộc diện (đề ở bank tổ/khoá/cá nhân hoặc loại thường xuyên/ôn tập giữ nguyên cổng xem cơ bản).
    */
   private async periodicSchoolVersion(paper: ExamRow, bank: QuestionBankRow): Promise<ExamVersionRow | null> {
@@ -301,7 +317,10 @@ export class ExamsService {
     });
   }
 
-  /** Cổng sửa/xoá đề: có exam:edit tại bank VÀ (là tác giả HOẶC có exam:moderate) — GV khác chỉ xem/copy, không sửa đề cá nhân của người khác. */
+  /**
+   * Cổng sửa/xoá đề: có exam:edit tại bank VÀ (là tác giả HOẶC có exam:moderate) — GV khác chỉ xem/copy, không sửa đề
+   * cá nhân của người khác.
+   */
   async assertCanEditPaper(actorId: string, paper: ExamRow, bank: QuestionBankRow): Promise<void> {
     if (await this.evaluator.isSiteAdmin(actorId)) return;
     await this.evaluator.requireCapability(actorId, EXAM_CAPABILITIES.edit, bank.contextId);
@@ -327,8 +346,9 @@ export class ExamsService {
     return version;
   }
 
-  /** Phân giải danh sách slot payload thành slot đã ghim: mỗi câu phải tồn tại và có bản ready (ghim bản ready mới nhất —
-   * cùng điểm phân giải của quiz.addSlot QB-3); câu draft/hidden bị chặn tại cổng này.
+  /**
+   * Phân giải danh sách slot payload thành slot đã ghim: mỗi câu phải tồn tại và có bản ready (ghim bản ready mới nhất
+   * — cùng điểm phân giải của quiz.addSlot QB-3); câu draft/hidden bị chặn tại cổng này.
    */
   private async resolveSlots(slots: ExamSlotInput[]): Promise<{
     questionId: string; pinnedVersionId: string; pinnedVersionNumber: number;
@@ -350,8 +370,8 @@ export class ExamsService {
         questionId: s.questionId,
         pinnedVersionId: ready.versionId,
         pinnedVersionNumber: ready.versionNumber,
-        // Không ghi điểm cho slot = lấy điểm mặc định của phiên bản câu hỏi đã ghim (khuôn quiz cũ: điểm slot thắng khi ghi
-        // rõ).
+        // Không ghi điểm cho slot = lấy điểm mặc định của phiên bản câu hỏi đã ghim (khuôn quiz cũ: điểm slot thắng khi
+        // ghi rõ).
         maxMark: s.maxMark ?? ready.defaultMark,
         section: s.section ?? '',
         clusterId: null,
@@ -415,7 +435,8 @@ export class ExamsService {
       attribution = {
         derivedFromExamId: paper.derivedFromExamId,
         originalAuthorId: paper.originalAuthorId,
-        // Ưu tiên bank nguồn đã ghi tại lúc copy; chỉ bản copy cũ (chưa có cột ghi) mới suy từ bank hiện tại của đề nguồn.
+        // Ưu tiên bank nguồn đã ghi tại lúc copy; chỉ bản copy cũ (chưa có cột ghi) mới suy từ bank hiện tại của đề
+        // nguồn.
         sourceBankId: paper.derivedFromBankId ?? source?.bankId ?? paper.bankId,
         derivedFromVersionNumber: paper.derivedFromVersionNumber,
       };
@@ -471,8 +492,9 @@ export class ExamsService {
     return summaries;
   }
 
-  /** Chi tiết một đề: version hiện tại + slots đã ghim + truy vết + khả năng của actor. Nội dung đề qua cổng A.3.4 (EB-3)
-   * và ghi audit khi thuộc diện định kỳ ở bank trường.
+  /**
+   * Chi tiết một đề: version hiện tại + slots đã ghim + truy vết + khả năng của actor. Nội dung đề qua cổng A.3.4
+   * (EB-3) và ghi audit khi thuộc diện định kỳ ở bank trường.
    */
   async getPaper(actorId: string, paperId: string): Promise<ExamView> {
     const paper = await this.getPaperOrThrow(paperId);
@@ -502,7 +524,10 @@ export class ExamsService {
     }));
   }
 
-  /** Tạo đề snapshot mới trong bank đề (metadata + slots tuỳ chọn; rỗng = đề trắng để soạn tiếp). Cổng tạo là exam:add (khuôn S3) — exam:edit chỉ gác sửa đề đã có. */
+  /**
+   * Tạo đề snapshot mới trong bank đề (metadata + slots tuỳ chọn; rỗng = đề trắng để soạn tiếp). Cổng tạo là exam:add
+   * (khuôn S3) — exam:edit chỉ gác sửa đề đã có.
+   */
   async createPaper(actorId: string, bankId: string, input: CreateExam): Promise<ExamView> {
     const bank = await this.getExamBank(actorId, bankId);
     await this.evaluator.requireCapability(actorId, EXAM_CAPABILITIES.add, bank.contextId);
@@ -716,8 +741,8 @@ export class ExamsService {
       await this.ensureExamGrants(row);
       target = row;
     }
-    // Ghi một đề MỚI vào bank đích = cổng tạo exam:add tại bank đích (khuôn S3); quyền sửa đề đã có (exam:edit) không thay
-    // cho cổng tạo.
+    // Ghi một đề MỚI vào bank đích = cổng tạo exam:add tại bank đích (khuôn S3); quyền sửa đề đã có (exam:edit) không
+    // thay cho cổng tạo.
     await this.evaluator.requireCapability(actorId, EXAM_CAPABILITIES.add, target.contextId);
 
     const copied = await this.deepCopyInto(actorId, source, target, input.name);
@@ -731,7 +756,8 @@ export class ExamsService {
     return this.paperView(actorId, copied);
   }
 
-  /** Nhân bản đề (danh tính + version hiện tại thành version 1 + slots nguyên trạng) vào bank đích — dùng chung cho copy
+  /**
+   * Nhân bản đề (danh tính + version hiện tại thành version 1 + slots nguyên trạng) vào bank đích — dùng chung cho copy
    * tay và chốt duyệt đóng góp mode 'new' không kèm hồ sơ; bản nhân bản hạ cánh `ready` theo quy tắc hoàn thiện.
    */
   private async deepCopyInto(actorId: string, source: ExamRow, target: QuestionBankRow, nameOverride?: string): Promise<ExamRow> {
@@ -755,7 +781,8 @@ export class ExamsService {
         derivedFromExamId: source.id,
         derivedFromMatrixId: sourceVersion.matrixId,
         originalAuthorId: source.originalAuthorId ?? source.createdBy,
-        // Ghi bank nguồn + số version của đề nguồn TẠI LÚC COPY — truy vết không phụ thuộc trạng thái của đề nguồn về sau.
+        // Ghi bank nguồn + số version của đề nguồn TẠI LÚC COPY — truy vết không phụ thuộc trạng thái của đề nguồn về
+        // sau.
         derivedFromBankId: source.bankId,
         derivedFromVersionNumber: sourceVersion.version,
         createdBy: actorId, latestVersion: 1,
@@ -844,8 +871,8 @@ export class ExamsService {
         if (this.paperContentHash(otherVersion, otherSlots) === hash) { nearDuplicateOf = other.id; break; }
       }
     }
-    // Bộ hồ sơ đính kèm: ghim bộ ba TẠI LÚC ĐỀ XUẤT như đường hồ sơ cũ ghim tại lúc nộp — người duyệt về sau duyệt đúng bộ
-    // này kể cả khi đề nguồn có version mới trong lúc chờ.
+    // Bộ hồ sơ đính kèm: ghim bộ ba TẠI LÚC ĐỀ XUẤT như đường hồ sơ cũ ghim tại lúc nộp — người duyệt về sau duyệt đúng
+    // bộ này kể cả khi đề nguồn có version mới trong lúc chờ.
     let dossier: {
       dossierExamVersionId: string; dossierExamVersionNumber: number;
       dossierMatrixId: string; dossierMatrixVersion: number | null; dossierMatrixVersionId: string | null;
@@ -890,7 +917,10 @@ export class ExamsService {
     return row;
   }
 
-  /** Hàng chờ đóng góp của một bank đề: người duyệt (exam:moderate tại bank đích) thấy tất cả kèm vết mốc duyệt; người khác chỉ thấy đề xuất của mình (như QB-4). */
+  /**
+   * Hàng chờ đóng góp của một bank đề: người duyệt (exam:moderate tại bank đích) thấy tất cả kèm vết mốc duyệt; người
+   * khác chỉ thấy đề xuất của mình (như QB-4).
+   */
   async listContributions(actorId: string, bankId: string): Promise<ExamContributionView[]> {
     const bank = await this.getExamBank(actorId, bankId);
     const canModerate = await this.evaluator.hasCapability(actorId, EXAM_CAPABILITIES.moderate, bank.contextId);
@@ -924,7 +954,10 @@ export class ExamsService {
     return row;
   }
 
-  /** Đóng góp có cần qua cấp duyệt 2 hay không: có bộ hồ sơ đính kèm VÀ công tắc tenant của bank đích đang bật (điểm seam duy nhất). */
+  /**
+   * Đóng góp có cần qua cấp duyệt 2 hay không: có bộ hồ sơ đính kèm VÀ công tắc tenant của bank đích đang bật (điểm
+   * seam duy nhất).
+   */
   private async contributionNeedsBoard(contribution: ExamContributionRow, bank: QuestionBankRow): Promise<boolean> {
     if (!contribution.dossierExamVersionId) return false;
     return this.boardApprovalRequiredForBank(bank);
@@ -1050,7 +1083,8 @@ export class ExamsService {
     return this.evaluator.hasCapability(actorId, EXAM_CAPABILITIES.moderate, system.id);
   }
 
-  /** Duyệt cấp 1 một đề xuất (exam:moderate tại bank đích): đóng góp có bộ hồ sơ đính kèm + công tắc cấp 2 bật thì cấp 1
+  /**
+   * Duyệt cấp 1 một đề xuất (exam:moderate tại bank đích): đóng góp có bộ hồ sơ đính kèm + công tắc cấp 2 bật thì cấp 1
    * chỉ ghi mốc và đưa đóng góp sang `pending_board` (đề CHƯA vào bank đích); còn lại cấp 1 là mốc chốt.
    */
   private async approveContributionLevel1(actorId: string, bankId: string, contributionId: string, _input: ApproveExamContribution): Promise<ExamContributionRow> {
@@ -1169,9 +1203,9 @@ export class ExamsService {
       const created = await this.createPaper(actorId, bankRow.id, input.newExam);
       examId = created.paper.id;
       examVersionId = created.version.id;
-      // Đề mới tạo giữ trạng thái draft và ghim ngay ở version vừa tạo: đây là đề CỦA CHÍNH giáo viên trong khoá của mình
-      // (luồng "tạo bài trong khoá" từ course builder) — cổng ready chỉ áp cho đường ghim examId có sẵn bên dưới. GV
-      // soạn tiếp trong trình soạn đề rồi nâng version của pin; học sinh chưa làm được khi đề chưa có câu (cổng
+      // Đề mới tạo giữ trạng thái draft và ghim ngay ở version vừa tạo: đây là đề CỦA CHÍNH giáo viên trong khoá của
+      // mình (luồng "tạo bài trong khoá" từ course builder) — cổng ready chỉ áp cho đường ghim examId có sẵn bên dưới.
+      // GV soạn tiếp trong trình soạn đề rồi nâng version của pin; học sinh chưa làm được khi đề chưa có câu (cổng
       // no_questions ở attempt).
     }
     if (!examId) {
@@ -1223,8 +1257,8 @@ export class ExamsService {
     // Sinh đề là TẠO một đề mới trong bank cá nhân → cổng exam:add (khuôn S3).
     await this.evaluator.requireCapability(actorId, EXAM_CAPABILITIES.add, bankRow.contextId);
 
-    // Ghim version ready cho từng câu đã rút (đúng kỷ luật ghim của đề: version tại thời điểm chụp) — phân giải trước khi
-    // ghi.
+    // Ghim version ready cho từng câu đã rút (đúng kỷ luật ghim của đề: version tại thời điểm chụp) — phân giải trước
+    // khi ghi.
     const drawnPinned = await Promise.all(drawn.map(async (d) => {
       const ready = await this.repo.resolveReadyVersion(d.questionId);
       if (!ready) {
@@ -1243,8 +1277,8 @@ export class ExamsService {
         status: 'ready', createdBy: actorId, latestVersion: 1,
         derivedFromMatrixId: matrix.id,
       }, tx);
-      // Neo FK tới đúng version bất biến của ma trận tại thời điểm sinh đề: đề đọc lại được nội dung ma trận gốc dù ma trận
-      // có version mới về sau.
+      // Neo FK tới đúng version bất biến của ma trận tại thời điểm sinh đề: đề đọc lại được nội dung ma trận gốc dù ma
+      // trận có version mới về sau.
       const matrixVersionId = await this.repo.getMatrixVersionRowId(matrix.id, matrix.version, tx);
       const version = await this.repo.insertVersion({
         examId: paper.id, version: 1, name: input.name,
@@ -1334,7 +1368,8 @@ export class ExamsService {
     return this.paperView(actorId, (await this.repo.getPaper(paper.id))!);
   }
 
-  /** Bản đặc tả neo theo ĐỀ (điểm E-6 của hồ sơ ngân hàng đề): đặc tả sinh từ ma trận của paper version hiện tại, vị trí
+  /**
+   * Bản đặc tả neo theo ĐỀ (điểm E-6 của hồ sơ ngân hàng đề): đặc tả sinh từ ma trận của paper version hiện tại, vị trí
    * câu lấy từ slots của chính đề (không phải từ quiz — quiz chỉ là một lần triển khai của đề). Tham số `quizId` tuỳ
    * chọn ghi nhận lần triển khai cụ thể vào tài liệu; quiz phải thuộc chính đề này. Đề không gắn ma trận → 400
    * `exam.spec_requires_matrix`. Nội dung qua cổng A.3.4 + audit như mọi bề mặt nội dung đề.
@@ -1375,7 +1410,8 @@ export class ExamsService {
     return this.quiz.renderSpecification(spec, format);
   }
 
-  /** Bản in HTML của một đề SNAPSHOT theo một MÃ ĐỀ của một lần triển khai: thứ tự câu hoán vị xác định bằng seed của mã
+  /**
+   * Bản in HTML của một đề SNAPSHOT theo một MÃ ĐỀ của một lần triển khai: thứ tự câu hoán vị xác định bằng seed của mã
    * (in lại cùng mã cho cùng thứ tự — khớp bản chấm); đầu trang ghi rõ mã đề. In theo slots của exam version đã ghim
    * trên pin.
    */

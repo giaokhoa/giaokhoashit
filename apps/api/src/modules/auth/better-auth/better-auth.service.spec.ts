@@ -58,7 +58,8 @@ describe('Khối BetterAuthService', () => {
     // Cookie cache tắt để thu hồi phiên có hiệu lực ngay.
     expect(auth.options.session?.cookieCache?.enabled).toBe(false);
     expect(auth.options.plugins?.some((plugin) => plugin.id === 'username')).toBe(true);
-        // Plugin twoFactor chủ đích KHÔNG có mặt: cổng quyết định và bước hoàn tất MFA đều đi qua `user_totp` (cổng riêng
+        // Plugin twoFactor chủ đích KHÔNG có mặt: cổng quyết định và bước hoàn tất MFA đều đi qua `user_totp` (cổng
+        // riêng
     // mfa-gate.ts + endpoint hoàn tất ở tầng Nest), còn plugin đòi trường user `twoFactorEnabled` không có trong ánh xạ
     // của hệ — lý do đầy đủ ở khối plugins của factory. Đăng ký lại plugin này là hỏng mọi đường tạo user, ca này phải
     // đỏ.
@@ -95,7 +96,8 @@ describe('Khối BetterAuthService', () => {
     });
     expect(service.cutoverStage).toBe('bake');
     const auth = service.requireAuth();
-        // Ba điểm nối đồng bộ ngược (xem legacyPasswordSync ở factory): hook tạo credential + callback sau reset. Đường cập
+        // Ba điểm nối đồng bộ ngược (xem legacyPasswordSync ở factory): hook tạo credential + callback sau reset. Đường
+        // cập
     // nhật mật khẩu KHÔNG có database hook update — updatePassword của 1.7.12 đi qua updateMany (hook nhận số dòng,
     // không phải bản ghi).
     expect(typeof auth.options.databaseHooks?.account?.create?.after).toBe('function');
@@ -106,7 +108,8 @@ describe('Khối BetterAuthService', () => {
   it('không có bề mặt mail khi cổng mail chưa nối (giai đoạn 2.5 chưa kết nối)', () => {
     const service = buildService({ BETTER_AUTH_ENABLED: true, BETTER_AUTH_SECRET: SECRET, PORT: 3000 });
     const auth = service.requireAuth();
-        // Chưa nối cổng mail: không callback reset (endpoint reset của Better Auth tự từ chối RESET_PASSWORD_DISABLED) và
+        // Chưa nối cổng mail: không callback reset (endpoint reset của Better Auth tự từ chối RESET_PASSWORD_DISABLED)
+        // và
     // không plugin OTP — không có luồng nào nhận yêu cầu rồi để mất.
     expect(auth.options.emailAndPassword?.sendResetPassword).toBeUndefined();
     expect(auth.options.plugins?.some((plugin) => plugin.id === 'email-otp')).toBe(false);

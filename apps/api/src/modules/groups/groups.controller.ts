@@ -73,7 +73,8 @@ export class CourseGroupingsController {
   }
   @Get()
   /**
-   * GET /courses/:id/groupings — liệt kê grouping (đã lọc theo quyền nhìn thấy nhóm của người xem ở chế độ separate groups).
+   * GET /courses/:id/groupings — liệt kê grouping (đã lọc theo quyền nhìn thấy nhóm của người xem ở chế độ separate
+   * groups).
    */
   async listGroupings(@Param('courseId', { schema: uuidIdSchema }) courseId: string, @CurrentUser() actor: AuthenticatedUser) {
     return this.groups.listGroupings(courseId, actor.id);
@@ -123,7 +124,10 @@ export class CohortsController {
     return { deleted: true };
   }
   @Get(':id/members')
-  /** GET /cohorts/:id/members — thành viên của cohort (chỉ người có quyền xem/quản lý cohort; người ngoài nhận 404 như cohort không tồn tại). */
+  /**
+   * GET /cohorts/:id/members — thành viên của cohort (chỉ người có quyền xem/quản lý cohort; người ngoài nhận 404 như
+   * cohort không tồn tại).
+   */
   async members(@Param('id', { schema: uuidIdSchema }) id: string, @CurrentUser() actor: AuthenticatedUser) { return this.groups.listCohortMembers(id, actor.id); }
   @Post(':id/members')
   /** POST /cohorts/:id/members — thêm thành viên cohort (kích hoạt cohort sync). */
