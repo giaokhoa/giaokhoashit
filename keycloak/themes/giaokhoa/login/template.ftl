@@ -2,7 +2,7 @@
 <#import "theme-resources.ftl" as themeResourceTags>
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
-<html lang="${lang}"<#if realm.internationalizationEnabled> dir="${(locale.rtl)?then('rtl','ltr')}"</#if>>
+<html class="${properties.kcHtmlClass!}" lang="${lang}"<#if realm.internationalizationEnabled> dir="${(locale.rtl)?then('rtl','ltr')}"</#if>>
 
 <head>
     <meta charset="utf-8">
@@ -101,7 +101,7 @@
     </#if>
 </head>
 
-<body data-page-id="login-${pageId}">
+<body class="${properties.kcBodyClass!}" data-page-id="login-${pageId}">
 <div class="gk-page">
     <div class="gk-decor" aria-hidden="true">
         <span class="gk-circle gk-circle--left"></span>
