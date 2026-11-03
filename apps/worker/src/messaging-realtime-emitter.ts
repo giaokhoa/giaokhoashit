@@ -7,25 +7,20 @@ import { Server } from 'socket.io';
 export const MESSAGING_NAMESPACE = '/messaging';
 
 /**
- * Trần chờ xác nhận publish của một lượt phát (mili giây). Một lần
- * publish lên Redis cùng máy/cùng mạng nội bộ được xác nhận trong
- * vài mili giây; trần 10 giây đủ xa để không biến dao động tải
- * thành lỗi giả, và đủ gần để một connection publish đã chết (lệnh
- * bị xếp vào hàng đợi offline của ioredis và không bao giờ được trả
- * lời) bị biến thành lỗi phân phối trong cùng lượt thử của job,
- * thay vì treo job tới khi BullMQ hết hạn khoá.
+ * Trần chờ xác nhận publish của một lượt phát (mili giây). Một lần publish lên Redis cùng máy/cùng mạng nội bộ được xác
+ * nhận trong vài mili giây; trần 10 giây đủ xa để không biến dao động tải thành lỗi giả, và đủ gần để một connection
+ * publish đã chết (lệnh bị xếp vào hàng đợi offline của ioredis và không bao giờ được trả lời) bị biến thành lỗi phân
+ * phối trong cùng lượt thử của job, thay vì treo job tới khi BullMQ hết hạn khoá.
  */
 const PUBLISH_CONFIRM_TIMEOUT_MS = 10_000;
 
 /**
  * Chờ một lần publish của adapter được Redis xác nhận.
  *
- * Publish bị Redis từ chối (ví dụ connection bị tước quyền PUBLISH
- * bằng ACL, hoặc lỗi connection có kết luận) thì promise gốc reject
- * và lỗi đó được ném nguyên vẹn. Publish không kết luận trong trần
- * {@link PUBLISH_CONFIRM_TIMEOUT_MS} thì bị coi là lỗi phân phối:
- * ném lỗi trần chờ để caller dừng lượt phân phối (không ghi dấu,
- * BullMQ thử lại).
+ * Publish bị Redis từ chối (ví dụ connection bị tước quyền PUBLISH bằng ACL, hoặc lỗi connection có kết luận) thì
+ * promise gốc reject và lỗi đó được ném nguyên vẹn. Publish không kết luận trong trần
+ * {@link PUBLISH_CONFIRM_TIMEOUT_MS} thì bị coi là lỗi phân phối: ném lỗi trần chờ để caller dừng lượt phân phối (không
+ * ghi dấu, BullMQ thử lại).
  *
  * @param publish - Promise mà `pubClient.publish(...)` của adapter trả về cho đúng lượt phát đó.
  */

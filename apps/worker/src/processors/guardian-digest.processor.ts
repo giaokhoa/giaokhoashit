@@ -17,7 +17,9 @@ export interface GuardianDigestSweepResult {
   queued: GuardianDigestQueuedItem[];
 }
 
-/** Khoá tuỳ chọn tần suất digest trong user_preferences (theo từng con) — nguồn sự thật phía API cũng đọc đúng khoá này. */
+/**
+ * Khoá tuỳ chọn tần suất digest trong user_preferences (theo từng con) — nguồn sự thật phía API cũng đọc đúng khoá này.
+ */
 export function guardianDigestFrequencyPreferenceName(studentUserId: string): string {
   return `guardian_digest_frequency:${studentUserId}`;
 }

@@ -10,19 +10,14 @@ import { SpaceDatabaseService } from './db/routing/space-database.service';
 import { createMessagingRealtimeEmitter, type MessagingRealtimeEmitterHandle } from './messaging-realtime-emitter';
 
 /**
- * Runtime của consumer phân phối realtime messaging ở worker
- * (issue #521): sở hữu các tài nguyên sống theo tiến trình mà
- * processor cần — tầng phân phối dùng chung của `@lms/messaging`
- * (dựng trên kết nối DB của worker), connection Redis giữ dấu
- * đã-phân-phối theo `outboxId`, và cổng phát realtime qua Redis
- * adapter — rồi đóng tất cả khi module tắt, để không rò connection
- * qua các vòng boot (nhất là trong test boot module nhiều lần).
+ * Runtime của consumer phân phối realtime messaging ở worker (issue #521): sở hữu các tài nguyên sống theo tiến trình
+ * mà processor cần — tầng phân phối dùng chung của `@lms/messaging` (dựng trên kết nối DB của worker), connection Redis
+ * giữ dấu đã-phân-phối theo `outboxId`, và cổng phát realtime qua Redis adapter — rồi đóng tất cả khi module tắt, để
+ * không rò connection qua các vòng boot (nhất là trong test boot module nhiều lần).
  */
 @Injectable()
 export class MessagingRealtimeRuntime implements OnModuleDestroy {
-  /** Tầng phân phối dùng chung (luật ở `@lms/messaging`). */
   readonly distribution: MessagingDistributionService;
-  /** Connection Redis giữ dấu đã-phân-phối của consumer. */
   readonly redis: Redis;
   private readonly emitterHandle: MessagingRealtimeEmitterHandle;
 

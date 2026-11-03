@@ -1,20 +1,15 @@
 /**
  * Processor đối soát ghi danh cấp lớp (`class-enrol-reconcile`).
  *
- * Flow tổng thể: scheduler đăng ký job lặp vào queue →
- * {@link ClassEnrolReconcileProcessor.process} bọc ngữ cảnh platform
- * → quét danh sách lớp `active` → với từng lớp, hạ ngữ cảnh xuống
- * tenant của lớp, lên kế hoạch sửa từ hai phía (roster của backing
- * cohort ↔ `user_enrolments` vật chất hoá trên các instance cohort),
- * áp ngưỡng an toàn theo lớp rồi áp từng việc sửa (ghi danh / kích
- * hoạt lại / đình chỉ / rút ghi danh / cấp bổ sung vai) kèm sự kiện
- * outbox như đường API → kết quả lượt chạy ghi vào `task_log`.
+ * Flow tổng thể: scheduler đăng ký job lặp vào queue → {@link ClassEnrolReconcileProcessor.process} bọc ngữ cảnh
+ * platform → quét danh sách lớp `active` → với từng lớp, hạ ngữ cảnh xuống tenant của lớp, lên kế hoạch sửa từ hai phía
+ * (roster của backing cohort ↔ `user_enrolments` vật chất hoá trên các instance cohort), áp ngưỡng an toàn theo lớp rồi
+ * áp từng việc sửa (ghi danh / kích hoạt lại / đình chỉ / rút ghi danh / cấp bổ sung vai) kèm sự kiện outbox như đường
+ * API → kết quả lượt chạy ghi vào `task_log`.
  *
- * Bất biến sống còn: MỌI truy vấn của processor phải chạy trong một
- * ngữ cảnh tenant tường minh (platform cho lượt quét, tenant của lớp
- * cho phần việc của lớp). Ngoài ngữ cảnh, RLS fail-closed làm job đọc
- * 0 lớp mà vẫn báo thành công — hồi quy #292, có test riêng chạy bằng
- * role không BYPASSRLS (`test/class-enrol-reconcile-rls.spec.ts`).
+ * Bất biến sống còn: MỌI truy vấn của processor phải chạy trong một ngữ cảnh tenant tường minh (platform cho lượt quét,
+ * tenant của lớp cho phần việc của lớp). Ngoài ngữ cảnh, RLS fail-closed làm job đọc 0 lớp mà vẫn báo thành công — hồi
+ * quy #292, có test riêng chạy bằng role không BYPASSRLS (`test/class-enrol-reconcile-rls.spec.ts`).
  */
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import type { Job } from 'bullmq';
@@ -25,10 +20,8 @@ import { TaskLogService } from '../task-log.service';
 import { tenantAls } from '../db/tenant-als';
 
 /**
- * Danh sách cột đọc của một dòng `enrol` mà processor này nạp —
- * đúng hình dạng `EnrolRow` của `@lms/db`, dùng chung cho lượt đọc
- * các instance cohort của lớp: bí danh camelCase tường minh theo
- * khuôn danh sách cột của `@lms/db`.
+ * Danh sách cột đọc của một dòng `enrol` mà processor này nạp — đúng hình dạng `EnrolRow` của `@lms/db`, dùng chung cho
+ * lượt đọc các instance cohort của lớp: bí danh camelCase tường minh theo khuôn danh sách cột của `@lms/db`.
  */
 const ENROL_COLUMNS = [
   'id',
@@ -54,10 +47,8 @@ const ENROL_COLUMNS = [
 ] as const;
 
 /**
- * Danh sách cột đọc của một dòng `user_enrolments` mà kế hoạch
- * đối soát cần: định danh, instance, người dùng, trạng thái và
- * vết người thao tác (phân biệt đình chỉ thủ công với đình chỉ
- * của đồng bộ hệ thống).
+ * Danh sách cột đọc của một dòng `user_enrolments` mà kế hoạch đối soát cần: định danh, instance, người dùng, trạng
+ * thái và vết người thao tác (phân biệt đình chỉ thủ công với đình chỉ của đồng bộ hệ thống).
  */
 const USER_ENROLMENT_PLAN_COLUMNS = [
   'id',
@@ -86,9 +77,14 @@ export interface ClassEnrolReconcileResult {
   skippedClassIds: string[];
 }
 
-/** Ngưỡng lệch bất thường của một lớp: phần việc cần sửa vượt tỉ lệ này của quy mô đối chiếu thì chỉ báo cáo (hồ sơ lớp học mục 4.2). */
+/**
+ * Ngưỡng lệch bất thường của một lớp: phần việc cần sửa vượt tỉ lệ này của quy mô đối chiếu thì chỉ báo cáo (hồ sơ lớp
+ * học mục 4.2).
+ */
 export const RECONCILE_MAX_FIX_RATIO = 0.2;
-/** Miễn ngưỡng tỉ lệ cho lớp nhỏ: tối thiểu ngần này việc sửa vẫn được áp dụng dù tỉ lệ cao (lớp mới tạo, roster ít). */
+/**
+ * Miễn ngưỡng tỉ lệ cho lớp nhỏ: tối thiểu ngần này việc sửa vẫn được áp dụng dù tỉ lệ cao (lớp mới tạo, roster ít).
+ */
 export const RECONCILE_MIN_FIX_ALLOWANCE = 5;
 
 const ENROL_ACTIVE = 0;
@@ -107,63 +103,49 @@ interface PlannedFix {
 }
 
 /**
- * Đối soát ghi danh cấp lớp (issue #184, CLASS-0 — vá bền vững #2 của hồ
- * sơ lớp học): nguồn sự thật là `cohort_members` của backing cohort;
- * ghi danh cấp khoá trên các instance cohort của lớp là bản vật chất
- * hoá. Job quét mọi lớp `active`, so hai phía và sửa theo hướng nguồn
- * sự thật: thiếu → ghi danh (kèm gán vai theo instance + group "cả
- * lớp" + sự kiện outbox như đường API), thừa → áp chế độ rời lớp của
- * instance (`suspend` mặc định / `unenrol` → withdrawn + gỡ vai do
- * instance cấp), ghi danh ACTIVE thiếu gán vai của instance → cấp bổ
- * sung (lấp đúng lỗ hổng gán vai nằm ngoài transaction ở enrolUserInternal).
+ * Đối soát ghi danh cấp lớp (issue #184, CLASS-0 — vá bền vững #2 của hồ sơ lớp học): nguồn sự thật là `cohort_members`
+ * của backing cohort; ghi danh cấp khoá trên các instance cohort của lớp là bản vật chất hoá. Job quét mọi lớp
+ * `active`, so hai phía và sửa theo hướng nguồn sự thật: thiếu → ghi danh (kèm gán vai theo instance + group "cả lớp" +
+ * sự kiện outbox như đường API), thừa → áp chế độ rời lớp của instance (`suspend` mặc định / `unenrol` → withdrawn + gỡ
+ * vai do instance cấp), ghi danh ACTIVE thiếu gán vai của instance → cấp bổ sung (lấp đúng lỗ hổng gán vai nằm ngoài
+ * transaction ở enrolUserInternal).
  *
- * LUẬT CỨNG — tôn trọng đình chỉ thủ công theo khoá (ca "miễn môn"):
- * một UE đang SUSPENDED mang `modifier_id` của một NGƯỜI (vết do
- * `EnrolService.setSuspended` ghi) là quyết định thủ công của giáo
- * viên tại khoá đó — job KHÔNG bao giờ tự kích hoạt lại. Chỉ UE bị
- * đình chỉ bởi đồng bộ hệ thống (modifier_id = null, vết do đường
- * cohort-removed ghi) mới được kích hoạt lại khi user quay về roster.
+ * LUẬT CỨNG — tôn trọng đình chỉ thủ công theo khoá (ca "miễn môn"): một UE đang SUSPENDED mang `modifier_id` của một
+ * NGƯỜI (vết do `EnrolService.setSuspended` ghi) là quyết định thủ công của giáo viên tại khoá đó — job KHÔNG bao giờ
+ * tự kích hoạt lại. Chỉ UE bị đình chỉ bởi đồng bộ hệ thống (modifier_id = null, vết do đường cohort-removed ghi) mới
+ * được kích hoạt lại khi user quay về roster.
  *
- * Chống sửa sai diện rộng: kế hoạch sửa của một lớp vượt quá
- * RECONCILE_MAX_FIX_RATIO của quy mô đối chiếu (và quá
- * RECONCILE_MIN_FIX_ALLOWANCE việc) thì lớp đó bị bỏ qua lượt này và
- * ghi vào kết quả để người vận hành kiểm tra — nguồn sự thật bị thao
- * tác lỗi không được phép kéo theo sửa hàng loạt. Job idempotent:
- * chạy lại trên trạng thái đã khớp là không sửa gì.
+ * Chống sửa sai diện rộng: kế hoạch sửa của một lớp vượt quá RECONCILE_MAX_FIX_RATIO của quy mô đối chiếu (và quá
+ * RECONCILE_MIN_FIX_ALLOWANCE việc) thì lớp đó bị bỏ qua lượt này và ghi vào kết quả để người vận hành kiểm tra — nguồn
+ * sự thật bị thao tác lỗi không được phép kéo theo sửa hàng loạt. Job idempotent: chạy lại trên trạng thái đã khớp là
+ * không sửa gì.
  */
 @Processor('class-enrol-reconcile')
 export class ClassEnrolReconcileProcessor extends WorkerHost {
   constructor(private readonly spaceDb: SpaceDatabaseService, private readonly taskLog: TaskLogService) { super(); }
 
   /**
-   * Xử lý một job đối soát. Worker không có request HTTP nên processor
-   * phải TỰ bọc ngữ cảnh tenant (TENANT-1, #196) — lượt quét danh sách
-   * lớp chạy dưới ngữ cảnh platform tường minh, đúng chuẩn mọi
-   * processor quét xuyên tenant khác (guardian-digest,
-   * notification-retention...).
+   * Xử lý một job đối soát. Worker không có request HTTP nên processor phải TỰ bọc ngữ cảnh tenant (TENANT-1, #196) —
+   * lượt quét danh sách lớp chạy dưới ngữ cảnh platform tường minh, đúng chuẩn mọi processor quét xuyên tenant khác
+   * (guardian-digest, notification-retention...).
    *
-   * @remarks
-   * Bọc ngữ cảnh là điều kiện SỐNG CÒN của job này (hồi quy #292):
-   * ngoài ngữ cảnh, `TenantAwarePool` gắn `app.tenant_id = ''` +
-   * `app.platform = 'off'`, RLS fail-closed trên bảng `classes` làm
-   * lượt quét đọc **0 lớp** — job vẫn kết thúc "thành công" với
-   * `classesChecked = 0` và lệch ghi danh không bao giờ được sửa.
-   * Phần xử lý từng lớp được hạ xuống ngữ cảnh của chính tenant lớp
-   * đó trong {@link sweep}.
+   * @remarks Bọc ngữ cảnh là điều kiện SỐNG CÒN của job này (hồi quy #292): ngoài ngữ cảnh, `TenantAwarePool` gắn
+   * `app.tenant_id = ''` + `app.platform = 'off'`, RLS fail-closed trên bảng `classes` làm lượt quét đọc **0 lớp** —
+   * job vẫn kết thúc "thành công" với `classesChecked = 0` và lệch ghi danh không bao giờ được sửa. Phần xử lý từng lớp
+   * được hạ xuống ngữ cảnh của chính tenant lớp đó trong {@link sweep}.
    *
-   * @param _job - Job BullMQ của queue `class-enrol-reconcile` (không
-   *   mang payload nghiệp vụ; lịch lặp do scheduler đăng ký).
-   * @returns Kết quả lượt đối soát (số lớp đã kiểm, số việc sửa theo
-   *   loại, danh sách lớp bị bỏ qua vì vượt ngưỡng an toàn).
+   * @param _job - Job BullMQ của queue `class-enrol-reconcile` (không mang payload nghiệp vụ; lịch lặp do scheduler
+   * đăng ký).
+   * @returns Kết quả lượt đối soát (số lớp đã kiểm, số việc sửa theo loại, danh sách lớp bị bỏ qua vì vượt ngưỡng an
+   * toàn).
    */
   async process(_job: Job): Promise<ClassEnrolReconcileResult> {
     void _job;
-    // Ngữ cảnh platform cho lượt quét xuyên tenant — thiếu lớp bọc này
-    // là toàn bộ job mù dữ liệu vì RLS (xem @remarks ở trên).
+    // Ngữ cảnh platform cho lượt quét xuyên tenant — thiếu lớp bọc này là toàn bộ job mù dữ liệu vì RLS (xem @remarks ở
+    // trên).
     return tenantAls.run({ platform: true }, () => this.processInContext());
   }
 
-  /** Thân xử lý của một lượt đối soát, chạy trong ngữ cảnh platform do {@link process} bọc. */
   private async processInContext(): Promise<ClassEnrolReconcileResult> {
     return this.taskLog.run('class-enrol-reconcile', () => this.sweep(), (r) =>
       `classes ${r.classesChecked}, enrolled ${r.enrolled}, reactivated ${r.reactivated}, suspended ${r.suspended}, withdrawn ${r.withdrawn}, roles ${r.rolesRestored}, skipped ${r.skippedClassIds.length}`);

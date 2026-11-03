@@ -11,145 +11,95 @@ import type { OutboxEventJobData } from '../outbox-event-routes';
 import { ResendMailService } from '../resend-mail.service';
 
 /**
- * Consumer trên hàng đợi của sự kiện outbox `auth_mail_requested`
- * (issue #517 — consumer đầu tiên của đợt tách issue cha #491 chuyển
- * từ polling phía API sang hàng đợi ở worker).
+ * Consumer trên hàng đợi của sự kiện outbox `auth_mail_requested` (issue #517 — consumer đầu tiên của đợt tách issue
+ * cha #491 chuyển từ polling phía API sang hàng đợi ở worker).
  *
- * @remarks
- * Flow tổng thể của mail auth sau đợt chuyển đổi:
- * 1. Các callback của Better Auth phía API chỉ GHI dòng outbox
- *    `auth_mail_requested` (payload theo hợp đồng ở `@lms/contracts`)
- *    rồi trả về ngay — không gửi mail trong request.
- * 2. Relay outbox duy nhất ở worker phát dòng đó thành MỘT job trên
- *    hàng đợi `auth-mail` (bảng định tuyến ở `outbox-event-routes.ts`:
- *    tên job là loại sự kiện, `jobId` là id của dòng outbox, dữ liệu
- *    job là toàn bộ dòng — xem {@link OutboxEventJobData}), đóng dấu
- *    `publishedAt` và phản chiếu `event_log`. Dấu `publishedAt` là
- *    dấu ĐÃ PHÁT, không phải dấu hoàn thành xử lý.
- * 3. Processor này nhận job, dựng nội dung mail bằng template dùng
- *    chung {@link renderAuthMail} của `@lms/contracts` và gửi qua
- *    transport Resend phía worker ({@link ResendMailService}) — nội
- *    dung mail và hành vi gửi giữ nguyên như đường consumer polling
- *    phía API trước đây (consumer đó đã gỡ ở cùng issue này).
+ * @remarks Flow tổng thể của mail auth sau đợt chuyển đổi:
+ * 1. Các callback của Better Auth phía API chỉ GHI dòng outbox `auth_mail_requested` (payload theo hợp đồng ở
+ *    `@lms/contracts`) rồi trả về ngay — không gửi mail trong request.
+ * 2. Relay outbox duy nhất ở worker phát dòng đó thành MỘT job trên hàng đợi `auth-mail` (bảng định tuyến ở
+ *    `outbox-event-routes.ts`: tên job là loại sự kiện, `jobId` là id của dòng outbox, dữ liệu job là toàn bộ dòng —
+ *    xem {@link OutboxEventJobData}), đóng dấu `publishedAt` và phản chiếu `event_log`. Dấu `publishedAt` là dấu ĐÃ
+ *    PHÁT, không phải dấu hoàn thành xử lý.
+ * 3. Processor này nhận job, dựng nội dung mail bằng template dùng chung {@link renderAuthMail} của `@lms/contracts` và
+ *    gửi qua transport Resend phía worker ({@link ResendMailService}) — nội dung mail và hành vi gửi giữ nguyên như
+ *    đường consumer polling phía API trước đây (consumer đó đã gỡ ở cùng issue này).
  *
- * Tính idempotent theo `outboxId` (bất biến trung tâm của
- * processor): cơ chế phát là at-least-once — cùng một sự kiện có
- * thể tới processor nhiều lần (`jobId` của BullMQ chỉ chống trùng
- * trong cửa sổ hàng đợi còn lưu giữ job; job bị thử lại sau lỗi,
- * job được phát lại sau sự cố, hay job mới được tạo cho cùng một
- * dòng ngoài cửa sổ lưu giữ đều là các đường tới lần hai), và hai
- * lượt xử lý còn có thể chạy ĐỒNG THỜI (job bị nhận xử lý lại sau
- * khi mất khoá BullMQ trong lúc lượt trước chưa xong, hai tiến
- * trình worker chồng lấn khi triển khai). Hàng rào vì vậy gồm HAI
- * TRẠNG THÁI tách bạch ở {@link AuthMailSentMarker}, không gộp vào
- * một khoá như bản đầu của đợt chuyển đổi (bản đó chiếm một khoá
- * duy nhất trước khi gửi và giữ luôn khoá làm dấu đã xử lý — tiến
- * trình sập sau khi chiếm mà trước khi gửi xong thì khoá vẫn đứng
- * tới hết hạn 7 ngày, mọi lần phát lại trong cửa sổ đó bị coi là
- * đã xử lý và mail mất hẳn dù job vẫn ghi thành công):
+ * Tính idempotent theo `outboxId` (bất biến trung tâm của processor): cơ chế phát là at-least-once — cùng một sự kiện
+ * có thể tới processor nhiều lần (`jobId` của BullMQ chỉ chống trùng trong cửa sổ hàng đợi còn lưu giữ job; job bị thử
+ * lại sau lỗi, job được phát lại sau sự cố, hay job mới được tạo cho cùng một dòng ngoài cửa sổ lưu giữ đều là các
+ * đường tới lần hai), và hai lượt xử lý còn có thể chạy ĐỒNG THỜI (job bị nhận xử lý lại sau khi mất khoá BullMQ trong
+ * lúc lượt trước chưa xong, hai tiến trình worker chồng lấn khi triển khai). Hàng rào vì vậy gồm HAI TRẠNG THÁI tách
+ * bạch ở {@link AuthMailSentMarker}, không gộp vào một khoá như bản đầu của đợt chuyển đổi (bản đó chiếm một khoá duy
+ * nhất trước khi gửi và giữ luôn khoá làm dấu đã xử lý — tiến trình sập sau khi chiếm mà trước khi gửi xong thì khoá
+ * vẫn đứng tới hết hạn 7 ngày, mọi lần phát lại trong cửa sổ đó bị coi là đã xử lý và mail mất hẳn dù job vẫn ghi thành
+ * công):
  *
- * - Dấu ĐÃ GỬI: chỉ ghi SAU KHI transport đã nhận mail (hoặc khai
- *   báo bỏ qua vì chưa cấu hình — coi như đã xử lý như đường cũ).
- *   Lượt xử lý thấy dấu này thì kết thúc `duplicate`: không gửi,
- *   không lỗi.
- * - Lease ĐANG XỬ LÝ: khoá riêng có token chủ sở hữu và hạn ngắn
- *   (60 giây), chiếm nguyên tử TRƯỚC khi gửi — đúng một lượt chiếm
- *   được lease và đi tiếp tới transport. Lượt không chiếm được
- *   lease KHÔNG được kết thúc như đã xử lý: nó hẹn hàng đợi phát
- *   lại sau bằng cơ chế hoãn của BullMQ (`moveToDelayed` +
- *   `DelayedError` — pattern hoãn chính thức của BullMQ, không
- *   tính là lần thử thất bại và không đốt số lần thử của job), vì
- *   tại thời điểm đó chưa biết lượt đang giữ lease có gửi thành
- *   công hay không. Khi job được phát lại, hoặc dấu ĐÃ GỬI đã
- *   đứng (lượt kia gửi xong — kết thúc `duplicate`), hoặc lease
- *   đã hết hạn/được nhả (chiếm lại và gửi).
- * - Đọc lại dấu ĐÃ GỬI TRONG lease: lượt chiếm được lease đọc
- *   lại dấu ĐÃ GỬI trong lúc đang giữ lease, TRƯỚC khi gọi
- *   transport — kết quả đọc lại này mới là kết quả có hiệu lực.
- *   Lần đọc trước khi chiếm lease chỉ là đường nhanh cho các lần
- *   phát lại thông thường, vì kết quả của nó có thể thành cũ:
- *   một lượt đọc "chưa gửi" rồi bị chậm trước khi chiếm lease,
- *   trong lúc lượt khác gửi trọn, ghi dấu và nhả lease; lượt đầu
- *   chiếm lại lease vừa nhả mà dựa vào kết quả cũ thì gửi lần
- *   hai dù không hề có lỗi nào xảy ra. Thấy dấu ở lần đọc lại
- *   thì lượt giữ lease nhả lease của chính mình (kiểm tra chủ)
- *   và kết thúc `duplicate`.
- * - Tiến trình sập SAU khi chiếm lease mà TRƯỚC khi gửi xong:
- *   lease tự hết hạn sau tối đa 60 giây; job của worker đã chết
- *   được BullMQ phát hiện qua khoá job hết hạn (mặc định 30 giây)
- *   và phát lại — lượt phát lại chiếm lại lease và GỬI ĐƯỢC mail,
- *   mail không mất. Nhả lease luôn kiểm tra token chủ sở hữu để
- *   một lượt không xoá nhầm lease mà lượt khác vừa chiếm lại sau
- *   khi lease cũ hết hạn.
- * - Giới hạn còn lại, đúng ngữ nghĩa at-least-once (không tuyên
- *   bố đúng-một-lần tuyệt đối với dịch vụ mail bên ngoài): tiến
- *   trình sập SAU khi transport đã nhận mail mà TRƯỚC khi ghi
- *   xong dấu ĐÃ GỬI — hoặc một lần gửi treo lâu hơn hạn lease —
- *   thì lượt khôi phục có thể gửi thêm một bản trùng của cùng
- *   mail đó. Mất mail im lặng thì không còn đường nào: mọi trạng
- *   thái chưa-gửi-được đều hoặc được thử lại, hoặc tự hết hạn để
- *   lượt sau gửi được.
+ * - Dấu ĐÃ GỬI: chỉ ghi SAU KHI transport đã nhận mail (hoặc khai báo bỏ qua vì chưa cấu hình — coi như đã xử lý như
+ *   đường cũ). Lượt xử lý thấy dấu này thì kết thúc `duplicate`: không gửi, không lỗi.
+ * - Lease ĐANG XỬ LÝ: khoá riêng có token chủ sở hữu và hạn ngắn (60 giây), chiếm nguyên tử TRƯỚC khi gửi — đúng một
+ *   lượt chiếm được lease và đi tiếp tới transport. Lượt không chiếm được lease KHÔNG được kết thúc như đã xử lý: nó
+ *   hẹn hàng đợi phát lại sau bằng cơ chế hoãn của BullMQ (`moveToDelayed` + `DelayedError` — pattern hoãn chính thức
+ *   của BullMQ, không tính là lần thử thất bại và không đốt số lần thử của job), vì tại thời điểm đó chưa biết lượt
+ *   đang giữ lease có gửi thành công hay không. Khi job được phát lại, hoặc dấu ĐÃ GỬI đã đứng (lượt kia gửi xong — kết
+ *   thúc `duplicate`), hoặc lease đã hết hạn/được nhả (chiếm lại và gửi).
+ * - Đọc lại dấu ĐÃ GỬI TRONG lease: lượt chiếm được lease đọc lại dấu ĐÃ GỬI trong lúc đang giữ lease, TRƯỚC khi gọi
+ *   transport — kết quả đọc lại này mới là kết quả có hiệu lực. Lần đọc trước khi chiếm lease chỉ là đường nhanh cho
+ *   các lần phát lại thông thường, vì kết quả của nó có thể thành cũ: một lượt đọc "chưa gửi" rồi bị chậm trước khi
+ *   chiếm lease, trong lúc lượt khác gửi trọn, ghi dấu và nhả lease; lượt đầu chiếm lại lease vừa nhả mà dựa vào kết
+ *   quả cũ thì gửi lần hai dù không hề có lỗi nào xảy ra. Thấy dấu ở lần đọc lại thì lượt giữ lease nhả lease của chính
+ *   mình (kiểm tra chủ) và kết thúc `duplicate`.
+ * - Tiến trình sập SAU khi chiếm lease mà TRƯỚC khi gửi xong: lease tự hết hạn sau tối đa 60 giây; job của worker đã
+ *   chết được BullMQ phát hiện qua khoá job hết hạn (mặc định 30 giây) và phát lại — lượt phát lại chiếm lại lease và
+ *   GỬI ĐƯỢC mail, mail không mất. Nhả lease luôn kiểm tra token chủ sở hữu để một lượt không xoá nhầm lease mà lượt
+ *   khác vừa chiếm lại sau khi lease cũ hết hạn.
+ * - Giới hạn còn lại, đúng ngữ nghĩa at-least-once (không tuyên bố đúng-một-lần tuyệt đối với dịch vụ mail bên ngoài):
+ *   tiến trình sập SAU khi transport đã nhận mail mà TRƯỚC khi ghi xong dấu ĐÃ GỬI — hoặc một lần gửi treo lâu hơn hạn
+ *   lease — thì lượt khôi phục có thể gửi thêm một bản trùng của cùng mail đó. Mất mail im lặng thì không còn đường
+ *   nào: mọi trạng thái chưa-gửi-được đều hoặc được thử lại, hoặc tự hết hạn để lượt sau gửi được.
  *
  * Hành vi theo từng kết quả xử lý một job:
- * - Payload không hợp lệ (thiếu/khác hai loại `kind` đã chốt, thiếu
- *   người nhận): ghi log lỗi và KẾT THÚC job không gửi, không ném
- *   lỗi — payload hỏng vĩnh viễn thì thử lại bao nhiêu lần cũng
- *   hỏng, không được để job độc chặn hàng đợi (đường cũ bỏ qua dòng
- *   theo đúng cách này).
- * - Transport trả `skipped` (chưa cấu hình `RESEND_API_KEY` /
- *   `MAIL_FROM`): môi trường chưa được cấp khoá là trạng thái vận
- *   hành hợp lệ — ghi log cảnh báo, ghi dấu ĐÃ GỬI và kết thúc job
- *   như đường cũ coi dòng là đã xử lý.
- * - Transport ném lỗi (mạng/4xx/5xx của Resend): NHẢ lease (kiểm
- *   tra chủ) rồi ném lỗi ra để cơ chế thử lại của BullMQ (chính
- *   sách job mặc định của `worker.module.ts`: tối đa 3 lần, giãn
- *   cách hàm mũ) phát lại job; lần thử sau chiếm lại lease nên vẫn
- *   gửi được và chỉ gửi đúng một lần khi thành công. Khác đường cũ
- *   ở cơ chế thử lại (hàng đợi thay cho bộ đếm trong tiến trình)
- *   và ở chỗ một job hỏng không còn chặn các mail đứng sau nó
- *   trong outbox.
+ * - Payload không hợp lệ (thiếu/khác hai loại `kind` đã chốt, thiếu người nhận): ghi log lỗi và KẾT THÚC job không gửi,
+ *   không ném lỗi — payload hỏng vĩnh viễn thì thử lại bao nhiêu lần cũng hỏng, không được để job độc chặn hàng đợi
+ *   (đường cũ bỏ qua dòng theo đúng cách này).
+ * - Transport trả `skipped` (chưa cấu hình `RESEND_API_KEY` / `MAIL_FROM`): môi trường chưa được cấp khoá là trạng thái
+ *   vận hành hợp lệ — ghi log cảnh báo, ghi dấu ĐÃ GỬI và kết thúc job như đường cũ coi dòng là đã xử lý.
+ * - Transport ném lỗi (mạng/4xx/5xx của Resend): NHẢ lease (kiểm tra chủ) rồi ném lỗi ra để cơ chế thử lại của BullMQ
+ *   (chính sách job mặc định của `worker.module.ts`: tối đa 3 lần, giãn cách hàm mũ) phát lại job; lần thử sau chiếm
+ *   lại lease nên vẫn gửi được và chỉ gửi đúng một lần khi thành công. Khác đường cũ ở cơ chế thử lại (hàng đợi thay
+ *   cho bộ đếm trong tiến trình) và ở chỗ một job hỏng không còn chặn các mail đứng sau nó trong outbox.
  *
- * Side-effect: gửi mail qua Resend (qua transport phía worker);
- * đọc/ghi dấu ĐÃ GỬI và chiếm/nhả lease ĐANG XỬ LÝ theo `outboxId`
- * trên Redis qua {@link AuthMailSentMarker}. Không đọc/ghi DB,
- * không đụng `publishedAt`.
+ * Side-effect: gửi mail qua Resend (qua transport phía worker); đọc/ghi dấu ĐÃ GỬI và chiếm/nhả lease ĐANG XỬ LÝ theo
+ * `outboxId` trên Redis qua {@link AuthMailSentMarker}. Không đọc/ghi DB, không đụng `publishedAt`.
  */
 
 /**
- * Hàng rào chống trùng hai trạng thái của sự kiện outbox theo
- * `outboxId` — bề mặt tối thiểu mà {@link AuthMailProcessor} cần
- * để đạt tính idempotent kể cả khi hai lượt xử lý chạy đồng thời
- * và khi một lượt chết giữa chừng. Bản cài đặt production là
- * {@link RedisAuthMailSentMarker} (mọi thao tác đều là lệnh Redis
- * nguyên tử); test cấp bản giả trong bộ nhớ có cùng ngữ nghĩa.
+ * Hàng rào chống trùng hai trạng thái của sự kiện outbox theo `outboxId` — bề mặt tối thiểu mà
+ * {@link AuthMailProcessor} cần để đạt tính idempotent kể cả khi hai lượt xử lý chạy đồng thời và khi một lượt chết
+ * giữa chừng. Bản cài đặt production là {@link RedisAuthMailSentMarker} (mọi thao tác đều là lệnh Redis nguyên tử);
+ * test cấp bản giả trong bộ nhớ có cùng ngữ nghĩa.
  */
 export interface AuthMailSentMarker {
   /**
-   * Sự kiện có `outboxId` này đã có dấu ĐÃ GỬI hay chưa. Dấu chỉ
-   * được ghi sau khi transport đã nhận mail, nên `true` ở đây là
-   * bằng chứng mail đã thật sự được gửi ở một lần xử lý trước.
+   * Sự kiện có `outboxId` này đã có dấu ĐÃ GỬI hay chưa. Dấu chỉ được ghi sau khi transport đã nhận mail, nên `true` ở
+   * đây là bằng chứng mail đã thật sự được gửi ở một lần xử lý trước.
    */
   hasSent(outboxId: string): Promise<boolean>;
   /**
-   * Chiếm lease ĐANG XỬ LÝ theo `outboxId` một cách NGUYÊN TỬ:
-   * trả token chủ sở hữu (chuỗi duy nhất của lượt chiếm) cho đúng
-   * một lượt gọi khi chưa có lease còn hạn, trả `null` cho mọi
-   * lượt gọi khác trong khi lease còn đứng. Lease có hạn ngắn —
-   * tiến trình giữ lease chết trước khi gửi xong thì lease tự hết
-   * hạn để lượt xử lý sau chiếm lại được và gửi được mail.
+   * Chiếm lease ĐANG XỬ LÝ theo `outboxId` một cách NGUYÊN TỬ: trả token chủ sở hữu (chuỗi duy nhất của lượt chiếm) cho
+   * đúng một lượt gọi khi chưa có lease còn hạn, trả `null` cho mọi lượt gọi khác trong khi lease còn đứng. Lease có
+   * hạn ngắn — tiến trình giữ lease chết trước khi gửi xong thì lease tự hết hạn để lượt xử lý sau chiếm lại được và
+   * gửi được mail.
    */
   claimProcessing(outboxId: string): Promise<string | null>;
   /**
-   * Ghi dấu ĐÃ GỬI theo `outboxId`: CHỈ gọi sau khi transport đã
-   * nhận mail (hoặc khai báo bỏ qua vì chưa cấu hình). Đây là dấu
-   * duy nhất khiến các lần phát lại sau đó kết thúc `duplicate`.
+   * Ghi dấu ĐÃ GỬI theo `outboxId`: CHỈ gọi sau khi transport đã nhận mail (hoặc khai báo bỏ qua vì chưa cấu hình). Đây
+   * là dấu duy nhất khiến các lần phát lại sau đó kết thúc `duplicate`.
    */
   markSent(outboxId: string): Promise<void>;
   /**
-   * Nhả lease ĐANG XỬ LÝ theo `outboxId` CÓ KIỂM TRA CHỦ: chỉ xoá
-   * khoá khi `ownerToken` khớp token đã ghi lúc chiếm — một lượt
-   * kết thúc muộn không xoá nhầm lease mà lượt khác vừa chiếm lại
-   * sau khi lease của nó hết hạn.
+   * Nhả lease ĐANG XỬ LÝ theo `outboxId` CÓ KIỂM TRA CHỦ: chỉ xoá khoá khi `ownerToken` khớp token đã ghi lúc chiếm —
+   * một lượt kết thúc muộn không xoá nhầm lease mà lượt khác vừa chiếm lại sau khi lease của nó hết hạn.
    */
   releaseProcessing(outboxId: string, ownerToken: string): Promise<void>;
 }
@@ -164,56 +114,42 @@ const SENT_MARKER_KEY_PREFIX = 'lms:auth-mail:sent:';
 const PROCESSING_LEASE_KEY_PREFIX = 'lms:auth-mail:processing:';
 
 /**
- * Thời gian sống của dấu ĐÃ GỬI: 7 ngày. Mọi cửa sổ phát lại thực
- * tế (thử lại của BullMQ, phát lại của relay sau sự cố) đều tính
- * bằng phút tới giờ, còn bí mật trong mail chỉ sống tối đa 1 giờ
- * (liên kết reset) và 5 phút (mã OTP) — dấu sống lâu hơn hẳn mọi
- * cửa sổ đó nhưng vẫn tự dọn để Redis không tích lũy vô hạn theo
- * số sự kiện.
+ * Thời gian sống của dấu ĐÃ GỬI: 7 ngày. Mọi cửa sổ phát lại thực tế (thử lại của BullMQ, phát lại của relay sau sự cố)
+ * đều tính bằng phút tới giờ, còn bí mật trong mail chỉ sống tối đa 1 giờ (liên kết reset) và 5 phút (mã OTP) — dấu
+ * sống lâu hơn hẳn mọi cửa sổ đó nhưng vẫn tự dọn để Redis không tích lũy vô hạn theo số sự kiện.
  */
 const SENT_MARKER_TTL_SECONDS = 7 * 24 * 3600;
 
 /**
- * Thời gian sống của lease ĐANG XỬ LÝ: 60 giây. Một lần gửi qua
- * Resend bình thường hoàn tất trong vài giây, nên 60 giây cho biên
- * rộng nhiều lần so với một lần gửi mà vẫn đủ ngắn để khôi phục
- * sau sập kịp tuổi thọ ngắn nhất của bí mật trong mail (mã OTP 5
- * phút): BullMQ phát hiện job của worker đã chết qua khoá job hết
- * hạn (mặc định 30 giây) rồi phát lại, và cơ chế hoãn thử lại 5
- * giây bắc qua phần hạn lease còn lại nếu lượt phát lại tới sớm
- * hơn lúc lease hết hạn.
+ * Thời gian sống của lease ĐANG XỬ LÝ: 60 giây. Một lần gửi qua Resend bình thường hoàn tất trong vài giây, nên 60 giây
+ * cho biên rộng nhiều lần so với một lần gửi mà vẫn đủ ngắn để khôi phục sau sập kịp tuổi thọ ngắn nhất của bí mật
+ * trong mail (mã OTP 5 phút): BullMQ phát hiện job của worker đã chết qua khoá job hết hạn (mặc định 30 giây) rồi phát
+ * lại, và cơ chế hoãn thử lại 5 giây bắc qua phần hạn lease còn lại nếu lượt phát lại tới sớm hơn lúc lease hết hạn.
  */
 const PROCESSING_LEASE_TTL_SECONDS = 60;
 
 /**
- * Khoảng hoãn khi hẹn hàng đợi phát lại một job gặp lease đang bị
- * lượt khác giữ: 5 giây — đủ ngắn để mail không trễ đáng kể khi
- * lượt giữ lease gửi xong ngay sau đó, đủ dài để không quay vòng
- * vô ích trong lúc chờ lease hết hạn (tối đa 60 giây).
+ * Khoảng hoãn khi hẹn hàng đợi phát lại một job gặp lease đang bị lượt khác giữ: 5 giây — đủ ngắn để mail không trễ
+ * đáng kể khi lượt giữ lease gửi xong ngay sau đó, đủ dài để không quay vòng vô ích trong lúc chờ lease hết hạn (tối đa
+ * 60 giây).
  */
 const PROCESSING_RETRY_DELAY_MS = 5000;
 
 /**
- * Script Lua nhả lease có kiểm tra chủ: chỉ `DEL` khi giá trị đang
- * lưu đúng token của lượt nhả. Kiểm-tra-và-xoá phải là MỘT thao
- * tác nguyên tử phía Redis — làm bằng `GET` rồi `DEL` ở hai lệnh
- * rời nhau thì lease của lượt mới (chiếm lại sau khi lease cũ hết
- * hạn) có thể bị xoá nhầm trong khe giữa hai lệnh.
+ * Script Lua nhả lease có kiểm tra chủ: chỉ `DEL` khi giá trị đang lưu đúng token của lượt nhả. Kiểm-tra-và-xoá phải là
+ * MỘT thao tác nguyên tử phía Redis — làm bằng `GET` rồi `DEL` ở hai lệnh rời nhau thì lease của lượt mới (chiếm lại
+ * sau khi lease cũ hết hạn) có thể bị xoá nhầm trong khe giữa hai lệnh.
  */
 const RELEASE_PROCESSING_IF_OWNER_SCRIPT =
   "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
 
 /**
- * Bản cài đặt Redis của {@link AuthMailSentMarker}: mỗi sự kiện có
- * hai khoá độc lập — `lms:auth-mail:sent:<outboxId>` (dấu ĐÃ GỬI,
- * hạn {@link SENT_MARKER_TTL_SECONDS}) và
- * `lms:auth-mail:processing:<outboxId>` (lease ĐANG XỬ LÝ mang
- * token chủ sở hữu, hạn {@link PROCESSING_LEASE_TTL_SECONDS}).
- * Chiếm lease bằng `SET ... NX` (lệnh nguyên tử phía Redis — đúng
- * một lượt trong mọi lượt đồng thời nhận được khoá); nhả lease
- * bằng script Lua kiểm tra chủ. Kết nối Redis tạo lười theo đúng
- * khuôn của `NotificationDeliveryService` (chỉ mở kết nối khi job
- * đầu tiên cần thao tác dấu) và đóng khi module huỷ.
+ * Bản cài đặt Redis của {@link AuthMailSentMarker}: mỗi sự kiện có hai khoá độc lập — `lms:auth-mail:sent:<outboxId>`
+ * (dấu ĐÃ GỬI, hạn {@link SENT_MARKER_TTL_SECONDS}) và `lms:auth-mail:processing:<outboxId>` (lease ĐANG XỬ LÝ mang
+ * token chủ sở hữu, hạn {@link PROCESSING_LEASE_TTL_SECONDS}). Chiếm lease bằng `SET ... NX` (lệnh nguyên tử phía Redis
+ * — đúng một lượt trong mọi lượt đồng thời nhận được khoá); nhả lease bằng script Lua kiểm tra chủ. Kết nối Redis tạo
+ * lười theo đúng khuôn của `NotificationDeliveryService` (chỉ mở kết nối khi job đầu tiên cần thao tác dấu) và đóng khi
+ * module huỷ.
  */
 @Injectable()
 export class RedisAuthMailSentMarker implements AuthMailSentMarker, OnModuleDestroy {
@@ -229,7 +165,6 @@ export class RedisAuthMailSentMarker implements AuthMailSentMarker, OnModuleDest
     }
   }
 
-  /** Kết nối Redis tạo lười cho các khoá dấu của mail auth. */
   private redis(): Redis {
     if (!this.client) {
       this.client = new Redis({

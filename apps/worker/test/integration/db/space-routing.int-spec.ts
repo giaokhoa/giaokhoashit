@@ -12,35 +12,23 @@ import { tenantAls } from '../../../src/db/tenant-als';
 import { TenantAwarePool } from '../../../src/db/tenant-pool';
 
 /**
- * Ca tích hợp của KHUNG ĐỊNH TUYẾN THEO TRUNG TÂM PHÍA WORKER
- * (issue #581): bản sao của khung ở tiến trình worker phải mở được
- * phiên theo trung tâm cho tác vụ nền trên CÙNG một sổ đăng ký và
- * cùng một luật phân giải với phía API.
+ * Ca tích hợp của KHUNG ĐỊNH TUYẾN THEO TRUNG TÂM PHÍA WORKER (issue #581): bản sao của khung ở tiến trình worker phải
+ * mở được phiên theo trung tâm cho tác vụ nền trên CÙNG một sổ đăng ký và cùng một luật phân giải với phía API.
  *
- * Môi trường của ca tự cấp phát trên cùng cụm với database test
- * của worker, toàn bộ bằng TÊN MỚI của riêng đợt này: một database
- * control plane (`lms_test_cp_581w`) với role riêng và một kho
- * riêng (`lms_test_centre_w_581`) có đúng một role ứng dụng riêng
- * (CONNECT của PUBLIC bị thu hồi, baseline nghiệp vụ áp bằng
- * chính role chủ kho). Worker chưa có kết nối control plane dùng
- * chung nên service của worker tự giữ pool đọc sổ từ biến
- * `CONTROL_PLANE_DATABASE_URL` — ca này dựng service trực tiếp
- * trên biến đó, không khởi động toàn bộ module worker.
+ * Môi trường của ca tự cấp phát trên cùng cụm với database test của worker, toàn bộ bằng TÊN MỚI của riêng đợt này: một
+ * database control plane (`lms_test_cp_581w`) với role riêng và một kho riêng (`lms_test_centre_w_581`) có đúng một
+ * role ứng dụng riêng (CONNECT của PUBLIC bị thu hồi, baseline nghiệp vụ áp bằng chính role chủ kho). Worker chưa có
+ * kết nối control plane dùng chung nên service của worker tự giữ pool đọc sổ từ biến `CONTROL_PLANE_DATABASE_URL` — ca
+ * này dựng service trực tiếp trên biến đó, không khởi động toàn bộ module worker.
  *
- * Vòng sửa của PR (theo phán quyết điều phối trên PR) thêm hai ca
- * hồi quy cho bản sao phía worker, dựng đúng hình hai ca phía
- * API: (1) sổ đổi role/bí mật của kho sau khi pool đã tạo thì lần
- * lấy handle kế tiếp kết nối bằng role mới — cần một role thứ hai
- * của kho (`lms_centre_w2_581_app`, có CONNECT vào kho) làm đích
- * đổi sổ; (2) trung tâm kho riêng đã chuẩn bị mà pool bị đóng vì
- * nhàn rỗi thì truy vấn qua handle định tuyến trong ngữ cảnh còn
- * mang slug bị từ chối (fail-closed) — ca này dựng một service
- * thứ hai với ngưỡng nhàn rỗi 600 mili giây để không phải chờ
- * ngưỡng mặc định.
+ * Vòng sửa của PR (theo phán quyết điều phối trên PR) thêm hai ca hồi quy cho bản sao phía worker, dựng đúng hình hai
+ * ca phía API: (1) sổ đổi role/bí mật của kho sau khi pool đã tạo thì lần lấy handle kế tiếp kết nối bằng role mới —
+ * cần một role thứ hai của kho (`lms_centre_w2_581_app`, có CONNECT vào kho) làm đích đổi sổ; (2) trung tâm kho riêng
+ * đã chuẩn bị mà pool bị đóng vì nhàn rỗi thì truy vấn qua handle định tuyến trong ngữ cảnh còn mang slug bị từ chối
+ * (fail-closed) — ca này dựng một service thứ hai với ngưỡng nhàn rỗi 600 mili giây để không phải chờ ngưỡng mặc định.
  *
- * Shim `uuidv7()` chỉ áp khi server PostgreSQL dưới 18 (môi trường
- * chạy local bằng PG16): PG18 — bản ở CI và production — có sẵn
- * hàm này, shim sẽ che mất hàm gốc nên tuyệt đối không áp ở đó.
+ * Shim `uuidv7()` chỉ áp khi server PostgreSQL dưới 18 (môi trường chạy local bằng PG16): PG18 — bản ở CI và production
+ * — có sẵn hàm này, shim sẽ che mất hàm gốc nên tuyệt đối không áp ở đó.
  */
 const CP_DATABASE = 'lms_test_cp_581w';
 const CP_ROLE = 'lms_cp_test_581w';
@@ -54,14 +42,19 @@ const CENTRE_TENANT_ID = '01958100-0000-7000-8000-0000000000d4';
 /** Role thứ hai của kho riêng phía worker — đích đổi sổ của ca hồi quy xoay role/bí mật sau khi pool đã tạo. */
 const CENTRE2_ROLE = 'lms_centre_w2_581_app';
 const CENTRE2_PASSWORD = 'centre-w2-581';
-/** Id dòng ghi hợp lệ qua phiên của ca bị-thu-hồi (ghi vào kho riêng), phân biệt với dòng ghi qua handle định tuyến phải bị từ chối. */
+/**
+ * Id dòng ghi hợp lệ qua phiên của ca bị-thu-hồi (ghi vào kho riêng), phân biệt với dòng ghi qua handle định tuyến phải
+ * bị từ chối.
+ */
 const SESSION_ROW_ID = '01958100-0000-7000-8000-0000000000e6';
-/** Id của dòng ghi mà ca bị-thu-hồi cố ý ghi qua handle định tuyến sau khi pool đã đóng: dòng này không được phép xuất hiện ở bất kỳ kho nào. */
+/**
+ * Id của dòng ghi mà ca bị-thu-hồi cố ý ghi qua handle định tuyến sau khi pool đã đóng: dòng này không được phép xuất
+ * hiện ở bất kỳ kho nào.
+ */
 const REVOKED_MARKER_ID = '01958100-0000-7000-8000-0000000000f7';
 
 const UUIDV7_SHIM = `CREATE OR REPLACE FUNCTION uuidv7() RETURNS uuid AS $$ DECLARE ts_ms bigint := (extract(epoch from clock_timestamp()) * 1000)::bigint; b bytea; BEGIN b := decode(lpad(to_hex(ts_ms), 12, '0'), 'hex') || gen_random_bytes(10); b := set_byte(b, 6, (get_byte(b, 6) & 15) | 112); b := set_byte(b, 8, (get_byte(b, 8) & 63) | 128); RETURN encode(b, 'hex')::uuid; END; $$ LANGUAGE plpgsql VOLATILE`;
 
-/** Dựng URL kết nối tới một database trên cùng cụm với database test của worker. */
 function clusterUrl(database: string, username?: string, secret?: string): string {
   const base = new URL(process.env.DATABASE_URL!);
   base.pathname = `/${database}`;
@@ -85,7 +78,6 @@ async function withClient<T>(connectionString: string, fn: (client: Client) => P
   }
 }
 
-/** Áp một file migration SQL (tách theo dấu phân đoạn statement-breakpoint) lên một database qua kết nối cho trước. */
 async function applySqlFile(connectionString: string, filePath: string): Promise<void> {
   await withClient(connectionString, async (client) => {
     const version = await client.query<{ server_version_num: string }>('SHOW server_version_num');
@@ -111,9 +103,8 @@ describe('Khung định tuyến theo trung tâm phía worker (integration)', () 
     const businessDatabase = decodeURIComponent(businessUrl.pathname.replace(/^\//, ''));
     const businessRole = decodeURIComponent(businessUrl.username);
 
-    // Cấp phát control plane + kho riêng trên cụm test bằng tên
-    // mới, đúng khuôn phía API: role riêng từng kho, CONNECT của
-    // PUBLIC bị thu hồi và chỉ cấp lại cho đúng role đó.
+    // Cấp phát control plane + kho riêng trên cụm test bằng tên mới, đúng khuôn phía API: role riêng từng kho, CONNECT
+    // của PUBLIC bị thu hồi và chỉ cấp lại cho đúng role đó.
     await withClient(clusterUrl('postgres'), async (admin) => {
       for (const database of [CP_DATABASE, CENTRE_DATABASE]) {
         await admin.query(`DROP DATABASE IF EXISTS ${quoted(database)} WITH (FORCE)`);

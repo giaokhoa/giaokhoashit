@@ -10,109 +10,69 @@ import { COHORT_SYNC_EVENT_TYPES } from './processors/cohort-sync-events.process
 import type { OutboxEventJobData } from './outbox-event-routes';
 
 /**
- * Tiền tố khoá watermark của consumer polling đồng bộ cohort phía
- * API trước đây: khoá đầy đủ là `${LEGACY_WATERMARK_KEY_PREFIX}<tên
- * database>:seq`, giá trị là `seq` của dòng outbox cuối cùng
- * consumer cũ đã xử lý xong. Tên khoá và ngữ nghĩa giá trị lấy
- * đúng từ consumer cũ — cơ chế phát bù đọc lại chính khoá đó,
- * không dựng khoá song song.
+ * Tiền tố khoá watermark của consumer polling đồng bộ cohort phía API trước đây: khoá đầy đủ là
+ * `${LEGACY_WATERMARK_KEY_PREFIX}<tên database>:seq`, giá trị là `seq` của dòng outbox cuối cùng consumer cũ đã xử lý
+ * xong. Tên khoá và ngữ nghĩa giá trị lấy đúng từ consumer cũ — cơ chế phát bù đọc lại chính khoá đó, không dựng khoá
+ * song song.
  */
 const LEGACY_WATERMARK_KEY_PREFIX = 'lms:cohort-sync:';
 /** Số dòng tồn đọng tối đa đọc trong một lô phát bù — cùng cỡ lô quét của consumer cũ. */
 const DRAIN_BATCH_SIZE = 200;
 /**
- * Nhịp chờ đầu tiên trước lần thử phát bù kế tiếp khi một lần
- * thử bị lỗi — cùng quy ước backoff mũ của hàng đợi trong hệ
- * (`defaultJobOptions` ở `worker.module.ts`: backoff
- * exponential, delay 1000 ms).
+ * Nhịp chờ đầu tiên trước lần thử phát bù kế tiếp khi một lần thử bị lỗi — cùng quy ước backoff mũ của hàng đợi trong
+ * hệ (`defaultJobOptions` ở `worker.module.ts`: backoff exponential, delay 1000 ms).
  */
 const DRAIN_RETRY_BASE_DELAY_MS = 1_000;
 /** Trần nhịp chờ giữa hai lần thử phát bù: backoff gấp đôi sau mỗi lần thử lỗi nhưng không vượt mức này. */
 const DRAIN_RETRY_MAX_DELAY_MS = 30_000;
 
 /**
- * Cơ chế chuyển tiếp MỘT LẦN của consumer đồng bộ cohort (issue
- * con #528 của #519; bổ sung theo phân xử điểm chặn trên PR #550):
- * phát bù các dòng outbox cohort bị kẹt lại tại thời điểm gỡ
- * consumer polling phía API.
+ * Cơ chế chuyển tiếp MỘT LẦN của consumer đồng bộ cohort (issue con #528 của #519; bổ sung theo phân xử điểm chặn trên
+ * PR #550): phát bù các dòng outbox cohort bị kẹt lại tại thời điểm gỡ consumer polling phía API.
  *
- * @remarks
- * Bối cảnh bắt buộc phải có cơ chế này: consumer polling cũ đọc
- * dòng theo `seq > watermark` KHÔNG phụ thuộc `publishedAt`, còn
- * relay outbox đóng dấu `publishedAt` vô điều kiện cho cả loại sự
- * kiện chưa có trong bảng định tuyến. Tại thời điểm PR #550 triển
- * khai (hai loại cohort vào bảng định tuyến, consumer cũ bị gỡ),
- * mọi dòng cohort có `seq` lớn hơn watermark cuối của consumer cũ
- * đều đã mang `publishedAt`: relay không bao giờ phát chúng thành
- * job (relay chỉ lấy dòng chưa có dấu), và reader theo watermark
- * đã bị gỡ — sự kiện tương ứng mất vĩnh viễn và lặng lẽ nếu không
- * có bước chuyển tiếp. Job đối soát `class-enrol-reconcile` chạy
- * định kỳ không thay thế được bước này: nó chỉ sửa lệch bằng
- * quét-so sánh dòng ghi danh/vai trò, không phát lại các dòng
- * outbox bị kẹt và không phát bù các tác dụng phụ sự kiện
- * (`user_enrolled`/`user_unenrolled`, yêu cầu tái tổng hợp khi
- * rút).
+ * @remarks Bối cảnh bắt buộc phải có cơ chế này: consumer polling cũ đọc dòng theo `seq > watermark` KHÔNG phụ thuộc
+ * `publishedAt`, còn relay outbox đóng dấu `publishedAt` vô điều kiện cho cả loại sự kiện chưa có trong bảng định
+ * tuyến. Tại thời điểm PR #550 triển khai (hai loại cohort vào bảng định tuyến, consumer cũ bị gỡ), mọi dòng cohort có
+ * `seq` lớn hơn watermark cuối của consumer cũ đều đã mang `publishedAt`: relay không bao giờ phát chúng thành job
+ * (relay chỉ lấy dòng chưa có dấu), và reader theo watermark đã bị gỡ — sự kiện tương ứng mất vĩnh viễn và lặng lẽ nếu
+ * không có bước chuyển tiếp. Job đối soát `class-enrol-reconcile` chạy định kỳ không thay thế được bước này: nó chỉ sửa
+ * lệch bằng quét-so sánh dòng ghi danh/vai trò, không phát lại các dòng outbox bị kẹt và không phát bù các tác dụng phụ
+ * sự kiện (`user_enrolled`/`user_unenrolled`, yêu cầu tái tổng hợp khi rút).
  *
- * Flow (kích hoạt khi module khởi động — `onModuleInit` chờ
- * lượt phát bù rút cạn xong mới hoàn tất khởi tạo, đúng mẫu
- * hook async của NestJS; trong ngữ cảnh platform tường minh
- * như relay vì việc quét xuyên tenant):
- * 1. Dựng lại khoá watermark của consumer cũ từ tên database
- *    trong `DATABASE_URL` — đúng cách consumer cũ dựng — và đọc
- *    giá trị đã lưu. Khoá không tồn tại nghĩa là hệ mới tinh
- *    (consumer cũ chưa từng chạy trên đời DB này): dừng ngay,
+ * Flow (kích hoạt khi module khởi động — `onModuleInit` chờ lượt phát bù rút cạn xong mới hoàn tất khởi tạo, đúng mẫu
+ * hook async của NestJS; trong ngữ cảnh platform tường minh như relay vì việc quét xuyên tenant):
+ * 1. Dựng lại khoá watermark của consumer cũ từ tên database trong `DATABASE_URL` — đúng cách consumer cũ dựng — và đọc
+ *    giá trị đã lưu. Khoá không tồn tại nghĩa là hệ mới tinh (consumer cũ chưa từng chạy trên đời DB này): dừng ngay,
  *    không làm gì thêm.
- * 2. Đọc các dòng thuộc hai loại sự kiện cohort có `seq` lớn
- *    hơn watermark, theo thứ tự `seq` tăng dần, từng lô
- *    {@link DRAIN_BATCH_SIZE} dòng, BẤT KỂ dòng đã có
- *    `publishedAt` hay chưa (dòng chưa có dấu thì relay cũng sẽ
- *    phát — hai đường gặp nhau ở khoá chống trùng dưới đây).
- * 3. Mỗi dòng được phát thành job vào hàng đợi
- *    `cohort-sync-events` theo đúng hình dạng relay phát: tên
- *    job là loại sự kiện, `jobId` là id của dòng, dữ liệu là
- *    toàn bộ dòng đã chuẩn hoá ({@link OutboxEventJobData}).
- * 4. Rút cạn hết các lô thì XOÁ khoá watermark cũ: dấu vết
- *    chuyển tiếp không còn, các lần khởi động sau là no-op.
+ * 2. Đọc các dòng thuộc hai loại sự kiện cohort có `seq` lớn hơn watermark, theo thứ tự `seq` tăng dần, từng lô
+ *    {@link DRAIN_BATCH_SIZE} dòng, BẤT KỂ dòng đã có `publishedAt` hay chưa (dòng chưa có dấu thì relay cũng sẽ phát —
+ *    hai đường gặp nhau ở khoá chống trùng dưới đây).
+ * 3. Mỗi dòng được phát thành job vào hàng đợi `cohort-sync-events` theo đúng hình dạng relay phát: tên job là loại sự
+ *    kiện, `jobId` là id của dòng, dữ liệu là toàn bộ dòng đã chuẩn hoá ({@link OutboxEventJobData}).
+ * 4. Rút cạn hết các lô thì XOÁ khoá watermark cũ: dấu vết chuyển tiếp không còn, các lần khởi động sau là no-op.
  *
  * Bất biến:
- * - Chống trùng hai lớp, cùng khuôn toàn hệ outbox: `jobId`
- *   bằng id dòng khiến BullMQ trả lại job đã có thay vì tạo job
- *   thứ hai khi dòng được phát hai đường (phát bù và relay) hoặc
- *   phát bù chạy lại sau một lần rút cạn dở dang; ngoài cửa sổ
- *   lưu giữ của hàng đợi, processor `CohortSyncEventsProcessor`
- *   chống trùng theo trạng thái hiện tại của `cohort_members`
- *   trong bề mặt — dòng đã xử lý rồi không sinh tác dụng phụ
- *   thứ hai.
- * - Đây KHÔNG phải consumer polling thứ hai: cơ chế chỉ chạy
- *   khi còn khoá watermark cũ (triển khai lần đầu) và tự xoá
- *   khoá khi rút cạn xong. Đường thường trực duy nhất vẫn là
- *   relay → hàng đợi như thiết kế gốc.
- * - Tự neo khi DB dựng lại: watermark lưu lớn hơn `seq` lớn
- *   nhất hiện có nghĩa là khoá thuộc về đời DB trước (seq đã
- *   thụt lùi sau reset) — không dòng nào của đời DB này nằm
- *   trên watermark đó, phần rút cạn hoàn tất rỗng và khoá cũ
- *   được xoá như thường, không kẹt lại cho các lần khởi động
- *   sau.
+ * - Chống trùng hai lớp, cùng khuôn toàn hệ outbox: `jobId` bằng id dòng khiến BullMQ trả lại job đã có thay vì tạo job
+ *   thứ hai khi dòng được phát hai đường (phát bù và relay) hoặc phát bù chạy lại sau một lần rút cạn dở dang; ngoài
+ *   cửa sổ lưu giữ của hàng đợi, processor `CohortSyncEventsProcessor` chống trùng theo trạng thái hiện tại của
+ *   `cohort_members` trong bề mặt — dòng đã xử lý rồi không sinh tác dụng phụ thứ hai.
+ * - Đây KHÔNG phải consumer polling thứ hai: cơ chế chỉ chạy khi còn khoá watermark cũ (triển khai lần đầu) và tự xoá
+ *   khoá khi rút cạn xong. Đường thường trực duy nhất vẫn là relay → hàng đợi như thiết kế gốc.
+ * - Tự neo khi DB dựng lại: watermark lưu lớn hơn `seq` lớn nhất hiện có nghĩa là khoá thuộc về đời DB trước (seq đã
+ *   thụt lùi sau reset) — không dòng nào của đời DB này nằm trên watermark đó, phần rút cạn hoàn tất rỗng và khoá cũ
+ *   được xoá như thường, không kẹt lại cho các lần khởi động sau.
  *
- * Hành vi khi lỗi (theo bài học vòng 2 của PR #542): lỗi ở bất
- * kỳ bước nào (đọc khoá, đọc DB, đẩy job) làm LẦN THỬ đang chạy
- * dừng ngay tại đó; khoá watermark cũ KHÔNG bị xoá. Lượt phát bù
- * tự thử lại ngay trong cùng tiến trình, có backoff mũ
- * ({@link DRAIN_RETRY_BASE_DELAY_MS} gấp đôi mỗi lần, trần
- * {@link DRAIN_RETRY_MAX_DELAY_MS}), cho tới khi rút cạn trọn
- * vẹn — mỗi lần thử thất bại ghi log mức error kèm số lần thử
- * và nhịp chờ kế tiếp, không nuốt lặng. Vòng thử chỉ dừng hẳn
- * khi module bị huỷ (`onModuleDestroy`, tiến trình đang đóng):
- * lần khởi động kế tiếp vẫn gặp khoá cũ và phát bù lại từ đầu.
- * Vì `onModuleInit` chờ lượt phát bù, một hạ tầng đang lỗi kéo
- * dài việc khởi tạo module tương ứng — đây là lựa chọn có chủ
- * đích: thà worker chậm lên còn hơn chuyển tiếp kẹt lặng lẽ; hệ
- * không còn khoá cũ (trạng thái thường trực sau chuyển đổi) thì
- * lượt phát bù là no-op tức thì và khởi tạo không bị ảnh hưởng.
+ * Hành vi khi lỗi (theo bài học vòng 2 của PR #542): lỗi ở bất kỳ bước nào (đọc khoá, đọc DB, đẩy job) làm LẦN THỬ đang
+ * chạy dừng ngay tại đó; khoá watermark cũ KHÔNG bị xoá. Lượt phát bù tự thử lại ngay trong cùng tiến trình, có backoff
+ * mũ ({@link DRAIN_RETRY_BASE_DELAY_MS} gấp đôi mỗi lần, trần {@link DRAIN_RETRY_MAX_DELAY_MS}), cho tới khi rút cạn
+ * trọn vẹn — mỗi lần thử thất bại ghi log mức error kèm số lần thử và nhịp chờ kế tiếp, không nuốt lặng. Vòng thử chỉ
+ * dừng hẳn khi module bị huỷ (`onModuleDestroy`, tiến trình đang đóng): lần khởi động kế tiếp vẫn gặp khoá cũ và phát
+ * bù lại từ đầu. Vì `onModuleInit` chờ lượt phát bù, một hạ tầng đang lỗi kéo dài việc khởi tạo module tương ứng — đây
+ * là lựa chọn có chủ đích: thà worker chậm lên còn hơn chuyển tiếp kẹt lặng lẽ; hệ không còn khoá cũ (trạng thái thường
+ * trực sau chuyển đổi) thì lượt phát bù là no-op tức thì và khởi tạo không bị ảnh hưởng.
  *
- * Side-effect: đẩy job BullMQ vào hàng đợi `cohort-sync-events`
- * và xoá khoá Redis của consumer cũ sau khi rút cạn. Không ghi
- * DB, không đóng dấu `publishedAt` (dấu đó là của relay).
+ * Side-effect: đẩy job BullMQ vào hàng đợi `cohort-sync-events` và xoá khoá Redis của consumer cũ sau khi rút cạn.
+ * Không ghi DB, không đóng dấu `publishedAt` (dấu đó là của relay).
  */
 @Injectable()
 export class CohortSyncCatchupService implements OnModuleInit, OnModuleDestroy {
@@ -130,10 +90,8 @@ export class CohortSyncCatchupService implements OnModuleInit, OnModuleDestroy {
     this.redis = new Redis({
       ...redisConnectionFromUrl(config.getOrThrow<string>('REDIS_URL')),
     });
-    // Dựng khoá đúng cách consumer polling cũ dựng: tên database
-    // là path của DATABASE_URL bỏ dấu gạch đầu; không parse được
-    // thì dùng tên mặc định — cả hai phía cùng một luật nên khoá
-    // luôn gặp nhau.
+    // Dựng khoá đúng cách consumer polling cũ dựng: tên database là path của DATABASE_URL bỏ dấu gạch đầu; không parse
+    // được thì dùng tên mặc định — cả hai phía cùng một luật nên khoá luôn gặp nhau.
     let databaseName = 'default';
     try {
       databaseName = new URL(config.getOrThrow<string>('DATABASE_URL')).pathname.replace(/^\//, '') || 'default';

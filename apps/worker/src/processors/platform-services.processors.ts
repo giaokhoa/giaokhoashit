@@ -8,38 +8,25 @@ import { resolveDefaultTenantId } from '../db/default-tenant';
 import { SpaceDatabaseService } from '../db/routing/space-database.service';
 
 /**
- * Các processor platform services của worker. Mỗi processor là bản song sinh (twin) của
- * logic API tương ứng, chạy trên cùng bảng: backup, restore, search reindex,
- * analytics run, report schedule, privacy export/delete, payment
+ * Các processor platform services của worker. Mỗi processor là bản song sinh (twin) của logic API tương ứng, chạy trên
+ * cùng bảng: backup, restore, search reindex, analytics run, report schedule, privacy export/delete, payment
  * reconciliation/webhook. Tất cả đều idempotent theo khoá nghiệp vụ của job.
  *
- * @remarks
- * Mọi truy vấn của các processor trong file này đi qua handle Kysely
- * định tuyến (`SpaceDatabaseService.routedKysely`): các processor chạy
- * trong ngữ cảnh platform tường minh (xem TENANT-1 ở từng `process`)
- * nên handle vào kho chung — cùng đích kho với handle bộ máy cũ định
- * tuyến trước đây. Các cột jsonb khi ghi (`archive`, `detail`,
- * `indicators`, `data`, `last_result`, `manifest`, `result`,
- * payload outbox) đi qua serialize tường minh + `::jsonb` theo khuôn
- * pilot (driver `pg` hiểu mảng cấp cao nhất là mảng PostgreSQL nếu
- * không serialize); khoá bên trong các giá trị jsonb là khoá dữ kiện
- * đã lưu nên giữ nguyên camelCase như trước.
+ * @remarks Mọi truy vấn của các processor trong file này đi qua handle Kysely định tuyến
+ * (`SpaceDatabaseService.routedKysely`): các processor chạy trong ngữ cảnh platform tường minh (xem TENANT-1 ở từng
+ * `process`) nên handle vào kho chung — cùng đích kho với handle bộ máy cũ định tuyến trước đây. Các cột jsonb khi ghi
+ * (`archive`, `detail`, `indicators`, `data`, `last_result`, `manifest`, `result`, payload outbox) đi qua serialize
+ * tường minh + `::jsonb` theo khuôn pilot (driver `pg` hiểu mảng cấp cao nhất là mảng PostgreSQL nếu không serialize);
+ * khoá bên trong các giá trị jsonb là khoá dữ kiện đã lưu nên giữ nguyên camelCase như trước.
  */
 
 /** Backup: dựng archive (format riêng v1) cho job backup đang pending và ghi các bước contributor. */
 @Processor('backup')
-/**
- * Xử lý job sao lưu khoá học nền.
- */
 export class BackupProcessor extends WorkerHost {
   constructor(private readonly spaceDb: SpaceDatabaseService) { super(); }
-  /**
-   * Xử lý một job của queue tương ứng.
-   */
   async process(job: Job<{ jobId: string }>): Promise<{ status: string; sections?: number; cms?: number }> {
-    // TENANT-1 (#196): processor nền quét/xử lý xuyên tenant — bọc
-    // ngữ cảnh platform tường minh để RLS fail-closed không làm mù
-    // dữ liệu tenant (pool gắn GUC theo ALS ở mọi checkout).
+    // TENANT-1 (#196): processor nền quét/xử lý xuyên tenant — bọc ngữ cảnh platform tường minh để RLS fail-closed
+    // không làm mù dữ liệu tenant (pool gắn GUC theo ALS ở mọi checkout).
     return tenantAls.run({ platform: true }, () => this.processInContext(job));
   }
 

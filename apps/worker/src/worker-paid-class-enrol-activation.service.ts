@@ -10,77 +10,51 @@ import { WorkerEnrolOutboxService } from './worker-enrol-outbox.service';
 import { WorkerPaymentSpaceScope } from './worker-payment-space-scope.service';
 
 /**
- * Cài đặt phía worker cho cổng kích hoạt ghi danh cấp lớp
- * (`PAID_CLASS_ENROL_ACTIVATION_PORT` — issue con #539 của #522).
+ * Cài đặt phía worker cho cổng kích hoạt ghi danh cấp lớp (`PAID_CLASS_ENROL_ACTIVATION_PORT` — issue con #539 của
+ * #522).
  *
- * Flow: payment `class_fee` khớp đủ điều kiện ở nhịp matching →
- * cổng này đưa người mua vào lớp đích qua backing cohort của lớp;
- * cohort sync sau đó vật chất hoá ghi danh xuống mọi khoá của lớp.
+ * Flow: payment `class_fee` khớp đủ điều kiện ở nhịp matching → cổng này đưa người mua vào lớp đích qua backing cohort
+ * của lớp; cohort sync sau đó vật chất hoá ghi danh xuống mọi khoá của lớp.
  *
- * 0. Toàn bộ thân kích hoạt chạy trong phạm vi kho của trung tâm
- *    sở hữu payment qua `WorkerPaymentSpaceScope` (tiền điều kiện
- *    Phần B của issue #587 — hạng mục 2): không gian được phân
- *    giải THEO TỪNG PAYMENT từ `tenantId` của payment. Trung tâm
- *    ở kho riêng thì mọi lượt đọc/ghi dưới đây (đọc lớp, đảm bảo
- *    membership, chèn cohort, ghi outbox) chạy tại kho của trung
- *    tâm đó; trung tâm ở kho chung thì hành vi như các bước dưới
- *    đây, tại kho chung. Phân giải hoặc chuẩn bị kho đích lỗi thì
- *    ném ra (fail-closed) — không ghi vào kho chung cho trung tâm
- *    kho riêng.
- * 1. Chạy trong ngữ cảnh platform tường minh: lớp đích có thể thuộc
- *    tenant khác tenant nền và các chốt đọc chính sách xuyên tenant
- *    — cùng khuôn đọc của `ClassesService.activatePaidClassEnrol`
- *    phía API và cùng lý do #292 (RLS fail-closed ngoài ngữ cảnh).
- * 2. Đọc lớp đích: không tồn tại → lỗi `class.not_found`; đã lưu
- *    trữ → lỗi `class.archived` (payment đã thu tiền nhưng roster
- *    đóng băng: vận hành xử lý bằng hoàn tiền, không tự phá luật
- *    đóng băng).
- * 3. Đã thuộc roster → dừng tại đây, không phát lại sự kiện vào
- *    lớp, không ghi danh trùng (webhook replay / matching chạy lại
- *    đều an toàn).
- * 4. Đảm bảo membership tenant của lớp cho người mua (học sinh tự
- *    do ở trang chính mua lớp của trung tâm thì được cấp membership
- *    của trung tâm ở bước này, như đường tự báo danh).
- * 5. Chốt tách vai của đường hệ thống: người xin vào vẫn không được
- *    là giáo viên của chính lớp/khoá đích (cùng kiểm tra như đường
- *    roster thủ công).
- * 6. Thêm vào backing cohort (chèn bỏ qua khi trùng — đua hai nhịp
- *    cùng thêm thì nhịp thua không phát sự kiện hai lần).
- * 7. Phát đúng cặp sự kiện như đường API, theo thứ tự của API:
- *    `cohort_member_added` trước (cohort sync vật chất hoá ghi danh
- *    xuống các khoá), rồi `class_member_joined` (dấu lớp đã nhận
- *    thành viên qua gói lớp).
+ * 0. Toàn bộ thân kích hoạt chạy trong phạm vi kho của trung tâm sở hữu payment qua `WorkerPaymentSpaceScope` (tiền
+ *    điều kiện Phần B của issue #587 — hạng mục 2): không gian được phân giải THEO TỪNG PAYMENT từ `tenantId` của
+ *    payment. Trung tâm ở kho riêng thì mọi lượt đọc/ghi dưới đây (đọc lớp, đảm bảo membership, chèn cohort, ghi
+ *    outbox) chạy tại kho của trung tâm đó; trung tâm ở kho chung thì hành vi như các bước dưới đây, tại kho chung.
+ *    Phân giải hoặc chuẩn bị kho đích lỗi thì ném ra (fail-closed) — không ghi vào kho chung cho trung tâm kho riêng.
+ * 1. Chạy trong ngữ cảnh platform tường minh: lớp đích có thể thuộc tenant khác tenant nền và các chốt đọc chính sách
+ *    xuyên tenant — cùng khuôn đọc của `ClassesService.activatePaidClassEnrol` phía API và cùng lý do #292 (RLS
+ *    fail-closed ngoài ngữ cảnh).
+ * 2. Đọc lớp đích: không tồn tại → lỗi `class.not_found`; đã lưu trữ → lỗi `class.archived` (payment đã thu tiền nhưng
+ *    roster đóng băng: vận hành xử lý bằng hoàn tiền, không tự phá luật đóng băng).
+ * 3. Đã thuộc roster → dừng tại đây, không phát lại sự kiện vào lớp, không ghi danh trùng (webhook replay / matching
+ *    chạy lại đều an toàn).
+ * 4. Đảm bảo membership tenant của lớp cho người mua (học sinh tự do ở trang chính mua lớp của trung tâm thì được cấp
+ *    membership của trung tâm ở bước này, như đường tự báo danh).
+ * 5. Chốt tách vai của đường hệ thống: người xin vào vẫn không được là giáo viên của chính lớp/khoá đích (cùng kiểm tra
+ *    như đường roster thủ công).
+ * 6. Thêm vào backing cohort (chèn bỏ qua khi trùng — đua hai nhịp cùng thêm thì nhịp thua không phát sự kiện hai lần).
+ * 7. Phát đúng cặp sự kiện như đường API, theo thứ tự của API: `cohort_member_added` trước (cohort sync vật chất hoá
+ *    ghi danh xuống các khoá), rồi `class_member_joined` (dấu lớp đã nhận thành viên qua gói lớp).
  *
- * Tính nguyên tử của bước 6–7 (phân xử 6509434733 trên PR #552):
- * chèn thành viên + cả hai dòng outbox nằm trong CÙNG một
- * transaction Kysely (dùng `enrolOutbox.enqueue(tx, …)`), không
- * phải ba transaction riêng biệt như trước. Lỗi ở bất kỳ bước nào cũng
- * rollback toàn bộ: lần chạy lại sau đó thấy chưa thuộc roster và
- * chạy đủ cả ba bước ghi. Ngược lại, nếu chèn đã commit mà ghi
- * outbox lỗi giữa chừng thì nhịp vẫn lật payment thành `succeeded`
- * trong khi `cohort_member_added` không bao giờ tồn tại — người đã
- * trả tiền mà quyền học không kích hoạt, phá đúng bất biến mà
- * docblock của `SepayMatchingService` khẳng định (kích hoạt chạy
- * TRƯỚC nhịp lật trạng thái).
+ * Tính nguyên tử của bước 6–7 (phân xử 6509434733 trên PR #552): chèn thành viên + cả hai dòng outbox nằm trong CÙNG
+ * một transaction Kysely (dùng `enrolOutbox.enqueue(tx, …)`), không phải ba transaction riêng biệt như trước. Lỗi ở bất
+ * kỳ bước nào cũng rollback toàn bộ: lần chạy lại sau đó thấy chưa thuộc roster và chạy đủ cả ba bước ghi. Ngược lại,
+ * nếu chèn đã commit mà ghi outbox lỗi giữa chừng thì nhịp vẫn lật payment thành `succeeded` trong khi
+ * `cohort_member_added` không bao giờ tồn tại — người đã trả tiền mà quyền học không kích hoạt, phá đúng bất biến mà
+ * docblock của `SepayMatchingService` khẳng định (kích hoạt chạy TRƯỚC nhịp lật trạng thái).
  *
- * Khác đường API ở đúng một điểm, có chủ đích: đường API phát thêm
- * sự kiện TRONG TIẾN TRÌNH `cohort_member_added` cho listener đồng
- * bộ của `EnrolModule` — tiến trình worker không có listener đó
- * nên không phát. Đường đồng bộ bền không phụ thuộc bước phát nhanh
- * này: dòng outbox `cohort_member_added` ghi ở bước 7 là đường mà
- * consumer đồng bộ cohort (phía API hôm nay, phía worker sau #550)
- * quét để áp ghi danh — đúng khuôn mà chính đường settle hoàn tiền
- * của API đã dựa vào cho sự kiện rời cohort.
+ * Khác đường API ở đúng một điểm, có chủ đích: đường API phát thêm sự kiện TRONG TIẾN TRÌNH `cohort_member_added` cho
+ * listener đồng bộ của `EnrolModule` — tiến trình worker không có listener đó nên không phát. Đường đồng bộ bền không
+ * phụ thuộc bước phát nhanh này: dòng outbox `cohort_member_added` ghi ở bước 7 là đường mà consumer đồng bộ cohort
+ * (phía API hôm nay, phía worker sau #550) quét để áp ghi danh — đúng khuôn mà chính đường settle hoàn tiền của API đã
+ * dựa vào cho sự kiện rời cohort.
  *
- * Idempotent: đã thuộc roster thì dừng ở bước 3; chèn trùng được
- * bỏ qua ở bước 6 và không phát sự kiện; cohort sync neo vào trạng
- * thái `cohort_members` hiện tại nên phát lại muộn không ghi danh
- * sai.
+ * Idempotent: đã thuộc roster thì dừng ở bước 3; chèn trùng được bỏ qua ở bước 6 và không phát sự kiện; cohort sync neo
+ * vào trạng thái `cohort_members` hiện tại nên phát lại muộn không ghi danh sai.
  *
- * @throws SharedDomainError mã `class.not_found`, `class.archived`,
- * hoặc lỗi chốt tách vai; lỗi phân giải không gian hoặc chuẩn bị
- * kho đích của bước 0 (fail-closed) — nhịp matching bắt từng sự
- * kiện và ghi cảnh báo nên lỗi ở đây không làm hỏng cả lô quét.
+ * @throws SharedDomainError mã `class.not_found`, `class.archived`, hoặc lỗi chốt tách vai; lỗi phân giải không gian
+ * hoặc chuẩn bị kho đích của bước 0 (fail-closed) — nhịp matching bắt từng sự kiện và ghi cảnh báo nên lỗi ở đây không
+ * làm hỏng cả lô quét.
  */
 @Injectable()
 export class WorkerPaidClassEnrolActivationService implements PaidClassEnrolActivationPort {
@@ -93,12 +67,9 @@ export class WorkerPaidClassEnrolActivationService implements PaidClassEnrolActi
     this.materialization = new CohortMaterializationSurface({
       db: this.spaceScope.routedKysely,
       outbox: enrolOutbox,
-      // Phạm vi platform của bề mặt giữ nguyên `spaceSlug` của
-      // ngữ cảnh đang chạy (cùng khuôn `CohortSyncService`): phạm
-      // vi này chỉ đổi tầm nhìn RLS sang đường platform, không
-      // đổi kho đích — dựng store mới không mang slug thì handle
-      // định tuyến rơi về kho chung trong lúc thân kích hoạt
-      // đang chạy ở kho riêng của trung tâm.
+      // Phạm vi platform của bề mặt giữ nguyên `spaceSlug` của ngữ cảnh đang chạy (cùng khuôn `CohortSyncService`):
+      // phạm vi này chỉ đổi tầm nhìn RLS sang đường platform, không đổi kho đích — dựng store mới không mang slug thì
+      // handle định tuyến rơi về kho chung trong lúc thân kích hoạt đang chạy ở kho riêng của trung tâm.
       runInPlatformScope: (fn) =>
         tenantAls.run({ platform: true, spaceSlug: tenantAls.getStore()?.spaceSlug }, fn),
     });
@@ -109,9 +80,8 @@ export class WorkerPaidClassEnrolActivationService implements PaidClassEnrolActi
    *
    * @param itemId - Id của lớp đích (trường `itemId` của payment).
    * @param userId - Id của người mua (trường `userId` của payment).
-   * @param tenantId - Id của tenant sở hữu payment (trường `tenantId`
-   *   của payment): điểm phân giải không gian cho lượt kích hoạt
-   *   này, xem bước 0 ở mô tả lớp.
+   * @param tenantId - Id của tenant sở hữu payment (trường `tenantId` của payment): điểm phân giải không gian cho lượt
+   * kích hoạt này, xem bước 0 ở mô tả lớp.
    */
   async activatePaidClassEnrol(itemId: string, userId: string, tenantId: string): Promise<void> {
     await this.spaceScope.runForTenant(tenantId, async () => {
