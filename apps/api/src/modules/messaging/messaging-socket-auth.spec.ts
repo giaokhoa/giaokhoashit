@@ -5,8 +5,8 @@ import { tenantAls } from '../tenants/tenant-als';
 import { MessagingSocketAuth } from './messaging-socket-auth';
 
 /**
- * GĐ5 (issue #7): gateway realtime xác thực hai đường, cookie phiên
- * Better Auth TRƯỚC, access token JWT làm đường dự phòng.
+ * GĐ5 (issue #7): gateway realtime xác thực hai đường, cookie phiên Better Auth TRƯỚC, access token JWT làm đường dự
+ * phòng.
  *
  * - Cookie hợp lệ (cờ bật, phiên dùng được, tài khoản còn active) →
  *   danh tính chốt ở cookie, tenant = tenant mặc định của user (phiên
@@ -18,12 +18,10 @@ import { MessagingSocketAuth } from './messaging-socket-auth';
  *   scope, có sid), tài khoản còn active; token có scope/thiếu sid/
  *   sai chữ ký → null, gateway ngắt kết nối.
  *
- * Tiền điều kiện Phần B (issue #587, hạng mục 1): handshake tại địa
- * chỉ của trung tâm ở kho riêng thì MỌI lượt đọc danh tính phải chạy
- * trong kho của trung tâm đó. Các ca của khối này dùng một đầu dò
- * ghi lại từng lượt đọc có nằm trong `withSpaceKysely` hay không
- * và store ALS tại thời điểm đọc — gỡ bước phân giải không gian (đọc
- * thẳng như đường kho chung) là các khẳng định về đầu dò đỏ ngay.
+ * Tiền điều kiện Phần B (issue #587, hạng mục 1): handshake tại địa chỉ của trung tâm ở kho riêng thì MỌI lượt đọc danh
+ * tính phải chạy trong kho của trung tâm đó. Các ca của khối này dùng một đầu dò ghi lại từng lượt đọc có nằm trong
+ * `withSpaceKysely` hay không và store ALS tại thời điểm đọc — gỡ bước phân giải không gian (đọc thẳng như đường kho
+ * chung) là các khẳng định về đầu dò đỏ ngay.
  */
 describe('MessagingSocketAuth — dual auth cookie + token (GĐ5)', () => {
   const SECRET = 'test-jwt-secret-gd5';
@@ -41,9 +39,8 @@ describe('MessagingSocketAuth — dual auth cookie + token (GĐ5)', () => {
     spaceId?: string;
     platformTenantId?: string;
   } = {}) {
-    // Đầu dò phạm vi kho: `insideSpace` bật trong lúc callback của
-    // `withSpaceKysely` chạy; mọi lượt đọc của các fake ghi lại
-    // trạng thái đầu dò tại thời điểm đọc, kèm store ALS thật.
+    // Đầu dò phạm vi kho: `insideSpace` bật trong lúc callback của `withSpaceKysely` chạy; mọi lượt đọc của các fake
+    // ghi lại trạng thái đầu dò tại thời điểm đọc, kèm store ALS thật.
     const probe = {
       insideSpace: false,
       reads: [] as { kind: string; insideSpace: boolean }[],
@@ -205,17 +202,14 @@ describe('MessagingSocketAuth — dual auth cookie + token (GĐ5)', () => {
         headers: { host: HOST, cookie: 'better-auth.session_token=abc123' },
       });
       expect(identity).toEqual({ userId: 'u1', username: 'user-u1', tenantId: 'tenant-a', spaceSlug: SLUG });
-      // Cả ba lượt đọc đều nằm trong phạm vi kho của trung tâm, theo
-      // đúng thứ tự phiên → tài khoản → tenant mặc định; không lượt
-      // nào chạy ngoài phạm vi (tức ở kho chung).
       expect(probe.reads).toEqual([
         { kind: 'session', insideSpace: true },
         { kind: 'user', insideSpace: true },
         { kind: 'defaultTenant', insideSpace: true },
       ]);
       expect(probe.spaceSlugs.every((slug) => slug === SLUG)).toBe(true);
-      // Lượt suy tenant mặc định giữ ngữ cảnh platform KÈM slug của
-      // trung tâm trong store ALS — mất slug là rơi về kho chung.
+      // Lượt suy tenant mặc định giữ ngữ cảnh platform KÈM slug của trung tâm trong store ALS — mất slug là rơi về kho
+      // chung.
       expect(probe.alsStores[0]).toMatchObject({ platform: true, spaceSlug: SLUG });
     });
 

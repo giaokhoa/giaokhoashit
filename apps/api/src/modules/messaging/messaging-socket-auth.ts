@@ -20,24 +20,17 @@ export interface MessagingSocketIdentity {
   userId: string;
   username: string;
   /**
-   * Tenant hiệu lực của phiên (claim `tid` của token, TENANT-1 #196):
-   * room + khoá presence của socket được namespace theo tenant này.
-   * Token cũ không mang `tid` → null (room rơi về đoạn 'platform').
-   * Phiên cookie Better Auth không mang claim: tenant được phân giải
-   * là tenant mặc định của user (xem authenticateCookie).
+   * Tenant hiệu lực của phiên (claim `tid` của token, TENANT-1 #196): room + khoá presence của socket được namespace
+   * theo tenant này. Token cũ không mang `tid` → null (room rơi về đoạn 'platform'). Phiên cookie Better Auth không
+   * mang claim: tenant được phân giải là tenant mặc định của user (xem authenticateCookie).
    */
   tenantId: string | null;
   /**
-   * Slug của trung tâm ở kho riêng mà danh tính này đã được phân
-   * giải TRONG kho của trung tâm đó; `null` khi danh tính thuộc
-   * đường kho chung (địa chỉ thường, trung tâm kho chung, hoặc
-   * phiên vận hành platform được tra ở kho chung ngay tại địa chỉ
-   * kho riêng). Gateway gắn slug này lên kết nối để mọi lượt đọc
-   * dữ kiện theo kết nối (vào room lúc nối, join/sync/typing)
-   * chạy trong đúng kho của trung tâm qua `withSpaceKysely` —
-   * danh tính đã phân giải ở kho riêng mà các lượt đọc đó rơi về
-   * kho chung thì hội thoại/membership của trung tâm vô hình với
-   * socket dù xác thực đã qua.
+   * Slug của trung tâm ở kho riêng mà danh tính này đã được phân giải TRONG kho của trung tâm đó; `null` khi danh tính
+   * thuộc đường kho chung (địa chỉ thường, trung tâm kho chung, hoặc phiên vận hành platform được tra ở kho chung ngay
+   * tại địa chỉ kho riêng). Gateway gắn slug này lên kết nối để mọi lượt đọc dữ kiện theo kết nối (vào room lúc nối,
+   * join/sync/typing) chạy trong đúng kho của trung tâm qua `withSpaceKysely` — danh tính đã phân giải ở kho riêng mà
+   * các lượt đọc đó rơi về kho chung thì hội thoại/membership của trung tâm vô hình với socket dù xác thực đã qua.
    */
   spaceSlug: string | null;
 }
@@ -120,24 +113,17 @@ export class MessagingSocketAuth {
   }
 
   /**
-   * Xác thực toàn bộ handshake: phân giải không gian từ `Host`
-   * trước, rồi thử cookie phiên Better Auth, không chốt được danh
-   * tính thì thử token mang theo handshake. Null nghĩa là cả hai
-   * đường đều không dùng được — gateway ngắt kết nối ngay, không
-   * lộ lý do ra client.
+   * Xác thực toàn bộ handshake: phân giải không gian từ `Host` trước, rồi thử cookie phiên Better Auth, không chốt được
+   * danh tính thì thử token mang theo handshake. Null nghĩa là cả hai đường đều không dùng được — gateway ngắt kết nối
+   * ngay, không lộ lý do ra client.
    *
-   * Bước chuẩn bị kho đích (`getKyselyForSpace`) chạy tại đây,
-   * trước cả hai đường, đúng bước PREPARE của khung định tuyến:
-   * lỗi phân giải/chuẩn bị ném ra ngoài (gateway ngắt kết nối kèm
-   * log) thay vì được nuốt thành null — một handshake thuộc trung
-   * tâm kho riêng không bao giờ được phục vụ lặng lẽ từ kho chung.
+   * Bước chuẩn bị kho đích (`getKyselyForSpace`) chạy tại đây, trước cả hai đường, đúng bước PREPARE của khung định
+   * tuyến: lỗi phân giải/chuẩn bị ném ra ngoài (gateway ngắt kết nối kèm log) thay vì được nuốt thành null — một
+   * handshake thuộc trung tâm kho riêng không bao giờ được phục vụ lặng lẽ từ kho chung.
    *
-   * Khi phân giải trả `null` nhưng địa chỉ vẫn mang slug ứng
-   * viên, bước này phân biệt lại lý do qua `resolveTarget` (xem
-   * `isRoutingNotConfiguredForHost`): chỉ tổ hợp "tầng định tuyến
-   * chưa cấu hình" mới sinh cờ truyền xuống đường token; slug
-   * chưa đăng ký và trung tâm kho chung giữ nguyên đường kho
-   * chung như cũ.
+   * Khi phân giải trả `null` nhưng địa chỉ vẫn mang slug ứng viên, bước này phân biệt lại lý do qua `resolveTarget`
+   * (xem `isRoutingNotConfiguredForHost`): chỉ tổ hợp "tầng định tuyến chưa cấu hình" mới sinh cờ truyền xuống đường
+   * token; slug chưa đăng ký và trung tâm kho chung giữ nguyên đường kho chung như cũ.
    */
   async authenticateHandshake(handshake: MessagingHandshake): Promise<MessagingSocketIdentity | null> {
     const space = await resolveDedicatedSpace(this.spaceDb, handshake.headers['host']);
@@ -149,23 +135,16 @@ export class MessagingSocketAuth {
   }
 
   /**
-   * Phân biệt lý do phân giải không gian trả `null` cho một địa
-   * chỉ mang slug ứng viên: tầng định tuyến chưa cấu hình
-   * (`space_routing.not_configured`) hay các trường hợp đường kho
-   * chung thông thường (slug chưa đăng ký, trung tâm ở chế độ kho
-   * chung).
+   * Phân biệt lý do phân giải không gian trả `null` cho một địa chỉ mang slug ứng viên: tầng định tuyến chưa cấu hình
+   * (`space_routing.not_configured`) hay các trường hợp đường kho chung thông thường (slug chưa đăng ký, trung tâm ở
+   * chế độ kho chung).
    *
-   * `resolveDedicatedSpace` cố ý gộp cả ba trường hợp thành
-   * `null` cho tầng chiến lược xác thực dùng chung với HTTP, nên
-   * lớp này gọi lại `resolveTarget` trực tiếp trên slug ứng viên
-   * — đúng cách `SpaceContextGuard` phía HTTP phân biệt — thay vì
-   * đổi hành vi của helper dùng chung (đổi helper sẽ phá hợp đồng
-   * "chưa cấu hình thì app chạy như trước" của mọi đường HTTP
-   * trên deployment chưa cấu hình control plane). Lỗi phân giải
-   * ngoài hai mã đã biết ném ra nguyên trạng, fail-closed như
-   * mọi lỗi phân giải khác của lớp này.
+   * `resolveDedicatedSpace` cố ý gộp cả ba trường hợp thành `null` cho tầng chiến lược xác thực dùng chung với HTTP,
+   * nên lớp này gọi lại `resolveTarget` trực tiếp trên slug ứng viên — đúng cách `SpaceContextGuard` phía HTTP phân
+   * biệt — thay vì đổi hành vi của helper dùng chung (đổi helper sẽ phá hợp đồng "chưa cấu hình thì app chạy như trước"
+   * của mọi đường HTTP trên deployment chưa cấu hình control plane). Lỗi phân giải ngoài hai mã đã biết ném ra nguyên
+   * trạng, fail-closed như mọi lỗi phân giải khác của lớp này.
    *
-   * @param host - Giá trị header `Host` của handshake.
    * @returns `true` chỉ khi bộ phân giải báo tầng định tuyến chưa
    *   cấu hình cho slug ứng viên của địa chỉ này.
    */
@@ -184,30 +163,21 @@ export class MessagingSocketAuth {
   }
 
   /**
-   * Danh tính từ cookie phiên Better Auth trong headers của
-   * handshake (trình duyệt gửi cookie cùng nguồn kèm request bắt tay
-   * khi client bật `withCredentials`). Trả null cho mọi trường hợp
-   * không dùng được: cờ tắt, không có cookie phiên, phiên
-   * hỏng/hết hạn, user không còn active.
+   * Danh tính từ cookie phiên Better Auth trong headers của handshake (trình duyệt gửi cookie cùng nguồn kèm request
+   * bắt tay khi client bật `withCredentials`). Trả null cho mọi trường hợp không dùng được: cờ tắt, không có cookie
+   * phiên, phiên hỏng/hết hạn, user không còn active.
    *
-   * Phiên cookie không mang claim tenant như JWT: tenant hiệu lực
-   * được phân giải như `TenantGuard` phía HTTP khi danh tính không
-   * có `tid` — tenant mặc định của user theo membership (cùng luật
-   * `TenantsService.resolveDefaultTenant`, bản gương trong repo của
-   * messaging), tra cứu trong ngữ cảnh platform vì đây là đường
-   * tiền-ngữ-cảnh giống hệt cách TenantGuard tự phân giải.
+   * Phiên cookie không mang claim tenant như JWT: tenant hiệu lực được phân giải như `TenantGuard` phía HTTP khi danh
+   * tính không có `tid` — tenant mặc định của user theo membership (cùng luật `TenantsService.resolveDefaultTenant`,
+   * bản gương trong repo của messaging), tra cứu trong ngữ cảnh platform vì đây là đường tiền-ngữ-cảnh giống hệt cách
+   * TenantGuard tự phân giải.
    *
-   * Khi địa chỉ thuộc trung tâm ở kho riêng (`space` khác null),
-   * cả ba lượt đọc — phiên, tài khoản, tenant mặc định — chạy
-   * trong kho của trung tâm đó qua `withSpaceKysely`: phiên
-   * Better Auth của thành viên chỉ tồn tại ở kho riêng nên đọc ở
-   * kho chung trả rỗng, và phiên chỉ tồn tại ở kho chung mang tới
-   * địa chỉ này cũng không được phục vụ lặng lẽ từ kho chung.
-   * Lượt suy tenant mặc định vẫn chạy trong ngữ cảnh platform
-   * nhưng store ALS PHẢI giữ `spaceSlug` của trung tâm: thay toàn
-   * bộ store bằng `{ platform: true }` trần sẽ đánh rơi slug và
-   * handle định tuyến rơi về kho chung (đúng lớp lỗi A4 của Phần A
-   * đã sửa ở các wrapper phía service).
+   * Khi địa chỉ thuộc trung tâm ở kho riêng (`space` khác null), cả ba lượt đọc — phiên, tài khoản, tenant mặc định —
+   * chạy trong kho của trung tâm đó qua `withSpaceKysely`: phiên Better Auth của thành viên chỉ tồn tại ở kho riêng nên
+   * đọc ở kho chung trả rỗng, và phiên chỉ tồn tại ở kho chung mang tới địa chỉ này cũng không được phục vụ lặng lẽ từ
+   * kho chung. Lượt suy tenant mặc định vẫn chạy trong ngữ cảnh platform nhưng store ALS PHẢI giữ `spaceSlug` của trung
+   * tâm: thay toàn bộ store bằng `{ platform: true }` trần sẽ đánh rơi slug và handle định tuyến rơi về kho chung (đúng
+   * lớp lỗi A4 của Phần A đã sửa ở các wrapper phía service).
    */
   async authenticateCookie(
     headers: Record<string, string | string[] | undefined>,
@@ -222,8 +192,8 @@ export class MessagingSocketAuth {
     try {
       resolved = space ? await this.spaceDb.withSpaceKysely(space.slug, readSession) : await readSession();
     } catch {
-      // Cookie hỏng chữ ký/định dạng: coi như không có phiên Better
-      // Auth, để đường token quyết định — như BetterAuthSessionGuard.
+      // Cookie hỏng chữ ký/định dạng: coi như không có phiên Better Auth, để đường token quyết định — như
+      // BetterAuthSessionGuard.
       return null;
     }
     if (!resolved) return null;
@@ -232,8 +202,7 @@ export class MessagingSocketAuth {
     try {
       user = space ? await this.spaceDb.withSpaceKysely(space.slug, readUser) : await readUser();
     } catch {
-      // Tài khoản không đọc được trong kho của phiên: không đặt
-      // danh tính từ cookie, để đường token quyết định — như
+      // Tài khoản không đọc được trong kho của phiên: không đặt danh tính từ cookie, để đường token quyết định — như
       // BetterAuthSessionGuard phía HTTP.
       return null;
     }
@@ -249,14 +218,12 @@ export class MessagingSocketAuth {
   }
 
   /**
-   * Xác thực một access token lấy từ handshake của socket. Trả null
-   * cho mọi trường hợp không hợp lệ (thiếu token, sai chữ ký, hết hạn,
-   * token có scope, thiếu sid, user không còn active) — gateway ngắt
-   * kết nối ngay, không lộ lý do ra client.
+   * Xác thực một access token lấy từ handshake của socket. Trả null cho mọi trường hợp không hợp lệ (thiếu token, sai
+   * chữ ký, hết hạn, token có scope, thiếu sid, user không còn active) — gateway ngắt kết nối ngay, không lộ lý do ra
+   * client.
    *
-   * Khi địa chỉ thuộc trung tâm ở kho riêng (`space` khác null),
-   * đường token áp đúng nguyên tắc cổng 1a/1b của Phần A như
-   * `JwtAuthStrategy` + `SpaceContextGuard` phía HTTP:
+   * Khi địa chỉ thuộc trung tâm ở kho riêng (`space` khác null), đường token áp đúng nguyên tắc cổng 1a/1b của Phần A
+   * như `JwtAuthStrategy` + `SpaceContextGuard` phía HTTP:
    * - Token mang claim `centre_id` lệch định danh của trung tâm
    *   tại địa chỉ → từ chối TRƯỚC khi chạm vào kho đích (không tra
    *   kho nào để khẳng định thêm); claim khớp thì tài khoản tra
@@ -270,14 +237,10 @@ export class MessagingSocketAuth {
    *   platform không có tài khoản trong kho riêng, và danh tính
    *   của đường này thuộc kho chung nên `spaceSlug` trả về null.
    *
-   * Khi `routingNotConfigured` bật (địa chỉ mang slug ứng viên
-   * nhưng tầng định tuyến chưa cấu hình — xem
-   * `isRoutingNotConfiguredForHost`), token mang claim
-   * `centre_id` là bằng chứng phiên thuộc trung tâm kho riêng:
-   * deployment đang phục vụ mà không tra được sổ đăng ký là lỗi
-   * vận hành, nên từ chối TRƯỚC mọi lượt đọc tài khoản ở kho
-   * chung, đúng chốt của `SpaceContextGuard` phía HTTP. Token
-   * không mang claim giữ nguyên đường kho chung như cũ.
+   * Khi `routingNotConfigured` bật (địa chỉ mang slug ứng viên nhưng tầng định tuyến chưa cấu hình — xem
+   * `isRoutingNotConfiguredForHost`), token mang claim `centre_id` là bằng chứng phiên thuộc trung tâm kho riêng:
+   * deployment đang phục vụ mà không tra được sổ đăng ký là lỗi vận hành, nên từ chối TRƯỚC mọi lượt đọc tài khoản ở
+   * kho chung, đúng chốt của `SpaceContextGuard` phía HTTP. Token không mang claim giữ nguyên đường kho chung như cũ.
    */
   async authenticate(
     token: string | undefined,
@@ -291,13 +254,11 @@ export class MessagingSocketAuth {
     } catch {
       return null;
     }
-    // Cùng luật với JwtAuthStrategy phía REST: chỉ access token đăng
-    // nhập (không scope) gắn với một phiên (sid) mới được chấp nhận.
+    // Cùng luật với JwtAuthStrategy phía REST: chỉ access token đăng nhập (không scope) gắn với một phiên (sid) mới
+    // được chấp nhận.
     if (!payload.sub || payload.scope !== undefined || typeof payload.sid !== 'string') return null;
-    // Chốt fail-closed cho tổ hợp "định tuyến chưa cấu hình +
-    // claim centre_id" (khớp SpaceContextGuard): claim là bằng
-    // chứng phiên thuộc trung tâm kho riêng, không được rơi
-    // xuống lượt tra tài khoản ở kho chung ngay dưới đây.
+    // Chốt fail-closed cho tổ hợp "định tuyến chưa cấu hình + claim centre_id" (khớp SpaceContextGuard): claim là bằng
+    // chứng phiên thuộc trung tâm kho riêng, không được rơi xuống lượt tra tài khoản ở kho chung ngay dưới đây.
     if (routingNotConfigured && payload.centre_id !== undefined) return null;
     const sub = payload.sub;
     const tid = typeof payload.tid === 'string' ? payload.tid : undefined;

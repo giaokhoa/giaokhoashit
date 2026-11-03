@@ -7,9 +7,8 @@ import { MessagingRepository } from '@lms/db/repositories/messaging';
 import { tenantAls } from '../tenants/tenant-als';
 
 /**
- * Kênh Redis pub/sub mang tín hiệu "số thông báo chưa đọc của một user
- * vừa thay đổi". Payload chỉ là userId — số đếm thật luôn được đọc lại
- * từ database ở phía nhận, không tin số mang theo tín hiệu.
+ * Kênh Redis pub/sub mang tín hiệu "số thông báo chưa đọc của một user vừa thay đổi". Payload chỉ là userId — số đếm
+ * thật luôn được đọc lại từ database ở phía nhận, không tin số mang theo tín hiệu.
  */
 export const NOTIFICATION_UNREAD_CHANGED_CHANNEL = 'lms:notifications:unread-changed';
 
@@ -19,20 +18,17 @@ const HEARTBEAT_INTERVAL_MS = 25_000;
 /**
  * Stream thời gian thực cho số thông báo chưa đọc (SSE).
  *
- * Thông báo có thể được tạo từ bất kỳ tiến trình nào (API khi xử lý
- * request, worker khi chạy job nền như cấp huy hiệu) nên tín hiệu thay
- * đổi đi qua Redis pub/sub làm backplane: nơi thay đổi số đếm gọi
- * {@link signalUnreadCountChanged}, mọi tiến trình API đang giữ stream
- * của user đó đều nhận tín hiệu, đọc lại số thật từ DB rồi đẩy xuống.
- * Kết nối subscriber phải là một connection Redis riêng (connection đã
- * subscribe không publish được), tách khỏi connection publish.
+ * Thông báo có thể được tạo từ bất kỳ tiến trình nào (API khi xử lý request, worker khi chạy job nền như cấp huy hiệu)
+ * nên tín hiệu thay đổi đi qua Redis pub/sub làm backplane: nơi thay đổi số đếm gọi {@link signalUnreadCountChanged},
+ * mọi tiến trình API đang giữ stream của user đó đều nhận tín hiệu, đọc lại số thật từ DB rồi đẩy xuống. Kết nối
+ * subscriber phải là một connection Redis riêng (connection đã subscribe không publish được), tách khỏi connection
+ * publish.
  */
 @Injectable()
 export class NotificationUnreadStreamService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(NotificationUnreadStreamService.name);
   private readonly publisher: Redis;
   private readonly subscriber: Redis;
-  /** Các stream SSE đang mở trong tiến trình này, theo user. */
   private readonly streamsByUser = new Map<string, Set<Subject<MessageEvent>>>();
 
   constructor(
@@ -66,9 +62,8 @@ export class NotificationUnreadStreamService implements OnModuleInit, OnModuleDe
   }
 
   /**
-   * Phát tín hiệu số đếm của user đã đổi. Lỗi Redis bị nuốt lặng: đẩy
-   * thời gian thực là đường phụ, không bao giờ được làm hỏng nghiệp vụ
-   * tạo/đánh dấu thông báo vốn đã ghi xong xuống DB.
+   * Phát tín hiệu số đếm của user đã đổi. Lỗi Redis bị nuốt lặng: đẩy thời gian thực là đường phụ, không bao giờ được
+   * làm hỏng nghiệp vụ tạo/đánh dấu thông báo vốn đã ghi xong xuống DB.
    */
   async signalUnreadCountChanged(userId: string): Promise<void> {
     try {
@@ -79,10 +74,9 @@ export class NotificationUnreadStreamService implements OnModuleInit, OnModuleDe
   }
 
   /**
-   * Mở stream cho một user: sự kiện đầu tiên là snapshot số hiện tại
-   * đọc từ DB (mỗi lần nối — kể cả EventSource tự nối lại — đều đồng bộ
-   * lại từ đầu), sau đó là mỗi thay đổi được đẩy xuống, kẹp heartbeat
-   * giữ kết nối. Ngắt kết nối thì gỡ đăng ký, không rò listener.
+   * Mở stream cho một user: sự kiện đầu tiên là snapshot số hiện tại đọc từ DB (mỗi lần nối — kể cả EventSource tự nối
+   * lại — đều đồng bộ lại từ đầu), sau đó là mỗi thay đổi được đẩy xuống, kẹp heartbeat giữ kết nối. Ngắt kết nối thì
+   * gỡ đăng ký, không rò listener.
    */
   streamUnreadCount(userId: string): Observable<MessageEvent> {
     return new Observable<MessageEvent>((subscriber) => {
@@ -113,21 +107,17 @@ export class NotificationUnreadStreamService implements OnModuleInit, OnModuleDe
     });
   }
 
-  /** Đọc số thật từ DB và đẩy xuống mọi stream đang mở của user. */
   private async pushCurrentCount(userId: string): Promise<void> {
     const subjects = this.streamsByUser.get(userId);
     if (!subjects || subjects.size === 0) return;
     try {
-      // TENANT-1 (#196): callback pub/sub chạy NGOÀI mọi ngữ cảnh
-      // request — đếm trong ngữ cảnh tenant mặc định của chính user
-      // (theo membership) để RLS fail-closed không trả 0 giả; không
-      // phân giải được tenant thì rơi về ngữ cảnh platform (đếm theo
-      // userId vẫn đúng phạm vi một người).
+      // TENANT-1 (#196): callback pub/sub chạy NGOÀI mọi ngữ cảnh request — đếm trong ngữ cảnh tenant mặc định của
+      // chính user (theo membership) để RLS fail-closed không trả 0 giả; không phân giải được tenant thì rơi về ngữ
+      // cảnh platform (đếm theo userId vẫn đúng phạm vi một người).
       const tenantId = await this.repo.getUserDefaultTenantId(userId).catch(() => null);
       const unread = await tenantAls.run(
         tenantId ? { tenantId } : { platform: true },
-        // Vòng ALS vẫn giữ (nó lập cả ngữ cảnh pool/RLS); tenantId
-        // đồng thời truyền tường minh xuống repository vì
+        // Vòng ALS vẫn giữ (nó lập cả ngữ cảnh pool/RLS); tenantId đồng thời truyền tường minh xuống repository vì
         // repository tại `@lms/db` không đọc ALS (issue #658).
         () => this.repo.countUnreadNotifications(userId, tenantId ?? undefined),
       );

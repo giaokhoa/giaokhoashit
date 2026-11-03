@@ -4,14 +4,12 @@ import { MessagingRepository } from '@lms/db/repositories/messaging';
 import { MessagingRealtimeService } from './messaging-realtime.service';
 import { MessagingNotificationsService } from './messaging-notifications.service';
 
-/** Tóm tắt hiển thị của một user trong các response của messaging (hợp đồng ở @lms/contracts). */
 export interface PersonSummaryView {
   userId: string;
   displayName: string;
   username: string;
 }
 
-/** Trạng thái quan hệ của một người so với người đang tìm (hợp đồng ở @lms/contracts). */
 export type ContactRelationship = 'contact' | 'pending_incoming' | 'pending_outgoing' | 'blocked' | 'none';
 
 /** Tên hiển thị của một user: "firstName lastName" đã cắt khoảng trắng; cả hai trống thì lùi về username. */
@@ -23,30 +21,21 @@ export function displayNameOf(user: { firstName: string; lastName: string; usern
 /**
  * LIÊN HỆ + CHẶN của MessagingModule (cụm ca sử dụng "liên hệ/chặn").
  *
- * Luồng nghiệp vụ: quan hệ liên hệ là quan hệ CÓ DUYỆT (thay danh bạ
- * một chiều cũ như Moodle): gửi yêu cầu → phía kia chấp nhận thì quan
- * hệ mới tồn tại ở cả hai chiều; từ chối thì yêu cầu biến mất, quan
- * hệ không hình thành; gửi yêu cầu cho người đã gửi yêu cầu cho mình
- * = chấp nhận ngầm. Cổng liên lạc (đã chốt lại 24/10/2026 trên issue
- * #33): nhắn riêng 1-1 CHỈ giữa liên hệ đã được duyệt — `assertCanContact`
- * là cổng đó, cụm hội thoại và cụm tin nhắn gọi nó trước khi mở/gửi;
- * ngoại lệ duy nhất là quan hệ giáo viên–học viên cùng khoá/lớp còn
- * hiệu lực. Chặn là quan hệ một chiều cứng hơn liên hệ: người bị chặn
- * không gửi được tin và không thấy người chặn; huỷ chặn khôi phục tầm
- * nhìn hội thoại cũ. `profilesFor`/`displayNameOf` là tiện ích hiển
- * thị người dùng dùng chung cho các cụm khác (roster, danh sách hội
- * thoại). Method `assertCanContact` để public trong nội bộ module cho
- * các service cụm gọi — không phải bề mặt API của MessagingModule.
+ * Luồng nghiệp vụ: quan hệ liên hệ là quan hệ CÓ DUYỆT (thay danh bạ một chiều cũ như Moodle): gửi yêu cầu → phía kia
+ * chấp nhận thì quan hệ mới tồn tại ở cả hai chiều; từ chối thì yêu cầu biến mất, quan hệ không hình thành; gửi yêu cầu
+ * cho người đã gửi yêu cầu cho mình = chấp nhận ngầm. Cổng liên lạc (đã chốt lại 24/10/2026 trên issue #33): nhắn riêng
+ * 1-1 CHỈ giữa liên hệ đã được duyệt — `assertCanContact` là cổng đó, cụm hội thoại và cụm tin nhắn gọi nó trước khi
+ * mở/gửi; ngoại lệ duy nhất là quan hệ giáo viên–học viên cùng khoá/lớp còn hiệu lực. Chặn là quan hệ một chiều cứng
+ * hơn liên hệ: người bị chặn không gửi được tin và không thấy người chặn; huỷ chặn khôi phục tầm nhìn hội thoại cũ.
+ * `profilesFor`/`displayNameOf` là tiện ích hiển thị người dùng dùng chung cho các cụm khác (roster, danh sách hội
+ * thoại). Method `assertCanContact` để public trong nội bộ module cho các service cụm gọi — không phải bề mặt API của
+ * MessagingModule.
  *
- * Cách lắp ráp (issue #295): service này là một CỤM của MessagingModule,
- * tách từ MessagingService cũ theo cụm ca sử dụng — tách cấu trúc thuần,
- * không đổi hành vi. MessagingService nay là facade giữ nguyên bề mặt
- * công khai và chữ ký constructor, tự lắp ráp các service cụm trong
- * constructor của nó (các test đơn vị hiện hữu khởi tạo trực tiếp
- * `new MessagingService(...)` với đúng các phụ thuộc hạ tầng cũ nên
- * facade là điểm lắp ráp để giữ nguyên hợp đồng khởi tạo đó); các
- * service cụm không đăng ký provider riêng trong module và module
- * wiring giữ nguyên như trước khi tách.
+ * Cách lắp ráp (issue #295): service này là một CỤM của MessagingModule, tách từ MessagingService cũ theo cụm ca sử
+ * dụng — tách cấu trúc thuần, không đổi hành vi. MessagingService nay là facade giữ nguyên bề mặt công khai và chữ ký
+ * constructor, tự lắp ráp các service cụm trong constructor của nó (các test đơn vị hiện hữu khởi tạo trực tiếp `new
+ * MessagingService(...)` với đúng các phụ thuộc hạ tầng cũ nên facade là điểm lắp ráp để giữ nguyên hợp đồng khởi tạo
+ * đó); các service cụm không đăng ký provider riêng trong module và module wiring giữ nguyên như trước khi tách.
  */
 export class MessagingContactsService {
   constructor(
@@ -56,19 +45,14 @@ export class MessagingContactsService {
     private readonly notifications: MessagingNotificationsService,
   ) {}
 
-  // --- contacts: luồng yêu cầu – chấp nhận (Lớp B) ---------------------------
-  // Thay danh bạ MỘT CHIỀU cũ bằng quan hệ có duyệt như Moodle: gửi yêu
-  // cầu → phía kia chấp nhận thì quan hệ mới tồn tại (ở cả hai chiều)
-  // và mới mở cổng liên lạc; từ chối thì yêu cầu biến mất, quan hệ
-  // không hình thành. Gửi yêu cầu cho người ĐÃ gửi yêu cầu cho mình =
-  // chấp nhận ngầm (hai phía cùng muốn kết nối thì không cần thêm một
-  // lượt duyệt nữa).
+  // Thay danh bạ MỘT CHIỀU cũ bằng quan hệ có duyệt như Moodle: gửi yêu cầu → phía kia chấp nhận thì quan hệ mới tồn
+  // tại (ở cả hai chiều) và mới mở cổng liên lạc; từ chối thì yêu cầu biến mất, quan hệ không hình thành. Gửi yêu cầu
+  // cho người ĐÃ gửi yêu cầu cho mình = chấp nhận ngầm (hai phía cùng muốn kết nối thì không cần thêm một lượt duyệt
+  // nữa).
 
   /**
-   * Gửi yêu cầu kết bạn tới một user. Đã là liên hệ thì trả trạng thái
-   * accepted (idempotent); đã có yêu cầu chiều ngược đang chờ thì chấp
-   * nhận luôn yêu cầu đó. Người bị phía kia chặn (hoặc đã chặn phía
-   * kia) không gửi được yêu cầu.
+   * Gửi yêu cầu kết bạn tới một user. Đã là liên hệ thì trả trạng thái accepted (idempotent); đã có yêu cầu chiều ngược
+   * đang chờ thì chấp nhận luôn yêu cầu đó. Người bị phía kia chặn (hoặc đã chặn phía kia) không gửi được yêu cầu.
    */
   async requestContact(userId: string, contactId: string): Promise<{ status: 'pending' | 'accepted'; contacts: string[] }> {
     if (contactId === userId) throw new BadRequestException({ message: 'You cannot add yourself as a contact', code: 'messaging.contact_self' });
@@ -98,10 +82,8 @@ export class MessagingContactsService {
   }
 
   /**
-   * Các yêu cầu kết bạn của tôi: `incoming` là yêu cầu người khác gửi
-   * tới chờ tôi duyệt, `outgoing` là yêu cầu tôi đã gửi đang chờ.
-   * Mỗi mục kèm tên hiển thị + username của phía kia để giao diện
-   * hiện TÊN thay cho UUID thô.
+   * Các yêu cầu kết bạn của tôi: `incoming` là yêu cầu người khác gửi tới chờ tôi duyệt, `outgoing` là yêu cầu tôi đã
+   * gửi đang chờ. Mỗi mục kèm tên hiển thị + username của phía kia để giao diện hiện TÊN thay cho UUID thô.
    */
   async listContactRequests(userId: string): Promise<{
     incoming: { userId: string; createdAt: Date; displayName: string; username: string }[];
@@ -126,9 +108,8 @@ export class MessagingContactsService {
   }
 
   /**
-   * Tóm tắt hiển thị (tên + username) cho một tập user id — các
-   * response danh sách của messaging trả kèm để client hiện TÊN thay
-   * cho UUID thô. User không còn tồn tại thì vắng khỏi bản đồ kết quả.
+   * Tóm tắt hiển thị (tên + username) cho một tập user id — các response danh sách của messaging trả kèm để client hiện
+   * TÊN thay cho UUID thô. User không còn tồn tại thì vắng khỏi bản đồ kết quả.
    */
   async profilesFor(userIds: string[]): Promise<Record<string, PersonSummaryView>> {
     const unique = [...new Set(userIds)];
@@ -142,29 +123,18 @@ export class MessagingContactsService {
   }
 
   /**
-   * Hồ sơ người phục vụ panel thông tin của chat 1–1 (issue #592):
-   * định danh + tên hiển thị + tên đăng nhập + email từ bảng người
-   * dùng thật. Các trường panel khác (giới thiệu, điện thoại,
-   * website, công ty, quốc gia, múi giờ, địa điểm, trạng thái sẵn
-   * sàng, các thẻ, dòng vai trò) KHÔNG có nguồn trong hệ nên
-   * không nằm trong kết quả — client giữ chúng qua adapter với
-   * giá trị rỗng, không bịa dữ kiện.
+   * Hồ sơ người phục vụ panel thông tin của chat 1–1 (issue #592): định danh + tên hiển thị + tên đăng nhập + email từ
+   * bảng người dùng thật. Các trường panel khác (giới thiệu, điện thoại, website, công ty, quốc gia, múi giờ, địa điểm,
+   * trạng thái sẵn sàng, các thẻ, dòng vai trò) KHÔNG có nguồn trong hệ nên không nằm trong kết quả — client giữ chúng
+   * qua adapter với giá trị rỗng, không bịa dữ kiện.
    *
-   * Cổng (issue #592, thu hẹp từ cổng cũ "chung conversation nhìn
-   * thấy được" — cổng cũ lộ email qua đồng bộ lười: mở chat lớp
-   * vật chất hoá membership cho toàn bộ roster nên mọi học viên
-   * chung lớp đều lấy được email của nhau dù chưa từng có hội
-   * thoại 1–1): chính chủ, hoặc chung hội thoại 1–1 không bị chặn
-   * với đối tác (xem repository), hoặc người xem có
-   * `site:viewuseridentity` tại context hệ thống hoặc context
-   * người dùng của đối tác (luật lộ email của UsersService).
-   * Ngoài cổng này đều nhận 404 như đối tác không tồn tại (không
-   * rò sự tồn tại). Email chỉ trả trong cổng này — khác với tóm
-   * tắt hiển thị dùng chung (không có email).
+   * Cổng (issue #592, thu hẹp từ cổng cũ "chung conversation nhìn thấy được" — cổng cũ lộ email qua đồng bộ lười: mở
+   * chat lớp vật chất hoá membership cho toàn bộ roster nên mọi học viên chung lớp đều lấy được email của nhau dù chưa
+   * từng có hội thoại 1–1): chính chủ, hoặc chung hội thoại 1–1 không bị chặn với đối tác (xem repository), hoặc người
+   * xem có `site:viewuseridentity` tại context hệ thống hoặc context người dùng của đối tác (luật lộ email của
+   * UsersService). Ngoài cổng này đều nhận 404 như đối tác không tồn tại (không rò sự tồn tại). Email chỉ trả trong
+   * cổng này — khác với tóm tắt hiển thị dùng chung (không có email).
    *
-   * @param viewerId - Người xem hồ sơ.
-   * @param targetId - Người cần xem hồ sơ.
-   * @returns Hồ sơ người theo hợp đồng panel chat.
    * @throws {NotFoundException} `messaging.person_profile_not_found`
    *   khi đối tác không tồn tại hoặc người xem ngoài cổng trên.
    */
@@ -177,8 +147,8 @@ export class MessagingContactsService {
   }
 
   /**
-   * Chấp nhận yêu cầu kết bạn TỪ requesterId: quan hệ hình thành ở cả
-   * hai chiều, yêu cầu rời hàng chờ. Không có yêu cầu như vậy thì 404.
+   * Chấp nhận yêu cầu kết bạn TỪ requesterId: quan hệ hình thành ở cả hai chiều, yêu cầu rời hàng chờ. Không có yêu cầu
+   * như vậy thì 404.
    */
   async acceptContactRequest(userId: string, requesterId: string): Promise<{ contacts: string[] }> {
     await this.users.getUser(requesterId);
@@ -190,8 +160,8 @@ export class MessagingContactsService {
   }
 
   /**
-   * Từ chối yêu cầu kết bạn TỪ requesterId: yêu cầu biến mất, quan hệ
-   * không hình thành. Không có yêu cầu như vậy thì 404.
+   * Từ chối yêu cầu kết bạn TỪ requesterId: yêu cầu biến mất, quan hệ không hình thành. Không có yêu cầu như vậy thì
+   * 404.
    */
   async declineContactRequest(userId: string, requesterId: string): Promise<{ declined: boolean }> {
     await this.users.getUser(requesterId);
@@ -202,8 +172,8 @@ export class MessagingContactsService {
   }
 
   /**
-   * Gỡ một liên hệ đã duyệt: quan hệ mất ở CẢ hai phía (cổng liên lạc
-   * đóng lại cho cả hai chiều), yêu cầu chờ giữa hai người cũng dọn.
+   * Gỡ một liên hệ đã duyệt: quan hệ mất ở CẢ hai phía (cổng liên lạc đóng lại cho cả hai chiều), yêu cầu chờ giữa hai
+   * người cũng dọn.
    */
   async removeContact(userId: string, contactId: string): Promise<{ contacts: string[] }> {
     await this.users.getUser(contactId);
@@ -218,19 +188,13 @@ export class MessagingContactsService {
     return this.repo.listContacts(userId);
   }
 
-  // --- cổng liên lạc: chỉ liên hệ đã duyệt -------------------------------------
-
   /**
-   * Cổng liên lạc 1-1 (đã chốt lại 24/10/2026 trên issue #33, thay mô
-   * hình cũ "liên hệ hoặc cùng khoá" và thay luôn hiệu lực của setting
-   * `core/messagingallusers`): người gửi chỉ nhắn riêng được với
-   * người nhận khi hai người là liên hệ ĐÃ ĐƯỢC DUYỆT của nhau (luồng
-   * yêu cầu–chấp nhận của Lớp B — yêu cầu đang chờ không mở cổng).
-   * Cùng khoá KHÔNG còn mở cổng cho học sinh với nhau: bạn cùng lớp
-   * muốn nhắn riêng phải kết bạn qua roster thành viên khoá trước.
-   * Kiểm này là một tra cứu `isContact` theo khoá chính (đội kiểm tra
-   * đo 0,018 ms — không nghẽn). Notification hệ thống (`notify`)
-   * KHÔNG đi qua cổng này.
+   * Cổng liên lạc 1-1 (đã chốt lại 24/10/2026 trên issue #33, thay mô hình cũ "liên hệ hoặc cùng khoá" và thay luôn
+   * hiệu lực của setting `core/messagingallusers`): người gửi chỉ nhắn riêng được với người nhận khi hai người là liên
+   * hệ ĐÃ ĐƯỢC DUYỆT của nhau (luồng yêu cầu–chấp nhận của Lớp B — yêu cầu đang chờ không mở cổng). Cùng khoá KHÔNG còn
+   * mở cổng cho học sinh với nhau: bạn cùng lớp muốn nhắn riêng phải kết bạn qua roster thành viên khoá trước. Kiểm này
+   * là một tra cứu `isContact` theo khoá chính (đội kiểm tra đo 0,018 ms — không nghẽn). Notification hệ thống
+   * (`notify`) KHÔNG đi qua cổng này.
    *
    * NGOẠI LỆ duy nhất (chốt bổ sung 25/10/2026 trên issue
    * #33): cặp GIÁO VIÊN ↔ HỌC SINH thuộc cùng một đơn vị học tập
@@ -250,8 +214,6 @@ export class MessagingContactsService {
    * `messaging.contact_blocked` trước khi tới đây; kiểm thêm tại đây
    * để đường MỞ hội thoại mới khép cùng một luật).
    *
-   * @param senderId - Người mở hội thoại/gửi tin.
-   * @param recipientId - Người nhận.
    * @returns Không trả dữ liệu; trở về bình thường nghĩa là cổng mở.
    * @throws {ForbiddenException} `messaging.not_a_contact` khi hai
    *   người không phải liên hệ đã duyệt và không có quan hệ GV–HS
@@ -262,16 +224,14 @@ export class MessagingContactsService {
     const blockedEitherWay = (await this.repo.isBlocked(senderId, recipientId))
       || (await this.repo.isBlocked(recipientId, senderId));
     if (!blockedEitherWay && await this.repo.findTeacherStudentSharedCourseId(senderId, recipientId)) return;
-    // Cùng ngoại lệ ở cấp LỚP (sổ mục D: HS thuộc khoá/LỚP của mình):
-    // giáo viên của lớp ↔ thành viên roster hiệu lực của lớp.
+    // Cùng ngoại lệ ở cấp LỚP (sổ mục D: HS thuộc khoá/LỚP của mình): giáo viên của lớp ↔ thành viên roster hiệu lực
+    // của lớp.
     if (!blockedEitherWay && await this.repo.findTeacherStudentSharedClassId(senderId, recipientId)) return;
     throw new ForbiddenException({
       message: 'You can only message a contact directly — send a contact request from the course member list and wait for it to be accepted',
       code: 'messaging.not_a_contact',
     });
   }
-
-  // --- liên hệ bị chặn ---------------------------------------------------------
 
   /**
    * Chặn một liên hệ.
@@ -288,8 +248,8 @@ export class MessagingContactsService {
    */
   async unblockContact(userId: string, blockedUserId: string): Promise<{ blocked: string[] }> {
     await this.repo.unblock(userId, blockedUserId);
-    // Nối lại room 1–1 (tiếp quản PR #94): bỏ chặn phải khôi phục
-    // nguyên trạng cho socket đang nối — xem rejoinDirectConversationAfterUnblock.
+    // Nối lại room 1–1 (tiếp quản PR #94): bỏ chặn phải khôi phục nguyên trạng cho socket đang nối — xem
+    // rejoinDirectConversationAfterUnblock.
     await this.realtime.rejoinDirectConversationAfterUnblock(userId, blockedUserId);
     return { blocked: await this.repo.listBlocked(userId) };
   }

@@ -14,7 +14,8 @@ import { TenantsModule } from '../tenants/tenants.module';
 import { PaymentsController } from './payments.controller';
 import { ManualPaymentGateway, PAYMENT_GATEWAY, PaymentsService } from './payments.service';
 
-/** PaymentsModule facade: PaymentsService. Gateway là PORT với adapter manual/fake.
+/**
+ * PaymentsModule facade: PaymentsService. Gateway là PORT với adapter manual/fake.
  * Lát 1 VietQR (#189): TenantsModule cho cổng tenant; endpoint IPN
  * SePay chỉ ghi sự kiện vào `payment_provider_events` rồi trả lời
  * ngay — matching bất đồng bộ chạy ở điểm quét phía worker (issue
@@ -36,7 +37,8 @@ import { ManualPaymentGateway, PAYMENT_GATEWAY, PaymentsService } from './paymen
  * đặt cho ba cổng xuyên module của nó) chỉ đăng ký phía worker —
  * module này giữ lại đúng hai class mà facade thanh toán dùng trực
  * tiếp (PaymentsRepository, PlanEntitlementsService) cho các đường
- * webhook manual, duyệt hoàn và hàng đợi `needs_review`. */
+ * webhook manual, duyệt hoàn và hàng đợi `needs_review`.
+ */
 @Module({
   imports: [AccessModule, EnrolModule, EventsModule, TenantsModule, ClassesModule, SiteConfigModule, SpaceRoutingModule],
   controllers: [PaymentsController],

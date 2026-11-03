@@ -1,6 +1,5 @@
 /**
- * Điểm vào CLI của pipeline cấp phát trung tâm mới (issue #583) —
- * chạy ngoài NestJS như các công cụ fleet (`node
+ * Điểm vào CLI của pipeline cấp phát trung tâm mới (issue #583) — chạy ngoài NestJS như các công cụ fleet (`node
  * dist/modules/tenants/space-provision.js <lệnh> [--khóa giá-trị]`).
  *
  * Ba lệnh:
@@ -17,15 +16,11 @@
  *   bắt buộc `--slug`. Idempotent: kho đã có đủ bộ vai thì không
  *   đổi gì.
  *
- * Đầu ra: các dòng tiến trình + một dòng JSON cuối cùng
- * (`PROVISION_RESULT` / `INVITE_RESULT` / `ROLE_BASELINE_RESULT`)
- * để vận hành đọc bằng mắt hoặc dùng script bắt tiếp. Mật khẩu
- * database mới sinh và token lời mời chỉ xuất hiện ở đầu ra này,
- * đúng một lần — không ghi xuống đĩa, không ghi vào sổ đăng ký,
- * không ghi log nơi khác.
- * Sau `provision`, vận hành còn phải thêm biến môi trường
- * `SPACE_<SLUG>_DATABASE_URL` vào môi trường triển khai thì tầng
- * ứng dụng mới phân giải được trung tâm mới (in rõ ở cuối đầu ra).
+ * Đầu ra: các dòng tiến trình + một dòng JSON cuối cùng (`PROVISION_RESULT` / `INVITE_RESULT` / `ROLE_BASELINE_RESULT`)
+ * để vận hành đọc bằng mắt hoặc dùng script bắt tiếp. Mật khẩu database mới sinh và token lời mời chỉ xuất hiện ở đầu
+ * ra này, đúng một lần — không ghi xuống đĩa, không ghi vào sổ đăng ký, không ghi log nơi khác. Sau `provision`, vận
+ * hành còn phải thêm biến môi trường `SPACE_<SLUG>_DATABASE_URL` vào môi trường triển khai thì tầng ứng dụng mới phân
+ * giải được trung tâm mới (in rõ ở cuối đầu ra).
  */
 import { installSpaceRoleBaseline, manageCentreInvite, runSpaceProvision } from './space-provision-runner';
 
@@ -55,7 +50,6 @@ function required(args: Record<string, string | true>, key: string): string {
   return value;
 }
 
-/** Lấy tham số tuỳ chọn dạng chuỗi. */
 function optional(args: Record<string, string | true>, key: string): string | undefined {
   const value = args[key];
   return typeof value === 'string' ? value : undefined;

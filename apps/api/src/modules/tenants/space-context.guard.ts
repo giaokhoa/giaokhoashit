@@ -17,16 +17,13 @@ import { tenantAls } from './tenant-als';
 import { TenantsRepository } from '@lms/db/repositories/tenants';
 
 /**
- * SpaceContextGuard (issue #582): gắn ngữ cảnh trung tâm vào
- * request. Guard chạy ngay sau `TenantGuard` (tenant hiệu lực đã
- * được kiểm chứng và ghim ở `request.tenantId`) và trước
- * `CapabilityGuard`, theo chuỗi bước sau:
+ * SpaceContextGuard (issue #582): gắn ngữ cảnh trung tâm vào request. Guard chạy ngay sau `TenantGuard` (tenant hiệu
+ * lực đã được kiểm chứng và ghim ở `request.tenantId`) và trước `CapabilityGuard`, theo chuỗi bước sau:
  *
  * 1. Trích slug ứng viên từ địa chỉ (`Host`) của request theo quy
  *    ước tên miền con (xem `space-resolution.ts`). Địa chỉ không
  *    mang trung tâm → request đi đúng đường hiện tại, guard không
- *    chạm gì thêm.
- * 2. Phân giải ứng viên qua khung định tuyến (bộ đệm của khung đọc
+ *    chạm gì thêm. 2. Phân giải ứng viên qua khung định tuyến (bộ đệm của khung đọc
  *    sổ đăng ký control plane). Slug chưa đăng ký → địa chỉ không
  *    thuộc trung tâm nào trong sổ: request vẫn đi đường hiện tại.
  *    Tầng định tuyến chưa được cấu hình (không có control plane)
@@ -39,19 +36,16 @@ import { TenantsRepository } from '@lms/db/repositories/tenants';
  *    cho qua lặng lẽ. Mọi lỗi phân giải còn lại (bí mật/role của
  *    kho riêng lệch sổ) là lỗi cấu hình vận hành: ném ra nguyên
  *    trạng, fail-closed, thay vì im lặng phục vụ request bằng kho
- *    chung.
- * 3. Đường vận hành platform tường minh được miễn toàn bộ các bước
+ *    chung. 3. Đường vận hành platform tường minh được miễn toàn bộ các bước
  *    sau: request mà tenant hiệu lực là tenant platform
  *    (tenant-zero) và người dùng là quản trị viên của site chính
  *    (`isSiteAdmin`) là đường vận hành hệ thống có sẵn — nó không
  *    bị chặn bởi trạng thái trung tâm, không bị đối chiếu token,
  *    và không bị ghim vào kho của trung tâm, vì vận hành phải còn
- *    vào được trung tâm đang bị đình chỉ để xử lý.
- * 4. Trung tâm chưa ở trạng thái `active` (đang cấp phát, bị đình
+ *    vào được trung tâm đang bị đình chỉ để xử lý. 4. Trung tâm chưa ở trạng thái `active` (đang cấp phát, bị đình
  *    chỉ hoặc đã đóng) → từ chối traffic nghiệp vụ bằng 403
  *    `space.not_active` kèm trạng thái trong thông điệp; dữ kiện
- *    của trung tâm không bị đụng tới.
- * 5. Trung tâm ở kho riêng: phiên phải thuộc đúng trung tâm này.
+ *    của trung tâm không bị đụng tới. 5. Trung tâm ở kho riêng: phiên phải thuộc đúng trung tâm này.
  *    Access token của phiên ở kho riêng mang claim `centre_id`
  *    (định danh đăng ký của trung tâm mà tenant hiệu lực của phiên
  *    thuộc về — cấp ở khâu phát hành token); claim lệch định danh
@@ -71,8 +65,7 @@ import { TenantsRepository } from '@lms/db/repositories/tenants';
  *      đặt): phiên cookie không mang claim theo thiết kế, nên
  *      vẫn được đối chiếu bằng tenant hiệu lực mà `TenantGuard`
  *      đã kiểm chứng trong CHÍNH kho riêng: slug của tenant đó
- *      phải đúng slug của địa chỉ.
- * 6. Bước CHUẨN BỊ theo hợp đồng của khung (issue #581): gọi
+ *      phải đúng slug của địa chỉ. 6. Bước CHUẨN BỊ theo hợp đồng của khung (issue #581): gọi
  *    `getKyselyForSpace(slug)` để
  *    phân giải + mở pool của kho đích TRƯỚC khi
  *    request được xử lý, rồi ghim slug lên
@@ -95,14 +88,11 @@ export class SpaceContextGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (context.getType() !== 'http') return true;
-    // Route tự gắn trung tâm (nhận diện công khai, kích hoạt lời
-    // mời — issue #583): handler tự phân giải slug, chuẩn bị kho và
-    // đọc/ghi trong ngữ cảnh ALS của kho đó, nên guard không ghim
-    // thêm ở đây — nếu không, request ẩn danh ở địa chỉ trung tâm
-    // đã bị 401 `auth.centre_mismatch` trước khi tới được handler
-    // (trang đăng nhập không đọc được tên/logo, lời mời không kích
-    // hoạt được). Bỏ qua guard KHÔNG có nghĩa là bỏ qua gắn trung
-    // tâm: handler vẫn bắt buộc gắn đúng kho trước mọi truy vấn.
+    // Route tự gắn trung tâm (nhận diện công khai, kích hoạt lời mời — issue #583): handler tự phân giải slug, chuẩn bị
+    // kho và đọc/ghi trong ngữ cảnh ALS của kho đó, nên guard không ghim thêm ở đây — nếu không, request ẩn danh ở địa
+    // chỉ trung tâm đã bị 401 `auth.centre_mismatch` trước khi tới được handler (trang đăng nhập không đọc được
+    // tên/logo, lời mời không kích hoạt được). Bỏ qua guard KHÔNG có nghĩa là bỏ qua gắn trung tâm: handler vẫn bắt
+    // buộc gắn đúng kho trước mọi truy vấn.
     if (this.reflector.getAllAndOverride<boolean>(SKIP_SPACE_CONTEXT_KEY, [context.getHandler(), context.getClass()])) {
       return true;
     }
@@ -125,12 +115,9 @@ export class SpaceContextGuard implements CanActivate {
         return true;
       }
       if (err instanceof SpaceRoutingError && err.code === 'space_routing.not_configured') {
-        // Phiên mang claim `centre_id` là bằng chứng traffic thuộc
-        // trung tâm kho riêng: tầng định tuyến chưa cấu hình ở
-        // deployment đang phục vụ kho riêng là lỗi vận hành, phải
-        // fail-closed thay vì cho qua lặng lẽ sang kho chung.
-        // Phiên không mang claim giữ hợp đồng "chưa cấu hình thì
-        // app chạy như trước" của đợt khung.
+        // Phiên mang claim `centre_id` là bằng chứng traffic thuộc trung tâm kho riêng: tầng định tuyến chưa cấu hình ở
+        // deployment đang phục vụ kho riêng là lỗi vận hành, phải fail-closed thay vì cho qua lặng lẽ sang kho chung.
+        // Phiên không mang claim giữ hợp đồng "chưa cấu hình thì app chạy như trước" của đợt khung.
         if (request.user?.centreId !== undefined) {
           throw err;
         }
@@ -139,10 +126,8 @@ export class SpaceContextGuard implements CanActivate {
       throw err;
     }
 
-    // Các tra cứu phục vụ quyết định miễn trừ chạy trong ngữ cảnh
-    // platform tường minh như chính TenantGuard: ngoài ngữ cảnh
-    // platform, RLS fail-closed giấu các dòng tenant/membership
-    // của trung tâm khác.
+    // Các tra cứu phục vụ quyết định miễn trừ chạy trong ngữ cảnh platform tường minh như chính TenantGuard: ngoài ngữ
+    // cảnh platform, RLS fail-closed giấu các dòng tenant/membership của trung tâm khác.
     const platformExempt = await tenantAls.run({ platform: true }, async () => {
       const user = request.user;
       if (!user || !request.tenantId) return false;
@@ -169,25 +154,17 @@ export class SpaceContextGuard implements CanActivate {
           });
         }
       } else if (request[AUTHENTICATED_VIA_BETTER_AUTH]) {
-        // Đường cookie Better Auth không mang claim theo thiết kế:
-        // đối chiếu bằng tenant hiệu lực đã được TenantGuard kiểm
-        // chứng trong CHÍNH kho riêng — tenant của phiên phải chính
-        // là tenant mang slug của địa chỉ này. PHẢI đọc qua
-        // `withSpaceKysely(slug)`: đọc trong ngữ cảnh platform
-        // không mang slug sẽ rơi về kho chung, nơi tenant chỉ sống
-        // ở kho riêng không tồn tại, và từ chối oan phiên cookie
-        // hợp lệ tại chính địa chỉ của trung tâm đó (lỗi A2).
+        // Đường cookie Better Auth không mang claim theo thiết kế: đối chiếu bằng tenant hiệu lực đã được TenantGuard
+        // kiểm chứng trong CHÍNH kho riêng — tenant của phiên phải chính là tenant mang slug của địa chỉ này. PHẢI đọc
+        // qua `withSpaceKysely(slug)`: đọc trong ngữ cảnh platform không mang slug sẽ rơi về kho chung, nơi tenant chỉ
+        // sống ở kho riêng không tồn tại, và từ chối oan phiên cookie hợp lệ tại chính địa chỉ của trung tâm đó (lỗi
+        // A2).
         const tenantId = request.tenantId;
-        // Lượt đọc tenant PHẢI mang tenantId mà TenantGuard đã kiểm
-        // chứng làm GUC của kho đích: chính sách RLS của bảng
-        // `tenants` chỉ cho thấy dòng khi `app.platform = 'on'`
-        // hoặc `app.tenant_id` đúng id của dòng — đọc trong ngữ
-        // cảnh chỉ có slug (không tenant) bị RLS giấu sạch dòng và
-        // từ chối oan mọi phiên cookie hợp lệ tại địa chỉ của
-        // chính trung tâm đó (lỗi A2). Truyền tenantId không nới
-        // cổng: giá trị này đã qua kiểm membership trong kho riêng
-        // ở TenantGuard, và phép đối chiếu slug ngay dưới đây mới
-        // là quyết định cho phép.
+        // Lượt đọc tenant PHẢI mang tenantId mà TenantGuard đã kiểm chứng làm GUC của kho đích: chính sách RLS của bảng
+        // `tenants` chỉ cho thấy dòng khi `app.platform = 'on'` hoặc `app.tenant_id` đúng id của dòng — đọc trong ngữ
+        // cảnh chỉ có slug (không tenant) bị RLS giấu sạch dòng và từ chối oan mọi phiên cookie hợp lệ tại địa chỉ của
+        // chính trung tâm đó (lỗi A2). Truyền tenantId không nới cổng: giá trị này đã qua kiểm membership trong kho
+        // riêng ở TenantGuard, và phép đối chiếu slug ngay dưới đây mới là quyết định cho phép.
         const effectiveTenant = tenantId
           ? await this.spaceDb.withSpaceKysely(
               slug,
@@ -202,11 +179,9 @@ export class SpaceContextGuard implements CanActivate {
           });
         }
       } else {
-        // Đường JWT không mang claim `centre_id`: đây là phiên cũ
-        // phát hành trước khi trung tâm chuyển kho (bất biến A1,
-        // Phần A issue #587) — từ chối fail-closed ngay, không cho
-        // qua theo slug khớp như đường cookie; chủ phiên phải đăng
-        // nhập lại tại địa chỉ của trung tâm để nhận phiên mới.
+        // Đường JWT không mang claim `centre_id`: đây là phiên cũ phát hành trước khi trung tâm chuyển kho (bất biến
+        // A1, Phần A issue #587) — từ chối fail-closed ngay, không cho qua theo slug khớp như đường cookie; chủ phiên
+        // phải đăng nhập lại tại địa chỉ của trung tâm để nhận phiên mới.
         throw new UnauthorizedException({
           message: 'Access token carries no centre claim for this dedicated centre; sign in again at this centre address',
           code: 'auth.centre_mismatch',
@@ -214,9 +189,8 @@ export class SpaceContextGuard implements CanActivate {
       }
     }
 
-    // Bước chuẩn bị (PREPARE) của khung định tuyến: phân giải đích
-    // + mở pool của kho đích phải xong trước khi handler chạy, vì
-    // đường đồng bộ của handle định tuyến chỉ tra bảng đã-chuẩn-bị.
+    // Bước chuẩn bị (PREPARE) của khung định tuyến: phân giải đích + mở pool của kho đích phải xong trước khi handler
+    // chạy, vì đường đồng bộ của handle định tuyến chỉ tra bảng đã-chuẩn-bị.
     await this.spaceDb.getKyselyForSpace(slug);
     request.spaceSlug = slug;
     const store = tenantAls.getStore();

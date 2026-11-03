@@ -28,12 +28,10 @@ export const QUIZ_CAPABILITIES = {
   manage: 'quiz:manage',
   manageOverrides: 'quiz:manageoverrides',
   /**
-   * Quyền ma trận đã về area `matrix:*` ở đợt đồng bộ khuôn ngân
-   * hàng (issue #228, lát S3) — KHÔNG còn neo vào quiz:*: viewMatrix
-   * = matrix:use (xem/dùng), addMatrix = matrix:add (tạo mới: tạo
-   * tay, nhập file, copy vào bank đích), manageMatrix = matrix:edit
-   * (sửa ma trận và các ô đã có). Khoá nội bộ giữ nguyên tên để các
-   * điểm gác không đổi hình dạng.
+   * Quyền ma trận đã về area `matrix:*` ở đợt đồng bộ khuôn ngân hàng (issue #228, lát S3) — KHÔNG còn neo vào quiz:*:
+   * viewMatrix = matrix:use (xem/dùng), addMatrix = matrix:add (tạo mới: tạo tay, nhập file, copy vào bank đích),
+   * manageMatrix = matrix:edit (sửa ma trận và các ô đã có). Khoá nội bộ giữ nguyên tên để các điểm gác không đổi hình
+   * dạng.
    */
   viewMatrix: 'matrix:use',
   addMatrix: 'matrix:add',
@@ -45,24 +43,18 @@ export const QUIZ_CAPABILITIES = {
 } as const;
 
 /**
- * Tầng thấp dùng chung của QuizService (không phải một cụm ca sử dụng):
- * các primitive tải pin/ma trận, cổng quyền theo context, view pin, và
- * các phép tính điểm/chấm từ usage mà nhiều cụm cùng dùng. Tách riêng
- * tầng này giữ đồ thị phụ thuộc giữa các service cụm không có vòng:
- * cụm ghim, cụm ma trận, cụm sinh đề và cụm lượt làm đều chỉ trỏ xuống
- * tầng này (cụm lượt làm là trung gian cho hai phép gọi chéo còn lại:
- * cụm ghim gọi chấm lại qua `pushGrade`, cụm sinh đề gọi chốt lượt
- * qua `finalizeAttempt`).
+ * Tầng thấp dùng chung của QuizService (không phải một cụm ca sử dụng): các primitive tải pin/ma trận, cổng quyền theo
+ * context, view pin, và các phép tính điểm/chấm từ usage mà nhiều cụm cùng dùng. Tách riêng tầng này giữ đồ thị phụ
+ * thuộc giữa các service cụm không có vòng: cụm ghim, cụm ma trận, cụm sinh đề và cụm lượt làm đều chỉ trỏ xuống tầng
+ * này (cụm lượt làm là trung gian cho hai phép gọi chéo còn lại: cụm ghim gọi chấm lại qua `pushGrade`, cụm sinh đề gọi
+ * chốt lượt qua `finalizeAttempt`).
  *
- * Các method vốn là `private` của QuizService cũ nhưng được cụm khác
- * gọi nay để public trong nội bộ module (không phải bề mặt API của
- * module): toàn bộ method của service này đều thuộc diện đó, trừ các
- * method vốn đã public. Bề mặt công khai ra ngoài module không đổi —
- * vẫn đi qua facade QuizService.
+ * Các method vốn là `private` của QuizService cũ nhưng được cụm khác gọi nay để public trong nội bộ module (không phải
+ * bề mặt API của module): toàn bộ method của service này đều thuộc diện đó, trừ các method vốn đã public. Bề mặt công
+ * khai ra ngoài module không đổi — vẫn đi qua facade QuizService.
  *
- * Hai hằng `QUIZ_COMPONENT`/`QUIZ_CAPABILITIES` chuyển về đây cùng
- * với nhóm cổng quyền (nơi dùng thật), facade re-export lại để bề mặt
- * import cũ không đổi.
+ * Hai hằng `QUIZ_COMPONENT`/`QUIZ_CAPABILITIES` chuyển về đây cùng với nhóm cổng quyền (nơi dùng thật), facade
+ * re-export lại để bề mặt import cũ không đổi.
  */
 
 export class QuizSharedService {
@@ -81,13 +73,10 @@ export class QuizSharedService {
     return this.tenantContext.currentTenantId() ?? (await this.tenants.fallbackTenantId());
   }
 
-  // --- helpers ---------------------------------------------------------------
-
   /**
-   * Lấy pin đã LÀM GIÀU; ném exam.pin_not_found khi vắng. Hàng
-   * exam_pins được gộp với các trường suy từ exam version đã ghim
-   * (thang điểm, tên hiển thị, ma trận, thang Đ–S) và exam (kind)
-   * thành một "bài kiểm tra trong khoá" thống nhất cho các tầng trên.
+   * Lấy pin đã LÀM GIÀU; ném exam.pin_not_found khi vắng. Hàng exam_pins được gộp với các trường suy từ exam version đã
+   * ghim (thang điểm, tên hiển thị, ma trận, thang Đ–S) và exam (kind) thành một "bài kiểm tra trong khoá" thống nhất
+   * cho các tầng trên.
    */
   async getPin(id: string): Promise<PinRow> {
     const row = await this.repo.getPin(id);
@@ -164,10 +153,9 @@ export class QuizSharedService {
   }
 
   /**
-   * View của quiz kèm slots và tổng điểm slot. Slot cố định mang thêm
-   * thông tin bank nguồn + kỷ luật version (QB-3): chế độ ghim, version
-   * đang ghim, version ready mới nhất và cờ có bản mới để UI hiển thị
-   * "Câu thuộc Ngân hàng [tên] · đang ghim v[n] · đã có v[m]".
+   * View của quiz kèm slots và tổng điểm slot. Slot cố định mang thêm thông tin bank nguồn + kỷ luật version (QB-3):
+   * chế độ ghim, version đang ghim, version ready mới nhất và cờ có bản mới để UI hiển thị "Câu thuộc Ngân hàng [tên] ·
+   * đang ghim v[n] · đã có v[m]".
    */
   async pinView(quiz: PinRow): Promise<QuizView> {
     const slots = await this.effectiveSlots(quiz);
@@ -230,8 +218,8 @@ export class QuizSharedService {
       examVersionId: quiz.examVersionId,
       examVersionNumber: quiz.examVersionNumber,
       latestExamVersionNumber: quiz.examLatestVersion,
-      // Huy hiệu bản đề mới (issue #254): chỉ khi đề đang ready và bản
-      // mới nhất mới hơn bản đang ghim thì mới có đích cập nhật.
+      // Huy hiệu bản đề mới (issue #254): chỉ khi đề đang ready và bản mới nhất mới hơn bản đang ghim thì mới có đích
+      // cập nhật.
       hasNewerExamVersion: quiz.examStatus === 'ready' && quiz.examLatestVersion > quiz.examVersionNumber,
       versionMode: quiz.versionMode === 'float_latest_ready' ? 'float_latest_ready' as const : 'pinned' as const,
       tfScale: quiz.tfScale,
@@ -265,11 +253,9 @@ export class QuizSharedService {
   }
 
   /**
-   * Tóm tắt NHIỀU lượt trong một lượt nạp tổng điểm (DL-03, issue
-   * #489): các trang liệt kê lượt (kết quả, lịch sử của học sinh) cần
-   * tóm tắt cho mọi lượt trên trang — tổng maxMark của các usage được
-   * nạp một lần theo lô thay vì gọi `getUsage` cho từng lượt như
-   * trước. Thứ tự tóm tắt giữ đúng thứ tự dòng đầu vào.
+   * Tóm tắt NHIỀU lượt trong một lượt nạp tổng điểm (DL-03, issue #489): các trang liệt kê lượt (kết quả, lịch sử của
+   * học sinh) cần tóm tắt cho mọi lượt trên trang — tổng maxMark của các usage được nạp một lần theo lô thay vì gọi
+   * `getUsage` cho từng lượt như trước. Thứ tự tóm tắt giữ đúng thứ tự dòng đầu vào.
    */
   public async attemptSummaries(quiz: PinRow, rows: ExamAttemptRow[]): Promise<QuizAttemptSummary[]> {
     const gradedRows = rows.filter((r) => r.sumGrades !== null);
@@ -295,13 +281,10 @@ export class QuizSharedService {
   }
 
   /**
-   * Đồng bộ tổng điểm của một lượt từ usage của engine: tổng tuyến
-   * tính các câu ĐÃ có fraction (mỗi câu đóng góp fraction × maxMark
-   * của chính nó; essay chưa chấm đóng góp 0) + số câu còn chờ chấm
-   * tay. Câu truefalse TF-A tự mang fraction đã tra thang Đ–S ở tầng
-   * engine (thang của lần ghim truyền vào lúc chốt usage) nên KHÔNG
-   * còn ngoại lệ chùm ở tầng tổng hợp này — mô hình chùm gom nhiều
-   * slot đã bỏ hẳn theo điểm quyết D-1.
+   * Đồng bộ tổng điểm của một lượt từ usage của engine: tổng tuyến tính các câu ĐÃ có fraction (mỗi câu đóng góp
+   * fraction × maxMark của chính nó; essay chưa chấm đóng góp 0) + số câu còn chờ chấm tay. Câu truefalse TF-A tự mang
+   * fraction đã tra thang Đ–S ở tầng engine (thang của lần ghim truyền vào lúc chốt usage) nên KHÔNG còn ngoại lệ chùm
+   * ở tầng tổng hợp này — mô hình chùm gom nhiều slot đã bỏ hẳn theo điểm quyết D-1.
    */
   public syncFromUsage(usage: UsageView): { sumGrades: number; pendingManual: number } {
     let sum = 0;
@@ -320,11 +303,9 @@ export class QuizSharedService {
   }
 
   /**
-   * ĐIỂM NEO QUYỀN DUY NHẤT của ma trận (MB-0, điểm E-8 của hồ sơ ngân
-   * hàng đề/ma trận): mọi kiểm tra quyền trên ma trận đều đi qua đây.
-   * Nguồn quyền chốt là BANK — ma trận nằm trong bank nào thì quyền
-   * theo bank đó; context môn (matrix.contextId) chỉ là PHẠM VI DỮ
-   * LIỆU. MB-1 (issue #111) đã cắm bank, với hai lưu ý thực thi:
+   * ĐIỂM NEO QUYỀN DUY NHẤT của ma trận (MB-0, điểm E-8 của hồ sơ ngân hàng đề/ma trận): mọi kiểm tra quyền trên ma
+   * trận đều đi qua đây. Nguồn quyền chốt là BANK — ma trận nằm trong bank nào thì quyền theo bank đó; context môn
+   * (matrix.contextId) chỉ là PHẠM VI DỮ LIỆU. MB-1 (issue #111) đã cắm bank, với hai lưu ý thực thi:
    * - Quyền tại bank đọc từ HAI VAI CHUYÊN DỤNG tại context bank
    *   (QuestionBanksService.bankLocalMatrixCaps: matrix:use ↔ thành
    *   viên + phụ trách; matrix:add và matrix:edit ↔ phụ trách),
@@ -338,8 +319,8 @@ export class QuizSharedService {
     if (matrix.bankId) {
       const bank = await this.banks.findBankById(matrix.bankId);
       if (bank) {
-        // Ma trận thuộc bank personal của người khác → 404 như ma trận
-        // không tồn tại (issue #123), trước mọi cổng capability.
+        // Ma trận thuộc bank personal của người khác → 404 như ma trận không tồn tại (issue #123), trước mọi cổng
+        // capability.
         if (await this.banks.isForeignPersonalBank(actorId, bank)) {
           throw new NotFoundException({ message: `Exam matrix ${matrix.id} not found`, code: 'quiz.matrix_not_found' });
         }
@@ -358,11 +339,9 @@ export class QuizSharedService {
   }
 
   /**
-   * Ứng viên thô của một ô: câu ready gắn BẤT KỲ YCCĐ nào thuộc ĐVK
-   * của ô ở đúng mức của ô, đúng dạng (qua
-   * question_learning_outcomes / Curriculum Chặng 2 — mức nằm trên
-   * dòng nối câu × YCCĐ; issue #249). Chưa xét quyền dùng ngân hàng
-   * của người gọi.
+   * Ứng viên thô của một ô: câu ready gắn BẤT KỲ YCCĐ nào thuộc ĐVK của ô ở đúng mức của ô, đúng dạng (qua
+   * question_learning_outcomes / Curriculum Chặng 2 — mức nằm trên dòng nối câu × YCCĐ; issue #249). Chưa xét quyền
+   * dùng ngân hàng của người gọi.
    */
   public async cellCandidates(cell: Pick<ExamMatrixCellRow, 'curriculumNodeId' | 'cognitiveLevel' | 'qtype'>): Promise<QuestionView[]> {
     return this.questions.listQuestionsByCurriculumFilter({
@@ -372,9 +351,8 @@ export class QuizSharedService {
   }
 
   /**
-   * Ứng viên một NGƯỜI DÙNG được dùng: ứng viên thô lọc theo quyền
-   * question:useall tại context của category chứa câu (cùng quy tắc
-   * quyền ngân hàng hiện hành).
+   * Ứng viên một NGƯỜI DÙNG được dùng: ứng viên thô lọc theo quyền question:useall tại context của category chứa câu
+   * (cùng quy tắc quyền ngân hàng hiện hành).
    */
   public async cellCandidatesForUser(actorId: string, cell: Pick<ExamMatrixCellRow, 'curriculumNodeId' | 'cognitiveLevel' | 'qtype'>): Promise<QuestionView[]> {
     const all = await this.cellCandidates(cell);
@@ -393,15 +371,11 @@ export class QuizSharedService {
   }
 
   /**
-   * Số ứng viên của một ô cho một người dùng — bản ĐẾM của
-   * cellCandidatesForUser (issue #488): số lượng tính bằng `count()` ở
-   * SQL trên đúng cùng điều kiện ứng viên (câu ready gắn bất kỳ YCCĐ
-   * nào thuộc ĐVK của ô ở đúng mức của ô, đúng dạng), nhóm theo
-   * category của bank entry; cổng quyền giữ nguyên — vẫn là
-   * PermissionEvaluator kiểm `question:useall` tại context của
-   * category chứa câu, cache theo context như đường nạp view. Chỉ các
-   * category mà người dùng dùng được mới cộng vào tổng. Đường này
-   * không nạp danh sách ứng viên và không lắp view.
+   * Số ứng viên của một ô cho một người dùng — bản ĐẾM của cellCandidatesForUser (issue #488): số lượng tính bằng
+   * `count()` ở SQL trên đúng cùng điều kiện ứng viên (câu ready gắn bất kỳ YCCĐ nào thuộc ĐVK của ô ở đúng mức của ô,
+   * đúng dạng), nhóm theo category của bank entry; cổng quyền giữ nguyên — vẫn là PermissionEvaluator kiểm
+   * `question:useall` tại context của category chứa câu, cache theo context như đường nạp view. Chỉ các category mà
+   * người dùng dùng được mới cộng vào tổng. Đường này không nạp danh sách ứng viên và không lắp view.
    */
   public async cellCandidateCountForUser(actorId: string, cell: Pick<ExamMatrixCellRow, 'curriculumNodeId' | 'cognitiveLevel' | 'qtype'>): Promise<number> {
     const groups = await this.questions.countQuestionsByCurriculumFilterByCategory({
@@ -423,16 +397,13 @@ export class QuizSharedService {
   }
 
   /**
-   * Số câu khả dụng của một ô cho một người dùng: mọi qtype đều đếm
-   * theo CÂU — câu truefalse TF-A tự nó đã là một chùm 4 ý hoàn chỉnh
-   * trong một câu, không còn phép gom chùm từ 4 câu rời theo ngữ liệu
-   * như mô hình cũ.
+   * Số câu khả dụng của một ô cho một người dùng: mọi qtype đều đếm theo CÂU — câu truefalse TF-A tự nó đã là một chùm
+   * 4 ý hoàn chỉnh trong một câu, không còn phép gom chùm từ 4 câu rời theo ngữ liệu như mô hình cũ.
    */
 
   /**
-   * Mở cổng xem quiz: người xem cần một trong các capability của hoạt
-   * động tại context của module (học sinh: view/attempt; giáo viên:
-   * manage/grade/viewreports/preview).
+   * Mở cổng xem quiz: người xem cần một trong các capability của hoạt động tại context của module (học sinh:
+   * view/attempt; giáo viên: manage/grade/viewreports/preview).
    */
   public async requireAnyViewCap(actorId: string, quiz: PinRow): Promise<void> {
     const ctx = await this.cmContextId(quiz);

@@ -1,13 +1,10 @@
 /**
- * Kiểm chứng EXHAUSTIVE cho số kiểm tra của mã tô CAM-0 (issue #112,
- * sửa theo phán quyết 6393776449 trên PR #120): bộ trọng số cũ (3, 5,
- * 7) cho mã lớp và (3, 5, 7, 9, 1, 3, 5) cho mã SBD chứa trọng số 5
- * với gcd(5, 10) = 5, nên đột biến 1 chữ số với delta CHẴN ở vị trí
- * trọng số 5 lọt qua số kiểm tra và gán nhầm học sinh khác (12,70%
- * đột biến SBD, 14,81% đột biến mã lớp theo probe của đội đánh giá).
- * Bộ trọng số mới — mã lớp (3, 9, 7), SBD (3, 9, 7, 9, 1, 3, 7) — mọi
- * trọng số đều nguyên tố cùng nhau với 10. File này khoá tính chất đó
- * bằng liệt kê đầy đủ, không lấy mẫu tượng trưng:
+ * Kiểm chứng EXHAUSTIVE cho số kiểm tra của mã tô CAM-0 (issue #112, sửa theo phán quyết 6393776449 trên PR #120): bộ
+ * trọng số cũ (3, 5, 7) cho mã lớp và (3, 5, 7, 9, 1, 3, 5) cho mã SBD chứa trọng số 5 với gcd(5, 10) = 5, nên đột biến
+ * 1 chữ số với delta CHẴN ở vị trí trọng số 5 lọt qua số kiểm tra và gán nhầm học sinh khác (12,70% đột biến SBD,
+ * 14,81% đột biến mã lớp theo probe của đội đánh giá). Bộ trọng số mới — mã lớp (3, 9, 7), SBD (3, 9, 7, 9, 1, 3, 7) —
+ * mọi trọng số đều nguyên tố cùng nhau với 10. File này khoá tính chất đó bằng liệt kê đầy đủ, không lấy mẫu tượng
+ * trưng:
  *  - mã lớp: TOÀN BỘ 999 mã × mọi vị trí × mọi chữ số thay thế;
  *  - mã SBD: 10.000 mã đầu × mọi vị trí × mọi chữ số thay thế, cộng
  *    các mã có một chữ số khác 0 ở từng vị trí thân cao (phủ đủ bộ ba
@@ -93,8 +90,8 @@ describe('Chữ số kiểm CAM-0 — bao phủ đột biến một chữ số t
   });
 
   it('va chạm danh sách: đột biến tại các vị trí từng rò rỉ không bao giờ thành mã thành viên khác trong danh sách', LONG, () => {
-    // Mã lớp: vị trí 1 (trọng số 5 cũ), delta +2 → thân tăng 20. Roster
-    // liên tiếp 1..45 như ca đội đánh giá đã chứng minh gán nhầm.
+    // Mã lớp: vị trí 1 (trọng số 5 cũ), delta +2 → thân tăng 20. Roster liên tiếp 1..45 như ca đội đánh giá đã chứng
+    // minh gán nhầm.
     const classRoster = new Set(Array.from({ length: 45 }, (_, i) => studentCodeForIndex(i)));
     let classChecked = 0;
     for (let index = 0; index < 45; index++) {
@@ -125,8 +122,8 @@ describe('Chữ số kiểm CAM-0 — bao phủ đột biến một chữ số t
 
   it('hoán vị kề: lớp thoát duy nhất là cặp chữ số lệch đúng 5 (giới hạn đã khai)', LONG, () => {
     const checkTranspositions = (code: string, ok: (c: string) => boolean) => {
-      // MỌI cặp kề: pos chạy tới cặp biên (chữ số thân cuối ↔ số kiểm
-      // tra) — vòng cũ dừng ở code.length - 2 nên bỏ sót đúng cặp này.
+      // MỌI cặp kề: pos chạy tới cặp biên (chữ số thân cuối ↔ số kiểm tra) — vòng cũ dừng ở code.length - 2 nên bỏ sót
+      // đúng cặp này.
       for (let pos = 0; pos < code.length - 1; pos++) {
         const a = Number(code[pos]);
         const b = Number(code[pos + 1]);
@@ -140,10 +137,9 @@ describe('Chữ số kiểm CAM-0 — bao phủ đột biến một chữ số t
   });
 
   it('cặp biên danh sách: hoán vị hai chữ số cuối không bao giờ rơi vào mã khác trong danh sách trừ khi hai chữ số lệch đúng 5', LONG, () => {
-    // Đúng ca của phán quyết 6394453120: với trọng số thân cuối cũ 9,
-    // sbdCodeForIndex(0) = 00000019 hoán vị cuối thành 00000091 — mã
-    // THẬT của thí sinh chỉ số 8 — và checksum vẫn nhận. Nay mã của
-    // chỉ số 0 là 00000017, hoán vị cuối 00000071 bị checksum chặn.
+    // Đúng ca của phán quyết 6394453120: với trọng số thân cuối cũ 9, sbdCodeForIndex(0) = 00000019 hoán vị cuối thành
+    // 00000091 — mã THẬT của thí sinh chỉ số 8 — và checksum vẫn nhận. Nay mã của chỉ số 0 là 00000017, hoán vị cuối
+    // 00000071 bị checksum chặn.
     expect(sbdCodeForIndex(0)).toBe('00000017');
     expect(sbdCodeChecksumOk('00000071')).toBe(false);
     expect(sbdCodeChecksumOk('00000091')).toBe(false);

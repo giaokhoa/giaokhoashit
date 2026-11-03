@@ -4,39 +4,27 @@ import { join } from 'node:path';
 import { MESSAGE_PROVIDERS, providerByName } from './notification-providers';
 
 /**
- * Parity luật thông báo API ↔ worker — nửa ĐỐI CHIẾU TRƯỜNG LUẬT
- * (issue #293).
+ * Parity luật thông báo API ↔ worker — nửa ĐỐI CHIẾU TRƯỜNG LUẬT (issue #293).
  *
- * Bối cảnh: registry `MESSAGE_PROVIDERS` trong file
- * `notification-providers.ts` cùng thư mục này là nguồn sự thật DUY
- * NHẤT của luật phân phối thông báo phía API. Phía worker là một
- * project TypeScript riêng (app riêng trong monorepo), giữ một BẢN
- * CHIẾU viết tay tối thiểu của registry trong hằng số
- * `WORKER_PROVIDERS` (file `apps/worker/src/notification-delivery.service.ts`):
- * mỗi provider mà worker là nơi phát được chiếu đúng 3 trường luật —
- * `name`, `component`, `mandatoryInApp`. Trước spec này không có
- * kiểm tra tự động nào đối chiếu hai phía: registry đổi một trường
- * luật mà bản chiếu không cập nhật theo thì hai phía phân kỳ âm thầm.
+ * Bối cảnh: registry `MESSAGE_PROVIDERS` trong file `notification-providers.ts` cùng thư mục này là nguồn sự thật DUY
+ * NHẤT của luật phân phối thông báo phía API. Phía worker là một project TypeScript riêng (app riêng trong monorepo),
+ * giữ một BẢN CHIẾU viết tay tối thiểu của registry trong hằng số `WORKER_PROVIDERS` (file
+ * `apps/worker/src/notification-delivery.service.ts`): mỗi provider mà worker là nơi phát được chiếu đúng 3 trường luật
+ * — `name`, `component`, `mandatoryInApp`. Trước spec này không có kiểm tra tự động nào đối chiếu hai phía: registry
+ * đổi một trường luật mà bản chiếu không cập nhật theo thì hai phía phân kỳ âm thầm.
  *
- * Vì sao spec này đọc bản chiếu phía worker DẠNG VĂN BẢN NGUỒN (fs)
- * thay vì import: hai app là hai project tsc riêng — import chéo app
- * làm file nguồn của app này lọt vào program của app kia và vỡ
- * typecheck (lỗi rootDir; đã vấp thật ở lượt CI đầu của issue này).
- * Đọc văn bản nguồn giữ nguyên tác dụng gác: spec này import registry
- * THẬT của chính app mình, trích bản chiếu thật từ source worker tại
- * thời điểm chạy, và khẳng định từng trường. Tuyệt đối không chép
- * cứng một bản sao thứ hai của registry vào test — chép snapshot thì
- * spec thành tự đối chiếu chính nó. Nếu định dạng khai báo
- * `WORKER_PROVIDERS` thay đổi (xuống dòng khác, thêm trường), phép
- * trích ở đây không khớp nữa và spec đỏ — đó là chủ ý: đổi hình dạng
- * bản chiếu thì phải cập nhật spec parity cùng lượt.
+ * Vì sao spec này đọc bản chiếu phía worker DẠNG VĂN BẢN NGUỒN (fs) thay vì import: hai app là hai project tsc riêng —
+ * import chéo app làm file nguồn của app này lọt vào program của app kia và vỡ typecheck (lỗi rootDir; đã vấp thật ở
+ * lượt CI đầu của issue này). Đọc văn bản nguồn giữ nguyên tác dụng gác: spec này import registry THẬT của chính app
+ * mình, trích bản chiếu thật từ source worker tại thời điểm chạy, và khẳng định từng trường. Tuyệt đối không chép cứng
+ * một bản sao thứ hai của registry vào test — chép snapshot thì spec thành tự đối chiếu chính nó. Nếu định dạng khai
+ * báo `WORKER_PROVIDERS` thay đổi (xuống dòng khác, thêm trường), phép trích ở đây không khớp nữa và spec đỏ — đó là
+ * chủ ý: đổi hình dạng bản chiếu thì phải cập nhật spec parity cùng lượt.
  *
- * Phạm vi parity — các trường THUỘC đối chiếu: `name`, `component`,
- * `mandatoryInApp` của mọi provider trong bản chiếu; cộng bề mặt
- * phát: mọi tên provider được phát qua `deliverInApp(` trong các
- * file nguồn production của apps/worker/src phải có mặt trong bản
- * chiếu (file test `*.spec.ts` đặt cạnh nguồn không phải đường
- * phát production — xem ghi chú tại vòng quét bên dưới).
+ * Phạm vi parity — các trường THUỘC đối chiếu: `name`, `component`, `mandatoryInApp` của mọi provider trong bản chiếu;
+ * cộng bề mặt phát: mọi tên provider được phát qua `deliverInApp(` trong các file nguồn production của apps/worker/src
+ * phải có mặt trong bản chiếu (file test `*.spec.ts` đặt cạnh nguồn không phải đường phát production — xem ghi chú tại
+ * vòng quét bên dưới).
  *
  * NGOÀI parity (kèm lý do, đã ghi tường minh trong issue #293):
  * - `audience`: chỉ gác ở tầng tuỳ chọn phía API (lọc danh sách loại
@@ -50,10 +38,9 @@ import { MESSAGE_PROVIDERS, providerByName } from './notification-providers';
  *   xếp job phía API. `group`/`label`/`description`: thuần trình bày
  *   phía API/web.
  *
- * Nửa HÀNH VI của parity (luật cứng hai phía cho cùng kết quả:
- * đình chỉ / chính sách admin NB-7 / loại bắt buộc P2) nằm ở phía
- * worker — `apps/worker/src/notification-parity.spec.ts` — vì nó
- * phải chạy `NotificationDeliveryService` thật của worker.
+ * Nửa HÀNH VI của parity (luật cứng hai phía cho cùng kết quả: đình chỉ / chính sách admin NB-7 / loại bắt buộc P2) nằm
+ * ở phía worker — `apps/worker/src/notification-parity.spec.ts` — vì nó phải chạy `NotificationDeliveryService` thật
+ * của worker.
  */
 
 const WORKER_SRC_ROOT = join(__dirname, '../../../../worker/src');
@@ -89,9 +76,7 @@ describe('Đối chiếu thông báo: mirror worker so với registry API (issue
     expect(mirror.size).toBeGreaterThan(0);
     expect(MESSAGE_PROVIDERS.length).toBeGreaterThan(0);
     for (const [key, law] of mirror) {
-      // Khoá của bản chiếu phải là chính tên provider.
       expect(law.name).toBe(key);
-      // Provider phía worker có mà registry không có = phân kỳ, đỏ.
       const registryEntry = providerByName(key);
       expect(registryEntry, `WORKER_PROVIDERS.${key} must exist in the API registry`).toBeDefined();
       expect(law.component).toBe(registryEntry!.component);
@@ -107,11 +92,9 @@ describe('Đối chiếu thông báo: mirror worker so với registry API (issue
         const full = join(dir, entry.name);
         if (entry.isDirectory()) { walk(full); continue; }
         if (!entry.name.endsWith('.ts')) continue;
-        // File test không phải đường phát production: spec của chính
-        // worker đặt cạnh nguồn (ví dụ notification-parity.spec.ts)
-        // chứa lời gọi deliverInApp bằng provider tổng hợp chỉ phục
-        // vụ ca test của nó — bề mặt phát mà ca này gác chỉ gồm file
-        // nguồn production, nên bỏ qua mọi file *.spec.ts.
+        // File test không phải đường phát production: spec của chính worker đặt cạnh nguồn (ví dụ
+        // notification-parity.spec.ts) chứa lời gọi deliverInApp bằng provider tổng hợp chỉ phục vụ ca test của nó — bề
+        // mặt phát mà ca này gác chỉ gồm file nguồn production, nên bỏ qua mọi file *.spec.ts.
         if (entry.name.endsWith('.spec.ts')) continue;
         const text = readFileSync(full, 'utf-8');
         for (const match of text.matchAll(/deliverInApp\(\s*[^,]+,\s*'([a-z0-9_]+)'/g)) {
@@ -120,8 +103,7 @@ describe('Đối chiếu thông báo: mirror worker so với registry API (issue
       }
     };
     walk(WORKER_SRC_ROOT);
-    // Có ít nhất các đường phát nền đã biết; tập rỗng nghĩa là phép
-    // quét hỏng chứ không phải không còn đường phát nào.
+    // Có ít nhất các đường phát nền đã biết; tập rỗng nghĩa là phép quét hỏng chứ không phải không còn đường phát nào.
     expect(emitted.size).toBeGreaterThan(0);
     for (const name of emitted) {
       expect(mirror.has(name), `worker emits '${name}' via deliverInApp but it is missing from WORKER_PROVIDERS`).toBe(true);

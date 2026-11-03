@@ -9,10 +9,8 @@
  *   vào kho trung tâm (trung tâm chủ động nhận gói mới; gác quyền
  *   `curriculum:manage` tại context từng môn gói chạm tới).
  *
- * Controller chỉ là lớp vận chuyển mỏng; gác quyền và luật nghiệp vụ
- * nằm ở service. Cập nhật gói không sửa ngược các gắn chuẩn đã có
- * (gắn chuẩn trỏ theo id YCCĐ); ánh xạ mã cũ→mã mới trong gói chỉ là
- * thông tin tham chiếu.
+ * Controller chỉ là lớp vận chuyển mỏng; gác quyền và luật nghiệp vụ nằm ở service. Cập nhật gói không sửa ngược các
+ * gắn chuẩn đã có (gắn chuẩn trỏ theo id YCCĐ); ánh xạ mã cũ→mã mới trong gói chỉ là thông tin tham chiếu.
  */
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { CurrentUser, type AuthenticatedUser } from '../../common/current-user.decorator';

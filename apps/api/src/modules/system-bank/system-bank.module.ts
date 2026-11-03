@@ -13,18 +13,14 @@ import { SystemBankPackagesController } from './system-bank-packages.controller'
 import { SystemBankService } from './system-bank.service';
 
 /**
- * SystemBankModule (issue #585): kho ngân hàng hệ thống trên database
- * riêng phía platform — bản chính tập trung, phiên bản bất biến, giáo
- * viên tìm câu qua API và nhập bản chụp đúng phiên bản vào kho trung
- * tâm. Import AccessModule để dùng PermissionEvaluator/ContextsService
- * cho cổng quản trị platform; xuất SystemBankService để các lát sau
- * (khám phá, nhập bản chụp, gói YCCĐ) và module khác dùng chung, và
- * xuất SystemBankConnection để các công cụ vận hành (di trú dữ kiện)
- * dùng đúng một kết nối kho ngân hàng của tiến trình.
+ * SystemBankModule (issue #585): kho ngân hàng hệ thống trên database riêng phía platform — bản chính tập trung, phiên
+ * bản bất biến, giáo viên tìm câu qua API và nhập bản chụp đúng phiên bản vào kho trung tâm. Import AccessModule để
+ * dùng PermissionEvaluator/ContextsService cho cổng quản trị platform; xuất SystemBankService để các lát sau (khám phá,
+ * nhập bản chụp, gói YCCĐ) và module khác dùng chung, và xuất SystemBankConnection để các công cụ vận hành (di trú dữ
+ * kiện) dùng đúng một kết nối kho ngân hàng của tiến trình.
  *
- * Từ hạng mục nhân rộng G10 (issue #650), cả hai repository sống ở
- * `@lms/db` (lớp thuần, không phụ thuộc Nest) nên module lắp chúng
- * bằng factory provider theo khuôn pilot kho control plane:
+ * Từ hạng mục nhân rộng G10 (issue #650), cả hai repository sống ở `@lms/db` (lớp thuần, không phụ thuộc Nest) nên
+ * module lắp chúng bằng factory provider theo khuôn pilot kho control plane:
  * - Repository kho ngân hàng nhận handle Kysely từ adapter
  *   `SystemBankConnection` (kết nối riêng chuyên dụng), kèm hàm dựng
  *   lỗi chưa-cấu-hình là `ServiceUnavailableException` mang mã

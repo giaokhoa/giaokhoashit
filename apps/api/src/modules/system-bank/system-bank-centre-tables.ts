@@ -1,10 +1,7 @@
 /**
- * Helper THUẦN dựng các câu lệnh ĐẢM BẢO 3 bảng vệ tinh của Ngân hàng
- * hệ thống tồn tại trong KHO NGHIỆP VỤ (issue #585): tách phần dựng
- * câu SQL khỏi phần thực thi (script
- * `system-bank-centre-tables-setup.ts`) để kiểm chứng bằng unit test
- * không cần database thật. Theo mẫu `system-bank-provision.ts` cùng
- * module.
+ * Helper THUẦN dựng các câu lệnh ĐẢM BẢO 3 bảng vệ tinh của Ngân hàng hệ thống tồn tại trong KHO NGHIỆP VỤ (issue
+ * #585): tách phần dựng câu SQL khỏi phần thực thi (script `system-bank-centre-tables-setup.ts`) để kiểm chứng bằng
+ * unit test không cần database thật. Theo mẫu `system-bank-provision.ts` cùng module.
  *
  * Vì sao cần bước ensure này (vòng sửa theo phán quyết trên PR #612):
  * - Ba bảng vệ tinh — `system_question_imports` (dòng nhập bản chụp +
@@ -26,20 +23,16 @@
  *   `pg_constraint`) nên trên database mới (baseline đã tạo đủ) bước
  *   này là no-op, và chạy lặp ở mỗi lần stack khởi động là an toàn.
  *
- * Kỷ luật đồng bộ: nội dung DDL ở đây (cột, ràng buộc, tên index,
- * khoá ngoại) PHẢI khớp từng chữ với khối tạo 3 bảng ở cuối file
- * baseline — đổi schema của bảng vệ tinh thì sửa cả hai nơi trong
- * cùng một lượt. Bảng tạo bởi role migration được role runtime thừa
- * hưởng quyền dữ kiện qua `ALTER DEFAULT PRIVILEGES` (issue #586)
- * nên tầng ứng dụng dùng được ngay, không cần bước cấp quyền riêng.
+ * Kỷ luật đồng bộ: nội dung DDL ở đây (cột, ràng buộc, tên index, khoá ngoại) PHẢI khớp từng chữ với khối tạo 3 bảng ở
+ * cuối file baseline — đổi schema của bảng vệ tinh thì sửa cả hai nơi trong cùng một lượt. Bảng tạo bởi role migration
+ * được role runtime thừa hưởng quyền dữ kiện qua `ALTER DEFAULT PRIVILEGES` (issue #586) nên tầng ứng dụng dùng được
+ * ngay, không cần bước cấp quyền riêng.
  */
 
 /**
- * Các câu lệnh đảm bảo 3 bảng vệ tinh tồn tại trong kho nghiệp vụ,
- * theo thứ tự: tạo bảng → tạo index → gắn khoá ngoại (khoá ngoại của
- * `system_question_imports` trỏ `question(id)` nên phải đứng sau khi
- * cả bảng vệ tinh lẫn bảng `question` của baseline đã có mặt).
- * Mọi câu đều chạy lặp an toàn.
+ * Các câu lệnh đảm bảo 3 bảng vệ tinh tồn tại trong kho nghiệp vụ, theo thứ tự: tạo bảng → tạo index → gắn khoá ngoại
+ * (khoá ngoại của `system_question_imports` trỏ `question(id)` nên phải đứng sau khi cả bảng vệ tinh lẫn bảng
+ * `question` của baseline đã có mặt). Mọi câu đều chạy lặp an toàn.
  */
 export function buildCentreSatelliteEnsureStatements(): string[] {
   return [

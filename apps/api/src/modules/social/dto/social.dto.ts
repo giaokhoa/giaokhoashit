@@ -12,8 +12,8 @@ import {
 } from '@lms/contracts';
 
 /**
- * Validation của Social (tags/comments/ratings/notes) dùng Zod qua
- * Standard Schema — schema nền ở `@lms/contracts` là nguồn sự thật duy nhất.
+ * Validation của Social (tags/comments/ratings/notes) dùng Zod qua Standard Schema — schema nền ở `@lms/contracts` là
+ * nguồn sự thật duy nhất.
  */
 export {
   addCommentSchema,

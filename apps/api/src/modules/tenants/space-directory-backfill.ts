@@ -1,17 +1,13 @@
 /**
- * Công cụ LẤP THƯ MỤC cho một không gian kho riêng đã di trú
- * (issue #587, tiền điều kiện Phần B, hạng mục 3 — thiết kế
- * B1+C1): các không gian đã chuyển kho TRƯỚC khi thư mục tồn tại
- * chưa có mục nào trong hai bảng thư mục ở control plane, nên:
+ * Công cụ LẤP THƯ MỤC cho một không gian kho riêng đã di trú (issue #587, tiền điều kiện Phần B, hạng mục 3 — thiết kế
+ * B1+C1): các không gian đã chuyển kho TRƯỚC khi thư mục tồn tại chưa có mục nào trong hai bảng thư mục ở control
+ * plane, nên:
  * - bộ chọn trung tâm (`listMyTenants`) không thấy trung tâm đó
  *   dù membership thật đang nằm đầy đủ trong kho đích;
  * - mã tham gia của các lớp trong kho đích không phân giải được
- *   vì đường tra cứu vẫn chỉ nhìn kho chung.
- * Lệnh này đọc membership và mã lớp TẠI KHO ĐÍCH của không gian
- * rồi ghi các mục thư mục tương ứng vào control plane — thư mục
- * chỉ mang dữ kiện định tuyến tối thiểu theo đúng thiết kế đã
- * chốt, không sao chép dữ kiện nghiệp vụ nào lên kho chung hay
- * control plane.
+ *   vì đường tra cứu vẫn chỉ nhìn kho chung. Lệnh này đọc membership và mã lớp TẠI KHO ĐÍCH của không gian rồi ghi các
+ *   mục thư mục tương ứng vào control plane — thư mục chỉ mang dữ kiện định tuyến tối thiểu theo đúng thiết kế đã chốt,
+ *   không sao chép dữ kiện nghiệp vụ nào lên kho chung hay control plane.
  *
  * Bất biến khi chạy:
  * - Khoá theo định danh gốc: mô hình vật chất hoá tài khoản
@@ -26,9 +22,8 @@
  *   được BÁO CÁO trong kết quả, tuyệt đối không ghi đè mục của
  *   không gian khác.
  *
- * Ranh giới tin cậy: chạy ngoài NestJS như các công cụ fleet —
- * quyền chạy script của đội vận hành trên máy triển khai là
- * ranh giới; không gác capability ở tầng này.
+ * Ranh giới tin cậy: chạy ngoài NestJS như các công cụ fleet — quyền chạy script của đội vận hành trên máy triển khai
+ * là ranh giới; không gác capability ở tầng này.
  */
 import { Pool } from 'pg';
 import { createCentreKysely, sql as kyselySql } from '@lms/db';
@@ -69,12 +64,8 @@ export type SpaceDirectoryBackfillResult = {
 };
 
 /**
- * Lấp thư mục thành viên + thư mục mã tham gia cho một không
- * gian kho riêng từ chính dữ kiện của kho đích.
+ * Lấp thư mục thành viên + thư mục mã tham gia cho một không gian kho riêng từ chính dữ kiện của kho đích.
  *
- * @param options - Slug không gian (+ môi trường/hàm log tuỳ chọn).
- * @returns Báo cáo số mục đã ghi và các va chạm mã (xem
- *   `SpaceDirectoryBackfillResult`).
  * @throws Error khi không gian chưa đăng ký, không phải không
  *   gian kho riêng đang hoạt động, biến môi trường URL kết nối
  *   của không gian/control plane chưa có, hoặc kho đích không
@@ -98,14 +89,13 @@ export async function runSpaceDirectoryBackfill(
     const centreUrl = env[secretEnvVar];
     if (!centreUrl) throw new Error(`Connection URL env var ${secretEnvVar} is not set in this environment`);
 
-    // ---- Đọc dữ kiện thật tại kho đích ----
     const centrePool = new Pool({ connectionString: centreUrl, max: 1 });
     const db = createCentreKysely(centrePool);
     let membershipRows: { userId: string; status: string }[] = [];
     let classRows: { id: string; joinCode: string | null }[] = [];
     try {
-      // GUC platform ở mức phiên: các bảng nghiệp vụ FORCE RLS,
-      // công cụ vận hành đọc toàn không gian như các runner khác.
+      // GUC platform ở mức phiên: các bảng nghiệp vụ FORCE RLS, công cụ vận hành đọc toàn không gian như các runner
+      // khác.
       await kyselySql`SELECT set_config('app.platform', 'on', false)`.execute(db);
       const tenant = await db.selectFrom('tenants').selectAll()
         .where('slug', '=', slug).limit(1).executeTakeFirst();
@@ -126,7 +116,6 @@ export async function runSpaceDirectoryBackfill(
     }
     log(`[directory-backfill] ${slug}: ${membershipRows.length} membership(s), ${classRows.length} class join code(s) in the space store`);
 
-    // ---- Ghi thư mục ----
     let membershipsUpserted = 0;
     for (const membership of membershipRows) {
       await writer.upsertMembershipDirectoryEntry({

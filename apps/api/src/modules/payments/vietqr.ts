@@ -36,9 +36,8 @@ export function paymentCodeFromSequence(seq: number): string {
 const PAYMENT_CODE_RE = /LMS[0-9A-HJKMNP-TV-Z]{9}/;
 
 /**
- * Trích mã thanh toán từ nội dung chuyển khoản: chuẩn hoá viết hoa và bỏ
- * mọi ký tự ngoài [A-Z0-9] (ngân hàng thường chèn dấu cách/gạch), rồi tìm
- * mẫu `LMS` + 9 ký tự Crockford (không chứa I, L, O, U).
+ * Trích mã thanh toán từ nội dung chuyển khoản: chuẩn hoá viết hoa và bỏ mọi ký tự ngoài [A-Z0-9] (ngân hàng thường
+ * chèn dấu cách/gạch), rồi tìm mẫu `LMS` + 9 ký tự Crockford (không chứa I, L, O, U).
  */
 export function extractPaymentCode(content: string): string | null {
   const normalized = content.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -84,9 +83,8 @@ export function readAccountConfig(raw: unknown): PaymentAccountConfig {
 }
 
 /**
- * Dựng payload VietQR động cho một payment; trả `null` khi tài khoản không
- * đủ điều kiện sinh QR (chưa liên kết SePay theo §6.3, thiếu số tài khoản
- * hoặc không rõ ngân hàng) — đường `manual` xác nhận tay vẫn chạy bình thường.
+ * Dựng payload VietQR động cho một payment; trả `null` khi tài khoản không đủ điều kiện sinh QR (chưa liên kết SePay
+ * theo §6.3, thiếu số tài khoản hoặc không rõ ngân hàng) — đường `manual` xác nhận tay vẫn chạy bình thường.
  */
 export function buildVietQrPayload(account: { gateway: string; config: unknown }, amount: number, paymentCode: string): string | null {
   const config = readAccountConfig(account.config);
@@ -111,10 +109,9 @@ export function buildVietQrPayload(account: { gateway: string; config: unknown }
 const SENSITIVE_KEY_RE = /(api[-_]?key|secret|checksum|password|token)/i;
 
 /**
- * Che cấu hình nhạy cảm trước khi ra response (tiêu chí 6.4.5): khoá có tên
- * chứa apiKey/secret/checksum/token/password bị thay bằng dấu hiệu đã cấu
- * hình + tối đa 4 ký tự cuối; các trường công khai (số tài khoản, BIN, xid)
- * giữ nguyên để vận hành đối chiếu được.
+ * Che cấu hình nhạy cảm trước khi ra response (tiêu chí 6.4.5): khoá có tên chứa apiKey/secret/checksum/token/password
+ * bị thay bằng dấu hiệu đã cấu hình + tối đa 4 ký tự cuối; các trường công khai (số tài khoản, BIN, xid) giữ nguyên để
+ * vận hành đối chiếu được.
  */
 export function maskAccountConfig(raw: unknown): Record<string, unknown> {
   const config = readAccountConfig(raw);

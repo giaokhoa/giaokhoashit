@@ -30,13 +30,11 @@ import { TenantContextService } from './tenant-context.service';
  *    riêng của trung tâm bên trong transaction (xem ghi chú ở
  *    `withTenant`).
  *
- * Role ứng dụng không có BYPASSRLS; đường platform là seam duy nhất
- * vượt tenant và mọi thao tác qua đường này phải được ghi audit ở tầng
- * ứng dụng (TenantsService / SiteConfigService / event log).
+ * Role ứng dụng không có BYPASSRLS; đường platform là seam duy nhất vượt tenant và mọi thao tác qua đường này phải được
+ * ghi audit ở tầng ứng dụng (TenantsService / SiteConfigService / event log).
  *
- * (Bản song song phía bộ máy cũ của năm điểm vào này đã xoá ở issue
- * #663 cùng đợt gỡ bộ máy cũ khỏi cây — chúng không còn điểm gọi nào
- * từ khi các cụm nghiệp vụ chuyển hết sang Kysely.)
+ * (Bản song song phía bộ máy cũ của năm điểm vào này đã xoá ở issue #663 cùng đợt gỡ bộ máy cũ khỏi cây — chúng không
+ * còn điểm gọi nào từ khi các cụm nghiệp vụ chuyển hết sang Kysely.)
  */
 @Injectable()
 export class TenantDbService {
@@ -46,11 +44,9 @@ export class TenantDbService {
   ) {}
 
   /**
-   * Chạy `fn` trong ngữ cảnh ALS của một tenant (không mở
-   * transaction): trường tenant/userId lấy theo đối số, nhưng ngữ
-   * cảnh dựng bằng cơ chế hợp ngữ cảnh cha nên giữ `spaceSlug` định
-   * tuyến; mọi truy vấn qua `routedKysely` trong `fn` chạy dưới
-   * RLS của đúng tenant đó nhờ GUC mà pool gắn theo ngữ cảnh.
+   * Chạy `fn` trong ngữ cảnh ALS của một tenant (không mở transaction): trường tenant/userId lấy theo đối số, nhưng ngữ
+   * cảnh dựng bằng cơ chế hợp ngữ cảnh cha nên giữ `spaceSlug` định tuyến; mọi truy vấn qua `routedKysely` trong `fn`
+   * chạy dưới RLS của đúng tenant đó nhờ GUC mà pool gắn theo ngữ cảnh.
    */
   async runInTenantContext<T>(tenantId: string, fn: () => Promise<T>): Promise<T> {
     return this.runInContext(
@@ -60,28 +56,21 @@ export class TenantDbService {
   }
 
   /**
-   * Chạy `fn` trong ngữ cảnh ALS platform tường minh (không mở
-   * transaction) — giữ `spaceSlug` của ngữ cảnh cha như mọi điểm
-   * vào của service này; chỉ dành cho vận hành hệ thống (relay
-   * outbox, consumer phân phối nền, seed, job quét xuyên tenant)
-   * — nơi mỗi thao tác dữ liệu tenant cụ thể vẫn phải tự giới hạn
-   * theo tenant của bản ghi.
+   * Chạy `fn` trong ngữ cảnh ALS platform tường minh (không mở transaction) — giữ `spaceSlug` của ngữ cảnh cha như mọi
+   * điểm vào của service này; chỉ dành cho vận hành hệ thống (relay outbox, consumer phân phối nền, seed, job quét
+   * xuyên tenant) — nơi mỗi thao tác dữ liệu tenant cụ thể vẫn phải tự giới hạn theo tenant của bản ghi.
    */
   async runInPlatformContext<T>(fn: () => Promise<T>): Promise<T> {
     return this.runInContext({ userId: this.tenantContext.currentUserId(), platform: true }, fn);
   }
 
   /**
-   * Transaction trong ngữ cảnh một tenant cụ thể: cùng ngữ nghĩa
-   * transaction + GUC như mọi wrapper của service này, chạy trên
-   * handle Kysely định tuyến và trả handle giao dịch `CentreTx`
-   * cho callback.
+   * Transaction trong ngữ cảnh một tenant cụ thể: cùng ngữ nghĩa transaction + GUC như mọi wrapper của service này,
+   * chạy trên handle Kysely định tuyến và trả handle giao dịch `CentreTx` cho callback.
    *
-   * Điểm cần giữ: ngữ cảnh ALS mà wrapper dựng GIỮ LẠI
-   * `spaceSlug` của ngữ cảnh cha. Giữ slug là điều kiện để
-   * `routedKysely` vẫn trỏ đúng kho riêng của trung tâm bên trong
-   * transaction — wrapper mà làm rơi slug thì mọi transaction đều
-   * rơi về kho chung bất kể phiên đang ở kho riêng.
+   * Điểm cần giữ: ngữ cảnh ALS mà wrapper dựng GIỮ LẠI `spaceSlug` của ngữ cảnh cha. Giữ slug là điều kiện để
+   * `routedKysely` vẫn trỏ đúng kho riêng của trung tâm bên trong transaction — wrapper mà làm rơi slug thì mọi
+   * transaction đều rơi về kho chung bất kể phiên đang ở kho riêng.
    */
   async withTenant<T>(tenantId: string, fn: (tx: CentreTx) => Promise<T>): Promise<T> {
     return this.runInContext({ tenantId, userId: this.tenantContext.currentUserId(), platform: false }, () =>
@@ -104,12 +93,10 @@ export class TenantDbService {
   }
 
   /**
-   * Transaction theo ngữ cảnh hiện tại: đang ở đường platform thì
-   * withPlatform, có tenant hiệu lực thì withTenant, ngoài mọi ngữ
-   * cảnh thì transaction thường trên handle định tuyến — nhưng dưới
-   * RLS fail-closed, transaction thường chỉ chạm được dòng platform
-   * (tenant_id NULL) ở các bảng cho phép; mã nền phải vào một trong
-   * hai ngữ cảnh tường minh ở trên.
+   * Transaction theo ngữ cảnh hiện tại: đang ở đường platform thì withPlatform, có tenant hiệu lực thì withTenant,
+   * ngoài mọi ngữ cảnh thì transaction thường trên handle định tuyến — nhưng dưới RLS fail-closed, transaction thường
+   * chỉ chạm được dòng platform (tenant_id NULL) ở các bảng cho phép; mã nền phải vào một trong hai ngữ cảnh tường minh
+   * ở trên.
    */
   async withCurrent<T>(fn: (tx: CentreTx) => Promise<T>): Promise<T> {
     if (this.tenantContext.isPlatformContext()) return this.withPlatform(fn);
@@ -119,9 +106,8 @@ export class TenantDbService {
   }
 
   /**
-   * Chạy `fn` trong ngữ cảnh ALS giữ lại `spaceSlug` của ngữ cảnh
-   * cha (định tuyến kho) nhưng thay các trường tenant/platform theo
-   * wrapper đang chạy — xem ghi chú ở `withTenant` về lý do giữ slug.
+   * Chạy `fn` trong ngữ cảnh ALS giữ lại `spaceSlug` của ngữ cảnh cha (định tuyến kho) nhưng thay các trường
+   * tenant/platform theo wrapper đang chạy — xem ghi chú ở `withTenant` về lý do giữ slug.
    */
   private runInContext<T>(store: TenantAlsStore, fn: () => Promise<T>): Promise<T> {
     const parent = tenantAls.getStore();

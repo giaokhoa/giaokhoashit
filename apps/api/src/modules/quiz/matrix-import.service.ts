@@ -1,10 +1,8 @@
 /**
- * Nhập ma trận đề từ file .xlsx (chuỗi lát I-1 → I-2 → I-3 trên issue
- * #233, theo hồ sơ `matrix-import-research-2026-10-26.md` đã đối chiếu
- * sổ quyết định mục B).
+ * Nhập ma trận đề từ file .xlsx (chuỗi lát I-1 → I-2 → I-3 trên issue #233, theo hồ sơ
+ * `matrix-import-research-2026-10-26.md` đã đối chiếu sổ quyết định mục B).
  *
- * Flow tổng thể của lát I-1 (file này):
- * 1. Giáo viên chọn (môn, chương trình, phạm vi ĐVK, checkbox Vận dụng
+ * Flow tổng thể của lát I-1 (file này): 1. Giáo viên chọn (môn, chương trình, phạm vi ĐVK, checkbox Vận dụng
  *    cao) → {@link MatrixImportService.buildTemplate} sinh workbook
  *    mẫu 3 sheet (`Hướng dẫn` / `Ma trận` / `Đặc tả`) đã điền sẵn danh
  *    sách hàng theo ĐƠN VỊ KIẾN THỨC của chương trình: cột khoá
@@ -13,15 +11,14 @@
  *    26/10: file nhập ma trận khoá theo ĐVK, KHÔNG dùng UUID của
  *    YCCĐ), kèm tên chủ đề/ĐVK và nguyên văn các YCCĐ thuộc ĐVK để
  *    giáo viên đối chiếu khi điền số. Giáo viên chỉ điền: tên ma trận,
- *    tổng điểm, điểm mỗi câu theo dạng và số câu/chùm vào lưới.
- * 2. Giáo viên tải file đã điền lên → {@link
+ *    tổng điểm, điểm mỗi câu theo dạng và số câu/chùm vào lưới. 2. Giáo viên tải file đã điền lên → {@link
  *    MatrixImportService.previewImport} parse lại workbook, kiểm lỗi
  *    hai tầng (lỗi cứng định vị theo sheet/dòng/cột + cảnh báo tỉ lệ
  *    theo tinh thần chữ "khoảng" của chú thích 5 CV 7991), tính lại
  *    tổng hai chiều từ các ô (KHÔNG tin công thức trong file), đối
  *    chiếu từng Mã ĐVK với `curriculum_nodes` thật của chương trình
- *    trong file và đính khả dụng ngân hàng theo từng ô dự thảo.
- * 3. Lát I-1 KHÔNG ghi DB: preview chỉ là kết quả kiểm. Lát I-2
+ *    trong file và đính khả dụng ngân hàng theo từng ô dự thảo. 3. Lát I-1 KHÔNG ghi DB: preview chỉ là kết quả kiểm.
+ *    Lát I-2
  *    ({@link MatrixImportService.commitImport}) nhận lại chính file,
  *    chạy lại toàn bộ bước 2 tại thời điểm ghi rồi mới ghi nguyên tử
  *    (tạo `exam_matrices` + cells trong một transaction qua
@@ -44,7 +41,10 @@ import { CurriculumService, type CurriculumTreeView } from '../curriculum/curric
 import { MATRIX_PRESETS, matrixWarnings } from './domain/matrix';
 import { QuizService } from './quiz.service';
 
-/** Tên các sheet trong workbook mẫu — parser chỉ đọc sheet `Ma trận`; sheet `Đặc tả` là để giáo viên đối chiếu/in nộp, hệ không đọc số từ đó (một nguồn số liệu duy nhất). */
+/**
+ * Tên các sheet trong workbook mẫu — parser chỉ đọc sheet `Ma trận`; sheet `Đặc tả` là để giáo viên đối chiếu/in nộp,
+ * hệ không đọc số từ đó (một nguồn số liệu duy nhất).
+ */
 export const MATRIX_IMPORT_SHEET_MATRIX = 'Ma trận';
 const SHEET_GUIDE = 'Hướng dẫn';
 const SHEET_SPEC = 'Đặc tả';
@@ -67,7 +67,10 @@ const LEVEL_DEFS = [
 ] as const;
 type MatrixLevel = (typeof LEVEL_DEFS)[number]['level'];
 
-/** Nhãn các trường của khối thông tin chung ở đầu sheet `Ma trận` (nhãn ở cột A, giá trị ở cột B, riêng mã môn/chương trình ở cột D với nhãn ở cột C). */
+/**
+ * Nhãn các trường của khối thông tin chung ở đầu sheet `Ma trận` (nhãn ở cột A, giá trị ở cột B, riêng mã môn/chương
+ * trình ở cột D với nhãn ở cột C).
+ */
 const INFO = {
   name: 'Tên ma trận',
   subjectName: 'Môn học',
@@ -81,12 +84,20 @@ const INFO = {
 
 /** Nhãn cột khoá của lưới — parser tìm hàng tiêu đề bằng nhãn này ở cột A. */
 const GRID_KEY_LABEL = 'Mã ĐVK';
-/** Số hàng dữ liệu tối đa trong một file nhập (chặn file phình bất thường; một chương trình môn học không tới mức này). */
+/**
+ * Số hàng dữ liệu tối đa trong một file nhập (chặn file phình bất thường; một chương trình môn học không tới mức này).
+ */
 const MAX_DATA_ROWS = 500;
-/** Dung sai lệch tổng điểm toàn bài (điểm) — lệch quá mức này là lỗi cứng số học, khác với lệch PHÂN BỔ tỉ lệ vốn chỉ cảnh báo theo chữ "khoảng". */
+/**
+ * Dung sai lệch tổng điểm toàn bài (điểm) — lệch quá mức này là lỗi cứng số học, khác với lệch PHÂN BỔ tỉ lệ vốn chỉ
+ * cảnh báo theo chữ "khoảng".
+ */
 const TOTAL_SCORE_TOLERANCE = 0.05;
 
-/** Hình dạng tối thiểu của một worksheet exceljs mà parser cần (tránh phụ thuộc namespace kiểu của exceljs — gói này được nạp động như các đường xuất/nhập file hiện hành). */
+/**
+ * Hình dạng tối thiểu của một worksheet exceljs mà parser cần (tránh phụ thuộc namespace kiểu của exceljs — gói này
+ * được nạp động như các đường xuất/nhập file hiện hành).
+ */
 interface ImportWorksheetLike {
   rowCount: number;
   columnCount: number;
@@ -109,31 +120,24 @@ interface GridColumn {
   level: MatrixLevel;
 }
 
-/** Giá trị đã trích từ một ô Excel: số (kèm cờ có phải số nguyên không) hoặc chuỗi đã cắt khoảng trắng; null = ô trống. */
+/**
+ * Giá trị đã trích từ một ô Excel: số (kèm cờ có phải số nguyên không) hoặc chuỗi đã cắt khoảng trắng; null = ô trống.
+ */
 type RawCellValue = { kind: 'number'; value: number } | { kind: 'text'; value: string } | null;
 
 @Injectable()
 /**
- * Service của chuỗi lát nhập ma trận: sinh workbook mẫu +
- * parse/preview file nhập (I-1, không ghi DB) và ghi nguyên tử khi
- * người nhập xác nhận (I-2 — parse lại từ file gốc tại thời điểm ghi,
- * không tin kết quả xem trước phía client).
+ * Service của chuỗi lát nhập ma trận: sinh workbook mẫu + parse/preview file nhập (I-1, không ghi DB) và ghi nguyên tử
+ * khi người nhập xác nhận (I-2 — parse lại từ file gốc tại thời điểm ghi, không tin kết quả xem trước phía client).
  *
- * Phân quyền của cả ba đầu chốt tại BANK ĐÍCH — bank ma trận cá nhân
- * của người nhập — qua cổng dùng chung
- * `QuizService.requirePersonalMatrixBankManage` (học thuyết neo bank
- * MB-0/MB-1: ma trận nằm trong bank nào thì quyền theo bank đó,
- * context của môn chỉ là phạm vi dữ liệu). Dữ liệu tham chiếu
- * môn/chương trình/cây đọc bằng đường tham chiếu nội bộ của
- * CurriculumService sau khi đã qua cổng bank. Trước đây luồng còn
- * gác thêm `quiz:managematrix` và (qua đường đọc công khai)
- * `curriculum:view` tại context của môn: môn GDPT neo tại context hệ
- * thống trong khi giáo viên chỉ được gán vai tại context khoá/trung
- * tâm, nên hai lớp cổng đó chặn nhầm mọi giáo viên ở cả ba đầu, và
- * lỗi quyền ở bước đọc môn còn bị nuốt thành "môn không tồn tại"
- * (điểm chặn của nghiệm thu D-3 trên production, issue #233). Các
- * endpoint đọc công khai của chương trình không qua luồng này nên
- * cổng của chúng không đổi.
+ * Phân quyền của cả ba đầu chốt tại BANK ĐÍCH — bank ma trận cá nhân của người nhập — qua cổng dùng chung
+ * `QuizService.requirePersonalMatrixBankManage` (học thuyết neo bank MB-0/MB-1: ma trận nằm trong bank nào thì quyền
+ * theo bank đó, context của môn chỉ là phạm vi dữ liệu). Dữ liệu tham chiếu môn/chương trình/cây đọc bằng đường tham
+ * chiếu nội bộ của CurriculumService sau khi đã qua cổng bank. Trước đây luồng còn gác thêm `quiz:managematrix` và (qua
+ * đường đọc công khai) `curriculum:view` tại context của môn: môn GDPT neo tại context hệ thống trong khi giáo viên chỉ
+ * được gán vai tại context khoá/trung tâm, nên hai lớp cổng đó chặn nhầm mọi giáo viên ở cả ba đầu, và lỗi quyền ở bước
+ * đọc môn còn bị nuốt thành "môn không tồn tại" (điểm chặn của nghiệm thu D-3 trên production, issue #233). Các
+ * endpoint đọc công khai của chương trình không qua luồng này nên cổng của chúng không đổi.
  */
 export class MatrixImportService {
   constructor(
@@ -141,23 +145,14 @@ export class MatrixImportService {
     private readonly quiz: QuizService,
   ) {}
 
-  // --- Sinh mẫu ---------------------------------------------------------------
-
   /**
    * Sinh workbook mẫu cho một (môn, chương trình, phạm vi, bộ mức).
    *
-   * Flow: gác cổng bank cá nhân của luồng nhập (cổng duy nhất của cả
-   * ba đầu — chạy TRƯỚC mọi lần đọc để người không đủ tư cách không
-   * dò được dữ liệu môn/chương trình qua đầu này) → đối chiếu chương
-   * trình thuộc môn bằng đường đọc tham chiếu nội bộ → lấy cây
-   * chương trình, làm phẳng thành danh sách ĐVK theo thứ tự cây (lọc
-   * theo `scopeNodeIds` nếu có: giữ ĐVK nằm trong phạm vi đã chọn
-   * hoặc thuộc subtree của node trong phạm vi) → dựng 3 sheet.
+   * Flow: gác cổng bank cá nhân của luồng nhập (cổng duy nhất của cả ba đầu — chạy TRƯỚC mọi lần đọc để người không đủ
+   * tư cách không dò được dữ liệu môn/chương trình qua đầu này) → đối chiếu chương trình thuộc môn bằng đường đọc tham
+   * chiếu nội bộ → lấy cây chương trình, làm phẳng thành danh sách ĐVK theo thứ tự cây (lọc theo `scopeNodeIds` nếu có:
+   * giữ ĐVK nằm trong phạm vi đã chọn hoặc thuộc subtree của node trong phạm vi) → dựng 3 sheet.
    *
-   * @param actorId - Người gọi (giáo viên).
-   * @param input - subjectId/curriculumId bắt buộc; levelSet mặc định
-   *   'three'; scopeNodeIds null/rỗng = toàn bộ ĐVK của chương trình.
-   * @returns Tên file + buffer .xlsx sẵn sàng trả về client.
    * @throws ForbiddenException khi người gọi không qua được cổng bank
    *   cá nhân của luồng nhập (xem
    *   `QuizService.requirePersonalMatrixBankManage`).
@@ -195,10 +190,9 @@ export class MatrixImportService {
   }
 
   /**
-   * Làm phẳng cây chương trình thành danh sách ĐVK (node kind
-   * 'lesson') theo đúng thứ tự cây; chủ đề của một ĐVK là node tổ tiên
-   * kind 'topic' gần nhất, không có thì lấy node gốc cao nhất của
-   * nhánh — cùng quy tắc dựng bản đặc tả hiện hành.
+   * Làm phẳng cây chương trình thành danh sách ĐVK (node kind 'lesson') theo đúng thứ tự cây; chủ đề của một ĐVK là
+   * node tổ tiên kind 'topic' gần nhất, không có thì lấy node gốc cao nhất của nhánh — cùng quy tắc dựng bản đặc tả
+   * hiện hành.
    */
   private flattenUnits(tree: CurriculumTreeView): FlatUnit[] {
     const units: FlatUnit[] = [];
@@ -219,7 +213,10 @@ export class MatrixImportService {
     return units;
   }
 
-  /** ĐVK thuộc phạm vi khi: không khai phạm vi; hoặc chính nó nằm trong phạm vi; hoặc một tổ tiên của nó nằm trong phạm vi (phạm vi chọn theo chủ đề bao cả subtree). */
+  /**
+   * ĐVK thuộc phạm vi khi: không khai phạm vi; hoặc chính nó nằm trong phạm vi; hoặc một tổ tiên của nó nằm trong phạm
+   * vi (phạm vi chọn theo chủ đề bao cả subtree).
+   */
   private inScope(nodeId: string, tree: CurriculumTreeView, scopeNodeIds?: string[] | null): boolean {
     if (!scopeNodeIds || scopeNodeIds.length === 0) return true;
     const scope = new Set(scopeNodeIds);
@@ -236,13 +233,10 @@ export class MatrixImportService {
   }
 
   /**
-   * Dựng workbook mẫu 3 sheet bằng exceljs (cùng hạ tầng với xuất bản
-   * đặc tả và xuất vnEdu). Sheet `Ma trận` mang khối thông tin chung ở
-   * các dòng cố định 2–11, hàng tiêu đề lưới ở dòng 13–14, dữ liệu từ
-   * dòng 15 và 3 hàng tổng bằng CÔNG THỨC Excel ngay dưới dữ liệu để
-   * giáo viên thấy tổng trong lúc điền (hệ không tin các công thức
-   * này khi nhập — tự tính lại từ các ô). Sheet `Đặc tả` tham chiếu
-   * sang sheet `Ma trận` bằng công thức, chỉ để đối chiếu/in.
+   * Dựng workbook mẫu 3 sheet bằng exceljs (cùng hạ tầng với xuất bản đặc tả và xuất vnEdu). Sheet `Ma trận` mang khối
+   * thông tin chung ở các dòng cố định 2–11, hàng tiêu đề lưới ở dòng 13–14, dữ liệu từ dòng 15 và 3 hàng tổng bằng
+   * CÔNG THỨC Excel ngay dưới dữ liệu để giáo viên thấy tổng trong lúc điền (hệ không tin các công thức này khi nhập —
+   * tự tính lại từ các ô). Sheet `Đặc tả` tham chiếu sang sheet `Ma trận` bằng công thức, chỉ để đối chiếu/in.
    */
   private async renderTemplateWorkbook(input: {
     subjectName: string; subjectId: string;
@@ -257,7 +251,6 @@ export class MatrixImportService {
     const lastDataCol = firstDataCol + FORM_DEFS.length * colsPerForm - 1;
     const letter = (idx: number) => this.columnLetter(idx);
 
-    // --- Sheet Hướng dẫn ---
     const guide = wb.addWorksheet(SHEET_GUIDE);
     guide.columns = [{ width: 110 }];
     const guideLines = [
@@ -273,7 +266,6 @@ export class MatrixImportService {
     ];
     for (const line of guideLines) guide.addRow([line]);
 
-    // --- Sheet Ma trận ---
     const ws = wb.addWorksheet(MATRIX_IMPORT_SHEET_MATRIX);
     ws.columns = [
       { width: 38 }, { width: 6 }, { width: 24 }, { width: 30 }, { width: 52 },
@@ -369,7 +361,6 @@ export class MatrixImportService {
     }
     ws.views = [{ state: 'frozen', ySplit: levelRow }];
 
-    // --- Sheet Đặc tả (tham chiếu — hệ không đọc) ---
     const spec = wb.addWorksheet(SHEET_SPEC);
     spec.columns = ws.columns.map((c) => ({ width: c.width }));
     spec.mergeCells(1, 1, 1, lastDataCol);
@@ -418,41 +409,34 @@ export class MatrixImportService {
     return out;
   }
 
-  // --- Parse + xem trước -------------------------------------------------------
-
   /**
-   * Parse một file .xlsx đã điền và trả kết quả XEM TRƯỚC — không ghi
-   * DB. Luồng:
-   * 1. Đọc workbook bằng exceljs; lỗi đọc/thiếu sheet `Ma trận`/thiếu
-   *    hàng tiêu đề lưới → lỗi cứng cấp file, dừng sớm.
-   * 2. Trích khối thông tin chung theo nhãn cố định; kiểm các trường
+   * Parse một file .xlsx đã điền và trả kết quả XEM TRƯỚC — không ghi DB. Luồng: 1. Đọc workbook bằng exceljs; lỗi
+   * đọc/thiếu sheet `Ma trận`/thiếu
+   *    hàng tiêu đề lưới → lỗi cứng cấp file, dừng sớm. 2. Trích khối thông tin chung theo nhãn cố định; kiểm các
+   *    trường
    *    bắt buộc và tính khớp giữa trường checkbox Vận dụng cao với
    *    lưới cột thực tế (khai "Có" mà không có cột VDC — hoặc ngược
-   *    lại — là lỗi cứng yêu cầu sinh lại mẫu, không tự suy diễn).
-   * 3. Gác cổng bank cá nhân của luồng nhập (ném 403 thẳng ra ngoài
+   *    lại — là lỗi cứng yêu cầu sinh lại mẫu, không tự suy diễn). 3. Gác cổng bank cá nhân của luồng nhập (ném 403
+   *    thẳng ra ngoài
    *    như mọi cổng quyền — người không đủ tư cách không đi tiếp
    *    được và không nhận được tín hiệu nào về dữ liệu môn), rồi đối
    *    chiếu môn/chương trình trong file với dữ liệu thật bằng đường
    *    đọc tham chiếu nội bộ: phải tồn tại và đi đúng cặp; "không
    *    tồn tại thật" dịch thành lỗi định vị trong payload như cũ,
    *    mọi lỗi khác truyền thẳng — không còn nuốt lỗi thành "môn
-   *    không tồn tại" như khi đọc qua đường công khai bị gác quyền.
-   * 4. Đối chiếu từng Mã ĐVK với `curriculum_nodes` của đúng chương
+   *    không tồn tại" như khi đọc qua đường công khai bị gác quyền. 4. Đối chiếu từng Mã ĐVK với `curriculum_nodes` của
+   *    đúng chương
    *    trình đó (không tồn tại/không phải đơn vị kiến thức/trùng hàng
    *    → lỗi cứng tại dòng); kiểm từng ô số là số nguyên ≥ 0; dạng nào
    *    có câu mà thiếu điểm-mỗi-câu → lỗi cứng; tính lại tổng điểm
    *    hai chiều từ các ô và so với tổng đã khai (lệch quá dung sai là
-   *    lỗi cứng kèm bảng tổng tính lại trong thông điệp).
-   * 5. Cảnh báo tỉ lệ qua `matrixWarnings` với mốc CV 7991 (điều
+   *    lỗi cứng kèm bảng tổng tính lại trong thông điệp). 5. Cảnh báo tỉ lệ qua `matrixWarnings` với mốc CV 7991 (điều
    *    chỉnh chú thích 3: môn không dùng Trả lời ngắn thì mốc Đúng–Sai
    *    là 40%; khi bật VDC thì chỉ cảnh báo trên tổng Vận dụng +
    *    Vận dụng cao so mốc 30% — văn bản không cho mốc riêng cho VDC)
-   *    + cảnh báo hàng ĐVK không có ô nào.
-   * 6. Đính khả dụng ngân hàng cho từng ô dự thảo (cần/có/thiếu —
+   *    + cảnh báo hàng ĐVK không có ô nào. 6. Đính khả dụng ngân hàng cho từng ô dự thảo (cần/có/thiếu —
    *    cảnh báo thuần thông tin).
    *
-   * @param actorId - Người gọi.
-   * @param buffer - Nội dung file .xlsx tải lên.
    * @returns Cấu trúc `MatrixImportPreview` (contracts): `valid` chỉ
    *   true khi không còn lỗi cứng nào.
    */
@@ -469,7 +453,6 @@ export class MatrixImportService {
       preview.errors.push({ sheet: MATRIX_IMPORT_SHEET_MATRIX, row: null, column: null, ...issue });
     };
 
-    // Bước 1 — đọc workbook.
     const wb = new ExcelJS.Workbook();
     try {
       await wb.xlsx.load(buffer as never);
@@ -483,7 +466,6 @@ export class MatrixImportService {
       return preview;
     }
 
-    // Bước 2 — trích khối thông tin chung + nhận diện lưới.
     const info = this.extractInfoBlock(ws);
     const grid = this.locateGrid(ws);
     if (!grid) {
@@ -525,13 +507,10 @@ export class MatrixImportService {
       return preview;
     }
 
-    // Bước 3 — cổng bank của luồng + đối chiếu môn/chương trình thật.
-    // Cổng bank ném 403 thẳng ra ngoài (đúng vị trí và hình dạng của
-    // cổng quyền trước đây ở bước này): chỉ người phụ trách được bank
-    // ma trận cá nhân của mình mới đi tiếp. Sau cổng, lần đọc tham
-    // chiếu chỉ còn ném NotFoundException khi dữ liệu thật sự vắng —
-    // dịch đúng lỗi đó thành lỗi định vị trong payload; mọi lỗi khác
-    // truyền thẳng, không nuốt thành "không tồn tại".
+    // Bước 3 — cổng bank của luồng + đối chiếu môn/chương trình thật. Cổng bank ném 403 thẳng ra ngoài (đúng vị trí và
+    // hình dạng của cổng quyền trước đây ở bước này): chỉ người phụ trách được bank ma trận cá nhân của mình mới đi
+    // tiếp. Sau cổng, lần đọc tham chiếu chỉ còn ném NotFoundException khi dữ liệu thật sự vắng — dịch đúng lỗi đó
+    // thành lỗi định vị trong payload; mọi lỗi khác truyền thẳng, không nuốt thành "không tồn tại".
     await this.quiz.requirePersonalMatrixBankManage(actorId);
     const subject = await this.curriculum.getSubjectReference(preview.subjectId).catch((e: unknown) => {
       if (e instanceof NotFoundException) return null;
@@ -554,7 +533,6 @@ export class MatrixImportService {
       return preview;
     }
 
-    // Bước 4 — đối chiếu từng hàng ĐVK + đọc các ô số.
     const tree = await this.curriculum.getTreeReference(curriculum.id);
     const units = this.flattenUnits(tree);
     const unitById = new Map(units.map((u) => [u.nodeId, u]));
@@ -615,7 +593,6 @@ export class MatrixImportService {
       }
     }
 
-    // Bước 4b — điểm mỗi câu + điểm từng ô + tổng hai chiều.
     for (const form of FORM_DEFS) {
       const total = countByForm.get(form.qtype) ?? 0;
       const per = info.perFormScores[form.qtype];
@@ -645,7 +622,6 @@ export class MatrixImportService {
       });
     }
 
-    // Bước 5 — cảnh báo (chỉ khi đã có ô và không lệch tổng thành lỗi cứng).
     if (draftCells.length > 0) {
       preview.warnings = this.buildWarnings(draftCells, preview.totals, preview.levelSet, preview.totalScore);
       const nodesWithCells = new Set(draftCells.map((c) => c.curriculumNodeId));
@@ -656,7 +632,6 @@ export class MatrixImportService {
       }
     }
 
-    // Bước 6 — khả dụng ngân hàng theo ô dự thảo.
     if (draftCells.length > 0) {
       preview.availability = await this.quiz.importAvailability(actorId, draftCells);
     }
@@ -664,8 +639,6 @@ export class MatrixImportService {
     preview.valid = preview.errors.length === 0;
     return preview;
   }
-
-  // --- Ghi nguyên tử (lát I-2) --------------------------------------------------
 
   /**
    * GHI ma trận từ file đã điền (lát I-2) — đầu chốt của luồng nhập:
@@ -677,15 +650,14 @@ export class MatrixImportService {
    *    luồng (ném 403 khi người gọi không phụ trách được bank ma
    *    trận cá nhân của mình). KHÔNG tin dữ liệu phía client gửi kèm
    *    (kể cả khi client nói "đã xem trước"): file là nguồn sự thật
-   *    duy nhất.
-   * 2. Kết quả parse không còn hợp lệ (file bị sửa tay sau xem trước
+   *    duy nhất. 2. Kết quả parse không còn hợp lệ (file bị sửa tay sau xem trước
    *    mà vi phạm luật) → TỪ CHỐI ghi toàn bộ: ném
    *    `UnprocessableEntityException` 422 mang mã
    *    `quiz.matrix_import_invalid` + danh sách lỗi cứng định vị
    *    trong extension member `matrixImportIssues` của ProblemDetails
    *    (đúng hình dạng lỗi của bước xem trước để web hiển thị lại
-   *    bảng lỗi). Chưa một bản ghi nào được tạo ở bước này.
-   * 3. Hợp lệ → uỷ quyền ghi cho `QuizService.createMatrixFromImport`:
+   *    bảng lỗi). Chưa một bản ghi nào được tạo ở bước này. 3. Hợp lệ → uỷ quyền ghi cho
+   *    `QuizService.createMatrixFromImport`:
    *    ma trận mới + toàn bộ ô trong MỘT transaction vào bank ma trận
    *    cá nhân của người nhập (draft; chống ghi trùng theo chữ ký nội
    *    dung — xem TSDoc của hàm đó). `position` của mỗi ô = số thứ tự
@@ -693,9 +665,6 @@ export class MatrixImportService {
    *    của hàng); phạm vi của ma trận = đúng tập ĐVK có hàng trong
    *    file theo thứ tự file.
    *
-   * @param actorId - Người gọi (người nhập).
-   * @param buffer - Nội dung file .xlsx tải lên (cùng file đã xem
-   *   trước, hoặc bản đã sửa sau xem trước — server kiểm lại từ đầu).
    * @returns View ma trận đã ghi (hoặc bản đã có khi trùng nội dung).
    * @throws UnprocessableEntityException 422 khi file không hợp lệ
    *   tại thời điểm ghi (kèm `matrixImportIssues` định vị).
@@ -711,9 +680,8 @@ export class MatrixImportService {
         matrixImportIssues: preview.errors,
       });
     }
-    // valid = true chỉ khi mọi trường định danh đã có (tên/môn/chương
-    // trình/bộ mức/tổng điểm đều là lỗi cứng khi thiếu) và lưới có ít
-    // nhất một ô — các khẳng định not-null dưới đây dựa vào bất biến đó.
+    // valid = true chỉ khi mọi trường định danh đã có (tên/môn/chương trình/bộ mức/tổng điểm đều là lỗi cứng khi thiếu)
+    // và lưới có ít nhất một ô — các khẳng định not-null dưới đây dựa vào bất biến đó.
     const positionByNode = new Map(preview.rows.map((r) => [r.nodeId, r.position]));
     return this.quiz.createMatrixFromImport(actorId, {
       name: preview.name!,
@@ -735,13 +703,10 @@ export class MatrixImportService {
   }
 
   /**
-   * Cảnh báo tỉ lệ cho bản xem trước: tái dùng `matrixWarnings` với
-   * mốc tham chiếu CV 7991 (hằng cấu hình, không phải lựa chọn của
-   * giáo viên), kèm hai điều chỉnh của hồ sơ import — chú thích 3
-   * (không dùng Trả lời ngắn → mốc Đúng–Sai 40%) và luật VDC (không có
-   * mốc riêng cho Vận dụng cao; cảnh báo trên tổng Vận dụng + Vận
-   * dụng cao so mốc 30%). Cảnh báo tổng điểm của `matrixWarnings` bị
-   * loại vì lệch tổng ở đường nhập là lỗi cứng riêng (bước 4b).
+   * Cảnh báo tỉ lệ cho bản xem trước: tái dùng `matrixWarnings` với mốc tham chiếu CV 7991 (hằng cấu hình, không phải
+   * lựa chọn của giáo viên), kèm hai điều chỉnh của hồ sơ import — chú thích 3 (không dùng Trả lời ngắn → mốc Đúng–Sai
+   * 40%) và luật VDC (không có mốc riêng cho Vận dụng cao; cảnh báo trên tổng Vận dụng + Vận dụng cao so mốc 30%). Cảnh
+   * báo tổng điểm của `matrixWarnings` bị loại vì lệch tổng ở đường nhập là lỗi cứng riêng (bước 4b).
    */
   private buildWarnings(
     cells: MatrixImportPreviewCell[],
@@ -774,7 +739,11 @@ export class MatrixImportService {
     return warnings;
   }
 
-  /** Tổng hai chiều của bản xem trước. Quy ước đếm: `totalQuestions` đếm số câu thật (Đúng–Sai nhân 4 ý như bản đặc tả); riêng các bảng theo dạng/mức giữ đơn vị như trong file (Đúng–Sai = số chùm) để giáo viên đối chiếu trực tiếp với file đã điền. */
+  /**
+   * Tổng hai chiều của bản xem trước. Quy ước đếm: `totalQuestions` đếm số câu thật (Đúng–Sai nhân 4 ý như bản đặc tả);
+   * riêng các bảng theo dạng/mức giữ đơn vị như trong file (Đúng–Sai = số chùm) để giáo viên đối chiếu trực tiếp với
+   * file đã điền.
+   */
   private computeTotals(cells: MatrixImportPreviewCell[]): MatrixImportPreview['totals'] {
     const totalScore = Math.round(cells.reduce((s, c) => s + c.cellScore, 0) * 10000) / 10000;
     const byFormMap = new Map<MatrixFormQtype, { questionCount: number; score: number }>();
@@ -807,10 +776,9 @@ export class MatrixImportService {
   }
 
   /**
-   * Nhận diện lưới trong sheet `Ma trận`: quét các dòng đầu tìm hàng
-   * có cột A = "Mã ĐVK" (hàng nhóm), hàng ngay dưới là hàng mức; ánh
-   * xạ từng cột số sang (dạng, mức) bằng nhãn nhóm lan theo merge +
-   * nhãn mức đã chuẩn hoá bỏ dấu. Trả null khi không thấy hàng tiêu đề.
+   * Nhận diện lưới trong sheet `Ma trận`: quét các dòng đầu tìm hàng có cột A = "Mã ĐVK" (hàng nhóm), hàng ngay dưới là
+   * hàng mức; ánh xạ từng cột số sang (dạng, mức) bằng nhãn nhóm lan theo merge + nhãn mức đã chuẩn hoá bỏ dấu. Trả
+   * null khi không thấy hàng tiêu đề.
    */
   private locateGrid(ws: ImportWorksheetLike): {
     dataStartRow: number;
@@ -845,9 +813,8 @@ export class MatrixImportService {
   }
 
   /**
-   * Trích khối thông tin chung: quét cột A của 20 dòng đầu theo nhãn
-   * cố định; giá trị lấy ở cột B (riêng mã môn/chương trình ở cột D).
-   * Điểm mỗi câu đọc theo nhãn riêng của từng dạng.
+   * Trích khối thông tin chung: quét cột A của 20 dòng đầu theo nhãn cố định; giá trị lấy ở cột B (riêng mã môn/chương
+   * trình ở cột D). Điểm mỗi câu đọc theo nhãn riêng của từng dạng.
    */
   private extractInfoBlock(ws: ImportWorksheetLike): {
     name: string | null; scopeNote: string | null;
@@ -885,10 +852,9 @@ export class MatrixImportService {
           out.rows.perFormScore[form.qtype] = r;
         }
       }
-      // Mã khoá KHÔNG nằm ở cột A như các trường còn lại: buildTemplate
-      // ghi nhãn mã ở cột C và giá trị ở cột D (cùng dòng với tên môn /
-      // tên chương trình ở cột A/B) — phải quét thêm nhãn cột C, nếu chỉ
-      // quét cột A thì không bao giờ thấy "Mã môn"/"Mã chương trình".
+      // Mã khoá KHÔNG nằm ở cột A như các trường còn lại: buildTemplate ghi nhãn mã ở cột C và giá trị ở cột D (cùng
+      // dòng với tên môn / tên chương trình ở cột A/B) — phải quét thêm nhãn cột C, nếu chỉ quét cột A thì không bao
+      // giờ thấy "Mã môn"/"Mã chương trình".
       const keyLabel = this.cellText(ws.getCell(r, 3).value);
       if (keyLabel === INFO.subjectId) { out.subjectId = valueD || null; out.rows.subjectId = r; }
       else if (keyLabel === INFO.curriculumId) { out.curriculumId = valueD || null; out.rows.curriculumId = r; }
@@ -896,7 +862,10 @@ export class MatrixImportService {
     return out;
   }
 
-  /** Trích giá trị thô của một ô: số trực tiếp, kết quả của công thức, hoặc chuỗi đã cắt khoảng trắng; ô trống/ngày tháng → null. */
+  /**
+   * Trích giá trị thô của một ô: số trực tiếp, kết quả của công thức, hoặc chuỗi đã cắt khoảng trắng; ô trống/ngày
+   * tháng → null.
+   */
   private rawCell(value: unknown): RawCellValue {
     if (value === null || value === undefined) return null;
     if (typeof value === 'number') return Number.isFinite(value) ? { kind: 'number', value } : null;
@@ -924,7 +893,10 @@ export class MatrixImportService {
     return raw.kind === 'number' ? String(raw.value) : raw.value.trim();
   }
 
-  /** Chuẩn hoá để so nhãn: bỏ dấu tiếng Việt, thường hoá, gộp khoảng trắng (nhãn trong file có thể bị gõ lại với dấu/không dấu khác nhau). */
+  /**
+   * Chuẩn hoá để so nhãn: bỏ dấu tiếng Việt, thường hoá, gộp khoảng trắng (nhãn trong file có thể bị gõ lại với
+   * dấu/không dấu khác nhau).
+   */
   private normalize(text: string): string {
     return text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/\s+/g, ' ').trim();
   }

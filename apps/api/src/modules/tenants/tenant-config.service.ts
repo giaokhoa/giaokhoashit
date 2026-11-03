@@ -38,20 +38,17 @@ export class TenantConfigService {
   }
 
   /**
-   * Giá trị đã lưu ở tầng platform; undefined khi chưa có ghi đè.
-   * Quy tắc lưu trữ (bảng `config` cho core, `plugin_config` cho
-   * component kèm nhánh đọc JSON) do `SiteConfigRepository` của
-   * `@lms/db` giữ — service này uỷ quyền thẳng, không giữ bản sao
-   * đường truy vấn riêng.
+   * Giá trị đã lưu ở tầng platform; undefined khi chưa có ghi đè. Quy tắc lưu trữ (bảng `config` cho core,
+   * `plugin_config` cho component kèm nhánh đọc JSON) do `SiteConfigRepository` của `@lms/db` giữ — service này uỷ
+   * quyền thẳng, không giữ bản sao đường truy vấn riêng.
    */
   private async platformStoredValue(component: string, name: string): Promise<unknown> {
     return this.siteConfig.getStoredValue(component, name);
   }
 
   /**
-   * Giá trị hiệu lực của một setting cho một tenant cụ thể — API đọc
-   * chuẩn cho mọi module cần cấu hình theo tenant (EB-3 đọc công tắc
-   * duyệt qua đây). Setting chưa đăng ký trả về undefined.
+   * Giá trị hiệu lực của một setting cho một tenant cụ thể — API đọc chuẩn cho mọi module cần cấu hình theo tenant
+   * (EB-3 đọc công tắc duyệt qua đây). Setting chưa đăng ký trả về undefined.
    */
   async getEffectiveValue<T = unknown>(tenantId: string, component: string, name: string): Promise<T | undefined> {
     const def = findSiteSetting(component, name);

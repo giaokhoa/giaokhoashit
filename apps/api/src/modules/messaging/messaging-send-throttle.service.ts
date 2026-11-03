@@ -37,22 +37,18 @@ return {1, ''}
 `;
 
 /**
- * Throttle gửi tin theo TỪNG NGƯỜI DÙNG bằng Redis (lát M2, issue
- * #212; hồ sơ rà soát hoàn thiện nhắn tin mục M2). Hai cửa sổ cố định
- * chạy song song, mức đọc qua site-config ở MỖI lần gửi nên quản trị
- * đổi cấu hình là hành vi đổi ngay, không cần khởi động lại:
+ * Throttle gửi tin theo TỪNG NGƯỜI DÙNG bằng Redis (lát M2, issue #212; hồ sơ rà soát hoàn thiện nhắn tin mục M2). Hai
+ * cửa sổ cố định chạy song song, mức đọc qua site-config ở MỖI lần gửi nên quản trị đổi cấu hình là hành vi đổi ngay,
+ * không cần khởi động lại:
  *   - bùng phát: `core/messagingsendburstlimit` tin trong
  *     `core/messagingsendburstwindowseconds` giây (mặc định 20/10s);
  *   - duy trì: `core/messagingsendperminutelimit` tin/phút (mặc định
- *     60, tức ~1 tin/giây).
- * Chạm một trong hai trần → 429 `messaging.rate_limited`. Khoá đếm
- * theo userId (định danh toàn cục duy nhất) nên không lẫn giữa các
- * tenant và tự hết hạn theo TTL — không có dữ liệu bền nào phải dọn.
+ *     60, tức ~1 tin/giây). Chạm một trong hai trần → 429 `messaging.rate_limited`. Khoá đếm theo userId (định danh
+ *     toàn cục duy nhất) nên không lẫn giữa các tenant và tự hết hạn theo TTL — không có dữ liệu bền nào phải dọn.
  *
- * Redis là hạ tầng phụ trợ của đường gửi (cùng họ presence/typing):
- * Redis lỗi thì FAIL-OPEN kèm log cảnh báo — thà mất lớp chống lạm
- * dụng trong chốc lát còn hơn chặn đứng toàn bộ nhắn tin, đúng triết
- * lý "đường phụ không được làm hỏng nghiệp vụ" của tầng realtime.
+ * Redis là hạ tầng phụ trợ của đường gửi (cùng họ presence/typing): Redis lỗi thì FAIL-OPEN kèm log cảnh báo — thà mất
+ * lớp chống lạm dụng trong chốc lát còn hơn chặn đứng toàn bộ nhắn tin, đúng triết lý "đường phụ không được làm hỏng
+ * nghiệp vụ" của tầng realtime.
  */
 @Injectable()
 export class MessagingSendThrottleService implements OnModuleDestroy {
@@ -87,11 +83,9 @@ export class MessagingSendThrottleService implements OnModuleDestroy {
   }
 
   /**
-   * Tiêu thụ một lượt gửi của `userId`: qua được thì trả về lặng lẽ,
-   * chạm trần thì ném 429 `messaging.rate_limited`. Người gọi phải gọi
-   * SAU khi đã kiểm tra tư cách/cổng liên lạc và SAU điểm trả trùng
-   * `clientMessageId` — lượt gửi lại của một tin đã nhận không tốn
-   * quota, và tin bị từ chối ở các cổng trước cũng vậy.
+   * Tiêu thụ một lượt gửi của `userId`: qua được thì trả về lặng lẽ, chạm trần thì ném 429 `messaging.rate_limited`.
+   * Người gọi phải gọi SAU khi đã kiểm tra tư cách/cổng liên lạc và SAU điểm trả trùng `clientMessageId` — lượt gửi lại
+   * của một tin đã nhận không tốn quota, và tin bị từ chối ở các cổng trước cũng vậy.
    */
   async consume(userId: string): Promise<void> {
     const [burstLimit, burstWindowSeconds, perMinuteLimit] = await Promise.all([
