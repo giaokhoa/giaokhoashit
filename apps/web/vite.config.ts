@@ -10,7 +10,10 @@ import { defineConfig } from 'vite';
  */
 export default defineConfig({
   plugins: [reactRouter(), tailwindcss()],
+  // Package contracts xuất CommonJS: để Node nạp ngoài Vite SSR module runner.
+  ssr: { external: ['@lms/contracts'] },
   server: {
+    host: '0.0.0.0',
     port: 5173,
     // Cho phép mở bản dev qua đường hầm công khai khi review từ xa.
     allowedHosts: ['.lhr.life', '.trycloudflare.com', '.pinggy.net', '.pinggy-free.link'],

@@ -1,4 +1,4 @@
-# LMS — TypeScript (NestJS + React)
+# GiaoKhoa — TypeScript (NestJS + React)
 
 Một LMS TypeScript viết từ đầu, có phạm vi nghiệp vụ tương đương các phân
 hệ lõi của Moodle (chỉ backend; không tương thích ngược với cơ sở dữ
@@ -28,25 +28,31 @@ không bao giờ import code backend hay schema cơ sở dữ liệu.
 
 ## Phát triển trong Dev Container
 
-Không cần cài gì trên máy ngoài Docker và VS Code: repo có sẵn định
-nghĩa Dev Container ở `.devcontainer/` tái tạo đúng các điều kiện
-tiên quyết ở trên — một service `app` (Node 24; pnpm 12.14 cấp qua
-corepack, đúng phiên bản ghim ở trường `packageManager` của
-`package.json` gốc) cùng hai service `db` (PostgreSQL 18.6) và `redis`
-(Redis 7), dùng đúng các image mà CI đang dùng. Ba service dùng chung
-một network namespace nên mọi mặc định localhost của repo
-(`localhost:5432`, `localhost:6379`) chạy nguyên trạng trong
-container — cùng cách bố trí như môi trường local ở mục dưới. Ở lần
-khởi động đầu tiên, service cơ sở dữ liệu tạo sẵn các DB `lms`,
-`lms_test`, `lms_test_api` và `lms_test_worker` (người dùng và mật
-khẩu đều là `postgres`). Khi tạo container, dependencies được cài sẵn
-(`pnpm install --frozen-lockfile`) và `apps/api/.env` /
-`apps/worker/.env` được chép từ các file `.env.example` tương ứng.
+Chỉ cần Docker và VS Code với extension Dev Containers trên máy host.
+Cấu hình `.devcontainer/` dùng image Ubuntu dành cho Dev Container và
+Features để cài Node 24, pnpm 12.14.0 (theo `packageManager` trong
+`package.json`) cùng GitHub CLI. Service `app` chia sẻ network
+namespace với PostgreSQL 18.6 và Redis 7, vì vậy API, worker và test
+tiếp tục kết nối qua `localhost:5432` và `localhost:6379`.
 
-Mở thư mục repo trong VS Code và chạy "Dev Containers: Reopen in
-Container", rồi thực hiện đúng các bước như môi trường review local ở
-mục dưới (migrate, seed, `pnpm dev`) trong terminal của container.
-Cổng 3000 (API) và 5173 (web) được chuyển tiếp ra máy host.
+PostgreSQL tạo các database `lms`, `lms_test`, `lms_test_api` và
+`lms_test_worker` khi khởi tạo volume mới (tài khoản/mật khẩu:
+`postgres`/`postgres`). Đây là tên database kỹ thuật còn được sử dụng
+trong cấu hình API, worker, test và CI; tên workspace và tên hiển thị
+Dev Container đã dùng `GiaoKhoa`. Với volume PostgreSQL đã tồn tại,
+`init-db.sql` không chạy lại; cần tạo riêng các database còn thiếu,
+không xóa volume nếu muốn giữ dữ liệu.
+
+Lần đầu tạo container sẽ chạy `pnpm install --frozen-lockfile` và tạo
+`apps/api/.env` / `apps/worker/.env` từ `.env.example` nếu chưa tồn
+tại. GitHub CLI lưu cấu hình đăng nhập trong Docker volume riêng để
+không mất khi rebuild container.
+
+Mở repo trong VS Code, chọn "Dev Containers: Reopen in Container",
+sau đó chạy migrate, seed, `pnpm dev` trong terminal container.
+Chỉ cổng 3000 (API) và 5173 (web) được tự động forward để truy cập
+từ máy host; cổng PostgreSQL 5432 và Redis 6379 chỉ dùng nội bộ
+(trừ khi forward thủ công trong VS Code).
 
 Container này CHỈ phục vụ phát triển. Đường triển khai production
 dùng `Dockerfile` đa target và `compose.yaml` ở gốc repo như mô
