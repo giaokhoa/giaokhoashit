@@ -18,12 +18,6 @@ public class AppUser {
 	@Column(name = "keycloak_sub", nullable = false, unique = true)
 	private String keycloakSub;
 
-	@Column(name = "display_name")
-	private String displayName;
-
-	@Column(name = "avatar_url")
-	private String avatarUrl;
-
 	@Column(name = "created_at", nullable = false)
 	private OffsetDateTime createdAt;
 
@@ -44,22 +38,6 @@ public class AppUser {
 
 	public void setKeycloakSub(String keycloakSub) {
 		this.keycloakSub = keycloakSub;
-	}
-
-	public String getDisplayName() {
-		return this.displayName;
-	}
-
-	public void setDisplayName(String displayName) {
-		this.displayName = displayName;
-	}
-
-	public String getAvatarUrl() {
-		return this.avatarUrl;
-	}
-
-	public void setAvatarUrl(String avatarUrl) {
-		this.avatarUrl = avatarUrl;
 	}
 
 	public OffsetDateTime getCreatedAt() {
