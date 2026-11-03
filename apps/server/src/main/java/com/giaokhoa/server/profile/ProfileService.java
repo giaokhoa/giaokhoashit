@@ -12,8 +12,11 @@ public class ProfileService {
 
 	private final AppUserRepository users;
 
-	public ProfileService(AppUserRepository users) {
+	private final AppUserCreator userCreator;
+
+	public ProfileService(AppUserRepository users, AppUserCreator userCreator) {
 		this.users = users;
+		this.userCreator = userCreator;
 	}
 
 	public record ProfileView(UUID id, String keycloakSub, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
@@ -27,18 +30,13 @@ public class ProfileService {
 
 	private AppUser findOrCreateUser(String keycloakSub) {
 		return this.users.findByKeycloakSub(keycloakSub).orElseGet(() -> {
-			AppUser created = new AppUser();
-			created.setId(UUID.randomUUID());
-			created.setKeycloakSub(keycloakSub);
-			OffsetDateTime now = OffsetDateTime.now();
-			created.setCreatedAt(now);
-			created.setUpdatedAt(now);
 			try {
-				return this.users.saveAndFlush(created);
+				return this.userCreator.createUser(keycloakSub);
 			}
 			catch (DataIntegrityViolationException ex) {
 				// Hai request đầu tiên của cùng một `sub` có thể cùng thấy chưa có bản ghi và cùng chèn; request
-				// thua cuộc đua nhận lỗi trùng khoá unique và chỉ cần đọc lại bản ghi request thắng vừa tạo.
+				// thua cuộc đua nhận lỗi trùng khoá unique và chỉ cần đọc lại bản ghi request thắng vừa tạo. Lần
+				// chèn đã chạy ở transaction riêng nên transaction hiện tại không bị huỷ theo và đọc lại được.
 				return this.users.findByKeycloakSub(keycloakSub).orElseThrow(() -> ex);
 			}
 		});
