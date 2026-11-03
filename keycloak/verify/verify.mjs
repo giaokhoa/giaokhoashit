@@ -23,7 +23,10 @@
 //   - MFA ở realm master: tài khoản tương tác chưa khai báo TOTP
 //     không hoàn tất được đăng nhập, hoàn tất khai báo thì vào
 //     được và lần sau bị hỏi OTP; tài khoản tự động hoá gọi Admin
-//     API tách riêng nên không bị gắn required action.
+//     API tách riêng nên không bị gắn required action;
+//   - phiên SSO master tạo từ trước khi chuyển sang flow MFA bị
+//     thu hồi ở lượt chuyển đổi: cookie của phiên cũ không còn
+//     vào được Admin Console mà không qua MFA.
 //
 // Mọi kiểm tra in một dòng tiếng Việt ĐẠT/KHÔNG ĐẠT/BỎ QUA kèm mô tả
 // hành vi; tiến trình thoát khác 0 nếu có kiểm tra KHÔNG ĐẠT. Bí mật
@@ -281,6 +284,15 @@ async function adminToken() {
   cachedAdminToken = data.access_token;
   adminTokenExpiresAt = Date.now() + (data.expires_in ?? 60) * 1000;
   return cachedAdminToken;
+}
+
+// Xoá token quản trị đang cache để lần gọi API tiếp theo xin
+// token mới. Cần sau các lượt chạy bộ cấp phát có thu hồi phiên
+// của realm master (logout-all ở lượt chuyển đổi sang flow MFA
+// thu hồi cả phiên gắn với token của chính harness).
+function resetAdminToken() {
+  cachedAdminToken = null;
+  adminTokenExpiresAt = 0;
 }
 
 async function api(method, path, json) {
@@ -1322,18 +1334,32 @@ async function phaseScopeRoleMappingDrift() {
   const platformApiId = await clientInternalId(platform.realm, "platform-api");
   const { data: scopesP } = await api("GET", `/admin/realms/${platform.realm}/client-scopes`);
   const rolesScopeP = (scopesP || []).find((s) => s.name === "roles");
-  await api("POST", `/admin/realms/${platform.realm}/clients/${platformApiId}/roles`, {
-    name: extraClientRoleName,
-    description: "Client role ngoài mẫu do bộ kiểm chứng dựng để thử hoà giải drift",
-  });
+  const createClientRoleRes = await api(
+    "POST",
+    `/admin/realms/${platform.realm}/clients/${platformApiId}/roles`,
+    {
+      name: extraClientRoleName,
+      description: "Client role ngoài mẫu do bộ kiểm chứng dựng để thử hoà giải drift",
+    },
+  );
   const { data: extraClientRole } = await api(
     "GET",
     `/admin/realms/${platform.realm}/clients/${platformApiId}/roles/${extraClientRoleName}`,
   );
-  await api(
+  const mapClientRoleRes = await api(
     "POST",
     `/admin/realms/${platform.realm}/client-scopes/${rolesScopeP.id}/scope-mappings/clients/${platformApiId}`,
     [extraClientRole],
+  );
+  // Tạo client role trả 201; chạy lại harness trên cùng instance
+  // thì vai đã có từ lượt trước nên trả 409 — cả hai đều là trạng
+  // thái dựng được, và khẳng định quyết định là ánh xạ thật sự
+  // hiện diện trong scope-mappings ngay dưới đây.
+  check(
+    "Drift phía client role dựng thành công: tạo client role ngoài mẫu và ánh xạ vào scope roles của giaokhoa",
+    (createClientRoleRes.status === 201 || createClientRoleRes.status === 409) &&
+      mapClientRoleRes.status === 204,
+    `tạo vai HTTP ${createClientRoleRes.status}, ánh xạ HTTP ${mapClientRoleRes.status}`,
   );
 
   const { data: driftMappings } = await api(
@@ -1343,6 +1369,76 @@ async function phaseScopeRoleMappingDrift() {
   check(
     "Drift dựng thành công: scope roles của tenant mang thêm vai ngoài mẫu trước khi hoà giải",
     (driftMappings?.realmMappings || []).some((r) => r.name === extraRoleName),
+  );
+
+  const { data: driftPlatformMappings } = await api(
+    "GET",
+    `/admin/realms/${platform.realm}/client-scopes/${rolesScopeP.id}/scope-mappings`,
+  );
+  check(
+    "Drift phía client role hiện diện thật trước hoà giải: clientMappings của platform-api chứa vai ngoài mẫu",
+    (driftPlatformMappings?.clientMappings?.["platform-api"]?.mappings || []).some(
+      (r) => r.name === extraClientRoleName,
+    ),
+  );
+
+  // Tài khoản nền tảng riêng cho pha drift: mang cả platform-admin
+  // lẫn client role ngoài mẫu, để khẳng định trên chính token nền
+  // tảng chứ không chỉ trên bản ghi scope-mappings. Xoá bản còn
+  // sót từ lượt chạy trước vì secret OTP của lượt trước không còn.
+  const driftPlatformName = "qtv-drift-kiem-chung";
+  const { data: driftLeftovers } = await api(
+    "GET",
+    `/admin/realms/${platform.realm}/users?username=${driftPlatformName}&exact=true`,
+  );
+  if (driftLeftovers?.[0]) {
+    await api("DELETE", `/admin/realms/${platform.realm}/users/${driftLeftovers[0].id}`);
+  }
+  const driftPlatformUser = await createUser(platform.realm, driftPlatformName, testPassword());
+  await assignClientRole(platform.realm, driftPlatformUser.id, "platform-api", "platform-admin");
+  await assignClientRole(platform.realm, driftPlatformUser.id, "platform-api", extraClientRoleName);
+  const loginPlatformDrift = async (otpState) => {
+    const jar = newJar();
+    const { verifier, challenge } = pkce();
+    const redirectUri = `https://${platform.host}/api/auth/callback/keycloak`;
+    const onPage = async (page) => {
+      if (page.kind === "otp-setup") return handleOtpSetup(jar, page, otpState);
+      if (page.kind === "password") {
+        return {
+          action: page.form.action,
+          fields: { ...page.form.fields, username: driftPlatformName, password: pw(driftPlatformName) },
+        };
+      }
+      if (page.kind === "otp" && otpState.secret) {
+        return {
+          action: page.form.action,
+          fields: { ...page.form.fields, otp: await freshTotp(otpState.secret) },
+        };
+      }
+      return null;
+    };
+    const result = await driveFlow(
+      jar,
+      authorizeUrl(platform.realm, { clientId: "platform-web", redirectUri, challenge }),
+      redirectUri,
+      onPage,
+    );
+    const tokens = await exchangeCode(platform.realm, {
+      clientId: "platform-web",
+      secret: process.env.PLATFORM_WEB_SECRET || "",
+      code: result.code,
+      redirectUri,
+      verifier,
+    });
+    const access = tokens.data?.access_token ? decodeJwt(tokens.data.access_token) : null;
+    return access?.payload.resource_access?.["platform-api"]?.roles || [];
+  };
+  const driftOtpState = { secret: null };
+  const driftPlatformRoles = await loginPlatformDrift(driftOtpState);
+  check(
+    "Khi drift còn hiệu lực, token nền tảng của tài khoản drift mang client role ngoài mẫu",
+    driftPlatformRoles.includes(extraClientRoleName) && driftPlatformRoles.includes("platform-admin"),
+    `roles: ${driftPlatformRoles.join(", ")}`,
   );
 
   const driftLogin = await loginTenantUser(realm, tenantA, "hv-kiem-chung", pw("hv-kiem-chung"));
@@ -1393,6 +1489,13 @@ async function phaseScopeRoleMappingDrift() {
     JSON.stringify(healedClientNames) === JSON.stringify(["platform-admin"]),
     `mappings: ${healedClientNames.join(", ")}`,
   );
+  const healedPlatformRoles = await loginPlatformDrift(driftOtpState);
+  check(
+    "Token nền tảng cấp sau hoà giải không còn client role ngoài mẫu, vẫn giữ platform-admin",
+    !healedPlatformRoles.includes(extraClientRoleName) &&
+      healedPlatformRoles.includes("platform-admin"),
+    `roles: ${healedPlatformRoles.join(", ")}`,
+  );
 
   const healedLogin = await loginTenantUser(realm, tenantA, "hv-kiem-chung", pw("hv-kiem-chung"));
   const healedTokens = await exchangeCode(realm, {
@@ -1411,9 +1514,11 @@ async function phaseScopeRoleMappingDrift() {
     `roles: ${healedRoles.join(", ")}`,
   );
 
-  // Dọn drift còn sót: gỡ gán vai khỏi thành viên và xoá hai vai lạ.
+  // Dọn drift còn sót: gỡ gán vai khỏi thành viên, xoá tài khoản
+  // drift của nền tảng và xoá hai vai lạ.
   await api("DELETE", `/admin/realms/${realm}/users/${users.member.id}/role-mappings/realm`, [extraRole]);
   await api("DELETE", `/admin/realms/${realm}/roles/${extraRoleName}`);
+  await api("DELETE", `/admin/realms/${platform.realm}/users/${driftPlatformUser.id}`);
   await api(
     "DELETE",
     `/admin/realms/${platform.realm}/clients/${platformApiId}/roles/${extraClientRoleName}`,
@@ -1521,6 +1626,106 @@ async function phaseMasterMfa() {
     `thấy trang OTP: ${secondLogin.sawOtpPage}, kết quả: ${secondLogin.result.outcome}`,
   );
 }
+async function phaseMasterLegacySession() {
+  section("Realm master — phiên SSO có từ trước khi chuyển sang flow MFA bị thu hồi ở lượt chuyển đổi");
+  const legacyName = "van-hanh-cu-kiem-chung";
+
+  // Dọn tài khoản kiểm chứng còn sót từ lần chạy trước trên cùng
+  // instance, cùng cách pha MFA của master xử lý.
+  const { data: leftovers } = await api(
+    "GET",
+    `/admin/realms/master/users?username=${legacyName}&exact=true`,
+  );
+  if (leftovers?.[0]) await api("DELETE", `/admin/realms/master/users/${leftovers[0].id}`);
+
+  const legacy = await createUser("master", legacyName, testPassword());
+  const { data: adminRole } = await api("GET", "/admin/realms/master/roles/admin");
+  await api("POST", `/admin/realms/master/users/${legacy.id}/role-mappings/realm`, [adminRole]);
+
+  // Mô phỏng trạng thái TRƯỚC chuyển đổi: master còn dùng flow
+  // trình duyệt mặc định "browser" (chỉ mật khẩu, chưa bắt MFA).
+  const { data: masterBefore } = await api("GET", "/admin/realms/master");
+  const reverted = await api("PUT", "/admin/realms/master", {
+    ...masterBefore,
+    browserFlow: "browser",
+  });
+  check(
+    "Đưa được realm master về flow trình duyệt mặc định để dựng phiên cũ chưa MFA",
+    reverted.status === 204,
+    `HTTP ${reverted.status}`,
+  );
+
+  // Đăng nhập chỉ bằng mật khẩu dưới flow cũ: phiên SSO được tạo,
+  // và cookie của phiên đó tự đi qua yêu cầu authorize tiếp theo
+  // mà không cần đăng nhập lại.
+  const preLogin = await loginMasterUser(legacyName, pw(legacyName), { enrollOtp: false });
+  check(
+    "Dưới flow cũ, tài khoản master đăng nhập chỉ bằng mật khẩu và tạo được phiên SSO",
+    preLogin.result.outcome === "redirect" && Boolean(preLogin.result.code),
+    `kết quả: ${preLogin.result.outcome}/${preLogin.result.kind || ""}`,
+  );
+  const consoleRedirect = `${baseUrl}/admin/master/console/`;
+  const reuseBefore = await driveFlow(
+    preLogin.jar,
+    authorizeUrl("master", {
+      clientId: "security-admin-console",
+      redirectUri: consoleRedirect,
+      challenge: pkce().challenge,
+    }),
+    consoleRedirect,
+    async () => null,
+  );
+  check(
+    "Trước chuyển đổi, cookie của phiên cũ tự qua được yêu cầu authorize mới (SSO còn hiệu lực)",
+    reuseBefore.outcome === "redirect" && Boolean(reuseBefore.code),
+    `kết quả: ${reuseBefore.outcome}/${reuseBefore.kind || ""}`,
+  );
+
+  // Lượt chuyển đổi: chạy lại bộ cấp phát — browserFlow đang là
+  // "browser", khác flow MFA, nên lớp phủ phải thu hồi toàn bộ
+  // phiên master hiện có đúng ở lượt này.
+  let provisionOk = true;
+  try {
+    runProvision();
+  } catch {
+    provisionOk = false;
+  }
+  check("Chạy lại bộ cấp phát để chuyển master sang flow MFA không lỗi", provisionOk);
+  // Lượt chuyển đổi vừa thu hồi cả phiên gắn với token quản trị
+  // đang cache của harness — xin token mới trước khi đọc lại.
+  resetAdminToken();
+  const { data: masterAfter } = await api("GET", "/admin/realms/master");
+  check(
+    "Sau chuyển đổi, realm master trở lại flow trình duyệt lms-master-browser",
+    masterAfter?.browserFlow === "lms-master-browser",
+    `browserFlow: ${masterAfter?.browserFlow}`,
+  );
+  const { data: sessionsAfter } = await api(
+    "GET",
+    `/admin/realms/master/users/${legacy.id}/sessions`,
+  );
+  check(
+    "Sau chuyển đổi, tài khoản master không còn phiên đăng nhập nào (phiên cũ đã bị thu hồi)",
+    Array.isArray(sessionsAfter) && sessionsAfter.length === 0,
+    `số phiên: ${Array.isArray(sessionsAfter) ? sessionsAfter.length : "không đọc được"}`,
+  );
+  const reuseAfter = await driveFlow(
+    preLogin.jar,
+    authorizeUrl("master", {
+      clientId: "security-admin-console",
+      redirectUri: consoleRedirect,
+      challenge: pkce().challenge,
+    }),
+    consoleRedirect,
+    async () => null,
+  );
+  check(
+    "Cookie của phiên cũ không còn vào được sau chuyển đổi: bị đưa về trang đăng nhập thay vì qua thẳng",
+    reuseAfter.outcome === "page" && reuseAfter.kind === "password",
+    `kết quả: ${reuseAfter.outcome}/${reuseAfter.kind || ""}`,
+  );
+}
+
 // Mật khẩu kiểm chứng giữ trong bộ nhớ theo username (không in ra log).
 const _passwords = new Map();
 function pw(username) {
@@ -1543,6 +1748,7 @@ async function main() {
   await phaseRollback();
   await phaseScopeRoleMappingDrift();
   await phaseMasterMfa();
+  await phaseMasterLegacySession();
   console.log(`\nTổng kết: ${passed} ĐẠT, ${failed} KHÔNG ĐẠT, ${skipped} BỎ QUA`);
   if (failed > 0) process.exit(1);
 }
