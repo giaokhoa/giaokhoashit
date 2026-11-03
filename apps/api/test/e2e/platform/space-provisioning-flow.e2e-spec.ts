@@ -180,7 +180,7 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
       await shared.query(`SELECT set_config('app.platform', 'on', false)`);
       await shared.query('INSERT INTO users (id, username, email) VALUES ($1, $2, $3)', [centreA.adminUserId, ADMIN_A_USERNAME, ADMIN_A_EMAIL]);
       await shared.query('INSERT INTO tenants (id, slug, name, kind, status) VALUES ($1, $2, $3, $4, $5)', [centreA.tenantId, SLUG_A, NAME_A, 'center', 'active']);
-      await shared.query('INSERT INTO tenant_memberships (tenant_id, user_id, status) VALUES ($1, $2, $3)', [centreA.tenantId, centreA.adminUserId, 'active']);
+      await shared.query("INSERT INTO tenant_memberships (tenant_id, user_id, status, primary_role) VALUES ($1, $2, $3, 'admin')", [centreA.tenantId, centreA.adminUserId, 'active']);
     });
 
     // Ứng dụng phải thấy control plane và hai bí mật kho riêng ngay
@@ -294,7 +294,7 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
   });
 
   it('quản trị trung tâm sửa được nhận diện của mình, người dùng thường bị từ chối, trung tâm khác không đổi', async () => {
-    // Tạo người dùng thường TRỰC TIẾP trong kho của trung tâm A
+    // Tạo giáo viên thường TRỰC TIẾP trong kho của trung tâm A
     // (kèm mirror vào kho chung để gắn phiên — xem chú thích đầu
     // file). Băm mật khẩu bằng đúng thuật toán của PasswordService
     // (argon2id) để đường đăng nhập thật kiểm chứng được.
@@ -305,12 +305,12 @@ describe('Cấp phát trung tâm + nhận diện (đầu-cuối)', () => {
     await withClient(clusterUrl(centreA.databaseName, centreA.connectionRole, DB_PASSWORD), async (centre) => {
       await centre.query(`SELECT set_config('app.platform', 'on', false)`);
       await centre.query('INSERT INTO users (id, username, email, password_hash, first_name, last_name) VALUES ($1, $2, $3, $4, $5, $6)', [teacherId, teacherUsername, teacherEmail, teacherHash, 'Giao', 'Vien']);
-      await centre.query('INSERT INTO tenant_memberships (tenant_id, user_id, status) VALUES ($1, $2, $3)', [centreA.tenantId, teacherId, 'active']);
+      await centre.query("INSERT INTO tenant_memberships (tenant_id, user_id, status, primary_role) VALUES ($1, $2, $3, 'teacher')", [centreA.tenantId, teacherId, 'active']);
     });
     await withClient(process.env.DATABASE_URL!, async (shared) => {
       await shared.query(`SELECT set_config('app.platform', 'on', false)`);
       await shared.query('INSERT INTO users (id, username, email) VALUES ($1, $2, $3)', [teacherId, teacherUsername, teacherEmail]);
-      await shared.query('INSERT INTO tenant_memberships (tenant_id, user_id, status) VALUES ($1, $2, $3)', [centreA.tenantId, teacherId, 'active']);
+      await shared.query("INSERT INTO tenant_memberships (tenant_id, user_id, status, primary_role) VALUES ($1, $2, $3, 'teacher')", [centreA.tenantId, teacherId, 'active']);
     });
     const teacherLogin = await http(app)
       .post('/api/v1/auth/token')

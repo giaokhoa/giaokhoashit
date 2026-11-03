@@ -16,8 +16,8 @@
  *   dòng nhật ký).
  * - Index: đếm trên CÙNG cơ số đo với mốc kỳ vọng của phương án —
  *   chỉ các index KHÔNG đỡ ràng buộc (không phải index sinh tự
- *   động cho PRIMARY KEY/UNIQUE): mốc 416 của kho trung tâm đo
- *   trên cơ số này (tổng index trong `pg_indexes` là 732 vì cộng
+ *   động cho PRIMARY KEY/UNIQUE): mốc 417 của kho trung tâm đo
+ *   trên cơ số này (tổng index trong `pg_indexes` là 733 vì cộng
  *   316 index đỡ ràng buộc; các index đỡ ràng buộc sinh tất định
  *   theo bảng/ràng buộc nên được kiểm gián tiếp qua số bảng và đối
  *   chiếu schema, đếm tách ở đây chỉ làm nhiễu cổng).

@@ -33,6 +33,8 @@
 --    được trỏ tới tenant không tồn tại, và xoá tenant cuốn theo
 --    liên kết của nó — nhưng tạo liên kết vẫn không sinh membership
 --    nào (principal platform có liên kết mà không là thành viên).
+--    Index dẫn đầu bằng `tenant_id` bao phủ FK một cột và tránh quét
+--    toàn bảng khi tenant bị xoá theo `ON DELETE CASCADE`.
 CREATE TABLE "identity_links" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7(),
 	"tenant_id" uuid NOT NULL,
@@ -51,6 +53,8 @@ CREATE TABLE "identity_links" (
 ALTER TABLE "identity_links" ADD CONSTRAINT "identity_links_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
 --> statement-breakpoint
 ALTER TABLE "identity_links" ADD CONSTRAINT "identity_links_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE;
+--> statement-breakpoint
+CREATE INDEX "identity_links_tenant_id_idx" ON "identity_links" ("tenant_id");
 --> statement-breakpoint
 ALTER TABLE "identity_links" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint

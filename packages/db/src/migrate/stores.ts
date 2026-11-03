@@ -12,11 +12,11 @@
  * database dựng bằng đường bộ máy cũ (mốc phương án: trung tâm 202
  * bảng + 21 policy RLS + 416 index, control plane 6 bảng, ngân
  * hàng hệ thống 10 bảng). Migration native của issue #5 cộng một
- * bảng cho kho trung tâm (`identity_links`, kèm một policy RLS —
- * các index mới đều đỡ ràng buộc PK/UNIQUE nên cơ số index không
- * đổi) và một bảng cho control plane (`space_domains`), nên mốc
- * hiện hành là: trung tâm 203 bảng + 22 policy RLS + 416 index +
- * 2 dòng nhật ký, control plane 7 bảng + 4 dòng nhật ký.
+ * bảng cho kho trung tâm (`identity_links`, kèm một policy RLS và
+ * một index tường minh dẫn đầu bằng FK `tenant_id`) và một bảng
+ * cho control plane (`space_domains`), nên mốc hiện hành là:
+ * trung tâm 203 bảng + 22 policy RLS + 417 index + 2 dòng nhật ký,
+ * control plane 7 bảng + 4 dòng nhật ký.
  */
 import { sql, type Kysely } from 'kysely';
 
@@ -73,7 +73,7 @@ export const MIGRATION_STORES: Record<MigrationStoreKey, MigrationStore> = {
   centre: {
     migrationsDirName: 'centre',
     carrierNames: ['20261025163710_baseline'],
-    expected: { tables: 203, policies: 22, indexes: 416, journalRows: 2 },
+    expected: { tables: 203, policies: 22, indexes: 417, journalRows: 2 },
     connectionEnvVars: ['MIGRATION_DATABASE_URL', 'DATABASE_URL'],
   },
   'control-plane': {

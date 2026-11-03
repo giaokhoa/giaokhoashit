@@ -82,11 +82,12 @@ async function insertAssignmentRow(roleId: string, userId: string, contextId: st
 }
 
 /**
- * Dựng thẳng vào DB một ghi danh học viên đang hoạt động cho
+ * Dựng thẳng vào DB một ghi danh đang hoạt động của giáo viên cho
  * fixture: bản ghi user_enrolments + dòng gán vai do ghi danh cấp
  * (component 'enrol', item_id là instance) + tư cách thành viên
- * tenant của khoá — đúng các dòng EnrolService.enrolUserInternal
- * vẫn ghi. Chỉ dùng cho persona giáo viên chủ lớp ở khoá 1 của spec
+ * tenant của khoá với vai chính `teacher` — đúng các dòng dữ liệu
+ * mà persona giáo viên của fixture cần để hiện diện trong trung tâm.
+ * Chỉ dùng cho persona giáo viên chủ lớp ở khoá 1 của spec
  * này: từ issue #425, ghi danh một chủ lớp vào khoá thuộc lớp mình
  * chủ nhiệm bị chốt funnel 1 chặn qua API (chủ lớp đã có cấp quyền
  * giảng dạy bao phủ khoá qua context lớp), nên ghi danh "theo thông
@@ -106,8 +107,8 @@ async function insertLegacyEnrolment(instanceId: string, userId: string, courseI
       [instanceId, userId, contextId],
     );
     await client.query(
-      `insert into tenant_memberships (tenant_id, user_id, status)
-         select tenant_id, $2, 'active' from course
+      `insert into tenant_memberships (tenant_id, user_id, status, primary_role)
+         select tenant_id, $2, 'active', 'teacher' from course
           where id = $1 and not exists (
             select 1 from tenant_memberships tm where tm.tenant_id = course.tenant_id and tm.user_id = $2
           )`,

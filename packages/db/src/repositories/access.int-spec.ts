@@ -97,8 +97,8 @@ beforeAll(async () => {
   await db
     .insertInto('tenant_memberships')
     .values([
-      { tenant_id: tenantId, user_id: userAId, status: 'active' },
-      { tenant_id: tenantId, user_id: userBId, status: 'active' },
+      { tenant_id: tenantId, user_id: userAId, status: 'active', primary_role: 'member' },
+      { tenant_id: tenantId, user_id: userBId, status: 'active', primary_role: 'member' },
     ])
     .execute();
   systemCtxId = await makeContext(10, null, '', 0);

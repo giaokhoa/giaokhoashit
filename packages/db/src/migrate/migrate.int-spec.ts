@@ -183,7 +183,7 @@ async function countPublic(dbUrl: string, kind: 'tables' | 'policies' | 'indexes
       );
       return result.rows[0].n as number;
     }
-    // Cùng cơ số đo với hậu kiểm của package (mốc 416): chỉ index
+    // Cùng cơ số đo với hậu kiểm của package (mốc 417): chỉ index
     // không đỡ ràng buộc PK/UNIQUE.
     const result = await client.query(
       `SELECT count(*)::int AS n FROM pg_index i
@@ -223,11 +223,11 @@ describe('bộ máy migration của package cho ba kho', () => {
     expect(result.ok).toBe(true);
     expect(result.tables).toBe(203);
     expect(result.policies).toBe(22);
-    expect(result.indexes).toBe(416);
+    expect(result.indexes).toBe(417);
     expect(result.journalRows).toBe(2);
     expect(await countPublic(centreUrl, 'tables')).toBe(203);
     expect(await countPublic(centreUrl, 'policies')).toBe(22);
-    expect(await countPublic(centreUrl, 'indexes')).toBe(416);
+    expect(await countPublic(centreUrl, 'indexes')).toBe(417);
   });
 
   it('hàm đọc nhật ký chỉ đọc kysely_migration: database trống trả tập rỗng, nhật ký cũ bị bỏ qua, nhật ký Kysely trả đúng tập tên', async () => {

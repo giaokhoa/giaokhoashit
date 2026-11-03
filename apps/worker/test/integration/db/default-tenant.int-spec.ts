@@ -85,12 +85,12 @@ beforeAll(async () => {
       [USER_SINGLE_ID, USER_MULTI_ID, USER_NONE_ID, USER_FALLBACK_ID],
     );
     await admin.query(
-      `INSERT INTO tenant_memberships (tenant_id, user_id, status) VALUES
-         ($1, $2, 'active'),
-         ($3, $4, 'active'),
-         ($5, $4, 'active'),
-         ($5, $6, 'suspended'),
-         ($7, $6, 'active')`,
+      `INSERT INTO tenant_memberships (tenant_id, user_id, status, primary_role) VALUES
+         ($1, $2, 'active', 'member'),
+         ($3, $4, 'active', 'member'),
+         ($5, $4, 'active', 'member'),
+         ($5, $6, 'suspended', NULL),
+         ($7, $6, 'active', 'member')`,
       [
         CENTRE_TENANT_ID, USER_SINGLE_ID,
         PLATFORM_TENANT_ID, USER_MULTI_ID,
