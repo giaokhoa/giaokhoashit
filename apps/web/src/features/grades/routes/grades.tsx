@@ -249,15 +249,12 @@ export function GradebookPage() {
         </ErrorAlert>
       )}
 
-      {}
       <StudentGradesCard activities={myActivities} locale={i18n.language} />
 
       {isStaff && report && (
         <>
-          {}
           <ClassGradesGridCard report={report} locale={i18n.language} />
 
-          {}
           <GradeItemsAdminCard
             items={items}
             publications={report.publications}
@@ -275,7 +272,6 @@ export function GradebookPage() {
             onSetPublished={setPublished}
           />
 
-          {}
           <EnterGradeCard
             items={items}
             rows={report.rows}
@@ -297,7 +293,6 @@ export function GradebookPage() {
             onLoadHistory={loadHistory}
           />
 
-          {}
           <VneduExportCard
             items={items}
             publications={report.publications}

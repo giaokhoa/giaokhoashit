@@ -101,7 +101,6 @@ export function UsersWithRolesSection({ roles, contexts }: UsersWithRolesSection
         <CardTitle className="text-lg">{t('userRolesTitle')}</CardTitle>
         <CardDescription>{t('userRolesDescription')}</CardDescription>
       </CardHeader>
-      {}
       <div className="border-b">
         <div className="flex flex-col gap-4 border-b p-6">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">

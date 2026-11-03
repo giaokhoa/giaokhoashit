@@ -140,7 +140,6 @@ export function MyPapersPanel({
 
   return (
     <>
-  {}
   <div className="space-y-4">
         {myPapers.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('examPaperEmpty')}</p>
@@ -295,7 +294,6 @@ export function MyPapersPanel({
             </Button>
           </div>
         ) : null}
-        {}
         {sharedExamBanks.length > 0 && myPapers.length > 0 ? (
           <div className="space-y-2">
             <div className="flex flex-wrap items-end gap-2">

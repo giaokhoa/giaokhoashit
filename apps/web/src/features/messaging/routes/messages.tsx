@@ -186,8 +186,6 @@ export function MessagesPage() {
 
   return (
     <PageShell fillHeight width="full" className="py-6 sm:px-6" contentClassName="mx-auto max-w-[1392px]">
-      {}
-      {}
       <div className="flex h-[calc(100dvh-5.5rem)] min-h-0 overflow-hidden rounded-lg border bg-background md:h-[calc(100dvh-7rem)] lg:min-h-[520px]">
         <div
           className={

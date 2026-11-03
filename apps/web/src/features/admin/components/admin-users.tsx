@@ -363,7 +363,6 @@ export function AdminUsersPage() {
       {message ? <ErrorAlert>{message}</ErrorAlert> : null}
       <Card>
         <CardContent className="space-y-4">
-          {}
           <div className="flex flex-wrap items-end gap-2">
             <Field className="w-72 max-w-full">
               <FieldLabel htmlFor="users-search">{t('searchUsers')}</FieldLabel>
@@ -477,7 +476,6 @@ export function AdminUsersPage() {
           />
         )}
       </Card>
-      {}
       {deleteTarget !== null ? (
         <UserDeleteDialog
           user={deleteTarget}

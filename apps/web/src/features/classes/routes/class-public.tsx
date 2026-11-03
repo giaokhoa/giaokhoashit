@@ -168,7 +168,6 @@ export function ClassPublicPage({ initialPublic }: { initialPublic?: ClassPublic
         </ErrorAlert>
       ) : (
         <Card>
-          {}
           <CardContent className="flex flex-col gap-4 pt-6">
             <div className="flex flex-col gap-1 text-sm">
               <p className="text-muted-foreground">{t('classPublicOwner', { name: pub.ownerName })}</p>

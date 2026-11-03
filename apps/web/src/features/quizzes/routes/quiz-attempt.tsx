@@ -277,7 +277,6 @@ export function QuizAttemptPage() {
             ) : (
               <p className="text-sm whitespace-pre-wrap">{plainText(q.questionText)}</p>
             )}
-            {}
             {hasRichTextContent(q.guidance) ? (
               <div className="rounded-md border p-3" data-testid={`quiz-guidance-${q.slot}`}>
                 <h4 className="text-sm font-medium">{t('guidanceHeading')}</h4>
@@ -305,7 +304,6 @@ export function QuizAttemptPage() {
                     ? t('quizQuestionWaitingGrade')
                     : t('quizQuestionMark', { mark: q.mark ?? 0, max: q.maxMark })}
                 </p>
-                {}
                 {q.solution || q.rightAnswer || q.feedback || q.generalFeedback ? (
                   <div className="rounded-md border p-3 space-y-2" data-testid={`quiz-solution-${q.slot}`}>
                     <h4 className="text-sm font-medium">{t('quizSolutionHeading')}</h4>

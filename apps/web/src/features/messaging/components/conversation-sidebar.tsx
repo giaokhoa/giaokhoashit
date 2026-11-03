@@ -137,7 +137,6 @@ export function ConversationSidebar({
     const unreadCount = c.unread ?? 0;
     return (
       <li key={c.id}>
-        {}
           <button
             type="button"
             aria-current={isActive || undefined}
@@ -162,7 +161,6 @@ export function ConversationSidebar({
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-baseline gap-2">
-                {}
                 <span
                   className={cn(
                     'min-w-0 flex-1 truncate text-sm',
@@ -180,7 +178,6 @@ export function ConversationSidebar({
               <span className="mt-0.5 flex items-center gap-1.5">
                 {c.lastMessage ? (
                   <span className="min-w-0 flex-1 truncate text-xs leading-4 text-muted-foreground">
-                    {}
                     {c.lastMessage.userIdFrom === myId
                       ? `${t('lastMessageOwnPrefix')} `
                       : c.type === 1
@@ -191,7 +188,6 @@ export function ConversationSidebar({
                 ) : (
                   <span className="min-w-0 flex-1" />
                 )}
-                {}
                 {c.pinnedAt ? (
                   <span data-testid={`conversation-pinned-${c.id}`} className="grid size-5 shrink-0 place-items-center">
                     <Pin className="size-3 fill-current opacity-70" aria-hidden />
@@ -352,10 +348,8 @@ export function ConversationSidebar({
               />
             </button>
           ) : null}
-          {}
           <h2 className="min-w-0 truncate text-lg font-semibold">{t('messagesTitle')}</h2>
         </div>
-        {}
         <Button
           type="button"
           variant="ghost"
@@ -385,8 +379,6 @@ export function ConversationSidebar({
         }}
         className="min-h-0 min-w-0 flex-1 px-3"
       >
-        {}
-        {}
         <InputGroup>
           <InputGroupAddon>
             <Search aria-hidden />
@@ -399,7 +391,6 @@ export function ConversationSidebar({
             onChange={(e) => setSearchText(e.target.value)}
           />
         </InputGroup>
-        {}
         <TabsList variant="line" className="w-full border-b">
           <TabsTrigger value="all" aria-label={t('messagesFilterAll')} className="gap-1 text-xs font-normal">
             {t('messagesFilterAll')}
@@ -445,7 +436,6 @@ export function ConversationSidebar({
           </div>
         </TabsContent>
         <TabsContent value="archived" className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {}
           {renderConversationPanel(false, archivedConversations, t('archivedEmpty'), {
             loading: Boolean(archivedLoading),
             error: archivedError ?? null,

@@ -98,7 +98,6 @@ export function DossierQueuePanel({
 
   return (
     <>
-    {}
     {systemExamBankId && bankDossiers.length > 0 ? (
       <div className="space-y-2">
         <h4 className="font-medium">{t('dossierQueue')}</h4>

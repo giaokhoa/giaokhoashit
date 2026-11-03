@@ -502,7 +502,6 @@ export function ChatPanel({
               </MemberActionMenu>
             ) : (
               <Avatar>
-                {}
                 <AvatarFallback className={mine ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}>
                   {initialsOf(nameOf(m.userIdFrom))}
                 </AvatarFallback>
@@ -516,7 +515,6 @@ export function ChatPanel({
             {!mine && isGroup && firstOfCluster ? (
               <MessageHeader className="px-1">{nameOf(m.userIdFrom)}</MessageHeader>
             ) : null}
-            {}
             <Bubble
               variant={m.deletedAt || m.recalledAt ? 'destructive' : mine ? 'default' : 'muted'}
               align={mine ? 'end' : 'start'}
@@ -551,7 +549,6 @@ export function ChatPanel({
                 }
               } : undefined}
             >
-              {}
               <BubbleContent>
                 {m.replyTo ? (
                   <button
@@ -579,7 +576,6 @@ export function ChatPanel({
                 <span className="block">
                   {m.recalledAt ? t('messageRecalled') : <RichMessageText text={m.fullMessage} />}
                 </span>
-                {}
                 <span
                   data-testid={`message-time-${m.id}`}
                   className="mt-1 flex items-center justify-end gap-1 text-[10px] leading-none"
@@ -599,7 +595,6 @@ export function ChatPanel({
                   ) : null}
                 </span>
               </BubbleContent>
-              {}
               {showReplyAction || showMoreMenu ? (
                 <div
                   data-slot="message-actions"
@@ -723,7 +718,6 @@ export function ChatPanel({
                 </div>
               ) : null}
             </Bubble>
-            {}
             {hasOwnStatusNote ? (
               <MessageFooter className="flex-wrap gap-2">
               {m.deletedAt ? (
@@ -799,7 +793,6 @@ export function ChatPanel({
 
   return (
     <div className="relative flex min-h-0 flex-1">
-      {}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
       <div className="flex items-center justify-between gap-4 px-2 pt-3">
         <Button
@@ -812,7 +805,6 @@ export function ChatPanel({
         >
           <ChevronLeft aria-hidden />
         </Button>
-        {}
         <button
           type="button"
           aria-label={t('conversationInfoTitle')}
@@ -833,13 +825,11 @@ export function ChatPanel({
           ) : null}
         </button>
         <div className="min-w-0 flex-1">
-          {}
           <p className="flex items-center gap-1.5">
             <span className="truncate text-sm font-medium">{title}</span>
           </p>
           {subtitle ? <p className="truncate text-xs leading-3 text-muted-foreground">{subtitle}</p> : null}
         </div>
-        {}
         <Tooltip>
           <TooltipTrigger render={<span className="inline-flex" />}>
             <Button type="button" variant="ghost" size="icon-sm" aria-label={t('callAction')} disabled>
@@ -856,7 +846,6 @@ export function ChatPanel({
           </TooltipTrigger>
           <TooltipContent>{t('videoCallAction')}</TooltipContent>
         </Tooltip>
-        {}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -938,7 +927,6 @@ export function ChatPanel({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {}
       {(!isGroup && otherId && blocked.includes(otherId)) || reportMessage || actionMessage ? (
         <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
           {!isGroup && otherId && blocked.includes(otherId) ? (
@@ -1034,7 +1022,6 @@ export function ChatPanel({
         <ScrollerBridge bridgeRef={scrollerRef} />
         <MessageScroller className="min-h-0 flex-1">
           <MessageScrollerViewport aria-label={t('messagesListLabel')}>
-            {}
             <MessageScrollerContent className="gap-0 px-2 py-8">
               {threadItems}
             </MessageScrollerContent>
@@ -1042,7 +1029,6 @@ export function ChatPanel({
           <MessageScrollerButton />
         </MessageScroller>
       </MessageScrollerProvider>
-      {}
       <div className="flex flex-col gap-3 px-3 pb-2">
         {active.enabled === false && !active.canManage ? (
           <p role="status" className="text-sm text-muted-foreground">{t('chatDisabledNotice')}</p>
@@ -1051,7 +1037,6 @@ export function ChatPanel({
             {active.enabled === false ? (
               <p role="status" className="text-sm text-muted-foreground">{t('chatDisabledForMembers')}</p>
             ) : null}
-            {}
             <div className="flex flex-wrap gap-1.5">
               {QUICK_REPLY_SHAPE_SAMPLES.map((sample) => (
                 <Button
@@ -1066,7 +1051,6 @@ export function ChatPanel({
                 </Button>
               ))}
             </div>
-            {}
             <Tabs
               value={composerTab}
               onValueChange={(value) => {
@@ -1089,7 +1073,6 @@ export function ChatPanel({
                       data-testid="reply-chip"
                       className="flex items-center gap-2 rounded-lg border-l-2 border-primary bg-muted/50 px-3 py-2"
                     >
-                      {}
                       <span className="min-w-0 flex-1">
                         <span className="block text-xs font-medium text-primary">{t('replyingTo', { user: nameOf(replyTarget.userIdFrom) })}</span>
                         <span className="block truncate text-xs text-muted-foreground">
@@ -1130,7 +1113,6 @@ export function ChatPanel({
                       }
                     }}
                   />
-                  {}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       <Button
@@ -1206,7 +1188,6 @@ export function ChatPanel({
                 </form>
               </TabsContent>
               <TabsContent value="note" className="m-0">
-                {}
                 <form onSubmit={sendNote} className="flex flex-col gap-2 px-3 pb-2">
                   <Textarea
                     ref={noteComposerRef}
@@ -1316,7 +1297,6 @@ export function ChatPanel({
           data-testid="info-aside"
           className="absolute inset-y-0 right-0 z-20 flex w-[85vw] max-w-[320px] min-w-0 flex-col overflow-x-hidden overflow-y-auto border-l bg-background shadow-xl md:static md:z-auto md:w-[320px] md:shrink-0 md:shadow-none"
         >
-          {}
           {isGroup && memberPanelBundle ? (
             <>
               <div className="flex justify-end px-3 pt-2 md:hidden">
@@ -1330,7 +1310,6 @@ export function ChatPanel({
                   <X aria-hidden />
                 </Button>
               </div>
-              {}
               <div className="flex flex-wrap gap-2 border-b px-3 py-2">
                 <Button
                   type="button"
@@ -1364,7 +1343,6 @@ export function ChatPanel({
           ) : null}
           {!isGroup && otherId && partnerProfile ? (
             <div data-testid="partner-panel" className="flex min-h-full flex-col">
-              {}
               <div className="sticky top-0 z-10 flex items-start gap-3 bg-background px-4 py-4">
                 <span className="relative shrink-0">
                   <Avatar size="lg">
@@ -1415,7 +1393,6 @@ export function ChatPanel({
               </div>
               <div className="space-y-4 px-4 pb-4">
                 <Separator />
-                {}
                 <div className="flex flex-col gap-2">
                   <Button
                     type="button"
@@ -1461,7 +1438,6 @@ export function ChatPanel({
                     </Button>
                   )}
                 </div>
-                {}
                 {partnerProfile.bio ? (
                   <div className="space-y-1">
                     <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -1471,7 +1447,6 @@ export function ChatPanel({
                     <p className="text-sm leading-relaxed text-muted-foreground">{partnerProfile.bio}</p>
                   </div>
                 ) : null}
-                {}
                 <dl className="space-y-2 text-sm">
                   {([
                     ['profileEmail', partnerProfile.email, Mail],
@@ -1502,7 +1477,6 @@ export function ChatPanel({
                     </div>
                   ))}
                 </dl>
-                {}
                 {sharedFiles.length > 0 ? (
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium">{t('sharedFilesTitle')}</h4>
@@ -1516,7 +1490,6 @@ export function ChatPanel({
                   </div>
                 ) : null}
               </div>
-              {}
               <div className="mt-auto px-4 pb-4 pt-2">
                 <Button type="button" variant="destructive" className="w-full gap-2" disabled>
                   <Trash className="size-4" aria-hidden />

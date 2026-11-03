@@ -129,7 +129,6 @@ export function GuardianPage() {
         </div>
       ) : (
         <>
-          {}
           {students.length > 1 && (
             <div className="flex flex-wrap items-center gap-2 px-4 lg:px-6" role="group" aria-label={t('chooseChild')}>
               {students.map((entry) => (
@@ -157,7 +156,6 @@ export function GuardianPage() {
             <PageSkeleton className="flex flex-col gap-4 px-4 lg:px-6" testId="guardian-loading" rows={['h-24 w-full', 'h-48 w-full']} />
           ) : (
             <>
-              {}
               <section className="flex flex-col gap-3">
                 <BlockTitle>{t('weeklyTitle')}</BlockTitle>
                 <p className="-mt-2 px-4 text-sm text-muted-foreground lg:px-6">
@@ -194,7 +192,6 @@ export function GuardianPage() {
                 </div>
               </section>
 
-              {}
               <section className="flex flex-col gap-3">
                 <BlockTitle>{t('newResultsTitle')}</BlockTitle>
                 <div className="px-4 lg:px-6">
@@ -225,7 +222,6 @@ export function GuardianPage() {
                 </div>
               </section>
 
-              {}
               <section className="flex flex-col gap-3">
                 <BlockTitle>{t('announcementsTitle')}</BlockTitle>
                 <div className="px-4 lg:px-6">
@@ -252,7 +248,6 @@ export function GuardianPage() {
                 </div>
               </section>
 
-              {}
               <section className="flex flex-col gap-3">
                 <BlockTitle>{t('progressTitle')}</BlockTitle>
                 <div className="px-4 lg:px-6">
@@ -280,7 +275,6 @@ export function GuardianPage() {
                 </div>
               </section>
 
-              {}
               <section className="flex flex-col gap-3">
                 <BlockTitle>{t('resultsTitle')}</BlockTitle>
                 <div className="flex flex-col gap-4 px-4 lg:px-6">

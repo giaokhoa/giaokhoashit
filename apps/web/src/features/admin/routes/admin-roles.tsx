@@ -126,7 +126,6 @@ export function AdminRolesPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  {}
                   <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
                     <div className="flex flex-1 flex-col items-center gap-0.5">
                       <span className="text-sm font-semibold">{r.readOverrideCount ?? 0}</span>
@@ -145,7 +144,6 @@ export function AdminRolesPage() {
                 </CardContent>
               </Card>
             ))}
-            {}
             <Card className="items-center justify-center">
               <CardContent className="flex flex-col items-center justify-center gap-4">
                 <div className="text-center">

@@ -287,7 +287,6 @@ export function QuestionsPage({ area = 'my-questions' }: { area?: BankArea }) {
 
       {area.startsWith('system') ? (
         <>
-      {}
       <div className="space-y-6">
             {area === 'system-questions' ? (
               <DiscoveryPanel
@@ -298,7 +297,6 @@ export function QuestionsPage({ area = 'my-questions' }: { area?: BankArea }) {
             ) : null}
             {area === 'system-exams' ? (
             <>
-            {}
             <section id="system-papers" className="space-y-3 scroll-mt-24">
               <SystemPapersPanel
                 systemExamBankId={systemExamBankId}

@@ -142,7 +142,6 @@ export function CategoryBrowser({
       header: t('actions'),
       cell: (view) => (
         <span className="flex gap-2">
-          {}
           <Button
             type="button"
             variant="outline"
@@ -240,7 +239,6 @@ export function CategoryBrowser({
 
   return (
     <>
-  {}
   {categories.map((cat) => {
     const isActive = qCategory === String(cat.id);
     return (

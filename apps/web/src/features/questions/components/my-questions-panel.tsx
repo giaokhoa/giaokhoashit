@@ -83,7 +83,6 @@ export function MyQuestionsPanel({
 
   return (
     <>
-  {}
   <div className="space-y-4">
         {myQuestions.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('dashboard:emptyTable')}</p>

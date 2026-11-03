@@ -26,7 +26,6 @@ export function AnswersSection({ form, patchForm, contextId, itemId, moveItem }:
       {form.qtype === 'multichoice' && (
         <fieldset className="space-y-3">
           <legend className="sr-only">{t('choices')}</legend>
-          {}
           <McDocumentField
             label={t('questionText')}
             value={form.mcDocument}
@@ -126,7 +125,6 @@ export function AnswersSection({ form, patchForm, contextId, itemId, moveItem }:
       {form.qtype === 'truefalse' && (
         <fieldset className="space-y-3">
           <legend className="sr-only">{t('tfStatementsHeading')}</legend>
-          {}
           <TfDocumentField
             label={t('questionText')}
             value={form.tfDocument}

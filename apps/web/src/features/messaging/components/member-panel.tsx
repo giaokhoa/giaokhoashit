@@ -303,11 +303,9 @@ export function MemberPanel({
               <span className="absolute right-0 bottom-0 size-2.5 rounded-full bg-green-500 ring-2 ring-background" />
             ) : null}
           </span>
-          {}
           <span className="min-w-0 flex-1 text-sm">
             <span className="block break-words">{entry.displayName}</span>
             <span className="block text-xs text-muted-foreground">@{entry.username}</span>
-            {}
             {online ? (
               <span className="block text-xs font-medium text-green-600">{t('onlineNow')}</span>
             ) : null}

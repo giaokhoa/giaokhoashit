@@ -178,11 +178,9 @@ export function SettingsNotificationsPage() {
               {prefError}
             </ErrorAlert>
           ) : null}
-          {}
           {prefsQuery.isSuccess && prefs.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('prefMinimalNote')}</p>
           ) : null}
-          {}
           {summaries.map((summary) => {
             const emailSaving = savingGroups.has(summary.group);
             return (
@@ -234,7 +232,6 @@ export function SettingsNotificationsPage() {
           })}
         </CardContent>
       </Card>
-      {}
       {prefs.length > 0 ? (
         <CollapsibleSection
           title={t('prefCustomizeTitle')}

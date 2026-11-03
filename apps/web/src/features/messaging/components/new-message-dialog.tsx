@@ -100,7 +100,6 @@ export function NewMessageDialog({
           <DialogTitle>{t('newMessage')}</DialogTitle>
         </DialogHeader>
         <div className="max-h-[70vh] space-y-5 overflow-y-auto pr-1">
-          {}
           {contactMessage ? <p role="status" className="text-sm">{contactMessage}</p> : null}
           {incomingRequests.length > 0 ? (
             <div className="space-y-2">
@@ -139,7 +138,6 @@ export function NewMessageDialog({
             </div>
           ) : null}
           <div className="space-y-2">
-            {}
             <div className="flex items-center gap-2 rounded-lg border px-3 py-1">
               <span className="shrink-0 text-sm text-muted-foreground">{t('messageToLabel')}</span>
               <span className="min-w-0 truncate text-sm">{recipientContextLabel}</span>
@@ -212,7 +210,6 @@ export function NewMessageDialog({
                 value=""
                 readOnly
               />
-              {}
               <Button type="button" variant="ghost" size="icon-sm" aria-label={t('copyInviteLink')} disabled>
                 <Copy className="size-3.5" aria-hidden />
               </Button>

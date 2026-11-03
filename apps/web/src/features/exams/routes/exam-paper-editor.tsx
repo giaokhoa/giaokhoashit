@@ -431,7 +431,6 @@ export function ExamPaperEditorPage({ mode }: { mode: 'new' | 'edit' }) {
 
         <Button type="submit" disabled={!name.trim()}>{t('saveAction')}</Button>
       </form>
-      {}
       {mode === 'edit' && (pins.length > 0 || canPin) ? (
         <Card>
           <CardHeader>

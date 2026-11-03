@@ -233,7 +233,6 @@ export function CalendarPage() {
               <SheetHeader>
                 <SheetTitle>{t('createEventTitle')}</SheetTitle>
               </SheetHeader>
-              {}
               <form onSubmit={(e) => createEvent(e)} className="px-4">
                 <FieldGroup>
                   <Field>

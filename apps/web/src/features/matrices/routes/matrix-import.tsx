@@ -283,7 +283,6 @@ export function MatrixImportPage() {
           {message}
         </ErrorAlert>
       ) : null}
-      {}
       <ol className="flex flex-wrap gap-2 text-sm">
         {STEP_KEYS.map((key, index) => (
           <li

@@ -170,7 +170,6 @@ export function RoleAssignmentDialog({
                   />
                 </InputGroup>
               </Field>
-              {}
               {usersQuery.isPending ? (
                 <PageSkeleton label={t('loading')} rows={['h-9 w-full', 'h-9 w-full']} />
               ) : usersQuery.isError ? (

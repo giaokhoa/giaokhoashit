@@ -421,7 +421,6 @@ export function QuestionEditorPage({ mode }: { mode: 'new' | 'edit' }) {
   return (
     <PageShell width="full">
       <PageHeader title={mode === 'edit' ? t('editQuestionTitle', { name: formExcerpt(form) }) : t('newQuestion')} />
-      {}
       <div
         id="editor-toolbar-slot"
         className="sticky top-2 z-30 mb-2 min-h-11 rounded-lg border bg-background shadow-sm empty:hidden"
@@ -457,7 +456,6 @@ export function QuestionEditorPage({ mode }: { mode: 'new' | 'edit' }) {
                 {message}
               </ErrorAlert>
             ) : null}
-            {}
             <div className="grid items-start gap-6 lg:grid-cols-2">
               <FieldGroup>
                 <GeneralSection

@@ -65,7 +65,6 @@ export function OwnProfileSheet({
         <SheetTitle className="sr-only">{t('myProfile')}</SheetTitle>
         <div className="flex max-h-dvh flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto">
-            {}
             <div className="sticky top-0 z-10 flex items-start gap-3 border-b bg-background px-4 py-4">
               <span className="relative shrink-0">
                 <Avatar size="lg">

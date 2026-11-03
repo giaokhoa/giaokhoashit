@@ -65,7 +65,6 @@ export function MyMatricesPanel({
 
   return (
     <>
-  {}
   <div className="space-y-4">
         {myMatrices.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('dashboard:emptyTable')}</p>

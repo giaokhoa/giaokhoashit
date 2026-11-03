@@ -468,7 +468,6 @@ export function MatrixEditPage() {
             </form>
           </div>
 
-          {}
           <div className="space-y-3">
             <h3 className="font-medium">{t('specSectionTitle')}</h3>
             <p className="text-sm text-muted-foreground">{t('specSectionHint')}</p>
@@ -548,10 +547,8 @@ export function MatrixEditPage() {
                                   <td className="p-2">
                                     {t(QTYPE_LABEL_KEYS[cell.qtype as (typeof QTYPES)[number]] ?? 'qtypeMultichoice')}
                                   </td>
-                                  {}
                                   <td className="p-2">{cell.qtype === 'truefalse' ? cell.questionCount * 4 : cell.questionCount}</td>
                                   <td className="p-2">{cell.cellScore}</td>
-                                  {}
                                   <td className="p-2">
                                     {cell.slotNumbers && cell.slotNumbers.length
                                       ? cell.drawNote
