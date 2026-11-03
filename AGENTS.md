@@ -264,18 +264,23 @@ trình hiện tại trong tài liệu này.
    hiện trên chính PR, chỉ ở chế độ chat thường — cấm dùng các
    chế độ tốn quota như Agent, Deep Research hay Work. Điều
    phối chỉ nêu số PR và repo trong cuộc trò chuyện ChatGPT;
-   ChatGPT tự đọc PR qua kết nối GitHub của tài khoản và đăng
-   phán quyết của mình thành comment trên chính PR. Phán quyết
+   ChatGPT tự đọc PR qua kết nối GitHub của tài khoản, đồng
+   thời dùng plugin Desktop Commander kéo branch của PR về
+   máy dev và review mã trực tiếp trên máy dev, rồi đăng phán
+   quyết của mình thành comment trên chính PR. Phán quyết
    của lớp ChatGPT là comment thường, không phải trạng thái
    review chính thức, vì tài khoản kết nối chính là tác giả
    của PR và GitHub không cho tác giả nộp đánh giá Approve hay
    Request changes lên PR của chính mình. Ở lượt
-   đầu, hai lớp chấm độc lập và không bên nào thấy phán quyết
-   của bên kia; phán quyết lượt đầu của đội review nội bộ được
-   niêm phong trên PR, ghi kèm head SHA của PR, trước khi lớp
-   ChatGPT bắt đầu chấm. Sau khi cả hai lớp đã có phán quyết
-   lượt đầu, hai lớp đọc comment của nhau trên PR và đánh giá
-   qua lại tới đồng thuận. Lượt review qua ChatGPT luôn dùng
+   đầu, hai lớp chấm song song và độc lập trên chính mã của
+   PR; không bên nào được đọc phán quyết hay comment review
+   của bên kia trước khi nộp phán quyết lượt đầu của mình.
+   Phán quyết lượt đầu của mỗi lớp được điều phối giữ lại và
+   chỉ đăng lên PR sau khi cả hai lớp đã nộp xong phán quyết
+   lượt đầu của chúng, mỗi phán quyết ghi kèm head SHA của PR
+   mà nó chấm. Sau khi cả hai phán quyết lượt đầu đã được
+   đăng, hai lớp đọc comment của nhau trên PR và đánh giá qua
+   lại tới đồng thuận. Lượt review qua ChatGPT luôn dùng
    mức reasoning High; sau khi gửi yêu cầu review phải kiểm
    tra lại mức reasoning đang hiệu lực trong chính cuộc trò
    chuyện đó, vì ChatGPT đặt mặc định Medium ở mỗi cuộc trò
