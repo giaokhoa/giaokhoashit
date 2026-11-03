@@ -542,6 +542,91 @@ export const oauthLinksResponseSchema = z.object({
 });
 export type OAuthLinksResponse = z.infer<typeof oauthLinksResponseSchema>;
 
+/* ---- Vai chính và liên kết danh tính Keycloak (issue #5) ----
+ *
+ * Hai hình dạng nền của hợp đồng xác thực Keycloak:
+ * - Vai chính: mỗi membership đang hoạt động mang đúng MỘT vai
+ *   chính thuộc tập đóng `admin | teacher | member`, ánh xạ 1-1
+ *   sang realm role `tenant-admin | tenant-teacher |
+ *   tenant-member` của realm trung tâm. Vai chính là hình chiếu do
+ *   API sở hữu trong giai đoạn 1 và độc lập với các gán vai theo
+ *   context — gán vai theo context vẫn quyết quyền chi tiết tại
+ *   cây context, không định danh loại thành viên.
+ * - Liên kết danh tính: cặp `(issuer, sub)` trỏ về đúng một user
+ *   của LMS. Email không xuất hiện trong hình dạng liên kết và
+ *   không bao giờ làm khoá — đổi email không đổi liên kết, trùng
+ *   email ở hai realm là hai danh tính khác nhau. Liên kết thuộc
+ *   về bảng `identity_links` của kho trung tâm (xem
+ *   `docs/keycloak-auth-contract.md` mục 2 và 10); nó KHÁC
+ *   `oauthLinkSchema` ở trên — liên kết OAuth cũ phục vụ nhà cung
+ *   cấp ngoài cũ và mang email, không phải danh tính Keycloak.
+ */
+
+/** Tập đóng vai chính của membership. */
+export const PRIMARY_ROLES = ['admin', 'teacher', 'member'] as const;
+export const primaryRoleSchema = z.enum(PRIMARY_ROLES);
+export type PrimaryRole = z.infer<typeof primaryRoleSchema>;
+
+/** Tập đóng realm role của realm trung tâm mà vai chính ánh xạ sang (chiều Keycloak của cùng một ánh xạ). */
+export const TENANT_REALM_ROLES = ['tenant-admin', 'tenant-teacher', 'tenant-member'] as const;
+export const tenantRealmRoleSchema = z.enum(TENANT_REALM_ROLES);
+export type TenantRealmRole = z.infer<typeof tenantRealmRoleSchema>;
+
+/**
+ * Ánh xạ 1-1 giữa vai chính phía LMS và realm role phía Keycloak —
+ * nguồn duy nhất của ánh xạ này ở tầng hợp đồng: đồng bộ vai ở các
+ * issue sau đọc từ đây, không khai lại bảng ánh xạ ở nơi khác.
+ */
+export const PRIMARY_ROLE_REALM_ROLES: Record<PrimaryRole, TenantRealmRole> = {
+  admin: 'tenant-admin',
+  teacher: 'tenant-teacher',
+  member: 'tenant-member',
+};
+
+/** Trạng thái của một liên kết danh tính: `active` đang hiệu lực, `revoked` đã thu hồi (không còn phân giải principal). */
+export const IDENTITY_LINK_STATUSES = ['active', 'revoked'] as const;
+export const identityLinkStatusSchema = z.enum(IDENTITY_LINK_STATUSES);
+export type IdentityLinkStatus = z.infer<typeof identityLinkStatusSchema>;
+
+/**
+ * Một liên kết danh tính Keycloak → user cục bộ của một kho trung
+ * tâm. `issuer` là issuer cố định đã đăng ký trong sổ control
+ * plane của không gian sở hữu kho; `subject` là claim `sub`.
+ * `version` tăng mỗi lần thu hồi/đồng bộ để các lượt đồng bộ sau
+ * nhận ra thay đổi. Cố ý KHÔNG có trường email: email là thuộc
+ * tính hiển thị/liên hệ của user, không phải một phần của liên kết.
+ */
+export const identityLinkSchema = z.object({
+  id: uuidIdSchema,
+  tenantId: uuidIdSchema,
+  userId: uuidIdSchema,
+  issuer: z.string(),
+  subject: z.string(),
+  status: identityLinkStatusSchema,
+  version: z.number().int().min(1),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type IdentityLink = z.infer<typeof identityLinkSchema>;
+
+/**
+ * Payload tạo một liên kết danh tính — dùng cho các đường cấp phát
+ * tài khoản/fixture từ Keycloak: liên kết được tạo với ánh xạ tường
+ * minh sang user nghiệp vụ cần giữ. `issuer` phải là một issuer đã
+ * đăng ký trong sổ control plane (tầng service đối chiếu, hợp đồng
+ * chỉ chốt hình dạng URL http/https và trần độ dài như hợp đồng
+ * đăng ký issuer). Payload không mang và không bao giờ được mang
+ * bí mật xác thực cũ (mật khẩu băm, TOTP secret, refresh token,
+ * phiên Better Auth) — các bí mật đó không di trú sang Keycloak.
+ */
+export const createIdentityLinkSchema = z.strictObject({
+  tenantId: uuidIdSchema,
+  userId: uuidIdSchema,
+  issuer: z.string().min(1).max(500).regex(/^https?:\/\/\S+$/),
+  subject: z.string().min(1).max(255),
+});
+export type CreateIdentityLink = z.infer<typeof createIdentityLinkSchema>;
+
 /** Đáp ứng đăng nhập phiên cookie thành công (session id cũng được đặt qua cookie HttpOnly; body mang theo để client không phụ thuộc cookie đọc được). */
 export const sessionLoginResponseSchema = z.object({
   user: z.object({

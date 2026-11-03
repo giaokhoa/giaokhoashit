@@ -19,6 +19,12 @@ import { uuidIdSchema } from './ids.js';
  * - Mọi thao tác ghi yêu cầu capability quản trị platform hiện hữu
  *   (`tenant:manage` tại context hệ thống) — tầng này không dựng mô
  *   hình tài khoản quản trị riêng.
+ * - Từ issue #5, sổ còn giữ hai dữ kiện của chuỗi danh tính chuẩn:
+ *   issuer OIDC cố định của từng không gian (mỗi trung tâm một realm
+ *   Keycloak; realm platform `giaokhoa` thuộc về không gian platform)
+ *   và ánh xạ domain đã xác minh → không gian. Host của request chọn
+ *   tenant/realm/issuer CHỈ qua ánh xạ này — domain chưa đăng ký
+ *   hoặc chưa xác minh không chọn được tenant hay platform nào.
  */
 export const SPACE_KINDS = ['center', 'platform'] as const;
 export const SPACE_STATUSES = ['provisioning', 'active', 'suspended', 'closed'] as const;
@@ -27,6 +33,17 @@ export const SPACE_SCHEMA_RUN_STATUSES = ['running', 'success', 'failed'] as con
 
 /** Mẫu slug của không gian — cùng khuôn slug tenant hiện hành (định danh địa chỉ, chữ thường + gạch nối). */
 const spaceSlugSchema = z.string().regex(/^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/);
+
+/**
+ * Issuer OIDC của một realm Keycloak — URL gốc của realm, dạng
+ * `https://<host>/realms/<tên realm>`. Issuer là định danh so khớp
+ * TUYỆT ĐỐI khi kiểm token (claim `iss` phải bằng đúng chuỗi đã
+ * đăng ký), nên hình dạng ở tầng hợp đồng là một URL http/https
+ * hoàn chỉnh không chứa khoảng trắng; việc chuẩn hoá sâu hơn (dấu
+ * gạch cuối, cổng) thuộc về nơi cấp phát realm khi chốt issuer vào
+ * sổ, không suy diễn ở đây.
+ */
+export const issuerUrlSchema = z.string().min(1).max(500).regex(/^https?:\/\/\S+$/);
 
 export const spaceRegistrationSchema = z.object({
   id: uuidIdSchema,
@@ -40,6 +57,8 @@ export const spaceRegistrationSchema = z.object({
   secretRef: z.string().nullable(),
   schemaVersion: z.string().nullable(),
   plan: z.string().nullable(),
+  /** Issuer OIDC cố định của không gian (issue #5); `null` khi realm chưa được cấp phát. */
+  issuerUrl: issuerUrlSchema.nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -57,6 +76,7 @@ export const createSpaceRegistrationSchema = z.strictObject({
   secretRef: z.string().max(200).optional(),
   schemaVersion: z.string().max(120).optional(),
   plan: z.string().max(80).optional(),
+  issuerUrl: issuerUrlSchema.optional(),
 });
 export type CreateSpaceRegistration = z.infer<typeof createSpaceRegistrationSchema>;
 
@@ -69,6 +89,7 @@ export const updateSpaceRegistrationSchema = z.strictObject({
   secretRef: z.string().max(200).nullable().optional(),
   schemaVersion: z.string().max(120).nullable().optional(),
   plan: z.string().max(80).nullable().optional(),
+  issuerUrl: issuerUrlSchema.nullable().optional(),
 });
 export type UpdateSpaceRegistration = z.infer<typeof updateSpaceRegistrationSchema>;
 
@@ -147,3 +168,81 @@ export const spaceSchemaMigrationRunSchema = z.object({
   finishedAt: z.string().nullable(),
 });
 export type SpaceSchemaMigrationRun = z.infer<typeof spaceSchemaMigrationRunSchema>;
+
+/* ---- Domain đã xác minh của không gian (issue #5) ----
+ *
+ * Ánh xạ domain → không gian là mắt xích đầu của chuỗi danh tính
+ * chuẩn: Host đã xác minh → tenant → realm → issuer cố định. Các
+ * bất biến nghiệp vụ mà hình dạng này mã hoá:
+ * - Domain là duy nhất TOÀN HỆ: một domain không bao giờ thuộc hai
+ *   không gian (chốt ở tầng dữ liệu bằng ràng buộc duy nhất; tầng
+ *   hợp đồng chốt hình dạng canonical để hai cách viết của cùng một
+ *   domain không lọt qua thành hai đăng ký khác nhau).
+ * - Mỗi không gian có tối đa MỘT domain chính (`primary`); các
+ *   domain phụ (`alias`) không giới hạn số lượng và phân giải về
+ *   cùng issuer với domain chính, vì issuer nằm trên dòng đăng ký
+ *   của không gian chứ không nằm trên dòng domain.
+ * - Chỉ domain ở trạng thái `verified` mới được bộ phân giải chọn;
+ *   `pending` là đã đăng ký nhưng chưa xác minh quyền sở hữu,
+ *   `disabled` là đã tắt — cả hai đều không chọn được tenant/platform.
+ */
+
+export const SPACE_DOMAIN_KINDS = ['primary', 'alias'] as const;
+export const SPACE_DOMAIN_STATUSES = ['pending', 'verified', 'disabled'] as const;
+
+/**
+ * Domain dạng canonical: chữ thường, ít nhất hai nhãn DNS phân cách
+ * bằng dấu chấm, mỗi nhãn 1–63 ký tự chữ/số/gạch nối không bắt đầu
+ * hay kết thúc bằng gạch nối, tổng không quá 253 ký tự. Dạng này cố
+ * ý loại: chữ hoa (hai cách viết của cùng domain phải là một), cổng
+ * (`host:port` không phải danh tính của domain), địa chỉ IP (bốn
+ * nhãn số dạng IPv4 literal — các nhãn toàn số khớp khuôn nhãn DNS
+ * nên phải chặn riêng bằng `refine`) và tên một nhãn (localhost và
+ * các tên nội bộ không bao giờ là domain đã xác minh của một tenant).
+ */
+export const spaceDomainNameSchema = z
+  .string()
+  .regex(/^(?=.{4,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/)
+  .refine((value) => !/^\d{1,3}(?:\.\d{1,3}){3}$/.test(value), {
+    message: 'Domain không được là địa chỉ IP',
+  });
+
+/** Một domain đã đăng ký của một không gian. */
+export const spaceDomainSchema = z.object({
+  id: uuidIdSchema,
+  spaceId: uuidIdSchema,
+  domain: spaceDomainNameSchema,
+  kind: z.enum(SPACE_DOMAIN_KINDS),
+  status: z.enum(SPACE_DOMAIN_STATUSES),
+  /** Mốc xác minh quyền sở hữu gần nhất; `null` khi domain chưa từng được xác minh. */
+  verifiedAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type SpaceDomain = z.infer<typeof spaceDomainSchema>;
+
+/**
+ * Đăng ký một domain cho một không gian — chỉ quản trị platform.
+ * Domain luôn bắt đầu ở trạng thái `pending`: việc xác minh quyền
+ * sở hữu là một bước cấp phát riêng, hợp đồng tạo không cho phép
+ * khai sẵn `verified` để bỏ qua bước đó. `kind` vắng mặt = `alias`;
+ * domain chính của không gian được chỉ định tường minh.
+ */
+export const createSpaceDomainSchema = z.strictObject({
+  spaceId: uuidIdSchema,
+  domain: spaceDomainNameSchema,
+  kind: z.enum(SPACE_DOMAIN_KINDS).optional(),
+});
+export type CreateSpaceDomain = z.infer<typeof createSpaceDomainSchema>;
+
+/**
+ * Cập nhật một domain đã đăng ký: đổi loại (chính/phụ) hoặc đổi
+ * trạng thái cấp phát. Chuyển sang `verified` là hành động xác minh
+ * — mốc `verifiedAt` do tầng service đóng tại thời điểm chuyển,
+ * client không tự khai mốc này.
+ */
+export const updateSpaceDomainSchema = z.strictObject({
+  kind: z.enum(SPACE_DOMAIN_KINDS).optional(),
+  status: z.enum(SPACE_DOMAIN_STATUSES).optional(),
+});
+export type UpdateSpaceDomain = z.infer<typeof updateSpaceDomainSchema>;

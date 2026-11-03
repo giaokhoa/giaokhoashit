@@ -27,6 +27,11 @@ import {
   createSpaceRegistrationSchema, updateSpaceRegistrationSchema, changeSpaceStatusSchema,
   updateSpaceSchemaRegistrySchema, recordSpaceSchemaMigrationRunSchema,
   SPACE_KINDS, SPACE_STATUSES, SPACE_STORAGE_MODES,
+  createSpaceDomainSchema, updateSpaceDomainSchema, spaceDomainNameSchema, issuerUrlSchema,
+  SPACE_DOMAIN_KINDS, SPACE_DOMAIN_STATUSES,
+  primaryRoleSchema, tenantRealmRoleSchema, PRIMARY_ROLE_REALM_ROLES,
+  createIdentityLinkSchema, identityLinkSchema,
+  addTenantMemberSchema, tenantMembershipSchema,
   createSystemBankQuestionSchema, createSystemBankVersionSchema, createSystemOutcomePackageSchema,
   discoverSystemBankQuestionsSchema, importSystemBankQuestionSchema, withdrawSystemBankQuestionSchema,
   systemBankPackageSchema, SYSTEM_BANK_QUESTION_TYPES,
@@ -1469,5 +1474,141 @@ describe('Hợp đồng kho ngân hàng hệ thống (gói phiên bản bất bi
     expect(() => importSystemBankQuestionSchema.parse({})).toThrow();
     expect(() => importSystemBankQuestionSchema.parse({ sourceQuestionId: 'khong-phai-uuid' })).toThrow();
     expect(() => importSystemBankQuestionSchema.parse({ sourceQuestionId: sourceId, sourceVersionNumber: 0 })).toThrow();
+  });
+});
+
+describe('Hợp đồng domain/issuer và vai chính (issue #5)', () => {
+  const spaceId = '22222222-2222-7222-8222-222222222222';
+  const userId = '33333333-3333-7333-8333-333333333333';
+  const tenantId = '44444444-4444-7444-8444-444444444444';
+
+  it('domain canonical: chấp nhận tên miền chữ thường nhiều nhãn đúng hình dạng DNS', () => {
+    expect(spaceDomainNameSchema.parse('trung-tam-a.giaokhoa.vn')).toBe('trung-tam-a.giaokhoa.vn');
+    expect(spaceDomainNameSchema.parse('giaokhoa.vn')).toBe('giaokhoa.vn');
+  });
+
+  it('domain canonical: từ chối chữ hoa, cổng, IP, tên một nhãn và nhãn sai hình dạng', () => {
+    // Chữ hoa bị từ chối để hai cách viết của cùng một domain không
+    // thành hai đăng ký khác nhau (domain là duy nhất toàn hệ).
+    expect(() => spaceDomainNameSchema.parse('Trung-Tam-A.giaokhoa.vn')).toThrow();
+    expect(() => spaceDomainNameSchema.parse('trung-tam-a.giaokhoa.vn:8443')).toThrow();
+    expect(() => spaceDomainNameSchema.parse('127.0.0.1')).toThrow();
+    expect(() => spaceDomainNameSchema.parse('localhost')).toThrow();
+    expect(() => spaceDomainNameSchema.parse('trung_tam_a.giaokhoa.vn')).toThrow();
+    expect(() => spaceDomainNameSchema.parse('-trung-tam-a.giaokhoa.vn')).toThrow();
+    expect(() => spaceDomainNameSchema.parse('trung-tam-a.giaokhoa.vn.')).toThrow();
+  });
+
+  it('đăng ký domain: chỉ nhận spaceId + domain + kind thuộc tập đóng, không cho khai sẵn trạng thái đã xác minh', () => {
+    expect(createSpaceDomainSchema.parse({ spaceId, domain: 'a.giaokhoa.vn' })).toMatchObject({ domain: 'a.giaokhoa.vn' });
+    expect(createSpaceDomainSchema.parse({ spaceId, domain: 'a.giaokhoa.vn', kind: 'primary' }).kind).toBe('primary');
+    expect(SPACE_DOMAIN_KINDS).toEqual(['primary', 'alias']);
+    expect(SPACE_DOMAIN_STATUSES).toEqual(['pending', 'verified', 'disabled']);
+    // Domain luôn bắt đầu ở pending: payload mang status bị strictObject chặn.
+    expect(() => createSpaceDomainSchema.parse({ spaceId, domain: 'a.giaokhoa.vn', status: 'verified' })).toThrow();
+    expect(() => createSpaceDomainSchema.parse({ spaceId, domain: 'a.giaokhoa.vn', kind: 'main' })).toThrow();
+    expect(() => createSpaceDomainSchema.parse({ spaceId: 'khong-phai-uuid', domain: 'a.giaokhoa.vn' })).toThrow();
+  });
+
+  it('cập nhật domain: kind và status chỉ thuộc tập đóng đã chốt', () => {
+    expect(updateSpaceDomainSchema.parse({ status: 'verified' })).toMatchObject({ status: 'verified' });
+    expect(updateSpaceDomainSchema.parse({})).toMatchObject({});
+    expect(() => updateSpaceDomainSchema.parse({ status: 'active' })).toThrow();
+    // Mốc xác minh do server đóng — client khai verifiedAt bị chặn.
+    expect(() => updateSpaceDomainSchema.parse({ status: 'verified', verifiedAt: '2026-11-03T00:00:00.000Z' })).toThrow();
+  });
+
+  it('issuer: là URL http/https hoàn chỉnh, từ chối chuỗi không phải URL và URL có khoảng trắng', () => {
+    expect(issuerUrlSchema.parse('https://keycloak.giaokhoa.vn/realms/trung-tam-a')).toContain('/realms/');
+    expect(issuerUrlSchema.parse('http://localhost:8080/realms/giaokhoa')).toContain('localhost');
+    expect(() => issuerUrlSchema.parse('keycloak.giaokhoa.vn/realms/x')).toThrow();
+    expect(() => issuerUrlSchema.parse('https://keycloak.giaokhoa.vn/realms/trung tam')).toThrow();
+    expect(() => issuerUrlSchema.parse('')).toThrow();
+  });
+
+  it('đăng ký không gian: issuerUrl tuỳ chọn khi tạo, đặt được và xoá được (null) khi cập nhật', () => {
+    const base = {
+      slug: 'trung-tam-a',
+      name: 'Trung tâm A',
+      kind: 'center',
+      databaseName: 'lms_centre_a',
+      storageMode: 'dedicated',
+      connectionRoleRef: 'lms_centre_a_role',
+    };
+    expect(createSpaceRegistrationSchema.parse(base).issuerUrl).toBeUndefined();
+    expect(
+      createSpaceRegistrationSchema.parse({ ...base, issuerUrl: 'https://keycloak.giaokhoa.vn/realms/trung-tam-a' }).issuerUrl,
+    ).toContain('/realms/trung-tam-a');
+    expect(() => createSpaceRegistrationSchema.parse({ ...base, issuerUrl: 'khong-phai-url' })).toThrow();
+    expect(updateSpaceRegistrationSchema.parse({ issuerUrl: null }).issuerUrl).toBeNull();
+    expect(updateSpaceRegistrationSchema.parse({}).issuerUrl).toBeUndefined();
+  });
+
+  it('vai chính là tập đóng admin/teacher/member và ánh xạ 1-1 sang realm role tenant-*', () => {
+    expect(primaryRoleSchema.parse('admin')).toBe('admin');
+    expect(primaryRoleSchema.parse('teacher')).toBe('teacher');
+    expect(primaryRoleSchema.parse('member')).toBe('member');
+    expect(() => primaryRoleSchema.parse('superadmin')).toThrow();
+    expect(() => primaryRoleSchema.parse('tenant-admin')).toThrow();
+    expect(PRIMARY_ROLE_REALM_ROLES).toEqual({
+      admin: 'tenant-admin',
+      teacher: 'tenant-teacher',
+      member: 'tenant-member',
+    });
+    for (const realmRole of Object.values(PRIMARY_ROLE_REALM_ROLES)) {
+      expect(tenantRealmRoleSchema.parse(realmRole)).toBe(realmRole);
+    }
+    expect(() => tenantRealmRoleSchema.parse('platform-admin')).toThrow();
+  });
+
+  it('tạo liên kết danh tính: khoá là (issuer, sub) — payload không có chỗ cho email hay bí mật xác thực cũ', () => {
+    const payload = {
+      tenantId,
+      userId,
+      issuer: 'https://keycloak.giaokhoa.vn/realms/trung-tam-a',
+      subject: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+    };
+    expect(createIdentityLinkSchema.parse(payload)).toMatchObject(payload);
+    // strictObject: email và mọi trường lạ (passwordHash, totpSecret…) đều bị chặn.
+    expect(() => createIdentityLinkSchema.parse({ ...payload, email: 'a@example.com' })).toThrow();
+    expect(() => createIdentityLinkSchema.parse({ ...payload, passwordHash: 'x' })).toThrow();
+    expect(() => createIdentityLinkSchema.parse({ ...payload, issuer: 'khong-phai-url' })).toThrow();
+    expect(() => createIdentityLinkSchema.parse({ ...payload, subject: '' })).toThrow();
+  });
+
+  it('liên kết danh tính: hình dạng dòng không mang email, trạng thái chỉ active/revoked, version từ 1', () => {
+    const link = {
+      id: '55555555-5555-7555-8555-555555555555',
+      tenantId,
+      userId,
+      issuer: 'https://keycloak.giaokhoa.vn/realms/trung-tam-a',
+      subject: 'sub-123',
+      status: 'active',
+      version: 1,
+      createdAt: '2026-11-03T00:00:00.000Z',
+      updatedAt: '2026-11-03T00:00:00.000Z',
+    };
+    expect(identityLinkSchema.parse(link)).toMatchObject({ status: 'active', version: 1 });
+    expect(identityLinkSchema.parse({ ...link, status: 'revoked', version: 2 }).status).toBe('revoked');
+    expect(() => identityLinkSchema.parse({ ...link, status: 'pending' })).toThrow();
+    expect(() => identityLinkSchema.parse({ ...link, version: 0 })).toThrow();
+  });
+
+  it('membership: primaryRole thuộc tập đóng hoặc null ở dòng lịch sử; thêm thành viên vắng vai thì để tầng service áp mặc định member', () => {
+    const membership = {
+      id: '66666666-6666-7666-8666-666666666666',
+      tenantId,
+      userId,
+      status: 'active',
+      primaryRole: 'teacher',
+      joinedAt: '2026-11-03T00:00:00.000Z',
+      endedAt: null,
+    };
+    expect(tenantMembershipSchema.parse(membership).primaryRole).toBe('teacher');
+    expect(tenantMembershipSchema.parse({ ...membership, primaryRole: null }).primaryRole).toBeNull();
+    expect(() => tenantMembershipSchema.parse({ ...membership, primaryRole: 'owner' })).toThrow();
+    expect(addTenantMemberSchema.parse({ userId }).primaryRole).toBeUndefined();
+    expect(addTenantMemberSchema.parse({ userId, primaryRole: 'admin' }).primaryRole).toBe('admin');
+    expect(() => addTenantMemberSchema.parse({ userId, primaryRole: 'tenant-admin' })).toThrow();
   });
 });

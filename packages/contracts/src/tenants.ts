@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { uuidIdSchema } from './ids.js';
+import { primaryRoleSchema } from './identity.js';
 
 /**
  * Hợp đồng API của nền multi-tenant (TENANT-0, issue #168): tenant =
@@ -47,14 +48,28 @@ export const tenantMembershipSchema = z.object({
   tenantId: uuidIdSchema,
   userId: uuidIdSchema,
   status: z.enum(TENANT_MEMBER_STATUSES),
+  /**
+   * Vai chính duy nhất của membership (issue #5, tập đóng ở
+   * `identity.ts`). `null` chỉ ở các dòng lịch sử có trước khi vai
+   * chính được ghi — mọi membership tạo/kích hoạt qua đường ghi
+   * hiện hành đều mang đúng một vai.
+   */
+  primaryRole: primaryRoleSchema.nullable(),
   joinedAt: z.string(),
   endedAt: z.string().nullable(),
 });
 export type TenantMembership = z.infer<typeof tenantMembershipSchema>;
 
-/** Thêm thành viên vào tenant (tenant admin của tenant đó, hoặc platform qua `tenant:manage`). */
+/**
+ * Thêm thành viên vào tenant (tenant admin của tenant đó, hoặc
+ * platform qua `tenant:manage`). `primaryRole` là vai chính của
+ * membership được tạo/kích hoạt (issue #5): vắng mặt thì mang vai
+ * mặc định `member` — thêm thành viên thường là thêm học viên/
+ * người học; cấp vai `admin`/`teacher` phải khai tường minh.
+ */
 export const addTenantMemberSchema = z.strictObject({
   userId: uuidIdSchema,
+  primaryRole: primaryRoleSchema.optional(),
 });
 export type AddTenantMember = z.infer<typeof addTenantMemberSchema>;
 
