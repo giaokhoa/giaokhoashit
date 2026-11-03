@@ -183,6 +183,7 @@ async function permissionDetail(perm) {
     resourceNames: (resources.data || []).map((r) => r.name),
     scopeNames: (scopes.data || []).map((s) => s.name),
     policyNames: (policies.data || []).map((p) => p.name),
+    policyIds: (policies.data || []).map((p) => p.id),
   };
 }
 
@@ -361,10 +362,12 @@ async function phaseOrganizationsAndFgap() {
   const base = await authzBase();
   const policies = await listAuthz(`${base}/policy`);
   const permissions = await fgPermissions();
+  const roleIdByAlias = new Map();
 
   for (const org of orgs) {
     const roleName = `org-admin-${org.alias}`;
     const { status: roleStatus, data: role } = await api("GET", `/admin/realms/${REALM}/roles/${roleName}`);
+    if (role?.id) roleIdByAlias.set(org.alias, role.id);
     check(`Organization ${org.alias}: có realm role ${roleName}`, roleStatus === 200 && role?.name === roleName);
 
     const policy = policies.find((p) => p.name === roleName && p.type === "role");
@@ -400,22 +403,57 @@ async function phaseOrganizationsAndFgap() {
       (orgDetail?.policyNames || []).includes(roleName),
     );
 
-    const userPerm = permissions.find((p) => p.name === `${roleName}-users`);
-    const userDetail = userPerm ? await permissionDetail(userPerm) : null;
-    check(
-      `Organization ${org.alias}: permission ${roleName}-users có resourceType Users và scope view, manage`,
-      userDetail?.resourceType === "Users" &&
-        ["view", "manage"].every((s) => (userDetail?.scopeNames || []).includes(s)),
-      `resourceType: ${userDetail?.resourceType}, scopes: ${(userDetail?.scopeNames || []).join(", ")}`,
-    );
-    // Permission Users không gắn resource cụ thể nào: Keycloak tự gắn
-    // resource mặc định mang tên đúng loại resource ("Users").
-    check(
-      `Organization ${org.alias}: permission ${roleName}-users không khoá theo user cụ thể (chỉ resource mặc định Users)`,
-      JSON.stringify(userDetail?.resourceNames || []) === JSON.stringify(["Users"]),
-      `resources: ${(userDetail?.resourceNames || []).join(", ")}`,
-    );
   }
+
+  const usersPolicy = policies.find((p) => p.name === "org-admin-users-policy" && p.type === "role");
+  let usersPolicyRoles = [];
+  if (usersPolicy) {
+    const { data: detail } = await api("GET", `${base}/policy/role/${usersPolicy.id}`);
+    usersPolicyRoles = detail?.roles || [];
+  }
+  const expectedRoleIds = orgs.map((o) => roleIdByAlias.get(o.alias)).filter(Boolean).sort();
+  const actualRoleIds = usersPolicyRoles.map((r) => r.id).sort();
+  check(
+    "Role policy org-admin-users-policy chứa đúng 2 role id của org-admin-trung-tam-a và " +
+      "org-admin-trung-tam-b, tất cả required: false",
+    Boolean(usersPolicy) &&
+      JSON.stringify(actualRoleIds) === JSON.stringify(expectedRoleIds) &&
+      expectedRoleIds.length === 2 &&
+      usersPolicyRoles.every((r) => r.required === false),
+    `roles: ${usersPolicyRoles.map((r) => `${r.id}:${r.required}`).join(", ")}`,
+  );
+
+  const usersPerms = permissions.filter((p) => p.name === "org-admin-users");
+  check(
+    "Tồn tại đúng một permission org-admin-users dùng chung toàn realm",
+    usersPerms.length === 1,
+    `số lượng: ${usersPerms.length}`,
+  );
+  const usersDetail = usersPerms[0] ? await permissionDetail(usersPerms[0]) : null;
+  check(
+    "Permission org-admin-users có resourceType Users và scope view, manage",
+    usersDetail?.resourceType === "Users" &&
+      ["view", "manage"].every((s) => (usersDetail?.scopeNames || []).includes(s)),
+    `resourceType: ${usersDetail?.resourceType}, scopes: ${(usersDetail?.scopeNames || []).join(", ")}`,
+  );
+  check(
+    "Permission org-admin-users gắn đúng policy org-admin-users-policy",
+    Boolean(usersPolicy) &&
+      JSON.stringify(usersDetail?.policyIds || []) === JSON.stringify([usersPolicy.id]),
+    `policies: ${(usersDetail?.policyNames || []).join(", ")}`,
+  );
+  // Permission Users không gắn resource cụ thể nào: Keycloak tự gắn
+  // resource mặc định mang tên đúng loại resource ("Users").
+  check(
+    "Permission org-admin-users không khoá theo user cụ thể (chỉ resource mặc định Users)",
+    JSON.stringify(usersDetail?.resourceNames || []) === JSON.stringify(["Users"]),
+    `resources: ${(usersDetail?.resourceNames || []).join(", ")}`,
+  );
+  check(
+    "Không tồn tại permission org-admin-trung-tam-a-users hay org-admin-trung-tam-b-users theo từng trung tâm",
+    !permissions.some((p) => p.name === `org-admin-${aliasA}-users` || p.name === `org-admin-${aliasB}-users`),
+    `permissions: ${permissions.map((p) => p.name).join(", ")}`,
+  );
   return new Map(orgs.map((o) => [o.alias, o]));
 }
 
@@ -604,6 +642,8 @@ async function phaseIdempotent() {
     `trước ${orgCountBefore}, sau ${orgCountAfter}`,
   );
   const permCountAfter = (await fgPermissions()).length;
+  // Tổng ở lượt 1 là 3 permission (2 permission -organizations theo trung tâm và 1 permission org-admin-users dùng
+  // chung); so bằng số đếm động của lượt 1 thay vì hằng số để khẳng định chạy lại không sinh thêm permission.
   check(
     "Chạy lại không tạo thêm permission FGAP",
     permCountAfter === permCountBefore,
