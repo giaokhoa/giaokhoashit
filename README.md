@@ -14,6 +14,12 @@ apps/
 packages/
   contracts/  Các schema zod dùng chung (Problem Details, health, …) — hợp đồng duy nhất giữa api và web
   config/     Các tsconfig cơ sở dùng chung
+docs/
+  Tài liệu kiến trúc và hợp đồng còn giữ trong repo: hợp đồng tích hợp
+  Keycloak (`keycloak-auth-contract.md`), kiểm kê capability
+  (`capability-inventory.md`), oracle quyết quyền (`access-oracle.md`),
+  dữ kiện kiểm chứng (`access-verification-fixtures.md`) và danh sách
+  xoá xác thực cũ (`auth-removal-list.md`)
 ```
 
 Luật phụ thuộc: `web` chỉ phụ thuộc vào `contracts`; `api`/`worker` dùng
@@ -168,6 +174,17 @@ quen với LMS"** với 3 section và 3 module, cả hai học viên đều đã
 danh, điểm mẫu (student1 = 8.5, student2 = 6.5 ở "Bài kiểm tra 1"), huy
 hiệu "Huy hiệu khởi đầu" đã trao cho student1, và một sự kiện lịch của
 khoá học vào 09:00 ngày mai.
+
+> **Mô hình xác thực và quyền (đích):** Keycloak 26.7.5 là hệ xác
+> thực duy nhất theo hợp đồng ở `docs/keycloak-auth-contract.md` —
+> mỗi trung tâm một realm, tài khoản mẫu ở trên thuộc realm của
+> trung tâm chứa dữ liệu mẫu (không phải tài khoản platform), phụ
+> huynh chỉ đọc thông báo lớp/khoá của con và nhắn giáo viên có
+> quan hệ hợp lệ, **không xem điểm/bài làm**. Trạng thái hiện tại:
+> **chưa triển khai runtime** — đăng nhập vẫn là JWT tự viết +
+> Better Auth và bề mặt phụ huynh hiện tại còn hiển thị điểm đã
+> công bố của con; các sai lệch được ghi ở
+> `docs/access-verification-fixtures.md`.
 
 Seed cũng nạp **toàn bộ chương trình GDPT 2018 cấp quốc gia**: cả 21
 dataset đã kiểm chứng được đóng gói sẵn trong repo (2.115 bản ghi trên 19 môn
