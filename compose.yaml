@@ -500,6 +500,19 @@ services:
     networks:
       - keycloak-net
 
+  # Điểm nghiệm thu tenant cho đăng nhập Keycloak (issue #38):
+  # ứng dụng demo thuần Node tại keycloak/tenant-demo/ phục vụ
+  # cả hai hostname trung-tam-1.fuckr.net và
+  # trung-tam-2.fuckr.net qua cùng một cổng host 8082
+  # (Cloudflare Tunnel trỏ hai hostname đó về cổng này ở bước
+  # kích hoạt sau merge). Ứng dụng gọi Keycloak qua issuer
+  # công khai auth.fuckr.net nên không vào mạng keycloak-net.
+  tenant-demo:
+    build: ./keycloak/tenant-demo
+    restart: unless-stopped
+    ports:
+      - "8082:3000"
+
 volumes:
   pgdata:
   redisdata:
