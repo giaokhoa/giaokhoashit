@@ -215,7 +215,7 @@ export const mcpSubmitContributionOutputSchema = z.object({
 export type McpSubmitContributionOutput = z.infer<typeof mcpSubmitContributionOutputSchema>;
 
 /**
- * Lát MCP-1 (issue #163) Các tool dưới đây dùng cùng một bộ nguyên tắc biên như MCP-0: strict object, chuỗi/mảng có
+ * Lát MCP-1 (issue #163): Các tool dưới đây dùng cùng một bộ nguyên tắc biên như MCP-0: strict object, chuỗi/mảng có
  * trần, idempotencyKey bắt buộc ở mọi tool ghi, kết quả ghi theo TỪNG ITEM (một item lỗi không kéo cả lô xuống, trừ
  * tool nhóm ngữ liệu nguyên tử ghi rõ ở mô tả của nó).
  */
