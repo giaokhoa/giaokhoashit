@@ -215,18 +215,18 @@ describe('bộ máy migration của package cho ba kho', () => {
     await dropTestDatabase(adminUrl, T3_DB).catch(() => undefined);
   });
 
-  it('áp đủ carrier kho trung tâm trên database trống với đúng số đếm kỳ vọng', async () => {
+  it('áp đủ migration kho trung tâm (carrier + native) trên database trống với đúng số đếm kỳ vọng', async () => {
     const verifyPool = new Pool({ connectionString: centreUrl });
     const verifyDb = new Kysely({ dialect: new PostgresDialect({ pool: verifyPool }) });
     const result = await verifyStore(verifyDb, 'centre');
     await verifyDb.destroy().catch(() => undefined);
     expect(result.ok).toBe(true);
-    expect(result.tables).toBe(202);
-    expect(result.policies).toBe(21);
+    expect(result.tables).toBe(203);
+    expect(result.policies).toBe(22);
     expect(result.indexes).toBe(416);
-    expect(result.journalRows).toBe(1);
-    expect(await countPublic(centreUrl, 'tables')).toBe(202);
-    expect(await countPublic(centreUrl, 'policies')).toBe(21);
+    expect(result.journalRows).toBe(2);
+    expect(await countPublic(centreUrl, 'tables')).toBe(203);
+    expect(await countPublic(centreUrl, 'policies')).toBe(22);
     expect(await countPublic(centreUrl, 'indexes')).toBe(416);
   });
 
@@ -255,7 +255,10 @@ describe('bộ máy migration của package cho ba kho', () => {
       const migrated = new Client({ connectionString: centreUrl });
       await migrated.connect();
       try {
-        expect(await getAppliedMigrations(migrated)).toEqual(['20261025163710_baseline']);
+        expect(await getAppliedMigrations(migrated)).toEqual([
+          '20261025163710_baseline',
+          '20261103050557_identity_links_and_primary_role',
+        ]);
       } finally {
         await migrated.end();
       }
@@ -286,7 +289,7 @@ describe('bộ máy migration của package cho ba kho', () => {
     const dir = packageMigrationsDir('control-plane');
     const allNames = listMigrationNames(dir);
     const nativeNames = allNames.filter((name) => !CP_CARRIERS.includes(name));
-    expect(nativeNames).toHaveLength(1);
+    expect(nativeNames).toHaveLength(2);
     const prodUrl = await freshDatabase(PROD_DB);
     const pool = new Pool({ connectionString: prodUrl });
     const db = new Kysely({ dialect: new PostgresDialect({ pool }) });

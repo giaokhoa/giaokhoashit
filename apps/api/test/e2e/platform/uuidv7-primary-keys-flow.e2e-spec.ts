@@ -29,7 +29,7 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
   });
   afterAll(async () => { await pg.end(); await app.close(); });
 
-  it('(1) insert SQL thô không có id nhận id phiên bản 7, và migration baseline duy nhất mặc định mọi PK thành uuidv7()', async () => {
+  it('(1) insert SQL thô không có id nhận id phiên bản 7, và các migration của kho trung tâm mặc định mọi PK thành uuidv7()', async () => {
     const cat = await pg.query(
       `insert into course_categories (name, tenant_id) values ($1, (select id from tenants where slug = 'trang-chinh')) returning id, uuid_extract_version(id) as v`,
       [`${run}-cat`],
@@ -56,9 +56,15 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
     const migrationsDir = join(process.cwd(), '..', '..', 'packages', 'db', 'migrations', 'centre');
     const migrations = readdirSync(migrationsDir, { withFileTypes: true })
       .filter((d) => d.isDirectory())
-      .map((d) => join(migrationsDir, d.name, 'migration.sql'));
-    expect(migrations).toHaveLength(1);
-    const sqlText = readFileSync(migrations[0]!, 'utf8');
+      .map((d) => d.name)
+      .sort()
+      .map((name) => join(migrationsDir, name, 'migration.sql'));
+    // Kho trung tâm có đúng HAI thư mục migration: carrier baseline
+    // đóng băng + migration native đầu tiên của issue #5. Số đếm dưới
+    // đây chạy trên TỔNG SQL của cả hai file theo thứ tự tên — bảng
+    // mới từ nay vào bằng migration native, không gộp lại baseline.
+    expect(migrations).toHaveLength(2);
+    const sqlText = migrations.map((file) => readFileSync(file, 'utf8')).join('\n');
     // 160 bảng nghiệp vụ có PK uuidv7: 109 trước đây + session, account, verification,
     // two_factor (đợt Better Auth giai đoạn 1, issue #7) + subjects,
     // curricula, curriculum_nodes, learning_outcomes (đợt GDPT 2018, issue #20)
@@ -201,7 +207,13 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
     // system_question_imports có PK là FK question_id, không cột id,
     // không tính vào số này) → 202 bảng tổng, 187 bảng có PK mặc
     // định uuidv7().
-    expect(sqlText.match(/DEFAULT uuidv7\(\)/g)?.length).toBe(187);
+    // + identity_links (issue #5 — liên kết danh tính (issuer, sub)
+    // trỏ về user cục bộ của kho, PK id uuidv7; vào bằng migration
+    // native đầu tiên của kho trung tâm, cùng lượt cộng cột
+    // primary_role/version vào tenant_memberships — không đổi số
+    // bảng của bảng đó) → 203 bảng tổng, 188 bảng có PK mặc định
+    // uuidv7().
+    expect(sqlText.match(/DEFAULT uuidv7\(\)/g)?.length).toBe(188);
     // Chỉ hai cột seq phụ được dùng identity; không PK nghiệp vụ nào dùng sequence/identity.
     expect(sqlText.match(/GENERATED ALWAYS AS IDENTITY/g)?.length).toBe(2);
     // Sequence DUY NHẤT được phép trong baseline: payment_code_seq —
@@ -252,8 +264,11 @@ describe('Khoá chính UUIDv7 (kiểm chứng platform PostgreSQL 18)', () => {
     // (system_bank_event_receipts, outcome_package_installs; bảng
     // system_question_imports cùng đợt không có cột id nên không
     // tính) → 189 dòng (187 uuidv7 + 2 ngoại lệ text).
+    // + identity_links của issue #5 (bảng liên kết danh tính
+    // (issuer, sub) → user cục bộ, có cột id uuidv7) → 190 dòng
+    // (188 uuidv7 + 2 ngoại lệ text).
     const TEXT_ID_ALLOWLIST = ['oauth_client', 'oauth_client_assertion'];
-    expect(defaults.rows.length).toBe(189);
+    expect(defaults.rows.length).toBe(190);
     for (const row of defaults.rows) {
       if (TEXT_ID_ALLOWLIST.includes(row.table_name)) {
         if (row.table_name === 'oauth_client') {
