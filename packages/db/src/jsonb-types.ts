@@ -57,6 +57,8 @@ export type SpaceRegistrySnapshot = {
   secretRef: string | null;
   schemaVersion: string | null;
   plan: string | null;
+  /** Issuer OIDC cố định của không gian (issue #5); `null` khi realm chưa được cấp phát. */
+  issuerUrl: string | null;
 };
 
 /** Kết quả một bước trong một lượt chạy migration (do công cụ fleet ghi). */

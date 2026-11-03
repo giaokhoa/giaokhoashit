@@ -1490,6 +1490,18 @@ export interface GuardianViewState {
   updated_at: Generated<Timestamp>;
 }
 
+export interface IdentityLinks {
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  issuer: string;
+  status: Generated<string>;
+  subject: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  user_id: string;
+  version: Generated<number>;
+}
+
 export interface Insights {
   context_id: string;
   course_id: string | null;
@@ -2440,9 +2452,11 @@ export interface TenantMemberships {
   ended_at: Timestamp | null;
   id: Generated<string>;
   joined_at: Generated<Timestamp>;
+  primary_role: string | null;
   status: Generated<string>;
   tenant_id: string;
   user_id: string;
+  version: Generated<number>;
 }
 
 export interface Tenants {
@@ -2660,6 +2674,7 @@ export interface DB {
   guardian_digests: GuardianDigests;
   guardian_links: GuardianLinks;
   guardian_view_state: GuardianViewState;
+  identity_links: IdentityLinks;
   insights: Insights;
   jwks: Jwks;
   learning_outcomes: LearningOutcomes;

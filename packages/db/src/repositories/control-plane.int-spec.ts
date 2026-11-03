@@ -75,7 +75,7 @@ function registration(slug: string, patch: Partial<NewSpaceRegistration> = {}): 
 }
 
 /** Ảnh chụp sổ đăng ký theo đúng hình dạng service ghi vào lịch sử. */
-function snapshotOf(row: { id: string; slug: string; name: string; kind: string; status: string; databaseName: string; storageMode: string; connectionRoleRef: string; secretRef: string | null; schemaVersion: string | null; plan: string | null }): SpaceRegistrySnapshot {
+function snapshotOf(row: { id: string; slug: string; name: string; kind: string; status: string; databaseName: string; storageMode: string; connectionRoleRef: string; secretRef: string | null; schemaVersion: string | null; plan: string | null; issuerUrl: string | null }): SpaceRegistrySnapshot {
   return {
     id: row.id,
     slug: row.slug,
@@ -88,6 +88,7 @@ function snapshotOf(row: { id: string; slug: string; name: string; kind: string;
     secretRef: row.secretRef,
     schemaVersion: row.schemaVersion,
     plan: row.plan,
+    issuerUrl: row.issuerUrl,
   };
 }
 
@@ -455,6 +456,7 @@ describe('T-7 (phần control plane) + T-10 — contract kiểu runtime và hìn
       secretRef: oracleRow.secret_ref,
       schemaVersion: oracleRow.schema_version,
       plan: oracleRow.plan,
+      issuerUrl: oracleRow.issuer_url,
     });
     const oracleHistory = await db
       .insertInto('space_registry_history')
@@ -593,10 +595,13 @@ describe('T-7 (phần control plane) + T-10 — contract kiểu runtime và hìn
 });
 
 describe('bộ máy migration trên kho control plane — hai đường', () => {
-  it('đường từ rỗng: database dựng bằng bộ máy migration có đủ 6 bảng, 3 dòng nhật ký và hậu kiểm của package đạt', async () => {
+  it('đường từ rỗng: database dựng bằng bộ máy migration có đủ 7 bảng, 4 dòng nhật ký và hậu kiểm của package đạt', async () => {
+    // 7 bảng / 4 dòng nhật ký: mốc cũ 6 bảng / 3 dòng cộng bảng
+    // `space_domains` và một dòng nhật ký của migration native
+    // issue #5 (xem `space-domains.int-spec.ts`).
     const counts = await verifyStore(db, 'control-plane');
-    expect(counts.tables).toBe(6);
-    expect(counts.journalRows).toBe(3);
+    expect(counts.tables).toBe(7);
+    expect(counts.journalRows).toBe(4);
   });
 
   it('đường đã có nhật ký đầy đủ: migrateToLatest là no-op, dữ kiện còn nguyên', async () => {

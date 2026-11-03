@@ -54,10 +54,12 @@ dưới đây là trạng thái thường trực.
   có cột numeric nào — đây là kỷ luật phòng ngừa cho cột đầu tiên xuất hiện).
 - **Cột có giá trị mặc định** được codegen bọc trong `Generated<…>`: cổng đếm
   theo kho trên cụm PG18 thật — số cột `id` có mặc định `uuidv7()` là
-  **trung tâm 187, control plane 5, ngân hàng hệ thống 10** (đếm trên
+  **trung tâm 188, control plane 6, ngân hàng hệ thống 10** (đếm trên
   catalog của DB dựng từ rỗng; riêng `oauth_client.id` mang mặc định
   `gen_random_uuid()` nên số `id: Generated<string>` trong file sinh của kho
-  trung tâm là 188).
+  trung tâm là 189). Hai cột cộng thêm so với mốc trước là của issue
+  #5: bảng `identity_links` ở kho trung tâm và bảng `space_domains` ở
+  control plane, đều mang khoá chính UUIDv7 như khuôn chung.
 - **Cột jsonb có hình dạng nghiệp vụ thật** (hình dạng được giữ ở
   `src/jsonb-types.ts`) phải có override từng cột trong file cấu hình codegen của
   kho (`scripts/codegen/<kho>.json`, khoá `overrides.columns` theo dạng

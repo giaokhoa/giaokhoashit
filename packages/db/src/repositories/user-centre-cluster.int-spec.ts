@@ -314,7 +314,8 @@ describe('TenantsRepository — vòng đời tenant, membership và cấu hình 
 
   it('membership: tạo, tra theo cặp tenant+user, liệt kê hai chiều và cập nhật trạng thái kết thúc', async () => {
     const user = await makeUser('membership');
-    const membership = await tenantsRepo.insertMembership({ tenantId, userId: user.id, status: 'active' });
+    const membership = await tenantsRepo.insertMembership({ tenantId, userId: user.id, status: 'active', primaryRole: 'member' });
+    expect(membership.primaryRole).toBe('member');
     expect(membership.id).toMatch(UUIDV7_PATTERN);
     expect((await tenantsRepo.getMembership(tenantId, user.id))?.id).toBe(membership.id);
     expect((await tenantsRepo.listMembershipsForUser(user.id)).map((m) => m.id)).toContain(membership.id);

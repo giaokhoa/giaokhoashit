@@ -2,10 +2,11 @@
  * Repository của kho CONTROL PLANE trên Kysely — pilot chuyển đổi
  * bộ máy cũ → Kysely của chiến dịch chuyển tầng dữ liệu (issue #640).
  *
- * Vai trò: mọi truy cập tới sáu bảng của database control plane
+ * Vai trò: mọi truy cập tới bảy bảng của database control plane
  * (sổ đăng ký không gian, lịch sử quản trị sổ, registry phiên bản
  * schema, nhật ký migration, thư mục thành viên và thư mục mã tham
- * gia của các không gian kho riêng) tập trung ở đây. Repository
+ * gia của các không gian kho riêng, và bảng domain đã xác minh của
+ * không gian — issue #5) tập trung ở đây. Repository
  * không chứa luật nghiệp vụ — gác quyền, ghi lịch sử và giao dịch
  * nằm ở tầng service phía ứng dụng; repository chỉ nhận handle
  * (instance gốc hoặc transaction đang mở) để phía gọi ghép nhiều
@@ -63,6 +64,15 @@ export interface SpaceRegistryRow {
   secretRef: string | null;
   schemaVersion: string | null;
   plan: string | null;
+  /**
+   * Issuer OIDC cố định của không gian (issue #5): mỗi trung tâm một
+   * realm Keycloak nên issuer suy thẳng từ realm của không gian đó;
+   * realm platform `giaokhoa` thuộc về dòng đăng ký của không gian
+   * platform. `null` cho tới khi realm được cấp phát và issuer được
+   * chốt vào sổ — bộ phân giải domain/issuer không chọn không gian
+   * chưa có issuer.
+   */
+  issuerUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -138,6 +148,8 @@ export interface NewSpaceRegistration {
   secretRef?: string | null;
   schemaVersion?: string | null;
   plan?: string | null;
+  /** Issuer OIDC cố định của không gian (issue #5); vắng mặt = giữ mặc định NULL của database. */
+  issuerUrl?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -164,6 +176,121 @@ export interface NewSchemaMigrationRun {
   steps?: SchemaMigrationStep[];
   startedAt?: Date;
   finishedAt?: Date | null;
+}
+
+/**
+ * Một dòng domain đã đăng ký của một không gian (issue #5).
+ *
+ * `domain` giữ dạng canonical (chữ thường, không cổng, không dấu
+ * chấm cuối — xem {@link normalizeSpaceDomainName}) và là duy nhất
+ * toàn hệ theo ràng buộc của bảng: một domain không bao giờ trỏ về
+ * hai không gian. `kind` là `primary` (domain chính, tối đa một cho
+ * mỗi không gian) hoặc `alias` (domain phụ); cả hai loại đều phân
+ * giải về cùng issuer của không gian vì issuer nằm trên dòng đăng
+ * ký, không nằm trên dòng domain. `status` là trạng thái cấp phát:
+ * chỉ `verified` mới được bộ phân giải domain/issuer chọn.
+ */
+export interface SpaceDomainRow {
+  id: string;
+  spaceId: string;
+  domain: string;
+  /** primary | alias. */
+  kind: string;
+  /** pending | verified | disabled. */
+  status: string;
+  verifiedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Dữ kiện ghi một domain mới cho một không gian (đã qua kiểm chứng ở tầng service/contract). */
+export interface NewSpaceDomain {
+  id?: string;
+  spaceId: string;
+  domain: string;
+  /** primary | alias; vắng mặt = mặc định `alias` của database. */
+  kind?: string;
+  /** pending | verified | disabled; vắng mặt = mặc định `pending` của database. */
+  status?: string;
+  verifiedAt?: Date | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+/**
+ * Kết quả tra cứu domain ĐÃ XÁC MINH kèm dòng đăng ký của không gian
+ * sở hữu — hình chiếu mà bộ phân giải domain/issuer ở tầng ứng dụng
+ * tiêu thụ: domain chọn không gian, không gian cho issuer cố định.
+ */
+export interface VerifiedSpaceDomainRow {
+  domainId: string;
+  domain: string;
+  /** primary | alias. */
+  domainKind: string;
+  spaceId: string;
+  slug: string;
+  /** center | platform. */
+  spaceKind: string;
+  /** provisioning | active | suspended | closed. */
+  spaceStatus: string;
+  /** shared | dedicated. */
+  storageMode: string;
+  /** Issuer OIDC cố định của không gian; `null` khi realm chưa được cấp phát. */
+  issuerUrl: string | null;
+}
+
+/**
+ * Chuẩn hoá một domain về dạng canonical mà bảng `space_domains`
+ * lưu và tra cứu: cắt khoảng trắng hai đầu, hạ chữ thường, bỏ MỘT
+ * dấu chấm cuối (dạng FQDN có dấu chấm gốc). Mọi đường ghi và đường
+ * tra cứu trong repository đều đi qua hàm này nên hai dạng viết
+ * khác nhau của cùng một domain (ví dụ khác chữ hoa) va chạm trên
+ * cùng một dòng — ràng buộc duy nhất toàn hệ vì vậy chặn được cả
+ * ca trùng theo chữ hoa. Hàm KHÔNG cắt cổng và không suy diễn gì
+ * thêm: domain mang cổng là dữ kiện sai ở tầng hợp đồng, không
+ * thuộc việc của repository.
+ */
+export function normalizeSpaceDomainName(domain: string): string {
+  const trimmed = domain.trim().toLowerCase();
+  return trimmed.endsWith('.') ? trimmed.slice(0, -1) : trimmed;
+}
+
+/** Tên ràng buộc duy nhất toàn hệ trên `space_domains.domain`. */
+export const SPACE_DOMAIN_UNIQUE_CONSTRAINT = 'space_domains_domain_unique';
+/** Tên chỉ số duy nhất riêng phần chốt tối đa một domain chính cho mỗi không gian. */
+export const SPACE_DOMAIN_PRIMARY_UNIQUE_INDEX = 'space_domains_one_primary_per_space';
+
+/**
+ * Lỗi có phải va chạm của một ràng buộc duy nhất thuộc bảng
+ * `space_domains` hay không — cùng khuôn
+ * {@link isDedicatedDatabaseNameConflict}: mã 23505 cộng tên ràng
+ * buộc khớp (trên trường `constraint` hoặc trong `message`), duyệt
+ * chuỗi `cause`. Hai helper tách riêng cho hai ràng buộc để tầng
+ * ứng dụng ánh xạ đúng mã lỗi nghiệp vụ: trùng domain toàn hệ và
+ * trùng domain chính của một không gian là hai xung đột khác nhau.
+ */
+function isSpaceDomainConstraintConflict(err: unknown, constraintName: string): boolean {
+  let e: unknown = err;
+  while (e !== null && typeof e === 'object') {
+    const candidate = e as { code?: unknown; constraint?: unknown; message?: unknown };
+    if (candidate.code === '23505'
+      && (candidate.constraint === constraintName
+        || (typeof candidate.message === 'string' && candidate.message.includes(constraintName)))) {
+      return true;
+    }
+    e = (e as { cause?: unknown }).cause;
+  }
+  return false;
+}
+
+/** Lỗi có phải va chạm trùng domain toàn hệ (`space_domains.domain`) hay không. */
+export function isSpaceDomainConflict(err: unknown): boolean {
+  return isSpaceDomainConstraintConflict(err, SPACE_DOMAIN_UNIQUE_CONSTRAINT);
+}
+
+/** Lỗi có phải va chạm "không gian đã có domain chính" hay không. */
+export function isSpacePrimaryDomainConflict(err: unknown): boolean {
+  return isSpaceDomainConstraintConflict(err, SPACE_DOMAIN_PRIMARY_UNIQUE_INDEX);
 }
 
 /**
@@ -253,6 +380,7 @@ const SPACE_REGISTRY_COLUMNS = [
   'secret_ref as secretRef',
   'schema_version as schemaVersion',
   'plan',
+  'issuer_url as issuerUrl',
   'created_at as createdAt',
   'updated_at as updatedAt',
 ] as const;
@@ -312,6 +440,56 @@ const SPACE_JOIN_CODE_DIRECTORY_COLUMNS = [
   'updated_at as updatedAt',
 ] as const;
 
+/** Danh sách cột tường minh có bí danh camelCase cho bảng domain của không gian (issue #5). */
+const SPACE_DOMAIN_COLUMNS = [
+  'id',
+  'space_id as spaceId',
+  'domain',
+  'kind',
+  'status',
+  'verified_at as verifiedAt',
+  'created_at as createdAt',
+  'updated_at as updatedAt',
+] as const;
+
+/**
+ * Ánh xạ dữ kiện ghi domain (camelCase) sang values insert
+ * (snake_case), LOẠI mọi trường mang `undefined` (quy tắc T-4).
+ * Domain luôn đi qua {@link normalizeSpaceDomainName} trước khi
+ * ghi để dạng lưu là canonical — ràng buộc duy nhất toàn hệ vì
+ * vậy chặn cả ca trùng chỉ khác chữ hoa.
+ */
+function spaceDomainInsertValues(values: NewSpaceDomain): Insertable<ControlPlaneDB['space_domains']> {
+  const row: Insertable<ControlPlaneDB['space_domains']> = {
+    space_id: values.spaceId,
+    domain: normalizeSpaceDomainName(values.domain),
+  };
+  if (values.id !== undefined) row.id = values.id;
+  if (values.kind !== undefined) row.kind = values.kind;
+  if (values.status !== undefined) row.status = values.status;
+  if (values.verifiedAt !== undefined) row.verified_at = values.verifiedAt;
+  if (values.createdAt !== undefined) row.created_at = values.createdAt;
+  if (values.updatedAt !== undefined) row.updated_at = values.updatedAt;
+  return row;
+}
+
+/**
+ * Ánh xạ một patch cập nhật domain (camelCase) sang set update
+ * (snake_case), LOẠI mọi trường `undefined` (quy tắc T-4); domain
+ * trong patch cũng được chuẩn hoá như đường ghi mới.
+ */
+function spaceDomainUpdateSet(patch: Partial<NewSpaceDomain>): Updateable<ControlPlaneDB['space_domains']> {
+  const set: Updateable<ControlPlaneDB['space_domains']> = {};
+  if (patch.id !== undefined) set.id = patch.id;
+  if (patch.spaceId !== undefined) set.space_id = patch.spaceId;
+  if (patch.domain !== undefined) set.domain = normalizeSpaceDomainName(patch.domain);
+  if (patch.kind !== undefined) set.kind = patch.kind;
+  if (patch.status !== undefined) set.status = patch.status;
+  if (patch.verifiedAt !== undefined) set.verified_at = patch.verifiedAt;
+  if (patch.createdAt !== undefined) set.created_at = patch.createdAt;
+  return set;
+}
+
 /**
  * Ánh xạ dữ kiện ghi dòng đăng ký (camelCase) sang values insert
  * (snake_case), LOẠI mọi trường mang `undefined`: trường vắng mặt
@@ -332,6 +510,7 @@ function spaceRegistryInsertValues(values: NewSpaceRegistration): Insertable<Con
   if (values.secretRef !== undefined) row.secret_ref = values.secretRef;
   if (values.schemaVersion !== undefined) row.schema_version = values.schemaVersion;
   if (values.plan !== undefined) row.plan = values.plan;
+  if (values.issuerUrl !== undefined) row.issuer_url = values.issuerUrl;
   if (values.createdAt !== undefined) row.created_at = values.createdAt;
   if (values.updatedAt !== undefined) row.updated_at = values.updatedAt;
   return row;
@@ -356,6 +535,7 @@ function spaceRegistryUpdateSet(patch: Partial<NewSpaceRegistration>): Updateabl
   if (patch.secretRef !== undefined) set.secret_ref = patch.secretRef;
   if (patch.schemaVersion !== undefined) set.schema_version = patch.schemaVersion;
   if (patch.plan !== undefined) set.plan = patch.plan;
+  if (patch.issuerUrl !== undefined) set.issuer_url = patch.issuerUrl;
   if (patch.createdAt !== undefined) set.created_at = patch.createdAt;
   return set;
 }
@@ -769,5 +949,87 @@ export class ControlPlaneRepository {
       .where('space_slug', '=', spaceSlug)
       .orderBy('join_code', 'asc')
       .execute();
+  }
+
+  /**
+   * Đăng ký một domain cho một không gian (issue #5). Domain được
+   * chuẩn hoá về dạng canonical trước khi ghi; trùng domain toàn
+   * hệ (kể cả chỉ khác chữ hoa) hoặc đăng ký domain chính thứ hai
+   * cho cùng một không gian thì lỗi vi phạm duy nhất của Postgres
+   * ném thẳng ra — tầng ứng dụng nhận diện qua
+   * {@link isSpaceDomainConflict} / {@link isSpacePrimaryDomainConflict}
+   * để ánh xạ mã lỗi nghiệp vụ.
+   */
+  async insertDomain(values: NewSpaceDomain, db: CpDb = this.db()): Promise<SpaceDomainRow> {
+    const rows = await db
+      .insertInto('space_domains')
+      .values(spaceDomainInsertValues(values))
+      .returning(SPACE_DOMAIN_COLUMNS)
+      .execute();
+    return rows[0]!;
+  }
+
+  /** Cập nhật một domain theo id (đổi loại/trạng thái/mốc xác minh) và trả về dòng sau cập nhật. */
+  async updateDomain(id: string, patch: Partial<NewSpaceDomain>, db: CpDb = this.db()): Promise<SpaceDomainRow> {
+    const rows = await db
+      .updateTable('space_domains')
+      .set({ ...spaceDomainUpdateSet(patch), updated_at: new Date() })
+      .where('id', '=', id)
+      .returning(SPACE_DOMAIN_COLUMNS)
+      .execute();
+    return rows[0]!;
+  }
+
+  /**
+   * Tra một domain theo tên (mọi trạng thái cấp phát) — đường kiểm
+   * tra trùng và quản trị domain. Tên được chuẩn hoá trước khi tra
+   * nên dạng viết khác chữ hoa vẫn khớp đúng dòng đã đăng ký.
+   */
+  async findDomainByName(domain: string, db: CpDb = this.db()): Promise<SpaceDomainRow | undefined> {
+    return db
+      .selectFrom('space_domains')
+      .select(SPACE_DOMAIN_COLUMNS)
+      .where('domain', '=', normalizeSpaceDomainName(domain))
+      .limit(1)
+      .executeTakeFirst();
+  }
+
+  /** Mọi domain đã đăng ký cho một không gian, theo tên tăng dần. */
+  async listDomainsForSpace(spaceId: string, db: CpDb = this.db()): Promise<SpaceDomainRow[]> {
+    return db
+      .selectFrom('space_domains')
+      .select(SPACE_DOMAIN_COLUMNS)
+      .where('space_id', '=', spaceId)
+      .orderBy('domain', 'asc')
+      .execute();
+  }
+
+  /**
+   * Tra cứu phân giải của bộ phân giải domain/issuer (issue #5):
+   * CHỈ domain ở trạng thái `verified` mới trả dòng, kèm dòng đăng
+   * ký của không gian sở hữu để tầng ứng dụng lấy issuer cố định và
+   * trạng thái vòng đời. Domain chưa đăng ký, đang `pending` hoặc
+   * đã `disabled` đều trả `undefined` — bộ phân giải không có
+   * đường fallback nào khác.
+   */
+  async findVerifiedDomainByName(domain: string, db: CpDb = this.db()): Promise<VerifiedSpaceDomainRow | undefined> {
+    return db
+      .selectFrom('space_domains')
+      .innerJoin('space_registry', 'space_registry.id', 'space_domains.space_id')
+      .select([
+        'space_domains.id as domainId',
+        'space_domains.domain',
+        'space_domains.kind as domainKind',
+        'space_registry.id as spaceId',
+        'space_registry.slug',
+        'space_registry.kind as spaceKind',
+        'space_registry.status as spaceStatus',
+        'space_registry.storage_mode as storageMode',
+        'space_registry.issuer_url as issuerUrl',
+      ])
+      .where('space_domains.domain', '=', normalizeSpaceDomainName(domain))
+      .where('space_domains.status', '=', 'verified')
+      .limit(1)
+      .executeTakeFirst();
   }
 }

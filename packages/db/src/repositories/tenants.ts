@@ -50,12 +50,35 @@ export interface TenantRow {
   updatedAt: Date;
 }
 
+/**
+ * Vai chính duy nhất của một membership (issue #5): tập đóng
+ * `admin | teacher | member`, ánh xạ 1-1 sang realm role của
+ * Keycloak tương ứng là `tenant-admin | tenant-teacher |
+ * tenant-member`. Vai chính là hình chiếu do API sở hữu trong giai
+ * đoạn 1 của hợp đồng xác thực — độc lập với các gán vai theo
+ * context (`role_assignments`), vốn quyết quyền chi tiết tại cây
+ * context chứ không định danh loại thành viên.
+ */
+export type TenantPrimaryRole = 'admin' | 'teacher' | 'member';
+
 /** Một dòng membership của tenant. */
 export interface TenantMembershipRow {
   id: string;
   tenantId: string;
   userId: string;
   status: string;
+  /**
+   * Vai chính của membership (issue #5) — giá trị thuộc tập đóng
+   * {@link TenantPrimaryRole}, chốt ở database bằng ràng buộc
+   * CHECK. Mọi đường ghi được hỗ trợ đều bắt buộc ghi trường này
+   * khi tạo/kích hoạt membership; `null` chỉ còn ở các dòng lịch
+   * sử có trước migration cộng cột. Kiểu giữ `string` như mọi cột
+   * trạng thái khác của package; tập đóng được ép ở hợp đồng ghi
+   * {@link NewTenantMembership} và ở ràng buộc của bảng.
+   */
+  primaryRole: string | null;
+  /** Phiên bản đồng bộ của dòng membership — tăng khi thu hồi/đồng bộ danh tính ở các issue sau. */
+  version: number;
   joinedAt: Date;
   endedAt: Date | null;
 }
@@ -87,6 +110,14 @@ export interface NewTenantMembership {
   tenantId: string;
   userId: string;
   status?: string;
+  /**
+   * Vai chính của membership — BẮT BUỘC ở hợp đồng ghi (issue #5):
+   * không đường ghi được hỗ trợ nào tạo membership mà thiếu vai
+   * chính, và một cột đơn khiến "hơn một vai chính" không thể biểu
+   * diễn. Tập giá trị đóng còn được chốt ở database bằng ràng buộc
+   * CHECK trên cột `primary_role`.
+   */
+  primaryRole: TenantPrimaryRole;
   joinedAt?: Date;
   endedAt?: Date | null;
 }
@@ -127,6 +158,8 @@ const TENANT_MEMBERSHIP_COLUMNS = [
   'tenant_id as tenantId',
   'user_id as userId',
   'status',
+  'primary_role as primaryRole',
+  'version',
   'joined_at as joinedAt',
   'ended_at as endedAt',
 ] as const;
@@ -175,11 +208,12 @@ function tenantUpdateSet(patch: Partial<TenantRow>): Updateable<CentreDB['tenant
   return set;
 }
 
-/** Ánh xạ dữ kiện tạo membership (camelCase) sang values insert (snake_case), loại `undefined` như mọi đường ghi khác. */
+/** Ánh xạ dữ kiện tạo membership (camelCase) sang values insert (snake_case), loại `undefined` như mọi đường ghi khác. `primary_role` là trường bắt buộc của hợp đồng ghi nên luôn được ghi tường minh. */
 function membershipInsertValues(values: NewTenantMembership): Insertable<CentreDB['tenant_memberships']> {
   const row: Insertable<CentreDB['tenant_memberships']> = {
     tenant_id: values.tenantId,
     user_id: values.userId,
+    primary_role: values.primaryRole,
   };
   if (values.id !== undefined) row.id = values.id;
   if (values.status !== undefined) row.status = values.status;
@@ -200,6 +234,8 @@ function membershipUpdateSet(patch: Partial<TenantMembershipRow>): Updateable<Ce
   if (patch.tenantId !== undefined) set.tenant_id = patch.tenantId;
   if (patch.userId !== undefined) set.user_id = patch.userId;
   if (patch.status !== undefined) set.status = patch.status;
+  if (patch.primaryRole !== undefined) set.primary_role = patch.primaryRole;
+  if (patch.version !== undefined) set.version = patch.version;
   if (patch.joinedAt !== undefined) set.joined_at = patch.joinedAt;
   if (patch.endedAt !== undefined) set.ended_at = patch.endedAt;
   return set;
