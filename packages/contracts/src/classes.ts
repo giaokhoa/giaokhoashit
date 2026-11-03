@@ -5,10 +5,10 @@ import { uuidIdSchema } from './ids.js';
 /**
  * Hợp đồng API của LỚP HỌC HẠNG NHẤT (issue #184, CLASS-0): lớp được tạo TRƯỚC, khoá học nằm bên trong lớp; danh sách
  * học sinh thuộc về lớp (roster ≡ thành viên backing cohort) và tự vật chất hoá xuống mọi khoá của lớp qua enrol
- * instance cohort. Tạo lớp chỉ bắt buộc TÊN (khuôn Azota). CLASS-3 bổ sung học phí theo lớp (`fee*` trên hình dạng lớp
- * + gói công khai để mua gói lớp ở cuối file): payment mang `component = 'class_fee'`, `item_id = classes.id` qua seam
- * thanh toán sẵn có — hợp đồng payment nằm ở `platform.ts`, ở đây chỉ có cấu hình học phí trên lớp và bề mặt công khai
- * của gói lớp.
+ * instance cohort. Tạo lớp chỉ bắt buộc TÊN (khuôn Azota). CLASS-3 bổ sung học phí theo lớp (`fee*` trên hình dạng
+ * lớp + gói công khai để mua gói lớp ở cuối file): payment mang `component = 'class_fee'`, `item_id = classes.id` qua
+ * seam thanh toán sẵn có — hợp đồng payment nằm ở `platform.ts`, ở đây chỉ có cấu hình học phí trên lớp và bề mặt công
+ * khai của gói lớp.
  */
 export const CLASS_ON_LEAVE_MODES = ['suspend', 'unenrol'] as const;
 export const CLASS_STATUSES = ['active', 'archived'] as const;
@@ -60,20 +60,17 @@ export type ClassView = z.infer<typeof classSchema>;
  * `canManageRoster`/`canShare` và gói công khai đã có `isMember`/`canPurchase`). Các cờ chỉ là dữ kiện hiển thị — gác
  * quyền thật vẫn nằm ở từng endpoint (tạo/sửa/lưu trữ/xoá đều kiểm capability tại context tương ứng và trả 403 với
  * người không có quyền, bất kể cờ ở đây nói gì):
- *  - `canCreate`: người gọi có `class:create` tại context tenant —
- *    phục vụ nút "Tạo lớp"; giá trị giống nhau ở mọi dòng của cùng
- *    một đáp số vì khả năng này neo tại tenant, không neo tại lớp.
- *  - `canUpdate`: người gọi có `class:update` tại context của chính
- *    lớp này (chủ lớp luôn có) — phục vụ hành động Sửa và Lưu trữ.
+ *  - `canCreate`: người gọi có `class:create` tại context tenant — phục vụ nút "Tạo lớp"; giá trị giống nhau ở mọi dòng
+ *    của cùng một đáp số vì khả năng này neo tại tenant, không neo tại lớp.
+ *  - `canUpdate`: người gọi có `class:update` tại context của chính lớp này (chủ lớp luôn có) — phục vụ hành động Sửa
+ *    và Lưu trữ.
  *  - `canDelete`: người gọi qua được cổng xoá của lớp này (`class:delete` tại context lớp và, khi không phải chủ lớp,
  *    thêm `tenant:manage` tại context tenant) — phục vụ hành động Xoá. Lớp còn khoá học vẫn bị chặn ở tầng nghiệp vụ
  *    khi xoá thật; cờ này chỉ phản ánh phần quyền.
- *  - `canManageRoster`: người gọi có `class:manageroster` tại
- *    context của chính lớp này (chủ lớp luôn có) — cùng ngữ nghĩa
- *    với cờ tương ứng trong gói tổng quan.
- * `ClassView` ở các endpoint còn lại (chi tiết, tạo, sửa, lưu trữ)
- * không mang các cờ này vì các bề mặt đó đã có gói theo vai riêng
- * hoặc không vẽ hành động theo danh sách.
+ *  - `canManageRoster`: người gọi có `class:manageroster` tại context của chính lớp này (chủ lớp luôn có) — cùng ngữ
+ *    nghĩa với cờ tương ứng trong gói tổng quan.
+ * `ClassView` ở các endpoint còn lại (chi tiết, tạo, sửa, lưu trữ) không mang các cờ này vì các bề mặt đó đã có gói
+ * theo vai riêng hoặc không vẽ hành động theo danh sách.
  */
 export const classListItemSchema = classSchema.extend({
   canCreate: z.boolean(),
@@ -302,16 +299,13 @@ export const classSuspendedMemberSchema = z.object({
 export type ClassSuspendedMember = z.infer<typeof classSuspendedMemberSchema>;
 
 /**
- * Quan hệ của người gọi với lớp, do server suy từ dữ kiện thật (chủ lớp
- * / vai tại context lớp / thành viên roster) — web dùng để dựng dashboard
- * đúng vai, quyền thật vẫn gác ở từng endpoint phía API:
+ * Quan hệ của người gọi với lớp, do server suy từ dữ kiện thật (chủ lớp / vai tại context lớp / thành viên roster) —
+ * web dùng để dựng dashboard đúng vai, quyền thật vẫn gác ở từng endpoint phía API:
  *  - `owner`: chủ lớp — thấy mọi khoá của lớp + toàn bộ khối quản trị;
- *  - `staff`: đồng GV giữ một trong 3 vai lớp (hoặc người có quyền xem
- *    lớp ở mức quản trị như quản trị tenant) — thấy mọi khoá của lớp,
- *    khối quản trị hiện theo từng cờ khả năng đi kèm;
- *  - `member`: học sinh thuộc roster — `courses` CHỈ gồm các khoá mình
- *    đang ghi danh ACTIVE trong lớp (đình chỉ ở một khoá thì khoá đó
- *    biến mất khỏi danh sách này), không có khối quản trị nào.
+ *  - `staff`: đồng GV giữ một trong 3 vai lớp (hoặc người có quyền xem lớp ở mức quản trị như quản trị tenant) — thấy
+ *    mọi khoá của lớp, khối quản trị hiện theo từng cờ khả năng đi kèm;
+ *  - `member`: học sinh thuộc roster — `courses` CHỈ gồm các khoá mình đang ghi danh ACTIVE trong lớp (đình chỉ ở một
+ *    khoá thì khoá đó biến mất khỏi danh sách này), không có khối quản trị nào.
  */
 export const CLASS_VIEWER_ROLES = ['owner', 'staff', 'member'] as const;
 export const classViewerRoleSchema = z.enum(CLASS_VIEWER_ROLES);
@@ -345,8 +339,7 @@ export type ClassOverview = z.infer<typeof classOverviewSchema>;
  *  - `canPurchase`: được bắt đầu thanh toán NGAY — lớp đang hoạt động, có bật thu học phí (`feeEnabled`) và người gọi
  *    chưa là thành viên. Người đã ghi danh ACTIVE không bị mời mua lại: `canPurchase` luôn false với họ và bề mặt web
  *    hiện trạng thái đã ghi danh thay cho nút mua.
- * `feeEnabled` suy từ `feeCost` (null/0 = không thu qua hệ) để web
- * không tự diễn giải lại công tắc học phí.
+ * `feeEnabled` suy từ `feeCost` (null/0 = không thu qua hệ) để web không tự diễn giải lại công tắc học phí.
  */
 export const classPublicViewSchema = z.object({
   classId: uuidIdSchema,

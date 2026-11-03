@@ -3,9 +3,8 @@
  * mail auth.
  *
  * Đây là điểm nối giữa hai tiến trình qua bảng `outbox_events`:
- * - Phía API (các callback của Better Auth qua cổng ghi outbox) chỉ
- *   GHI dòng sự kiện mang payload theo hợp đồng ở file này — không
- *   gửi mail trong request.
+ * - Phía API (các callback của Better Auth qua cổng ghi outbox) chỉ GHI dòng sự kiện mang payload theo hợp đồng ở file
+ *   này — không gửi mail trong request.
  * - Phía worker (relay outbox duy nhất phát job theo loại sự kiện, processor trên hàng đợi của loại này xử lý job) ĐỌC
  *   payload, dựng nội dung mail bằng {@link renderAuthMail} rồi gọi transport Resend của phía worker.
  *

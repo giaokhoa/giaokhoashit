@@ -177,9 +177,8 @@ export const trueFalseExtensions = [
  * tài liệu — thứ tự này là thứ tự trình bày mệnh đề (a, b, c, d) ở mọi bề mặt.
  *
  * @param content - Tài liệu đúng/sai (soạn hoặc đã lưu).
- * @returns `stem` là tài liệu thân câu và `statements` là các mệnh
- *   đề theo thứ tự; tài liệu không có `statementList` thì
- *   `statements` rỗng và `stem` là chính tài liệu.
+ * @returns `stem` là tài liệu thân câu và `statements` là các mệnh đề theo thứ tự; tài liệu không có `statementList`
+ *   thì `statements` rỗng và `stem` là chính tài liệu.
  */
 export function splitTrueFalseDocument(content: TrueFalseDocumentJson): {
   stem: JSONContent;
@@ -213,8 +212,8 @@ export function getTrueFalseStatementIds(content: TrueFalseDocumentJson): string
  * Dựng một mệnh đề từ nội dung block cho trước.
  *
  * @param id - Định danh của mệnh đề.
- * @param blocks - Các block rich text của nội dung mệnh đề; rỗng thì
- *   đệm một paragraph rỗng để mệnh đề luôn mở soạn được.
+ * @param blocks - Các block rich text của nội dung mệnh đề; rỗng thì đệm một paragraph rỗng để mệnh đề luôn mở soạn
+ *   được.
  * @returns Node statement hoàn chỉnh cho tài liệu.
  */
 function statementFromBlocks(id: string, blocks: readonly JSONContent[] | undefined): TrueFalseStatementJson {
@@ -253,8 +252,8 @@ export function createEmptyTrueFalseDocument(): TrueFalseDocumentJson {
  * `statementList` thì gắn một danh sách mệnh đề rỗng; danh sách thiếu mệnh đề thì đệm mệnh đề rỗng có id mới; thừa thì
  * giữ {@link TRUE_FALSE_STATEMENT_COUNT} mệnh đề đầu theo thứ tự. Mệnh đề đã có giữ nguyên id và nội dung.
  *
- * @param questionText - Tài liệu thân câu của phiên bản (rỗng/`null`
- *   thì đệm một paragraph rỗng + danh sách mệnh đề rỗng).
+ * @param questionText - Tài liệu thân câu của phiên bản (rỗng/`null` thì đệm một paragraph rỗng + danh sách mệnh đề
+ *   rỗng).
  * @returns Tài liệu đúng/sai sẵn sàng nạp vào editor.
  */
 export function composeTrueFalseDocument(
@@ -285,8 +284,7 @@ export function composeTrueFalseDocument(
  * nghiệp vụ phía API.
  *
  * @param content - Tài liệu đúng/sai cần kiểm.
- * @param answers - Bản đồ đáp án theo id mệnh đề (`true` = Đúng,
- *   `false` = Sai; vắng mặt = chưa chọn).
+ * @param answers - Bản đồ đáp án theo id mệnh đề (`true` = Đúng, `false` = Sai; vắng mặt = chưa chọn).
  * @returns `true` khi tài liệu đủ điều kiện lưu thành câu sẵn sàng.
  */
 export function isCompleteTrueFalse(

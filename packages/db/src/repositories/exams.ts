@@ -647,9 +647,9 @@ function examDossierReviewInsertValues(values: NewExamDossierReview): Insertable
   return row;
 }
 /**
- * Kho dữ liệu của lớp Ngân hàng đề (EB-1): danh tính đề (exam_papers) + version nội dung bất biến (exam_paper_versions)
- * + slots ghim version câu (exam_paper_slots) + đề xuất đóng góp (exam_paper_contributions). Mọi truy vấn là truy vấn
- * thuần; cổng quyền và vòng đời nằm ở ExamsService.
+ * Kho dữ liệu của lớp Ngân hàng đề (EB-1): danh tính đề (exam_papers) + version nội dung bất biến
+ * (exam_paper_versions) + slots ghim version câu (exam_paper_slots) + đề xuất đóng góp (exam_paper_contributions). Mọi
+ * truy vấn là truy vấn thuần; cổng quyền và vòng đời nằm ở ExamsService.
  */
 export class ExamsRepository {
   constructor(private readonly handle: CentreDb) {}

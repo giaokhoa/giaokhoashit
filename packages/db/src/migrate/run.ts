@@ -110,8 +110,9 @@ async function main(argv: string[]): Promise<number> {
       }
       return 0;
     }
-    // Trình tự áp dùng chung của cả ba đường ghi migration (xem `apply.ts`): shim tiền-migration + `migrateToLatest()`
-    // + tự kiểm lỗi — lỗi áp được hàm dùng chung ném ra và rơi vào khối bắt lỗi của điểm vào CLI (thoát 1).
+    // Trình tự áp dùng chung của cả ba đường ghi migration (xem `apply.ts`): shim tiền-migration +
+    // `migrateToLatest()` + tự kiểm lỗi — lỗi áp được hàm dùng chung ném ra và rơi vào khối bắt lỗi của điểm vào CLI
+    // (thoát 1).
     const { shim, results } = await applyStoreMigrations(db, store, migrationsDir);
     console.log(`tiền-migration ${store}: shim uuidv7 ${shim === 'installed' ? 'đã cài (cụm dưới PG18)' : 'bỏ qua (cụm PG18+)'}`);
     for (const result of results) {

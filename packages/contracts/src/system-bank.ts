@@ -16,9 +16,8 @@ import { uuidIdSchema } from './ids.js';
  * - Các trường tài liệu Tiptap (`questionText`, `generalFeedback`, `stimulusContent`, `answer`, `feedback`) kiểm chứng
  *   ở mức cấu trúc lỏng (`z.unknown()`): hợp đồng khoá khung gói (các khoá bắt buộc, dạng câu, liên kết YCCĐ), còn nội
  *   dung tài liệu do tầng service kiểm chứng theo dạng câu khi phát hành — tránh hợp đồng vỡ vì một node Tiptap mới.
- * - Checksum KHÔNG do client cung cấp: server tự tính SHA-256 trên
- *   dạng chuẩn hoá của gói khi phát hành, lưu cùng phiên bản, và phía
- *   nhập kiểm chứng lại trước khi ghi bản chụp.
+ * - Checksum KHÔNG do client cung cấp: server tự tính SHA-256 trên dạng chuẩn hoá của gói khi phát hành, lưu cùng phiên
+ *   bản, và phía nhập kiểm chứng lại trước khi ghi bản chụp.
  * - Mọi thao tác ghi yêu cầu capability quản trị platform hiện hữu (`tenant:manage` tại context hệ thống — site admin
  *   vượt qua cổng này theo lối tắt của evaluator) — tầng này không dựng mô hình tài khoản quản trị riêng, không sinh
  *   capability mới.

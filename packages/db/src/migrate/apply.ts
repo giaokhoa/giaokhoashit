@@ -35,9 +35,8 @@ export interface ApplyStoreMigrationsResult {
 
 /**
  * Áp toàn bộ migration còn thiếu của một kho vào database đích.
- * @throws Error khi có migration áp lỗi — Kysely không ném từ
- *   `migrateToLatest()` nên hàm này chuyển `{ error, results }`
- *   thành ngoại lệ tường minh.
+ * @throws Error khi có migration áp lỗi — Kysely không ném từ `migrateToLatest()` nên hàm này chuyển `{ error, results
+ *   }` thành ngoại lệ tường minh.
  */
 export async function applyStoreMigrations(
   db: Kysely<any>,

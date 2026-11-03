@@ -300,8 +300,7 @@ export interface TrueFalseStatementContent {
  * Bóc các mệnh đề của một thân câu đúng/sai chùm: chỉ khi node block CUỐI của tài liệu là một `statementList` thì tài
  * liệu mới là thân câu TF-A và hàm trả các mệnh đề theo đúng thứ tự trình bày; ngoài ra trả `null` (thân câu thường,
  * hoặc statementList đặt sai vị trí — luật vị trí do tầng câu hỏi phán quyết bằng chính kết quả này).
- * @returns Các mệnh đề theo thứ tự, hoặc `null` khi tài liệu không
- *   chốt đuôi bằng một `statementList`.
+ * @returns Các mệnh đề theo thứ tự, hoặc `null` khi tài liệu không chốt đuôi bằng một `statementList`.
  */
 export function getTrueFalseStatements(doc: RichTextDocument): TrueFalseStatementContent[] | null {
   const last = doc.content[doc.content.length - 1];

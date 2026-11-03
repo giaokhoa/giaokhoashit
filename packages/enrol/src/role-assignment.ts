@@ -76,9 +76,8 @@ export class RoleAssignmentCore {
    * @param modifierId - người thực hiện gán (để truy vết và làm actor của sự kiện).
    * @param source - truy vết nguồn của dòng gán.
    * @returns dòng gán vai (mới chèn hoặc dòng hiện hữu cùng nguồn).
-   * @throws SharedDomainError mã `access.role_not_found` / `access.context_not_found`,
-   * hoặc lỗi của hai điểm chặn (mã `plan.tenant_slot_limit_reached` /
-   * `access.role_context_conflict`).
+   * @throws SharedDomainError mã `access.role_not_found` / `access.context_not_found`, hoặc lỗi của hai điểm chặn (mã
+   * `plan.tenant_slot_limit_reached` / `access.role_context_conflict`).
    */
   async assignRole(
     userId: string,
@@ -147,8 +146,7 @@ export class RoleAssignmentCore {
    * @param assignmentId - id của dòng gán cần gỡ.
    * @param modifierId - người thực hiện gỡ (làm actor của sự kiện).
    * @param opts - `allowEnrolManaged`: cho phép gỡ dòng do ghi danh cấp (chỉ đường nội bộ của enrol).
-   * @throws SharedDomainError mã `access.assignment_enrol_managed` khi gỡ dòng do
-   * ghi danh cấp mà không có cờ cho phép.
+   * @throws SharedDomainError mã `access.assignment_enrol_managed` khi gỡ dòng do ghi danh cấp mà không có cờ cho phép.
    */
   async unassignRole(assignmentId: string, modifierId?: string, opts?: { allowEnrolManaged?: boolean }): Promise<void> {
     const existing = await this.getAssignment(assignmentId);

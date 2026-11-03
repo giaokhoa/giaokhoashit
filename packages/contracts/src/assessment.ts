@@ -137,22 +137,17 @@ export const questionAnswerViewSchema = z.object({
 export type QuestionAnswerView = z.infer<typeof questionAnswerViewSchema>;
 
 /**
- * Lời giải (solution) của một phiên bản câu hỏi theo qtype — phần TÁCH
- * RIÊNG khỏi nội dung câu hỏi (quyết 12:04 ngày 26/10/2026; hướng dẫn
- * và lời giải là hai chuyện khác nhau). Hình dạng theo qtype:
- * - multichoice / truefalse một mệnh đề: `correctAnswerId` là id của
- *   dòng đáp án đúng — hình dạng HIỂN THỊ cho bề mặt xem lại (phía lưu
- *   trữ, đáp án đúng nằm ở `isCorrect` của các dòng answers).
- * - truefalse chùm nguyên bản (lát P5): `statements` là đáp án đúng/sai
- *   của từng mệnh đề trong thân câu.
- * - shortanswer: `acceptedAnswers` là các đáp án được chấp nhận (hiển
- *   thị xem lại; phía lưu trữ là chính các dòng answers).
- * - essay: `answer` là lời giải mẫu; dạng nhiều ý `answers` (đáp án
- *   theo `partId`) đã CHỪA SẴN hình dạng nhưng chưa thi công (điểm
- *   quyết D-6: hoãn essay nhiều ý).
- * Phía lưu trữ (`question_answer_keys.solution`) chỉ dùng biến thể
- * essay (và truefalse chùm ở P5); multichoice/truefalse/shortanswer
- * để null vì đáp án đúng đã nằm ở `isCorrect`.
+ * Lời giải (solution) của một phiên bản câu hỏi theo qtype — phần TÁCH RIÊNG khỏi nội dung câu hỏi (quyết 12:04 ngày
+ * 26/10/2026; hướng dẫn và lời giải là hai chuyện khác nhau). Hình dạng theo qtype:
+ * - multichoice / truefalse một mệnh đề: `correctAnswerId` là id của dòng đáp án đúng — hình dạng HIỂN THỊ cho bề mặt
+ *   xem lại (phía lưu trữ, đáp án đúng nằm ở `isCorrect` của các dòng answers).
+ * - truefalse chùm nguyên bản (lát P5): `statements` là đáp án đúng/sai của từng mệnh đề trong thân câu.
+ * - shortanswer: `acceptedAnswers` là các đáp án được chấp nhận (hiển thị xem lại; phía lưu trữ là chính các dòng
+ *   answers).
+ * - essay: `answer` là lời giải mẫu; dạng nhiều ý `answers` (đáp án theo `partId`) đã CHỪA SẴN hình dạng nhưng chưa thi
+ *   công (điểm quyết D-6: hoãn essay nhiều ý).
+ * Phía lưu trữ (`question_answer_keys.solution`) chỉ dùng biến thể essay (và truefalse chùm ở P5);
+ * multichoice/truefalse/shortanswer để null vì đáp án đúng đã nằm ở `isCorrect`.
  */
 export const questionSolutionSchema = z.union([
   z.strictObject({ correctAnswerId: uuidIdSchema }),
@@ -185,14 +180,12 @@ export const questionAnswerKeyViewSchema = z.object({
 export type QuestionAnswerKeyView = z.infer<typeof questionAnswerKeyViewSchema>;
 
 /**
- * Phía đáp án do người soạn GỬI LÊN trong payload tạo/sửa câu hỏi —
- * hai biến thể theo qtype, tầng nghiệp vụ đều ghi vào
+ * Phía đáp án do người soạn GỬI LÊN trong payload tạo/sửa câu hỏi — hai biến thể theo qtype, tầng nghiệp vụ đều ghi vào
  * `question_answer_keys.solution`:
  * - essay: `answer` là tài liệu lời giải mẫu.
  * - truefalse (TF-A, lát P5): `answers` là đáp án đúng/sai của TỪNG mệnh đề trong thân câu, bám theo `statementId` của
  *   node statement trong `questionText` — câu đúng/sai chùm KHÔNG có dòng answers Đúng/Sai như mô hình hai phía cũ.
- * Multichoice/shortanswer KHÔNG gửi solution: đáp án đúng đi qua cờ
- * `correct` của từng dòng answers.
+ * Multichoice/shortanswer KHÔNG gửi solution: đáp án đúng đi qua cờ `correct` của từng dòng answers.
  */
 export const questionSolutionInputSchema = z.union([
   z.strictObject({ answer: richTextInputSchema }),
@@ -479,17 +472,14 @@ export type QuestionOptionsInput = z.infer<typeof questionOptionsInputSchema>;
  * `question_answer_keys`, quyết 12:12); `solution` là phía đáp án do người soạn gửi lên (lời giải mẫu của essay; đáp án
  * từng mệnh đề của truefalse). Dạng payload cũ `answer` (truefalse {correct} / shortanswer {answers}) đã BỎ HẲN.
  *
- * Luật phía đáp án kiểm ngay tại schema (thay luật "tổng fraction =
- * 1" của mô hình cũ):
- * - multichoice: đúng 4 lựa chọn (điểm quyết D-3) và đúng MỘT đáp án
- *   đúng;
+ * Luật phía đáp án kiểm ngay tại schema (thay luật "tổng fraction = 1" của mô hình cũ):
+ * - multichoice: đúng 4 lựa chọn (điểm quyết D-3) và đúng MỘT đáp án đúng;
  * - truefalse (TF-A, điểm quyết D-1 — lát P5): KHÔNG có dòng answers; `questionText` phải là tài liệu chốt đuôi bằng
  *   một danh sách đúng 4 mệnh đề (node `statementList`), phần thân phía trước và từng mệnh đề đều có nội dung, id mệnh
  *   đề duy nhất; `solution.answers` phải phủ đúng tập mệnh đề đó, mỗi mệnh đề một giá trị Đúng/Sai;
  * - shortanswer: ít nhất 1 đáp án được chấp nhận; mọi đáp án liệt kê đều được chấp nhận (không đánh dấu `correct:
  *   false`) và việc chấm là khớp CHÍNH XÁC sau chuẩn hoá — KHÔNG còn ký tự đại diện wildcard `*` (điểm quyết D-2);
- * - essay: không có dòng đáp án (chấm tay; lời giải mẫu qua
- *   `solution`).
+ * - essay: không có dòng đáp án (chấm tay; lời giải mẫu qua `solution`).
  */
 /**
  * Nguồn gốc ngoài hệ thống của câu hỏi (truy vết nội bộ — không hiển thị cho học viên, quy tắc bản quyền 24/10/2026).
@@ -852,11 +842,9 @@ export const quizAttemptSummarySchema = z.object({
 export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;
 
 /**
- * Một câu trong lượt làm quiz như học sinh/người xem lại nhận được:
- * nội dung của version ĐÃ PIN trong lần ghim. Hai trường phía đáp án
- * theo mô hình giaokhoa (đợt port #248, lát P3):
- * - `guidance` (hướng dẫn) hiện KÈM câu hỏi ngay trong lúc làm — điểm
- *   quyết D-4 — nên KHÔNG qua cổng xem lại nào;
+ * Một câu trong lượt làm quiz như học sinh/người xem lại nhận được: nội dung của version ĐÃ PIN trong lần ghim. Hai
+ * trường phía đáp án theo mô hình giaokhoa (đợt port #248, lát P3):
+ * - `guidance` (hướng dẫn) hiện KÈM câu hỏi ngay trong lúc làm — điểm quyết D-4 — nên KHÔNG qua cổng xem lại nào;
  * - `solution` (lời giải/đáp án đúng dạng cấu trúc, xem `questionSolutionSchema`) chỉ có mặt khi cổng
  *   `reviewRightAnswer` của lần ghim cho phép tại cửa sổ xem lại hiện tại; cổng đóng thì trường này là `null` và dữ
  *   liệu đáp án đúng không rời server. Các khía cạnh xem lại còn lại giữ cổng riêng như cũ: `rightAnswer` dạng chữ cùng
@@ -1909,11 +1897,11 @@ export const copyExamSchema = z.strictObject({
 export type CopyExam = z.infer<typeof copyExamSchema>;
 
 /**
- * Payload đề xuất đóng góp một đề vào bank đích — ĐƯỜNG ĐÓNG GÓP DUY
- * NHẤT của đề, nâng lên khuôn QB-4 đầy đủ của câu hỏi:
+ * Payload đề xuất đóng góp một đề vào bank đích — ĐƯỜNG ĐÓNG GÓP DUY NHẤT của đề, nâng lên khuôn QB-4 đầy đủ của câu
+ * hỏi:
  *
- * - `mode` = 'new' (mặc định khi không gửi): duyệt đạt thì deep copy
- *   đề vào bank đích (danh tính mới, derived_from trỏ về đề nguồn).
+ * - `mode` = 'new' (mặc định khi không gửi): duyệt đạt thì deep copy đề vào bank đích (danh tính mới, derived_from trỏ
+ *   về đề nguồn).
  * - `mode` = 'update': BẮT BUỘC `targetExamId` — đề đã có trong bank đích mà đề nguồn là bản sao suy từ nó (tầng
  *   service kiểm liên kết derived_from, phá luật trả 400 `exam.contribution_not_derived`; thiếu targetExamId trả 400
  *   `exam.contribution_target_required`); duyệt đạt thì tạo VERSION MỚI trên chính danh tính đề đích.

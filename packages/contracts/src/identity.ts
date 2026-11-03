@@ -303,9 +303,8 @@ export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
  * Đơn vị phân trang ở đây là NGƯỜI DÙNG, khác `GET /access/assignments` phân trang theo từng dòng gán: một người giữ
  * nhiều vai ở nhiều context vẫn chỉ chiếm một dòng, nên `page`/`pageSize` cắt trên tập người dùng đã lọc và `total` ở
  * schema phản hồi đếm người dùng khớp lọc, không đếm dòng gán. Ba bộ lọc áp đồng thời phía server:
- * - `search`: khớp một phần, không phân biệt hoa thường, trên firstName,
- *   lastName, email, username và họ tên đầy đủ — cùng tập trường với tìm
- *   kiếm của danh sách người dùng và của bảng gán vai hiện hành.
+ * - `search`: khớp một phần, không phân biệt hoa thường, trên firstName, lastName, email, username và họ tên đầy đủ —
+ *   cùng tập trường với tìm kiếm của danh sách người dùng và của bảng gán vai hiện hành.
  * - `roleId`: chỉ giữ người dùng có ÍT NHẤT MỘT dòng gán với vai này ở bất kỳ context nào. Đây thuần là điều kiện lọc
  *   người; mảng `assignments` trong kết quả vẫn mang TOÀN BỘ dòng gán của người đó, không bị cắt theo vai đang lọc, để
  *   giao diện thấy đủ vai trò thật của từng người.

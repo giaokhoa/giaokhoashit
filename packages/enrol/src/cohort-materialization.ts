@@ -155,10 +155,10 @@ export class CohortMaterializationSurface {
    * idempotent thay vì để lỗi lọt ra ngoài (phía thắng đã phát `user_enrolled`). Sau đó: đảm bảo membership active tại
    * tenant của khoá, cấp vai của instance tại context khoá với truy vết của chính instance, và xếp người dùng vào nhóm
    * đích của instance (lỗi xếp nhóm bị nuốt — xếp nhóm là hệ quả phụ, không được làm hỏng ghi danh).
-   * @returns dòng ghi danh sau ghi danh và cờ cho biết đây có phải ghi danh MỚI hay không
-   * (host dùng cờ này cho các hệ quả chỉ áp cho ghi danh mới, vd tin nhắn chào mừng).
-   * @throws SharedDomainError mã `enrol.instance_disabled`, hoặc lỗi của các điểm
-   * chặn dùng chung (tách vai, slot, gán vai).
+   * @returns dòng ghi danh sau ghi danh và cờ cho biết đây có phải ghi danh MỚI hay không (host dùng cờ này cho các hệ
+   * quả chỉ áp cho ghi danh mới, vd tin nhắn chào mừng).
+   * @throws SharedDomainError mã `enrol.instance_disabled`, hoặc lỗi của các điểm chặn dùng chung (tách vai, slot, gán
+   * vai).
    */
   async enrolUserInternal(
     instance: EnrolInstanceRow,

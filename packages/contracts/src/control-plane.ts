@@ -7,17 +7,13 @@ import { uuidIdSchema } from './ids.js';
  * kho đã đăng ký.
  *
  * Ranh giới nghiệp vụ của tầng này:
- * - Sổ chỉ giữ bản ghi định tuyến tối thiểu (định danh địa chỉ, kho
- *   đích, vòng đời, gói dịch vụ) — nhận diện riêng của trung tâm (logo,
- *   thương hiệu) thuộc về dữ liệu của chính trung tâm, không ở đây.
- * - `plan` chỉ là MÃ GÓI DỊCH VỤ được lưu lại; nghiệp vụ billing
- *   (hoá đơn, thu tiền) không thuộc hợp đồng này.
- * - Mọi trường bí mật chỉ là THAM CHIẾU (`secretRef`, ví dụ
- *   `env:CONTROL_PLANE_DATABASE_URL`) — giá trị bí mật không bao giờ
- *   đi qua API hay nằm trong database.
- * - Mọi thao tác ghi yêu cầu capability quản trị platform hiện hữu
- *   (`tenant:manage` tại context hệ thống) — tầng này không dựng mô
- *   hình tài khoản quản trị riêng.
+ * - Sổ chỉ giữ bản ghi định tuyến tối thiểu (định danh địa chỉ, kho đích, vòng đời, gói dịch vụ) — nhận diện riêng của
+ *   trung tâm (logo, thương hiệu) thuộc về dữ liệu của chính trung tâm, không ở đây.
+ * - `plan` chỉ là MÃ GÓI DỊCH VỤ được lưu lại; nghiệp vụ billing (hoá đơn, thu tiền) không thuộc hợp đồng này.
+ * - Mọi trường bí mật chỉ là THAM CHIẾU (`secretRef`, ví dụ `env:CONTROL_PLANE_DATABASE_URL`) — giá trị bí mật không
+ *   bao giờ đi qua API hay nằm trong database.
+ * - Mọi thao tác ghi yêu cầu capability quản trị platform hiện hữu (`tenant:manage` tại context hệ thống) — tầng này
+ *   không dựng mô hình tài khoản quản trị riêng.
  */
 export const SPACE_KINDS = ['center', 'platform'] as const;
 export const SPACE_STATUSES = ['provisioning', 'active', 'suspended', 'closed'] as const;

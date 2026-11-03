@@ -13,9 +13,8 @@ import { plainTextExtensions } from './extensions.js';
  *    chốt đuôi bằng đúng một node `choiceList` chứa đúng {@link MULTIPLE_CHOICE_COUNT} node `choice` (mỗi `choice` mang
  *    `attrs.id` ổn định trong vòng soạn). Đáp án đúng KHÔNG nằm trong tài liệu: nó là metadata có cấu trúc ở ngoài — id
  *    của choice đúng (`correctChoiceId`), do `MultipleChoiceEditor` giữ qua radio widget cạnh từng choice.
- * 2. Khi nạp một câu có sẵn, {@link composeMultipleChoiceDocument} lắp
- *    view của API (thân câu + các dòng answers) thành tài liệu thống
- *    nhất (id của choice = id của dòng answers tương ứng).
+ * 2. Khi nạp một câu có sẵn, {@link composeMultipleChoiceDocument} lắp view của API (thân câu + các dòng answers) thành
+ *    tài liệu thống nhất (id của choice = id của dòng answers tương ứng).
  * 3. Khi lưu, {@link splitMultipleChoiceDocument} tách tài liệu thống nhất về đúng hình dạng hợp đồng: phần thân câu
  *    (tài liệu rich text KHÔNG còn node choice) đem vào `questionText`, từng choice theo đúng thứ tự trong tài liệu
  *    thành một dòng answers (`text` = tài liệu của choice, `correct` = id khớp `correctChoiceId`). Guidance/lời giải
@@ -187,11 +186,9 @@ export const multipleChoiceExtensions = [
  * (mẫu `splitMultipleChoiceDocument` của giaokhoa).
  *
  * @param content - Tài liệu thống nhất phía soạn.
- * @returns `question` là tài liệu thân câu (đã bỏ node `choiceList`,
- *   sẵn sàng ép về `RichTextDocument` của hợp đồng) và `choices` là
- *   các node choice theo đúng thứ tự trong tài liệu — thứ tự này là
- *   thứ tự đáp án (`sortOrder`) khi lưu. Tài liệu không có
- *   `choiceList` thì `choices` rỗng và `question` là chính tài liệu.
+ * @returns `question` là tài liệu thân câu (đã bỏ node `choiceList`, sẵn sàng ép về `RichTextDocument` của hợp đồng) và
+ *   `choices` là các node choice theo đúng thứ tự trong tài liệu — thứ tự này là thứ tự đáp án (`sortOrder`) khi lưu.
+ *   Tài liệu không có `choiceList` thì `choices` rỗng và `question` là chính tài liệu.
  */
 export function splitMultipleChoiceDocument(content: MultipleChoiceDocumentJson): {
   question: JSONContent;
@@ -214,10 +211,9 @@ export function splitMultipleChoiceDocument(content: MultipleChoiceDocumentJson)
 /**
  * Dựng một choice từ nội dung block cho trước.
  *
- * @param id - Định danh của choice (id dòng answers khi nạp câu có
- *   sẵn; id mới khi soạn thêm).
- * @param blocks - Các block rich text của nội dung lựa chọn; rỗng thì
- *   đệm một paragraph rỗng để choice luôn mở soạn được.
+ * @param id - Định danh của choice (id dòng answers khi nạp câu có sẵn; id mới khi soạn thêm).
+ * @param blocks - Các block rich text của nội dung lựa chọn; rỗng thì đệm một paragraph rỗng để choice luôn mở soạn
+ *   được.
  * @returns Node choice hoàn chỉnh cho tài liệu thống nhất.
  */
 function choiceFromBlocks(id: string, blocks: readonly JSONContent[] | undefined): MultipleChoiceChoiceJson {
@@ -259,10 +255,8 @@ export function createEmptyMultipleChoiceDocument(): MultipleChoiceDocumentJson 
  * Luật chuẩn hoá số lựa chọn về đúng {@link MULTIPLE_CHOICE_COUNT} (hợp đồng phía API đã khoá đúng 4 nên đây chỉ là
  * lưới an toàn cho dữ liệu lạ): thiếu thì đệm lựa chọn rỗng có id mới; thừa thì giữ các lựa chọn đầu theo thứ tự.
  *
- * @param questionText - Tài liệu thân câu của phiên bản (rỗng/`null`
- *   thì đệm một paragraph rỗng).
- * @param answers - Các dòng answers của phiên bản: `id`, tài liệu nội
- *   dung đáp án và thứ tự.
+ * @param questionText - Tài liệu thân câu của phiên bản (rỗng/`null` thì đệm một paragraph rỗng).
+ * @param answers - Các dòng answers của phiên bản: `id`, tài liệu nội dung đáp án và thứ tự.
  * @returns Tài liệu thống nhất sẵn sàng nạp vào editor.
  */
 export function composeMultipleChoiceDocument(
@@ -293,8 +287,7 @@ export function composeMultipleChoiceDocument(
  * nghiệp vụ phía API.
  *
  * @param content - Tài liệu thống nhất cần kiểm.
- * @param correctChoiceId - Id của lựa chọn đúng đã chọn (chưa chọn
- *   thì `undefined`).
+ * @param correctChoiceId - Id của lựa chọn đúng đã chọn (chưa chọn thì `undefined`).
  * @returns `true` khi tài liệu đủ điều kiện lưu thành câu sẵn sàng.
  */
 export function isCompleteMultipleChoice(

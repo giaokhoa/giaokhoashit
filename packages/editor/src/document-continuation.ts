@@ -16,8 +16,7 @@ function isEmptyParagraph(node: RichTextBlockNode | undefined): boolean {
  * thức tách dòng/ảnh): tài liệu đã kết thúc bằng paragraph (rỗng hay có chữ) thì giữ nguyên, còn lại thì thêm đúng một
  * paragraph rỗng vào cuối. Áp lúc tạo editor và lúc đồng bộ nội dung từ bên ngoài — theo đúng
  * `ensureTerminalContinuations` của editor giaokhoa.
- * @returns Tài liệu đã bảo đảm có paragraph chốt đuôi (cùng tham chiếu
- *   khi không cần đổi gì).
+ * @returns Tài liệu đã bảo đảm có paragraph chốt đuôi (cùng tham chiếu khi không cần đổi gì).
  */
 export function ensureTerminalContinuation(document: RichTextDocument): RichTextDocument {
   const content = document.content ?? [];

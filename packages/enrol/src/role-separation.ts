@@ -88,8 +88,7 @@ export class RoleSeparationCore {
    * Flow:
    * 1. Lấy context của khoá (cấp 50) và tách đường tổ tiên của nó.
    * 2. Loại context hệ thống khỏi tập context bao phủ.
-   * 3. Đếm các gán vai của người dùng tại các context còn lại, với
-   *    archetype giảng dạy và nguồn KHÔNG phải ghi danh.
+   * 3. Đếm các gán vai của người dùng tại các context còn lại, với archetype giảng dạy và nguồn KHÔNG phải ghi danh.
    * @returns true khi tồn tại ít nhất một gán vai giảng dạy bao phủ khoá.
    */
   async hasTeachingCoverageForCourse(userId: string, courseId: string): Promise<boolean> {
@@ -130,8 +129,8 @@ export class RoleSeparationCore {
   /**
    * Kiểm (b): người dùng có ghi danh học viên ĐANG HOẠT ĐỘNG trong một khoá không (định nghĩa đầy đủ ở lời dẫn của
    * class).
-   * @returns true khi tồn tại ghi danh đang hoạt động qua một instance
-   * cấp vai không thuộc archetype giảng dạy (hoặc không cấp vai nào).
+   * @returns true khi tồn tại ghi danh đang hoạt động qua một instance cấp vai không thuộc archetype giảng dạy (hoặc
+   * không cấp vai nào).
    */
   async hasActiveLearnerEnrolment(userId: string, courseId: string): Promise<boolean> {
     return this.withPlatformRead(async () => {
@@ -174,8 +173,8 @@ export class RoleSeparationCore {
   /**
    * Khẳng định một ghi danh học viên vào một khoá là hợp lệ theo nguyên tắc tách vai: ném lỗi khi kiểm (a) dương tính
    * cho đúng khoá đích.
-   * @throws RoleContextConflictError mã `access.role_context_conflict` khi
-   * người dùng đã có cấp quyền giảng dạy bao phủ chính khoá này.
+   * @throws RoleContextConflictError mã `access.role_context_conflict` khi người dùng đã có cấp quyền giảng dạy bao phủ
+   * chính khoá này.
    */
   async assertLearnerEnrolmentAllowed(userId: string, courseId: string): Promise<void> {
     if (await this.hasTeachingCoverageForCourse(userId, courseId)) {
@@ -216,8 +215,8 @@ export class RoleSeparationCore {
    * Đây là chốt của funnel 2 — mọi đường vào roster của lớp (theo userId, khớp email/số điện thoại, nhập Excel, tham
    * gia bằng mã, mua gói lớp) đều hội tụ về hai điểm vào thêm thành viên cohort, nên chốt tại đây phủ toàn bộ các đường
    * đó.
-   * @throws RoleContextConflictError mã `access.role_context_conflict` khi
-   * người dùng đang dạy bất kỳ khoá nào thuộc lớp/cohort đích.
+   * @throws RoleContextConflictError mã `access.role_context_conflict` khi người dùng đang dạy bất kỳ khoá nào thuộc
+   * lớp/cohort đích.
    */
   async assertCohortMembershipAllowed(userId: string, cohortId: string): Promise<void> {
     const courseIds = await this.coursesFedByCohort(cohortId);
@@ -257,8 +256,8 @@ export class RoleSeparationCore {
    * lệ: ném lỗi khi người dùng đang có ghi danh học viên đang hoạt động trong bất kỳ khoá nào bị context đó bao phủ
    * (kiểm (b)). Đây là chốt chiều ngược của cùng một bất biến — chặn đường "đang học rồi được cấp vai dạy ngay trong
    * khoá mình học".
-   * @throws RoleContextConflictError mã `access.role_context_conflict` khi
-   * tồn tại ghi danh học viên đang hoạt động trong khoá bị bao phủ.
+   * @throws RoleContextConflictError mã `access.role_context_conflict` khi tồn tại ghi danh học viên đang hoạt động
+   * trong khoá bị bao phủ.
    */
   async assertTeachingAssignmentAllowed(userId: string, contextId: string): Promise<void> {
     const courseIds = await this.coveredCoursesForContext(contextId);
@@ -279,14 +278,10 @@ export class RoleSeparationCore {
    * (rút ghi danh) là quyết định vận hành riêng, không thuộc lõi này.
    *
    * Flow:
-   * 1. Dựng, cho mỗi khoá, tập context tổ tiên bao phủ khoá (loại trừ
-   *    context hệ thống) từ cây context.
-   * 2. Nạp mọi gán vai giảng dạy không do ghi danh cấp → suy ra tập
-   *    khoá được bao phủ của từng người dùng.
-   * 3. Nạp mọi ghi danh học viên đang hoạt động → tập khoá đang học
-   *    của từng người dùng.
-   * 4. Giao nhau khác rỗng → nhóm cùng khoá; có cả hai tập nhưng rời
-   *    nhau → nhóm khác khoá.
+   * 1. Dựng, cho mỗi khoá, tập context tổ tiên bao phủ khoá (loại trừ context hệ thống) từ cây context.
+   * 2. Nạp mọi gán vai giảng dạy không do ghi danh cấp → suy ra tập khoá được bao phủ của từng người dùng.
+   * 3. Nạp mọi ghi danh học viên đang hoạt động → tập khoá đang học của từng người dùng.
+   * 4. Giao nhau khác rỗng → nhóm cùng khoá; có cả hai tập nhưng rời nhau → nhóm khác khoá.
    * @returns báo cáo hai nhóm kèm định danh hiển thị của từng tài khoản.
    */
   async auditRoleConflicts(): Promise<RoleConflictAuditReport> {

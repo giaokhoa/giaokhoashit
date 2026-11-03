@@ -12,8 +12,8 @@ import type { CentreDb } from '../client';
  *   KHÔNG bật CamelCasePlugin (một nguồn sự thật là database thật).
  * - Ghi qua hàm ánh xạ Insert/Update loại `undefined` tường minh từng trường (thử nghiệm T-4): `undefined` = không
  *   ghi/không đổi, `null` = ghi NULL.
- * - Mọi ghi jsonb (`layout`, `roster` của lô; `quality`, `readings` của phiếu) đi qua `jsonbValue` (xâu hoá tường minh
- *   + `::jsonb`, theo mục `JSONColumnType` của tài liệu Kysely và thử nghiệm T-6); `null` của cột jsonb nullable
+ * - Mọi ghi jsonb (`layout`, `roster` của lô; `quality`, `readings` của phiếu) đi qua `jsonbValue` (xâu hoá tường
+ *   minh + `::jsonb`, theo mục `JSONColumnType` của tài liệu Kysely và thử nghiệm T-6); `null` của cột jsonb nullable
  *   (`quality`) giữ nguyên là SQL NULL, không bị xâu hoá thành JSON `null`. `readings` có DEFAULT `[]` ở database:
  *   insert không truyền thì nhận mặc định, không tự điền ở tầng này.
  * - Khoá chính `uuidv7()` do database sinh (phụ lục U của kế hoạch): insert bỏ qua `id` và lấy dòng qua `returning`.

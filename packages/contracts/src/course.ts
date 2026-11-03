@@ -518,12 +518,12 @@ export const updatePageSchema = z.strictObject({
 export type UpdatePage = z.infer<typeof updatePageSchema>;
 
 /**
- * Kiểm scheme của URL tài nguyên ngoài ngay tại biên hợp đồng: phía web đưa URL này thẳng vào `href` của trang học nên
- * chỉ `http:`/ `https:` được phép — scheme `javascript:`/`data:` sẽ thực thi khi người xem bấm liên kết. URL tương đối
- * bị từ chối vì tài nguyên ngoài theo định nghĩa là đích tuyệt đối. Package này không mang kiểu Node/DOM nên phép kiểm
- * ở đây là kiểm tiền tố sau khi gạt ký tự điều khiển/khoảng trắng ở đầu chuỗi (đủ để chốt scheme đứng đầu); tầng nghiệp
- * vụ của `apps/api` kiểm lại độc lập bằng bộ phân tích URL đầy đủ và ném mã lỗi `content.url_scheme_not_allowed` (HTTP
- * 400) cho cùng ràng buộc.
+ * Kiểm scheme của URL tài nguyên ngoài ngay tại biên hợp đồng: phía web đưa URL này thẳng vào `href` của trang học
+ * nên chỉ `http:`/ `https:` được phép — scheme `javascript:`/`data:` sẽ thực thi khi người xem bấm liên kết. URL tương
+ * đối bị từ chối vì tài nguyên ngoài theo định nghĩa là đích tuyệt đối. Package này không mang kiểu Node/DOM nên phép
+ * kiểm ở đây là kiểm tiền tố sau khi gạt ký tự điều khiển/khoảng trắng ở đầu chuỗi (đủ để chốt scheme đứng đầu); tầng
+ * nghiệp vụ của `apps/api` kiểm lại độc lập bằng bộ phân tích URL đầy đủ và ném mã lỗi `content.url_scheme_not_allowed`
+ * (HTTP 400) cho cùng ràng buộc.
  */
 function isSafeExternalResourceUrl(url: string): boolean {
   const normalized = url.replace(/^[\s\u0000-\u001f]+/, '').toLowerCase();

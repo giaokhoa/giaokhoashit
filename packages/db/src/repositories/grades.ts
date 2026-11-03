@@ -16,10 +16,10 @@ import type { CentreDb, CentreTx } from '../client';
  * - Điểm mở giao dịch của repository là `transaction(fn)`; các phương thức nhận handle tuỳ chọn (`GradesDb` = handle
  *   thường hoặc handle giao dịch) để phía gọi lồng thao tác vào giao dịch của mình.
  *
- * Ba luồng ghi điểm của GradesService (`setGrade`, `recordActivityGrade`, `updateGrade`) giữ nguyên tử trọn gói — dòng
- * điểm + dòng lịch sử + dòng outbox `grade_updated` trong MỘT giao dịch — và chạy trên chính bề mặt này: `transaction`
- * + `upsertGrade`/`updateGrade`/`insertHistory` kèm `enqueueKysely` của OutboxService (lật ở issue #663 khi repository
- * chuyển tiếp phía bộ máy cũ bị xoá cùng đợt gỡ bộ máy cũ khỏi cây).
+ * Ba luồng ghi điểm của GradesService (`setGrade`, `recordActivityGrade`, `updateGrade`) giữ nguyên tử trọn
+ * gói — dòng điểm + dòng lịch sử + dòng outbox `grade_updated` trong MỘT giao dịch — và chạy trên chính bề mặt này:
+ * `transaction` + `upsertGrade`/`updateGrade`/`insertHistory` kèm `enqueueKysely` của OutboxService (lật ở issue #663
+ * khi repository chuyển tiếp phía bộ máy cũ bị xoá cùng đợt gỡ bộ máy cũ khỏi cây).
  */
 
 export interface ItemRow {

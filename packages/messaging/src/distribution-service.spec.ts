@@ -12,8 +12,7 @@ import { conversationRoom, userRoom } from './realtime-rooms.js';
  * - Tra danh sách chặn LỖI (cơ sở dữ liệu lỗi đúng lúc phân phối) thì toàn bộ lượt phân phối bị NÉN: không một sự kiện
  *   nào (message.new, conversation.updated) được phát cho cặp 1–1, vì không xác minh được quan hệ chặn thì không được
  *   phát.
- * - Tra cứu THÀNH CÔNG giữ nguyên hành vi cũ: cặp đang chặn thì
- *   không phát; cặp không chặn thì phát bình thường.
+ * - Tra cứu THÀNH CÔNG giữ nguyên hành vi cũ: cặp đang chặn thì không phát; cặp không chặn thì phát bình thường.
  *
  * Đổi kỷ luật (nuốt lỗi tra cứu thành danh sách rỗng) thì ca đầu tiên phải đỏ: lỗi tra cứu sẽ làm sự kiện lộ sang phía
  * đang bị chặn đúng như antipattern đã sửa.

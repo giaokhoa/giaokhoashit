@@ -15,8 +15,8 @@
  * - Giá trị `undefined` bị LOẠI khỏi values/set trước khi gọi builder (quy tắc T-4 đã chốt ở pilot); bộ lọc động của
  *   `listFiltered` ghép bằng các lần `.where(...)` xâu chuỗi trên cùng một builder giữ trong biến (khuôn T-13 đã chốt)
  *   thay cho mảng điều kiện + `and(...conds)` của bộ máy cũ.
- * - Cột jsonb khi ghi (`config_data`, `outcome_ids`, `keywords`, `review_checklist`) đi qua helper serialize tường minh
- *   + ép kiểu `::jsonb` ({@link jsonbValue}).
+ * - Cột jsonb khi ghi (`config_data`, `outcome_ids`, `keywords`, `review_checklist`) đi qua helper serialize tường
+ *   minh + ép kiểu `::jsonb` ({@link jsonbValue}).
  * - Cột `size_bytes` là bigint: codegen sinh kiểu `Int8` (đọc ra là `string` — thử nghiệm T-7 đã chốt: không bật parser
  *   toàn cục), trong khi hợp đồng dòng phía tiêu thụ giữ `number` như thời bộ máy cũ (`mode: 'number'`). Repository vì
  *   vậy chuyển đổi tường minh tại biên: đọc `string → number`, ghi `number` nguyên trạng (kiểu ghi của `Int8` nhận

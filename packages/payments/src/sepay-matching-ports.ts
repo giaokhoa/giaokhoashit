@@ -11,9 +11,8 @@ import type { PaymentRow, ProviderEventRow } from './payments.repository';
  *   `ClassesService` cho cổng ghi danh cấp lớp, `PaymentsService` cho cổng đối chiếu đích và xác nhận chi — nối bằng
  *   `useExisting` trong `PaymentsModule`. Luật nghiệp vụ của ba hiệu ứng vì vậy chỉ tồn tại đúng một bản, ở chính các
  *   service đó.
- * - Phía apps/worker (issue con tiếp theo của #522): cài đặt dựa
- *   trên bề mặt phễu ghi danh/cohort dùng chung mà issue #527 trích
- *   xuất — không thuộc phạm vi của issue này.
+ * - Phía apps/worker (issue con tiếp theo của #522): cài đặt dựa trên bề mặt phễu ghi danh/cohort dùng chung mà issue
+ *   #527 trích xuất — không thuộc phạm vi của issue này.
  *
  * Mọi cổng đều idempotent theo cùng nghĩa với cài đặt hiện hành: nhịp matching chết giữa chừng được nhận lại theo cửa
  * sổ stale của claim sự kiện và các khâu kích hoạt chạy lại an toàn.
@@ -53,18 +52,16 @@ export interface PaidClassEnrolActivationPort {
  * Cổng đối chiếu đích phía server và xác nhận chi hoàn — hai hiệu ứng còn nằm trong facade thanh toán của tiến trình
  * chủ (cài đặt hiện hành: `PaymentsService` phía apps/api):
  *
- * - `verifyPaymentAgainstServerTarget` là phép đối chiếu phòng thủ
- *   chiều sâu của matching: payment phải khớp giá + tenant phía
- *   server của đối tượng đích thì mới được kích hoạt quyền lợi.
- * - `settleRefundFromDebitEvent` đối khớp một sự kiện `debit` (bằng
- *   chứng lệnh chi hoàn) với dòng hoàn đang `approved` và xác nhận
- *   chi trong một transaction có khoá dòng.
+ * - `verifyPaymentAgainstServerTarget` là phép đối chiếu phòng thủ chiều sâu của matching: payment phải khớp giá +
+ *   tenant phía server của đối tượng đích thì mới được kích hoạt quyền lợi.
+ * - `settleRefundFromDebitEvent` đối khớp một sự kiện `debit` (bằng chứng lệnh chi hoàn) với dòng hoàn đang `approved`
+ *   và xác nhận chi trong một transaction có khoá dòng.
  */
 export interface PaymentSettlementPort {
   /**
    * Đối chiếu payment với đối tượng đích phía server (giá + tenant).
-   * @returns `true` khi payment khớp đích phía server; `false` là
-   *   tín hiệu rơi nhánh `needs_review`, tuyệt đối không kích hoạt.
+   * @returns `true` khi payment khớp đích phía server; `false` là tín hiệu rơi nhánh `needs_review`, tuyệt đối không
+   *   kích hoạt.
    */
   verifyPaymentAgainstServerTarget(payment: PaymentRow): Promise<boolean>;
 

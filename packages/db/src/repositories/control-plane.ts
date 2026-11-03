@@ -423,8 +423,8 @@ export class ControlPlaneRepository {
   }
 
   /**
-   * Toàn bộ sổ đăng ký theo thứ tự slug: đầu vào của các công cụ vận hành đội kho — runner migration đọc danh sách kho
-   * + phiên bản hiện tại từ đây, tác vụ sao lưu và kiểm thử khôi phục cũng duyệt cùng danh sách này. Thứ tự slug cố
+   * Toàn bộ sổ đăng ký theo thứ tự slug: đầu vào của các công cụ vận hành đội kho — runner migration đọc danh sách
+   * kho + phiên bản hiện tại từ đây, tác vụ sao lưu và kiểm thử khôi phục cũng duyệt cùng danh sách này. Thứ tự slug cố
    * định để mọi lượt chạy duyệt các kho theo cùng một thứ tự xác định.
    */
   async listSpaces(db: CpDb = this.db()): Promise<SpaceRegistryRow[]> {

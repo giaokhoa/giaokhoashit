@@ -9,15 +9,15 @@
  *
  * Ngữ nghĩa đã chốt cho hệ này (ghi rõ vì Moodle không định nghĩa hết trong một trang):
  *  - Chia cho 0 cho kết quả null (không có điểm) thay vì lỗi/Infinity — khớp yêu cầu nghiệp vụ.
- *  - Điểm trống (null) truyền qua phép toán hai ngôi thành null; riêng các hàm
- *    sum/average/min/max BỎ QUA đối số trống, và chỉ cho null khi mọi đối số đều trống.
+ *  - Điểm trống (null) truyền qua phép toán hai ngôi thành null; riêng các hàm sum/average/min/max BỎ QUA đối số trống,
+ *    và chỉ cho null khi mọi đối số đều trống.
  *  - power/mod/round truyền null như phép toán hai ngôi: một đối số trống là cả hàm cho null. mod có mẫu số 0 cho null
  *    (cùng luật chia cho 0); mod giữ phần dư theo dấu của số bị chia (ngữ nghĩa fmod — giữ phần thập phân, ví dụ
  *    mod(10.5, 3) = 1.5). power cho kết quả NaN (cơ số âm, số mũ phân số) thì cho null thay vì lan truyền NaN.
- *  - round dùng ngữ nghĩa PHP của Moodle: làm tròn nửa ra xa số 0 (round(2.5) = 3,
- *    round(-2.5) = -3), tham số thứ hai là số chữ số thập phân (mặc định 0).
- *  - if(điều kiện, đúng, sai) đánh giá LƯỜI: điều kiện trống → null; điều kiện khác 0 → nhánh
- *    thứ hai, bằng 0 → nhánh thứ ba; nhánh không được chọn không được đánh giá.
+ *  - round dùng ngữ nghĩa PHP của Moodle: làm tròn nửa ra xa số 0 (round(2.5) = 3, round(-2.5) = -3), tham số thứ hai
+ *    là số chữ số thập phân (mặc định 0).
+ *  - if(điều kiện, đúng, sai) đánh giá LƯỜI: điều kiện trống → null; điều kiện khác 0 → nhánh thứ hai, bằng 0 → nhánh
+ *    thứ ba; nhánh không được chọn không được đánh giá.
  *  - Toán tử so sánh (>, <, >=, <=, ==, !=) cho 1/0, là tầng ưu tiên thấp nhất và không chuỗi được (a > b > c là lỗi cú
  *    pháp); một vế trống → null. Đây là cách viết điều kiện chuẩn cho if theo ví dụ của MoodleDocs:
  *    `=if([[midtermexam]]>=5, [[midtermexam]]+[[lab]], 0)`.

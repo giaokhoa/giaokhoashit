@@ -16,20 +16,15 @@ import type {
  * dùng chung `@lms/payments` — chúng là mốc đối chiếu để việc trích xuất chứng minh bảo toàn hành vi, và là đặc tả thực
  * thi của các luật đã ghi trong docblock của service:
  *
- * - Luật khớp 3 điều kiện (mã thanh toán, số tiền, tài khoản nhận)
- *   cộng payment còn `pending` và chưa hết hạn, cộng phép đối chiếu
- *   đích phía server (issue #419) TRƯỚC khi kích hoạt bất cứ quyền
- *   lợi nào.
+ * - Luật khớp 3 điều kiện (mã thanh toán, số tiền, tài khoản nhận) cộng payment còn `pending` và chưa hết hạn, cộng
+ *   phép đối chiếu đích phía server (issue #419) TRƯỚC khi kích hoạt bất cứ quyền lợi nào.
  * - Bất biến đồng bộ của nhịp chốt: kích hoạt MỌI quyền lợi TRƯỚC nhịp lật payment sang `succeeded`, rồi mới phát đúng
  *   outbox `payment_succeeded` và chốt sự kiện `matched` — thứ tự này được ghim bằng nhật ký thứ tự gọi chung của các
  *   bản giả.
- * - Thiếu bất kỳ điều kiện nào: payment còn `pending` chuyển
- *   `needs_review`, sự kiện chuyển `needs_review`, KHÔNG kích hoạt
- *   gì và KHÔNG phát outbox.
- * - Sự kiện `debit` uỷ thác trọn cho cổng xác nhận chi hoàn, không
- *   đi đường khớp tiền về.
- * - Hoàn tất idempotent: payment đã `succeeded` bởi chính giao dịch
- *   này thì chỉ chốt sự kiện, không kích hoạt lại.
+ * - Thiếu bất kỳ điều kiện nào: payment còn `pending` chuyển `needs_review`, sự kiện chuyển `needs_review`, KHÔNG kích
+ *   hoạt gì và KHÔNG phát outbox.
+ * - Sự kiện `debit` uỷ thác trọn cho cổng xác nhận chi hoàn, không đi đường khớp tiền về.
+ * - Hoàn tất idempotent: payment đã `succeeded` bởi chính giao dịch này thì chỉ chốt sự kiện, không kích hoạt lại.
  *
  * Tầng dữ liệu và các cổng được thay bằng bản giả ghi lại lời gọi — hành vi đầu-cuối trên DB thật do các suite e2e
  * payments của apps/api ghim (vietqr, class-fee, coupons-slots, entitlement-gate, plans, refund-lifecycle,
