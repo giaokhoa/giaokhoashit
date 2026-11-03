@@ -643,7 +643,7 @@ async function findClientInternalId(realm, clientId) {
 // Cấp phát một realm
 // ---------------------------------------------------------------------------
 
-async function provisionRealm(rep) {
+async function provisionRealm(rep, organizations) {
   const realm = rep.realm;
   console.log(`Realm ${realm}:`);
   const { status } = await api("GET", `/admin/realms/${realm}`);
@@ -674,6 +674,264 @@ async function provisionRealm(rep) {
   await reconcileClientScopes(rep);
   await reconcileClients(rep);
   await reconcileScopeRoleMappings(rep);
+  const orgByAlias = await reconcileOrganizations(rep, organizations);
+  await assignOrganizationScope(rep);
+  await reconcileOrgAdminPermissions(rep, orgByAlias);
+}
+
+// ---------------------------------------------------------------------------
+// Organization theo trung tâm và uỷ quyền quản trị FGAP
+// ---------------------------------------------------------------------------
+
+async function listPaged(path) {
+  const items = [];
+  for (let first = 0; ; first += 100) {
+    const sep = path.includes("?") ? "&" : "?";
+    const { status, data } = await api("GET", `${path}${sep}first=${first}&max=100`);
+    if (status !== 200 || !Array.isArray(data)) return null;
+    items.push(...data);
+    if (data.length < 100) return items;
+  }
+}
+
+function sameSet(a, b) {
+  return JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+}
+
+// Trả về Map alias -> Organization hiện hữu trên realm sau hoà giải,
+// để bước FGAP gắn permission theo đúng id của từng Organization.
+async function reconcileOrganizations(rep, organizations) {
+  const realm = rep.realm;
+  const existing = await listPaged(`/admin/realms/${realm}/organizations`);
+  if (!existing) {
+    fail(`realm ${realm}: không đọc được danh sách Organization`);
+    return new Map();
+  }
+  const byAlias = new Map(existing.map((o) => [o.alias, o]));
+  const result = new Map();
+  for (const org of organizations) {
+    const found = byAlias.get(org.alias);
+    if (!found) {
+      const created = await api("POST", `/admin/realms/${realm}/organizations`, {
+        name: org.name,
+        alias: org.alias,
+        enabled: true,
+        domains: (org.domains || []).map((d) => ({ name: d })),
+      });
+      if (created.status !== 201) {
+        fail(`realm ${realm}: tạo Organization ${org.alias} trả HTTP ${created.status}`);
+        continue;
+      }
+      ok(`realm ${realm}: đã tạo Organization ${org.alias}`);
+      const after = await listPaged(`/admin/realms/${realm}/organizations`);
+      const fresh = (after || []).find((o) => o.alias === org.alias);
+      if (fresh) result.set(org.alias, fresh);
+      continue;
+    }
+    if (found.name !== org.name) {
+      const put = await api("PUT", `/admin/realms/${realm}/organizations/${found.id}`, {
+        ...found,
+        name: org.name,
+      });
+      if (put.status !== 204) {
+        fail(`realm ${realm}: cập nhật tên Organization ${org.alias} trả HTTP ${put.status}`);
+      } else {
+        ok(`realm ${realm}: đã cập nhật tên Organization ${org.alias}`);
+      }
+    }
+    result.set(org.alias, found);
+  }
+  if (organizations.length > 0) ok(`realm ${realm}: Organization theo trung tâm khớp cấu hình`);
+  return result;
+}
+
+async function ensureRealmRoleByName(realm, name) {
+  const { status, data } = await api("GET", `/admin/realms/${realm}/roles/${name}`);
+  if (status === 200) return data;
+  if (status !== 404) {
+    fail(`realm ${realm}: đọc realm role ${name} trả HTTP ${status}`);
+    return null;
+  }
+  const created = await api("POST", `/admin/realms/${realm}/roles`, { name });
+  if (created.status !== 201) {
+    fail(`realm ${realm}: tạo realm role ${name} trả HTTP ${created.status}`);
+    return null;
+  }
+  ok(`realm ${realm}: đã tạo realm role ${name}`);
+  const after = await api("GET", `/admin/realms/${realm}/roles/${name}`);
+  return after.data || null;
+}
+
+async function ensureRolePolicy(realm, apId, name, roleId) {
+  const base = `/admin/realms/${realm}/clients/${apId}/authz/resource-server`;
+  const desired = {
+    name,
+    type: "role",
+    logic: "POSITIVE",
+    decisionStrategy: "UNANIMOUS",
+    roles: [{ id: roleId, required: true }],
+  };
+  const policies = await listPaged(`${base}/policy`);
+  const found = (policies || []).find((p) => p.name === name);
+  if (!found) {
+    const created = await api("POST", `${base}/policy/role`, desired);
+    if (created.status !== 201) {
+      fail(`realm ${realm}: tạo role policy ${name} trả HTTP ${created.status}`);
+      return null;
+    }
+    ok(`realm ${realm}: đã tạo role policy ${name} trên client admin-permissions`);
+    const after = await listPaged(`${base}/policy`);
+    return (after || []).find((p) => p.name === name)?.id || null;
+  }
+  const { data: current } = await api("GET", `${base}/policy/role/${found.id}`);
+  const currentRoles = (current?.roles || []).map((r) => `${r.id}:${Boolean(r.required)}`);
+  if (!sameSet(currentRoles, [`${roleId}:true`])) {
+    const put = await api("PUT", `${base}/policy/role/${found.id}`, { ...desired, id: found.id });
+    if (put.status !== 201 && put.status !== 204) {
+      fail(`realm ${realm}: sửa role policy ${name} trả HTTP ${put.status}`);
+      return null;
+    }
+    ok(`realm ${realm}: đã sửa role policy ${name} cho khớp vai đích`);
+  }
+  return found.id;
+}
+
+// POST permission scope mà thiếu resourceType bị Keycloak trả 400;
+// resources truyền id thô của Organization, server tự ánh xạ sang
+// resource FGAP tương ứng (đã kiểm chứng trên 26.8.1).
+async function ensureScopePermission(realm, apId, { name, resourceType, resourceIds, scopeIds, policyId }) {
+  const base = `/admin/realms/${realm}/clients/${apId}/authz/resource-server`;
+  const desired = {
+    name,
+    type: "scope",
+    logic: "POSITIVE",
+    decisionStrategy: "UNANIMOUS",
+    resourceType,
+    scopes: scopeIds,
+    policies: [policyId],
+  };
+  if (resourceIds) desired.resources = resourceIds;
+  const perms = await listPaged(`${base}/permission/scope`);
+  const found = (perms || []).find((p) => p.name === name);
+  if (!found) {
+    const created = await api("POST", `${base}/permission/scope`, desired);
+    if (created.status !== 201) {
+      fail(`realm ${realm}: tạo permission ${name} trả HTTP ${created.status}`);
+      return;
+    }
+    ok(`realm ${realm}: đã tạo permission ${name} trên client admin-permissions`);
+    return;
+  }
+  const detail = await api("GET", `${base}/permission/scope/${found.id}`);
+  const resources = await api("GET", `${base}/policy/${found.id}/resources`);
+  const scopes = await api("GET", `${base}/policy/${found.id}/scopes`);
+  const policies = await api("GET", `${base}/policy/${found.id}/associatedPolicies`);
+  // Permission không khai resources (loại Users) được Keycloak gắn resource mặc định mang tên đúng loại resource.
+  const matches =
+    detail.data?.resourceType === resourceType &&
+    sameSet(
+      (resources.data || []).map((r) => r.name),
+      resourceIds || [resourceType],
+    ) &&
+    sameSet(
+      (scopes.data || []).map((x) => x.id),
+      scopeIds,
+    ) &&
+    sameSet(
+      (policies.data || []).map((x) => x.id),
+      [policyId],
+    );
+  if (matches) return;
+  const put = await api("PUT", `${base}/permission/scope/${found.id}`, { ...desired, id: found.id });
+  if (put.status !== 201 && put.status !== 204) {
+    fail(`realm ${realm}: sửa permission ${name} trả HTTP ${put.status}`);
+  }
+  else ok(`realm ${realm}: đã sửa permission ${name} cho khớp mẫu FGAP`);
+}
+
+// Keycloak chỉ lưu việc gán scope "organization" cho client khi realm đã có ít nhất một Organization (đã kiểm
+// chứng trên 26.8.1: realm chưa có Organization nào thì PUT gán scope trả 204 nhưng không lưu), nên bước này chạy
+// sau reconcileOrganizations và đọc lại để kiểm chứng thay vì tin mã trạng thái.
+async function assignOrganizationScope(rep) {
+  const realm = rep.realm;
+  const { data: allScopes } = await api("GET", `/admin/realms/${realm}/client-scopes`);
+  const orgScope = (allScopes || []).find((x) => x.name === "organization");
+  if (!orgScope) {
+    fail(`realm ${realm}: không thấy client scope organization do Keycloak tự tạo để gán cho lms-web/lms-api`);
+    return;
+  }
+  for (const clientId of ["lms-web", "lms-api"]) {
+    const internalId = await findClientInternalId(realm, clientId);
+    if (!internalId) {
+      fail(`realm ${realm}: không thấy client ${clientId} để gán scope organization`);
+      continue;
+    }
+    const path = `/admin/realms/${realm}/clients/${internalId}/default-client-scopes`;
+    const { data: current } = await api("GET", path);
+    if (!(current || []).some((x) => x.name === "organization")) {
+      const put = await api("PUT", `${path}/${orgScope.id}`);
+      if (put.status !== 204) {
+        fail(`realm ${realm}: gắn scope organization cho ${clientId} trả HTTP ${put.status}`);
+        continue;
+      }
+    }
+    const after = await api("GET", path);
+    if (!(after.data || []).some((x) => x.name === "organization")) {
+      fail(
+        `realm ${realm}: scope organization chưa nằm trong scope mặc định của ${clientId} sau khi gắn ` +
+          `(realm cần có ít nhất một Organization trước khi Keycloak lưu việc gán này)`,
+      );
+    }
+  }
+  ok(`realm ${realm}: scope organization đã gắn làm scope mặc định cho lms-web và lms-api`);
+}
+
+// Với mỗi Organization: realm role org-admin-<alias> giữ độc quyền qua
+// role policy cùng tên; permission trên Organizations khoá đúng một
+// Organization theo id, còn permission trên Users (không resources)
+// là lớp hiển thị/quản trị user mà Keycloak bắt buộc phải có để admin
+// trung tâm thao tác member của Organization mình qua API.
+async function reconcileOrgAdminPermissions(rep, orgByAlias) {
+  const realm = rep.realm;
+  if (orgByAlias.size === 0) return;
+  const apId = await findClientInternalId(realm, "admin-permissions");
+  if (!apId) {
+    fail(`realm ${realm}: không thấy client admin-permissions dù Admin Permissions đã bật`);
+    return;
+  }
+  const base = `/admin/realms/${realm}/clients/${apId}/authz/resource-server`;
+  const scopes = await listPaged(`${base}/scope`);
+  const scopeIdByName = new Map((scopes || []).map((x) => [x.name, x.id]));
+  const viewId = scopeIdByName.get("view");
+  const manageId = scopeIdByName.get("manage");
+  if (!viewId || !manageId) {
+    fail(`realm ${realm}: client admin-permissions thiếu scope FGAP view/manage`);
+    return;
+  }
+  for (const [alias, org] of orgByAlias) {
+    const roleName = `org-admin-${alias}`;
+    const role = await ensureRealmRoleByName(realm, roleName);
+    if (!role?.id) {
+      fail(`realm ${realm}: không xác định được id của realm role ${roleName}`);
+      continue;
+    }
+    const policyId = await ensureRolePolicy(realm, apId, roleName, role.id);
+    if (!policyId) continue;
+    await ensureScopePermission(realm, apId, {
+      name: `${roleName}-organizations`,
+      resourceType: "Organizations",
+      resourceIds: [org.id],
+      scopeIds: [viewId, manageId],
+      policyId,
+    });
+    await ensureScopePermission(realm, apId, {
+      name: `${roleName}-users`,
+      resourceType: "Users",
+      scopeIds: [viewId, manageId],
+      policyId,
+    });
+  }
+  ok(`realm ${realm}: bộ permission FGAP cho admin trung tâm khớp mẫu`);
 }
 
 // ---------------------------------------------------------------------------
@@ -699,7 +957,7 @@ async function main() {
     return;
   }
 
-  await provisionRealm(rep);
+  await provisionRealm(rep, organizations);
 
   if (failures > 0) {
     console.error(`Cấp phát kết thúc với ${failures} lỗi.`);
