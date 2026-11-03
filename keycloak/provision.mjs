@@ -537,18 +537,59 @@ async function reconcileClientRoles(rep) {
 // (đã kiểm chứng trên binary thật): bản ghi scope-mappings dùng
 // trường "realmMappings" và "clientMappings" (khoá theo clientId,
 // mỗi mục có mảng "mappings").
+// Cấu trúc hợp lệ của bản ghi scope-mappings trên Keycloak
+// 26.8.1 (đã kiểm chứng trên binary thật): payload là một object;
+// trường realmMappings/clientMappings bị BỎ HẲN khi tập tương
+// ứng rỗng (scope chưa có ánh xạ nào thì payload là {}), nên
+// "trường vắng mặt" nghĩa là tập rỗng theo đúng thiết kế API.
+// Ngược lại, trường có mặt mà sai kiểu (realmMappings không
+// phải mảng, clientMappings không phải object, mục con thiếu
+// mảng mappings) là payload không đáng tin.
+function scopeMappingsShapeOk(m) {
+  if (!m || typeof m !== "object" || Array.isArray(m)) return false;
+  if (m.realmMappings !== undefined && !Array.isArray(m.realmMappings)) return false;
+  if (m.clientMappings !== undefined) {
+    if (
+      !m.clientMappings ||
+      typeof m.clientMappings !== "object" ||
+      Array.isArray(m.clientMappings)
+    ) {
+      return false;
+    }
+    for (const entry of Object.values(m.clientMappings)) {
+      if (!entry || typeof entry !== "object" || !Array.isArray(entry.mappings)) return false;
+    }
+  }
+  return true;
+}
+
 async function reconcileScopeRoleMappings(rep, kind) {
   const realm = rep.realm;
-  const { data: scopes } = await api("GET", `/admin/realms/${realm}/client-scopes`);
-  const rolesScope = (scopes || []).find((s) => s.name === "roles");
-  if (!rolesScope) {
-    fail(`realm ${realm}: không thấy client scope roles để ánh xạ vai`);
+  const failuresBefore = failures;
+  const scopesRes = await api("GET", `/admin/realms/${realm}/client-scopes`);
+  const rolesScope = (Array.isArray(scopesRes.data) ? scopesRes.data : []).find(
+    (s) => s.name === "roles",
+  );
+  if (scopesRes.status !== 200 || !rolesScope) {
+    fail(`realm ${realm}: không đọc được client scope roles để ánh xạ vai (HTTP ${scopesRes.status})`);
     return;
   }
-  const { data: mappings } = await api(
+  const mappingsRes = await api(
     "GET",
     `/admin/realms/${realm}/client-scopes/${rolesScope.id}/scope-mappings`,
   );
+  const mappings = mappingsRes.data;
+  // Fail-closed: snapshot ánh xạ là căn cứ duy nhất để biết ánh xạ
+  // nào đang thừa mà gỡ. HTTP lỗi hoặc payload sai cấu trúc thì
+  // phải dừng và báo lỗi — tuyệt đối không diễn giải thành "không
+  // có ánh xạ nào", vì như vậy ánh xạ thừa sẽ lọt qua trong im
+  // lặng trong khi bộ cấp phát vẫn báo hoà giải thành công.
+  if (mappingsRes.status !== 200 || !scopeMappingsShapeOk(mappings)) {
+    fail(
+      `realm ${realm}: không đọc được snapshot ánh xạ của scope roles (HTTP ${mappingsRes.status}) — dừng hoà giải thay vì coi như không có ánh xạ`,
+    );
+    return;
+  }
 
   // Tập đích theo loại realm: tenant chỉ ánh xạ ba vai chính và
   // không ánh xạ client role nào; giaokhoa chỉ ánh xạ các client
@@ -556,7 +597,7 @@ async function reconcileScopeRoleMappings(rep, kind) {
   const wantedRealmRoles = kind === "tenant" ? rep.roles?.realm || [] : [];
   const wantedClientRoles = kind === "platform" ? rep.roles?.client || {} : {};
 
-  const currentRealmMappings = mappings?.realmMappings || [];
+  const currentRealmMappings = mappings.realmMappings || [];
   const wantedRealmNames = new Set(wantedRealmRoles.map((r) => r.name));
   for (const extra of currentRealmMappings) {
     if (wantedRealmNames.has(extra.name)) continue;
@@ -581,7 +622,7 @@ async function reconcileScopeRoleMappings(rep, kind) {
     else fail(`realm ${realm}: ánh xạ vai ${role.name} vào scope roles trả HTTP ${posted.status}`);
   }
 
-  const currentClientMappings = mappings?.clientMappings || {};
+  const currentClientMappings = mappings.clientMappings || {};
   const clientIds = new Set([
     ...Object.keys(currentClientMappings),
     ...Object.keys(wantedClientRoles),
@@ -591,6 +632,12 @@ async function reconcileScopeRoleMappings(rep, kind) {
     if (!internalId) {
       if ((wantedClientRoles[clientId] || []).length > 0) {
         fail(`realm ${realm}: không thấy client ${clientId} để ánh xạ client role vào scope roles`);
+      } else if ((currentClientMappings[clientId]?.mappings || []).length > 0) {
+        // Có ánh xạ hiện hữu cần gỡ mà không xác định được client:
+        // hoà giải không trọn vẹn, phải báo lỗi thay vì bỏ qua.
+        fail(
+          `realm ${realm}: scope roles đang mang ánh xạ của client ${clientId} nhưng không tìm thấy client để gỡ ánh xạ ngoài mẫu`,
+        );
       }
       continue;
     }
@@ -623,15 +670,61 @@ async function reconcileScopeRoleMappings(rep, kind) {
       else fail(`realm ${realm}: ánh xạ client role ${role.name} vào scope roles trả HTTP ${posted.status}`);
     }
   }
-  ok(`realm ${realm}: ánh xạ vai của scope roles khớp mẫu`);
+  // Đọc lại snapshot và so khớp chính xác tập đích trước khi kết
+  // luận: chỉ báo khớp mẫu khi tập ánh xạ sau hoà giải bằng đúng
+  // tập muốn có và toàn bộ thao tác trong hàm không phát sinh lỗi.
+  const afterRes = await api(
+    "GET",
+    `/admin/realms/${realm}/client-scopes/${rolesScope.id}/scope-mappings`,
+  );
+  const after = afterRes.data;
+  const namesOf = (list) => (list || []).map((r) => r.name).sort();
+  const sameNames = (a, b) => JSON.stringify(namesOf(a)) === JSON.stringify(namesOf(b));
+  let exact =
+    afterRes.status === 200 &&
+    scopeMappingsShapeOk(after) &&
+    sameNames(after.realmMappings || [], wantedRealmRoles);
+  if (exact) {
+    const clientKeys = new Set([
+      ...Object.keys(wantedClientRoles),
+      ...Object.keys(after.clientMappings || {}),
+    ]);
+    for (const clientId of clientKeys) {
+      if (
+        !sameNames(
+          (after.clientMappings || {})[clientId]?.mappings || [],
+          wantedClientRoles[clientId] || [],
+        )
+      ) {
+        exact = false;
+        break;
+      }
+    }
+  }
+  if (exact && failures === failuresBefore) {
+    ok(`realm ${realm}: ánh xạ vai của scope roles khớp mẫu`);
+  } else {
+    fail(
+      `realm ${realm}: ánh xạ vai của scope roles chưa khớp mẫu sau hoà giải (đọc lại HTTP ${afterRes.status})`,
+    );
+  }
 }
 
 async function findClientInternalId(realm, clientId) {
-  const { data } = await api(
+  const { status, data } = await api(
     "GET",
     `/admin/realms/${realm}/clients?clientId=${encodeURIComponent(clientId)}`,
   );
-  return Array.isArray(data) ? data[0]?.id : undefined;
+  // Fail-closed: không đọc được danh sách client thì không được
+  // diễn giải thành "client không tồn tại", vì caller có thể đang
+  // cần ID đó để gỡ một ánh xạ ngoài mẫu. Ném lỗi để dừng lượt
+  // cấp phát ngay, thay vì bỏ qua trong im lặng.
+  if (status !== 200 || !Array.isArray(data)) {
+    throw new Error(
+      `realm ${realm}: đọc danh sách client để tìm ${clientId} trả HTTP ${status} — không xác định được trạng thái hiện tại`,
+    );
+  }
+  return data[0]?.id;
 }
 
 async function reconcileIdps(rep) {
@@ -887,12 +980,24 @@ async function ensureMasterBrowserFlow() {
       return false;
     }
   }
-  ({ data: execs } = await api("GET", execsPath));
-  const signatureOk = (execs || []).every(
-    (e) => wantedRequirement.get(`${e.level}|${masterFlowKey(e)}`) === e.requirement,
-  );
+  const finalRead = await api("GET", execsPath);
+  const finalExecs = finalRead.data;
+  // Fail-closed: phải đọc lại được executions và đối chiếu cả tập
+  // phần tử lẫn requirement của từng phần tử. Mảng rỗng không
+  // được coi là đạt — phép every trên mảng rỗng luôn đúng theo
+  // tính chất vacuous truth.
+  const signatureOk =
+    finalRead.status === 200 &&
+    Array.isArray(finalExecs) &&
+    finalExecs.length > 0 &&
+    masterFlowElements(finalExecs) === wantedElements &&
+    finalExecs.every(
+      (e) => wantedRequirement.get(`${e.level}|${masterFlowKey(e)}`) === e.requirement,
+    );
   if (!signatureOk) {
-    fail(`flow ${MASTER_BROWSER_FLOW} của realm master chưa đạt đúng requirement theo mẫu sau khi đặt`);
+    fail(
+      `flow ${MASTER_BROWSER_FLOW} của realm master chưa đạt đúng requirement theo mẫu sau khi đặt (đọc lại HTTP ${finalRead.status})`,
+    );
     return false;
   }
   ok(`flow ${MASTER_BROWSER_FLOW} của realm master khớp mẫu (OTP bắt buộc sau mật khẩu)`);
