@@ -84,9 +84,10 @@ export class SeedService implements OnApplicationBootstrap {
     if (admin) {
       // Admin khởi tạo là thành viên của cả tenant-zero lẫn tenant trường
       // mặc định, và là tenant admin (manager tại context tenant) của cả
-      // hai — câu chuyện demo của review-seed.
-      await this.tenants.ensureActiveMembership(zero.id, admin.id);
-      await this.tenants.ensureActiveMembership(school.id, admin.id);
+      // hai — câu chuyện demo của review-seed. Vai chính của hai
+      // membership này là `admin` (issue #5), khớp vai trò tenant admin.
+      await this.tenants.ensureActiveMembership(zero.id, admin.id, 'admin');
+      await this.tenants.ensureActiveMembership(school.id, admin.id, 'admin');
       const manager = await this.roles.getRoleByShortname('manager');
       if (manager) {
         await this.assignRoleIfMissing(admin.id, manager.id, (await this.contexts.ensureTenantContext(zero.id)).id);
@@ -129,7 +130,9 @@ export class SeedService implements OnApplicationBootstrap {
     if (!admins.includes(operator.id)) {
       await this.evaluator.setSiteAdmins([...admins, operator.id]);
     }
-    await this.tenants.ensureActiveMembership(platformTenantId, operator.id);
+    // Operator của platform là quản trị ở tenant platform — vai
+    // chính `admin` (issue #5).
+    await this.tenants.ensureActiveMembership(platformTenantId, operator.id, 'admin');
   }
 
   private async currentSiteAdmins(): Promise<string[]> {

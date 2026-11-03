@@ -680,7 +680,10 @@ export async function runSpaceProvision(options: SpaceProvisionOptions): Promise
         }).returningAll().executeTakeFirstOrThrow();
         adminUserId = inserted.id;
       }
-      await db.insertInto('tenant_memberships').values({ tenant_id: tenantId, user_id: adminUserId, status: 'active' })
+      // Membership của quản trị đầu tiên mang vai chính `admin`
+      // (issue #5): đường cấp phát là một đường ghi được hỗ trợ nên
+      // phải ghi vai chính tường minh như mọi đường ghi khác.
+      await db.insertInto('tenant_memberships').values({ tenant_id: tenantId, user_id: adminUserId, status: 'active', primary_role: 'admin' })
         .onConflict((oc) => oc.columns(['tenant_id', 'user_id']).doNothing())
         .execute();
       // Mục THƯ MỤC THÀNH VIÊN cho quản trị đầu tiên (issue #587,

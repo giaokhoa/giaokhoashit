@@ -107,6 +107,7 @@ export class ControlPlaneRegistryService {
       secretRef: row.secretRef,
       schemaVersion: row.schemaVersion,
       plan: row.plan,
+      issuerUrl: row.issuerUrl,
     };
   }
 
@@ -159,6 +160,7 @@ export class ControlPlaneRegistryService {
             secretRef: dto.secretRef ?? null,
             schemaVersion: dto.schemaVersion ?? null,
             plan: dto.plan ?? null,
+            issuerUrl: dto.issuerUrl ?? null,
           },
           tx,
         );

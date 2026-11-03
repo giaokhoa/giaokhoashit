@@ -12,6 +12,7 @@ import {
   PLATFORM_TENANT_SLUG,
   TenantsRepository,
   type TenantMembershipRow,
+  type TenantPrimaryRole,
   type TenantRow,
 } from '@lms/db/repositories/tenants';
 import type { UserRow } from '@lms/db/repositories/users';
@@ -52,6 +53,7 @@ export function toMembershipDto(row: TenantMembershipRow): TenantMembershipDto {
     tenantId: row.tenantId,
     userId: row.userId,
     status: row.status as TenantMembershipDto['status'],
+    primaryRole: row.primaryRole as TenantMembershipDto['primaryRole'],
     joinedAt: row.joinedAt.toISOString(),
     endedAt: row.endedAt ? row.endedAt.toISOString() : null,
   };
@@ -562,7 +564,11 @@ export class TenantsService {
    * (`ensureActiveTenantMembership` của `@lms/enrol`) vì funnel ghi
    * danh dùng chung phải đảm bảo membership ngay trong đường vật
    * chất hoá của nó mà không phụ thuộc service của API; method này
-   * chỉ uỷ thác, giữ nguyên hành vi và kiểu trả về.
+   * chỉ uỷ thác, giữ nguyên hành vi và kiểu trả về. Tham số
+   * `primaryRole` (issue #5) chuyển tiếp vai chính cho membership
+   * được tạo/kích hoạt: vắng mặt thì tầng dùng chung áp mặc định
+   * `member` của đường ghi danh; membership đã có vai chính thì
+   * giữ nguyên vai đó (xem hợp đồng của hàm được uỷ thác).
    *
    * Handle uỷ thác (D5 #657): tầng dùng chung `@lms/enrol` đã
    * chuyển sang Kysely nên điểm này uỷ thác bằng tay cầm Kysely
@@ -578,8 +584,12 @@ export class TenantsService {
    * createTenantUser, bootstrap seed) đã tự bọc ngữ cảnh platform ở
    * tầng của chúng và method này kế thừa ngữ cảnh của nơi gọi.
    */
-  async ensureActiveMembership(tenantId: string, userId: string): Promise<TenantMembershipRow> {
-    return ensureActiveTenantMembership(this.spaceDb.routedKysely, tenantId, userId);
+  async ensureActiveMembership(
+    tenantId: string,
+    userId: string,
+    primaryRole?: TenantPrimaryRole,
+  ): Promise<TenantMembershipRow> {
+    return ensureActiveTenantMembership(this.spaceDb.routedKysely, tenantId, userId, primaryRole);
   }
 
   /**
@@ -652,7 +662,7 @@ export class TenantsService {
         await this.planLimits.assertTenantSlotForNewTeacher(tenantId, user.id);
       }
     }
-    const row = await this.ensureActiveMembership(tenantId, user.id);
+    const row = await this.ensureActiveMembership(tenantId, user.id, dto.primaryRole);
     await this.outbox.enqueueStandalone({
       aggregate: 'tenant',
       type: 'tenant_member_added',

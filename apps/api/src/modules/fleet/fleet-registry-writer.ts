@@ -350,6 +350,7 @@ function snapshotOf(row: SpaceRegistryRow): {
   secretRef: string | null;
   schemaVersion: string | null;
   plan: string | null;
+  issuerUrl: string | null;
 } {
   return {
     id: row.id,
@@ -363,5 +364,6 @@ function snapshotOf(row: SpaceRegistryRow): {
     secretRef: row.secretRef,
     schemaVersion: row.schemaVersion,
     plan: row.plan,
+    issuerUrl: row.issuerUrl,
   };
 }
