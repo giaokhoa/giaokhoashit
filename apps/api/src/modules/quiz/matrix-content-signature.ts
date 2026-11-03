@@ -47,8 +47,7 @@ export interface MatrixContentSignatureInput {
  * đơn vị kiến thức phạm vi và mảng ô đã kết chuỗi "ĐVK|mức|dạng|số câu|điểm ô" → kết chuỗi JSON theo thứ tự trường cố
  * định. Hàm thuần, không đọc DB: người gọi tự nạp ô.
  *
- * @returns Chuỗi JSON là chữ ký; hai ma trận trùng toàn bộ về nội
- *   dung cho cùng một chuỗi.
+ * @returns Chuỗi JSON là chữ ký; hai ma trận trùng toàn bộ về nội dung cho cùng một chuỗi.
  */
 export function matrixContentSignature(input: MatrixContentSignatureInput): string {
   const norm = (n: number) => Math.round(n * 10000) / 10000;

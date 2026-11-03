@@ -31,8 +31,7 @@ const listeners = new Set<SpaceRegistryChangedListener>();
 /**
  * Đăng ký nghe sự kiện đổi sổ đăng ký.
  *
- * @param listener - Hàm được gọi với slug của không gian vừa đổi,
- *   chạy đồng bộ ngay trong lượt phát.
+ * @param listener - Hàm được gọi với slug của không gian vừa đổi, chạy đồng bộ ngay trong lượt phát.
  * @returns Hàm huỷ đăng ký; gọi để bên nghe ngừng nhận sự kiện.
  */
 export function onSpaceRegistryChanged(listener: SpaceRegistryChangedListener): SpaceRegistryChangedUnsubscribe {
@@ -46,8 +45,7 @@ export function onSpaceRegistryChanged(listener: SpaceRegistryChangedListener): 
  * Phát sự kiện "dòng đăng ký của một không gian vừa đổi" — gọi SAU khi thay đổi trên sổ đã commit thành công (phát
  * trước commit sẽ làm bên nghe đọc lại đúng giá trị cũ và đệm lại giá trị cũ).
  *
- * @param slug - Slug của không gian vừa đổi trạng thái/phiên bản/cấu
- *   hình định tuyến.
+ * @param slug - Slug của không gian vừa đổi trạng thái/phiên bản/cấu hình định tuyến.
  */
 export function emitSpaceRegistryChanged(slug: string): void {
   for (const listener of listeners) listener(slug);

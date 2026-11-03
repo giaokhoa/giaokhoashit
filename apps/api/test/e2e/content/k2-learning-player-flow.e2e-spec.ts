@@ -4,16 +4,12 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
 import { createCategory, createCourse, createEnrolInstance, createSection, enrolUser, getFirstSectionId } from '../../support/course-enrolment-helpers';
 
 /**
- * K2 — Học liệu thật + Player + tiến độ học (issue #85), gồm phần hấp
- * thụ nghiên cứu học liệu số VN (K2-B1→B6):
- *  - B1: mặc định hoàn thành theo loại nội dung (trang đọc/tài liệu =
- *    manual: mở xem + tự xác nhận; video = progress ≥ 90%; tệp khác/
- *    liên kết ngoài = none: chỉ ghi truy cập, ngoài % hoàn thành).
- *  - B2: sự kiện học lưu bền + bản ghi hồ sơ chụp tên mục khi hoàn
- *    thành (Điều 8 TT 09/2021).
+ * K2 — Học liệu thật + Player + tiến độ học (issue #85), gồm phần hấp thụ nghiên cứu học liệu số VN (K2-B1→B6):
+ *  - B1: mặc định hoàn thành theo loại nội dung (trang đọc/tài liệu = manual: mở xem + tự xác nhận; video = progress ≥
+ *    90%; tệp khác/ liên kết ngoài = none: chỉ ghi truy cập, ngoài % hoàn thành).
+ *  - B2: sự kiện học lưu bền + bản ghi hồ sơ chụp tên mục khi hoàn thành (Điều 8 TT 09/2021).
  *  - B4: báo cáo tiến độ GV (ma trận lớp × mục + CSV + lọc nhóm).
- *  - B5: mẫu cấu trúc bài học theo khung CV 5512.
- * % tiến độ luôn đối chiếu với dữ liệu completion qua API completion.
+ *  - B5: mẫu cấu trúc bài học theo khung CV 5512. % tiến độ luôn đối chiếu với dữ liệu completion qua API completion.
  */
 describe('Nội dung học tập, trình phát và tiến độ K2', () => {
   let app: INestApplication;

@@ -11,13 +11,11 @@ import { addGroupMember, contextIdByLevelInstance, createGroupViaApi } from '../
  * Lát M3 — TRẢ LỜI TRÍCH DẪN (issue #229): người dùng trả lời MỘT tin cụ thể trong cùng hội thoại; tin mới mang tham
  * chiếu reply-to và khối tóm tắt (quote) do server dựng theo quyền của người đọc. Các ca kiểm chứng đúng luồng nghiệp
  * vụ:
- *  - gửi kèm trích dẫn → response + đường đọc của cả hai phía mang
- *    quote đầy đủ (người gửi gốc, seq, excerpt rút gọn 120 ký tự);
- *  - gác service: trích dẫn tin của hội thoại KHÁC hoặc id không tồn
- *    tại → cùng một 400 `messaging.reply_target_not_found`, không
- *    tin nào được tạo (không lộ sự tồn tại của tin ở nơi khác);
- *  - trần ký tự của M2 tính trên nội dung tin MỚI, không tính trích
- *    dẫn;
+ *  - gửi kèm trích dẫn → response + đường đọc của cả hai phía mang quote đầy đủ (người gửi gốc, seq, excerpt rút gọn
+ *    120 ký tự);
+ *  - gác service: trích dẫn tin của hội thoại KHÁC hoặc id không tồn tại → cùng một 400
+ *    `messaging.reply_target_not_found`, không tin nào được tạo (không lộ sự tồn tại của tin ở nơi khác);
+ *  - trần ký tự của M2 tính trên nội dung tin MỚI, không tính trích dẫn;
  *  - tin gốc bị thu hồi / bị tác giả ẩn phía mình → quote chuyển `unavailable`, excerpt rỗng, nội dung gốc KHÔNG xuất
  *    hiện ở bất kỳ trường nào của payload người thường; tin gốc bị moderator xoá cứng → tham chiếu mất hẳn (replyTo
  *    null qua FK SET NULL).

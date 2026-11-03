@@ -334,9 +334,8 @@ export class PaymentsService {
    * thiếu/sai hình dạng đều coi là KHÔNG khớp (fail-closed): thà đẩy vào `needs_review` để vận hành xử lý còn hơn kích
    * hoạt một quyền lợi không xác minh được.
    *
-   * @returns `true` khi payment mang component thường (không có
-   *   quyền lợi để đối chiếu) hoặc khớp cả giá lẫn tenant phía
-   *   server; `false` khi lệch hoặc không xác minh được.
+   * @returns `true` khi payment mang component thường (không có quyền lợi để đối chiếu) hoặc khớp cả giá lẫn tenant
+   *   phía server; `false` khi lệch hoặc không xác minh được.
    */
   async verifyPaymentAgainstServerTarget(payment: PaymentRow): Promise<boolean> {
     switch (payment.component) {
@@ -806,14 +805,14 @@ export class PaymentsService {
   //    chung, tenant ghi đè được); 0 = luôn hai cấp. Ngưỡng hiệu lực được ghi vào chính dòng hoàn để vết kiểm toán đứng
   //    vững dù cấu hình đổi sau này. 2. DUYỆT (approveRefund): chỉ áp cho dòng đang `requested`; người duyệt phải KHÁC
   //    người tạo — chặn ở tầng service này bằng mã lỗi riêng để không đường gọi nào (kể cả gọi thẳng service) lách
-  //    được; TỪ CHỐI (rejectRefund) áp cho dòng `requested`/`approved` và bắt buộc lý do — dòng `rejected` giải phóng
-  //    ngân sách hoàn. 3. XÁC NHẬN CHI (settleRefund tay, hoặc tự động khi sự kiện `debit` của SePay khớp — xem
-  //    settleRefundFromDebitEvent): chỉ áp cho dòng `approved`, kèm mã lệnh chi thực tế. Đây là mốc DUY NHẤT đảo quyền
-  //    lợi: nếu lần xác nhận này làm cộng dồn đã chi (các dòng `settled`) đạt đúng 100% khoản thu thì đình chỉ quyền
-  //    lợi TRƯỚC (ghi danh / thành viên lớp / quyền lợi gói — mọi khâu đều idempotent) rồi mới ghi dòng hoàn `settled`
-  //    + lật khoản thu sang `refunded` trong một transaction. Đình chỉ ném lỗi ⇒ chưa ghi gì cả, khoản thu còn
-  //    `succeeded`, dòng hoàn còn `approved`, gọi lại được — không để trạng thái "tiền đã ghi hoàn nhưng quyền lợi vẫn
-  //    chạy". Hoàn một phần (cộng dồn chưa 100%) không đảo quyền lợi.
+  //    được; TỪ CHỐI (rejectRefund) áp cho dòng `requested`/`approved` và bắt buộc lý do — dòng `rejected`
+  //    giải phóng ngân sách hoàn. 3. XÁC NHẬN CHI (settleRefund tay, hoặc tự động khi sự kiện `debit` của SePay khớp —
+  //    xem settleRefundFromDebitEvent): chỉ áp cho dòng `approved`, kèm mã lệnh chi thực tế. Đây là mốc DUY NHẤT đảo
+  //    quyền lợi: nếu lần xác nhận này làm cộng dồn đã chi (các dòng `settled`) đạt đúng 100% khoản thu thì đình chỉ
+  //    quyền lợi TRƯỚC (ghi danh / thành viên lớp / quyền lợi gói — mọi khâu đều idempotent) rồi mới ghi dòng hoàn
+  //    `settled` + lật khoản thu sang `refunded` trong một transaction. Đình chỉ ném lỗi ⇒ chưa ghi gì cả, khoản thu
+  //    còn `succeeded`, dòng hoàn còn `approved`, gọi lại được — không để trạng thái "tiền đã ghi hoàn nhưng quyền lợi
+  //    vẫn chạy". Hoàn một phần (cộng dồn chưa 100%) không đảo quyền lợi.
   //
   // Quyền ở mọi bước neo theo CHỦ TIỀN của khoản thu (tenant của khoản thu): tiền gói neo tại context hệ thống; học phí
   // neo tại context tenant của trung tâm sở hữu.
@@ -1015,8 +1014,7 @@ export class PaymentsService {
    *     huỷ, chưa ghi gì, gọi lại được. Chưa đạt thì ghi mà không đình chỉ. Đình chỉ ghi BẰNG CHÍNH transaction này
    *     (issue #490, DL-10) — mọi bước ghi sổ sau đó mà lỗi, transaction rollback thì đình chỉ cũng bị huỷ theo, không
    *     còn trạng thái "đã đình chỉ nhưng chưa ghi hoàn".
-   *  4. Ghi dòng hoàn `settled` (+ lật khoản thu `refunded` khi đạt
-   *     100%) trong cùng transaction rồi commit.
+   *  4. Ghi dòng hoàn `settled` (+ lật khoản thu `refunded` khi đạt 100%) trong cùng transaction rồi commit.
    *  5. SAU khi commit: nếu bước 3 có gỡ một thành viên khỏi backing cohort (đường `class_fee`), phát sự kiện
    *     trong-tiến-trình `cohort_member_removed` để cohort sync đình chỉ các ghi danh tương ứng. Sự kiện này bắt buộc
    *     chờ sau commit vì handler đồng bộ kiểm tra tư cách thành viên ĐÃ commit — phát giữa transaction sẽ thấy thành

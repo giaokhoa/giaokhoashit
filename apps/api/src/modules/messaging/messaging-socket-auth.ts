@@ -44,11 +44,10 @@ export interface MessagingHandshake {
 const SESSION_COOKIE_PATTERN = new RegExp(`(?:^|;\\s*)(?:__Secure-)?${BETTER_AUTH_SESSION_COOKIE}=`);
 
 /**
- * Lớp xác thực MỎNG cho kênh realtime của messaging — điểm chạm DUY
- * NHẤT của gateway với cơ chế auth (issue #33, chặng A1).
+ * Lớp xác thực MỎNG cho kênh realtime của messaging — điểm chạm DUY NHẤT của gateway với cơ chế auth (issue #33, chặng
+ * A1).
  *
- * Hai đường danh tính, đúng thứ tự của chuỗi guard HTTP (GĐ5 của
- * issue #7 — realtime trên cookie):
+ * Hai đường danh tính, đúng thứ tự của chuỗi guard HTTP (GĐ5 của issue #7 — realtime trên cookie):
  *
  * 1. **Cookie phiên Better Auth TRƯỚC** — cùng semantics với `BetterAuthSessionGuard` phía HTTP: cờ Better Auth bật +
  *    cookie phiên có mặt + phiên hợp lệ + tài khoản còn active (không suspended/deleted) thì danh tính chốt ở đây.
@@ -77,8 +76,8 @@ const SESSION_COOKIE_PATTERN = new RegExp(`(?:^|;\\s*)(?:__Secure-)?${BETTER_AUT
  * đường token: token mang claim `centre_id` bị từ chối TRƯỚC mọi lượt đọc tài khoản ở kho chung; token không claim và
  * đường cookie giữ nguyên hành vi cho qua như cũ.
  *
- * Gateway, consumer và tầng phân phối không biết gì về cơ chế bên
- * dưới — chúng chỉ nhận `MessagingSocketIdentity | null`.
+ * Gateway, consumer và tầng phân phối không biết gì về cơ chế bên dưới — chúng chỉ nhận `MessagingSocketIdentity |
+ * null`.
  */
 @Injectable()
 export class MessagingSocketAuth {
@@ -128,8 +127,7 @@ export class MessagingSocketAuth {
    * của mọi đường HTTP trên deployment chưa cấu hình control plane). Lỗi phân giải ngoài hai mã đã biết ném ra nguyên
    * trạng, fail-closed như mọi lỗi phân giải khác của lớp này.
    *
-   * @returns `true` chỉ khi bộ phân giải báo tầng định tuyến chưa
-   *   cấu hình cho slug ứng viên của địa chỉ này.
+   * @returns `true` chỉ khi bộ phân giải báo tầng định tuyến chưa cấu hình cho slug ứng viên của địa chỉ này.
    */
   private async isRoutingNotConfiguredForHost(host: string | string[] | undefined): Promise<boolean> {
     const header = Array.isArray(host) ? host[0] : host;

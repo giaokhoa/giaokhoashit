@@ -145,8 +145,8 @@ export type SpaceProvisionResult = {
  * chối dứt khoát (fail-closed) thay vì bị chuẩn hoá lặng lẽ: hạ quyền của một role đang có chủ khác có thể phá hệ thống
  * đang dùng role đó.
  *
- * @throws Error khi role mang quyền vượt ranh giới hoặc là thành
- *   viên của role đặc quyền — thông điệp nêu rõ quyền/vi phạm.
+ * @throws Error khi role mang quyền vượt ranh giới hoặc là thành viên của role đặc quyền — thông điệp nêu rõ quyền/vi
+ *   phạm.
  */
 async function assertCentreRoleIsClean(admin: Client, role: string): Promise<void> {
   const attrs = await admin.query<{
@@ -215,9 +215,8 @@ const ROLE_BASELINE_MARKER_VERSION = 1;
  *   trong kho (bước cài vai chạy trước bước tạo quản trị đầu tiên) nên việc đồng bộ lại ma trận không mất thay đổi cục
  *   bộ nào.
  *
- * @returns `created` khi lượt này đã chạy đường gieo và ghi dấu
- *   mốc hoàn tất, `reused` khi kho đã cài trọn bộ vai nên không
- *   đổi gì.
+ * @returns `created` khi lượt này đã chạy đường gieo và ghi dấu mốc hoàn tất, `reused` khi kho đã cài trọn bộ vai nên
+ *   không đổi gì.
  */
 async function installCentreRoleBaseline(accessDb: CentreDb): Promise<'created' | 'reused'> {
   const accessRepository = new AccessRepository(accessDb);
@@ -248,9 +247,8 @@ async function installCentreRoleBaseline(accessDb: CentreDb): Promise<'created' 
 /**
  * Chạy pipeline cấp phát trung tâm mới.
  *
- * @throws Error khi đầu vào sai (slug, actorId, thiếu cấu hình) hoặc
- *   bất kỳ bước nào hỏng — lỗi mang tên bước để vận hành chạy lại
- *   đúng từ bước dở dang.
+ * @throws Error khi đầu vào sai (slug, actorId, thiếu cấu hình) hoặc bất kỳ bước nào hỏng — lỗi mang tên bước để vận
+ *   hành chạy lại đúng từ bước dở dang.
  */
 export async function runSpaceProvision(options: SpaceProvisionOptions): Promise<SpaceProvisionResult> {
   const env = options.env ?? process.env;
@@ -670,9 +668,8 @@ export type CentreInviteResult = {
  * đã in ra — token gốc không lưu nên không thể "gửi lại" mà chỉ có thể cấp mới): huỷ mọi lời mời đang chờ của tài khoản
  * rồi tạo một lời mời mới (hạn 7 ngày). Với `--revoke` thì chỉ huỷ, không tạo mới.
  *
- * @throws Error khi trung tâm chưa đăng ký, chưa active, tài khoản
- *   không tồn tại trong kho trung tâm, hoặc biến môi trường URL kết
- *   nối của trung tâm chưa có trong môi trường chạy lệnh.
+ * @throws Error khi trung tâm chưa đăng ký, chưa active, tài khoản không tồn tại trong kho trung tâm, hoặc biến môi
+ *   trường URL kết nối của trung tâm chưa có trong môi trường chạy lệnh.
  */
 export async function manageCentreInvite(options: CentreInviteOptions): Promise<CentreInviteResult> {
   const env = options.env ?? process.env;
@@ -750,10 +747,8 @@ export type SpaceRoleBaselineResult = {
  * khuôn với lệnh cấp lại lời mời. Idempotent như bước trong pipeline: kho đã cài trọn bộ vai (có dấu mốc hoàn tất) thì
  * không đổi gì; kho mà lượt cài trước chưa chạy trọn thì lượt này lấp đủ.
  *
- * @throws Error khi trung tâm chưa đăng ký, không phải trung tâm
- *   kho riêng, chưa có dòng tenant trong kho của nó, hoặc biến môi
- *   trường URL kết nối của trung tâm chưa có trong môi trường
- *   chạy lệnh.
+ * @throws Error khi trung tâm chưa đăng ký, không phải trung tâm kho riêng, chưa có dòng tenant trong kho của nó, hoặc
+ *   biến môi trường URL kết nối của trung tâm chưa có trong môi trường chạy lệnh.
  */
 export async function installSpaceRoleBaseline(options: SpaceRoleBaselineOptions): Promise<SpaceRoleBaselineResult> {
   const env = options.env ?? process.env;

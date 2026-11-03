@@ -135,8 +135,8 @@ export class MessagingContactsService {
    * UsersService). Ngoài cổng này đều nhận 404 như đối tác không tồn tại (không rò sự tồn tại). Email chỉ trả trong
    * cổng này — khác với tóm tắt hiển thị dùng chung (không có email).
    *
-   * @throws {NotFoundException} `messaging.person_profile_not_found`
-   *   khi đối tác không tồn tại hoặc người xem ngoài cổng trên.
+   * @throws {NotFoundException} `messaging.person_profile_not_found` khi đối tác không tồn tại hoặc người xem ngoài
+   *   cổng trên.
    */
   async getPersonProfile(viewerId: string, targetId: string): Promise<{ userId: string; displayName: string; username: string; email: string }> {
     if (viewerId !== targetId && !(await this.repo.sharesDirectConversation(viewerId, targetId)) && !(await this.users.canViewUserIdentity(viewerId, targetId))) {
@@ -160,8 +160,8 @@ export class MessagingContactsService {
   }
 
   /**
-   * Từ chối yêu cầu kết bạn TỪ requesterId: yêu cầu biến mất, quan hệ không hình thành. Không có yêu cầu như vậy thì
-   * 404.
+   * Từ chối yêu cầu kết bạn TỪ requesterId: yêu cầu biến mất, quan hệ không hình thành. Không có yêu cầu như vậy
+   * thì 404.
    */
   async declineContactRequest(userId: string, requesterId: string): Promise<{ declined: boolean }> {
     await this.users.getUser(requesterId);
@@ -199,8 +199,8 @@ export class MessagingContactsService {
    * NGOẠI LỆ duy nhất (chốt bổ sung 25/10/2026 trên issue #33): cặp GIÁO VIÊN ↔ HỌC SINH thuộc cùng một đơn vị học tập
    * nhắn riêng trực tiếp không cần kết bạn — cả mở hội thoại mới lẫn gửi vào hội thoại cũ, cả hai chiều (học sinh trả
    * lời được). Ngoại lệ có HAI căn cứ quan hệ thật, tính lại tại MỖI lần kiểm:
-   * (a) cấp KHOÁ — gán vai dạy tại context khoá + ghi danh hiệu lực
-   * (xem {@link MessagingRepository.findTeacherStudentSharedCourseId});
+   * (a) cấp KHOÁ — gán vai dạy tại context khoá + ghi danh hiệu lực (xem {@link
+   * MessagingRepository.findTeacherStudentSharedCourseId});
    * (b) cấp LỚP — gán vai dạy tại context lớp + thành viên roster hiệu lực, bổ sung ở lát MSG-T2 theo sổ quyết định mục
    *     D ("HS thuộc khoá/LỚP của mình") (xem {@link MessagingRepository.findTeacherStudentSharedClassId}). Hết quan hệ
    *     (rời lớp/hết ghi danh/hết vai dạy) thì cổng đóng lại ngay, lịch sử cũ vẫn đọc được như luật gỡ liên hệ. Quan hệ
@@ -209,9 +209,8 @@ export class MessagingContactsService {
    *     một luật).
    *
    * @returns Không trả dữ liệu; trở về bình thường nghĩa là cổng mở.
-   * @throws {ForbiddenException} `messaging.not_a_contact` khi hai
-   *   người không phải liên hệ đã duyệt và không có quan hệ GV–HS
-   *   hiệu lực ở cấp khoá lẫn cấp lớp (hoặc đã chặn nhau).
+   * @throws {ForbiddenException} `messaging.not_a_contact` khi hai người không phải liên hệ đã duyệt và không có quan
+   *   hệ GV–HS hiệu lực ở cấp khoá lẫn cấp lớp (hoặc đã chặn nhau).
    */
   async assertCanContact(senderId: string, recipientId: string): Promise<void> {
     if (await this.repo.isContact(recipientId, senderId)) return;

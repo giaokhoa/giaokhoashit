@@ -15,22 +15,20 @@ import type { MailMessage } from '../../../src/modules/mail/mail.types';
 /**
  * Cổng MFA thống nhất trên các đường đăng nhập của Better Auth.
  *
- * Quy tắc nghiệp vụ được kiểm chứng (nguồn trạng thái MFA DUY NHẤT là
- * bảng `user_totp` của module auth — factor TOTP đã xác nhận):
+ * Quy tắc nghiệp vụ được kiểm chứng (nguồn trạng thái MFA DUY NHẤT là bảng `user_totp` của module auth — factor TOTP đã
+ * xác nhận):
  * - (a) Đăng nhập bằng username/mật khẩu: mật khẩu đúng vẫn CHƯA có phiên dùng được — đáp ứng là dấu
  *   `twoFactorRedirect` + cookie chờ của bước hai, không cookie phiên, không dòng session. Mã TOTP sai bị từ chối; ngân
  *   sách thử của một challenge có hạn (hết ngân sách thì mã đúng cũng bị từ chối, phải đăng nhập lại); mã đúng trong
  *   ngân sách → phiên thật, dùng được trên route nghiệp vụ.
- * - (b) Đăng nhập bằng email OTP: cùng khuôn — OTP email đúng vẫn
- *   dừng ở bước TOTP.
- * - (c) Callback social (Google): tài khoản đã liên kết + đã bật MFA
- *   → bị gác: redirect mang `twoFactorRedirect=true`, không phiên;
- *   qua bước TOTP mới có phiên.
+ * - (b) Đăng nhập bằng email OTP: cùng khuôn — OTP email đúng vẫn dừng ở bước TOTP.
+ * - (c) Callback social (Google): tài khoản đã liên kết + đã bật MFA → bị gác: redirect mang `twoFactorRedirect=true`,
+ *   không phiên; qua bước TOTP mới có phiên.
  * - Kho `two_factor` của plugin KHÔNG tham gia ở bất kỳ bước nào: bước hoàn tất (endpoint Nest
  *   `/auth/two-factor/verify-totp`) kiểm mã thẳng vào `user_totp` — không bản ghi two_factor nào được tạo cho người
  *   dùng trong suốt luồng.
- * - (e) Hồi quy: người chưa bật MFA đăng nhập như cũ ở mọi đường;
- *   người bị đình chỉ vẫn bị guard chặn trên route nghiệp vụ.
+ * - (e) Hồi quy: người chưa bật MFA đăng nhập như cũ ở mọi đường; người bị đình chỉ vẫn bị guard chặn trên route nghiệp
+ *   vụ.
  *
  * Biến môi trường phải tồn tại TRƯỚC khi AppModule được nạp nên các import của AppModule đều là import động bên trong
  * beforeAll — như các spec Better Auth khác. Provider Google được giả lập ở biên HTTP bằng cách thay `globalThis.fetch`
@@ -82,8 +80,8 @@ function cookiePairFrom(setCookie: string[] | undefined, name: string): string |
 }
 
 /**
- * Đáp ứng có mang cookie phiên SỐNG nào không — kiểm mọi entry, không phụ thuộc thứ tự: entry xoá cookie của cổng (tên
- * + giá trị rỗng) không tính là phiên sống.
+ * Đáp ứng có mang cookie phiên SỐNG nào không — kiểm mọi entry, không phụ thuộc thứ tự: entry xoá cookie của cổng
+ * (tên + giá trị rỗng) không tính là phiên sống.
  */
 function hasLiveSessionCookie(setCookie: string[] | undefined): boolean {
   return (setCookie ?? [])

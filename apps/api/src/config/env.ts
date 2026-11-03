@@ -153,8 +153,7 @@ export const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
   FACEBOOK_APP_ID: z.string().min(1).optional(),
   FACEBOOK_APP_SECRET: z.string().min(1).optional(),
-  // Chặng cutover (GĐ2, chặng 2.7 — hai bước có cổng riêng): công tắc
-  // LUỒNG CHÍNH ở mức cấu hình.
+  // Chặng cutover (GĐ2, chặng 2.7 — hai bước có cổng riêng): công tắc LUỒNG CHÍNH ở mức cấu hình.
   // - 'off' (mặc định): hệ auth tự viết là luồng chính như hiện tại, Better Auth chạy song song sau
   //   BETTER_AUTH_ENABLED; tắt cờ giữa cửa sổ bake là quay về luồng cũ TRỌN VẸN (điều kiện rollback trước bước B — mật
   //   khẩu đổi qua Better Auth trong lúc bake đã đồng bộ ngược về users.password_hash, xem cửa sổ bake dưới đây).
@@ -162,8 +161,8 @@ export const envSchema = z.object({
   //   ký thay cho cặp token; đổi mật khẩu qua Better Auth đồng bộ ngược hash về users.password_hash. 'bake' mà
   //   BETTER_AUTH_ENABLED tắt là cấu hình vô nghĩa: app từ chối boot (fail-fast trong BetterAuthService) thay vì chạy
   //   nửa vời.
-  // Sau bước B (gỡ legacy khỏi code + baseline) cờ này bị gỡ cùng đợt
-  // — không tồn tại trạng thái "primary" thứ ba để chọn.
+  // Sau bước B (gỡ legacy khỏi code + baseline) cờ này bị gỡ cùng đợt — không tồn tại trạng thái "primary" thứ ba để
+  // chọn.
   AUTH_CUTOVER_STAGE: z.enum(['off', 'bake']).default('off'),
   // Máy chủ OAuth (AS) cho MCP (issue #163, lát MCP-1): cờ RIÊNG với BETTER_AUTH_ENABLED — bật thì instance Better Auth
   // compose thêm jwt()/mcp()/cimd() và trở thành AS phát access token cho `/mcp` (không chờ cutover GĐ2 của #7). Bật mà

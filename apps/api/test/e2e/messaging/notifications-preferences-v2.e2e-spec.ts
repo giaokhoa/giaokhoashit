@@ -10,16 +10,13 @@ import { adminToken, assignRole, createTestApp, createUserViaApi, http, login, r
  *  - GET /messages/preferences trả MỘT dòng cho mỗi provider, mang nhãn + mô tả vi/en từ registry ở API (không khoá
  *    thô), phân loại 3 nhóm, nhãn theo vai cho loại chỉ GV nhận, cờ bắt buộc của P2 — và KHÔNG có bề mặt push hay trục
  *    loggedin/loggedoff nào.
- *  - Đổi tuỳ chọn có hiệu lực ngay ở lần phát kế tiếp (kiểm qua
- *    POST /notifications/send — điểm phát chuẩn của admin — và đọc
- *    trường channels của NotifyResult + số thông báo đã lưu).
+ *  - Đổi tuỳ chọn có hiệu lực ngay ở lần phát kế tiếp (kiểm qua POST /notifications/send — điểm phát chuẩn của admin —
+ *    và đọc trường channels của NotifyResult + số thông báo đã lưu).
  *  - Tắt email của grade_updated vẫn giữ popup hoạt động độc lập.
- *  - Loại bắt buộc (P2): enrol_expiry_warning + admin_announcement
- *    không tắt được popup (400) nhưng email vẫn tắt được tuyệt đối,
- *    và lần phát vẫn giao popup.
- *  - Dữ liệu tuỳ chọn CŨ (khoá provider × kênh × trạng thái) được suy
- *    về giá trị tương đương ở hậu trường: hàng cũ giữ nguyên không
- *    bị ghi đè, khoá v2 khi đã đặt thì thắng hàng cũ.
+ *  - Loại bắt buộc (P2): enrol_expiry_warning + admin_announcement không tắt được popup (400) nhưng email vẫn tắt được
+ *    tuyệt đối, và lần phát vẫn giao popup.
+ *  - Dữ liệu tuỳ chọn CŨ (khoá provider × kênh × trạng thái) được suy về giá trị tương đương ở hậu trường: hàng cũ giữ
+ *    nguyên không bị ghi đè, khoá v2 khi đã đặt thì thắng hàng cũ.
  *  - Phân chia theo vai + context (việc nối tiếp của issue #288): GET chỉ trả provider thuộc AUDIENCE của user —
  *    registry ở API là nguồn sự thật, audience chốt bằng truy vết điểm phát notify() thật. Giáo viên thuần không thấy
  *    loại chỉ học sinh nhận (báo điểm là ca bị bắt tại trận) hay loại của phụ huynh; người hai vai dạy + học thấy cả

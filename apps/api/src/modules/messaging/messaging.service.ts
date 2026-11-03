@@ -79,15 +79,12 @@ export { countUserVisibleCharacters, isWithinRecallWindow } from './messaging-me
 
 /**
  * Facade của MessagingModule (core_message của Moodle):
- *  - CONVERSATION + MESSAGE là user-tới-user. Sau khi gửi, quyền sở hữu của
- *    một message chuyển cho core_message: KHÔNG endpoint nào sửa hoặc xoá nó
- *    (xoá mềm có truy vết là chặng sau của Lớp B, issue #33).
- *  - NOTIFICATION là message hệ thống do các provider đã đăng ký tạo và
- *    được phân phối theo tuỳ chọn (provider × channel × loggedin/loggedoff)
- *    lưu trong user_preferences.
- *  - Một user bị suspended (hoặc đã xoá) KHÔNG NHẬN gì: không phân phối message,
- *    không notification, trên bất kỳ kênh nào. Một user đã chặn người gửi cũng
- *    không nhận message của họ.
+ *  - CONVERSATION + MESSAGE là user-tới-user. Sau khi gửi, quyền sở hữu của một message chuyển cho core_message: KHÔNG
+ *    endpoint nào sửa hoặc xoá nó (xoá mềm có truy vết là chặng sau của Lớp B, issue #33).
+ *  - NOTIFICATION là message hệ thống do các provider đã đăng ký tạo và được phân phối theo tuỳ chọn (provider ×
+ *    channel × loggedin/loggedoff) lưu trong user_preferences.
+ *  - Một user bị suspended (hoặc đã xoá) KHÔNG NHẬN gì: không phân phối message, không notification, trên bất kỳ kênh
+ *    nào. Một user đã chặn người gửi cũng không nhận message của họ.
  *  - Phân phối kênh ngoài đi qua hàng đợi BullMQ 'notification-dispatch' do worker tiêu thụ. Từ NB-5 (issue #174) kênh
  *    email gửi thật qua Resend ở phía worker (gửi ngay, hoặc qua tổng hợp theo ngày với tần suất 'daily'); push vẫn là
  *    cổng chỉ ghi log (chưa có ứng dụng native).

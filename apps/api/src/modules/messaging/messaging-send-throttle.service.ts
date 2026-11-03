@@ -37,8 +37,8 @@ return {1, ''}
  * Throttle gửi tin theo TỪNG NGƯỜI DÙNG bằng Redis (lát M2, issue #212; hồ sơ rà soát hoàn thiện nhắn tin mục M2). Hai
  * cửa sổ cố định chạy song song, mức đọc qua site-config ở MỖI lần gửi nên quản trị đổi cấu hình là hành vi đổi ngay,
  * không cần khởi động lại:
- *   - bùng phát: `core/messagingsendburstlimit` tin trong
- *     `core/messagingsendburstwindowseconds` giây (mặc định 20/10s);
+ *   - bùng phát: `core/messagingsendburstlimit` tin trong `core/messagingsendburstwindowseconds` giây (mặc định
+ *     20/10s);
  *   - duy trì: `core/messagingsendperminutelimit` tin/phút (mặc định 60, tức ~1 tin/giây). Chạm một trong hai trần →
  *     429 `messaging.rate_limited`. Khoá đếm theo userId (định danh toàn cục duy nhất) nên không lẫn giữa các tenant và
  *     tự hết hạn theo TTL — không có dữ liệu bền nào phải dọn.

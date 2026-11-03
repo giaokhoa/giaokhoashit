@@ -308,22 +308,19 @@ export class PermissionEvaluator {
   }
 
   /**
-   * Phân giải capability THEO LÔ cho một tập context đích — đường riêng
-   * của ảnh chụp quyền (`UsersService.getMyAccess`), KHÔNG phải đường gác
-   * route: các route nghiệp vụ vẫn đi qua `hasCapability` như cũ.
+   * Phân giải capability THEO LÔ cho một tập context đích — đường riêng của ảnh chụp quyền
+   * (`UsersService.getMyAccess`), KHÔNG phải đường gác route: các route nghiệp vụ vẫn đi qua `hasCapability` như cũ.
    *
    * Vì sao cần: ảnh chụp quyền phải phân giải toàn bộ capability đã đăng ký tại mọi context liên quan của người dùng.
    * Gọi `hasCapability` tuần tự cho từng cặp (context × capability) tốn vài truy vấn Postgres cho mỗi cặp (đọc context,
    * đọc path, cổng tenant — trước cả khi tra cache kết quả), nên một request ảnh chụp quyền phát sinh hàng nghìn truy
    * vấn. Phép này nạp dữ kiện MỘT lần theo lô rồi tính trong bộ nhớ:
-   *   1. Path (lá → gốc) của từng đích dựng từ cột `path` vật chất hoá
-   *      và bảng context được truyền vào; id nào còn thiếu thì nạp bổ
-   *      sung đúng một truy vấn cho mọi đích.
+   *   1. Path (lá → gốc) của từng đích dựng từ cột `path` vật chất hoá và bảng context được truyền vào; id nào còn
+   *      thiếu thì nạp bổ sung đúng một truy vấn cho mọi đích.
    *   2. Cổng tenant của từng đích tính từ HAI truy vấn dùng chung (thông tin cổng của mọi tenant xuất hiện trên các
    *      path + trạng thái membership của user ở các tenant đó). Kết quả cổng của một đích chỉ phụ thuộc tenant trên
    *      path của nó và membership của user nên dùng chung không đổi kết quả so với `tenantGate`.
-   *   3. Lối tắt site admin tra một lần, chỉ áp cho các đích ngoài cây
-   *      tenant (cổng không thu hẹp) — đúng điều kiện của
+   *   3. Lối tắt site admin tra một lần, chỉ áp cho các đích ngoài cây tenant (cổng không thu hẹp) — đúng điều kiện của
    *      `hasCapability`.
    *   4. Các đích còn lại được đánh giá bằng đúng các hàm thuần `evaluateSingleRole`/`aggregateRoleResults` trên dữ
    *      kiện nạp theo lô: gán vai của user trên hợp nhất các path (một truy vấn, lọc lại theo path và
@@ -338,11 +335,10 @@ export class PermissionEvaluator {
    * dữ kiện vừa nạp cho cùng một đáp án; đổi lại ảnh chụp quyền không phải trả hàng trăm vòng đi Redis cho mỗi request.
    *
    * @param targets - Các context đích cần phân giải.
-   * @param contextRowsById - Bảng tra các context đã nạp sẵn (phải gồm
-   *   mọi tổ tiên của mọi đích — `getMyAccess` nạp đúng tập này; id nào
-   *   thiếu vẫn được nạp bổ sung ở bước 1).
-   * @returns Map từ id context đích sang danh sách capability đạt được
-   *   tại context đó, theo đúng thứ tự của sổ đăng ký capability.
+   * @param contextRowsById - Bảng tra các context đã nạp sẵn (phải gồm mọi tổ tiên của mọi đích — `getMyAccess` nạp
+   *   đúng tập này; id nào thiếu vẫn được nạp bổ sung ở bước 1).
+   * @returns Map từ id context đích sang danh sách capability đạt được tại context đó, theo đúng thứ tự của sổ đăng ký
+   *   capability.
    */
   async resolveCapabilitiesForContexts(
     userId: string,

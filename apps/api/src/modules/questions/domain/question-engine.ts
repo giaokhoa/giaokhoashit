@@ -17,16 +17,14 @@
  * Chấm điểm theo MÔ HÌNH GIAOKHOA (quyết 12:04 ngày 26/10/2026, đợt port #248): đáp án KHÔNG còn tỉ trọng (fraction) —
  * mỗi dòng đáp án chỉ mang cờ đúng/sai nhị phân `isCorrect`, và việc chấm tự động là NHỊ PHÂN 1/0 cho multichoice và
  * shortanswer:
- *   - multichoice: 1 khi học sinh chọn ĐÚNG MỘT đáp án và đó là đáp án
- *     đúng duy nhất của câu (mô hình giaokhoa khoá một đáp án đúng);
- *     chọn khác, chọn nhiều hoặc không chọn đều 0.
+ *   - multichoice: 1 khi học sinh chọn ĐÚNG MỘT đáp án và đó là đáp án đúng duy nhất của câu (mô hình giaokhoa khoá một
+ *     đáp án đúng); chọn khác, chọn nhiều hoặc không chọn đều 0.
  *   - shortanswer: 1 khi đáp án khớp CHÍNH XÁC một đáp án được chấp nhận sau chuẩn hoá (cắt khoảng trắng hai đầu;
  *     hoa/thường theo tuỳ chọn useCase) — ký tự đại diện `*` đã BỎ HẲN (điểm quyết D-2). Chế độ đáp án số (điểm 6.3.3
  *     issue #30) giữ nguyên: đáp án vi phạm ràng buộc số bị 0 điểm ngay, không rơi xuống so khớp.
- *   - essay: không bao giờ tự chấm — attempt đi vào needsgrading.
- * `rightAnswer` (đáp án đúng để hiển thị xem lại) luôn suy từ dòng đáp án `isCorrect` của version đã pin, không còn suy
- * từ fraction cao nhất. Trạng thái graded* vẫn suy từ fraction bằng ngưỡng của Moodle (question/engine/states.php
- * graded_state_for_fraction).
+ *   - essay: không bao giờ tự chấm — attempt đi vào needsgrading. `rightAnswer` (đáp án đúng để hiển thị xem lại) luôn
+ * suy từ dòng đáp án `isCorrect` của version đã pin, không còn suy từ fraction cao nhất. Trạng thái graded* vẫn suy từ
+ * fraction bằng ngưỡng của Moodle (question/engine/states.php graded_state_for_fraction).
  *
  * Câu truefalse là trường hợp riêng (TF-A nguyên bản giaokhoa, điểm quyết D-1, lát P5): MỘT câu gồm thân chung + 4 mệnh
  * đề, mỗi mệnh đề chấm 0/1 và fraction của CÂU tra thang Đ–S theo SỐ Ý ĐÚNG (`thang[số ý đúng] / 100`). Thang là CẤU

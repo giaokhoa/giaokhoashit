@@ -290,8 +290,8 @@ const DISK7_QUADRANTS = diskQuadrants(DISK7);
 /**
  * Tô kín THẬT phủ mực khắp đĩa bong bóng; hai kiểu "không kín" phổ biến phải bị bắt vào hàng chờ dù mật độ trung bình
  * cao:
- *  - nét gạch/dấu ✓ chỉ phủ một dải chéo → góc phần tư ít mực nhất của
- *    đĩa thấp hẳn so với mật độ của chính ô (ngưỡng phủ góc 45%);
+ *  - nét gạch/dấu ✓ chỉ phủ một dải chéo → góc phần tư ít mực nhất của đĩa thấp hẳn so với mật độ của chính ô (ngưỡng
+ *    phủ góc 45%);
  *  - tẩy xoá để lại VÀNH mực quanh tâm trắng → mật độ ở đĩa tâm (r≤4) thấp hẳn so với mật độ của chính ô (ngưỡng phủ
  *    tâm 50%). Ô thắng mà một trong hai kiểm tra không đạt thì không phải tô kín: xếp ca mơ hồ cho giáo viên xác nhận,
  *    hệ thống không chấm đoán (tiêu chí cứng của CAM-0: 100% ca mơ hồ vào hàng chờ).

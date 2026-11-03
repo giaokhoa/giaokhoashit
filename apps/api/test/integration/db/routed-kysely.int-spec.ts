@@ -2,22 +2,17 @@
  * Ca tích hợp của FACADE KYSELY ĐỊNH TUYẾN phía API (issue #639): chứng minh `routedKysely` của `SpaceDatabaseService`
  * giữ đúng hợp đồng định tuyến — và giữ đúng ngữ nghĩa Kysely — qua Proxy uỷ thác theo ngữ cảnh ALS:
  *
- *   - `getKyselyForSpace` trả handle kho chung cho slug kho chung,
- *     handle kho riêng khác instance cho slug kho riêng, và cùng
- *     instance khi gọi lại (chuẩn bị có nhớ);
- *   - `routedKysely` đọc/ghi đúng kho theo `spaceSlug` trong ALS,
- *     ngoài ALS thì về kho chung, slug chưa chuẩn bị thì về kho
- *     chung (không ném);
+ *   - `getKyselyForSpace` trả handle kho chung cho slug kho chung, handle kho riêng khác instance cho slug kho riêng,
+ *     và cùng instance khi gọi lại (chuẩn bị có nhớ);
+ *   - `routedKysely` đọc/ghi đúng kho theo `spaceSlug` trong ALS, ngoài ALS thì về kho chung, slug chưa chuẩn bị thì về
+ *     kho chung (không ném);
  *   - `transaction()` qua facade commit và rollback đúng;
- *   - getter `schema` qua facade tạo/xoá bảng thăm dò được thật
- *     trên kho hiệu lực (không bị đóng băng vào handle lúc tạo
- *     facade);
- *   - builder lười qua facade chỉ thực thi khi `execute()`/await,
- *     nên dòng insert sau khi tạo builder vẫn được builder thấy;
- *   - slug đã chuẩn bị ở kho riêng mà pool bị thu hồi vì nhàn rỗi
- *     thì truy vấn qua facade trong ngữ cảnh cũ ném
- *     `space_routing.prepared_revoked` (fail-closed, không rơi im
- *     lặng về kho chung).
+ *   - getter `schema` qua facade tạo/xoá bảng thăm dò được thật trên kho hiệu lực (không bị đóng băng vào handle lúc
+ *     tạo facade);
+ *   - builder lười qua facade chỉ thực thi khi `execute()`/await, nên dòng insert sau khi tạo builder vẫn được builder
+ *     thấy;
+ *   - slug đã chuẩn bị ở kho riêng mà pool bị thu hồi vì nhàn rỗi thì truy vấn qua facade trong ngữ cảnh cũ ném
+ *     `space_routing.prepared_revoked` (fail-closed, không rơi im lặng về kho chung).
  *
  * Nếu bất kỳ điểm nào gãy, facade CHƯA được chứng minh và pilot không được xây trên nó (issue #639 yêu cầu dừng và
  * trình phương án provider `current()` thay vì tự tuyên bố ngoại lệ).

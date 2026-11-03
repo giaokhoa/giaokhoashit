@@ -7,8 +7,7 @@ import { EnrolService } from '../enrol/enrol.service';
 import { AuthService } from '../auth/auth.service';
 
 /**
- * Ca khoá hành vi của lỗ hổng AsyncLocalStorage ở A4 (issue #587)
- * và của các closure giữ `spaceSlug` đã sửa cùng đợt:
+ * Ca khoá hành vi của lỗ hổng AsyncLocalStorage ở A4 (issue #587) và của các closure giữ `spaceSlug` đã sửa cùng đợt:
  *
  * - Builder truy vấn Kysely cũng là thenable lười — việc thực thi chỉ bắt đầu khi builder được await (điểm `.then`)
  *   hoặc khi gọi `.execute()`. Lõi `PlanLimitsCore` phải gọi `.execute()` BÊN TRONG callback async của cổng platform

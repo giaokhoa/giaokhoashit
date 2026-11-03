@@ -8,12 +8,10 @@ import { TenantAwarePool } from './tenant-pool';
  * GUC của ngữ cảnh ALS hiện tại. Mã ứng dụng không checkout tường minh cho truy vấn thường — nó gọi `pool.query(...)`,
  * và pg hiện thực `Pool.query` bằng cách gọi nội bộ `this.connect()`. Spec này khoá chặt cả hai đường:
  *
- *  - `pool.query` trong ngữ cảnh tenant/platform/ngoài ngữ cảnh đều
- *    thấy đúng GUC của ngữ cảnh đó (nếu `Pool.query` lách qua
- *    `connect()` đã override, GUC sẽ trống hoặc mang giá trị cũ);
- *  - `connect()` tường minh cũng gắn GUC, và GUC KHÔNG rò giữa các
- *    lượt checkout nối tiếp trên cùng một kết nối vật lý (pool `max: 1`
- *    ép mọi lượt dùng chung một kết nối).
+ *  - `pool.query` trong ngữ cảnh tenant/platform/ngoài ngữ cảnh đều thấy đúng GUC của ngữ cảnh đó (nếu `Pool.query`
+ *    lách qua `connect()` đã override, GUC sẽ trống hoặc mang giá trị cũ);
+ *  - `connect()` tường minh cũng gắn GUC, và GUC KHÔNG rò giữa các lượt checkout nối tiếp trên cùng một kết nối vật lý
+ *    (pool `max: 1` ép mọi lượt dùng chung một kết nối).
  */
 const GUC_SQL =
   "select current_setting('app.tenant_id', true) as tenant_id, current_setting('app.platform', true) as platform";

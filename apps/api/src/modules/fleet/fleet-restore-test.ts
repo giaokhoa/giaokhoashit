@@ -1,5 +1,5 @@
-/** Kiểm thử khôi phục định kỳ của đội kho (issue #586) — script CLI chạy bằng
- * `pnpm --filter @lms/api fleet:restore-test [--space <slug>]`:
+/** Kiểm thử khôi phục định kỳ của đội kho (issue #586) — script CLI chạy bằng `pnpm --filter @lms/api
+ * fleet:restore-test [--space <slug>]`:
  *
  * 1. Chọn kho: theo slug được chỉ định, hoặc theo vòng xoay công bằng (kho đang hoạt động có lượt kiểm thử cũ nhất —
  * xem `pickRestoreCandidate`) khi lịch định kỳ gọi không kèm slug.

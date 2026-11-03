@@ -318,8 +318,7 @@ export class TenantsService {
    *   tầng định tuyến chưa cấu hình → `dedicated: false` (thế giới kho chung, cùng khuôn `createTenantUser`). Mọi lỗi
    *   phân giải còn lại là lỗi cấu hình của một trung tâm kho riêng đã đăng ký → ném ra nguyên trạng, fail-closed.
    *
-   * @returns Slug của tenant và cờ kho riêng, hoặc `null` khi
-   *   tenant không tồn tại ở kho nào.
+   * @returns Slug của tenant và cờ kho riêng, hoặc `null` khi tenant không tồn tại ở kho nào.
    */
   async spaceTargetForTenant(tenantId: string): Promise<{ slug: string; dedicated: boolean } | null> {
     const row = await this.tenantRowForTargetResolution(tenantId);

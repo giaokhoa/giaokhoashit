@@ -18,9 +18,8 @@ import { SearchService } from '../../../src/modules/search/search.service';
  * - Sau một lần dựng lại toàn bộ, tài liệu trong chỉ mục chứa đúng các id đủ điều kiện của các fixture trong spec này
  *   (user đang hoạt động, khoá học, nội dung public) và không chứa các id bị loại (user suspended, user đã xoá, nội
  *   dung draft).
- * - `countDocs` đếm ở SQL: kết quả phải bằng đúng số dòng thật của
- *   bảng `search_documents` tại cùng thời điểm, và bằng độ dài của
- *   `listDocs`.
+ * - `countDocs` đếm ở SQL: kết quả phải bằng đúng số dòng thật của bảng `search_documents` tại cùng thời điểm, và bằng
+ *   độ dài của `listDocs`.
  *
  * Đưa điều kiện lọc về tầng ứng dụng hoặc làm lệch tập id thì các khẳng định theo fixture phải đỏ.
  *

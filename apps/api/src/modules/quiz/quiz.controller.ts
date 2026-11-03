@@ -130,8 +130,8 @@ export class ExamMatricesController {
   }
   @Get(':id/versions/:version')
   /**
-   * GET /exam-matrices/:id/versions/:version — nội dung nguyên vẹn của đúng một version bất biến của ma trận (cấu hình
-   * + ô tại version đó); version không tồn tại → 404.
+   * GET /exam-matrices/:id/versions/:version — nội dung nguyên vẹn của đúng một version bất biến của ma trận (cấu
+   * hình + ô tại version đó); version không tồn tại → 404.
    */
   async getVersion(@Param('id', { schema: uuidIdSchema }) id: string, @Param('version') version: string, @CurrentUser() actor: AuthenticatedUser) {
     const parsed = Number(version);

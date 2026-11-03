@@ -9,9 +9,8 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
 /**
  * Toàn vẹn gán vai theo ghi danh (issue #157, phát sinh từ phán quyết CHƯA ĐẠT của PR #152).
  *
- * Trạng thái cấm: một ghi danh còn hiệu lực mà không còn gán vai tại
- * context khoá (định nghĩa "thuộc khoá" của #33 = ghi danh ∪ gán vai).
- * Trước fix, trạng thái này chạm tới được qua API hai đường:
+ * Trạng thái cấm: một ghi danh còn hiệu lực mà không còn gán vai tại context khoá (định nghĩa "thuộc khoá" của #33 =
+ * ghi danh ∪ gán vai). Trước fix, trạng thái này chạm tới được qua API hai đường:
  *  1. ghi danh qua 2 instance cùng vai chỉ có MỘT dòng gán vai dùng chung (assignRole/insertAssignment không set
  *     component/itemId), mà unenrolInternal xoá mọi dòng khớp roleId của instance bị rút — rút 1 instance là mất vai dù
  *     ghi danh instance kia vẫn ACTIVE;

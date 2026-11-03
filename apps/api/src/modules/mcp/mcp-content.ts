@@ -3,10 +3,10 @@ import { createHash } from 'node:crypto';
 /**
  * Validate LỚP 3 — NỘI DUNG (hồ sơ research MCP Phần 3.1) cho payload qua MCP. Biên MCP chỉ nhận chuỗi thuần và lát
  * rich text là text-only nên không tồn tại đường HTML/script vào nội dung; lớp này lo phần riêng của đầu vào AI:
- *  - chặn ký tự điều khiển C0 (trừ \n, \t) và ký tự zero-width /
- *    bidi-override (chống trojan-source trong nội dung câu hỏi);
- *  - chuẩn hoá: \r\n/\r → \n, Unicode NFC (dấu tiếng Việt dạng tổ hợp
- *    không lách được chống trùng — khớp hàm chuẩn hoá QB-4 + NFC);
+ *  - chặn ký tự điều khiển C0 (trừ \n, \t) và ký tự zero-width / bidi-override (chống trojan-source trong nội dung câu
+ *    hỏi);
+ *  - chuẩn hoá: \r\n/\r → \n, Unicode NFC (dấu tiếng Việt dạng tổ hợp không lách được chống trùng — khớp hàm chuẩn hoá
+ *    QB-4 + NFC);
  *  - từ chối trường nội dung toàn khoảng trắng. Giới hạn độ dài/số lượng nằm ở lớp 1 (schema contracts); nghiệp vụ theo
  *  qtype nằm ở lớp 2 (QuestionsService) — lớp này không lặp lại.
  */

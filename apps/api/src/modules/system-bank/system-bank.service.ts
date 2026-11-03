@@ -467,13 +467,11 @@ export class SystemBankService {
    * Phát hành một gói YCCĐ phía platform (quản trị platform): chụp cây chương trình hiện hành từ kho nghiệp vụ trong
    * ngữ cảnh platform (một transaction đọc nhất quán) rồi ghi nguyên trạng vào kho ngân hàng kèm checksum trên JSON
    * canonical của toàn bộ items.
-   * - Phạm vi `all`: toàn bộ cây; phạm vi slug môn: chỉ môn đó (môn
-   *   không có ở cây platform thì 404).
+   * - Phạm vi `all`: toàn bộ cây; phạm vi slug môn: chỉ môn đó (môn không có ở cây platform thì 404).
    * - Chỉ chụp YCCĐ chuẩn platform (tenantId NULL) và đang hiện hành (retiredAt NULL): YCCĐ đã rút khỏi chương trình
    *   không được hồi sinh qua gói; YCCĐ derived thuộc trung tâm không phải nội dung platform nên không nằm trong gói.
-   * - Môn học không nằm trong gói (môn mang context phân quyền, thuộc
-   *   dữ kiện nền của trung tâm): gói chỉ mang subjectSlug để bản cài
-   *   giải quyết môn ở trung tâm.
+   * - Môn học không nằm trong gói (môn mang context phân quyền, thuộc dữ kiện nền của trung tâm): gói chỉ mang
+   *   subjectSlug để bản cài giải quyết môn ở trung tâm.
    * - Định danh phiên bản trùng thì 409 (không ghi đè gói đã phát hành).
    */
   async createOutcomePackage(actorId: string, dto: CreateSystemOutcomePackageDto) {
@@ -637,11 +635,9 @@ export class SystemBankService {
    * - Gác quyền: `curriculum:manage` tại context của từng môn mà gói chạm tới trong kho trung tâm (đúng cổng ghi chương
    *   trình hiện hữu) — môn chưa có ở trung tâm thì fail-closed (trung tâm cần dữ kiện nền môn trước, thuộc bước cấp
    *   phát).
-   * - Xung đột chương trình: trung tâm đã có chương trình (môn, khối)
-   *   với id khác id gói thì fail-closed kèm cặp (slug môn, khối) —
-   *   không tự gộp hai cây khác id.
-   * - Gói hỏng (node cha vắng khỏi gói hoặc cha khác chương trình)
-   *   thì fail-closed trước khi ghi.
+   * - Xung đột chương trình: trung tâm đã có chương trình (môn, khối) với id khác id gói thì fail-closed kèm cặp (slug
+   *   môn, khối) — không tự gộp hai cây khác id.
+   * - Gói hỏng (node cha vắng khỏi gói hoặc cha khác chương trình) thì fail-closed trước khi ghi.
    * - Ở thế giới kho chung, cây chương trình và vết cài là dùng chung giữa các trung tâm chung DB — cài theo trung tâm
    *   thật sự chỉ có sau khi #587 tách kho vật lý; int-spec chạy trên DB trung tâm riêng nên kiểm được ngữ nghĩa theo
    *   trung tâm.

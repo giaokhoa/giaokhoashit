@@ -7,16 +7,14 @@ import { describe, expect, it } from 'vitest';
  * `messages/messages` về `messages`, đổi `notifications/read-all` thành `notifications/mark-read`, giữ nguyên mọi path
  * còn lại của module messaging.
  *
- * Ba khẳng định chính, tất cả đều dựng từ chính khai báo decorator
- * trong `messaging.controller.ts` (không chạy server, không cần DB):
+ * Ba khẳng định chính, tất cả đều dựng từ chính khai báo decorator trong `messaging.controller.ts` (không chạy server,
+ * không cần DB):
  * - Bảng route (method + path) dựng từ khai báo bằng đúng bảng đã chụp sau lát đổi (58 route viết literal dưới đây) —
  *   thêm/bớt/đổi bất kỳ route nào của module đều làm spec này đỏ, kể cả khi các flow nghiệp vụ vẫn chạy.
- * - Tập canonical (bảng trừ tập alias) chứa đúng 5 path đích đã chốt
- *   và không còn route nào chứa segment lặp `messages/messages` hay
- *   hậu tố `-all`; tập alias bằng đúng 6 path cũ.
- * - Route chữ `bulk-remove` khai trước các route `:id` trong cùng
- *   controller ở cả phía canonical lẫn phía alias, để không bị route
- *   tham số nuốt.
+ * - Tập canonical (bảng trừ tập alias) chứa đúng 5 path đích đã chốt và không còn route nào chứa segment lặp
+ *   `messages/messages` hay hậu tố `-all`; tập alias bằng đúng 6 path cũ.
+ * - Route chữ `bulk-remove` khai trước các route `:id` trong cùng controller ở cả phía canonical lẫn phía alias, để
+ *   không bị route tham số nuốt.
  *
  * Cách đếm cấp tài nguyên của bản đồ đích (ghi rõ để đội đánh giá phân xử): tiền tố controller
  * (`messages`/`notifications`) là gốc của cụm; lồng tối đa 2 cấp tài nguyên dưới gốc cộng tối đa 1 segment hành động.

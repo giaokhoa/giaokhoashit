@@ -1,7 +1,7 @@
 /**
- * Helper THUẦN cho việc cấp phát ROLE RUNTIME và ROLE MIGRATION của kho nghiệp vụ (issue #586): tách phần suy luận
- * (đọc đích từ URL, dựng câu SQL) khỏi phần thực thi (script `runtime-roles-setup.ts`) để kiểm chứng bằng unit test
- * không cần database thật — cùng khuôn với `control-plane-provision.ts` của issue #580.
+ * Helper THUẦN cho việc cấp phát ROLE RUNTIME và ROLE MIGRATION của kho nghiệp vụ (issue #586): tách phần suy luận (đọc
+ * đích từ URL, dựng câu SQL) khỏi phần thực thi (script `runtime-roles-setup.ts`) để kiểm chứng bằng unit test không
+ * cần database thật — cùng khuôn với `control-plane-provision.ts` của issue #580.
  *
  * Mô hình role của một kho (áp cho kho nghiệp vụ hiện tại và là khuôn cho mọi kho riêng của trung tâm về sau):
  * - Role MIGRATION: role duy nhất được sở hữu database và mọi đối tượng trong đó; chỉ các bước áp migration (bộ máy

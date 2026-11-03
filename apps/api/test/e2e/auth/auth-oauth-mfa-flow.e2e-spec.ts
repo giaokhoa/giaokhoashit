@@ -17,8 +17,7 @@ import type { SessionCacheService } from '../../../src/infra/cache/session-cache
  * - (d2) Lớp gác thứ hai tại điểm đổi bàn giao: một mã bàn giao ở định dạng cũ (giá trị là userId thuần, không có dấu
  *   đã-qua-MFA) của tài khoản đang bật MFA bị từ chối (`auth.oauth_mfa_required`) — điểm đổi là cổng cuối, không đường
  *   vòng nào qua được.
- * - (e) Hồi quy: tài khoản chưa bật MFA đi trọn luồng như cũ
- *   (callback → bàn giao → token).
+ * - (e) Hồi quy: tài khoản chưa bật MFA đi trọn luồng như cũ (callback → bàn giao → token).
  *
  * Provider được giả lập tại biên HTTP như spec OAuth hệ cũ; mọi bước bên trong (authorize, callback, khớp tài khoản,
  * challenge, bàn giao, phiên) đều chạy thật.

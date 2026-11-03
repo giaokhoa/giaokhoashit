@@ -305,8 +305,8 @@ export class QuestionBanksService {
   /**
    * Tạo bank theo yêu cầu tường minh (QB-1):
    * - personal: mỗi người một bank — đã có thì trả bank hiện hữu.
-   * - team: scopeRefId = cohort; người tạo phải là thành viên cohort (hoặc
-   *   site admin); tổ trưởng mặc định là người tạo, phải thuộc cohort.
+   * - team: scopeRefId = cohort; người tạo phải là thành viên cohort (hoặc site admin); tổ trưởng mặc định là người
+   *   tạo, phải thuộc cohort.
    * - school: chỉ người có `question:managecategory` tại hệ thống.
    * - course: scopeRefId = course; cổng `question:managecategory` tại khoá.
    */
@@ -569,15 +569,15 @@ export class QuestionBanksService {
   }
 
   /**
-   * Danh sách bank actor vào được: bank cá nhân của chính mình + bank trường (nếu là giáo viên) + bank tổ mình thuộc về
-   * + bank các khoá mình có quyền dùng câu. Bank cá nhân và bank trường được đảm bảo tồn tại cho người đủ tư cách (tạo
-   * lười).
+   * Danh sách bank actor vào được: bank cá nhân của chính mình + bank trường (nếu là giáo viên) + bank tổ mình thuộc
+   * về + bank các khoá mình có quyền dùng câu. Bank cá nhân và bank trường được đảm bảo tồn tại cho người đủ tư cách
+   * (tạo lười).
    */
   async listBanks(actorId: string, kind: BankKind = 'question'): Promise<BankView[]> {
     const isStaff = (await this.repo.listUserIdsWithArchetypes(STAFF_ARCHETYPES)).includes(actorId)
       || (await this.evaluator.isSiteAdmin(actorId));
-    // Chỉ người đủ tư cách mới được tạo lười bank cá nhân (điểm chặn 3): học sinh gọi listBanks không còn tự sinh bank
-    // + vai qbanklead.
+    // Chỉ người đủ tư cách mới được tạo lười bank cá nhân (điểm chặn 3): học sinh gọi listBanks không còn tự sinh
+    // bank + vai qbanklead.
     if (isStaff) await this.ensurePersonalBank(actorId, kind);
     if (isStaff) await this.ensureSchoolBank(actorId, kind);
     // Ngân hàng hệ thống (bank platform) chỉ platform tạo — người giữ tenant:manage ở hệ thống mở danh sách thì bank
@@ -1277,8 +1277,7 @@ export class QuestionBanksService {
    * thân câu chốt đuôi bằng đúng 4 mệnh đề và đáp án từng mệnh đề ở bản ghi phía đáp án phủ đúng tập mệnh đề đó;
    * shortanswer ít nhất 1 đáp án và mọi dòng đều được chấp nhận; essay không có yêu cầu phía đáp án (chấm tay).
    *
-   * @throws BadRequestException `question.bad_answer_data` khi phần đáp
-   *   án chưa đạt luật của qtype.
+   * @throws BadRequestException `question.bad_answer_data` khi phần đáp án chưa đạt luật của qtype.
    */
   private async assertReadyContent(questionId: string, latestVersion: number): Promise<void> {
     const q = await this.questionsRepo.getQuestion(questionId);
@@ -1456,10 +1455,9 @@ export class QuestionBanksService {
 
   /**
    * Duyệt một đề xuất (QB-4, cổng `question:moderate` tại bank đích):
-   * - mode 'new': COPY câu nguồn vào bank đích bằng cơ chế deep copy của
-   *   QB-2 (danh tính mới, derived_from trỏ về câu gốc, ghi công tác giả).
-   * - mode 'update': tạo VERSION MỚI trên chính danh tính câu đích từ
-   *   nội dung version mới nhất của câu nguồn.
+   * - mode 'new': COPY câu nguồn vào bank đích bằng cơ chế deep copy của QB-2 (danh tính mới, derived_from trỏ về câu
+   *   gốc, ghi công tác giả).
+   * - mode 'update': tạo VERSION MỚI trên chính danh tính câu đích từ nội dung version mới nhất của câu nguồn.
    */
   async approveContribution(actorId: string, bankId: string, contributionId: string, input: { targetCategoryId?: string }): Promise<ContributionRow> {
     const bank = await this.getBankOrThrow(bankId);

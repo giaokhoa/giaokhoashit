@@ -133,8 +133,7 @@ function getRelay(): OutboxRelayScheduler {
  * fail-closed sẽ làm mù các dòng của tenant nếu thiếu ngữ cảnh (xem ghi chú TENANT-1 ở relay của worker).
  *
  * @param db Tay cầm Kysely dùng chung của cầu dẫn.
- * @param stamped `true` để lấy các dòng đã có dấu `published_at`,
- *   `false` để lấy các dòng chưa có dấu.
+ * @param stamped `true` để lấy các dòng đã có dấu `published_at`, `false` để lấy các dòng chưa có dấu.
  * @returns Tập id các dòng khớp trạng thái đóng dấu.
  */
 async function readOutboxIdsByStampState(
@@ -155,12 +154,10 @@ async function readOutboxIdsByStampState(
  * Dẫn các nhịp relay của worker cho tới khi không còn dòng outbox chưa phát (tối đa 20 nhịp, mỗi nhịp 500 dòng — đúng
  * khuôn vòng xả cũ của các spec trước #523).
  *
- * Ghi vết cho việc dọn khi đóng — tập ỨNG VIÊN của lượt gồm ba
- * phần, chụp quanh lượt dẫn và hợp nhất ở khối `finally` nên vẫn
- * đầy đủ khi một nhịp relay ném lỗi giữa lượt:
+ * Ghi vết cho việc dọn khi đóng — tập ỨNG VIÊN của lượt gồm ba phần, chụp quanh lượt dẫn và hợp nhất ở khối `finally`
+ * nên vẫn đầy đủ khi một nhịp relay ném lỗi giữa lượt:
  * - mọi dòng CHƯA đóng dấu tại thời điểm bắt đầu lượt;
- * - mọi dòng được đóng dấu trong lượt (hiệu tập đã đóng dấu
- *   sau − trước);
+ * - mọi dòng được đóng dấu trong lượt (hiệu tập đã đóng dấu sau − trước);
  * - mọi dòng VẪN chưa đóng dấu tại thời điểm kết thúc lượt.
  *
  * Vì sao phải là tập ứng viên thay vì chỉ hiệu hai tập đã đóng dấu (cơ chế vòng đầu, bị phân xử vòng 2 bác): relay

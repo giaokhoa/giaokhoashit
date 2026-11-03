@@ -6,9 +6,8 @@
  * - `provision`: chạy toàn bộ pipeline 7 bước (xem `space-provision-runner.ts`); bắt buộc `--slug`, `--name`,
  *   `--admin-email`, `--actor-id` (UUID tài khoản quản trị vận hành — ghi vào lịch sử sổ đăng ký, không có giá trị mặc
  *   định).
- * - `invite`: cấp lại lời mời kích hoạt cho một tài khoản của trung
- *   tâm (huỷ lời mời đang chờ rồi tạo mới); bắt buộc `--slug`,
- *   `--email`; `--revoke` thì chỉ huỷ, không tạo mới.
+ * - `invite`: cấp lại lời mời kích hoạt cho một tài khoản của trung tâm (huỷ lời mời đang chờ rồi tạo mới); bắt buộc
+ *   `--slug`, `--email`; `--revoke` thì chỉ huỷ, không tạo mới.
  * - `install-roles`: cài riêng bộ vai mặc định vào kho của một trung tâm đã cấp phát (áp cơ chế chuyển tiếp cho các
  *   trung tâm cấp phát trước khi pipeline có bước này, không cấp phát lại); bắt buộc `--slug`. Idempotent: kho đã có đủ
  *   bộ vai thì không đổi gì.

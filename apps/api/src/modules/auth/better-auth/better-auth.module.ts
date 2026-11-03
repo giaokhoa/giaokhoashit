@@ -17,11 +17,9 @@ import { TwoFactorCompletionService } from './two-factor-completion.service';
  * `two-factor` cho Nest vì bước hoàn tất kiểm mã thẳng vào `user_totp` — xem `two-factor-completion.service.ts`.
  */
 @Module({
-  // Hai vòng module tường minh, forwardRef ở cả hai phía như khuôn
-  // UsersModule ↔ BetterAuthModule đã có:
-  // - UsersModule: module này cần PasswordService của UsersModule,
-  //   UsersService cần CredentialBridgeService của module này để đồng
-  //   bộ credential (chặng 2.6).
+  // Hai vòng module tường minh, forwardRef ở cả hai phía như khuôn UsersModule ↔ BetterAuthModule đã có:
+  // - UsersModule: module này cần PasswordService của UsersModule, UsersService cần CredentialBridgeService của module
+  //   này để đồng bộ credential (chặng 2.6).
   // - AuthModule: module này cần LoginLockoutService của AuthModule (điểm 2.4: hooks của instance dùng chung chính sách
   //   khoá với hệ legacy), AuthModule cần BetterAuthService + CredentialBridgeService của module này cho login-as ở
   //   chặng bake (chặng 2.6).

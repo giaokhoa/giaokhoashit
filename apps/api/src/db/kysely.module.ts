@@ -10,8 +10,7 @@
  *     tạo sẵn (pool quyết định ngữ cảnh kết nối: `TenantAwarePool` cho kho trung tâm để RLS/GUC hoạt động, pool thường
  *     cho hai kho còn lại) và đăng ký một provider cho mỗi kho được truyền, dùng đúng factory của `@lms/db`
  *     (`createCentreKysely`, `createControlPlaneKysely`, `createSystemBankKysely`).
- *   - Các service lấy handle bằng `@InjectKysely(...)` (xem
- *     `inject-kysely.ts` cùng thư mục).
+ *   - Các service lấy handle bằng `@InjectKysely(...)` (xem `inject-kysely.ts` cùng thư mục).
  *   - Khi ứng dụng đóng, một provider dọn dẹp gọi `destroy()` trên mọi instance đã đăng ký — theo hành vi của
  *     `PostgresDialect`, `destroy()` đóng luôn pool đã truyền vào, nên pool truyền cho `forRoot` thuộc quyền sở hữu của
  *     module từ thời điểm đăng ký.

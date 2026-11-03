@@ -24,8 +24,7 @@ import {
  * nằm ở kho của nó. Địa chỉ của trung tâm là tên miền con mang slug (`<slug>.test.local`) theo quy ước địa chỉ của hệ.
  *
  * Các ca khoá các tiêu chí nghiệm thu của issue ở phía API:
- * (1) access token của phiên thuộc trung tâm kho riêng mang
- *     claim `centre_id` bằng định danh đăng ký của trung tâm;
+ * (1) access token của phiên thuộc trung tâm kho riêng mang claim `centre_id` bằng định danh đăng ký của trung tâm;
  *     token của phiên ở kho chung không mang claim;
  * (2) token của trung tâm A mang tới địa chỉ của trung tâm B bị từ chối 401 `auth.centre_mismatch` TRƯỚC tầng dữ kiện —
  *     kiểm chứng bằng số kết nối thật vào kho B (không một kết nối nào của role kho B được mở bởi request bị từ chối);
@@ -35,8 +34,7 @@ import {
  * (4) trung tâm bị đình chỉ trên sổ thì traffic nghiệp vụ tại địa chỉ của nó bị từ chối 403 `space.not_active`, dữ kiện
  *     trong kho của nó còn nguyên, và đường vận hành platform (quản trị viên site chính ở tenant platform) vẫn vào
  *     được;
- * (5) trung tâm ở kho chung giữ nguyên hành vi hiện tại ở cả địa
- *     chỉ gốc lẫn tên miền con của nó.
+ * (5) trung tâm ở kho chung giữ nguyên hành vi hiện tại ở cả địa chỉ gốc lẫn tên miền con của nó.
  */
 const CP_DATABASE = 'lms_test_cp_582';
 const CP_ROLE = 'lms_cp_test_582';

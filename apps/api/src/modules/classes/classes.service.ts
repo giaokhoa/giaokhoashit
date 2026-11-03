@@ -414,26 +414,24 @@ export class ClassesService implements OnModuleInit {
    * khoá mình đang học, nên gói này suy cả hai ở phía server.
    *
    * Flow:
-   *  1. Cổng xem lớp như mọi đường đọc của lớp (canViewClass): người
-   *     ngoài lớp nhận 404 đồng nhất, không lộ sự tồn tại của lớp.
+   *  1. Cổng xem lớp như mọi đường đọc của lớp (canViewClass): người ngoài lớp nhận 404 đồng nhất, không lộ sự tồn tại
+   *     của lớp.
    *  2. Suy quan hệ của người gọi từ dữ kiện thật: chủ lớp → `owner`; giữ ít nhất một trong 3 vai lớp gán tay tại
    *     context lớp (cùng cách liệt kê của listStaff) hoặc có cờ quản roster/phân vai → `staff`; thuộc roster →
    *     `member`; còn lại là người xem được lớp nhờ quyền quản trị cấp trên (site admin / tenant:manage) → `staff` ở
    *     mức xem, các thao tác quản trị vẫn gác riêng bằng `canManageRoster`/`canShare` đi kèm trong gói.
-   *  3. Danh sách khoá lọc theo vai: owner/staff nhận mọi khoá của
-   *     lớp; member chỉ nhận các khoá mình đang ghi danh ACTIVE —
-   *     đình chỉ ở một khoá thì khoá đó biến mất khỏi gói.
+   *  3. Danh sách khoá lọc theo vai: owner/staff nhận mọi khoá của lớp; member chỉ nhận các khoá mình đang ghi danh
+   *     ACTIVE — đình chỉ ở một khoá thì khoá đó biến mất khỏi gói.
    *
-   * Bất biến: gói KHÔNG mang bất kỳ dữ kiện điểm nào — dashboard là
-   * bề mặt tổng quan/điều hướng; mô hình điểm (chốt 23:49 25/10/2026)
-   * chỉ có điểm theo từng bài, cấm tổng hợp theo lớp/khoá.
+   * Bất biến: gói KHÔNG mang bất kỳ dữ kiện điểm nào — dashboard là bề mặt tổng quan/điều hướng; mô hình điểm (chốt
+   * 23:49 25/10/2026) chỉ có điểm theo từng bài, cấm tổng hợp theo lớp/khoá.
    *
    * @param actorId - Người gọi đã xác thực.
    * @param id - Id của lớp.
-   * @returns Gói tổng quan khớp `classOverviewSchema` phía contracts
-   *   (danh sách khoá là bản ghi khoá thô như endpoint khoá của lớp).
-   * @throws NotFoundException `class.not_found` khi lớp không thuộc
-   *   tenant hiệu lực hoặc người gọi không có quan hệ với lớp.
+   * @returns Gói tổng quan khớp `classOverviewSchema` phía contracts (danh sách khoá là bản ghi khoá thô như endpoint
+   *   khoá của lớp).
+   * @throws NotFoundException `class.not_found` khi lớp không thuộc tenant hiệu lực hoặc người gọi không có quan hệ với
+   *   lớp.
    */
   async getClassOverview(actorId: string, id: string): Promise<Omit<ClassOverview, 'courses'> & { courses: CourseRow[] }> {
     const row = await this.getClassRow(id);
@@ -1180,8 +1178,8 @@ export class ClassesService implements OnModuleInit {
    * @param actorId - Người gọi đã xác thực.
    * @param id - Id của lớp.
    * @returns Gói khớp `classPublicViewSchema` phía contracts.
-   * @throws NotFoundException `class.not_found` khi lớp không thuộc
-   *   tenant hiệu lực (giữ nguyên tắc không lộ sự tồn tại xuyên tenant).
+   * @throws NotFoundException `class.not_found` khi lớp không thuộc tenant hiệu lực (giữ nguyên tắc không lộ sự tồn tại
+   *   xuyên tenant).
    */
   async getClassPublic(actorId: string, id: string): Promise<ClassPublicView> {
     const row = await this.getClassRow(id);
@@ -1210,14 +1208,12 @@ export class ClassesService implements OnModuleInit {
    * Cổng phía lớp cho việc TẠO payment `class_fee` — PaymentsService gọi trước khi chọn tài khoản và tạo payment. Mọi
    * luật thuộc về lớp nằm ở đây; luật tiền (chọn tài khoản, cổng tenant của account, sinh mã/QR) nằm ở PaymentsService,
    * cùng khuôn `createFeePayment` của `enrol_fee`:
-   *  1. Lớp phải thuộc tenant hiệu lực (trang mua gói nằm trong tenant)
-   *     — lớp của tenant khác nhận 404 như không tồn tại.
-   *  2. Lớp đã lưu trữ → 400 `class.archived` (roster đóng băng, không
-   *     bán ghi danh mới vào lớp đã đóng).
-   *  3. Lớp không bật thu học phí (`feeCost` null/0) → 400
-   *     `payment.no_fee` (cùng mã lỗi với instance fee không có phí).
-   *  4. Người mua đã thuộc roster → 409 `class.already_member`: đã ghi
-   *     danh ACTIVE thì không mua lại gói lớp.
+   *  1. Lớp phải thuộc tenant hiệu lực (trang mua gói nằm trong tenant) — lớp của tenant khác nhận 404 như không tồn
+   *     tại.
+   *  2. Lớp đã lưu trữ → 400 `class.archived` (roster đóng băng, không bán ghi danh mới vào lớp đã đóng).
+   *  3. Lớp không bật thu học phí (`feeCost` null/0) → 400 `payment.no_fee` (cùng mã lỗi với instance fee không có
+   *     phí).
+   *  4. Người mua đã thuộc roster → 409 `class.already_member`: đã ghi danh ACTIVE thì không mua lại gói lớp.
    *
    * @param classId - Id của lớp được mua gói.
    * @param userId - Người mua.
@@ -1269,25 +1265,21 @@ export class ClassesService implements OnModuleInit {
    * đường này đi qua cổng HỆ THỐNG của cohort, không gác capability của một actor.
    *
    * Flow:
-   *  1. Chạy trong ngữ cảnh platform tường minh: webhook/IPN không có
-   *     ngữ cảnh tenant của request, lớp đích có thể thuộc tenant khác
-   *     tenant nền — cùng tiền lệ tra mã tham gia của CLASS-1.
-   *  2. Đảm bảo tư cách thành viên tenant của lớp cho người mua (học
-   *     sinh tự do ở trang chính mua lớp của trung tâm thì được cấp
-   *     membership của trung tâm ở bước này, như đường tự báo danh).
-   *  3. Thêm vào backing cohort qua `addCohortMemberInternal` — cohort
-   *     sync vật chất hoá ghi danh xuống MỌI khoá của lớp.
+   *  1. Chạy trong ngữ cảnh platform tường minh: webhook/IPN không có ngữ cảnh tenant của request, lớp đích có thể
+   *     thuộc tenant khác tenant nền — cùng tiền lệ tra mã tham gia của CLASS-1.
+   *  2. Đảm bảo tư cách thành viên tenant của lớp cho người mua (học sinh tự do ở trang chính mua lớp của trung tâm thì
+   *     được cấp membership của trung tâm ở bước này, như đường tự báo danh).
+   *  3. Thêm vào backing cohort qua `addCohortMemberInternal` — cohort sync vật chất hoá ghi danh xuống MỌI khoá của
+   *     lớp.
    *
-   * Idempotent: đã thuộc roster thì đường cohort tự bỏ qua (không phát
-   * sự kiện, không ghi danh trùng) — webhook replay / matching chạy lại
-   * / tiêu thụ outbox lặp đều an toàn.
+   * Idempotent: đã thuộc roster thì đường cohort tự bỏ qua (không phát sự kiện, không ghi danh trùng) — webhook replay
+   * / matching chạy lại / tiêu thụ outbox lặp đều an toàn.
    *
    * @param classId - Id của lớp (chính là `item_id` của payment).
    * @param userId - Người mua (chính là `user_id` của payment).
    * @throws NotFoundException `class.not_found` khi lớp không tồn tại.
-   * @throws BadRequestException `class.archived` khi lớp đã lưu trữ —
-   *   payment đã thu tiền nhưng roster đóng băng: vận hành xử lý bằng
-   *   hoàn tiền, không tự phá luật đóng băng của CLASS-0.
+   * @throws BadRequestException `class.archived` khi lớp đã lưu trữ — payment đã thu tiền nhưng roster đóng băng: vận
+   *   hành xử lý bằng hoàn tiền, không tự phá luật đóng băng của CLASS-0.
    */
   async activatePaidClassEnrol(classId: string, userId: string): Promise<void> {
     await this.tenantContext.run({ platform: true }, async () => {
@@ -1327,15 +1319,11 @@ export class ClassesService implements OnModuleInit {
    *
    * @param classId - Id của lớp (chính là `item_id` của payment).
    * @param userId - Người bị đình chỉ (chính là `user_id` của payment).
-   * @param tx - Transaction của settle hoàn tiền (issue #490) khi bên
-   *   gọi đang settle: việc gỡ roster chạy trong đúng transaction đó
-   *   để rollback của settle cũng huỷ việc gỡ. Khi truyền `tx`, sự
-   *   kiện `cohort_member_removed` trong-tiến-trình KHÔNG phát ở đây
-   *   (handler đồng bộ đọc trạng thái đã commit — phát giữa
-   *   transaction sẽ thấy thành viên vẫn còn và bỏ qua) — hàm trả về
-   *   cohortId của lần gỡ để bên gọi phát bù qua
-   *   `notifyPaidClassMemberRemoved` SAU khi transaction của nó
-   *   commit. Không truyền `tx` thì hành vi như cũ, trả về null.
+   * @param tx - Transaction của settle hoàn tiền (issue #490) khi bên gọi đang settle: việc gỡ roster chạy trong đúng
+   *   transaction đó để rollback của settle cũng huỷ việc gỡ. Khi truyền `tx`, sự kiện `cohort_member_removed`
+   *   trong-tiến-trình KHÔNG phát ở đây (handler đồng bộ đọc trạng thái đã commit — phát giữa transaction sẽ thấy thành
+   *   viên vẫn còn và bỏ qua) — hàm trả về cohortId của lần gỡ để bên gọi phát bù qua `notifyPaidClassMemberRemoved`
+   *   SAU khi transaction của nó commit. Không truyền `tx` thì hành vi như cũ, trả về null.
    */
   async suspendPaidClassMember(classId: string, userId: string, tx?: CentreTx): Promise<string | null> {
     return this.tenantContext.run({ platform: true }, async () => {

@@ -178,11 +178,9 @@ const SHARED_CENTRE_KYSELY = 'SHARED_CENTRE_KYSELY';
      * dùng là handle ĐỊNH TUYẾN của khung (`routedKysely`) — uỷ thác về kho chung cho mọi ngữ cảnh chưa mang trung tâm
      * ở kho riêng (toàn bộ đường mặc định), và về kho của trung tâm khi ngữ cảnh đã được chuẩn bị theo trung tâm đó.
      * Instance này không được `destroy()` riêng — vòng đời của nó đi theo vòng đời pool chung.
-     * - Pool là `TenantAwarePool` (TENANT-1, #196): pool tự gắn
-     *   GUC tenant theo ngữ cảnh ALS ở mọi checkout.
-     * - Ngân sách kết nối (issue #586): trần `DATABASE_POOL_MAX`
-     *   khi được cấu hình; chưa cấu hình thì giữ nguyên cấu hình
-     *   pool như trước.
+     * - Pool là `TenantAwarePool` (TENANT-1, #196): pool tự gắn GUC tenant theo ngữ cảnh ALS ở mọi checkout.
+     * - Ngân sách kết nối (issue #586): trần `DATABASE_POOL_MAX` khi được cấu hình; chưa cấu hình thì giữ nguyên cấu
+     *   hình pool như trước.
      */
     {
       provide: SHARED_CENTRE_KYSELY,

@@ -174,13 +174,12 @@ export class MessagingNotificationsService {
    * - `'admin'` + mọi phía còn lại khi user là site admin: context quản trị phủ mọi audience — admin là người cấu hình
    *   chính sách phát cấp site cho cả 20 loại (NB-7) và `admin_announcement` có thể gửi đích danh cho bất kỳ ai kể cả
    *   chính admin, nên bề mặt của admin giữ nguyên đầy đủ như trước lát này.
-   * - `'staff'` khi có gán vai nhân sự — CÙNG nguồn với cổng bề mặt
-   *   đầy đủ ở trên (`hasStaffRoleAssignment`), không cơ chế song song.
+   * - `'staff'` khi có gán vai nhân sự — CÙNG nguồn với cổng bề mặt đầy đủ ở trên (`hasStaffRoleAssignment`), không cơ
+   *   chế song song.
    * - `'student'` khi có context học sinh thật (ghi danh hiệu lực ∪ gán vai archetype student —
    *   `repo.hasStudentContext`): giáo viên thuần không có context này nên không thấy loại chỉ học sinh nhận; người vừa
    *   dạy vừa học thì có cả hai phía.
-   * - `'guardian'` khi có liên kết giám hộ đang hiệu lực trong vai
-   *   phụ huynh (`repo.hasActiveGuardianLink`).
+   * - `'guardian'` khi có liên kết giám hộ đang hiệu lực trong vai phụ huynh (`repo.hasActiveGuardianLink`).
    */
   async resolvePreferenceAudiences(userId: string): Promise<Set<NotificationAudience>> {
     if (await this.evaluator.isSiteAdmin(userId)) {
@@ -383,13 +382,10 @@ export class MessagingNotificationsService {
    * điểm số, không nội dung tin nhắn. Job phân phối kênh ngoài chỉ được mang đúng một trong ba thứ sau (phân giải tại
    * `resolveExternalContent`):
    *
-   *  1. Bản tối thiểu hoá `externalSubject`/`externalBody` do phía
-   *     gọi truyền — chỉ thay nội dung của job kênh ngoài, bản
-   *     trong app giữ nguyên subject/body.
-   *  2. Nội dung gốc — CHỈ khi provider được khai báo tường minh
-   *     `externalPolicy: 'original-ok'` kèm lý do trong registry
-   *     provider (`notification-providers.ts`); không khai báo =
-   *     mặc định `'minimized'`.
+   *  1. Bản tối thiểu hoá `externalSubject`/`externalBody` do phía gọi truyền — chỉ thay nội dung của job kênh ngoài,
+   *     bản trong app giữ nguyên subject/body.
+   *  2. Nội dung gốc — CHỈ khi provider được khai báo tường minh `externalPolicy: 'original-ok'` kèm lý do trong
+   *     registry provider (`notification-providers.ts`); không khai báo = mặc định `'minimized'`.
    *  3. BẢN TÓM TẮT MẶC ĐỊNH dựng từ mẫu i18n chung (chỉ nêu loại sự kiện; `contextUrl` trên notification trong app giữ
    *     nguyên nên kênh ngoài vẫn là đường dẫn vào app sau đăng nhập) — áp dụng khi provider thuộc diện `'minimized'`
    *     mà phía gọi thiếu bản tối thiểu hoá, kèm log cảnh báo để nơi gọi chưa phân loại lộ diện khi vận hành. Riêng ở

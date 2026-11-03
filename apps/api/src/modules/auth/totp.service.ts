@@ -71,14 +71,12 @@ export class TotpService {
   }
 
   /**
-   * Bước setup: sinh secret mới, lưu dạng mã hoá ở trạng thái CHƯA xác
-   * nhận, và trả secret + otpauth URL — đây là lần duy nhất secret thô
-   * rời khỏi server.
+   * Bước setup: sinh secret mới, lưu dạng mã hoá ở trạng thái CHƯA xác nhận, và trả secret + otpauth URL — đây là lần
+   * duy nhất secret thô rời khỏi server.
    *
    * Luồng theo trạng thái của factor hiện có:
-   * - Chưa có bản ghi, hoặc bản ghi đang chờ xác nhận (chưa từng kích
-   *   hoạt): setup/setup lại tự do, secret chờ bị thay — chưa có factor
-   *   đang hoạt động nào bị hạ cấp.
+   * - Chưa có bản ghi, hoặc bản ghi đang chờ xác nhận (chưa từng kích hoạt): setup/setup lại tự do, secret chờ bị thay
+   *   — chưa có factor đang hoạt động nào bị hạ cấp.
    * - Bản ghi ĐÃ xác nhận (MFA đang bật): setup lại là thao tác THAY một factor đang hoạt động. Vì `upsertPendingTotp`
    *   đặt `confirmed` về false mà cổng đăng nhập chỉ nhìn cờ đó, một lần ghi đè vô điều kiện sẽ tắt MFA ngay lập tức và
    *   làm authenticator hiện tại thành vô dụng — phiên bị lộ là đủ để gỡ im lặng lớp bảo vệ đang bật. Do đó bước này áp

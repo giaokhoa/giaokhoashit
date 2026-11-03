@@ -17,21 +17,17 @@ import {
 } from './dto/control-plane.dto';
 
 /**
- * Bề mặt HTTP của control plane (issue #580) — tiền tố riêng
- * `control-plane`, tách khỏi mọi tiền tố nghiệp vụ:
+ * Bề mặt HTTP của control plane (issue #580) — tiền tố riêng `control-plane`, tách khỏi mọi tiền tố nghiệp vụ:
  * - `POST /control-plane/spaces` — tạo dòng đăng ký không gian.
  * - `PATCH /control-plane/spaces/:id` — cập nhật dòng đăng ký.
  * - `POST /control-plane/spaces/:id/status` — đổi trạng thái vòng đời.
  * - `GET /control-plane/spaces/:id/history` — lịch sử quản trị của sổ.
  * - `GET /control-plane/spaces/by-slug/:slug` — tra cứu định tuyến.
- * - `GET|PUT /control-plane/spaces/:id/schema-registry` — đọc/ghi
- *   trạng thái schema của kho.
- * - `GET|POST /control-plane/spaces/:id/schema-migration-runs` —
- *   đọc/ghi nhật ký lượt chạy migration của kho.
+ * - `GET|PUT /control-plane/spaces/:id/schema-registry` — đọc/ghi trạng thái schema của kho.
+ * - `GET|POST /control-plane/spaces/:id/schema-migration-runs` — đọc/ghi nhật ký lượt chạy migration của kho.
  *
- * Mọi route đều qua service gác capability quản trị platform
- * (`tenant:manage` tại context hệ thống); controller chỉ là lớp vận
- * chuyển mỏng theo khuôn các controller hiện hữu.
+ * Mọi route đều qua service gác capability quản trị platform (`tenant:manage` tại context hệ thống); controller chỉ là
+ * lớp vận chuyển mỏng theo khuôn các controller hiện hữu.
  *
  * Tách bề mặt (issue #584): toàn bộ controller mang `@PlatformRoute()` — chỉ token mang audience `platform` (cấp từ bề
  * mặt đăng nhập quản trị platform riêng) mới được gọi; token nghiệp vụ thường bị `AudienceGuard` từ chối trước cả cổng

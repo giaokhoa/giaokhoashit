@@ -3,9 +3,8 @@
  * trị:
  * - `GET /system-bank/discovery` — khám phá câu đang phát hành (lọc theo dạng/YCCĐ/mức độ; kết quả kèm danh sách phiên
  *   bản để chọn đúng phiên bản nhập). Yêu cầu ngữ cảnh trung tâm, không sinh capability mới.
- * - `POST /system-bank/import` — nhập bản chụp một phiên bản vào kho
- *   trung tâm (đích mặc định bank cá nhân của người nhập; cổng
- *   `question:add` tại category đích).
+ * - `POST /system-bank/import` — nhập bản chụp một phiên bản vào kho trung tâm (đích mặc định bank cá nhân của người
+ *   nhập; cổng `question:add` tại category đích).
  * - `GET /system-bank/events/pending` — liệt kê sự kiện kho ngân hàng (hiện tại: rút câu) về các câu chính trung tâm đã
  *   nhập mà trung tâm chưa ghi nhận; trung tâm lấy định danh sự kiện từ chính danh sách này. Qua cổng `question:useall`
  *   tại context hệ thống ở service: danh sách là thông báo vận hành của trung tâm, không mở cho mọi thành viên của

@@ -8,13 +8,11 @@
  * và bỏ qua, không tạo trùng).
  *
  * Giới hạn kỹ thuật chi phối các hàm dưới đây:
- * - Slug là một nhãn DNS (xem `SPACE_LABEL_PATTERN` ở tầng định
- *   tuyến): chỉ chữ thường, số và dấu gạch ngang, tối đa 63 ký tự.
- * - Tên database và tên role của PostgreSQL tối đa 63 BYTE; slug
- *   chỉ chứa ký tự ASCII nên số ký tự bằng số byte.
- * - Mật khẩu chèn vào URL kết nối `postgres://` phải an toàn với
- *   URI (bài học từ sự cố biến môi trường của preview: mật khẩu
- *   chứa ký tự phá URI làm bước migrate lỗi `URI malformed`).
+ * - Slug là một nhãn DNS (xem `SPACE_LABEL_PATTERN` ở tầng định tuyến): chỉ chữ thường, số và dấu gạch ngang, tối đa 63
+ *   ký tự.
+ * - Tên database và tên role của PostgreSQL tối đa 63 BYTE; slug chỉ chứa ký tự ASCII nên số ký tự bằng số byte.
+ * - Mật khẩu chèn vào URL kết nối `postgres://` phải an toàn với URI (bài học từ sự cố biến môi trường của preview: mật
+ *   khẩu chứa ký tự phá URI làm bước migrate lỗi `URI malformed`).
  */
 import { createHash, randomBytes } from 'node:crypto';
 import { SPACE_LABEL_PATTERN } from './space-resolution';
@@ -134,8 +132,8 @@ export function buildCentreDatabaseUrl(parts: {
 }
 
 /**
- * Suy ra định danh PostgreSQL từ tiền tố + slug: đổi gạch ngang thành gạch dưới, giữ nguyên khi vừa giới hạn, cắt ngắn
- * + gắn hậu tố băm khi vượt giới hạn.
+ * Suy ra định danh PostgreSQL từ tiền tố + slug: đổi gạch ngang thành gạch dưới, giữ nguyên khi vừa giới hạn, cắt
+ * ngắn + gắn hậu tố băm khi vượt giới hạn.
  */
 function derivePostgresIdentifier(prefix: string, slug: string): string {
   const body = slug.replaceAll('-', '_');

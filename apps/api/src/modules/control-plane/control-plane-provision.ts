@@ -25,8 +25,8 @@ export type ControlPlaneTarget = {
 
 /**
  * Đọc đích cấp phát từ URL của control plane.
- * @throws Error khi URL thiếu tên database hoặc thiếu username — cấu
- * hình sai phải lộ ngay ở bước cấp phát, không chạy tiếp nửa vời.
+ * @throws Error khi URL thiếu tên database hoặc thiếu username — cấu hình sai phải lộ ngay ở bước cấp phát, không chạy
+ * tiếp nửa vời.
  */
 export function parseControlPlaneTarget(controlPlaneUrl: string): ControlPlaneTarget {
   const parsed = new URL(controlPlaneUrl);
@@ -94,8 +94,8 @@ export type BusinessDatabaseTarget = {
  * Đọc đích khoá kết nối của kho nghiệp vụ từ URL kết nối nghiệp vụ
  * (`DATABASE_URL`): tên database = path của URL, role nghiệp vụ hợp
  * lệ = username của URL (role kết nối của chính đường dữ kiện).
- * @throws Error khi URL thiếu tên database hoặc thiếu username — cấu
- * hình sai phải lộ ngay ở bước cấp phát, không chạy tiếp nửa vời.
+ * @throws Error khi URL thiếu tên database hoặc thiếu username — cấu hình sai phải lộ ngay ở bước cấp phát, không chạy
+ * tiếp nửa vời.
  */
 export function parseBusinessTarget(businessUrl: string): BusinessDatabaseTarget {
   const parsed = new URL(businessUrl);

@@ -9,16 +9,15 @@
  * (dựng từ `DATABASE_URL` của kho nghiệp vụ, trỏ về database `postgres`).
  *
  * Cô lập kết nối của role ngân hàng:
- * - Database ngân hàng: thu hồi CONNECT của PUBLIC, chỉ cấp cho role
- *   ngân hàng — mọi role khác không kết nối được vào database này.
+ * - Database ngân hàng: thu hồi CONNECT của PUBLIC, chỉ cấp cho role ngân hàng — mọi role khác không kết nối được vào
+ *   database này.
  * - Role ngân hàng KHÔNG được cấp CONNECT vào bất kỳ database nghiệp vụ nào: database nghiệp vụ đã bị khoá chiều ngược
  *   bởi `control-plane-setup` (issue #580) và `runtime-roles-setup` (issue #586) trong cùng chuỗi migrate — PUBLIC bị
  *   thu hồi CONNECT ở đó và chỉ các role nghiệp vụ mới được cấp lại, nên role ngân hàng (không nằm trong danh sách cấp)
  *   bị từ chối ngay ở bước mở kết nối vào kho nghiệp vụ. Script này không tự khoá lại phía nghiệp vụ để tránh hai nơi
  *   cùng sở hữu một thao tác khoá.
- * - Role tạo ra không có CREATEDB/CREATEROLE/SUPERUSER (mặc định của
- *   CREATE ROLE khi không khai cờ): dịch vụ đọc câu hỏi không có quyền
- *   tạo database, sửa gói dịch vụ hay đọc dữ kiện của trung tâm.
+ * - Role tạo ra không có CREATEDB/CREATEROLE/SUPERUSER (mặc định của CREATE ROLE khi không khai cờ): dịch vụ đọc câu
+ *   hỏi không có quyền tạo database, sửa gói dịch vụ hay đọc dữ kiện của trung tâm.
  */
 
 export type SystemBankTarget = {

@@ -59,12 +59,10 @@ import {
  * chung — danh sách kho riêng không bao giờ rò sang; (a3) cổng đăng nhập platform ghim kho chung: quản trị trung tâm
  * gọi cổng platform tại địa chỉ trung tâm mình vẫn bị 403 `auth.platform_admin_required` dù phép hợp nhất một chiều
  * nhận diện quản trị đó trong ngữ cảnh kho riêng;
- * (b) tenant ở kho chung giữ nguyên hành vi: tạo người dùng
- *     qua endpoint thật sinh tài khoản toàn cục ở kho chung
- *     kèm membership ở kho chung;
- * (c) id tenant không tồn tại ở bất kỳ kho nào, gọi tại địa
- *     chỉ của trung tâm kho riêng (và tại địa chỉ platform),
- *     vẫn trả 404 `tenant.not_found` — fail-closed không đổi.
+ * (b) tenant ở kho chung giữ nguyên hành vi: tạo người dùng qua endpoint thật sinh tài khoản toàn cục ở kho chung kèm
+ *     membership ở kho chung;
+ * (c) id tenant không tồn tại ở bất kỳ kho nào, gọi tại địa chỉ của trung tâm kho riêng (và tại địa chỉ platform), vẫn
+ *     trả 404 `tenant.not_found` — fail-closed không đổi.
  */
 // Cô lập cache giữa các lượt chạy: khoá cache `siteadmins` của evaluator mang tên database của kho đang được đọc, nên
 // mọi kho bài test này dựng đều mang tên duy nhất theo lượt chạy (RUN_SUFFIX) — khoá cache của lượt chạy này vì thế

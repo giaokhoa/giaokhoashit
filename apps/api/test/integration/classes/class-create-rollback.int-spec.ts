@@ -11,10 +11,10 @@ const TEST_DB_URL = process.env.LMS_TEST_DATABASE_URL ?? 'postgres://postgres:po
 /**
  * Hồi quy nguyên tử cho luồng TẠO LỚP (issue #490, DL-09).
  *
- * Bất biến nghiệp vụ: tạo lớp là một biên nguyên tử — backing cohort, dòng lớp, context lớp, bộ override capability của
- * 4 vai tại context lớp, gán vai chủ lớp và sự kiện outbox `class_created` hoặc CÙNG thành công, hoặc không bước nào
- * được ghi. Trước bản sửa, các bước ghi chạy rời nhau: lỗi ở bước gán vai (bước cuối) để lại lớp dở dang — cohort + lớp
- * + context + override đã tồn tại mà lớp chưa có chủ.
+ * Bất biến nghiệp vụ: tạo lớp là một biên nguyên tử — backing cohort, dòng lớp, context lớp, bộ override capability
+ * của 4 vai tại context lớp, gán vai chủ lớp và sự kiện outbox `class_created` hoặc CÙNG thành công, hoặc không bước
+ * nào được ghi. Trước bản sửa, các bước ghi chạy rời nhau: lỗi ở bước gán vai (bước cuối) để lại lớp dở dang — cohort +
+ * lớp + context + override đã tồn tại mà lớp chưa có chủ.
  *
  * Cách gây lỗi: spy `RolesService.assignRole` ném lỗi — đây là bước ghi gần cuối của luồng, sau khi
  * cohort/lớp/context/override đã ghi, nên nó phân biệt rõ hai thế giới: không có transaction thì trạng thái dở dang còn

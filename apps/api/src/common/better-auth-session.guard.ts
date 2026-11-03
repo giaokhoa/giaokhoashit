@@ -30,12 +30,11 @@ const SESSION_COOKIE_PATTERN = new RegExp(`(?:^|;\\s*)(?:__Secure-)?${BETTER_AUT
  *
  * Nguyên tắc không đổi hành vi cũ:
  * - Cờ Better Auth tắt → trả true ngay, như không tồn tại.
- * - Request không mang cookie phiên Better Auth → trả true, JwtAuthGuard
- *   xử lý như hiện tại (kể cả việc ném 401).
- * - Cookie có nhưng phiên không hợp lệ/hết hạn → cũng trả true và KHÔNG
- *   đặt danh tính: quyết định từ chối vẫn thuộc về JwtAuthGuard như cũ.
- * - Phiên hợp lệ nhưng tài khoản bị suspended/deleted → không đặt danh
- *   tính (chặn dù phiên còn hạn, cùng semantics với JwtStrategy).
+ * - Request không mang cookie phiên Better Auth → trả true, JwtAuthGuard xử lý như hiện tại (kể cả việc ném 401).
+ * - Cookie có nhưng phiên không hợp lệ/hết hạn → cũng trả true và KHÔNG đặt danh tính: quyết định từ chối vẫn thuộc về
+ *   JwtAuthGuard như cũ.
+ * - Phiên hợp lệ nhưng tài khoản bị suspended/deleted → không đặt danh tính (chặn dù phiên còn hạn, cùng semantics với
+ *   JwtStrategy).
  *
  * `sessionId` ở đây là id của dòng phiên trong bảng `session` của Better Auth — cùng vai trò `sid` của hệ JWT hiện tại.
  *

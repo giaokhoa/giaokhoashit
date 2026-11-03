@@ -11,9 +11,8 @@ import { addGroupMember, contextIdByLevelInstance, createGroupViaApi } from '../
  * Cổng tạo NHÓM TỰ DO (issue #563): nhóm thủ công trong hệ thống chỉ do ba nhóm người tạo —
  *
  *  1. Quản trị viên hệ thống (site admin);
- *  2. Chủ trung tâm: thành viên của tenant giữ vai manager tại
- *     context của chính tenant đó (capability `tenant:manage` tại
- *     context tenant hiện hành);
+ *  2. Chủ trung tâm: thành viên của tenant giữ vai manager tại context của chính tenant đó (capability `tenant:manage`
+ *     tại context tenant hiện hành);
  *  3. Quản trị viên nền tảng: giữ vai manager tại context HỆ THỐNG (capability `tenant:manage` tại context hệ thống)
  *     nhưng không nằm trong danh sách site admin và không phải thành viên của tenant hiện hành — qua cổng nhờ nhánh dự
  *     phòng của cùng predicate chủ trung tâm, vì gán vai ở context hệ thống không chảy vào cây tenant nên phải kiểm

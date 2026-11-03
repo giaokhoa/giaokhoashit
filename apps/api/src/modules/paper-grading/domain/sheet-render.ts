@@ -192,8 +192,8 @@ export function seededRandom(seed: number): () => number {
 }
 
 /**
- * Mô phỏng một ảnh chụp điện thoại: phiếu đặt trên nền bàn tối, 4 góc bị lệch phối cảnh ngẫu nhiên, cộng gradient sáng
- * + nhiễu + tuỳ chọn mờ. Trả về PNG bytes để đưa thẳng vào engine như ảnh thật.
+ * Mô phỏng một ảnh chụp điện thoại: phiếu đặt trên nền bàn tối, 4 góc bị lệch phối cảnh ngẫu nhiên, cộng gradient
+ * sáng + nhiễu + tuỳ chọn mờ. Trả về PNG bytes để đưa thẳng vào engine như ảnh thật.
  */
 export function simulatePhoto(sheet: RgbaImage, opts: PhotoSimOptions = {}): Buffer {
   const rand = seededRandom(opts.seed ?? 42);

@@ -29,9 +29,8 @@ export type EmailFrequency = 'immediate' | 'daily' | 'off';
  * - `'minimized'`: nội dung gốc KHÔNG tự rời app. Job kênh ngoài chỉ mang bản tối thiểu hoá
  *   `externalSubject`/`externalBody` do nơi gọi truyền; thiếu bản tối thiểu hoá thì mang bản tóm tắt mặc định i18n
  *   (riêng môi trường test là lỗi — xem `notify()`).
- * - `'original-ok'`: loại nội dung này đã được khai báo tường minh
- *   là an toàn theo thiết kế để mang nguyên văn ra kênh ngoài —
- *   BẮT BUỘC kèm `externalPolicyReason` trong định nghĩa provider.
+ * - `'original-ok'`: loại nội dung này đã được khai báo tường minh là an toàn theo thiết kế để mang nguyên văn ra kênh
+ *   ngoài — BẮT BUỘC kèm `externalPolicyReason` trong định nghĩa provider.
  *
  * Provider không khai báo thì hiệu lực là `'minimized'` (mặc định an toàn — xem `externalPolicyOf`).
  */
@@ -41,18 +40,15 @@ export type ExternalContentPolicy = 'minimized' | 'original-ok';
  * Phía người nhận của một loại thông báo theo VAI + CONTEXT (lát phân chia tuỳ chọn theo vai trò, việc nối tiếp của
  * issue #288):
  *
- * - `'student'` — người nhận là HỌC SINH/người học trong một context
- *   học tập (người có điểm thay đổi, người được giao bài, người ghi
- *   danh sắp hết hạn…).
- * - `'staff'` — người nhận là NHÂN SỰ/GIÁO VIÊN trong vai trò phụ
- *   trách (nhân sự khoá nhận bản gộp bài nộp, người duyệt năng lực…).
- * - `'guardian'` — người nhận là PHỤ HUYNH qua liên kết giám hộ đang
- *   hiệu lực (digest/ cảnh báo quá hạn của con).
- * - `'admin'` — người nhận gồm QUẢN TRỊ VIÊN CẤP SITE trong vai trò
- *   quản trị (đồng nhận báo cáo hội thoại cùng nhân sự khoá…).
- * - `'all'` — MỌI VAI đều có thể là người nhận (tin nhắn mới, yêu cầu
- *   kết bạn, nhắc lịch của chính mình, thông báo quản trị gửi đích
- *   danh cho một user bất kỳ…).
+ * - `'student'` — người nhận là HỌC SINH/người học trong một context học tập (người có điểm thay đổi, người được giao
+ *   bài, người ghi danh sắp hết hạn…).
+ * - `'staff'` — người nhận là NHÂN SỰ/GIÁO VIÊN trong vai trò phụ trách (nhân sự khoá nhận bản gộp bài nộp, người duyệt
+ *   năng lực…).
+ * - `'guardian'` — người nhận là PHỤ HUYNH qua liên kết giám hộ đang hiệu lực (digest/ cảnh báo quá hạn của con).
+ * - `'admin'` — người nhận gồm QUẢN TRỊ VIÊN CẤP SITE trong vai trò quản trị (đồng nhận báo cáo hội thoại cùng nhân sự
+ *   khoá…).
+ * - `'all'` — MỌI VAI đều có thể là người nhận (tin nhắn mới, yêu cầu kết bạn, nhắc lịch của chính mình, thông báo quản
+ *   trị gửi đích danh cho một user bất kỳ…).
  *
  * Giá trị của từng provider được chốt bằng TRUY VẾT điểm phát thật (`notify()` ở consumer sự kiện + các service gọi
  * trực tiếp + processor phía worker): ai là user nhận ở điểm phát thì audience là vai đó — KHÔNG suy đoán theo tên
@@ -278,8 +274,7 @@ export function externalPolicyOf(provider: MessageProviderDefinition): ExternalC
  * tính từ cơ chế vai sẵn có: gán vai archetype, ghi danh hiệu lực, liên kết giám hộ hiệu lực, cờ site admin). Luật
  * khớp:
  *
- * - audience chứa `'all'` → thuộc bề mặt của mọi user (đã qua cổng
- *   bề mặt đầy đủ của NB-7).
+ * - audience chứa `'all'` → thuộc bề mặt của mọi user (đã qua cổng bề mặt đầy đủ của NB-7).
  * - còn lại: thuộc bề mặt khi audience GIAO với tập context của user (giáo viên thuần không có context học sinh → không
  *   thấy loại chỉ học sinh nhận; người vừa dạy vừa học có cả hai context → thấy cả hai phía; site admin được tính là có
  *   mọi context — xem `MessagingService.resolvePreferenceAudiences`).

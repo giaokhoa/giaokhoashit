@@ -8,8 +8,8 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
 import { contextIdByLevelInstance, suspendUser } from '../../support/engagement-helpers';
 
 /**
- * Mô hình khám phá bạn bè ĐÃ CHỐT LẠI của issue #33 (quyết định
- * 24/10/2026, thay toàn bộ cơ chế tìm người theo tên của PR #41):
+ * Mô hình khám phá bạn bè ĐÃ CHỐT LẠI của issue #33 (quyết định 24/10/2026, thay toàn bộ cơ chế tìm người theo tên của
+ * PR #41):
  *  - Endpoint `GET /messages/people/search` ĐÃ GỠ — gọi vào là 404.
  *  - Khám phá bạn bè qua ROSTER thành viên khoá: thành viên = ghi danh đang hiệu lực ∪ gán vai tại context khoá (giáo
  *    viên chỉ được gán vai, không ghi danh, vẫn hiện với dấu hiệu teacher). Chỉ thành viên mới xem được; người ngoài

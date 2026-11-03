@@ -94,10 +94,8 @@ export function verifyPackageChecksum(pkg: SystemQuestionPackage, expectedChecks
  * Kiểm chứng gói theo dạng câu ở mức thô — cùng luật mà module câu hỏi áp ở `normaliseContent`, nhưng chỉ phần đếm đáp
  * án (không lặp lại chuẩn hoá Tiptap sâu; kiểm chứng sâu xảy ra ở lúc nhập vào kho trung tâm qua `QuestionsService`):
  * - multichoice: đúng 4 lựa chọn và đúng 1 đáp án đúng;
- * - truefalse (TF-A): không mang dòng đáp án (đáp án từng mệnh đề đi
- *   qua `answerKey.solution`);
- * - shortanswer: ít nhất 1 đáp án và mọi dòng đều là đáp án được chấp
- *   nhận;
+ * - truefalse (TF-A): không mang dòng đáp án (đáp án từng mệnh đề đi qua `answerKey.solution`);
+ * - shortanswer: ít nhất 1 đáp án và mọi dòng đều là đáp án được chấp nhận;
  * - essay: không mang dòng đáp án. Dạng câu ngoài 4 dạng đã chốt không qua được hợp đồng route nên không tới được đây;
  *   gặp thì coi như gói lỗi.
  *

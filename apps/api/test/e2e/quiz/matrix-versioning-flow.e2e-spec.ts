@@ -9,14 +9,10 @@ import { adminToken, createTestApp, http } from '../../support/identity-access-h
  * mất nội dung cũ".
  *
  * Luật được khoá ở đây:
- *  - Tạo ma trận sinh ngay hàng version 1 bất biến; ô thuộc về đúng
- *    một version qua matrix_version_id.
- *  - Ma trận còn draft: sửa ô/cấu hình tại chỗ trên version đang mở,
- *    không sinh version mới.
- *  - Ma trận đã rời draft: sửa ô hoặc sửa cấu hình nội dung = sinh
- *    version mới mang toàn bộ ô; version cũ đọc lại qua
- *    GET /exam-matrices/:id/versions/:version nguyên vẹn từng giá
- *    trị.
+ *  - Tạo ma trận sinh ngay hàng version 1 bất biến; ô thuộc về đúng một version qua matrix_version_id.
+ *  - Ma trận còn draft: sửa ô/cấu hình tại chỗ trên version đang mở, không sinh version mới.
+ *  - Ma trận đã rời draft: sửa ô hoặc sửa cấu hình nội dung = sinh version mới mang toàn bộ ô; version cũ đọc lại qua
+ *    GET /exam-matrices/:id/versions/:version nguyên vẹn từng giá trị.
  *  - Copy ma trận: bản copy có version 1 bất biến của riêng nó.
  */
 describe('Phiên bản ma trận bất biến (issue #228 S1)', () => {

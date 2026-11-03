@@ -34,9 +34,9 @@ import type { GroupsRepository } from '@lms/db/repositories/groups';
  * ĐÚNG MỘT lượt cho cả tập lớp và không còn lượt `hasCapability('class:view')` theo từng lớp; khi ở chế độ thấy toàn bộ
  * (site admin / tenant:manage) đường theo lô không được chạm tới — lối tắt hiện hành giữ nguyên.
  *
- * Thế giới kiểm chứng: tenant có 5 lớp ở các trạng thái quyền khác nhau (lớp của mình, lớp có capability, lớp là thành
- * viên roster, lớp không liên hệ, lớp của người khác) trên cây context thật system → tenant → class; `ContextsService`
- * + `PermissionEvaluator` là service THẬT trên tầng dữ liệu giả lập trong bộ nhớ.
+ * Thế giới kiểm chứng: tenant có 5 lớp ở các trạng thái quyền khác nhau (lớp của mình, lớp có capability,
+ * lớp là thành viên roster, lớp không liên hệ, lớp của người khác) trên cây context thật system → tenant → class;
+ * `ContextsService` + `PermissionEvaluator` là service THẬT trên tầng dữ liệu giả lập trong bộ nhớ.
  */
 
 const SYS_ID = '00000000-0000-4000-8000-000000000010';

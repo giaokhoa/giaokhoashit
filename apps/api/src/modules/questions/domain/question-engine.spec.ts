@@ -4,14 +4,13 @@ import { canTransition, gradeAnswer, truefalseHashAnswers, usageState, DeferredF
 /**
  * Kiểm chứng engine chấm theo LUỒNG NGHIỆP VỤ của mô hình giaokhoa (quyết 12:04 + các điểm quyết D ngày 26/10/2026, đợt
  * port #248):
- *  - đáp án chỉ mang cờ đúng/sai `isCorrect` — KHÔNG còn tỉ trọng
- *    fraction của đáp án; chấm tự động là NHỊ PHÂN 1/0 cho multichoice
- *    và shortanswer;
+ *  - đáp án chỉ mang cờ đúng/sai `isCorrect` — KHÔNG còn tỉ trọng fraction của đáp án; chấm tự động là NHỊ PHÂN 1/0 cho
+ *    multichoice và shortanswer;
  *  - truefalse là câu CHÙM TF-A (D-1): chấm từng mệnh đề 0/1 rồi tra thang Đ–S theo số ý đúng — thang là cấu hình của
  *    lần ghim truyền qua GradingData, mặc định QĐ 764 [0, 10, 25, 50, 100]; đây là nguồn gradedpartial duy nhất của
  *    chấm tự động (bên cạnh chấm tay essay);
- *  - shortanswer khớp CHÍNH XÁC sau chuẩn hoá — đáp án mẫu chứa ký tự
- *    `*` được hiểu là ký tự thường, không phải ký tự đại diện;
+ *  - shortanswer khớp CHÍNH XÁC sau chuẩn hoá — đáp án mẫu chứa ký tự `*` được hiểu là ký tự thường, không phải ký tự
+ *    đại diện;
  *  - máy trạng thái usage/attempt giữ ngữ nghĩa Moodle (questionusagebyactivity_test): deferred behaviour chỉ ghi nhận
  *    khi nộp, chấm khi kết thúc; trạng thái graded* suy từ fraction của ATTEMPT (điểm lượt làm) theo ngưỡng states.php.
  *    Các ca dưới đây phải ĐỎ nếu nghiệp vụ bị đổi ngược (vd quay lại cộng tỉ trọng từng phần, khớp wildcard, hay chấm

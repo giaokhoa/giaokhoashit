@@ -4,11 +4,10 @@
  * "không gian template" 1240×1754 px (A4 ở 150 dpi); phía PDF đổi sang point bằng PX_PER_PT.
  *
  * Bố cục (trục y từ trên xuống):
- *  - 4 fiducial vuông đen 40×40 ở 4 góc, tâm cách biên 68px — mốc nắn
- *    phối cảnh; thiếu 1 mốc là ảnh bị cổng chất lượng từ chối.
- *  - Đầu phiếu (y 48..300): tiêu đề + tên bài bên trái; QR 240×240 ở
- *    góc phải (phiếu cá nhân hoá mang userId; phiếu dùng chung chỉ
- *    mang mã lô + mã đề).
+ *  - 4 fiducial vuông đen 40×40 ở 4 góc, tâm cách biên 68px — mốc nắn phối cảnh; thiếu 1 mốc là ảnh bị cổng chất lượng
+ *    từ chối.
+ *  - Đầu phiếu (y 48..300): tiêu đề + tên bài bên trái; QR 240×240 ở góc phải (phiếu cá nhân hoá mang userId; phiếu
+ *    dùng chung chỉ mang mã lô + mã đề).
  *  - Vùng mã (y 300..664): bên trái là lưới MÃ ĐỀ 4 cột × 10 hàng kèm hàng ô ghi chữ số phía trên (cặp ghi+tô như mẫu
  *    Bộ — học sinh ghi mã đề trên đề thi được phát rồi tô vào lưới dưới); bên phải là lưới MÃ HỌC SINH cấu hình được: 4
  *    cột (tại lớp: 3 số thứ tự + 1 số kiểm tra) hoặc 8 cột (thi thử theo phòng: 7 số thứ tự + 1 số kiểm tra, đúng độ

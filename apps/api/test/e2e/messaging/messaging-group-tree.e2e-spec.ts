@@ -13,12 +13,10 @@ import { addGroupMember, contextIdByLevelInstance, createGroupViaApi } from '../
  * /messages/group-tree) + phân loại conversation trên danh sách.
  *
  * Luồng nghiệp vụ được kiểm:
- *  (1) GV là chủ 2 lớp, mỗi lớp có khoá: cây của GV có đúng 2 nút lớp
- *      vai "đang dạy" (teaching), khoá nằm TRONG lớp theo quan hệ
- *      lớp–khoá, chat chưa ensure thì conversationId null + unread 0.
- *  (2) Sau khi chat khoá được ensure và có tin chưa đọc, nút khoá
- *      mang đúng conversationId + unread; nút lớp mang tổng chưa đọc
- *      của các nút con.
+ *  (1) GV là chủ 2 lớp, mỗi lớp có khoá: cây của GV có đúng 2 nút lớp vai "đang dạy" (teaching), khoá nằm TRONG lớp
+ *      theo quan hệ lớp–khoá, chat chưa ensure thì conversationId null + unread 0.
+ *  (2) Sau khi chat khoá được ensure và có tin chưa đọc, nút khoá mang đúng conversationId + unread; nút lớp mang tổng
+ *      chưa đọc của các nút con.
  *  (3) HS thuộc roster của lớp 1: cây chỉ có lớp 1 vai "đang học" (learning); HS đồng thời ghi danh vào một khoá thuộc
  *      lớp khác (không thuộc roster lớp đó): khoá hiện ở mục ngoài-lớp-trực- tiếp, KHÔNG kéo theo nút lớp lạ, lớp 2 của
  *      GV không xuất hiện.
@@ -27,9 +25,8 @@ import { addGroupMember, contextIdByLevelInstance, createGroupViaApi } from '../
  *      conversationId; nhóm tự do do quản trị viên tạo hiện ở mục freeGroups, GV và HS đều là thành viên thường vai
  *      learning. Cờ `canCreateFreeGroup` trên cây khớp đúng cổng tạo nhóm tự do: quản trị viên true; GV, HS, nhân viên
  *      và người ngoài false.
- *  (6) Phân loại trên GET /messages/conversations: chat khoá mang
- *      itemType 'course' + itemId đúng; nhóm con 'groups'; nhóm tự
- *      do cả ba trường null.
+ *  (6) Phân loại trên GET /messages/conversations: chat khoá mang itemType 'course' + itemId đúng; nhóm con 'groups';
+ *      nhóm tự do cả ba trường null.
  *  (7) Mốc ghim cá nhân trên cây (vòng bổ sung bằng chứng của PR #607): HS vừa ghim vừa lưu trữ một nhóm tự do và chat
  *      khoá — hai hội thoại lúc đó chỉ còn nằm ở tập đã lưu trữ của HS — cây của HS vẫn báo pinnedAt khác null cho cả
  *      nút nhóm tự do lẫn nút khoá, tức mốc ghim được dựng từ cả hai tập tóm tắt; một nhóm tự do khác chỉ lưu trữ,

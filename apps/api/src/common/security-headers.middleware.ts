@@ -2,14 +2,12 @@ import { Injectable, type NestMiddleware } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 
 /**
- * Gắn các header bảo mật chuẩn cho mọi phản hồi HTTP (tự xây, cùng tinh
- * thần với ProblemDetailsFilter: Nest không có sẵn cơ chế này).
+ * Gắn các header bảo mật chuẩn cho mọi phản hồi HTTP (tự xây, cùng tinh thần với ProblemDetailsFilter: Nest không có
+ * sẵn cơ chế này).
  * - `nosniff` + `DENY` framing + `no-referrer`: áp cho mọi route.
- * - HSTS: chỉ có nghĩa trên HTTPS nhưng gửi kèm luôn để mọi môi trường
- *   sau reverse proxy đều nhất quán.
- * - CSP chặt (`default-src 'none'`) chỉ áp cho API JSON (`/api/v1/…`):
- *   trang tài liệu Swagger ở `/api/docs` cần nạp script/style của chính
- *   nó nên không nhận CSP này.
+ * - HSTS: chỉ có nghĩa trên HTTPS nhưng gửi kèm luôn để mọi môi trường sau reverse proxy đều nhất quán.
+ * - CSP chặt (`default-src 'none'`) chỉ áp cho API JSON (`/api/v1/…`): trang tài liệu Swagger ở `/api/docs` cần nạp
+ *   script/style của chính nó nên không nhận CSP này.
  */
 @Injectable()
 export class SecurityHeadersMiddleware implements NestMiddleware {

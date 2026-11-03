@@ -18,8 +18,8 @@ import { RolesService } from '../../../src/modules/access/roles.service';
  *    tại ở bất kỳ tầng nào (định nghĩa lẫn override đã seed).
  *  - Cổng TẠO dùng capability add ở cả ba đường tạo: tạo ma trận tại context môn (matrix:add), tạo đề trong bank
  *    (exam:add) — thành viên bank (chỉ có use + copy) tạo đề trong bank tổ bị 403, phụ trách bank (đủ bộ) tạo được.
- *  - Bề mặt capabilities của bank ma trận phản ánh đúng bộ mới:
- *    phụ trách có add + edit, thành viên chỉ có use (+ copy).
+ *  - Bề mặt capabilities của bank ma trận phản ánh đúng bộ mới: phụ trách có add + edit, thành viên chỉ có use (+
+ *    copy).
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });

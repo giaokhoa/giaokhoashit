@@ -3,8 +3,7 @@
  * chính template hệ thống, tô theo kịch bản, "chụp" mô phỏng (lệch phối cảnh + nhiễu + gradient sáng + mờ nhẹ) rồi đọc
  * bằng đúng engine sản xuất. Các ngưỡng khẳng định trong file này là tiêu chí nghiệm thu cứng của issue:
  *  - độ chính xác đọc ô ≥ 99,5% trên ảnh đạt cổng chất lượng;
- *  - 100% ca mơ hồ (tô mờ, dấu ✓, tô hai ô, tẩy xoá) vào hàng chờ —
- *    không ca nào bị đoán;
+ *  - 100% ca mơ hồ (tô mờ, dấu ✓, tô hai ô, tẩy xoá) vào hàng chờ — không ca nào bị đoán;
  *  - QR định danh đúng 100%;
  *  - mã tô sai bị phát hiện 100% (số kiểm tra hỏng → không gán nhầm).
  */

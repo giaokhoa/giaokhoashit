@@ -17,25 +17,19 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
  * khoản đồng thời có cấp quyền giảng dạy bao phủ một khoá và ghi danh học viên đang hoạt động trong chính khoá đó (hoặc
  * lớp chứa khoá đó).
  *
- * Định nghĩa dùng chung duy nhất ở RoleSeparationService (tầng
- * Access):
- * - Kiểm (a): tồn tại gán vai archetype editingteacher/teacher KHÔNG
- *   do ghi danh cấp (component <> 'enrol') tại một context trên
- *   đường tổ tiên của context khoá (trừ context hệ thống).
- * - Kiểm (b): tồn tại user_enrolments status = 0 qua một enrol
- *   instance của khoá mà vai cấp kèm không thuộc archetype giảng dạy.
+ * Định nghĩa dùng chung duy nhất ở RoleSeparationService (tầng Access):
+ * - Kiểm (a): tồn tại gán vai archetype editingteacher/teacher KHÔNG do ghi danh cấp (component <> 'enrol') tại một
+ *   context trên đường tổ tiên của context khoá (trừ context hệ thống).
+ * - Kiểm (b): tồn tại user_enrolments status = 0 qua một enrol instance của khoá mà vai cấp kèm không thuộc archetype
+ *   giảng dạy.
  *
- * Các ca dưới đây khoá hành vi ở BA funnel ghi danh và chốt chiều
- * ngược:
- *  1. Funnel 1 — ghi danh tay giáo viên vào chính khoá mình dạy qua
- *     EnrolService.enrolUserInternal: bị từ chối
- *     `access.role_context_conflict`, không tạo ghi danh, không gán
- *     vai học viên.
+ * Các ca dưới đây khoá hành vi ở BA funnel ghi danh và chốt chiều ngược:
+ *  1. Funnel 1 — ghi danh tay giáo viên vào chính khoá mình dạy qua EnrolService.enrolUserInternal: bị từ chối
+ *     `access.role_context_conflict`, không tạo ghi danh, không gán vai học viên.
  *  2. Funnel 2 — thêm roster lớp bằng EMAIL của chính chủ lớp qua GroupsService.addCohortMember: bị từ chối cùng mã;
  *     chủ lớp không vào cohort, không có ghi danh ở khoá của lớp; học sinh thường vẫn nạp được (đối chứng dương).
- *  3. Đối chứng giữ đường tham gia: giáo viên ghi danh vào khoá
- *     KHÔNG liên quan vẫn thành công và ở khoá đó chỉ là học viên
- *     (không có grade:viewall).
+ *  3. Đối chứng giữ đường tham gia: giáo viên ghi danh vào khoá KHÔNG liên quan vẫn thành công và ở khoá đó chỉ là học
+ *     viên (không có grade:viewall).
  *  4. Chiều ngược — gán vai giảng dạy tại context khoá và context lớp cho học viên đang học đang hoạt động trong khoá
  *     bị bao phủ: bị từ chối cùng mã; gán cho người không có ghi danh như vậy vẫn thành công (đối chứng dương).
  *  5. Funnel 3 — restore backup chứa ghi danh của người đang dạy khoá đích: restore hoàn tất, ghi danh vi phạm bị bỏ

@@ -20,10 +20,8 @@ import { closeSepaySweepDriver, driveCohortSync, driveSepaySweep } from '../../s
  *  2. Payment lưu sẵn có số tiền hoặc tenant lệch giá/tenant phía server của đối tượng đích thì KHÔNG điểm kích hoạt
  *     nào (khớp IPN SePay, webhook gateway, xử lý tay `needs_review`) được cấp quyền lợi: matching và webhook chuyển
  *     payment sang `needs_review`, quyết định khớp tay bị từ chối.
- *  3. Ba đường chính thức giữ nguyên hành vi: mua qua
- *     `/payments/fee/:id`, `/payments/class-fee/:id`,
- *     `/payments/plans` rồi tiền về đúng → kích hoạt quyền lợi như
- *     trước.
+ *  3. Ba đường chính thức giữ nguyên hành vi: mua qua `/payments/fee/:id`, `/payments/class-fee/:id`, `/payments/plans`
+ *     rồi tiền về đúng → kích hoạt quyền lợi như trước.
  *
  * Đổi luật (bỏ chốt ở điểm tạo, bỏ đối chiếu ở điểm kích hoạt) thì ca tương ứng phải đỏ — các ca (b) dùng payment do
  * đường chính thức tạo rồi phẫu thuật số tiền/tenant trong DB để mô phỏng payment đã bị can thiệp trước khi tới điểm

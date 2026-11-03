@@ -142,12 +142,10 @@ export class MatrixImportService {
    * chiếu nội bộ → lấy cây chương trình, làm phẳng thành danh sách ĐVK theo thứ tự cây (lọc theo `scopeNodeIds` nếu có:
    * giữ ĐVK nằm trong phạm vi đã chọn hoặc thuộc subtree của node trong phạm vi) → dựng 3 sheet.
    *
-   * @throws ForbiddenException khi người gọi không qua được cổng bank
-   *   cá nhân của luồng nhập (xem
+   * @throws ForbiddenException khi người gọi không qua được cổng bank cá nhân của luồng nhập (xem
    *   `QuizService.requirePersonalMatrixBankManage`).
    * @throws NotFoundException khi môn hoặc chương trình không tồn tại.
-   * @throws BadRequestException khi chương trình không thuộc môn, hoặc
-   *   phạm vi không chứa ĐVK nào.
+   * @throws BadRequestException khi chương trình không thuộc môn, hoặc phạm vi không chứa ĐVK nào.
    */
   async buildTemplate(actorId: string, input: {
     subjectId: string; curriculumId: string;
@@ -415,8 +413,7 @@ export class MatrixImportService {
    * mốc 30% — văn bản không cho mốc riêng cho VDC) + cảnh báo hàng ĐVK không có ô nào. 6. Đính khả dụng ngân hàng cho
    * từng ô dự thảo (cần/có/thiếu — cảnh báo thuần thông tin).
    *
-   * @returns Cấu trúc `MatrixImportPreview` (contracts): `valid` chỉ
-   *   true khi không còn lỗi cứng nào.
+   * @returns Cấu trúc `MatrixImportPreview` (contracts): `valid` chỉ true khi không còn lỗi cứng nào.
    */
   async previewImport(actorId: string, buffer: Buffer): Promise<MatrixImportPreview> {
     const preview: MatrixImportPreview = {
@@ -635,10 +632,9 @@ export class MatrixImportService {
    *    hàng trong file theo thứ tự file.
    *
    * @returns View ma trận đã ghi (hoặc bản đã có khi trùng nội dung).
-   * @throws UnprocessableEntityException 422 khi file không hợp lệ
-   *   tại thời điểm ghi (kèm `matrixImportIssues` định vị).
-   * @throws ForbiddenException khi người gọi không qua được cổng bank
-   *   cá nhân của luồng nhập (ném từ bước parse lại).
+   * @throws UnprocessableEntityException 422 khi file không hợp lệ tại thời điểm ghi (kèm `matrixImportIssues` định
+   *   vị).
+   * @throws ForbiddenException khi người gọi không qua được cổng bank cá nhân của luồng nhập (ném từ bước parse lại).
    */
   async commitImport(actorId: string, buffer: Buffer): Promise<ExamMatrixView> {
     const preview = await this.previewImport(actorId, buffer);

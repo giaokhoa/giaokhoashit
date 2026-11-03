@@ -110,16 +110,12 @@ export class CompletionService implements OnModuleInit {
    * - Ngữ nghĩa tenant sao đúng bản gốc: tenant hiệu lực lấy từ `input.tenantId` nếu nơi gọi chỉ định, không thì từ ngữ
    *   cảnh ALS của luồng phát sinh, không có nữa thì null; tenant cũng được gương vào payload khi payload chưa có khoá
    *   `tenantId`, để các consumer chạy ở ngữ cảnh platform biết sự kiện thuộc tenant nào.
-   * - Payload ghi qua serialize tường minh + ép kiểu `::jsonb` như
-   *   mọi đường ghi jsonb của tầng Kysely (driver `pg` hiểu mảng cấp
-   *   cao nhất là mảng PostgreSQL).
+   * - Payload ghi qua serialize tường minh + ép kiểu `::jsonb` như mọi đường ghi jsonb của tầng Kysely (driver `pg`
+   *   hiểu mảng cấp cao nhất là mảng PostgreSQL).
    *
-   * @remarks
-   * Đây là điểm chuyển tiếp có chủ đích: `OutboxService` thuộc phạm
-   * vi của hạng mục chuyển đổi outbox (nhóm D1) và vẫn nhận handle
-   * giao dịch của ORM cũ. Khi hạng mục đó chuyển `enqueue` sang
-   * nhận handle Kysely, hai điểm gọi trong module này quay về dùng
-   * `OutboxService.enqueue` và helper này bị xoá.
+   * @remarks Đây là điểm chuyển tiếp có chủ đích: `OutboxService` thuộc phạm vi của hạng mục chuyển đổi outbox (nhóm
+   * D1) và vẫn nhận handle giao dịch của ORM cũ. Khi hạng mục đó chuyển `enqueue` sang nhận handle Kysely, hai điểm gọi
+   * trong module này quay về dùng `OutboxService.enqueue` và helper này bị xoá.
    */
   private async enqueueOutboxInTx(tx: CentreTx, input: OutboxEventInput): Promise<void> {
     const tenantId = input.tenantId ?? tenantAls.getStore()?.tenantId ?? null;

@@ -67,11 +67,11 @@ export class QuizMatricesService {
   }
 
   /**
-   * Tạo một lần GHIM đề vào khoá (thực thể duy nhất thay quiz + deployment): bản ghi exam_pins neo (exam, exam version)
-   * + course module (component mod_quiz, completion tự động theo điểm) + grade item 'mod' mang thang điểm của exam
-   * version. Cổng exam:deploy tại bank của đề + trạng thái ready của đề do ExamsService kiểm trước khi gọi; quyền tạo
-   * hoạt động do CoursesService kiểm (course:manageactivities); các thao tác về sau kiểm quiz:manage tại context của
-   * module.
+   * Tạo một lần GHIM đề vào khoá (thực thể duy nhất thay quiz + deployment): bản ghi exam_pins neo (exam, exam
+   * version) + course module (component mod_quiz, completion tự động theo điểm) + grade item 'mod' mang thang điểm của
+   * exam version. Cổng exam:deploy tại bank của đề + trạng thái ready của đề do ExamsService kiểm trước khi gọi; quyền
+   * tạo hoạt động do CoursesService kiểm (course:manageactivities); các thao tác về sau kiểm quiz:manage tại context
+   * của module.
    */
 
   /**
@@ -86,10 +86,8 @@ export class QuizMatricesService {
    * ghi, và giáo viên thật không có vai nào tại context hệ thống của môn GDPT nên cổng tại context môn chặn nhầm mọi
    * giáo viên (điểm chặn của nghiệm thu D-3 trên production, issue #233).
    *
-   * @throws ForbiddenException `question.personal_bank_staff_only`
-   *   khi người gọi không thuộc nhóm staff và chưa có bank cá nhân;
-   *   `access.capability_denied` khi bộ quyền bank-local không cho
-   *   phụ trách bank.
+   * @throws ForbiddenException `question.personal_bank_staff_only` khi người gọi không thuộc nhóm staff và chưa có bank
+   *   cá nhân; `access.capability_denied` khi bộ quyền bank-local không cho phụ trách bank.
    */
   async requirePersonalMatrixBankManage(actorId: string): Promise<QuestionBankRow> {
     const bank = await this.banks.ensurePersonalBank(actorId, 'matrix');
@@ -272,8 +270,7 @@ export class QuizMatricesService {
    * hành vi "trả bản đã có" (tạo tay, sửa, thao tác ô): trùng toàn bộ nội dung trong cùng một bank là lỗi nghiệp vụ của
    * người gọi, không phải lỗi 500 thô của DB. Lỗi khác được ném lại nguyên vẹn.
    *
-   * @throws ConflictException `quiz.matrix_duplicate_content` khi
-   *   `err` là va chạm của ràng buộc chữ ký.
+   * @throws ConflictException `quiz.matrix_duplicate_content` khi `err` là va chạm của ràng buộc chữ ký.
    */
   private rethrowAsDuplicateContentConflict(err: unknown): never {
     if (isMatrixContentSignatureConflict(err)) {
@@ -307,8 +304,7 @@ export class QuizMatricesService {
    *
    * @returns View ma trận (mới tạo, hoặc bản đã có khi trùng nội dung).
    * @throws BadRequestException khi chương trình không thuộc môn.
-   * @throws ForbiddenException khi người nhập không có quyền phụ
-   *   trách bank cá nhân của mình (bộ quyền bank-local).
+   * @throws ForbiddenException khi người nhập không có quyền phụ trách bank cá nhân của mình (bộ quyền bank-local).
    */
   async createMatrixFromImport(actorId: string, input: {
     name: string; subjectId: string; curriculumId: string;

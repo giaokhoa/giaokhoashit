@@ -4,15 +4,14 @@ import { onSpaceRegistryChanged } from './space-routing-events';
  * Bộ phân giải đích kết nối theo trung tâm (issue #581) — thành phần đầu tiên của khung định tuyến ở tầng dữ kiện.
  *
  * Luồng phân giải cho một slug không gian:
- * 1. Tra bộ nhớ đệm trong tiến trình: mục đệm còn hạn (TTL ngắn cấu
- *    hình được) thì trả ngay, không chạm database control plane.
+ * 1. Tra bộ nhớ đệm trong tiến trình: mục đệm còn hạn (TTL ngắn cấu hình được) thì trả ngay, không chạm database
+ *    control plane.
  * 2. Hết hạn hoặc chưa có: đọc dòng đăng ký của không gian từ sổ đăng ký ở control plane — nguồn sự thật DUY NHẤT cho
  *    việc một trung tâm đang dùng database nào (quyết định đã ghi trong issue #581). Không có dòng đăng ký → lỗi
  *    `space_not_found`: định tuyến fail-closed, tuyệt đối không đoán đích.
  * 3. Từ dòng đăng ký, quyết định đích theo `storageMode`:
- *    - `shared`: trung tâm chưa di trú — đích là kho chung hiện tại,
- *      bộ phân giải chỉ xác nhận chế độ, kết nối thật do tầng gọi
- *      giữ như đường hiện hành.
+ *    - `shared`: trung tâm chưa di trú — đích là kho chung hiện tại, bộ phân giải chỉ xác nhận chế độ, kết nối thật do
+ *      tầng gọi giữ như đường hiện hành.
  *    - `dedicated`: trung tâm đã có kho riêng — đích là database mang tên `databaseName` trong sổ, kết nối bằng ĐÚNG
  *      role của kho đó. Chuỗi kết nối gốc lấy từ tham chiếu bí mật (`secretRef`, dạng `env:<TÊN_BIẾN>`) — sổ chỉ giữ
  *      tham chiếu, giá trị bí mật không bao giờ nằm trong database; tên database trong chuỗi gốc bị thay bằng
@@ -158,16 +157,12 @@ export class SpaceConnectionResolver {
    * Phân giải đích kết nối cho một không gian theo slug.
    *
    * @param slug - Định danh địa chỉ của không gian trong sổ đăng ký.
-   * @returns Đích kết nối (chế độ kho, tên database, role; kèm chuỗi
-   *   kết nối nếu là kho riêng).
-   * @throws SpaceRoutingError `space_routing.space_not_found` khi
-   *   slug chưa có dòng đăng ký; `space_routing.secret_missing` khi
-   *   kho riêng thiếu tham chiếu bí mật hoặc biến bí mật chưa được
-   *   cấu hình; `space_routing.secret_invalid` khi giá trị bí mật
-   *   không phải URL kết nối hợp lệ;
-   *   `space_routing.role_mismatch` khi role trong chuỗi kết nối
-   *   lệch role sổ đã đăng ký; `space_routing.storage_mode_unknown`
-   *   khi sổ mang chế độ kho ngoài hai chế độ đã biết.
+   * @returns Đích kết nối (chế độ kho, tên database, role; kèm chuỗi kết nối nếu là kho riêng).
+   * @throws SpaceRoutingError `space_routing.space_not_found` khi slug chưa có dòng đăng ký;
+   *   `space_routing.secret_missing` khi kho riêng thiếu tham chiếu bí mật hoặc biến bí mật chưa được cấu hình;
+   *   `space_routing.secret_invalid` khi giá trị bí mật không phải URL kết nối hợp lệ; `space_routing.role_mismatch`
+   *   khi role trong chuỗi kết nối lệch role sổ đã đăng ký; `space_routing.storage_mode_unknown` khi sổ mang chế độ kho
+   *   ngoài hai chế độ đã biết.
    */
   async resolve(slug: string): Promise<ResolvedSpaceConnection> {
     const cached = this.cache.get(slug);

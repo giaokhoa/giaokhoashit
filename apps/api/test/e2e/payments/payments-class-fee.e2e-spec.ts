@@ -12,22 +12,17 @@ import { createGradeItem, setGrade } from '../../support/assessment-helpers';
 import { closeSepaySweepDriver, driveCohortSync, driveSepaySweep } from '../../support/sepay-sweep-driver';
 
 /**
- * CLASS-3 — HỌC PHÍ THEO LỚP (issue #184, lát cuối của feat lớp học
- * hạng nhất). Bộ ca bám LUẬT NGHIỆP VỤ trên đúng pipeline VietQR/SePay
- * sẵn có (component `class_fee`, item_id = classes.id):
- *  1. Cấu hình học phí qua PATCH lớp (capability `class:update` tại
- *     context lớp) + gói công khai cho người chưa ghi danh.
- *  2. IPN SePay khớp đủ 3 điều kiện → payment succeeded → người mua
- *     vào roster và ACTIVE ở MỌI khoá của lớp; kích hoạt lặp không
- *     trùng ghi danh.
- *  3. Khớp thiếu số tiền / sai tài khoản nhận → needs_review, KHÔNG
- *     vào lớp.
+ * CLASS-3 — HỌC PHÍ THEO LỚP (issue #184, lát cuối của feat lớp học hạng nhất). Bộ ca bám LUẬT NGHIỆP VỤ trên đúng
+ * pipeline VietQR/SePay sẵn có (component `class_fee`, item_id = classes.id):
+ *  1. Cấu hình học phí qua PATCH lớp (capability `class:update` tại context lớp) + gói công khai cho người chưa ghi
+ *     danh.
+ *  2. IPN SePay khớp đủ 3 điều kiện → payment succeeded → người mua vào roster và ACTIVE ở MỌI khoá của lớp; kích hoạt
+ *     lặp không trùng ghi danh.
+ *  3. Khớp thiếu số tiền / sai tài khoản nhận → needs_review, KHÔNG vào lớp.
  *  4. Tài khoản chỉ định trên lớp thuộc tenant khác → chặn tạo payment.
- *  5. Webhook manual succeeded → vào lớp; hoàn một phần giữ quyền lợi;
- *     hoàn đủ → đình chỉ mọi khoá, GIỮ điểm, vào lại là nối tiếp dữ
- *     liệu cũ.
- * Đổi luật (kích hoạt khi chưa khớp, xoá điểm khi đình chỉ…) thì ca
- * tương ứng phải đỏ.
+ *  5. Webhook manual succeeded → vào lớp; hoàn một phần giữ quyền lợi; hoàn đủ → đình chỉ mọi khoá, GIỮ điểm, vào lại
+ *     là nối tiếp dữ liệu cũ.
+ * Đổi luật (kích hoạt khi chưa khớp, xoá điểm khi đình chỉ…) thì ca tương ứng phải đỏ.
  */
 const WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET ?? '';
 const SEPAY_KEY = 'sk-test-classfee-7a11c2';

@@ -83,14 +83,13 @@ export interface JwtPayload {
  * gian từ địa chỉ request trước khi tra tài khoản. Địa chỉ thuộc trung tâm ở kho riêng thì tài khoản phải tồn tại TRONG
  * kho của trung tâm đó mới được dựng principal; tra ở kho chung sẽ từ chối oan tài khoản chỉ sống ở kho riêng. Hai
  * ngoại lệ giữ hành vi của issue #582, đều kiểm TRƯỚC khi chạm vào kho đích nên không mở kết nối nào tới kho đó:
- * - Token mang claim `centre_id` lệch với trung tâm tại địa chỉ
- *   bị từ chối 401 `auth.centre_mismatch` ngay (không tra kho
- *   đích để khẳng định thêm).
+ * - Token mang claim `centre_id` lệch với trung tâm tại địa chỉ bị từ chối 401 `auth.centre_mismatch` ngay (không tra
+ *   kho đích để khẳng định thêm).
  * - Phiên mang `tid` của tenant platform (đường vận hành platform của quản trị viên site chính) tra ở kho chung như cũ
  *   — quản trị platform không có tài khoản trong kho riêng, và chốt chặn cuối cho đường này vẫn là `SpaceContextGuard`
  *   (miễn trừ chỉ khi user là site admin).
- * Việc đối chiếu phiên với trung tâm tại địa chỉ cho các trường
- * hợp còn lại vẫn thuộc về `SpaceContextGuard` chạy sau, như trước.
+ * Việc đối chiếu phiên với trung tâm tại địa chỉ cho các trường hợp còn lại vẫn thuộc về `SpaceContextGuard` chạy sau,
+ * như trước.
  */
 export class JwtAuthStrategy extends PassportStrategy(JwtStrategy, 'jwt') {
   constructor(

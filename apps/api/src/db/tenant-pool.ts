@@ -13,8 +13,8 @@ import { tenantAls } from '../modules/tenants/tenant-als';
  *
  *   - ngữ cảnh tenant: `app.tenant_id = <tenant>`, `app.platform='off'`
  *   - ngữ cảnh platform tường minh: `app.platform = 'on'`
- *   - ngoài ngữ cảnh: `app.tenant_id = ''`, `app.platform = 'off'`
- *     (fail-closed: chỉ thấy dòng platform ở các bảng cho phép)
+ *   - ngoài ngữ cảnh: `app.tenant_id = ''`, `app.platform = 'off'` (fail-closed: chỉ thấy dòng platform ở các bảng cho
+ *     phép)
  *
  * GUC mức phiên (tham số thứ ba = false) vì một checkout không đồng nghĩa một transaction: các truy vấn thường của bộ
  * máy cũ chạy ngoài transaction tường minh. Client trả về pool rồi được checkout lại chỉ CẬP NHẬT state gắn GUC (không

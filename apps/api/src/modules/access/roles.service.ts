@@ -286,9 +286,8 @@ export class RolesService {
    * /access/assignments`; hàm `listAssignments` ở trên giữ nguyên cho các đường nội bộ cần toàn bộ dòng khớp bộ lọc
    * không qua phân trang.
    *
-   * @returns các dòng của trang hiện tại kèm tổng số dòng khớp bộ lọc
-   * và chính các tham số trang đã dùng, theo khuôn phản hồi liệt kê
-   * người dùng hiện hành.
+   * @returns các dòng của trang hiện tại kèm tổng số dòng khớp bộ lọc và chính các tham số trang đã dùng, theo khuôn
+   * phản hồi liệt kê người dùng hiện hành.
    */
   async listAssignmentsPage(
     filter: { userId?: string; contextId?: string; roleId?: string; search?: string },
@@ -312,14 +311,11 @@ export class RolesService {
    * áp trước khi vào đây, cùng cổng với đường đọc bảng gán vai; người gọi thiếu năng lực bị guard chặn bằng lỗi
    * `access.capability_denied` (403), không tới được hàm này.
    *
-   * @param filter - Ba bộ lọc tuỳ chọn phía server: `search` (họ tên,
-   * email, tên đăng nhập), `roleId` (người có ít nhất một gán với
-   * vai này), `status` (nhóm trạng thái tài khoản).
+   * @param filter - Ba bộ lọc tuỳ chọn phía server: `search` (họ tên, email, tên đăng nhập), `roleId` (người có ít nhất
+   * một gán với vai này), `status` (nhóm trạng thái tài khoản).
    * @param page - Trang cần lấy (bắt đầu từ 1).
-   * @param pageSize - Số người dùng tối đa trên một trang (trần 100
-   * do validation ở DTO chặn trước).
-   * @returns Trang người dùng kèm mảng gán của từng người, tổng số
-   * người dùng khớp lọc và thông số trang đã áp.
+   * @param pageSize - Số người dùng tối đa trên một trang (trần 100 do validation ở DTO chặn trước).
+   * @returns Trang người dùng kèm mảng gán của từng người, tổng số người dùng khớp lọc và thông số trang đã áp.
    */
   async listUsersWithAssignmentsPage(
     filter: { search?: string; roleId?: string; status?: UserListStatus },
@@ -374,8 +370,7 @@ export class RolesService {
    * INHERIT tường minh đều kết thúc ở trạng thái không có ghi đè — tức kế thừa — đúng ngữ nghĩa của đường đặt một ghi
    * đè) → đánh dấu dirty cho context như mọi thay đổi ghi đè khác.
    *
-   * @returns tập ghi đè đã lưu của role tại context sau khi áp dụng,
-   * sắp xếp theo tên năng lực.
+   * @returns tập ghi đè đã lưu của role tại context sau khi áp dụng, sắp xếp theo tên năng lực.
    */
   async replaceRoleCapabilities(
     roleId: string,
@@ -435,8 +430,7 @@ export class RolesService {
    *
    * @param contextId - Định danh của context cần đọc ma trận.
    * @returns `contextId` đã đọc kèm một dòng cho mỗi vai trong hệ.
-   * @throws Lỗi 404 ProblemDetails `access.context_not_found` khi
-   * context không tồn tại.
+   * @throws Lỗi 404 ProblemDetails `access.context_not_found` khi context không tồn tại.
    */
   async getCapabilityMatrix(contextId: string): Promise<{ contextId: string; roles: RoleCapabilityMatrixItem[] }> {
     await this.contexts.getContext(contextId);

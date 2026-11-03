@@ -27,14 +27,12 @@ import { tenantAls } from '../../../src/modules/tenants/tenant-als';
  * - thêm thành viên: ghi danh ACTIVE, gán vai của instance tại context khoá với truy vết nguồn của instance, sự kiện
  *   `user_enrolled` + `role_assigned`, membership active tại tenant của khoá, và xếp vào nhóm đích của instance khi
  *   instance có nhóm đích;
- * - thành viên vi phạm chốt tách vai (đã có cấp quyền giảng dạy bao
- *   phủ khoá) bị bỏ qua riêng lẻ, không lỗi, không ghi danh;
- * - sự kiện phát lại lệch trạng thái hiện tại của `cohort_members`
- *   là no-op ở cả hai chiều (thêm cho người đã rời, rời cho người
- *   vẫn còn trong cohort);
- * - rời cohort ở chế độ suspend: ghi danh SUSPENDED với vết người
- *   thao tác bị xoá về null và sự kiện đình chỉ mang lý do
- *   `cohort_removed`;
+ * - thành viên vi phạm chốt tách vai (đã có cấp quyền giảng dạy bao phủ khoá) bị bỏ qua riêng lẻ, không lỗi, không ghi
+ *   danh;
+ * - sự kiện phát lại lệch trạng thái hiện tại của `cohort_members` là no-op ở cả hai chiều (thêm cho người đã rời, rời
+ *   cho người vẫn còn trong cohort);
+ * - rời cohort ở chế độ suspend: ghi danh SUSPENDED với vết người thao tác bị xoá về null và sự kiện đình chỉ mang lý
+ *   do `cohort_removed`;
  * - rời cohort ở chế độ unenrol: ma trận giữ/xoá theo dữ liệu liên quan (không dữ liệu → xoá cứng; chỉ hoàn thành → giữ
  *   WITHDRAWN; chỉ điểm → giữ WITHDRAWN; cả hai → giữ WITHDRAWN), sự kiện `user_unenrolled` mang đúng cờ `keptData`, gỡ
  *   đúng dòng gán do instance cấp kèm sự kiện `role_unassigned`, và MỌI lần rút đều phát sự kiện
@@ -48,9 +46,8 @@ import { tenantAls } from '../../../src/modules/tenants/tenant-als';
  * - ở nhánh xoá cứng, việc xoá dòng ghi danh nằm trong cùng transaction với hai sự kiện: sự kiện tái tổng hợp không bao
  *   giờ nhìn thấy được trong lúc dòng ghi danh còn tồn tại, và transaction rollback thì cả việc xoá lẫn hai sự kiện
  *   cùng biến mất, dòng ghi danh còn nguyên;
- * - funnel trực tiếp `enrolUserInternal` vẫn từ chối ghi danh học
- *   viên cho người có cấp quyền giảng dạy bao phủ khoá bằng lỗi 400
- *   mã `access.role_context_conflict`.
+ * - funnel trực tiếp `enrolUserInternal` vẫn từ chối ghi danh học viên cho người có cấp quyền giảng dạy bao phủ khoá
+ *   bằng lỗi 400 mã `access.role_context_conflict`.
  *
  * Fixture dựng bằng SQL trực tiếp (tenant/context/khoá/cohort/ instance/người dùng) với id ngẫu nhiên theo từng ca để
  * các ca không giẫm nhau; khẳng định đọc thẳng từ cơ sở dữ liệu.

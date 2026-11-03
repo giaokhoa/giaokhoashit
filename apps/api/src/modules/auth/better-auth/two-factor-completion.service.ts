@@ -107,9 +107,8 @@ export class TwoFactorCompletionService {
    * @param req Request thô (đọc cookie chờ + Origin).
    * @param code Mã 6 số người dùng nhập.
    * @returns Kết quả để controller đặt cookie phiên và trả thân.
-   * @throws TwoFactorCompletionError với mã lỗi theo ngữ nghĩa
-   *   Better Auth khi challenge không hợp lệ/hết hạn/hết ngân sách
-   *   hoặc mã sai.
+   * @throws TwoFactorCompletionError với mã lỗi theo ngữ nghĩa Better Auth khi challenge không hợp lệ/hết hạn/hết ngân
+   *   sách hoặc mã sai.
    */
   async verifyTotp(req: Request, code: string): Promise<TwoFactorCompletionResult> {
     const challenge = await this.resolveChallenge(req);

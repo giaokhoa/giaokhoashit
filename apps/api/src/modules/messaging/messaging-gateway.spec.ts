@@ -6,10 +6,8 @@ import { MessagingGateway } from './messaging.gateway';
  * thoại — một lần nối với nhiều hội thoại 1–1 chỉ được tải danh sách chặn tối đa một lần, và tập room socket vào được
  * không đổi so với khi tải lại theo từng hội thoại:
  *
- * - Hội thoại 1–1 đang chặn (bất kỳ chiều nào): socket KHÔNG vào
- *   room của hội thoại đó.
- * - Hội thoại 1–1 không chặn và hội thoại nhóm: socket vào room
- *   như cũ; socket luôn vào room riêng của user.
+ * - Hội thoại 1–1 đang chặn (bất kỳ chiều nào): socket KHÔNG vào room của hội thoại đó.
+ * - Hội thoại 1–1 không chặn và hội thoại nhóm: socket vào room như cũ; socket luôn vào room riêng của user.
  *
  * Trả danh sách chặn về tải lại theo từng hội thoại thì ca này đỏ ở khẳng định số lượt gọi repository.
  *

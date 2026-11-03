@@ -400,8 +400,8 @@ export class QuizService {
 
   /**
    * Slots HIỆU LỰC của một pin — không còn bảng slots riêng của bài:
-   * - Đề snapshot: đọc thẳng exam_slots của version đã ghim (page suy
-   *   từ thứ tự xuất hiện của section, như lúc triển khai trước đây).
+   * - Đề snapshot: đọc thẳng exam_slots của version đã ghim (page suy từ thứ tự xuất hiện của section, như lúc triển
+   *   khai trước đây).
    */
   async effectiveSlots(pin: PinRow): Promise<EffectiveSlotRow[]> {
     return this.shared.effectiveSlots(pin);
@@ -476,8 +476,7 @@ export class QuizService {
   }
 
   /**
-   * Áp cập nhật pin lên exam version mới nhất của đề (quiz:manage;
-   * issue #254) — thao tác TƯỜNG MINH sau bước xem diff:
+   * Áp cập nhật pin lên exam version mới nhất của đề (quiz:manage; issue #254) — thao tác TƯỜNG MINH sau bước xem diff:
    * 1. Luật khoá dùng chung với updatePin: pin đã có lượt làm thật thì bị chặn `exam.pin_locked` (cập nhật chỉ áp cho
    *    người chưa làm; lượt đã có giữ nguyên version và điểm — sửa hệ quả điểm của chúng chỉ qua đường chấm lại theo
    *    đáp án). 2. Đích phải thuộc đúng đề của pin, là version MỚI NHẤT của đề và đề phải đang `ready`
@@ -590,10 +589,8 @@ export class QuizService {
    * ghi, và giáo viên thật không có vai nào tại context hệ thống của môn GDPT nên cổng tại context môn chặn nhầm mọi
    * giáo viên (điểm chặn của nghiệm thu D-3 trên production, issue #233).
    *
-   * @throws ForbiddenException `question.personal_bank_staff_only`
-   *   khi người gọi không thuộc nhóm staff và chưa có bank cá nhân;
-   *   `access.capability_denied` khi bộ quyền bank-local không cho
-   *   phụ trách bank.
+   * @throws ForbiddenException `question.personal_bank_staff_only` khi người gọi không thuộc nhóm staff và chưa có bank
+   *   cá nhân; `access.capability_denied` khi bộ quyền bank-local không cho phụ trách bank.
    */
   async requirePersonalMatrixBankManage(actorId: string): Promise<QuestionBankRow> {
     return this.matrices.requirePersonalMatrixBankManage(actorId);
@@ -647,8 +644,7 @@ export class QuizService {
    *    không tạo dữ liệu nào.
    *
    * @throws BadRequestException khi chương trình không thuộc môn.
-   * @throws ForbiddenException khi người nhập không có quyền phụ
-   *   trách bank cá nhân của mình (bộ quyền bank-local).
+   * @throws ForbiddenException khi người nhập không có quyền phụ trách bank cá nhân của mình (bộ quyền bank-local).
    */
   async createMatrixFromImport(actorId: string, input: {
     name: string; subjectId: string; curriculumId: string;

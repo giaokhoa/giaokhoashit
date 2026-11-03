@@ -95,10 +95,10 @@ function errorShape(error: unknown): { code: string; message: string } {
 }
 
 /**
- * Lỗi schema Zod của payload tạo câu: schema mới kiểm luật đáp án theo qtype ngay tại parse (multichoice đúng 4 lựa
- * chọn + đúng một đáp án đúng, shortanswer không đáp án sai...) nên lỗi này là lỗi nghiệp vụ của payload, KHÔNG phải
- * lỗi nội bộ — dịch sang `question.bad_answer_data` kèm fieldPath từ issue đầu tiên. Chỉ dùng ở hai đường tạo (lõi đơn
- * + nhóm ngữ liệu); đường đọc giữ nguyên `errorShape` để lỗi parse view vẫn là lỗi nội bộ.
+ * Lỗi schema Zod của payload tạo câu: schema mới kiểm luật đáp án theo qtype ngay tại parse (multichoice đúng
+ * 4 lựa chọn + đúng một đáp án đúng, shortanswer không đáp án sai...) nên lỗi này là lỗi nghiệp vụ của payload, KHÔNG
+ * phải lỗi nội bộ — dịch sang `question.bad_answer_data` kèm fieldPath từ issue đầu tiên. Chỉ dùng ở hai đường tạo (lõi
+ * đơn + nhóm ngữ liệu); đường đọc giữ nguyên `errorShape` để lỗi parse view vẫn là lỗi nội bộ.
  */
 function asZodIssue(error: unknown): { message: string; fieldPath: string } | null {
   if (typeof error !== 'object' || error === null) return null;
@@ -214,8 +214,8 @@ function normalizeMcpAnswers(
 /**
  * Dữ kiện băm chống trùng QB-4 cho một payload MCP chưa lưu — phải khớp đúng cặp (thân câu thuần + đáp án kèm cờ) mà
  * version ĐÃ lưu sinh hash, nếu không trùng exact không bao giờ khớp:
- * - multichoice/shortanswer/essay: thân câu như gửi + đáp án đã chuẩn
- *   hoá cờ (essay không có đáp án nên mảng rỗng khớp version đã lưu);
+ * - multichoice/shortanswer/essay: thân câu như gửi + đáp án đã chuẩn hoá cờ (essay không có đáp án nên mảng rỗng khớp
+ *   version đã lưu);
  * - truefalse TF-A: dữ kiện băm là từng mệnh đề kèm giá trị Đúng/Sai của chính mệnh đề đó (issue #316), ghép từ tài
  *   liệu + solution do `buildTruefalseContent` dựng bằng ĐÚNG hàm dùng chung `truefalseHashAnswers` với đường version
  *   đã lưu — hai câu TF-A cùng chữ nhưng khác Đ/S ở một mệnh đề cho hash khác nhau ở cả hai đường. Trả `null` khi câu
@@ -638,7 +638,7 @@ export function registerMcpTools(server: McpServer, actor: McpActor, deps: McpTo
         return errResult('insufficient_scope', 'This tool requires the OAuth scope "lms.banks.contribute"');
       }
 
-      // trùng, quyền share — do proposeContribution giữ như REST). ──
+      // trùng, quyền share — do proposeContribution giữ như REST).
       try {
         await deps.banks.getBankOrThrow(targetBankId);
       } catch {
@@ -813,7 +813,7 @@ export function registerMcpTools(server: McpServer, actor: McpActor, deps: McpTo
       const gate = await gatePersonalBankWrite(deps, actor, 'create_questions_batch', bankId, categoryId);
       if (gate.kind === 'error') return errResult(gate.code, gate.message, gate.fieldPath);
 
-      // theo (khoá lô) để phát lại cả lô không nhân đôi ngữ liệu. ──
+      // theo (khoá lô) để phát lại cả lô không nhân đôi ngữ liệu.
       const stimuliResults: McpCreateQuestionsBatchOutput['stimuli'] = [];
       const stimulusIdByRef = new Map<string, string>();
       const declaredStimuli = clean.stimuli ?? [];
@@ -1105,7 +1105,7 @@ export function registerMcpTools(server: McpServer, actor: McpActor, deps: McpTo
     async (rawArgs) => {
       const args = rawArgs as { questionIds: string[]; idempotencyKey: string };
 
-      // ── Trần scope (phòng thủ tầng tool; cổng chính ở mount). ────
+      // Trần scope (phòng thủ tầng tool; cổng chính ở mount).
       if (!actor.scopes.includes('lms.questions.write')) {
         await auditCall(deps, actor, 'publish_questions', { result: 'insufficient_scope' });
         return errResult('insufficient_scope', 'This tool requires the OAuth scope "lms.questions.write"');

@@ -6,30 +6,24 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser, getFirstS
 import { addExamSlot, createExamDraft, createReadyQuestion, personalExamBankId, pinExam } from '../../support/exam-pin-helpers';
 
 /**
- * Issue #254 — mô hình lai tham chiếu version câu hỏi, đối chiếu 8 tiêu
- * chí của mục Nghiệm thu trong issue:
- *  1) huy hiệu "có bản ready mới" hiện đúng ở bề mặt soạn đề (dữ kiện
- *     slot của đề: hasNewerVersion/latestReadyVersionNumber) và ở cấp
- *     pin (hasNewerExamVersion trên QuizView);
- *  2) cập nhật tường minh: xem diff từng slot trước khi áp, áp xong có
- *     vết ghi ai/khi nào/từ exam version nào lên version nào;
+ * Issue #254 — mô hình lai tham chiếu version câu hỏi, đối chiếu 8 tiêu chí của mục Nghiệm thu trong issue:
+ *  1) huy hiệu "có bản ready mới" hiện đúng ở bề mặt soạn đề (dữ kiện slot của đề:
+ *     hasNewerVersion/latestReadyVersionNumber) và ở cấp pin (hasNewerExamVersion trên QuizView);
+ *  2) cập nhật tường minh: xem diff từng slot trước khi áp, áp xong có vết ghi ai/khi nào/từ exam version nào lên
+ *     version nào;
  *  3) lần ghim đã có attempt → API chặn cập nhật (exam.pin_locked);
  *  4) hai học sinh cùng cửa sổ thi thấy cùng một version câu hỏi;
- *  5) cập nhật chỉ áp cho người chưa làm — attempt đã có giữ nguyên
- *     version đã ghim và điểm;
- *  6) chấm lại tường minh theo đáp án: dry-run báo điểm đổi khớp khi áp
- *     thật, có log, học sinh xem được lịch sử sửa (sau công bố);
- *  7) float_latest_ready chỉ cho luyện tập (preset regular) — kiểm tra
- *     chính thức bị chặn ở API (exam.version_mode_not_allowed);
+ *  5) cập nhật chỉ áp cho người chưa làm — attempt đã có giữ nguyên version đã ghim và điểm;
+ *  6) chấm lại tường minh theo đáp án: dry-run báo điểm đổi khớp khi áp thật, có log, học sinh xem được lịch sử sửa
+ *     (sau công bố);
+ *  7) float_latest_ready chỉ cho luyện tập (preset regular) — kiểm tra chính thức bị chặn ở API
+ *     (exam.version_mode_not_allowed);
  *  8) CI verify xanh — cổng ngoài test này (log CI của PR).
  *
- * Bổ sung ở lát S4/S5 của issue #228 (đồng bộ cơ chế ngân hàng):
- *  3b) định nghĩa "đã có attempt" của quyết định Q2 — lượt đang làm
- *      dở khoá pin như lượt đã nộp; lượt xem trước của giáo viên
- *      không khoá;
- *  9) quyết định Q3 — sao chép khoá mang theo cờ version_mode của
- *     lần ghim: bản sao của pin float vẫn float, pin pinned vẫn
- *     pinned.
+ * Bổ sung ở lát S4/S5 của issue #228 (đồng bộ cơ chế ngân hàng): 3b) định nghĩa "đã có attempt" của quyết định Q2 —
+ *  lượt đang làm dở khoá pin như lượt đã nộp; lượt xem trước của giáo viên không khoá;
+ *  9) quyết định Q3 — sao chép khoá mang theo cờ version_mode của lần ghim: bản sao của pin float vẫn float, pin pinned
+ *     vẫn pinned.
  */
 describe('Cập nhật phiên bản ghim + chấm lại theo đáp án (issue #254)', () => {
   let app: INestApplication;

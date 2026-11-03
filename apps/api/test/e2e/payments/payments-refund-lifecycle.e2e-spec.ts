@@ -12,25 +12,21 @@ import { TenantConfigService } from '../../../src/modules/tenants/tenant-config.
 import { closeSepaySweepDriver, driveSepaySweep } from '../../support/sepay-sweep-driver';
 
 /**
- * Lát 3 (cuối) của issue #189 — vòng đời duyệt hoàn + hàng đợi
- * `needs_review` theo chủ tiền. Bộ ca bám hai quyết định vận hành đã
- * ghi trong issue và ba yêu cầu kỹ thuật đi kèm:
+ * Lát 3 (cuối) của issue #189 — vòng đời duyệt hoàn + hàng đợi `needs_review` theo chủ tiền. Bộ ca bám hai quyết định
+ * vận hành đã ghi trong issue và ba yêu cầu kỹ thuật đi kèm:
  *  1. Tạo yêu cầu hoàn: lý do BẮT BUỘC; một cấp (tự duyệt ngay) khi hoàn một phần dưới ngưỡng; HAI CẤP khi lần hoàn từ
  *     ngưỡng trở lên hoặc làm cộng dồn đạt 100% — ngưỡng là khoá cấu hình `refunddualapprovalthreshold` (mặc định
  *     1.000.000, ghi đè được).
- *  2. Duyệt cấp 2 phải KHÁC người tạo (chặn ở service, mã
- *     `payment.refund_approver_must_differ`); từ chối bắt buộc lý do
- *     và giải phóng ngân sách cộng dồn.
- *  3. Cổng cộng dồn NGUYÊN TỬ: hai yêu cầu song song vượt tổng thì
- *     đúng một yêu cầu qua, một yêu cầu nhận
+ *  2. Duyệt cấp 2 phải KHÁC người tạo (chặn ở service, mã `payment.refund_approver_must_differ`); từ chối bắt buộc lý
+ *     do và giải phóng ngân sách cộng dồn.
+ *  3. Cổng cộng dồn NGUYÊN TỬ: hai yêu cầu song song vượt tổng thì đúng một yêu cầu qua, một yêu cầu nhận
  *     `payment.refund_exceeds_total`.
  *  4. Đảo quyền lợi CHỈ tại mốc `settled` khi cộng dồn đã chi đạt 100%, theo thứ tự đình chỉ-trước-ghi-sau: khâu đình
  *     chỉ lỗi ⇒ chưa ghi gì, khoản thu còn `succeeded`, gọi lại được. Quyết định đình chỉ phải dựa trên tổng đã khoá
  *     dòng khoản thu: hai dòng hoàn bù nhau cùng xác nhận chi ĐỒNG THỜI thì lượt làm cộng dồn đạt 100% phải đình chỉ
  *     thật — không được lật `refunded` trong khi quyền lợi chưa hề bị đình chỉ (ca 10).
- *  5. Sự kiện `debit` SePay khớp dòng hoàn đang chờ theo (mã lệnh
- *     chi, tài khoản, số tiền) → tự xác nhận chi; debit không khớp →
- *     `needs_review` của chủ tài khoản, hiện trong hàng đợi.
+ *  5. Sự kiện `debit` SePay khớp dòng hoàn đang chờ theo (mã lệnh chi, tài khoản, số tiền) → tự xác nhận chi; debit
+ *     không khớp → `needs_review` của chủ tài khoản, hiện trong hàng đợi.
  *  6. Hàng đợi chia theo chủ tiền: trung tâm chỉ thấy/xử lý khoản chờ của mình (gồm tự hoàn học phí bằng cổng neo tại
  *     context tenant), platform không thấy khoản của trung tâm; vết xử lý bắt buộc; quá hạn theo
  *     `payments/reviewtargethours` chỉ là cảnh báo.
@@ -38,9 +34,8 @@ import { closeSepaySweepDriver, driveSepaySweep } from '../../support/sepay-swee
  *     CÓ ĐIỀU KIỆN nên hai lượt đua trên cùng một dòng chỉ một lượt thắng, lượt thua nhận mã lỗi trạng thái của chính
  *     đường gọi đó; đối soát `reconcile` đếm ở SQL và khớp phép đếm độc lập; hàng đợi duyệt tra cấu hình ngưỡng quá hạn
  *     tối đa một lần cho mỗi tenant trong một lần dựng.
- * Đổi luật (bỏ bắt buộc lý do, cho tự duyệt hai cấp, đảo quyền lợi
- * sớm hơn mốc settled, rò khoản chờ chéo tenant…) thì ca tương ứng
- * phải đỏ.
+ * Đổi luật (bỏ bắt buộc lý do, cho tự duyệt hai cấp, đảo quyền lợi sớm hơn mốc settled, rò khoản chờ chéo tenant…) thì
+ * ca tương ứng phải đỏ.
  */
 const WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET ?? '';
 // Định danh SePay RIÊNG của spec này — tuyệt đối không trùng xid/số tài khoản với các spec payments khác (DB test dùng
@@ -510,8 +505,8 @@ describe('Lát 3 #189: vòng đời hoàn tiền + hàng đợi needs_review the
     expect(ownSettled.status).toBeLessThan(300);
     expect(ownSettled.body.status).toBe('settled');
 
-    // Không chạm chéo: manager platform hoàn học phí của trung tâm → 403; quản lý trung tâm hoàn khoản thu platform →
-    // 403.
+    // Không chạm chéo: manager platform hoàn học phí của trung tâm → 403; quản lý trung tâm hoàn khoản thu platform
+    // → 403.
     const cross1 = await createRefund(platformMgr.token, p3.id, { amount: 1000, reason: 'platform chạm học phí' });
     expect(cross1.status).toBe(403);
     const platformPayment = await manualSucceededPayment();

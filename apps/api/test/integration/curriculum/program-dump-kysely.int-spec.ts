@@ -19,8 +19,7 @@ import {
  * - Ca đầy đủ: restore trọn artifact thật, đếm dòng từng bảng khớp số đếm của artifact và mọi môn học được neo về
  *   context đích (bước update bằng builder chạy SAU sql.raw trong cùng transaction — bằng chứng các câu sau raw vẫn
  *   thuộc cùng transaction và commit cùng nhau).
- * - Ca rollback: chèn một câu INSERT sai cú pháp vào giữa script
- *   — restore phải ném lỗi và cả năm bảng đích vẫn 0 dòng.
+ * - Ca rollback: chèn một câu INSERT sai cú pháp vào giữa script — restore phải ném lỗi và cả năm bảng đích vẫn 0 dòng.
  */
 const adminUrl =
   process.env.LMS_DB_TEST_ADMIN_URL ??

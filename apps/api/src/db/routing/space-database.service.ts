@@ -17,14 +17,10 @@ import { SpacePoolManager } from './space-pool-manager';
  * kết nối theo trung tâm.
  *
  * Ba thành phần hợp lại ở đây:
- * - `SpaceConnectionResolver`: đọc sổ đăng ký ở control plane (có
- *   đệm + vô hiệu hoá theo sự kiện đổi sổ), quyết định đích — kho
- *   chung hay kho riêng — và chốt chuỗi kết nối bằng đúng role của
- *   kho đích.
- * - `SpacePoolManager`: pool theo database, tạo lười, có trần, đóng
- *   khi nhàn rỗi — kỷ luật ngân sách kết nối của cụm.
- * - Service này: biến đích đã phân giải thành handle Kysely, và
- *   phơi ba đường dùng:
+ * - `SpaceConnectionResolver`: đọc sổ đăng ký ở control plane (có đệm + vô hiệu hoá theo sự kiện đổi sổ), quyết định
+ *   đích — kho chung hay kho riêng — và chốt chuỗi kết nối bằng đúng role của kho đích.
+ * - `SpacePoolManager`: pool theo database, tạo lười, có trần, đóng khi nhàn rỗi — kỷ luật ngân sách kết nối của cụm.
+ * - Service này: biến đích đã phân giải thành handle Kysely, và phơi ba đường dùng:
  *   1. `getKyselyForSpace(slug)` — lấy handle của một trung tâm theo định danh tường minh (đường vận hành, đường kiểm
  *      chứng, và bước CHUẨN BỊ mà tầng gắn ngữ cảnh — `SpaceContextGuard` cho request, bộ chạy job theo trung tâm cho
  *      job nền, issue #582 — gọi trước khi xử lý request/job của trung tâm đó).
@@ -191,8 +187,7 @@ export class SpaceDatabaseService implements OnModuleDestroy {
    *   cả khi mục đã-chuẩn-bị đã bị thu hồi vì pool đóng: lượt đọc qua handle lúc đó fail-closed ở `currentKysely`,
    *   nhưng danh tính kho của ngữ cảnh vẫn là kho riêng đó, tuyệt đối không rơi về kho chung.
    *
-   * @returns Tên database kho riêng của ngữ cảnh, hoặc
-   *   `undefined` khi ngữ cảnh đang được phục vụ bằng kho chung.
+   * @returns Tên database kho riêng của ngữ cảnh, hoặc `undefined` khi ngữ cảnh đang được phục vụ bằng kho chung.
    */
   currentContextDatabaseName(): string | undefined {
     const slug = tenantAls.getStore()?.spaceSlug;
@@ -201,10 +196,8 @@ export class SpaceDatabaseService implements OnModuleDestroy {
   }
 
   /**
-   * Lấy handle Kysely của một trung tâm theo slug — bước chuẩn bị
-   * của mọi đường định tuyến:
-   * - Trung tâm ở kho chung: trả chính handle Kysely kho chung đã
-   *   gắn (qua `bindSharedKysely`).
+   * Lấy handle Kysely của một trung tâm theo slug — bước chuẩn bị của mọi đường định tuyến:
+   * - Trung tâm ở kho chung: trả chính handle Kysely kho chung đã gắn (qua `bindSharedKysely`).
    * - Trung tâm ở kho riêng: lấy (hoặc tạo lười) pool của kho đó từ trình quản lý pool — pool nối bằng đúng role của
    *   kho, trần kết nối theo cấu hình `SPACE_DB_POOL_MAX`. Pool được lấy THEO DANH TÍNH kết nối vừa phân giải: nếu sổ
    *   đã đổi role/bí mật kể từ khi pool được tạo, trình quản lý pool thay pool cũ bằng pool mới đúng danh tính hiện
@@ -214,8 +207,8 @@ export class SpaceDatabaseService implements OnModuleDestroy {
    * chuẩn bị này cũng được ghi vào `dedicatedSlugs` (chỉ khi là kho riêng) để đường đồng bộ phân biệt được ca
    * đã-chuẩn-bị-bị-thu hồi với ca chưa từng chuẩn bị.
    *
-   * @throws SpaceRoutingError khi slug chưa đăng ký, control plane
-   *   chưa cấu hình, hoặc bí mật/role của kho riêng lệch sổ đăng ký.
+   * @throws SpaceRoutingError khi slug chưa đăng ký, control plane chưa cấu hình, hoặc bí mật/role của kho riêng lệch
+   *   sổ đăng ký.
    */
   async getKyselyForSpace(slug: string): Promise<CentreDb> {
     const target = await this.resolver.resolve(slug);
@@ -225,17 +218,14 @@ export class SpaceDatabaseService implements OnModuleDestroy {
   }
 
   /**
-   * Chuẩn bị handle cho một đích đã phân giải: ghi handle vào
-   * bảng đã-chuẩn-bị và trả handle đó.
-   * - Đích kho chung: handle là handle Kysely kho chung đã gắn;
-   *   chưa gắn là lỗi lập trình ở đường khởi động, ném lỗi
+   * Chuẩn bị handle cho một đích đã phân giải: ghi handle vào bảng đã-chuẩn-bị và trả handle đó.
+   * - Đích kho chung: handle là handle Kysely kho chung đã gắn; chưa gắn là lỗi lập trình ở đường khởi động, ném lỗi
    *   chưa-gắn như hợp đồng vốn có.
    * - Đích kho riêng: lấy (hoặc tạo lười) pool của kho đó từ trình quản lý pool — pool nối bằng đúng role của kho, trần
    *   kết nối theo cấu hình `SPACE_DB_POOL_MAX`, lấy THEO DANH TÍNH kết nối vừa phân giải như trên.
    *
-   * @throws SpaceRoutingError khi đích kho riêng thiếu chuỗi kết
-   *   nối (lỗi nội bộ của khung), hoặc khi handle kho chung chưa
-   *   được gắn.
+   * @throws SpaceRoutingError khi đích kho riêng thiếu chuỗi kết nối (lỗi nội bộ của khung), hoặc khi handle kho chung
+   *   chưa được gắn.
    */
   private prepareKyselySide(
     slug: string,
@@ -322,8 +312,7 @@ export class SpaceDatabaseService implements OnModuleDestroy {
    * Handle hiệu lực cho ngữ cảnh hiện tại:
    * - Ngữ cảnh không mang slug, hoặc slug CHƯA từng được chuẩn bị ở kho riêng (kể cả slug chưa chuẩn bị lần nào):
    *   handle kho chung — hợp đồng "phiên chỉ định tuyến được khi bước chuẩn bị đã chạy trước cho slug đó".
-   * - Slug đã chuẩn bị và mục đã-chuẩn-bị còn: handle của kho
-   *   riêng.
+   * - Slug đã chuẩn bị và mục đã-chuẩn-bị còn: handle của kho riêng.
    * - Slug ĐÃ được chuẩn bị ở kho riêng nhưng mục đã-chuẩn-bị đã bị thu hồi (pool bị đóng vì nhàn rỗi hoặc bị thay vì
    *   đổi danh tính): ném `SpaceRoutingError` (`space_routing.prepared_revoked`) — fail-closed. Đường này là đường ĐỒNG
    *   BỘ của một lần truy vấn, không thể chuẩn bị lại tại đây; rơi về kho chung ở ca này là đổi đích dữ kiện im lặng

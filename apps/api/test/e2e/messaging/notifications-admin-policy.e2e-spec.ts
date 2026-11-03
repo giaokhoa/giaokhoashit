@@ -16,11 +16,10 @@ import { MANDATORY_NOTIFICATION_PROVIDERS, MESSAGE_PROVIDERS, notificationPolicy
  *  - Admin tắt một loại → notify() không phát cho BẤT KỲ ai (kể cả người có tuỳ chọn cá nhân đang bật), kết quả skipped
  *    = 'admin-disabled' + dispatch log `skipped-admin-disabled`; admin bật lại → phát bình thường. Loại khác không bị
  *    ảnh hưởng.
- *  - Hai loại bắt buộc P2 (enrol_expiry_warning, admin_announcement):
- *    admin đặt tắt → API từ chối 400; thông báo vẫn phát.
- *  - Học sinh thuần (chỉ ghi danh, không vai nhân sự): PUT tuỳ chọn
- *    theo loại → 403 kèm code rõ ràng; GET tuỳ chọn theo loại → [];
- *    ngoại lệ tắt tiếng theo khoá (NB-4) vẫn dùng được.
+ *  - Hai loại bắt buộc P2 (enrol_expiry_warning, admin_announcement): admin đặt tắt → API từ chối 400; thông báo vẫn
+ *    phát.
+ *  - Học sinh thuần (chỉ ghi danh, không vai nhân sự): PUT tuỳ chọn theo loại → 403 kèm code rõ ràng; GET tuỳ chọn theo
+ *    loại → []; ngoại lệ tắt tiếng theo khoá (NB-4) vẫn dùng được.
  *  - Giáo viên (vai nhân sự) giữ nguyên bề mặt v2 đầy đủ.
  */
 describe('Chính sách thông báo admin NB-7 + tuỳ chọn tối thiểu của học viên', () => {

@@ -4,8 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWORD } from '../../support/identity-access-helpers';
 
 /**
- * Flow test cho stream SSE số thông báo chưa đọc
- * (GET /notifications/unread-count/stream):
+ * Flow test cho stream SSE số thông báo chưa đọc (GET /notifications/unread-count/stream):
  *  - mở stream → sự kiện `unread-count` đầu tiên là snapshot số hiện tại;
  *  - có thông báo mới → server đẩy số tăng qua Redis pub/sub;
  *  - đánh dấu đã đọc / đọc tất cả → server đẩy số giảm;

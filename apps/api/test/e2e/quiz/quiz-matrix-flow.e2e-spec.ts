@@ -6,14 +6,13 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser, getFirstS
 import { addExamSlot, createExamDraft, pinExam } from '../../support/exam-pin-helpers';
 
 /**
- * Quiz Chặng 3 (issue #30) — ma trận đề + sinh slots + chấm Đ–S chùm +
- * bản đặc tả, đối chiếu hồ sơ thiết kế mục C:
+ * Quiz Chặng 3 (issue #30) — ma trận đề + sinh slots + chấm Đ–S chùm + bản đặc tả, đối chiếu hồ sơ thiết kế mục C:
  *  - ma trận neo Chương trình GDPT 2018 (môn → chương trình → ĐVK); ô = ĐVK × mức × dạng (issue #249 — ma trận KHÔNG
  *    gắn YCCĐ, YCCĐ chỉ hiện ở cột suy ra của bản đặc tả), preset chụp lúc tạo, lệch tỉ lệ chỉ cảnh báo;
  *  - generate khoá cứng 422 khi thiếu câu ở bất kỳ ô nào; generate rút MỘT bộ câu cố định ghim cứng vào slots của exam
  *    version (bỏ hẳn drawMode/per_student theo chốt #226) — hai học sinh làm cùng một pin nhận cùng một bộ câu;
- *  - chùm Đ–S (1 stimulus + 4 câu truefalse) chấm theo thang lũy tiến
- *    QĐ 764 mặc định [0,10,25,50,100]% — KHÔNG cộng tuyến tính;
+ *  - chùm Đ–S (1 stimulus + 4 câu truefalse) chấm theo thang lũy tiến QĐ 764 mặc định [0,10,25,50,100]% — KHÔNG cộng
+ *    tuyến tính;
  *  - bản đặc tả theo Mẫu 2 CV 7991 + xuất xlsx/docx.
  */
 describe('Sinh ma trận quiz + chấm TF-A + đặc tả (giai đoạn 3)', () => {

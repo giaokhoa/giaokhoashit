@@ -24,10 +24,10 @@ export default defineConfig({
       RATE_LIMIT_PER_MINUTE: '1000000',
       RATE_LIMIT_AUTH_PER_MINUTE: '1000000',
     },
-    // Ba tầng test chạy tách nhau bằng Vitest projects: unit (spec cạnh mã nguồn trong src), int (test/integration —
-    // spec gọi trực tiếp service), e2e (test/e2e — spec lái qua HTTP). Mỗi project khai include tường minh neo thư mục
-    // + hậu tố của tầng mình, vì pattern khám phá mặc định của Vitest không nhận `.e2e-spec.ts` lẫn `.int-spec.ts` —
-    // thiếu khai là test âm thầm không chạy. Các tuỳ chọn dùng chung (env, timeout, fileParallelism) khai ở gốc để
+    // Ba tầng test chạy tách nhau bằng Vitest projects: unit (spec cạnh mã nguồn trong src), int (test/integration
+    // — spec gọi trực tiếp service), e2e (test/e2e — spec lái qua HTTP). Mỗi project khai include tường minh neo thư
+    // mục + hậu tố của tầng mình, vì pattern khám phá mặc định của Vitest không nhận `.e2e-spec.ts` lẫn `.int-spec.ts`
+    // — thiếu khai là test âm thầm không chạy. Các tuỳ chọn dùng chung (env, timeout, fileParallelism) khai ở gốc để
     // project con kế thừa. Chạy riêng từng tầng: pnpm test:unit / test:int / test:e2e; script test chạy đủ mọi project.
     //
     // Riêng suite bench KHÔNG thuộc cổng PR: các spec hậu tố `.bench.spec.ts` là bench/nghiệm thu mô phỏng nặng theo

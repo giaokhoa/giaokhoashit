@@ -24,17 +24,15 @@ const USERNAME_MAX_LENGTH = 30;
 const USERNAME_PATTERN = /^[a-zA-Z0-9_.]+$/;
 
 /**
- * Cầu nối credential giữa kho tài khoản nghiệp vụ (`users`) và Better
- * Auth (issue #7). Ba phép toán nền mà Giai đoạn 2 sẽ dùng ở mọi điểm
- * đồng bộ user (admin tạo user, seed lại tại cutover, login-as):
+ * Cầu nối credential giữa kho tài khoản nghiệp vụ (`users`) và Better Auth (issue #7). Ba phép toán nền mà Giai đoạn 2
+ * sẽ dùng ở mọi điểm đồng bộ user (admin tạo user, seed lại tại cutover, login-as):
  *
  * - `createUserWithCredential`: tạo CẶP user + account credential trong MỘT transaction của adapter. Phát hiện ở Giai
  *   đoạn 0: `internalAdapter.createUser` của 1.7.12 chỉ ghi bản ghi user, KHÔNG tự tạo account từ trường password —
  *   thiếu nửa sau là user có thật nhưng không bao giờ đăng nhập được; transaction bọc cả hai lần ghi để `createAccount`
  *   lỗi cũng không để lại user mồ côi.
- * - `linkExistingPasswordHash`: chép nguyên hash argon2id đang nằm ở
- *   `users.password_hash` sang dòng credential của `account` (verify uỷ
- *   thác argon2 nên hash cũ dùng được nguyên trạng).
+ * - `linkExistingPasswordHash`: chép nguyên hash argon2id đang nằm ở `users.password_hash` sang dòng credential của
+ *   `account` (verify uỷ thác argon2 nên hash cũ dùng được nguyên trạng).
  * - `createProgrammaticSession`: tạo phiên theo chương trình qua internalAdapter + giá trị cookie ĐÃ KÝ — nền của
  *   login-as (endpoint có cổng capability thi công ở Giai đoạn 2). Cookie chứa token trần bị Better Auth từ chối; chữ
  *   ký HMAC theo đúng cơ chế của nó.

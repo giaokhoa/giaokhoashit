@@ -6,9 +6,8 @@
  * tăng tuyến tính theo số trung tâm kể cả khi đa số trung tâm không có traffic. Trình quản lý này giữ ba kỷ luật ngân
  * sách:
  *
- * - **Tạo lười:** pool của một kho chỉ được tạo ở lần lấy handle đầu
- *   tiên cho kho đó (tức lần traffic đầu tiên), không tạo lúc khởi
- *   động cho mọi kho đã đăng ký.
+ * - **Tạo lười:** pool của một kho chỉ được tạo ở lần lấy handle đầu tiên cho kho đó (tức lần traffic đầu tiên), không
+ *   tạo lúc khởi động cho mọi kho đã đăng ký.
  * - **Trần theo kho:** trần kết nối của từng pool do nơi tạo pool chốt qua cấu hình của `pg` Pool (`max`) khi dựng
  *   handle; trình quản lý phơi tổng số kết nối đang mở của mọi pool (`totalConnections`) để tầng vận hành kiểm chứng
  *   ngân sách.
@@ -79,8 +78,7 @@ export class SpacePoolManager<TDatabase> {
    * dùng lại pool đang sống bất kể danh tính pool đó được tạo bằng.
    *
    * @param databaseName - Tên database làm khoá pool.
-   * @param create - Hàm dựng handle (pool + bộ máy cũ) cho kho, chạy
-   *   tối đa một lần cho mỗi vòng đời pool.
+   * @param create - Hàm dựng handle (pool + bộ máy cũ) cho kho, chạy tối đa một lần cho mỗi vòng đời pool.
    */
   getHandle(databaseName: string, create: (databaseName: string) => SpacePoolHandle<TDatabase>): SpacePoolHandle<TDatabase> {
     return this.acquire(databaseName, undefined, create);
@@ -94,10 +92,8 @@ export class SpacePoolManager<TDatabase> {
    * hai dòng đăng ký trùng tên database nhưng khác role không bao giờ dùng chung một pool.
    *
    * @param databaseName - Tên database làm khoá pool.
-   * @param identity - Danh tính kết nối đã phân giải (chuỗi kết nối
-   *   đã chốt đích) mà pool phải được tạo bằng.
-   * @param create - Hàm dựng handle cho kho, chạy khi chưa có pool
-   *   đang sống mang đúng danh tính.
+   * @param identity - Danh tính kết nối đã phân giải (chuỗi kết nối đã chốt đích) mà pool phải được tạo bằng.
+   * @param create - Hàm dựng handle cho kho, chạy khi chưa có pool đang sống mang đúng danh tính.
    */
   getHandleForIdentity(
     databaseName: string,

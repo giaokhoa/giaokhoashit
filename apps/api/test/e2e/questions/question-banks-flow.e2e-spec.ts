@@ -10,17 +10,14 @@ import { addExamSlot, createExamDraft } from '../../support/exam-pin-helpers';
 
 /**
  * Feat Ngân hàng câu hỏi chung (issue #70, QB-1 → QB-4):
- *  - QB-1: bank 4 scope có context riêng; quyền theo vai tại context bank
- *    (chủ bank cá nhân / tổ trưởng / thành viên tổ / giáo viên trường);
- *    học sinh không vào được bề mặt bank chung.
- *  - QB-2: copy = deep copy độc lập + derived_from + ghi công tác giả
- *    gốc; copy_count tăng; người ngoài copy câu ở bank kín → 403.
- *  - QB-3: slot từ bank tổ mặc định pinned; attempt giữ version đã ghim
- *    kể cả khi câu đã lên bản mới và cả khi câu bị rút; nâng version ghi
- *    nhật ký; xoá vật lý bị chặn khi còn slot tham chiếu.
- *  - QB-4: đóng góp → duyệt (copy vào bank đích / version mới qua
- *    derived_from) → từ chối có lý do → đề xuất lại; chống trùng hoàn
- *    toàn; khám phá theo bank/từ khoá kèm use_count.
+ *  - QB-1: bank 4 scope có context riêng; quyền theo vai tại context bank (chủ bank cá nhân / tổ trưởng / thành viên tổ
+ *    / giáo viên trường); học sinh không vào được bề mặt bank chung.
+ *  - QB-2: copy = deep copy độc lập + derived_from + ghi công tác giả gốc; copy_count tăng; người ngoài copy câu ở bank
+ *    kín → 403.
+ *  - QB-3: slot từ bank tổ mặc định pinned; attempt giữ version đã ghim kể cả khi câu đã lên bản mới và cả khi câu bị
+ *    rút; nâng version ghi nhật ký; xoá vật lý bị chặn khi còn slot tham chiếu.
+ *  - QB-4: đóng góp → duyệt (copy vào bank đích / version mới qua derived_from) → từ chối có lý do → đề xuất lại; chống
+ *    trùng hoàn toàn; khám phá theo bank/từ khoá kèm use_count.
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });

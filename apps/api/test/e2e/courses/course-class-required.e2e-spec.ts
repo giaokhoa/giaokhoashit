@@ -13,15 +13,12 @@ import { createCategory, createClass, createCourse } from '../../support/course-
  * Các đường được phủ:
  *  (1) POST /courses không kèm classId;
  *  (2) POST /courses kèm classId: null tường minh;
- *  (3) nhân bản khoá MẪU không lớp (class_id=null hợp lệ cho mẫu) mà
- *      không truyền lớp đích;
+ *  (3) nhân bản khoá MẪU không lớp (class_id=null hợp lệ cho mẫu) mà không truyền lớp đích;
  *  (4) nhân bản kèm classId: null tường minh;
  *  (5) khôi phục backup mode=new (gọi createCourse không kèm lớp);
- *  (6) đối chứng dương: nhân bản khoá mẫu không lớp CÓ truyền lớp đích
- *      thì thành công và bản sao nằm trong lớp đích;
+ *  (6) đối chứng dương: nhân bản khoá mẫu không lớp CÓ truyền lớp đích thì thành công và bản sao nằm trong lớp đích;
  *  (7) đối chứng dương: POST /courses có classId thì thành công;
- *  (8) lưới DB: INSERT thẳng khoá dạy thật không lớp bị CHECK chặn
- *      (23514), trong khi khoá mẫu không lớp vẫn hợp lệ.
+ *  (8) lưới DB: INSERT thẳng khoá dạy thật không lớp bị CHECK chặn (23514), trong khi khoá mẫu không lớp vẫn hợp lệ.
  */
 describe('Khoá học phải thuộc một lớp (#200 packaging, #184)', () => {
   let app: INestApplication;

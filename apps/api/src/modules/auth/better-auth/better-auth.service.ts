@@ -19,9 +19,8 @@ export type AuthCutoverStage = 'off' | 'bake';
  * Chủ sở hữu duy nhất của Better Auth instance trong tiến trình API.
  *
  * Instance tồn tại khi MỘT trong hai cờ bật:
- * - `BETTER_AUTH_ENABLED` (Giai đoạn 1 của issue #7): phiên BA song
- *   song với hệ auth tự viết — `enabled` giữ nguyên nghĩa này, guard
- *   nhận diện cookie và bridge chỉ chạy theo nó.
+ * - `BETTER_AUTH_ENABLED` (Giai đoạn 1 của issue #7): phiên BA song song với hệ auth tự viết — `enabled` giữ nguyên
+ *   nghĩa này, guard nhận diện cookie và bridge chỉ chạy theo nó.
  * - `MCP_AS_ENABLED` (lát MCP-1, issue #163): instance kiêm máy chủ OAuth cho MCP — factory compose thêm
  *   jwt()/mcp()/cimd() (xem better-auth.instance.ts). Cờ này KHÔNG chờ cutover GĐ2: AS chỉ cần phiên BA + bảng users
  *   chung mà GĐ1 đã có.

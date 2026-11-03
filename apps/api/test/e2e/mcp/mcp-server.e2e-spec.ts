@@ -19,24 +19,20 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser, getFirstS
 import { createExamDraft } from '../../support/exam-pin-helpers';
 
 /**
- * Lát MCP-0 (issue #110) — nền MCP server + nhập câu hỏi nháp bằng AI.
- * Bao phủ tiêu chí nghiệm thu Phần 4.3 của hồ sơ research:
- *  - một endpoint POST /mcp phục vụ cả hai kỷ nguyên (modern
- *    2026-07-28 + legacy 2025-11-25): tools/list + tools/call chạy ở
- *    cả hai; PRM chạy; không token → 401.
+ * Lát MCP-0 (issue #110) — nền MCP server + nhập câu hỏi nháp bằng AI. Bao phủ tiêu chí nghiệm thu Phần 4.3 của hồ sơ
+ * research:
+ *  - một endpoint POST /mcp phục vụ cả hai kỷ nguyên (modern 2026-07-28 + legacy 2025-11-25): tools/list + tools/call
+ *    chạy ở cả hai; PRM chạy; không token → 401.
  *  - create_question đủ 4 qtype vào bank personal của chính chủ token, trạng thái draft, source_kind='ai' +
  *    source_ref='client:<id>' (kiểm bằng SQL); draft KHÔNG rút được vào usage/slot ngẫu nhiên/slot quiz/startAttempt;
  *    phát hành ready thì dùng được và chấm đúng (gồm truefalse chùm TF-A 4 mệnh đề qua dạng answers chuẩn của MCP: thân
  *    câu + 4 mệnh đề kèm giá trị Đúng/Sai).
- *  - validate: lỗi nghiệp vụ kèm fieldPath; trường lạ bị schema chặn;
- *    nội dung HTML lưu thành text thuần; ký tự điều khiển bị từ chối.
- *  - phân quyền: học viên / giáo viên khác bị từ chối (bank của người
- *    khác coi như không tồn tại), 0 bản ghi sinh ra.
- *  - idempotency: phát lại cùng key → kết quả cũ không nhân đôi; cùng
- *    key khác payload → question.idempotency_conflict; trùng hoàn toàn
- *    → verdict duplicate_exact không tạo bản sao.
- *  - mọi tools/call ghi outbox aggregate 'mcp' (worker relay mirror
- *    sang event_log — cùng cơ chế mọi aggregate khác).
+ *  - validate: lỗi nghiệp vụ kèm fieldPath; trường lạ bị schema chặn; nội dung HTML lưu thành text thuần; ký tự điều
+ *    khiển bị từ chối.
+ *  - phân quyền: học viên / giáo viên khác bị từ chối (bank của người khác coi như không tồn tại), 0 bản ghi sinh ra.
+ *  - idempotency: phát lại cùng key → kết quả cũ không nhân đôi; cùng key khác payload → question.idempotency_conflict;
+ *    trùng hoàn toàn → verdict duplicate_exact không tạo bản sao.
+ *  - mọi tools/call ghi outbox aggregate 'mcp' (worker relay mirror sang event_log — cùng cơ chế mọi aggregate khác).
  *  - rate limit tạo câu: vượt hạn → 429 + mã -32029 (app riêng, hạn 2).
  *  - submit_contribution (lát MCP-2, mở lại #110): câu của chính chủ (draft → ready) nộp vào bank trường thành
  *    contribution pending ở cả hai kỷ nguyên; approve qua REST → deep copy vào bank trường (derived_from trỏ câu gốc);
@@ -816,7 +812,7 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
     expect(matrixSchool.status, JSON.stringify(matrixSchool.body)).toBeLessThan(300);
     const matrixSchoolId = matrixSchool.body.id as string;
 
-    // ── Đề ready của teacherA trong bank đề cá nhân ──
+    // Đề ready của teacherA trong bank đề cá nhân
     const examBanks = await http(app).get('/api/v1/question-banks?kind=exam').set(bearer(teacherA.token));
     const myExamBank = (examBanks.body as any[]).find((b) => b.scope === 'personal' && b.ownerId === teacherA.id);
     const qRes = await http(app).post('/api/v1/questions').set(bearer(teacherA.token)).send({
@@ -846,7 +842,7 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
     expect(erow.status).toBe('pending');
     expect(erow.mode).toBe('new');
 
-    // ── Đề của teacherB: A không nộp thay được (cổng chủ sở hữu ở biên chạy trước mọi cổng nghiệp vụ) ──
+    // Đề của teacherB: A không nộp thay được (cổng chủ sở hữu ở biên chạy trước mọi cổng nghiệp vụ)
     const examBanksB = await http(app).get('/api/v1/question-banks?kind=exam').set(bearer(teacherB.token));
     const bankB = (examBanksB.body as any[]).find((b) => b.scope === 'personal' && b.ownerId === teacherB.id);
     const paperB = await http(app).post(`/api/v1/exams/banks/${bankB.id}/exams`).set(bearer(teacherB.token))
@@ -862,7 +858,7 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
       'SELECT COUNT(*)::text AS n FROM exam_contributions WHERE exam_id = $1', [paperBId]);
     expect(Number(cntE.n)).toBe(0);
 
-    // ── Ma trận ready của teacherA trong bank ma trận cá nhân ──
+    // Ma trận ready của teacherA trong bank ma trận cá nhân
     const contexts = await http(app).get('/api/v1/access/contexts').set(bearer(admin));
     const systemCtx = (contexts.body as any[]).find((c) => c.contextLevel === 10);
     const subj = await http(app).post('/api/v1/curriculum/subjects').set(bearer(admin))
@@ -891,7 +887,7 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
     expect(mrow.status).toBe('pending');
     expect(mrow.content_hash).toBeTruthy();
 
-    // ── Ma trận của admin: A không nộp thay được ──
+    // Ma trận của admin: A không nộp thay được
     const adminMatrix = await http(app).post('/api/v1/exam-matrices').set(bearer(admin)).send({
       name: 'Ma trận của admin', subjectId: subj.body.id, curriculumId: curr.body.id, totalScore: 10,
     });
@@ -903,7 +899,7 @@ describe('Máy chủ MCP (MCP-0, issue #110)', () => {
     expect(fm.status).toBe('failed');
     expect(fm.code).toBe('quiz.matrix_contribution_source_not_own');
 
-    // ── Payload không có danh sách nào: schema chặn ở biên tool ──
+    // Payload không có danh sách nào: schema chặn ở biên tool
     const empty = await callTool(app, teacherA.token, 'submit_contribution', {
       targetBankId: examSchoolId, idempotencyKey: uniqueName('key'),
     });

@@ -74,12 +74,10 @@ export interface SpaceProgramPackageInstallReport {
  *    - Chưa có bản cài gói trung tâm mà dữ kiện chương trình cũng chưa có → restore artifact dump hiện hành của repo
  *      bằng đúng cơ chế cài gói đã có (`restoreProgramDumpSql`, neo lại context hệ thống của kho đích), rồi ghi dòng
  *      bản cài (phiên bản + checksum của artifact vừa cài).
- *    - Chưa có bản cài mà dữ kiện đã có (cửa sổ hỏng giữa lúc
- *      restore và lúc ghi bản cài) → chỉ ghi dòng bản cài, không
+ *    - Chưa có bản cài mà dữ kiện đã có (cửa sổ hỏng giữa lúc restore và lúc ghi bản cài) → chỉ ghi dòng bản cài, không
  *      restore chồng (đúng khuôn pipeline cấp phát).
- *    - Đã có bản cài lệch phiên bản/checksum so với artifact hiện
- *      hành → từ chối rõ thay vì ghi đè lặng lẽ: nâng cấp gói là
- *      việc của đợt migration gói, không phải của bước di trú.
+ *    - Đã có bản cài lệch phiên bản/checksum so với artifact hiện hành → từ chối rõ thay vì ghi đè lặng lẽ: nâng cấp
+ *      gói là việc của đợt migration gói, không phải của bước di trú.
  *    - Bản cài đã khớp → bỏ qua (chạy lại an toàn). 4. Chuyển sổ ghi nhận cài đặt: mỗi khoá trong sổ nguồn mà kho đích
  *      chưa có thì sao nguyên văn (phiên bản, checksum, thời điểm ghi nhận) sang kho đích. Riêng khoá gói trung tâm thì
  *      dòng của kho đích là căn cứ (vừa được cài/xác nhận ở bước 3) nên không bị dòng nguồn ghi đè — sổ nguồn của khoá
@@ -90,8 +88,8 @@ export interface SpaceProgramPackageInstallReport {
  * đã có của trung tâm giữ nguyên định danh YCCĐ đã gắn vì cơ chế cài ghi theo định danh giữ nguyên (id trong artifact
  * là hằng số literal) — bước này không viết lại bất kỳ gắn chuẩn nào.
  *
- * @throws Error khi trung tâm đích không ở chế độ kho riêng, hoặc
- *   khi bản cài đã có trong kho đích lệch phiên bản/checksum.
+ * @throws Error khi trung tâm đích không ở chế độ kho riêng, hoặc khi bản cài đã có trong kho đích lệch phiên
+ *   bản/checksum.
  */
 @Injectable()
 export class SpaceProgramPackageService {

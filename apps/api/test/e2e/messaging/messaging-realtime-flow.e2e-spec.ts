@@ -5,17 +5,13 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWORD } from '../../support/identity-access-helpers';
 
 /**
- * Flow test cho nền dữ liệu + realtime của messaging (issue #33,
- * Lớp A chặng 0 + 1):
- *  - trạng thái đã đọc theo TỪNG thành viên trong nhóm 3 người: một
- *    người đọc không làm người khác mất số chưa đọc (mô hình cũ để
- *    mốc đọc chung trên tin nhắn);
+ * Flow test cho nền dữ liệu + realtime của messaging (issue #33, Lớp A chặng 0 + 1):
+ *  - trạng thái đã đọc theo TỪNG thành viên trong nhóm 3 người: một người đọc không làm người khác mất số chưa đọc (mô
+ *    hình cũ để mốc đọc chung trên tin nhắn);
  *  - gửi trùng `clientMessageId` không nhân đôi tin (idempotent);
- *  - phân trang cursor theo `seq` không trùng/sót, đồng bộ thiếu hụt
- *    bằng afterSeq;
- *  - realtime theo KẾT NỐI ở phía API: nối lại + `sync` bù đúng phần
- *    thiếu; socket không có token hợp lệ bị ngắt; presence/typing
- *    (A2) đi qua Redis, không xuống DB.
+ *  - phân trang cursor theo `seq` không trùng/sót, đồng bộ thiếu hụt bằng afterSeq;
+ *  - realtime theo KẾT NỐI ở phía API: nối lại + `sync` bù đúng phần thiếu; socket không có token hợp lệ bị ngắt;
+ *    presence/typing (A2) đi qua Redis, không xuống DB.
  *
  * Các khẳng định về PHÂN PHỐI sự kiện (tin mới tới socket qua outbox → hàng đợi, biên đã-đọc tới thành viên còn lại,
  * thành viên bị gỡ không nhận tin nữa) thuộc về consumer phía worker từ issue #521 và được kiểm ở

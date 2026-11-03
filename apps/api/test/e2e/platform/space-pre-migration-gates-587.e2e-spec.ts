@@ -79,13 +79,11 @@ function signedBetterAuthCookie(token: string): string {
  * theo quy ước địa chỉ của hệ.
  *
  * Các ca khoá đúng các cổng tiền di trú của Phần A:
- * (a) đối chứng dương — token mang claim của trung tâm kho riêng
- *     đọc được hồ sơ từ kho đích (dấu phân biệt ghi ở kho đích);
- * (b) cổng 1b — token JWT cũ không mang claim `centre_id` của tài
- *     khoản chỉ còn ở kho riêng bị từ chối 401
+ * (a) đối chứng dương — token mang claim của trung tâm kho riêng đọc được hồ sơ từ kho đích (dấu phân biệt ghi ở kho
+ *     đích);
+ * (b) cổng 1b — token JWT cũ không mang claim `centre_id` của tài khoản chỉ còn ở kho riêng bị từ chối 401
  *     `auth.centre_mismatch`, KHÔNG cho qua theo slug khớp;
- * (c) cổng 1a — thành viên đã bị thu hồi ở kho đích (membership
- *     đã kết thúc sau khi token được cấp) bị từ chối 401
+ * (c) cổng 1a — thành viên đã bị thu hồi ở kho đích (membership đã kết thúc sau khi token được cấp) bị từ chối 401
  *     `tenant.membership_inactive`;
  * (d) cổng 1c/A2 — phiên cookie Better Auth của tài khoản ở kho riêng đọc được hồ sơ qua địa chỉ của chính trung tâm đó
  *     (phiên và tài khoản đều đọc qua kho đích, không đọc kho chung). Phiên được gieo thẳng vào bảng `session` ở kho

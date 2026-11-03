@@ -15,18 +15,14 @@ import { createCategory, createCourse, getFirstSectionId } from '../../support/c
  * - gửi duyệt bắt metadata chương trình đủ (môn–khối–node + file) + metadata sư phạm (mô tả–từ khoá–đối tượng–vị trí
  *   trong bài, CB1-B3); scope trường bắt thêm trường bản quyền/nguồn gốc (CB1-B1): chưa đủ bản quyền thì chưa mở được
  *   scope trường;
- * - loại học liệu là 5 nhóm Điều 7 TT 09/2021 (CB1-B2) + cấp học độc
- *   lập; duyệt theo checklist tiêu chí Bộ, từ chối bắt buộc có lý do
- *   (CB1-B3); học liệu dẫn xuất giữ derived_from về học liệu gốc;
+ * - loại học liệu là 5 nhóm Điều 7 TT 09/2021 (CB1-B2) + cấp học độc lập; duyệt theo checklist tiêu chí Bộ, từ chối bắt
+ *   buộc có lý do (CB1-B3); học liệu dẫn xuất giữ derived_from về học liệu gốc;
  * - duyệt xong học liệu mới hiện với thành viên tổ và cắm được vào khoá của đồng nghiệp bằng BẢN SAO file (module
  *   mod_resource + file riêng trong context của module; sửa bản gốc sau đó không đổi bản đã cắm);
- * - sửa học liệu đã duyệt → quay về draft, biến mất khỏi danh sách của
- *   đồng nghiệp;
+ * - sửa học liệu đã duyệt → quay về draft, biến mất khỏi danh sách của đồng nghiệp;
  * - scope trường tương tự (duyệt bởi người có reviewcontent ở hệ thống);
- * - học liệu kiểu bộ câu hỏi chỉ THAM CHIẾU category của ngân hàng câu
- *   hỏi — cắm vào khoá bị từ chối;
- * - người không có vai trò (học sinh) không tạo được học liệu, không
- *   xem được học liệu chưa duyệt.
+ * - học liệu kiểu bộ câu hỏi chỉ THAM CHIẾU category của ngân hàng câu hỏi — cắm vào khoá bị từ chối;
+ * - người không có vai trò (học sinh) không tạo được học liệu, không xem được học liệu chưa duyệt.
  *
  * Bổ sung theo phân xử điểm mở probe v86 (issue #69 mở lại): giáo viên CHỈ có vai tại context khoá tạo được học liệu
  * trong kho cá nhân của mình theo đường mặc định của UI (không contextId); học liệu trường approved+public mở cho mọi

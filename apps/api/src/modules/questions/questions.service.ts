@@ -433,15 +433,13 @@ export class QuestionsService {
    *    của version trước do `updateQuestion` ghép sau bước này — NHƯNG chỉ khi tập statementId của thân mới == tập
    *    solution cũ phủ, khác thì `updateQuestion` từ chối 400 (bề mặt soạn luôn gửi kèm đáp án cùng thân câu nên không
    *    đi qua đường kế thừa này).
-   *  - shortanswer: ít nhất 1 đáp án được chấp nhận; MỌI dòng liệt kê
-   *    đều là đáp án được chấp nhận (dòng `correct: false` bị từ chối —
-   *    đáp án sai không có chỗ trong danh sách này).
+   *  - shortanswer: ít nhất 1 đáp án được chấp nhận; MỌI dòng liệt kê đều là đáp án được chấp nhận (dòng `correct:
+   *    false` bị từ chối — đáp án sai không có chỗ trong danh sách này).
    *  - essay: không có dòng đáp án; options mang cấu hình trả lời + graderInfo + responseTemplate; giới hạn từ phải hợp
    *    lệ (min ≤ max). Lời giải mẫu đi qua `solution.answer`. guidance đi vào `answerKey` (bản ghi phía đáp án) cho MỌI
    *    qtype.
    *
-   * @throws BadRequestException `question.bad_answer_data` khi phần đáp
-   *   án/options vi phạm luật của qtype.
+   * @throws BadRequestException `question.bad_answer_data` khi phần đáp án/options vi phạm luật của qtype.
    */
   private normaliseContent(qtype: SupportedQtype, input: QuestionContentInput, existingQuestionText?: RichTextDocument | null): NormalisedContent {
     const options = input.options ?? {};
@@ -727,9 +725,8 @@ export class QuestionsService {
    * bảng một lượt cho cả tập) rồi lắp trong bộ nhớ, thay cho vòng lặp gọi getQuestion từng câu. Bất biến giữ nguyên so
    * với đường từng câu:
    * - Thứ tự view khớp đúng thứ tự dòng câu đầu vào.
-   * - Câu đầu tiên (theo thứ tự vào) thiếu entry hoặc thiếu version
-   *   mới nhất thì ném đúng NotFoundException cùng mã như getQuestion
-   *   (`question.entry_missing` / `question.version_missing`).
+   * - Câu đầu tiên (theo thứ tự vào) thiếu entry hoặc thiếu version mới nhất thì ném đúng NotFoundException cùng mã như
+   *   getQuestion (`question.entry_missing` / `question.version_missing`).
    * - Hình dạng từng view do cùng các ánh xạ với assembleView dựng (options qua optionsFromRow, answerKey mặc định cả
    *   hai null khi version không có dòng phía đáp án, stimulus null khi version không gắn hoặc không còn dòng ngữ
    *   liệu).

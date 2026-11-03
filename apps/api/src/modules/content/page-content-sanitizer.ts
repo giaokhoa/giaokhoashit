@@ -1,9 +1,8 @@
 import sanitizeHtml from 'sanitize-html';
 
 /**
- * Làm sạch nội dung HTML của trang đọc (mod_page) và kiểm scheme của
- * URL tài nguyên ngoài (mod_resource) — lớp gác XSS lưu trữ của module
- * content.
+ * Làm sạch nội dung HTML của trang đọc (mod_page) và kiểm scheme của URL tài nguyên ngoài (mod_resource) — lớp gác XSS
+ * lưu trữ của module content.
  *
  * Ngữ cảnh nghiệp vụ: nội dung trang đọc là HTML do giáo viên soạn (người có `course:manageactivities` tại khoá) và
  * được trang học phía web render bằng `dangerouslySetInnerHTML` — điểm render HTML trực tiếp duy nhất của toàn hệ
@@ -13,8 +12,7 @@ import sanitizeHtml from 'sanitize-html';
  * SẠCH THEO ALLOWLIST chứ không bỏ HTML: chỉ giữ thẻ/thuộc tính phục vụ định dạng học liệu, loại mọi cấu trúc thực thi.
  *
  * Flow sử dụng:
- * - `ContentService.createPage`/`updatePage` làm sạch trước khi ghi
- *   DB — dữ kiện mới lưu vào đã sạch ngay từ nguồn.
+ * - `ContentService.createPage`/`updatePage` làm sạch trước khi ghi DB — dữ kiện mới lưu vào đã sạch ngay từ nguồn.
  * - `ContentService.getPage` làm sạch lại ở đường đọc — dữ kiện đã lưu từ trước khi có cổng ghi (hoặc ghi qua đường
  *   vòng như import backup) vẫn an toàn khi tới tay người xem; hai hàm đọc phục vụ trang học (`getPageForUser`,
  *   `getPlayer`) đều đi qua `getPage`.

@@ -18,12 +18,11 @@ import type { TotpService } from '../../../src/modules/auth/totp.service';
  * callback.
  *
  * Quy tắc nghiệp vụ thể hiện ở đây (chốt trong hồ sơ chương trình GĐ2):
- *  - email đã có tài khoản + email do provider xác thực (Google) →
- *    liên kết vào tài khoản đó, không tạo user mới;
- *  - email hoàn toàn mới → CHẶN tạo tài khoản qua OAuth (disableSignUp
- *    cấp provider), redirect lỗi, không user/không session;
- *  - Facebook KHÔNG nằm trong trustedProviders và email của nó không
- *    được Better Auth coi là đã xác thực → KHÔNG liên kết ngầm;
+ *  - email đã có tài khoản + email do provider xác thực (Google) → liên kết vào tài khoản đó, không tạo user mới;
+ *  - email hoàn toàn mới → CHẶN tạo tài khoản qua OAuth (disableSignUp cấp provider), redirect lỗi, không user/không
+ *    session;
+ *  - Facebook KHÔNG nằm trong trustedProviders và email của nó không được Better Auth coi là đã xác thực → KHÔNG liên
+ *    kết ngầm;
  *  - tài khoản đã bật MFA (factor TOTP đã xác nhận trong `user_totp` — nguồn trạng thái MFA duy nhất) → callback OAuth
  *    bị cổng chặn: KHÔNG tồn tại session dùng được trong lúc chờ bước hai, redirect mang `twoFactorRedirect=true` +
  *    cookie chờ bước hai.

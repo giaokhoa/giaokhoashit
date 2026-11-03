@@ -452,8 +452,7 @@ describe('Control plane: sổ đăng ký không gian và registry phiên bản s
     // Kỹ thuật cổng hai pha, có chứng minh ở từng pha (nhận diện phiên bị cổng chặn qua `pg_blocking_pids`, không dùng
     // khoảng chờ cố định): cổng giữ khoá FOR KEY SHARE trên dòng đăng ký — mức khoá nhẹ nhất vẫn xung đột với FOR
     // UPDATE, nên bất kỳ lượt ghi nào tới câu khoá dòng đăng ký của mình đều phải dừng sau cổng.
-    // - Pha 1: cho lượt ghi sao lưu xuất phát trước và chờ tới
-    //   khi nó thật sự bị cổng chặn ở câu khoá dòng đăng ký.
+    // - Pha 1: cho lượt ghi sao lưu xuất phát trước và chờ tới khi nó thật sự bị cổng chặn ở câu khoá dòng đăng ký.
     // - Pha 2: cho `recordMigrationRun` xuất phát. Có khoá dòng đăng ký, nó cũng bị cổng chặn ngay ở câu khoá của mình
     //   — pha 2 thấy một phiên thứ hai bị cổng chặn. Thiếu khoá đó, nó không có câu khoá nào để dừng: nó chèn lượt
     //   chạy, ghi registry và commit XONG TOÀN BỘ trong lúc lượt sao lưu vẫn còn bị cổng chặn — pha 2 không bao giờ

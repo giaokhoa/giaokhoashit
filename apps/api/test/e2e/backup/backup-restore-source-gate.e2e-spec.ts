@@ -13,19 +13,15 @@ import { courseContextId } from '../../support/engagement-helpers';
  * đường đọc (`backup:backupcourse` hoặc `backup:restorecourse` tại context của khoá thuộc job) TRƯỚC mọi xử lý archive
  * và trước mọi kiểm tra phía đích. Biết ID của job không đồng nghĩa có quyền trên dữ kiện của job.
  *
- * Kịch bản: giáo viên có `backup:restorecourse` tại khoá ĐÍCH của mình
- * (quyền mặc định của editingteacher tại context khoá) nhưng không có
- * quyền gì tại khoá NGUỒN:
+ * Kịch bản: giáo viên có `backup:restorecourse` tại khoá ĐÍCH của mình (quyền mặc định của editingteacher tại context
+ * khoá) nhưng không có quyền gì tại khoá NGUỒN:
  *  - đọc job nguồn: 403 `backup.job_forbidden` (hành vi sẵn có, đối chứng);
- *  - restore `merge` vào khoá của mình: 403 `backup.job_forbidden`,
- *    không job restore nào được tạo, ngân hàng câu hỏi của khoá đích
- *    vẫn trống;
- *  - restore `new`: cũng 403 `backup.job_forbidden` — cổng nguồn chạy
- *    trước kiểm tra phía đích nên mã lỗi là của cổng nguồn, không còn
- *    là lỗi capability phía đích như trước khi vá;
- *  - sau khi được cấp quyền tại khoá nguồn, cùng lời gọi `merge` chạy
- *    hoàn tất và dữ kiện nguồn (danh mục câu hỏi + câu hỏi) xuất hiện
- *    ở khoá đích.
+ *  - restore `merge` vào khoá của mình: 403 `backup.job_forbidden`, không job restore nào được tạo, ngân hàng câu hỏi
+ *    của khoá đích vẫn trống;
+ *  - restore `new`: cũng 403 `backup.job_forbidden` — cổng nguồn chạy trước kiểm tra phía đích nên mã lỗi là của cổng
+ *    nguồn, không còn là lỗi capability phía đích như trước khi vá;
+ *  - sau khi được cấp quyền tại khoá nguồn, cùng lời gọi `merge` chạy hoàn tất và dữ kiện nguồn (danh mục câu hỏi + câu
+ *    hỏi) xuất hiện ở khoá đích.
  */
 describe('Cổng đọc nguồn khôi phục sao lưu', () => {
   let app: INestApplication;

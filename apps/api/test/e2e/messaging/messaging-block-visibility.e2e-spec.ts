@@ -9,12 +9,11 @@ import {
 } from '../../support/identity-access-helpers';
 
 /**
- * Chuẩn app nhắn tin phổ biến, chốt bổ sung trên issue #33
- * (24/10/2026): LIÊN HỆ ĐÃ CHẶN THÌ KHÔNG HIỆN Ở PHẦN TIN NHẮN.
+ * Chuẩn app nhắn tin phổ biến, chốt bổ sung trên issue #33 (24/10/2026): LIÊN HỆ ĐÃ CHẶN THÌ KHÔNG HIỆN Ở PHẦN TIN
+ * NHẮN.
  *  - Có quan hệ chặn ở bất kỳ chiều nào: conversation 1–1 và liên hệ của nhau biến mất khỏi danh sách của CẢ HAI phía
  *    (lọc ở tầng truy vấn, không xoá dữ liệu); huy hiệu chưa đọc không đếm conversation đang ẩn.
- *  - Gửi tin trong lúc chặn bị từ chối ở cả hai chiều
- *    (`messaging.contact_blocked`).
+ *  - Gửi tin trong lúc chặn bị từ chối ở cả hai chiều (`messaging.contact_blocked`).
  *  - Mở thẳng theo id (việc nối tiếp của #33, siết sau PR #89): chi tiết, cửa sổ lịch sử tin và đánh dấu đã đọc của
  *    conversation 1–1 đang chặn đều 404 như không tồn tại ở CẢ HAI phía; `sync` realtime cũng không trả lịch sử của
  *    conversation đang chặn. Hội thoại nhóm chứa cả hai người không bị cổng này chạm.

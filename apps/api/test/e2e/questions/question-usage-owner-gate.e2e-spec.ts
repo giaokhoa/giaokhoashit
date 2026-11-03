@@ -7,11 +7,10 @@ import { addExamSlot, createExamDraft, pinExam } from '../../support/exam-pin-he
 
 /**
  * Issue #60 — cổng chủ sở hữu cho các route thao tác question usage thô:
- *  - người khác (không phải chủ usage) start/submit/finish qua route thô
- *    → 404 không-oracle, lượt của nạn nhân nguyên vẹn;
- *  - usage gắn lượt quiz đang `inprogress` bị khoá kênh thô kể cả với
- *    chính chủ (403 `question.usage_managed_by_quiz`) để đáp án đúng chỉ
- *    lộ qua luồng quiz sau khi nộp;
+ *  - người khác (không phải chủ usage) start/submit/finish qua route thô → 404 không-oracle, lượt của nạn nhân nguyên
+ *    vẹn;
+ *  - usage gắn lượt quiz đang `inprogress` bị khoá kênh thô kể cả với chính chủ (403 `question.usage_managed_by_quiz`)
+ *    để đáp án đúng chỉ lộ qua luồng quiz sau khi nộp;
  *  - usage tự do của ngân hàng: chủ sở hữu vẫn làm trọn luồng như cũ.
  */
 describe('Cổng chủ sở hữu usage câu hỏi (issue #60)', () => {

@@ -109,8 +109,8 @@ export class QuizSharedService {
 
   /**
    * Slots HIỆU LỰC của một pin — không còn bảng slots riêng của bài:
-   * - Đề snapshot: đọc thẳng exam_slots của version đã ghim (page suy
-   *   từ thứ tự xuất hiện của section, như lúc triển khai trước đây).
+   * - Đề snapshot: đọc thẳng exam_slots của version đã ghim (page suy từ thứ tự xuất hiện của section, như lúc triển
+   *   khai trước đây).
    */
   async effectiveSlots(pin: PinRow): Promise<EffectiveSlotRow[]> {
     const slots = await this.repo.listExamSlots(pin.examVersionId);
@@ -310,8 +310,7 @@ export class QuizSharedService {
    *   ↔ thành viên + phụ trách; matrix:add và matrix:edit ↔ phụ trách), KHÔNG qua PermissionEvaluator — evaluator kế
    *   thừa mặc định archetype từ mọi context tổ tiên nên giáo viên có vai ở context hệ thống sẽ lọt cổng bank kín của
    *   tổ dù không phải thành viên.
-   * - Ma trận chưa thuộc bank nào (hoặc bank đã bị xoá) giữ hành vi
-   *   Chặng 3: PermissionEvaluator tại context môn.
+   * - Ma trận chưa thuộc bank nào (hoặc bank đã bị xoá) giữ hành vi Chặng 3: PermissionEvaluator tại context môn.
    */
   public async requireMatrixCap(actorId: string, matrix: ExamMatrixRow, capability: string): Promise<void> {
     if (matrix.bankId) {

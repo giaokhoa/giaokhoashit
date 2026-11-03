@@ -31,9 +31,8 @@ import { MESSAGE_PROVIDERS, providerByName } from './notification-providers';
  *   PUT ngoài phía người nhận bằng lỗi 403 mã `messaging.preference_audience`); luật PHÁT của worker không đọc trường
  *   này — nơi phát phía worker đã biết đích danh người nhận. Bản chiếu vì vậy không mang `audience` (ca hình dạng bên
  *   dưới gác điều này: mỗi mục của bản chiếu phải có đúng 3 trường thuộc parity).
- * - `channels`: worker chỉ phát kênh trong-app; kênh ngoài là cổng
- *   xếp job phía API. `group`/`label`/`description`: thuần trình bày
- *   phía API/web.
+ * - `channels`: worker chỉ phát kênh trong-app; kênh ngoài là cổng xếp job phía API. `group`/`label`/`description`:
+ *   thuần trình bày phía API/web.
  *
  * Nửa HÀNH VI của parity (luật cứng hai phía cho cùng kết quả: đình chỉ / chính sách admin NB-7 / loại bắt buộc P2) nằm
  * ở phía worker — `apps/worker/src/notification-parity.spec.ts` — vì nó phải chạy `NotificationDeliveryService` thật

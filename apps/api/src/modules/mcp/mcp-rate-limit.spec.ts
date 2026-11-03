@@ -3,9 +3,8 @@ import { McpRateLimiter } from './mcp-rate-limit';
 
 /**
  * Kiểm chứng bộ giới hạn tần suất MCP (issue #485) ở mức đơn vị:
- * - Quyết định cho phép/chặn và `retryAfterSeconds` quanh biên cửa sổ
- *   một giờ phải giữ nguyên tuyệt đối trước và sau khi sửa rò bộ nhớ
- *   (cùng cửa sổ, cùng ngưỡng, cùng cách tính phần chờ còn lại).
+ * - Quyết định cho phép/chặn và `retryAfterSeconds` quanh biên cửa sổ một giờ phải giữ nguyên tuyệt đối trước và sau
+ *   khi sửa rò bộ nhớ (cùng cửa sổ, cùng ngưỡng, cùng cách tính phần chờ còn lại).
  * - Entry của khoá đã hết hạn cửa sổ phải bị xoá khỏi Map lưu cửa sổ ngay trong phép kiểm tra, để kích thước Map bị
  *   chặn bởi số khoá đang còn trong cửa sổ hiệu lực — trước khi sửa, Map giữ vĩnh viễn mọi khoá từng gọi tới và phình
  *   không giới hạn theo số client.

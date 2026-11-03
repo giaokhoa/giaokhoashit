@@ -44,9 +44,8 @@ export const MATRIX_BANK_CAPS = {
 /**
  * Lớp BANK của Ngân hàng ma trận (MB-1, issue #111) — khuôn QB-1→QB-4 của ngân hàng câu hỏi áp cho ma trận:
  *
- * - Bank là question_banks với bank_kind='matrix' (bảng đa loại của
- *   PR #83); exam_matrices.bank_id neo vào bank, quyền MỘT nguồn duy
- *   nhất là context của bank (resolver trong QuizService).
+ * - Bank là question_banks với bank_kind='matrix' (bảng đa loại của PR #83); exam_matrices.bank_id neo vào bank, quyền
+ *   MỘT nguồn duy nhất là context của bank (resolver trong QuizService).
  * - Copy mẫu → ma trận làm việc: deep copy toàn bộ ô với danh tính mới, derived_from_matrix_id trỏ về mẫu, version về
  *   1, hạ cánh `ready` (quy tắc hoàn thiện: sao chép vào bank là đường vào bank ở dạng đã hoàn thiện) — sửa bản copy
  *   fork version mới, không đụng mẫu (bất biến truy vết).
@@ -111,8 +110,7 @@ export class MatrixBanksService {
    * nội dung, ràng buộc duy nhất (bank, chữ ký) chặn bản sao và toàn bộ transaction rollback, dịch thành 409
    * `quiz.matrix_duplicate_content` thay vì lỗi 500 thô.
    *
-   * @throws ConflictException khi bank đích đã có ma trận trùng toàn
-   *   bộ nội dung với bản sao.
+   * @throws ConflictException khi bank đích đã có ma trận trùng toàn bộ nội dung với bản sao.
    */
   private async deepCopyMatrix(actorId: string, source: ExamMatrixRow, targetBank: QuestionBankRow, opts: {
     status: 'draft' | 'ready'; isTemplate: boolean; name?: string;

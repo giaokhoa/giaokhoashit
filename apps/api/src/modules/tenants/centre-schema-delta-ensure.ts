@@ -210,8 +210,8 @@ async function ensureObjects(
 /**
  * Đảm bảo phần delta schema của issue #583 có mặt trên kho nghiệp vụ và (khi có URL) kho control plane.
  *
- * @throws Error khi thiếu URL kho nghiệp vụ hoặc khi bất kỳ câu
- *   lệnh ensure nào hỏng (transaction của kho đó đã rollback).
+ * @throws Error khi thiếu URL kho nghiệp vụ hoặc khi bất kỳ câu lệnh ensure nào hỏng (transaction của kho đó đã
+ *   rollback).
  */
 export async function ensureCentreSchemaDelta(options: {
   businessDatabaseUrl: string;

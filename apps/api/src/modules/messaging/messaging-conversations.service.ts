@@ -262,9 +262,8 @@ export class MessagingConversationsService {
    * viên khi đồng bộ lười thấy roster đã đổi. Người mở qua cổng phạm vi nhưng chưa là thành viên (thực tế chỉ quản trị
    * hệ thống) được cấp membership ngay trong lượt ensure này như đường khoá (issue #592).
    *
-   * @throws {NotFoundException} `messaging.class_not_found` khi lớp
-   *   không tồn tại, đã lưu trữ, hoặc người mở không thuộc lớp —
-   *   ba trường hợp không phân biệt được với nhau.
+   * @throws {NotFoundException} `messaging.class_not_found` khi lớp không tồn tại, đã lưu trữ, hoặc người mở không
+   *   thuộc lớp — ba trường hợp không phân biệt được với nhau.
    */
   async ensureClassConversation(actorId: string, classId: string): Promise<ConversationRow & { members: string[] }> {
     const cls = await this.repo.getClassSummary(classId);
@@ -307,9 +306,8 @@ export class MessagingConversationsService {
   }
 
   // Ba câu hỏi khác nhau, không gộp làm một:
-  //  - "phụ trách khoá của conversation này" (staff tại context khoá
-  //    hoặc tổ tiên của nó, hoặc quản trị viên) → quyền KIỂM DUYỆT:
-  //    xoá tin của người khác, xem lại báo cáo, xem tin đã xoá mềm.
+  //  - "phụ trách khoá của conversation này" (staff tại context khoá hoặc tổ tiên của nó, hoặc quản trị viên) → quyền
+  //    KIỂM DUYỆT: xoá tin của người khác, xem lại báo cáo, xem tin đã xoá mềm.
   //  - "quản lý conversation" = phụ trách khoá, cộng thêm NGƯỜI TẠO đối với conversation KHÔNG gắn cấu trúc lớp/khoá →
   //    quyền bật/tắt chat và gửi tin khi chat đang tắt. Conversation gắn group của khoá thì người tạo bản ghi (có thể
   //    là một học sinh bấm mở nhóm lớp) KHÔNG thành người quản lý — quản lý chỉ theo staff khoá.
@@ -426,12 +424,9 @@ export class MessagingConversationsService {
    * nhân ghim/lưu/ tắt tiếng + mốc đã đọc của người đó trên conversation, vì chúng sống trên cùng dòng) rồi trả
    * conversation kèm danh sách thành viên mới — cùng hình dạng đường bật/tắt chat.
    *
-   * @throws 404 `messaging.conversation_not_found` khi conversation
-   *   không tồn tại; 404 `messaging.member_not_found` khi người bị
-   *   gỡ không còn là thành viên; 400
-   *   `messaging.member_remove_structural` cho nhóm cấu trúc; 400
-   *   `messaging.member_remove_self` khi tự gỡ mình; 403
-   *   `messaging.conversation_manage_forbidden` khi thiếu thẩm
+   * @throws 404 `messaging.conversation_not_found` khi conversation không tồn tại; 404 `messaging.member_not_found` khi
+   *   người bị gỡ không còn là thành viên; 400 `messaging.member_remove_structural` cho nhóm cấu trúc; 400
+   *   `messaging.member_remove_self` khi tự gỡ mình; 403 `messaging.conversation_manage_forbidden` khi thiếu thẩm
    *   quyền; 403 `messaging.member_remove_creator` khi gỡ người tạo.
    */
   async removeConversationMember(actorId: string, conversationId: string, targetUserId: string): Promise<ConversationRow & { members: string[] }> {

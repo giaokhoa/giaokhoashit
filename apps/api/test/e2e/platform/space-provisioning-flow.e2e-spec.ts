@@ -18,22 +18,17 @@ import { STRONG_PASSWORD, createTestApp, http } from '../../support/identity-acc
  * migrate từ trống trước khi chạy spec này — đúng tiền điều kiện của mọi spec e2e khác (bước Migrate trong CI).
  *
  * Các ca khoá các tiêu chí nghiệm thu của issue ở phía HTTP:
- * (1) một lệnh cấp phát cho ra trung tâm dùng được: quản trị đầu
- *     tiên kích hoạt bằng lời mời rồi đăng nhập tại địa chỉ trung
- *     tâm, nhận diện công khai đọc được ở cả địa chỉ trung tâm lẫn
- *     địa chỉ gốc;
- * (2) token lời mời của trung tâm này không kích hoạt được ở trung
- *     tâm khác (kho của trung tâm kia không có lời mời đó);
- * (3) mật khẩu yếu làm cháy lời mời (đốt trước, đặt mật khẩu sau),
- *     phát hành lại bằng CLI rồi kích hoạt thành công;
- * (4) quản trị trung tâm sửa được nhận diện của mình, người dùng
- *     thường của cùng trung tâm bị từ chối, nhận diện của trung tâm
- *     khác không đổi;
- * (5) đình chỉ chặn traffic nghiệp vụ nhưng nhận diện công khai
- *     vẫn đọc được, dữ kiện còn nguyên, mở lại thì traffic trở lại;
- * (6) sau khi đã định tuyến, tắt control plane đi thì bề mặt trung
- *     tâm vẫn hiển thị đúng nhận diện đã nạp (nhận diện đọc từ kho
- *     của trung tâm, không đọc từ control plane).
+ * (1) một lệnh cấp phát cho ra trung tâm dùng được: quản trị đầu tiên kích hoạt bằng lời mời rồi đăng nhập tại địa chỉ
+ *     trung tâm, nhận diện công khai đọc được ở cả địa chỉ trung tâm lẫn địa chỉ gốc;
+ * (2) token lời mời của trung tâm này không kích hoạt được ở trung tâm khác (kho của trung tâm kia không có lời mời
+ *     đó);
+ * (3) mật khẩu yếu làm cháy lời mời (đốt trước, đặt mật khẩu sau), phát hành lại bằng CLI rồi kích hoạt thành công;
+ * (4) quản trị trung tâm sửa được nhận diện của mình, người dùng thường của cùng trung tâm bị từ chối, nhận diện của
+ *     trung tâm khác không đổi;
+ * (5) đình chỉ chặn traffic nghiệp vụ nhưng nhận diện công khai vẫn đọc được, dữ kiện còn nguyên, mở lại thì traffic
+ *     trở lại;
+ * (6) sau khi đã định tuyến, tắt control plane đi thì bề mặt trung tâm vẫn hiển thị đúng nhận diện đã nạp (nhận diện
+ *     đọc từ kho của trung tâm, không đọc từ control plane).
  *
  * MẪU MIRROR CHO PHIÊN TRUNG TÂM (theo pattern của e2e #582): luồng cấp token hiện tại tra tenant trong kho chung dưới
  * ngữ cảnh platform, nên một quản trị chỉ tồn tại trong kho riêng chưa nhận được claim `centre_id` — đó là cổng #587

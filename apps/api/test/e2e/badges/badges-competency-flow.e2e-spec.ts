@@ -9,8 +9,7 @@ import {
 } from '../../support/engagement-helpers';
 
 /**
- * Kiểm thử luồng Badges + Competencies.
- * Oracle (Moodle MOODLE_503_STABLE, đọc ngày 2026-10-22):
+ * Kiểm thử luồng Badges + Competencies. Oracle (Moodle MOODLE_503_STABLE, đọc ngày 2026-10-22):
  *  - public/badges/tests/badgeslib_test.php: test_create_badge_criteria, test_badge_awards, test_clone_badge (duplicate
  *    = cách để sửa), test_delete_badge (delete = archive). Báo cáo §2#14: cây tiêu chí ALL/ANY; tiêu chí bị ĐÔNG CỨNG
  *    khi đã cấp/đang hoạt động; assertion bất biến; revoke ≠ delete.

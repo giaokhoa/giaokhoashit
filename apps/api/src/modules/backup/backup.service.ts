@@ -708,8 +708,8 @@ export class BackupService {
       },
       import: async (targetCourseId, data, mapping, actorId) => {
         const d = data as { badges: BadgeRow[]; criteria: BadgeCriteriaRow[] };
-                // Pha 1: tạo badge trước để tiêu chí `badge` tham chiếu chéo trong cùng archive tra được mapping ở pha
-                // 2.
+                // Pha 1: tạo badge trước để tiêu chí `badge` tham chiếu chéo trong cùng archive tra được mapping ở
+                // pha 2.
         for (const b of d.badges ?? []) {
           const [row] = await db.insertInto('badge').values({
             name: b.name, description: b.description, type: targetCourseId ? 2 : b.type,

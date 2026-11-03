@@ -401,8 +401,7 @@ export class QuizPinsService {
   }
 
   /**
-   * Áp cập nhật pin lên exam version mới nhất của đề (quiz:manage;
-   * issue #254) — thao tác TƯỜNG MINH sau bước xem diff:
+   * Áp cập nhật pin lên exam version mới nhất của đề (quiz:manage; issue #254) — thao tác TƯỜNG MINH sau bước xem diff:
    * 1. Luật khoá dùng chung với updatePin: pin đã có lượt làm thật thì bị chặn `exam.pin_locked` (cập nhật chỉ áp cho
    *    người chưa làm; lượt đã có giữ nguyên version và điểm — sửa hệ quả điểm của chúng chỉ qua đường chấm lại theo
    *    đáp án). 2. Đích phải thuộc đúng đề của pin, là version MỚI NHẤT của đề và đề phải đang `ready`

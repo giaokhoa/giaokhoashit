@@ -38,10 +38,10 @@ const MAX_BODY_BYTES = 256 * 1024;
 const MCP_SCOPES = ['lms.questions.read', 'lms.questions.draft', 'lms.questions.write', 'lms.banks.contribute'] as const;
 
 /**
- * Tập scope kỷ nguyên CẦU AUTH cấp cho token hệ thống (authInfo.scopes): chỉ các scope đã có tool thật sau lưng — read
- * + draft của MCP-0 và contribute của lát MCP-2 (issue #110 mở lại). `lms.questions.write` KHÔNG nằm ở đây: publish là
- * tool của MCP-1 và chỉ gọi được bằng access token OAuth thật (cầu auth cấp trần đồng nhất không dựng được ca thiếu
- * scope — chính là động cơ của lát này). Khi AS bật, scope lấy từ access token qua McpOAuthVerifier;
+ * Tập scope kỷ nguyên CẦU AUTH cấp cho token hệ thống (authInfo.scopes): chỉ các scope đã có tool
+ * thật sau lưng — read + draft của MCP-0 và contribute của lát MCP-2 (issue #110 mở lại). `lms.questions.write` KHÔNG
+ * nằm ở đây: publish là tool của MCP-1 và chỉ gọi được bằng access token OAuth thật (cầu auth cấp trần đồng nhất không
+ * dựng được ca thiếu scope — chính là động cơ của lát này). Khi AS bật, scope lấy từ access token qua McpOAuthVerifier;
  * `deps.grantedScopes` vẫn là đường ghi đè cho test ở cả hai kỷ nguyên.
  */
 const BRIDGE_SCOPES: readonly string[] = ['lms.questions.read', 'lms.questions.draft', 'lms.banks.contribute'];
@@ -221,8 +221,8 @@ export function mountMcp(app: NestExpressApplication, deps: McpMountDeps): void 
       // - AS bật (deps.oauthVerifier): RS thật — verifier của plugin kiểm chữ ký JWKS + iss/aud + hạn; scope +
       //   client_id lấy từ CHÍNH token; tài khoản phải còn hoạt động qua resolveActor (cùng nghĩa kiểm tra trong cầu
       //   bridge).
-      // - AS tắt: đường lùi cầu auth MCP-0 (token JWT hệ thống HS256,
-      //   trần scope = BRIDGE_SCOPES) — giữ nguyên hành vi MCP-0.
+      // - AS tắt: đường lùi cầu auth MCP-0 (token JWT hệ thống HS256, trần scope = BRIDGE_SCOPES) — giữ nguyên hành vi
+      //   MCP-0.
       let identity: { userId: string; username: string; tenantId: string | null };
       let tokenScopes: readonly string[];
       let verifiedClientId: string | null = null;

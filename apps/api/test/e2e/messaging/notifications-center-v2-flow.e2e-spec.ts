@@ -10,14 +10,11 @@ import { adminToken, createTestApp, createUserViaApi, http, login, STRONG_PASSWO
  *  - GET /notifications là danh sách GỘP theo (loại × nguồn × ngày) kèm count/unreadCount, phân trang con trỏ không
  *    trùng/khuyết — không còn request tải toàn bộ lịch sử (đáp ứng dạng phong bì { items, nextCursor } thay cho mảng
  *    phẳng cũ).
- *  - Một đợt nhiều thông báo cùng loại × nguồn × ngày (mẫu "chấm
- *    điểm cả lớp": 30 thông báo điểm của một khoá trong một ngày)
- *    chỉ thành MỘT dòng gộp, mở ra xem đủ từng mục qua
- *    GET /notifications/items.
+ *  - Một đợt nhiều thông báo cùng loại × nguồn × ngày (mẫu "chấm điểm cả lớp": 30 thông báo điểm của một khoá trong một
+ *    ngày) chỉ thành MỘT dòng gộp, mở ra xem đủ từng mục qua GET /notifications/items.
  *  - Lọc theo 3 nhóm (learning/people/system) và theo chưa đọc.
- *  - read-group đánh dấu đã đọc hàng loạt theo khoá gộp; xoá từng
- *    mục (của người khác → 404 không lộ tồn tại); clear-read chỉ dọn
- *    mục đã đọc.
+ *  - read-group đánh dấu đã đọc hàng loạt theo khoá gộp; xoá từng mục (của người khác → 404 không lộ tồn tại);
+ *    clear-read chỉ dọn mục đã đọc.
  *
  * Dữ liệu được gieo thẳng vào bảng notifications qua pg để kiểm soát tất định thời điểm tạo (khoá ngày) — đường phát
  * thông báo thật từ sự kiện nghiệp vụ đã được spec của N1 (notifications-providers-flow) kiểm chứng riêng.

@@ -151,13 +151,13 @@ export class MessagingGroupTreeService {
    * của khoá đó — phần "chỉ qua khoá" được tổng hợp thành khoá nằm NGOÀI các lớp trực tiếp của tôi
    * (`coursesOutsideClasses`) để client không mất khoá nào.
    *
-   * Mỗi nút: `conversationId` null khi chat của nút CHƯA được ensure (bấm vào mới ensure ở MSG-T3/T2), unread khi đó là
-   * 0; đã ensure thì unread là số chưa đọc của chính người gọi trên conversation đó. Unread của nút khoá gồm chat khoá
-   * + các nhóm con của nó; unread của nút lớp là tổng của nút lớp + mọi nút con — để nhìn lướt là biết lớp/khoá nào
-   * đang có tin. Chat cấp lớp (MSG-T2) là conversation riêng của nút lớp: conversationId của nút tra theo item 'class'
-   * như các nút khác — null cho tới khi có người thuộc lớp mở chat lớp lần đầu (bấm vào nút ở MSG-T3 sẽ ensure qua
-   * endpoint cấp lớp). Đồng bộ lười membership được kích hoạt như ở danh sách conversation để số chưa đọc bám đúng tư
-   * cách thành viên hiện tại.
+   * Mỗi nút: `conversationId` null khi chat của nút CHƯA được ensure (bấm vào mới ensure ở MSG-T3/T2), unread khi
+   * đó là 0; đã ensure thì unread là số chưa đọc của chính người gọi trên conversation đó. Unread của nút khoá gồm chat
+   * khoá + các nhóm con của nó; unread của nút lớp là tổng của nút lớp + mọi nút con — để nhìn lướt là biết lớp/khoá
+   * nào đang có tin. Chat cấp lớp (MSG-T2) là conversation riêng của nút lớp: conversationId của nút tra theo item
+   * 'class' như các nút khác — null cho tới khi có người thuộc lớp mở chat lớp lần đầu (bấm vào nút ở MSG-T3 sẽ ensure
+   * qua endpoint cấp lớp). Đồng bộ lười membership được kích hoạt như ở danh sách conversation để số chưa đọc bám đúng
+   * tư cách thành viên hiện tại.
    *
    * bằng cổng tạo nhóm của cụm hội thoại cho tenant hiện hành; cụm này chỉ gắn nguyên vẹn vào kết quả, không tự suy
    * quyền.
@@ -389,9 +389,8 @@ export class MessagingGroupTreeService {
    * sau) → gắn quan hệ liên hệ và cờ nhắn thẳng cho từng dòng → mã hoá con trỏ trang kế từ dòng cuối trang.
    *
    * @returns Một trang thành viên kèm `nextCursor` (null khi hết).
-   * @throws {NotFoundException} `messaging.class_not_found` khi lớp
-   *   không tồn tại, đã lưu trữ, hoặc người xem không thuộc lớp —
-   *   ba trường hợp không phân biệt được với nhau.
+   * @throws {NotFoundException} `messaging.class_not_found` khi lớp không tồn tại, đã lưu trữ, hoặc người xem không
+   *   thuộc lớp — ba trường hợp không phân biệt được với nhau.
    */
   async listClassRoster(actorId: string, classId: string, query: { limit?: number; cursor?: string }): Promise<{
     members: ClassRosterMemberView[];

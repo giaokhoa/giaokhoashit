@@ -20,14 +20,11 @@ import { PROGRAM_DUMP_VERSION } from '../../../src/modules/curriculum/program-du
  * (1) lượt đầu cài gói trung tâm bằng đúng cơ chế cài gói đã có (restore artifact dump khi kho đích chưa có dữ kiện
  *     chương trình), ghi dòng bản cài vào kho đích và chuyển sổ nguồn sang kho đích — trừ khoá gói trung tâm (dòng đích
  *     là căn cứ, không bị dòng nguồn ghi đè);
- * (2) chạy lại an toàn: lượt thứ hai không restore, không ghi lại
- *     dòng bản cài, không chuyển lại khoá đã có, bản cài sau lượt
- *     vẫn khớp phiên bản artifact hiện hành;
- * (3) trung tâm còn ở kho chung thì bước này từ chối fail-closed
- *     thay vì cài chồng lên kho chung.
- * (4) bản cài đã có trong kho đích lệch phiên bản/checksum so với
- *     artifact hiện hành thì bước này từ chối thay vì ghi đè lặng
- *     lẽ, và dòng bản cài lệch được giữ nguyên.
+ * (2) chạy lại an toàn: lượt thứ hai không restore, không ghi lại dòng bản cài, không chuyển lại khoá đã có, bản cài
+ *     sau lượt vẫn khớp phiên bản artifact hiện hành;
+ * (3) trung tâm còn ở kho chung thì bước này từ chối fail-closed thay vì cài chồng lên kho chung.
+ * (4) bản cài đã có trong kho đích lệch phiên bản/checksum so với artifact hiện hành thì bước này từ chối thay vì ghi
+ *     đè lặng lẽ, và dòng bản cài lệch được giữ nguyên.
  */
 const CP_DATABASE = 'lms_test_cp_587b';
 const CP_ROLE = 'lms_cp_test_587b';

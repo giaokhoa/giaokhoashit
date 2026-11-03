@@ -5,11 +5,9 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser } from '..
 import { addGroupMember, createGroupViaApi, suspendUser } from '../../support/engagement-helpers';
 
 /**
- * Kiểm thử luồng Messaging + Calendar.
- * Oracle (Moodle MOODLE_503_STABLE, đọc ngày 2026-10-22):
- *  - public/message/tests/api_test.php: test_count_blocked_users,
- *    test_mark_all_read_for_user_touser(_with_fromuser), create_conversation
- *    với các loại individual/group.
+ * Kiểm thử luồng Messaging + Calendar. Oracle (Moodle MOODLE_503_STABLE, đọc ngày 2026-10-22):
+ *  - public/message/tests/api_test.php: test_count_blocked_users, test_mark_all_read_for_user_touser(_with_fromuser),
+ *    create_conversation với các loại individual/group.
  *  - Các bất biến của báo cáo §2#12: message ≠ notification; tin nhắn đã gửi KHÔNG được SỬA; người dùng bị đình chỉ
  *    hoặc đang chặn thì không nhận được gì; tuỳ chọn gác việc phát theo (provider × channel × loggedin/ loggedoff).
  *    Việc XOÁ tuân theo chính sách Lớp B sau này của issue #33 (xoá mềm có để lại vết), chính sách này thay thế tính
@@ -643,9 +641,8 @@ describe('Nhắn tin và lịch', () => {
     expect(openBlocked.status).toBe(403);
     expect(openBlocked.body.code).toBe('messaging.not_a_contact');
 
-    // 5. Xoá liên hệ đóng cổng cả trên cuộc trò chuyện ĐANG TỒN TẠI
-    //    nữa: lịch sử vẫn đọc được, các lần gửi mới bị
-    //    từ chối (cổng được kiểm tra ở mọi lần gửi — không có ngoại lệ bảo lưu).
+    // 5. Xoá liên hệ đóng cổng cả trên cuộc trò chuyện ĐANG TỒN TẠI nữa: lịch sử vẫn đọc được, các lần gửi mới bị từ
+    //    chối (cổng được kiểm tra ở mọi lần gửi — không có ngoại lệ bảo lưu).
     const removed = await http(app).delete(`/api/v1/messages/contacts/${pair.b.id}`).set('Authorization', `Bearer ${pair.aToken}`);
     expect(removed.status).toBe(200);
     const sendAgain = await http(app).post(`/api/v1/messages/conversations/${contactConv.body.id}/messages`).set('Authorization', `Bearer ${pair.aToken}`)

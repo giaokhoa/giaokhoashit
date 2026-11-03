@@ -181,8 +181,8 @@ export class ExamsController {
 
   @Get(':id/specification')
   /**
-   * GET /exams/:id/specification?pinId= — bản đặc tả neo theo ĐỀ (EB-3, E-6): sinh từ ma trận của exam version hiện tại
-   * + vị trí câu từ slots của chính đề; pinId (tuỳ chọn) chỉ ghi nhận lần tổ chức cụ thể.
+   * GET /exams/:id/specification?pinId= — bản đặc tả neo theo ĐỀ (EB-3, E-6): sinh từ ma trận của exam version hiện
+   * tại + vị trí câu từ slots của chính đề; pinId (tuỳ chọn) chỉ ghi nhận lần tổ chức cụ thể.
    */
   async specification(@Param('id', { schema: uuidIdSchema }) id: string, @Query('pinId') pinId: string | undefined, @CurrentUser() actor: AuthenticatedUser) {
     if (pinId !== undefined && !uuidIdSchema.safeParse(pinId).success) {

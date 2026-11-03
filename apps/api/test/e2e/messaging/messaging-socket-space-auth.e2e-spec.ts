@@ -69,15 +69,13 @@ function signedBetterAuthCookie(token: string): string {
  * đường đọc kho chung không còn gì để phục vụ.
  *
  * Các ca khoá đúng nghiệm thu của hạng mục 1 ở bề mặt socket:
- * - thành viên chỉ ở kho riêng nối socket bằng cookie tại địa chỉ
- *   của trung tâm và nhận ảnh chụp presence (gỡ phân giải không
- *   gian ở lớp auth là phiên không thấy ở kho chung → bị ngắt);
+ * - thành viên chỉ ở kho riêng nối socket bằng cookie tại địa chỉ của trung tâm và nhận ảnh chụp presence (gỡ phân giải
+ *   không gian ở lớp auth là phiên không thấy ở kho chung → bị ngắt);
  * - hai thành viên trao đổi qua socket: `sync` trả tin chỉ có ở kho riêng, join/typing được chấp nhận và tín hiệu
  *   typing tới được phía bên kia (gỡ phạm vi kho ở gateway là membership vô hình → sync rỗng, join/typing bị từ chối);
- * - phiên chỉ tồn tại ở kho chung mang tới địa chỉ kho riêng bị
- *   ngắt, không được phục vụ lặng lẽ từ kho chung;
- * - token mang claim `centre_id` nối được tại địa chỉ trung tâm,
- *   token cũ không mang claim bị ngắt (cổng 1a/1b phía socket).
+ * - phiên chỉ tồn tại ở kho chung mang tới địa chỉ kho riêng bị ngắt, không được phục vụ lặng lẽ từ kho chung;
+ * - token mang claim `centre_id` nối được tại địa chỉ trung tâm, token cũ không mang claim bị ngắt (cổng 1a/1b phía
+ *   socket).
  *
  * Khẳng định về PHÂN PHỐI sự kiện qua hàng đợi phía worker nằm ngoài spec này, cùng ranh giới với spec realtime-flow
  * hiện hữu.

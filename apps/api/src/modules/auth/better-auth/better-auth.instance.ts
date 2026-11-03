@@ -168,9 +168,9 @@ export interface BetterAuthFactoryDeps {
     syncFromCredentialAccount: (userId: string) => Promise<void>;
   } | null;
   /**
-   * Cấu hình máy chủ OAuth (AS) cho MCP (issue #163, lát MCP-1): có giá trị thì factory compose thêm `jwt()` + `mcp()`
-   * + `cimd()` — instance trở thành AS phát access token cho `/mcp`. `null`/thiếu = instance thuần GĐ1 như trước, KHÔNG
-   * có bề mặt OAuth nào.
+   * Cấu hình máy chủ OAuth (AS) cho MCP (issue #163, lát MCP-1): có giá trị thì factory compose thêm `jwt()` +
+   * `mcp()` + `cimd()` — instance trở thành AS phát access token cho `/mcp`. `null`/thiếu = instance thuần GĐ1 như
+   * trước, KHÔNG có bề mặt OAuth nào.
    */
   mcpAs?: BetterAuthMcpAsConfig | null;
   /**
@@ -192,8 +192,8 @@ export interface BetterAuthFactoryDeps {
 /**
  * Dựng object `socialProviders` cho instance từ cấu hình env: chỉ gồm provider đã cấu hình. Cả hai provider đều
  * `disableSignUp: true` ở cấp provider — OAuth KHÔNG bao giờ tự tạo tài khoản (khớp `disableSignUp` toàn cục đã chốt:
- * tài khoản do admin/cầu nối tạo), kể cả khi client xin `requestSignUp`; luồng còn lại là đăng nhập bằng liên kết đã có
- * + liên kết ngầm theo email theo luật account linking bên dưới.
+ * tài khoản do admin/cầu nối tạo), kể cả khi client xin `requestSignUp`; luồng còn lại là đăng nhập bằng liên kết đã
+ * có + liên kết ngầm theo email theo luật account linking bên dưới.
  */
 function buildSocialProviders(config: BetterAuthSocialConfig | null | undefined) {
   if (!config) return undefined;

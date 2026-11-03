@@ -103,11 +103,9 @@ function round1(v: number): number {
  * Preset quy tắc thi theo hình thức kiểm tra (hồ sơ tổ chức thi trực tuyến VN, mục 5.1 — theo TT 22 + Quy chế thi TN TT
  * 24/2024): chọn exam_kind lúc tạo quiz là ĐIỀN SẴN các trường dưới đây, giáo viên vẫn sửa từng trường sau đó. Điểm
  * theo hình thức:
- *  - thường xuyên (regular): xem điểm/đáp án/feedback NGAY SAU NỘP
- *    (bitmask = mọi cửa sổ sau nộp: 0x1110 = 4368);
- *  - định kỳ (periodic) và thi thử (mock): các khía cạnh chỉ mở ở cửa
- *    sổ SAU KHI ĐÓNG (0x10) — và mốc đóng hiệu lực cho review là
- *    max(timeClose) của cả đợt (xem reviewWindowBit);
+ *  - thường xuyên (regular): xem điểm/đáp án/feedback NGAY SAU NỘP (bitmask = mọi cửa sổ sau nộp: 0x1110 = 4368);
+ *  - định kỳ (periodic) và thi thử (mock): các khía cạnh chỉ mở ở cửa sổ SAU KHI ĐÓNG (0x10) — và mốc đóng hiệu lực cho
+ *    review là max(timeClose) của cả đợt (xem reviewWindowBit);
  *  - thi thử: late_entry_minutes = 15 (Điều 21 TT 24/2024);
  *  - giám sát sự kiện (chỉ ghi nhận): định kỳ/thi thử bật, thường xuyên tắt. Mật khẩu/subnet KHÔNG nằm trong preset:
  *    preset chỉ nêu kỳ vọng (định kỳ/thi thử phát mật khẩu đầu buổi) — giá trị do giáo viên đặt.

@@ -42,16 +42,12 @@ import {
  * Các ca khoá các tiêu chí nghiệm thu của issue:
  * (1) cùng email đăng ký ở hai trung tâm kho riêng thành hai tài khoản độc lập (id khác nhau, không có dòng nào ở kho
  *     chung), đình chỉ một bên không ảnh hưởng bên kia, đổi mật khẩu một bên không ảnh hưởng bên kia;
- * (2) phiên (token lẫn cookie) của trung tâm A bị từ chối ở trung
- *     tâm B và ở site chính;
+ * (2) phiên (token lẫn cookie) của trung tâm A bị từ chối ở trung tâm B và ở site chính;
  * (3) chuyển tenant không áp dụng ở trung tâm kho riêng;
- * (4) site chính hoạt động như một không gian độc lập trên kho
- *     riêng của nó (đăng ký, đăng nhập, dữ kiện ở kho của nó);
- * (5) token platform và token nghiệp vụ không dùng chéo bề mặt
- *     (platform không gọi được API nghiệp vụ, nghiệp vụ không gọi
- *     được control plane);
- * (6) challenge MFA gắn với không gian đã cấp nó (đổi địa chỉ thì
- *     bước hai thất bại);
+ * (4) site chính hoạt động như một không gian độc lập trên kho riêng của nó (đăng ký, đăng nhập, dữ kiện ở kho của nó);
+ * (5) token platform và token nghiệp vụ không dùng chéo bề mặt (platform không gọi được API nghiệp vụ, nghiệp vụ không
+ *     gọi được control plane);
+ * (6) challenge MFA gắn với không gian đã cấp nó (đổi địa chỉ thì bước hai thất bại);
  * (7) đăng nhập ở kho riêng chỉ tạo family refresh trong kho đó;
  * (8) đường kho chung giữ nguyên hành vi (hồi quy gọn).
  */

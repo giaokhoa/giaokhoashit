@@ -6,16 +6,11 @@ import type { Observable } from 'rxjs';
  * được giữ lại làm alias sau các đợt chuẩn hoá path là sắp bỏ (Deprecation + Sunset theo RFC 8594) và ghi log có cấu
  * trúc cho mỗi lượt gọi qua alias.
  *
- * @remarks
- * Vai trò: khi một path bị đổi tên hoặc làm phẳng, handler tại path
- * canonical mang path mới, còn path cũ giữ lại dưới dạng handler
- * alias uỷ quyền nguyên vẹn cho cùng logic nghiệp vụ. Interceptor
- * này là điểm duy nhất gắn header cảnh báo và ghi log đo lường cho
- * mọi bề mặt alias; trước đây khuôn này có bốn triển khai song song
- * (bản ở `common/` cho các hành động đổi tên, cùng ba bản theo module
- * cho điểm, cụm đề và messaging) — đợt hợp nhất gom cả bốn về lớp
- * này, các bảng alias trở thành dữ kiện khai theo từng bề mặt ở ngay
- * trong file này.
+ * @remarks Vai trò: khi một path bị đổi tên hoặc làm phẳng, handler tại path canonical mang path mới, còn path cũ giữ
+ * lại dưới dạng handler alias uỷ quyền nguyên vẹn cho cùng logic nghiệp vụ. Interceptor này là điểm duy nhất gắn header
+ * cảnh báo và ghi log đo lường cho mọi bề mặt alias; trước đây khuôn này có bốn triển khai song song (bản ở `common/`
+ * cho các hành động đổi tên, cùng ba bản theo module cho điểm, cụm đề và messaging) — đợt hợp nhất gom cả bốn về lớp
+ * này, các bảng alias trở thành dữ kiện khai theo từng bề mặt ở ngay trong file này.
  *
  * Bốn bề mặt và cách khai bảng của chúng:
  *

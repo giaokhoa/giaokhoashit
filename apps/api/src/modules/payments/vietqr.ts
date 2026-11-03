@@ -2,9 +2,8 @@ import { encodeVietQr } from 'vn-qr-pay';
 
 /**
  * Lõi VietQR Lát 1 (issue #189; hồ sơ payment-vietqr §2/§6):
- * - Mã thanh toán: `LMS` + 9 ký tự base32 Crockford mã hoá từ số thứ tự của
- *   sequence `payment_code_seq` — sinh một lần, duy nhất (unique ở DB),
- *   không tái sử dụng; đặt ở trường 62/08 (purpose) của QR.
+ * - Mã thanh toán: `LMS` + 9 ký tự base32 Crockford mã hoá từ số thứ tự của sequence `payment_code_seq` — sinh một lần,
+ *   duy nhất (unique ở DB), không tái sử dụng; đặt ở trường 62/08 (purpose) của QR.
  * - QR ĐỘNG theo chuẩn EMVCo/NAPAS qua `vn-qr-pay`: trường 54 khoá số tiền, trường 62/08 mang mã thanh toán. Mã dịch vụ
  *   trường 38/02 giữ chuẩn NAPAS `QRIBFTTA` (chuyển khoản tới số tài khoản). GHI NHẬN KIỂM CHỨNG (25/10/2026): test
  *   vector vàng §2.2 là mẫu của payOS — trường 38/02 của mẫu là mã dịch vụ RIÊNG của payOS (`99998888`) và CRC cuối mẫu

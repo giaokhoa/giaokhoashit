@@ -719,9 +719,9 @@ export class AssignmentsService {
   }
 
   /**
-   * TRẢ BÀI cho một học sinh (assign:grade): công bố nguyên tử gói chấm nháp của lần nộp hiện hành — điểm/mức + lời phê
-   * + annotation + kết quả rubric cùng hiện với học sinh, điểm ghi vào sổ điểm tại đúng thời điểm này, kèm sự kiện để
-   * tầng thông báo báo cho học sinh.
+   * TRẢ BÀI cho một học sinh (assign:grade): công bố nguyên tử gói chấm nháp của lần nộp hiện hành — điểm/mức + lời
+   * phê + annotation + kết quả rubric cùng hiện với học sinh, điểm ghi vào sổ điểm tại đúng thời điểm này, kèm sự kiện
+   * để tầng thông báo báo cho học sinh.
    */
   async releaseSubmission(actorId: string, assignmentId: string, userId: string): Promise<AssignSubmissionDetail> {
     const assignment = await this.getAssignment(assignmentId);

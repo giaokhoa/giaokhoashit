@@ -13,17 +13,13 @@ import {
  * sinh sự kiện nào và người xem không bao giờ học được họ đang trực tuyến — đây là kịch bản đã làm vòng nghiệm thu
  * trình duyệt của PR #610 trượt ở panel thành viên và đầu khung 1–1. Kịch bản kiểm chứng:
  *
- * - B (thành viên nhóm chung) nối socket TRƯỚC và presence đã ghi
- *   trong Redis; A nối SAU thì ảnh chụp A nhận được vẫn chứa B.
- * - C (không có hội thoại chung nào với A) cũng đang trực tuyến
- *   nhưng KHÔNG xuất hiện trong ảnh chụp của A — presence không lộ
- *   ra ngoài quan hệ hội thoại chung; ảnh chụp của chính C cũng
- *   không chứa B.
- * - D là phía bên kia của hội thoại 1–1 mà A đã chặn: D đang trực
- *   tuyến nhưng bị loại khỏi ảnh chụp của A (cùng luật nhìn thấy với
- *   sự kiện presence.changed và các bề mặt định danh).
- * - E là thành viên nhóm chung nhưng không nối socket (ngoại tuyến)
- *   và chính A: cả hai đều vắng mặt trong ảnh chụp.
+ * - B (thành viên nhóm chung) nối socket TRƯỚC và presence đã ghi trong Redis; A nối SAU thì ảnh chụp A nhận được vẫn
+ *   chứa B.
+ * - C (không có hội thoại chung nào với A) cũng đang trực tuyến nhưng KHÔNG xuất hiện trong ảnh chụp của A — presence
+ *   không lộ ra ngoài quan hệ hội thoại chung; ảnh chụp của chính C cũng không chứa B.
+ * - D là phía bên kia của hội thoại 1–1 mà A đã chặn: D đang trực tuyến nhưng bị loại khỏi ảnh chụp của A (cùng luật
+ *   nhìn thấy với sự kiện presence.changed và các bề mặt định danh).
+ * - E là thành viên nhóm chung nhưng không nối socket (ngoại tuyến) và chính A: cả hai đều vắng mặt trong ảnh chụp.
  *
  * Kiểm chứng đột biến: gỡ lời phát `presence.snapshot` ở gateway (hoặc lời gọi `listOnlineCoMemberIds`) thì ca này đỏ
  * vì A không nhận được ảnh chụp nào; khôi phục thì xanh.

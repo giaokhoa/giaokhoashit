@@ -8,14 +8,12 @@ import { createCategory, createCourse, createEnrolInstance, enrolUser, getFirstS
 
 /**
  * Feat Ngân hàng đề (issue #113, EB-1):
- *  - Đề snapshot trong bank đề (bank_kind='exam'): soạn tự do, slot
- *    ghim version ready mới nhất của câu; sửa đề tạo paper version mới.
- *  - Copy = deep copy + derived_from + ghi công tác giả gốc; GV khác
- *    chỉ xem/copy đề ready, không sửa đề cá nhân của người khác;
- *    học sinh không vào được bề mặt ngân hàng đề.
- *  - Ghim vào khoá (exam_pins) ghim exam version: học sinh làm đúng
- *    bộ câu đã ghim; attempt cũ giữ bộ câu của version cũ; đề hidden
- *    không vỡ pin đã ghim; xoá đề thì pin bị xoá theo (FK cascade).
+ *  - Đề snapshot trong bank đề (bank_kind='exam'): soạn tự do, slot ghim version ready mới nhất của câu; sửa đề tạo
+ *    paper version mới.
+ *  - Copy = deep copy + derived_from + ghi công tác giả gốc; GV khác chỉ xem/copy đề ready, không sửa đề cá nhân của
+ *    người khác; học sinh không vào được bề mặt ngân hàng đề.
+ *  - Ghim vào khoá (exam_pins) ghim exam version: học sinh làm đúng bộ câu đã ghim; attempt cũ giữ bộ câu của version
+ *    cũ; đề hidden không vỡ pin đã ghim; xoá đề thì pin bị xoá theo (FK cascade).
  *  - Đóng góp/duyệt khuôn QB-4 cho đơn vị đề.
  */
 

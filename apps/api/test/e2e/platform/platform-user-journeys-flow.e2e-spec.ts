@@ -9,12 +9,10 @@ import { createCategory, createCourse, createCm, createEnrolInstance, createSect
  * Hành trình người dùng (user journeys) dịch từ oracle Behat của Moodle 5.3 (MOODLE_503_STABLE, đã kiểm chứng live
  * 22/10/2026) — chỉ dịch BƯỚC NGHIỆP VỤ và KẾT QUẢ KỲ VỌNG thành e2e qua HTTP; các bước gắn giao diện PHP (ô tìm kiếm
  * trên header, breadcrumb, fieldset, menu hành động, dialogue) là chi tiết cài đặt UI và được bỏ qua:
- * - Behat `search/tests/behat/search_query.feature`, scenario
- *   "Search from search page with two results": truy vấn khớp thì thấy các
- *   kết quả khớp kèm mô tả; truy vấn không khớp thì "No results".
- * - Behat `search/tests/behat/search_by_user.feature`, scenario
- *   "As student, cannot see users on other courses": người học không thấy
- *   nội dung/người dùng của khoá mình không tham gia.
+ * - Behat `search/tests/behat/search_query.feature`, scenario "Search from search page with two results": truy vấn khớp
+ *   thì thấy các kết quả khớp kèm mô tả; truy vấn không khớp thì "No results".
+ * - Behat `search/tests/behat/search_by_user.feature`, scenario "As student, cannot see users on other courses": người
+ *   học không thấy nội dung/người dùng của khoá mình không tham gia.
  * - Behat `backup/util/ui/tests/behat/restore_moodle2_courses.feature`, scenarios "Restore a course in another existing
  *   course" (khoá đích giữ nguyên danh tính, nhận thêm nội dung nguồn) và "Restore a course in a new course" (khoá mới
  *   chứa đủ section/nội dung của nguồn, không thừa).

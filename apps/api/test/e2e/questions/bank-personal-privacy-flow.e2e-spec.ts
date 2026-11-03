@@ -15,15 +15,13 @@ import {
  * EB-1 6391268932).
  *
  * Ma trận ca của spec này:
- *  - Chủ sở hữu: 200/201 mọi đường (bank, câu, category, attribution,
- *    ma trận, bank ma trận).
+ *  - Chủ sở hữu: 200/201 mọi đường (bank, câu, category, attribution, ma trận, bank ma trận).
  *  - GV staff khác: bank personal của đồng nghiệp KHÔNG xuất hiện trong listBanks (question/exam/matrix); mọi đường đọc
  *    thẳng theo id → 404; copy nguồn thuộc bank personal của đồng nghiệp → 403; khám phá không rò câu.
  *  - Học sinh: 404 các đường đọc bank personal.
- *  - Bank trường/tổ: hành vi KHÔNG đổi (GV trường đọc được bank trường;
- *    thành viên tổ đọc được bank tổ).
- *  - Khuôn UI "bank personal đầu tiên trong listBanks" còn đúng: bank
- *    personal duy nhất trong danh sách của mỗi GV là của chính họ.
+ *  - Bank trường/tổ: hành vi KHÔNG đổi (GV trường đọc được bank trường; thành viên tổ đọc được bank tổ).
+ *  - Khuôn UI "bank personal đầu tiên trong listBanks" còn đúng: bank personal duy nhất trong danh sách của mỗi GV là
+ *    của chính họ.
  * Site admin giữ toàn quyền như bất biến hiện hành (khớp MB-1 E-8).
  *
  * VÒNG 2 (phán quyết đánh giá 6392040333 — điểm chặn sườn GHI): spec vòng 1 dùng archetype `teacher` (không có
@@ -34,8 +32,7 @@ import {
  *    subject + YCCĐ, tạo category trong bank của đồng nghiệp, đề xuất đóng góp bằng câu của đồng nghiệp → 404 (mã
  *    not-found của chính tài nguyên).
  *  - Chủ sở hữu editingteacher + site admin: ghi bình thường.
- *  - Bank trường: editingteacher không phải chủ câu vẫn ghi theo
- *    capability như cũ (cổng chỉ áp bank personal).
+ *  - Bank trường: editingteacher không phải chủ câu vẫn ghi theo capability như cũ (cổng chỉ áp bank personal).
  */
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
