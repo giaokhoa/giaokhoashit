@@ -51,7 +51,12 @@ const RUNTIME_ROLE = 'lms_runtime_test_586';
 const RUNTIME_PASSWORD = 'runtime-test-586';
 const MIGRATOR_ROLE = 'lms_migrator_test_586';
 const MIGRATOR_PASSWORD = 'migrator-test-586';
-const BASELINE_VERSION = '20261025163710_baseline';
+// Phiên bản đích hiện hành của kho centre = tên thư mục migration
+// cuối cùng của kho (cơ chế fleet chốt đích ở thư mục cuối). Trước
+// issue #5 đích là chính baseline; từ khi centre có migration
+// native đầu tiên, đích dời sang thư mục đó — thêm migration mới
+// cho centre thì cập nhật hằng này.
+const CENTRE_HEAD_VERSION = '20261103050557_identity_links_and_primary_role';
 const BACKUP_DIR = join(__dirname, 'fleet-586-artifacts');
 
 const SPACES = [
@@ -385,7 +390,7 @@ describe('Đội kho: tách role, migration theo đợt, sao lưu, khôi phục 
 
       const summary = await runFleetMigration(runnerOptions());
       const bySlug = new Map(summary.outcomes.map((outcome) => [outcome.slug, outcome.outcome]));
-      expect(summary.targetVersion).toBe(BASELINE_VERSION);
+      expect(summary.targetVersion).toBe(CENTRE_HEAD_VERSION);
       expect(bySlug.get('trang-chinh-586')).toBe('migrated');
       expect(bySlug.get('tt-a-canary-586')).toBe('migrated');
       expect(bySlug.get('tt-b-loi-586')).toBe('failed');
@@ -394,7 +399,7 @@ describe('Đội kho: tách role, migration theo đợt, sao lưu, khôi phục 
 
       // Sổ khớp sự thật trong từng kho sau lượt chạy.
       for (const slug of ['trang-chinh-586', 'tt-a-canary-586', 'tt-c-586']) {
-        expect((await registryState(slug)).currentVersion).toBe(BASELINE_VERSION);
+        expect((await registryState(slug)).currentVersion).toBe(CENTRE_HEAD_VERSION);
       }
       expect((await registryState('tt-b-loi-586')).currentVersion).toBeNull();
       const brokenDbVersion = await withClient(
@@ -406,7 +411,7 @@ describe('Đội kho: tách role, migration theo đợt, sao lưu, khôi phục 
         clusterUrl('lms_test_space_platform_586', MIGRATOR_ROLE, MIGRATOR_PASSWORD),
         (client) => readDatabaseSchemaVersion(client),
       );
-      expect(platformDbVersion).toBe(BASELINE_VERSION);
+      expect(platformDbVersion).toBe(CENTRE_HEAD_VERSION);
 
       // Nhật ký: mỗi kho đúng một lượt; lượt của kho hỏng ghi bước
       // áp migration thất bại, bản chốt trước migration của nó vẫn
@@ -446,8 +451,8 @@ describe('Đội kho: tách role, migration theo đợt, sao lưu, khôi phục 
       expect(bySlug.get('tt-c-586')).toBe('skipped');
       expect(summary.failedCount).toBe(0);
 
-      expect((await registryState('tt-a-canary-586')).currentVersion).toBe(BASELINE_VERSION);
-      expect((await registryState('tt-b-loi-586')).currentVersion).toBe(BASELINE_VERSION);
+      expect((await registryState('tt-a-canary-586')).currentVersion).toBe(CENTRE_HEAD_VERSION);
+      expect((await registryState('tt-b-loi-586')).currentVersion).toBe(CENTRE_HEAD_VERSION);
       // Chỉ kho tt-b có thêm lượt chạy thứ hai; các kho khác giữ
       // nguyên một lượt — đồng bộ sổ không bịa lượt chạy.
       expect(await migrationRuns('tt-b-loi-586')).toHaveLength(2);

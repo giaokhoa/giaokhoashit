@@ -207,8 +207,14 @@ async function applyBusinessBaseline(connectionString: string): Promise<void> {
 }
 
 /**
- * Sao một dòng (đọc từ kho chung) vào cùng bảng ở kho đích với
- * nguyên bộ cột — mô phỏng phần dữ kiện đã di trú của trung tâm.
+ * Sao một dòng (đọc từ kho chung) vào cùng bảng ở kho đích — mô
+ * phỏng phần dữ kiện đã di trú của trung tâm. Kho đích của ca này
+ * CỐ Ý ở trạng thái tiền di trú (chỉ baseline) trong khi kho
+ * nguồn luôn ở schema mới nhất, nên chỉ sao các cột mà bảng đích
+ * thật sự có: cột do migration native thêm vào nguồn (vd
+ * `primary_role`/`version` của `tenant_memberships` từ issue #5)
+ * chưa tồn tại ở đích và không thể mang theo — đúng bản chất của
+ * một kho chưa được di trú.
  */
 async function copyRow(
   sourceUrl: string,
@@ -225,9 +231,14 @@ async function copyRow(
     return result.rows[0] as Record<string, unknown> | undefined;
   });
   if (!row) throw new Error(`Không tìm thấy dòng nguồn ${table}.${whereColumn}=${whereValue}`);
-  const columns = Object.keys(row);
   await withClient(targetUrl, async (client) => {
     await client.query("SELECT set_config('app.platform', 'on', false)");
+    const targetColumns = await client.query<{ column_name: string }>(
+      `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1`,
+      [table],
+    );
+    const targetSet = new Set(targetColumns.rows.map((entry) => entry.column_name));
+    const columns = Object.keys(row).filter((column) => targetSet.has(column));
     const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
     await client.query(
       `INSERT INTO ${quoted(table)} (${columns.map(quoted).join(', ')}) VALUES (${placeholders})`,

@@ -154,10 +154,16 @@ async function applyControlPlaneMigrations(connectionString: string): Promise<vo
   }
 }
 
-/** Áp baseline nghiệp vụ vào một kho riêng bằng kết nối của chính role chủ kho đó. */
-async function applyBusinessBaseline(connectionString: string): Promise<void> {
-  const baseline = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre', '20261025163710_baseline', 'migration.sql');
-  await applySqlFile(connectionString, baseline, true);
+/** Áp toàn bộ migration nghiệp vụ vào kho riêng bằng kết nối của chính role chủ kho đó: baseline mang dữ liệu trước, các migration native nối tiếp theo thứ tự thư mục (từ issue #5 centre không còn chỉ một baseline) — kho riêng mô phỏng kho hiện hành nên phải ở schema mới nhất như đường cấp phát thật. */
+async function applyBusinessMigrations(connectionString: string): Promise<void> {
+  const centreDir = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre');
+  const folders = readdirSync(centreDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  for (const folder of folders) {
+    await applySqlFile(connectionString, join(centreDir, folder, 'migration.sql'), true);
+  }
 }
 
 /** Giải mã phần payload của một access token JWT (không kiểm chứng chữ ký — chỉ đọc claim cho khẳng định). */
@@ -281,9 +287,9 @@ describe('Hồ sơ thành viên theo trung tâm và tách site chính (đầu-cu
       }
     });
     await applyControlPlaneMigrations(clusterUrl(CP_DATABASE, CP_ROLE, CP_PASSWORD));
-    await applyBusinessBaseline(clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD));
-    await applyBusinessBaseline(clusterUrl(CENTRE_B_DATABASE, CENTRE_B_ROLE, CENTRE_B_PASSWORD));
-    await applyBusinessBaseline(clusterUrl(MAIN_DATABASE, MAIN_ROLE, MAIN_PASSWORD));
+    await applyBusinessMigrations(clusterUrl(CENTRE_A_DATABASE, CENTRE_A_ROLE, CENTRE_A_PASSWORD));
+    await applyBusinessMigrations(clusterUrl(CENTRE_B_DATABASE, CENTRE_B_ROLE, CENTRE_B_PASSWORD));
+    await applyBusinessMigrations(clusterUrl(MAIN_DATABASE, MAIN_ROLE, MAIN_PASSWORD));
 
     // Ứng dụng phải thấy control plane và bí mật các kho riêng
     // ngay từ lúc khởi động.
@@ -774,7 +780,7 @@ describe('Hồ sơ thành viên theo trung tâm và tách site chính (đầu-cu
       await admin.query(`REVOKE CONNECT ON DATABASE ${quoted(centreCDatabase)} FROM PUBLIC`);
       await admin.query(`GRANT CONNECT ON DATABASE ${quoted(centreCDatabase)} TO ${quoted(centreCRole)}`);
     });
-    await applyBusinessBaseline(clusterUrl(centreCDatabase, centreCRole, centreCPassword));
+    await applyBusinessMigrations(clusterUrl(centreCDatabase, centreCRole, centreCPassword));
     process.env.SPACE_TEST_C_584_URL = clusterUrl('postgres', centreCRole, centreCPassword);
     try {
       const createdC = (await must(

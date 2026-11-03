@@ -126,10 +126,16 @@ async function applyControlPlaneMigrations(connectionString: string): Promise<vo
   }
 }
 
-/** Áp baseline nghiệp vụ vào kho riêng bằng kết nối của chính role chủ kho đó. */
-async function applyBusinessBaseline(connectionString: string): Promise<void> {
-  const baseline = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre', '20261025163710_baseline', 'migration.sql');
-  await applySqlFile(connectionString, baseline, true);
+/** Áp toàn bộ migration nghiệp vụ vào kho riêng bằng kết nối của chính role chủ kho đó: baseline mang dữ liệu trước, các migration native nối tiếp theo thứ tự thư mục (từ issue #5 centre không còn chỉ một baseline) — kho riêng mô phỏng kho hiện hành nên phải ở schema mới nhất như đường cấp phát thật. */
+async function applyBusinessMigrations(connectionString: string): Promise<void> {
+  const centreDir = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre');
+  const folders = readdirSync(centreDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  for (const folder of folders) {
+    await applySqlFile(connectionString, join(centreDir, folder, 'migration.sql'), true);
+  }
 }
 
 /** Sao một dòng (đọc từ kho chung) vào cùng bảng ở kho đích với nguyên bộ cột — mô phỏng phần dữ kiện đã di trú của trung tâm. */
@@ -244,7 +250,7 @@ describe('Đọc quản trị ở kho đích + thư mục định tuyến (đầ
       await admin.query(`GRANT CONNECT ON DATABASE ${quoted(CENTRE_DATABASE)} TO ${quoted(CENTRE_ROLE)}`);
     });
     await applyControlPlaneMigrations(cpUrl());
-    await applyBusinessBaseline(centreUrl());
+    await applyBusinessMigrations(centreUrl());
 
     process.env.CONTROL_PLANE_DATABASE_URL = cpUrl();
     process.env.SPACE_TEST_TD3_URL = clusterUrl('postgres', CENTRE_ROLE, CENTRE_PASSWORD);

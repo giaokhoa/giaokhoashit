@@ -340,10 +340,19 @@ describe('Kích hoạt ghi danh trả phí theo không gian của payment (integ
     for (const folder of folders) {
       await applySqlFile(clusterUrl(CP_DATABASE), join(cpDir, folder, 'migration.sql'));
     }
-    await applySqlFile(
-      clusterUrl(CENTRE_DATABASE),
-      join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre', '20261025163710_baseline', 'migration.sql'),
-    );
+    // Kho riêng áp TOÀN BỘ migration của centre theo thứ tự thư mục
+    // (baseline mang dữ liệu trước, các migration native nối tiếp —
+    // từ issue #5 centre không còn chỉ một baseline), khớp đường
+    // cấp phát thật áp đủ bộ migration; chỉ áp baseline như trước
+    // làm kho riêng thiếu hẳn cột/bảng của migration native.
+    const centreDir = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'db', 'migrations', 'centre');
+    const centreFolders = readdirSync(centreDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+    for (const folder of centreFolders) {
+      await applySqlFile(clusterUrl(CENTRE_DATABASE), join(centreDir, folder, 'migration.sql'));
+    }
 
     // Gieo sổ đăng ký: trung tâm kho riêng trỏ database riêng
     // (chuỗi bí mật mang tên database mặc định của role — resolver
