@@ -24,23 +24,28 @@
 //     không hoàn tất được đăng nhập, hoàn tất khai báo thì vào
 //     được và lần sau bị hỏi OTP; tài khoản tự động hoá gọi Admin
 //     API tách riêng nên không bị gắn required action;
-//   - phiên SSO master tạo từ trước khi chuyển sang flow MFA bị
-//     thu hồi ở lượt chuyển đổi: cookie của phiên cũ không còn
-//     vào được Admin Console mà không qua MFA.
+//   - phiên SSO master tiền-MFA vẫn bị thu hồi khi nâng cấp từ
+//     head cũ đã đặt browserFlow sang flow MFA nhưng chưa logout;
+//     nếu logout-all lỗi, mốc migration không được chốt và lượt
+//     cấp phát sau phải thử thu hồi lại trước khi ghi mốc hoàn tất.
 //
 // Mọi kiểm tra in một dòng tiếng Việt ĐẠT/KHÔNG ĐẠT/BỎ QUA kèm mô tả
 // hành vi; tiến trình thoát khác 0 nếu có kiểm tra KHÔNG ĐẠT. Bí mật
 // kiểm chứng sinh ngẫu nhiên trong bộ nhớ của tiến trình, không ghi
 // ra file và không in ra log.
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createHash, createHmac, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PROVISION = join(HERE, "..", "provision.mjs");
+const MASTER_BROWSER_FLOW = "lms-master-browser";
+const MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE = "lms.master.mfa-session-migration";
+const MASTER_MFA_SESSION_MIGRATION_VERSION = "logout-all-v1";
 
 const baseUrl = (process.env.KC_BASE_URL || "http://localhost:8180").replace(/\/$/, "");
 const adminUser = process.env.KC_ADMIN_USERNAME || "";
@@ -373,6 +378,17 @@ function runProvision() {
   execFileSync("node", [PROVISION, "--config", configPath], {
     env: process.env,
     stdio: "pipe",
+  });
+}
+
+function runProvisionAsync(env) {
+  return new Promise((resolve) => {
+    const child = spawn("node", [PROVISION, "--config", configPath], {
+      env,
+      stdio: "ignore",
+    });
+    child.once("error", () => resolve(false));
+    child.once("exit", (code) => resolve(code === 0));
   });
 }
 
@@ -1627,11 +1643,9 @@ async function phaseMasterMfa() {
   );
 }
 async function phaseMasterLegacySession() {
-  section("Realm master — phiên SSO có từ trước khi chuyển sang flow MFA bị thu hồi ở lượt chuyển đổi");
+  section("Realm master — nâng cấp từ head cũ vẫn thu hồi phiên SSO tiền-MFA");
   const legacyName = "van-hanh-cu-kiem-chung";
 
-  // Dọn tài khoản kiểm chứng còn sót từ lần chạy trước trên cùng
-  // instance, cùng cách pha MFA của master xử lý.
   const { data: leftovers } = await api(
     "GET",
     `/admin/realms/master/users?username=${legacyName}&exact=true`,
@@ -1642,28 +1656,59 @@ async function phaseMasterLegacySession() {
   const { data: adminRole } = await api("GET", "/admin/realms/master/roles/admin");
   await api("POST", `/admin/realms/master/users/${legacy.id}/role-mappings/realm`, [adminRole]);
 
-  // Mô phỏng trạng thái TRƯỚC chuyển đổi: master còn dùng flow
-  // trình duyệt mặc định "browser" (chỉ mật khẩu, chưa bắt MFA).
+  // Dựng đúng tiền trạng thái mà head 001aeaea có thể để lại:
+  // phiên được tạo dưới flow cũ, user đã có OTP, rồi chỉ đổi
+  // browserFlow sang flow MFA mà không thu hồi phiên và không có mốc.
   const { data: masterBefore } = await api("GET", "/admin/realms/master");
+  const legacyAttributes = { ...(masterBefore?.attributes || {}) };
+  delete legacyAttributes[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE];
   const reverted = await api("PUT", "/admin/realms/master", {
     ...masterBefore,
     browserFlow: "browser",
+    attributes: legacyAttributes,
   });
   check(
-    "Đưa được realm master về flow trình duyệt mặc định để dựng phiên cũ chưa MFA",
+    "Đưa được master về flow cũ và xoá mốc migration để dựng trạng thái nâng cấp",
     reverted.status === 204,
     `HTTP ${reverted.status}`,
   );
 
-  // Đăng nhập chỉ bằng mật khẩu dưới flow cũ: phiên SSO được tạo,
-  // và cookie của phiên đó tự đi qua yêu cầu authorize tiếp theo
-  // mà không cần đăng nhập lại.
-  const preLogin = await loginMasterUser(legacyName, pw(legacyName), { enrollOtp: false });
-  check(
-    "Dưới flow cũ, tài khoản master đăng nhập chỉ bằng mật khẩu và tạo được phiên SSO",
-    preLogin.result.outcome === "redirect" && Boolean(preLogin.result.code),
-    `kết quả: ${preLogin.result.outcome}/${preLogin.result.kind || ""}`,
+  const { data: legacyBeforeLogin } = await api("GET", `/admin/realms/master/users/${legacy.id}`);
+  await api("PUT", `/admin/realms/master/users/${legacy.id}`, {
+    ...legacyBeforeLogin,
+    requiredActions: ["CONFIGURE_TOTP"],
+  });
+  const preLogin = await loginMasterUser(legacyName, pw(legacyName));
+  const { data: legacyCredentials } = await api(
+    "GET",
+    `/admin/realms/master/users/${legacy.id}/credentials`,
   );
+  check(
+    "Tài khoản nâng cấp đã có credential OTP và phiên SSO sống dưới flow cũ",
+    preLogin.result.outcome === "redirect" &&
+      Boolean(preLogin.result.code) &&
+      (legacyCredentials || []).some((credential) => credential.type === "otp"),
+    `kết quả đăng nhập: ${preLogin.result.outcome}`,
+  );
+
+  const { data: masterWithLegacySession } = await api("GET", "/admin/realms/master");
+  const oldHeadAttributes = { ...(masterWithLegacySession?.attributes || {}) };
+  delete oldHeadAttributes[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE];
+  const oldHeadState = await api("PUT", "/admin/realms/master", {
+    ...masterWithLegacySession,
+    browserFlow: MASTER_BROWSER_FLOW,
+    attributes: oldHeadAttributes,
+  });
+  const { data: masterOldHead } = await api("GET", "/admin/realms/master");
+  check(
+    "Trạng thái head cũ có browserFlow MFA nhưng chưa có mốc migration",
+    oldHeadState.status === 204 &&
+      masterOldHead?.browserFlow === MASTER_BROWSER_FLOW &&
+      masterOldHead?.attributes?.[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE] !==
+        MASTER_MFA_SESSION_MIGRATION_VERSION,
+    `HTTP ${oldHeadState.status}, browserFlow: ${masterOldHead?.browserFlow}`,
+  );
+
   const consoleRedirect = `${baseUrl}/admin/master/console/`;
   const reuseBefore = await driveFlow(
     preLogin.jar,
@@ -1676,36 +1721,33 @@ async function phaseMasterLegacySession() {
     async () => null,
   );
   check(
-    "Trước chuyển đổi, cookie của phiên cũ tự qua được yêu cầu authorize mới (SSO còn hiệu lực)",
+    "Ở trạng thái head cũ, cookie tiền-MFA vẫn tự qua authorize dù browserFlow đã là flow MFA",
     reuseBefore.outcome === "redirect" && Boolean(reuseBefore.code),
     `kết quả: ${reuseBefore.outcome}/${reuseBefore.kind || ""}`,
   );
 
-  // Lượt chuyển đổi: chạy lại bộ cấp phát — browserFlow đang là
-  // "browser", khác flow MFA, nên lớp phủ phải thu hồi toàn bộ
-  // phiên master hiện có đúng ở lượt này.
   let provisionOk = true;
   try {
     runProvision();
   } catch {
     provisionOk = false;
   }
-  check("Chạy lại bộ cấp phát để chuyển master sang flow MFA không lỗi", provisionOk);
-  // Lượt chuyển đổi vừa thu hồi cả phiên gắn với token quản trị
-  // đang cache của harness — xin token mới trước khi đọc lại.
+  check("Bộ cấp phát mới xử lý trạng thái nâng cấp từ head cũ không lỗi", provisionOk);
+
   resetAdminToken();
   const { data: masterAfter } = await api("GET", "/admin/realms/master");
   check(
-    "Sau chuyển đổi, realm master trở lại flow trình duyệt lms-master-browser",
-    masterAfter?.browserFlow === "lms-master-browser",
-    `browserFlow: ${masterAfter?.browserFlow}`,
+    "Sau nâng cấp, mốc migration chỉ ra thu hồi phiên đã hoàn tất",
+    masterAfter?.attributes?.[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE] ===
+      MASTER_MFA_SESSION_MIGRATION_VERSION,
+    `mốc: ${masterAfter?.attributes?.[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE] || "thiếu"}`,
   );
   const { data: sessionsAfter } = await api(
     "GET",
     `/admin/realms/master/users/${legacy.id}/sessions`,
   );
   check(
-    "Sau chuyển đổi, tài khoản master không còn phiên đăng nhập nào (phiên cũ đã bị thu hồi)",
+    "Sau nâng cấp, phiên SSO tiền-MFA của tài khoản đã có OTP bị thu hồi",
     Array.isArray(sessionsAfter) && sessionsAfter.length === 0,
     `số phiên: ${Array.isArray(sessionsAfter) ? sessionsAfter.length : "không đọc được"}`,
   );
@@ -1720,9 +1762,132 @@ async function phaseMasterLegacySession() {
     async () => null,
   );
   check(
-    "Cookie của phiên cũ không còn vào được sau chuyển đổi: bị đưa về trang đăng nhập thay vì qua thẳng",
+    "Cookie tiền-MFA không còn dùng được sau nâng cấp và bị đưa về trang đăng nhập",
     reuseAfter.outcome === "page" && reuseAfter.kind === "password",
     `kết quả: ${reuseAfter.outcome}/${reuseAfter.kind || ""}`,
+  );
+}
+
+async function phaseMasterLogoutRetry() {
+  section("Realm master — logout-all lỗi không chốt mốc và lượt sau thử lại");
+  const retryName = "van-hanh-thu-lai-kiem-chung";
+
+  const { data: leftovers } = await api(
+    "GET",
+    `/admin/realms/master/users?username=${retryName}&exact=true`,
+  );
+  if (leftovers?.[0]) await api("DELETE", `/admin/realms/master/users/${leftovers[0].id}`);
+
+  const retryUser = await createUser("master", retryName, testPassword());
+  const { data: adminRole } = await api("GET", "/admin/realms/master/roles/admin");
+  await api("POST", `/admin/realms/master/users/${retryUser.id}/role-mappings/realm`, [adminRole]);
+
+  const { data: masterBefore } = await api("GET", "/admin/realms/master");
+  const pendingAttributes = { ...(masterBefore?.attributes || {}) };
+  delete pendingAttributes[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE];
+  await api("PUT", "/admin/realms/master", {
+    ...masterBefore,
+    browserFlow: "browser",
+    attributes: pendingAttributes,
+  });
+  const preLogin = await loginMasterUser(retryName, pw(retryName), { enrollOtp: false });
+  check(
+    "Tạo được phiên SSO để kiểm chứng đường thử lại logout-all",
+    preLogin.result.outcome === "redirect" && Boolean(preLogin.result.code),
+    `kết quả: ${preLogin.result.outcome}/${preLogin.result.kind || ""}`,
+  );
+
+  let forcedFailures = 0;
+  const proxy = createServer(async (req, res) => {
+    if (req.method === "POST" && req.url === "/admin/realms/master/logout-all" && forcedFailures === 0) {
+      forcedFailures += 1;
+      res.writeHead(503);
+      res.end();
+      return;
+    }
+
+    try {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const headers = { ...req.headers, "accept-encoding": "identity" };
+      delete headers.host;
+      delete headers.connection;
+      delete headers["content-length"];
+      delete headers["transfer-encoding"];
+      const upstream = await fetch(`${baseUrl}${req.url}`, {
+        method: req.method,
+        headers,
+        body: req.method === "GET" || req.method === "HEAD" ? undefined : Buffer.concat(chunks),
+        redirect: "manual",
+      });
+      const body = Buffer.from(await upstream.arrayBuffer());
+      const contentType = upstream.headers.get("content-type");
+      if (contentType) res.setHeader("content-type", contentType);
+      res.writeHead(upstream.status);
+      res.end(body);
+    } catch {
+      res.writeHead(502);
+      res.end();
+    }
+  });
+
+  await new Promise((resolve, reject) => {
+    proxy.once("error", reject);
+    proxy.listen(0, "127.0.0.1", resolve);
+  });
+  const proxyAddress = proxy.address();
+  const failedRunOk = await runProvisionAsync({
+    ...process.env,
+    KC_BASE_URL: `http://127.0.0.1:${proxyAddress.port}`,
+  });
+  await new Promise((resolve) => proxy.close(resolve));
+
+  check(
+    "Lượt đầu bị ép lỗi đúng tại logout-all và bộ cấp phát trả lỗi",
+    !failedRunOk && forcedFailures === 1,
+    `provision thành công: ${failedRunOk}, số lỗi ép: ${forcedFailures}`,
+  );
+
+  const { data: masterAfterFailure } = await api("GET", "/admin/realms/master");
+  const { data: sessionsAfterFailure } = await api(
+    "GET",
+    `/admin/realms/master/users/${retryUser.id}/sessions`,
+  );
+  check(
+    "Sau logout-all lỗi, flow đã đổi sang MFA nhưng mốc chưa được chốt và phiên cũ còn sống",
+    masterAfterFailure?.browserFlow === MASTER_BROWSER_FLOW &&
+      masterAfterFailure?.attributes?.[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE] !==
+        MASTER_MFA_SESSION_MIGRATION_VERSION &&
+      Array.isArray(sessionsAfterFailure) &&
+      sessionsAfterFailure.length > 0,
+    `browserFlow: ${masterAfterFailure?.browserFlow}, số phiên: ${
+      Array.isArray(sessionsAfterFailure) ? sessionsAfterFailure.length : "không đọc được"
+    }`,
+  );
+
+  let retryOk = true;
+  try {
+    runProvision();
+  } catch {
+    retryOk = false;
+  }
+  resetAdminToken();
+  check("Lượt cấp phát thứ hai thử lại migration và chạy thành công", retryOk);
+
+  const { data: masterAfterRetry } = await api("GET", "/admin/realms/master");
+  const { data: sessionsAfterRetry } = await api(
+    "GET",
+    `/admin/realms/master/users/${retryUser.id}/sessions`,
+  );
+  check(
+    "Lượt thứ hai thu hồi phiên rồi mới chốt mốc migration hoàn tất",
+    masterAfterRetry?.attributes?.[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE] ===
+      MASTER_MFA_SESSION_MIGRATION_VERSION &&
+      Array.isArray(sessionsAfterRetry) &&
+      sessionsAfterRetry.length === 0,
+    `mốc: ${
+      masterAfterRetry?.attributes?.[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE] || "thiếu"
+    }, số phiên: ${Array.isArray(sessionsAfterRetry) ? sessionsAfterRetry.length : "không đọc được"}`,
   );
 }
 
@@ -1749,6 +1914,7 @@ async function main() {
   await phaseScopeRoleMappingDrift();
   await phaseMasterMfa();
   await phaseMasterLegacySession();
+  await phaseMasterLogoutRetry();
   console.log(`\nTổng kết: ${passed} ĐẠT, ${failed} KHÔNG ĐẠT, ${skipped} BỎ QUA`);
   if (failed > 0) process.exit(1);
 }

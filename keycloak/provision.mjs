@@ -873,19 +873,14 @@ async function provisionRealm(rep, kind, webClientId, webSecretEnvName) {
 //   auth-cookie ALTERNATIVE cùng cấp với subflow form, nên một
 //   phiên SSO master đã tạo từ trước (khi master chưa bắt MFA)
 //   có thể tiếp tục bằng cookie cũ mà bỏ qua subflow mật khẩu +
-//   OTP. Vì vậy, ở lượt cấp phát đầu tiên trỏ browserFlow của
-//   master sang flow MFA (browserFlow hiện tại chưa phải flow
-//   MFA), ngay sau khi trỏ flow, bộ cấp phát gọi endpoint chính
-//   thức POST /admin/realms/master/logout-all để thu hồi toàn bộ
-//   phiên đăng nhập hiện có của realm master: phiên cũ không
-//   còn dùng được, mọi tài khoản phải đăng nhập lại và qua MFA.
-//   Đây là migration một lần gắn với thời điểm chuyển flow —
-//   các lượt chạy lại sau đó (browserFlow đã là flow MFA) KHÔNG
-//   thu hồi phiên nữa. Đường quay lui: đặt lại browserFlow của
-//   master về "browser" trong Admin Console; các phiên đã thu
-//   hồi không khôi phục được, người dùng chỉ đăng nhập lại như
-//   bình thường. Nếu sau quay lui lại áp lớp phủ, lượt chuyển
-//   đổi mới lại thu hồi phiên một lần nữa.
+//   OTP. Vì vậy bộ cấp phát dùng một realm attribute bền vững,
+//   độc lập với browserFlow, để ghi nhận migration đã hoàn tất.
+//   Khi chưa có đúng mốc hiện hành, bộ cấp phát gọi endpoint
+//   chính thức POST /admin/realms/master/logout-all và chỉ ghi
+//   mốc sau khi thu hồi thành công. Nếu logout-all lỗi, mốc vẫn
+//   thiếu nên lượt chạy sau bắt buộc thử lại. Nếu browserFlow
+//   từng bị quay lui khỏi flow MFA, mốc cũ bị xoá khi áp lại để
+//   chu kỳ chuyển đổi mới cũng thu hồi toàn bộ phiên hiện có.
 //
 // Flow được tạo TỪNG BƯỚC bằng các endpoint chính thức (tạo flow,
 // thêm từng execution, đặt requirement bằng PUT từng bản ghi
@@ -897,6 +892,8 @@ async function provisionRealm(rep, kind, webClientId, webSecretEnvName) {
 
 const MASTER_BROWSER_FLOW = "lms-master-browser";
 const MASTER_BROWSER_FORMS = "lms-master-browser forms";
+const MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE = "lms.master.mfa-session-migration";
+const MASTER_MFA_SESSION_MIGRATION_VERSION = "logout-all-v1";
 
 // Chữ ký đích của flow: [mức lồng, định danh execution, requirement].
 // Execution dạng subflow mang định danh "flow:<alias của subflow>".
@@ -1043,29 +1040,56 @@ async function applyMasterOverlay() {
   // Chỉ trỏ browserFlow về flow MFA khi flow đã bảo đảm đúng mẫu,
   // tránh để realm master trỏ vào một flow chưa sẵn sàng.
   if (flowReady) wanted.browserFlow = MASTER_BROWSER_FLOW;
-  // Đây có phải lượt chuyển đổi sang flow MFA không: browserFlow
-  // hiện tại chưa phải flow MFA thì ngay sau khi trỏ flow phải
-  // thu hồi toàn bộ phiên master hiện có (migration một lần —
-  // xem khối giải thích ở đầu mục này).
-  const migratingToMfaFlow = flowReady && master?.browserFlow !== MASTER_BROWSER_FLOW;
+
+  const migrationComplete =
+    master?.attributes?.[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE] ===
+    MASTER_MFA_SESSION_MIGRATION_VERSION;
+  const migrationPending =
+    flowReady && (master?.browserFlow !== MASTER_BROWSER_FLOW || !migrationComplete);
+
+  // Nếu flow từng bị quay lui, mốc cũ không còn đại diện cho chu kỳ
+  // chuyển đổi hiện tại: xoá nó ngay trong PUT đưa flow về MFA.
+  if (flowReady && master?.browserFlow !== MASTER_BROWSER_FLOW && migrationComplete) {
+    wanted.attributes = { ...(master.attributes || {}) };
+    delete wanted.attributes[MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE];
+  }
+
   const updated = { ...master, ...wanted };
   const { status } = await api("PUT", "/admin/realms/master", updated);
   if (status === 204) {
     ok("đã áp tham số brute force, sự kiện và browser flow MFA cho realm master");
-    if (migratingToMfaFlow) {
+    if (migrationPending) {
       const revoked = await api("POST", "/admin/realms/master/logout-all");
       if (revoked.status === 200) {
         ok(
-          "chuyển đổi sang flow MFA: đã thu hồi toàn bộ phiên đăng nhập hiện có của realm master — phiên cũ phải đăng nhập lại qua MFA",
+          "migration MFA master: đã thu hồi toàn bộ phiên đăng nhập hiện có — phiên cũ phải đăng nhập lại qua MFA",
         );
         // logout-all thu hồi cả phiên của chính tài khoản gọi
-        // Admin API (token password grant cũng gắn với một
-        // phiên), nên token đang cache không còn hiệu lực: xoá
-        // cache để lần gọi API tiếp theo xin token mới.
+        // Admin API, nên phải xin token mới trước khi ghi mốc.
         cachedToken = null;
         tokenExpiresAt = 0;
+
+        const masterAfterLogout = await api("GET", "/admin/realms/master");
+        if (masterAfterLogout.status !== 200 || !masterAfterLogout.data) {
+          fail(
+            `đọc realm master sau khi thu hồi phiên trả HTTP ${masterAfterLogout.status}; chưa ghi mốc migration`,
+          );
+        } else {
+          const marked = await api("PUT", "/admin/realms/master", {
+            ...masterAfterLogout.data,
+            attributes: {
+              ...(masterAfterLogout.data.attributes || {}),
+              [MASTER_MFA_SESSION_MIGRATION_ATTRIBUTE]: MASTER_MFA_SESSION_MIGRATION_VERSION,
+            },
+          });
+          if (marked.status === 204) {
+            ok("migration MFA master: đã ghi mốc thu hồi phiên hoàn tất");
+          } else {
+            fail(`ghi mốc migration MFA master trả HTTP ${marked.status}`);
+          }
+        }
       } else {
-        fail(`thu hồi phiên realm master ở lượt chuyển đổi sang flow MFA trả HTTP ${revoked.status}`);
+        fail(`thu hồi phiên realm master cho migration MFA trả HTTP ${revoked.status}`);
       }
     }
   } else fail(`PUT realm master trả HTTP ${status}`);
@@ -1157,7 +1181,7 @@ async function main() {
           `${job.rep.identityProviders?.length || 0} IdP sau lọc theo môi trường`,
       );
     }
-    console.log("DRY-RUN realm master: lớp phủ brute force + flow trình duyệt bắt OTP + CONFIGURE_TOTP cho mọi tài khoản tương tác trừ tài khoản gọi API; lượt chuyển đổi đầu tiên sang flow MFA thu hồi toàn bộ phiên master hiện có");
+    console.log("DRY-RUN realm master: lớp phủ brute force + flow trình duyệt bắt OTP + CONFIGURE_TOTP cho mọi tài khoản tương tác trừ tài khoản gọi API; migration MFA chưa có mốc bền vững sẽ thu hồi toàn bộ phiên master hiện có rồi mới ghi mốc hoàn tất");
     return;
   }
 

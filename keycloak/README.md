@@ -306,21 +306,20 @@ mẫu import, bộ cấp phát áp mọi thứ bằng Admin REST API:
   báo lỗi thay vì tự viết lại flow đang chạy (cùng kỷ luật
   với các realm có mẫu); quay lui khi cần là đặt lại
   `browserFlow` của realm về `browser` trong Admin Console.
-- Thu hồi phiên ở lượt chuyển đổi sang flow MFA: flow mới
-  vẫn giữ cookie ở mức ALTERNATIVE cùng cấp với subflow
-  form, nên phiên SSO `master` tạo từ trước khi áp lớp phủ
-  (khi `master` chưa bắt MFA) có thể tiếp tục bằng cookie
-  cũ mà bỏ qua mật khẩu + OTP. Để đóng đường này, ở lượt
-  cấp phát đầu tiên trỏ `browserFlow` sang
-  `lms-master-browser`, bộ cấp phát gọi endpoint chính
-  thức `POST /admin/realms/master/logout-all` ngay sau khi
-  trỏ flow để thu hồi toàn bộ phiên đăng nhập hiện có của
-  realm `master`. Đây là migration một lần: các lượt chạy
-  lại sau đó, khi `browserFlow` đã là flow MFA, không thu
-  hồi phiên nữa. Phiên đã thu hồi không khôi phục được —
-  người dùng đăng nhập lại và qua MFA như bình thường;
-  nếu quay lui `browserFlow` về `browser` rồi áp lại lớp
-  phủ, lượt chuyển đổi mới lại thu hồi phiên một lần nữa.
+- Thu hồi phiên khi migration sang flow MFA: flow mới vẫn
+  giữ cookie ở mức ALTERNATIVE cùng cấp với subflow form,
+  nên phiên SSO `master` tạo từ trước khi áp lớp phủ có thể
+  tiếp tục bằng cookie cũ mà bỏ qua mật khẩu + OTP. Bộ cấp
+  phát vì vậy dùng realm attribute
+  `lms.master.mfa-session-migration=logout-all-v1` làm mốc
+  bền vững, độc lập với `browserFlow`. Realm chưa có đúng
+  mốc này — gồm realm đã được cấp bởi các head cũ từng đặt
+  `browserFlow=lms-master-browser` nhưng chưa thu hồi phiên
+  — vẫn phải gọi `POST /admin/realms/master/logout-all`.
+  Mốc chỉ được ghi sau khi logout-all thành công; nếu endpoint
+  lỗi hoặc việc ghi mốc lỗi thì lần chạy sau vẫn thử lại. Nếu
+  `browserFlow` từng bị quay lui khỏi flow MFA, mốc cũ được
+  xoá khi áp lại để chu kỳ chuyển đổi mới cũng thu hồi phiên.
 - Required action `CONFIGURE_TOTP` được gắn cho **mọi** tài
   khoản thuộc realm `master` chưa có credential OTP — trừ
   đúng tài khoản đang gọi Admin API (`KC_ADMIN_USERNAME`).
@@ -386,12 +385,14 @@ kiểm, mã thoát khác 0 nếu có kiểm nào không đạt:
   khai báo MFA, khai báo xong thì vào được và lần đăng nhập
   sau bị hỏi mã OTP; đồng thời khẳng định tài khoản tự động
   hoá gọi Admin API không bị gắn required action và vẫn lấy
-  được token qua password grant sau lớp phủ. Một pha riêng
-  dựng phiên SSO `master` dưới flow mặc định (chỉ mật khẩu),
-  chạy lại bộ cấp phát để chuyển đổi sang flow MFA, rồi
-  khẳng định phiên cũ bị thu hồi ở lượt chuyển đổi: danh
-  sách phiên của tài khoản trống và cookie cũ bị đưa về
-  trang đăng nhập thay vì vào thẳng Admin Console.
+  được token qua password grant sau lớp phủ. Pha nâng cấp dựng
+  đúng trạng thái head cũ: user đã có OTP, phiên/cookie SSO
+  tạo dưới flow cũ vẫn sống, `browserFlow` đã là
+  `lms-master-browser` nhưng marker chưa có; chạy bản mới
+  phải thu hồi phiên và chỉ sau đó ghi marker. Pha thử lại ép
+  `logout-all` trả lỗi sau PUT đổi flow, khẳng định marker
+  vẫn thiếu và phiên còn sống; lần chạy kế tiếp phải thu hồi
+  phiên thành công rồi mới chốt marker.
 
 Cách chạy bằng Docker (môi trường có Docker):
 
