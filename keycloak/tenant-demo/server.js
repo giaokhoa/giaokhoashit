@@ -55,23 +55,30 @@ async function getSigningKey(jwksUri, kid) {
   return createPublicKey({ key: jwk, format: 'jwk' });
 }
 
-// Kiểm chứng đầy đủ ID token theo OIDC Core: chữ ký RS256 qua JWKS của
-// issuer, rồi iss/aud/exp/nonce. Thiếu bước này thì claim lấy từ token
+// Kiểm chứng chữ ký RS256 qua JWKS của issuer, rồi iss/exp — dùng chung
+// cho ID token và access token. Thiếu bước này thì claim lấy từ token
 // không có gì đảm bảo là do Keycloak phát hành cho đúng lần đăng nhập.
-async function verifyIdToken(idToken, endpoints, expectedNonce) {
-  const parts = idToken.split('.');
-  if (parts.length !== 3) throw new Error('malformed id token');
+async function verifySignedToken(token, endpoints) {
+  const parts = token.split('.');
+  if (parts.length !== 3) throw new Error('malformed token');
   const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
   const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-  if (header.alg !== 'RS256') throw new Error('unexpected id token alg');
+  if (header.alg !== 'RS256') throw new Error('unexpected token alg');
   const key = await getSigningKey(endpoints.jwks_uri, header.kid);
   const signed = Buffer.from(`${parts[0]}.${parts[1]}`);
   const signature = Buffer.from(parts[2], 'base64url');
-  if (!verifySignature('RSA-SHA256', signed, key, signature)) throw new Error('id token signature invalid');
-  if (payload.iss !== ISSUER) throw new Error('id token issuer mismatch');
+  if (!verifySignature('RSA-SHA256', signed, key, signature)) throw new Error('token signature invalid');
+  if (payload.iss !== ISSUER) throw new Error('token issuer mismatch');
+  if (payload.exp * 1000 <= Date.now()) throw new Error('token expired');
+  return payload;
+}
+
+// ID token kiểm thêm aud và nonce theo OIDC Core: aud phải là client này
+// và nonce phải khớp giá trị đã gửi ở bước authorize của đúng lượt này.
+async function verifyIdToken(idToken, endpoints, expectedNonce) {
+  const payload = await verifySignedToken(idToken, endpoints);
   const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
   if (!audiences.includes(CLIENT_ID)) throw new Error('id token audience mismatch');
-  if (payload.exp * 1000 <= Date.now()) throw new Error('id token expired');
   if (payload.nonce !== expectedNonce) throw new Error('id token nonce mismatch');
   return payload;
 }
@@ -243,7 +250,9 @@ async function handleLogin(req, res) {
   authorizeUrl.searchParams.set('client_id', CLIENT_ID);
   authorizeUrl.searchParams.set('response_type', 'code');
   authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-  authorizeUrl.searchParams.set('scope', 'openid');
+  // Scope organization phải xin tường minh: Keycloak 26.8.1 không nhận scope này làm Default client scope (gán
+  // qua Admin API vẫn thành công nhưng scope nằm ở nhóm Optional), không xin thì claim organization không về.
+  authorizeUrl.searchParams.set('scope', 'openid organization');
   authorizeUrl.searchParams.set('state', state);
   authorizeUrl.searchParams.set('nonce', nonce);
   authorizeUrl.searchParams.set('code_challenge', codeChallenge);
@@ -284,6 +293,7 @@ async function handleCallback(req, res, url) {
   const tokens = await tokenRes.json();
 
   const idTokenClaims = await verifyIdToken(tokens.id_token, endpoints, flow.nonce);
+  const accessTokenClaims = await verifySignedToken(tokens.access_token, endpoints);
 
   const userinfoRes = await fetch(endpoints.userinfo_endpoint, {
     headers: { Authorization: `Bearer ${tokens.access_token}` },
@@ -294,17 +304,20 @@ async function handleCallback(req, res, url) {
     return renderError(res, 502, 'Thông tin người dùng không khớp với ID token.');
   }
 
-  // Claim organization và realm_access nằm ở userinfo khi mapper của
-  // Keycloak bật cộng vào userinfo; lượt nào userinfo thiếu thì lấy từ
-  // ID token đã kiểm chứng chữ ký ở trên — cả hai đều là dữ kiện
-  // Keycloak trả về cho đúng người dùng vừa đăng nhập.
-  const rolesClaim = userinfo.realm_access || idTokenClaims.realm_access || {};
+  // Nguồn claim theo thứ tự userinfo -> ID token -> access token (cả hai
+  // token đều đã kiểm chứng chữ ký ở trên): scope `roles` có sẵn của
+  // Keycloak chỉ đưa realm_access vào access token (mapper của nó không
+  // bật cộng vào ID token hay userinfo), còn claim organization có mặt ở
+  // cả ID token và userinfo khi scope organization được xin tường minh.
+  const rolesClaim = userinfo.realm_access || idTokenClaims.realm_access || accessTokenClaims.realm_access || {};
   const defaultRoles = new Set(['offline_access', 'uma_authorization']);
   const roles = (rolesClaim.roles || []).filter(
     (role) => !defaultRoles.has(role) && !role.startsWith('default-roles-'),
   );
   const organizationClaim = userinfo.organization || idTokenClaims.organization || {};
-  const organizations = Object.keys(organizationClaim);
+  // Claim organization có hai dạng tuỳ cách Keycloak phát hành: mảng các alias, hoặc map alias -> thông tin
+  // của tổ chức (id, groups khi mapper bật). Cả hai đều chỉ cần danh sách alias.
+  const organizations = Array.isArray(organizationClaim) ? organizationClaim : Object.keys(organizationClaim);
 
   const sessionId = randomToken(32);
   sessions.set(sessionId, {

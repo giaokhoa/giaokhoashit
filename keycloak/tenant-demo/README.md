@@ -11,8 +11,8 @@ không có quyền tại đó: quyền của tài khoản chỉ tồn tại tron
 Organizations của Keycloak.
 
 Ứng dụng là một file `server.js` dùng thuần thư viện chuẩn của Node (http, fetch, crypto), tự cài đặt authorization
-code flow với PKCE S256, `state` và `nonce` theo OpenID Connect Core/Discovery và RFC 7636, có kiểm chứng chữ ký ID
-token qua JWKS của issuer. Không có dependency nào. Phiên đăng nhập chỉ ở bộ nhớ tiến trình; token không bao giờ
+code flow với PKCE S256, `state` và `nonce` theo OpenID Connect Core/Discovery và RFC 7636, có kiểm chứng chữ ký
+các token qua JWKS của issuer. Không có dependency nào. Phiên đăng nhập chỉ ở bộ nhớ tiến trình; token không bao giờ
 được hiển thị hay ghi log.
 
 ## Cách chạy
@@ -42,4 +42,5 @@ node keycloak/tenant-demo/server.js
 | `TENANT_DEMO_PUBLIC_SCHEME` | `https` | Scheme địa chỉ công khai; đặt `http` khi chạy local. |
 
 Phía Keycloak, client `lms-web` cần có redirect URI và post-logout redirect URI cho từng hostname trong danh sách
-cho phép, và client scope `organization` ở dạng Default để claim `organization` có mặt trong token/userinfo.
+cho phép. Ứng dụng xin tường minh scope `organization` ở bước đăng nhập (Keycloak 26.8.1 không nhận scope này làm
+Default client scope) để claim `organization` có mặt trong token/userinfo.
