@@ -341,7 +341,11 @@ export function CourseAdminPage() {
     (courseAccess?.capabilities.includes('course:update') ?? false);
   const canManageGroups =
     perms.canAdminister || (courseAccess?.capabilities.includes('course:managegroups') ?? false);
-  /** Quản lý thành viên cohort cần `cohort:manage` ở context của cohort; giao diện hiện thao tác khi capability này xuất hiện trong ảnh chụp quyền ở bất kỳ context nào hoặc là quản trị hệ thống — API vẫn thực thi theo đúng context của từng cohort. */
+  /**
+   * Quản lý thành viên cohort cần `cohort:manage` ở context của cohort; giao diện hiện thao tác khi capability này xuất
+   * hiện trong ảnh chụp quyền ở bất kỳ context nào hoặc là quản trị hệ thống — API vẫn thực thi theo đúng context của
+   * từng cohort.
+   */
   const canManageCohorts =
     perms.canAdminister ||
     (perms.access?.contexts.some((c) => c.capabilities.includes('cohort:manage')) ?? false);

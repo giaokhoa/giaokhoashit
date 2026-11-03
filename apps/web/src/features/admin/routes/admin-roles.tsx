@@ -41,10 +41,9 @@ export function AdminRolesPage() {
   const matrix = matrixQuery.data ?? [];
   const loading = rolesQuery.isPending || capabilitiesQuery.isPending || contextsQuery.isPending;
   /**
-   * Lỗi tải theo độ hạt của từng query (điểm 5 ở comment đầu file):
-   * banner toàn trang chỉ khi danh sách vai lỗi và chưa có dữ kiện;
-   * hai query phụ lỗi khi chưa có dữ kiện thì báo tại chỗ; lỗi làm
-   * mới nền khi đã có dữ kiện không sinh thông báo nào.
+   * Lỗi tải theo độ hạt của từng query (điểm 5 ở comment đầu file): banner toàn trang chỉ khi danh sách vai lỗi và chưa
+   * có dữ kiện; hai query phụ lỗi khi chưa có dữ kiện thì báo tại chỗ; lỗi làm mới nền khi đã có dữ kiện không sinh
+   * thông báo nào.
    */
   const rolesLoadFailed = rolesQuery.isError && rolesQuery.data === undefined;
   const supportLoadFailed =

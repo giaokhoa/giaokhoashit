@@ -2,23 +2,17 @@ import i18n, { type BackendModule } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 /**
- * i18n phía frontend (i18next + react-i18next): catalog tiếng Việt tập trung
- * tại file này và được đóng gói sẵn trong bundle khởi tạo (locale mặc định),
- * kèm tiếng Anh NẠP LƯỜI — cùng quy ước với catalog của backend
- * (@nestjs/i18n). Mọi chuỗi hiển thị trên các màn hình phải tra qua
- * `t('...')`, không nhúng chuỗi cứng trong component.
+ * i18n phía frontend (i18next + react-i18next): catalog tiếng Việt tập trung tại file này và được đóng gói sẵn trong
+ * bundle khởi tạo (locale mặc định), kèm tiếng Anh NẠP LƯỜI — cùng quy ước với catalog của backend (@nestjs/i18n). Mọi
+ * chuỗi hiển thị trên các màn hình phải tra qua `t('...')`, không nhúng chuỗi cứng trong component.
  *
- * Luồng nạp tiếng Anh (issue #503, bước gọn i18n ở root; pattern lazy
- * loading chính thức của i18next — backend plugin +
- * `partialBundledLanguages`): catalog en nằm ở module riêng `i18n-en.ts`,
- * KHÔNG nằm trong bundle khởi tạo vì giao diện mặc định chỉ dùng tiếng
- * Việt (trước khi tách, en chiếm ~47% số byte catalog nạp ở root). Khi
- * ngôn ngữ được chuyển sang `en`, i18next gọi `read` của backend dưới
- * đây cho từng namespace; backend dynamic import `i18n-en.ts` (Vite cắt
- * thành chunk riêng, chỉ tải ở đúng lượt chuyển ngôn ngữ đó) rồi trả
- * object chuỗi của namespace — i18next chờ nạp xong mới phát sự kiện đổi
- * ngôn ngữ nên giao diện không bao giờ hiện khoá thô. Tiếng Việt đã đóng
- * gói sẵn nên backend không bao giờ được gọi cho `vi`.
+ * Luồng nạp tiếng Anh (issue #503, bước gọn i18n ở root; pattern lazy loading chính thức của i18next — backend plugin +
+ * `partialBundledLanguages`): catalog en nằm ở module riêng `i18n-en.ts`, KHÔNG nằm trong bundle khởi tạo vì giao diện
+ * mặc định chỉ dùng tiếng Việt (trước khi tách, en chiếm ~47% số byte catalog nạp ở root). Khi ngôn ngữ được chuyển
+ * sang `en`, i18next gọi `read` của backend dưới đây cho từng namespace; backend dynamic import `i18n-en.ts` (Vite cắt
+ * thành chunk riêng, chỉ tải ở đúng lượt chuyển ngôn ngữ đó) rồi trả object chuỗi của namespace — i18next chờ nạp xong
+ * mới phát sự kiện đổi ngôn ngữ nên giao diện không bao giờ hiện khoá thô. Tiếng Việt đã đóng gói sẵn nên backend không
+ * bao giờ được gọi cho `vi`.
  */
 export const platformResources = {
   vi: {
@@ -2805,17 +2799,17 @@ export const guardianResources = {
   }
 } as const;
 
-/** Promise import module catalog en — dùng chung cho mọi lần `read` (bốn
- * namespace) để chunk en chỉ tải đúng một lần trong suốt phiên. Nếu lần
- * nạp lỗi (mạng/CDN) thì cache tự xoá ở điểm gán trong `read` bên dưới,
- * để lần yêu cầu sau nạp lại từ đầu thay vì dùng lại promise đã reject. */
+/**
+ * Promise import module catalog en — dùng chung cho mọi lần `read` (bốn namespace) để chunk en chỉ tải đúng một lần
+ * trong suốt phiên. Nếu lần nạp lỗi (mạng/CDN) thì cache tự xoá ở điểm gán trong `read` bên dưới, để lần yêu cầu sau
+ * nạp lại từ đầu thay vì dùng lại promise đã reject.
+ */
 let englishCatalogModule: Promise<typeof import('#config/i18n-en')> | undefined;
 
 /**
- * Backend nạp lười của i18next cho DUY NHẤT locale `en`: `read` được
- * i18next gọi theo từng namespace khi locale đó được yêu cầu (đổi ngôn
- * ngữ hoặc `loadLanguages('en')`); các locale đã đóng gói sẵn (vi) không
- * đi qua backend này nhờ `partialBundledLanguages: true` ở init dưới.
+ * Backend nạp lười của i18next cho DUY NHẤT locale `en`: `read` được i18next gọi theo từng namespace khi locale đó được
+ * yêu cầu (đổi ngôn ngữ hoặc `loadLanguages('en')`); các locale đã đóng gói sẵn (vi) không đi qua backend này nhờ
+ * `partialBundledLanguages: true` ở init dưới.
  */
 const englishCatalogBackend: BackendModule = {
   type: 'backend',

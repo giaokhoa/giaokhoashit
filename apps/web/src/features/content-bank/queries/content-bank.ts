@@ -119,10 +119,9 @@ export function useReviewContentBankItem() {
 }
 
 /**
- * Đột biến cắm một học liệu vào một section của khoá bằng bản sao
- * (POST /contentbank/:id/insert): thao tác này tạo nội dung phía
- * khoá, không đổi dữ liệu kho học liệu nên không invalidate cụm khoá
- * kho — trang chỉ cần mã module vừa cắm để báo thành công.
+ * Đột biến cắm một học liệu vào một section của khoá bằng bản sao (POST /contentbank/:id/insert): thao tác này tạo nội
+ * dung phía khoá, không đổi dữ liệu kho học liệu nên không invalidate cụm khoá kho — trang chỉ cần mã module vừa cắm để
+ * báo thành công.
  */
 export function useInsertContentBankItem() {
   return useMutation({

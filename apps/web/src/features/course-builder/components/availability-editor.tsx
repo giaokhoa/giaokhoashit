@@ -10,20 +10,18 @@ import '#config/i18n';
 /**
  * Trình sửa cây điều kiện availability cho section/course module.
  *
- * Cây giữ đúng hình dạng JSON phía API (khớp `availability-tree` ở tầng
- * availability của backend, gốc Moodle core_availability): nút là
- * `{ op: '&' | '|' | '!&' | '!|', c: [...], show?, showc? }`, lá là
- * `{ type, ...tham số }` với sáu loại lá mà backend có evaluator:
+ * Cây giữ đúng hình dạng JSON phía API (khớp `availability-tree` ở tầng availability của backend, gốc Moodle
+ * core_availability): nút là `{ op: '&' | '|' | '!&' | '!|', c: [...], show?, showc? }`, lá là `{ type, ...tham số }`
+ * với sáu loại lá mà backend có evaluator:
  * - `date`: `{ d: '>=' | '<', t: epoch giây }`
  * - `grade`: `{ id: gradeItemId, min?, max? }` (min/max là phần trăm)
  * - `completion`: `{ id: cmId, state }` (1 hoàn thành, 2 đạt, 3 không đạt)
  * - `group`: `{ id: groupId }`, `grouping`: `{ id: groupingId }`
  * - `profile`: `{ field, operator: eq|contains|notempty|isempty, value? }`
  *
- * Lá thuộc loại lạ (plugin ngoài sáu loại trên) được giữ nguyên vẹn khi
- * lưu và chỉ cho xoá — trình sửa không đoán cấu trúc của chúng. Component
- * khởi tạo mô hình từ `value` tại thời điểm mount; nơi dùng phải truyền
- * `key` riêng cho từng section/module để đổi mục tiêu là dựng lại state.
+ * Lá thuộc loại lạ (plugin ngoài sáu loại trên) được giữ nguyên vẹn khi lưu và chỉ cho xoá — trình sửa không đoán cấu
+ * trúc của chúng. Component khởi tạo mô hình từ `value` tại thời điểm mount; nơi dùng phải truyền `key` riêng cho từng
+ * section/module để đổi mục tiêu là dựng lại state.
  */
 
 export type AvailabilityOp = '&' | '|' | '!&' | '!|';

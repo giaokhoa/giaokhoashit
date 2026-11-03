@@ -19,14 +19,11 @@ export function AdminPermissionsPage() {
   const { t } = useTranslation('app');
   const [contextOverride, setContextOverride] = useState('');
   /**
-   * Sửa đổi lạc quan theo từng ô: vai trò → năng lực → {giá trị bốn
-   * trạng thái, ngữ cảnh của lần ghi}. Giá trị này ưu tiên trước ghi
-   * đè đã lưu khi hiển thị. Ghi thành công thì mục tương ứng bị xoá
-   * để ma trận tải lại không bị nháp cũ che; ghi lỗi thì mục tương
-   * ứng bị xoá để ô hoàn lại giá trị đã lưu. Ngữ cảnh đi kèm mỗi mục
-   * để lần ghi thất bại muộn của ngữ cảnh khác không xoá nhầm nháp
-   * mới — hai lần ghi cùng ô ở hai ngữ cảnh có thể trùng giá trị,
-   * chỉ so giá trị thì không phân biệt được.
+   * Sửa đổi lạc quan theo từng ô: vai trò → năng lực → {giá trị bốn trạng thái, ngữ cảnh của lần ghi}. Giá trị này ưu
+   * tiên trước ghi đè đã lưu khi hiển thị. Ghi thành công thì mục tương ứng bị xoá để ma trận tải lại không bị nháp cũ
+   * che; ghi lỗi thì mục tương ứng bị xoá để ô hoàn lại giá trị đã lưu. Ngữ cảnh đi kèm mỗi mục để lần ghi thất bại
+   * muộn của ngữ cảnh khác không xoá nhầm nháp mới — hai lần ghi cùng ô ở hai ngữ cảnh có thể trùng giá trị, chỉ so giá
+   * trị thì không phân biệt được.
    */
   const [edits, setEdits] = useState<
     Record<string, Record<string, { permission: number; contextId: string }>>
@@ -41,10 +38,8 @@ export function AdminPermissionsPage() {
     contexts.find((ctx) => ctx.contextLevel === 10)?.id ?? contexts[0]?.id ?? '';
   const contextId = contextOverride || systemContextId;
   /**
-   * Gương ngữ cảnh mới nhất để đối chiếu khi lỗi muộn về: callback
-   * lỗi của lần ghi chụp ngữ cảnh lúc gọi, còn ngữ cảnh hiển thị
-   * có thể đã đổi trong lúc chờ — chỉ hiện lỗi khi hai bên vẫn
-   * trùng nhau (xem `handleCellChange`).
+   * Gương ngữ cảnh mới nhất để đối chiếu khi lỗi muộn về: callback lỗi của lần ghi chụp ngữ cảnh lúc gọi, còn ngữ cảnh
+   * hiển thị có thể đã đổi trong lúc chờ — chỉ hiện lỗi khi hai bên vẫn trùng nhau (xem `handleCellChange`).
    */
   const contextIdRef = useRef(contextId);
   useEffect(() => {
@@ -97,10 +92,9 @@ export function AdminPermissionsPage() {
   const matrixReady = !loadFailed && !loading && matrix !== undefined;
 
   /**
-   * Xoá mục nháp của đúng một lần ghi — chỉ khi mục hiện tại vẫn là
-   * lần ghi đó (cùng giá trị và cùng ngữ cảnh): người dùng đổi tiếp
-   * ô đó trong lúc chờ, hoặc sửa cùng ô ở ngữ cảnh khác sang cùng
-   * giá trị, thì giữ lại sửa mới nhất thay vì xoá nhầm.
+   * Xoá mục nháp của đúng một lần ghi — chỉ khi mục hiện tại vẫn là lần ghi đó (cùng giá trị và cùng ngữ cảnh): người
+   * dùng đổi tiếp ô đó trong lúc chờ, hoặc sửa cùng ô ở ngữ cảnh khác sang cùng giá trị, thì giữ lại sửa mới nhất thay
+   * vì xoá nhầm.
    */
   function dropEditFor(roleId: string, capability: string, permission: number, editContextId: string) {
     return (prev: Record<string, Record<string, { permission: number; contextId: string }>>) => {

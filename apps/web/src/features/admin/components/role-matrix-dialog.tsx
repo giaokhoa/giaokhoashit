@@ -194,10 +194,9 @@ export function RoleMatrixDialog({
   const title = mode === 'create' ? t('roleDialogCreateTitle') : t('roleDialogEditTitle');
   const subtitle = mode === 'create' ? t('roleDialogCreateDescription') : t('roleDialogEditDescription');
   /**
-   * Chế độ sửa chỉ lưu được khi ma trận đã tải thành công: đang tải
-   * hoặc tải lỗi mà vẫn cho lưu thì PUT thay toàn bộ mang tập gần
-   * rỗng (mọi ô tính là kế thừa) và xoá lặng ghi đè đã lưu tại ngữ
-   * cảnh đó. Chế độ tạo không có ma trận đã lưu nên không cần cổng.
+   * Chế độ sửa chỉ lưu được khi ma trận đã tải thành công: đang tải hoặc tải lỗi mà vẫn cho lưu thì PUT thay toàn bộ
+   * mang tập gần rỗng (mọi ô tính là kế thừa) và xoá lặng ghi đè đã lưu tại ngữ cảnh đó. Chế độ tạo không có ma trận đã
+   * lưu nên không cần cổng.
    */
   const matrixReady = mode === 'create' || (!matrixPending && !matrixError);
   /**

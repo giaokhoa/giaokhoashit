@@ -220,10 +220,9 @@ export function CategoryBrowser({
   }
 
   /**
-   * Tạo lượt làm bài từ các câu hỏi đã chọn: slot chỉ cần `questionId`
-   * (schema `questionUsageSlotSchema`) — server tự gắn phiên bản mới nhất
-   * khi attempt bắt đầu, nên trang không gửi version id nào. Component
-   * `mod_quiz` khớp cách API/e2e tạo usage cho một hoạt động quiz.
+   * Tạo lượt làm bài từ các câu hỏi đã chọn: slot chỉ cần `questionId` (schema `questionUsageSlotSchema`) — server tự
+   * gắn phiên bản mới nhất khi attempt bắt đầu, nên trang không gửi version id nào. Component `mod_quiz` khớp cách
+   * API/e2e tạo usage cho một hoạt động quiz.
    */
   async function startUsageFromSelection() {
     try {

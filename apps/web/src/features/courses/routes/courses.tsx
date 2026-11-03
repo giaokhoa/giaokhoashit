@@ -154,10 +154,8 @@ export function CoursesPage() {
   const deleteCategoryMutation = useDeleteCourseCategory();
 
   /**
-   * Tạo danh mục qua đột biến POST /courses/categories với đúng
-   * `createCourseCategorySchema`: `parent` chỉ gửi khi chọn một danh mục
-   * cha thật (ở cấp cao nhất thì bỏ qua hẳn trường này thay vì gửi giá trị
-   * không phải UUID).
+   * Tạo danh mục qua đột biến POST /courses/categories với đúng `createCourseCategorySchema`: `parent` chỉ gửi khi chọn
+   * một danh mục cha thật (ở cấp cao nhất thì bỏ qua hẳn trường này thay vì gửi giá trị không phải UUID).
    */
   async function createCategory(event: FormEvent) {
     event.preventDefault();

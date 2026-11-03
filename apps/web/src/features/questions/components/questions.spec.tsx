@@ -1027,14 +1027,11 @@ describe('Trang ngân hàng câu hỏi — huy hiệu phiên bản và trang usa
 });
 
 /**
- * Đường đóng góp DUY NHẤT của đề (issue #228, S4/Q4): bộ hồ sơ không
- * còn đường ghi riêng — nộp bộ hồ sơ là đề xuất đóng góp kèm đính kèm
- * (`withDossier`), duyệt hai cấp đi trên trạng thái của đóng góp
- * (pending = cấp 1, pending_board = cấp 2 ban giám hiệu), và hàng chờ
- * hồ sơ (bề mặt đọc lịch sử) thao tác duyệt qua đóng góp đã chuyển
- * đổi từ chính hồ sơ đó (sourceDossierId). Các ca dưới đây khoá đúng
- * các lời gọi API của ba thao tác đó và khẳng định KHÔNG còn lời gọi
- * ghi nào tới bề mặt hồ sơ (nơi API đã đóng, trả 410).
+ * Đường đóng góp DUY NHẤT của đề (issue #228, S4/Q4): bộ hồ sơ không còn đường ghi riêng — nộp bộ hồ sơ là đề xuất đóng
+ * góp kèm đính kèm (`withDossier`), duyệt hai cấp đi trên trạng thái của đóng góp (pending = cấp 1, pending_board = cấp
+ * 2 ban giám hiệu), và hàng chờ hồ sơ (bề mặt đọc lịch sử) thao tác duyệt qua đóng góp đã chuyển đổi từ chính hồ sơ đó
+ * (sourceDossierId). Các ca dưới đây khoá đúng các lời gọi API của ba thao tác đó và khẳng định KHÔNG còn lời gọi ghi
+ * nào tới bề mặt hồ sơ (nơi API đã đóng, trả 410).
  */
 describe('Ghi hồ sơ đề đi theo đường đóng góp duy nhất (issue #228 Q4)', () => {
   afterEach(() => {

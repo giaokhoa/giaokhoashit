@@ -20,15 +20,11 @@ import { useMemberPanelData } from '../hooks/use-member-panel-data';
 import type { ContactRelationship, ConversationView } from '../types/types';
 
 /**
- * Callback dùng-chung "gán muộn" cho vòng phụ thuộc chéo giữa các
- * hook điều phối: hook sở hữu một hàm (ví dụ `open`,
- * `applyReadMarker`) có thể được tạo SAU hook cần dùng hàm đó, nên
- * trang tạo trước một hàm ổn định ủy quyền qua ref, rồi gán triển
- * khai thật ngay sau khi hook sở hữu được tạo — vẫn trong cùng lượt
- * render, trước mọi hiệu ứng và xử lý sự kiện, nên mọi lời gọi đều
- * thấy triển khai mới nhất.
- * Chỉ dùng cho đúng các điểm chéo đã liệt kê ở thân component; các
- * hook khác nhận trực tiếp giá trị trả về của hook đã tạo trước.
+ * Callback dùng-chung "gán muộn" cho vòng phụ thuộc chéo giữa các hook điều phối: hook sở hữu một hàm (ví dụ `open`,
+ * `applyReadMarker`) có thể được tạo SAU hook cần dùng hàm đó, nên trang tạo trước một hàm ổn định ủy quyền qua ref,
+ * rồi gán triển khai thật ngay sau khi hook sở hữu được tạo — vẫn trong cùng lượt render, trước mọi hiệu ứng và xử lý
+ * sự kiện, nên mọi lời gọi đều thấy triển khai mới nhất. Chỉ dùng cho đúng các điểm chéo đã liệt kê ở thân component;
+ * các hook khác nhận trực tiếp giá trị trả về của hook đã tạo trước.
  */
 function useLateCallback<Fn extends (...args: any[]) => any>() {
   const ref = useRef<Fn | null>(null);

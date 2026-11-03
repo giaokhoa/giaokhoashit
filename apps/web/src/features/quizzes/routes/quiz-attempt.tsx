@@ -57,10 +57,8 @@ function solutionTrueFalseStatements(
 }
 
 /**
- * Giải mã response của câu TF-A: chuỗi JSON của bản đồ
- * `statementId → boolean` (ý chưa trả lời vắng mặt trong bản đồ).
- * Chuỗi không phải JSON/bản đồ thì coi như chưa trả lời ý nào — cùng
- * quy ước toàn phần với engine chấm phía API.
+ * Giải mã response của câu TF-A: chuỗi JSON của bản đồ `statementId → boolean` (ý chưa trả lời vắng mặt trong bản đồ).
+ * Chuỗi không phải JSON/bản đồ thì coi như chưa trả lời ý nào — cùng quy ước toàn phần với engine chấm phía API.
  */
 function parseTrueFalseResponse(value: string): Record<string, boolean> {
   try {
@@ -349,21 +347,17 @@ export function QuizAttemptPage() {
 }
 
 /**
- * Bộ nhập câu trả lời theo qtype — response luôn là chuỗi theo quy ước
- * của question engine (multichoice: id của đáp án được chọn; truefalse
- * TF-A: chuỗi JSON của bản đồ `statementId → boolean`; shortanswer/
- * essay: văn bản trả lời).
+ * Bộ nhập câu trả lời theo qtype — response luôn là chuỗi theo quy ước của question engine (multichoice: id của đáp án
+ * được chọn; truefalse TF-A: chuỗi JSON của bản đồ `statementId → boolean`; shortanswer/ essay: văn bản trả lời).
  *
  * Multichoice LUÔN là radio chọn một: mô hình giaokhoa khoá đúng một
  * đáp án đúng cho mỗi câu (quyết 12:04 ngày 26/10/2026) nên không còn
  * nhánh checkbox chọn-nhiều.
  *
- * Ở màn xem lại (lượt đã nộp), `correctAnswerId` (multichoice) /
- * `tfSolution` (truefalse) mang đáp án đúng suy từ `solution` — trang
- * cha chỉ truyền hai prop này khi lượt đã nộp và API đã trả solution
- * (cổng reviewRightAnswer ở phía API); phía đúng của từng ý được đánh
- * dấu trực tiếp bằng nhãn "Đáp án đúng" cạnh nội dung, và mỗi mệnh đề
- * mang phán quyết đúng/sai của chính nó.
+ * Ở màn xem lại (lượt đã nộp), `correctAnswerId` (multichoice) / `tfSolution` (truefalse) mang đáp án đúng suy từ
+ * `solution` — trang cha chỉ truyền hai prop này khi lượt đã nộp và API đã trả solution (cổng reviewRightAnswer ở phía
+ * API); phía đúng của từng ý được đánh dấu trực tiếp bằng nhãn "Đáp án đúng" cạnh nội dung, và mỗi mệnh đề mang phán
+ * quyết đúng/sai của chính nó.
  */
 function QuestionAnswerInput(props: {
   q: AttemptQuestion;

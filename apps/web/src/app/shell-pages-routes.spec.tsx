@@ -22,22 +22,16 @@ import * as teacherCurriculumRoute from '#features/curriculum/routes/teacher-cur
  *
  * Với từng page module, spec khẳng định hai điểm của nghiệm thu lát
  * hoàn tất F-07/F-08:
- *  1. Export `ErrorBoundary` là ĐÚNG component dùng chung
- *     `RouteErrorBoundary` (so sánh đồng nhất tham chiếu, không phải
- *     một component trông giống) — lỗi của trang được chứa trong
- *     vùng nội dung theo cơ chế đã gác ở `routes/ssr-frame.spec.tsx`.
- *  2. `meta()` trả tiêu đề "<Tên trang> · LMS" dựng từ ĐÚNG khoá
- *     tiêu đề mà chính trang dùng cho heading của nó: namespace
- *     `app` cho 9 trang (classesHeading cho classes và cho
- *     class-detail — heading của class-detail là tên lớp động, khoá
- *     này là heading dự phòng của chính trang khi chưa có dữ liệu
- *     lớp; classPublicTitle là khoá tiêu đề riêng bổ sung vào i18n
- *     cho class-public vì trang này chưa có khoá tiêu đề riêng —
- *     heading của nó là tên lớp động với nhãn học phí làm dự phòng),
- *     namespace `guardian` riêng cho trang guardian (khoá `title`).
- *     Khoá phải tồn tại thật trong resources: nếu khoá sai hoặc
- *     thiếu, `i18n.t` trả lại chính chuỗi khoá và ca đối chiếu
- *     khoá-suy-ra sẽ đỏ thay vì xanh giả.
+ *  1. Export `ErrorBoundary` là ĐÚNG component dùng chung `RouteErrorBoundary` (so sánh đồng nhất tham chiếu, không
+ *     phải một component trông giống) — lỗi của trang được chứa trong vùng nội dung theo cơ chế đã gác ở
+ *     `routes/ssr-frame.spec.tsx`.
+ *  2. `meta()` trả tiêu đề "<Tên trang> · LMS" dựng từ ĐÚNG khoá tiêu đề mà chính trang dùng cho heading của nó:
+ *     namespace `app` cho 9 trang (classesHeading cho classes và cho class-detail — heading của class-detail là tên lớp
+ *     động, khoá này là heading dự phòng của chính trang khi chưa có dữ liệu lớp; classPublicTitle là khoá tiêu đề
+ *     riêng bổ sung vào i18n cho class-public vì trang này chưa có khoá tiêu đề riêng — heading của nó là tên lớp động
+ *     với nhãn học phí làm dự phòng), namespace `guardian` riêng cho trang guardian (khoá `title`). Khoá phải tồn tại
+ *     thật trong resources: nếu khoá sai hoặc thiếu, `i18n.t` trả lại chính chuỗi khoá và ca đối chiếu khoá-suy-ra sẽ
+ *     đỏ thay vì xanh giả.
  */
 const CASES = [
   { name: 'classes', route: classesRoute, ns: 'app', key: 'classesHeading' },

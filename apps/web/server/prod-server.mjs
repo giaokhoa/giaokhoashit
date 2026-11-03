@@ -4,32 +4,22 @@
  * Một tiến trình Node thuần (không framework ngoài) giữ ba vai:
  *   1. Mặt tiền HTTP duy nhất: bind cổng PUBLIC_PORT (mặc định $PORT
  *      do môi trường triển khai cấp).
- *   2. Proxy các đường của API (xem `proxy-paths.mjs`: `/api/*`,
- *      `/socket.io/*`, `/mcp`, `/.well-known/oauth-protected-resource`)
- *      về API ở địa chỉ nội bộ
- *      (LMS_API_INTERNAL_URL, mặc định http://127.0.0.1:3000): chuyển
- *      nguyên header (Cookie đi lên, Set-Cookie — kể cả nhiều header —
- *      đi xuống; Host GIỮ NGUYÊN của request gốc vì tầng ứng dụng
- *      phân giải trung tâm theo Host, xem proxy-headers.mjs), nối
- *      tiếp chuỗi X-Forwarded-For của chặng trước, và
- *      STREAM không đệm để SSE sống qua proxy; trình duyệt đóng kết
- *      nối thì hủy luôn request phía API. WebSocket (socket.io) đi qua
- *      đường hầm TCP ở sự kiện `upgrade` — đầu request upgrade cũng
- *      giữ nguyên Host gốc (xem `proxy-headers.mjs`), vì socket auth
- *      phân giải trung tâm theo Host của chính request bắt tay đó.
- *   3. Phục vụ asset tĩnh của bản build client (tên file có hash →
- *      cache immutable; asset text được nén brotli/gzip theo
- *      Accept-Encoding — xem `compression.mjs`, CHỈ ở đường tĩnh này)
- *      và giao mọi request còn lại cho server build
- *      của React Router (SSR) qua createRequestListener. Mọi tài
- *      liệu HTML ở cả hai đường (tĩnh lẫn SSR) đều mang header bảo
- *      mật Content-Security-Policy — xem `security-headers.mjs`.
+ *   2. Proxy các đường của API (xem `proxy-paths.mjs`: `/api/*`, `/socket.io/*`, `/mcp`,
+ *      `/.well-known/oauth-protected-resource`) về API ở địa chỉ nội bộ (LMS_API_INTERNAL_URL, mặc định
+ *      http://127.0.0.1:3000): chuyển nguyên header (Cookie đi lên, Set-Cookie — kể cả nhiều header — đi xuống; Host
+ *      GIỮ NGUYÊN của request gốc vì tầng ứng dụng phân giải trung tâm theo Host, xem proxy-headers.mjs), nối tiếp
+ *      chuỗi X-Forwarded-For của chặng trước, và STREAM không đệm để SSE sống qua proxy; trình duyệt đóng kết nối thì
+ *      hủy luôn request phía API. WebSocket (socket.io) đi qua đường hầm TCP ở sự kiện `upgrade` — đầu request upgrade
+ *      cũng giữ nguyên Host gốc (xem `proxy-headers.mjs`), vì socket auth phân giải trung tâm theo Host của chính
+ *      request bắt tay đó.
+ *   3. Phục vụ asset tĩnh của bản build client (tên file có hash → cache immutable; asset text được nén brotli/gzip
+ *      theo Accept-Encoding — xem `compression.mjs`, CHỈ ở đường tĩnh này) và giao mọi request còn lại cho server build
+ *      của React Router (SSR) qua createRequestListener. Mọi tài liệu HTML ở cả hai đường (tĩnh lẫn SSR) đều mang
+ *      header bảo mật Content-Security-Policy — xem `security-headers.mjs`.
  *
- * Chạy độc lập: `node server/prod-server.mjs` (cần `react-router
- * build` trước) — đây cũng là cách target `web` của Dockerfile ở gốc
- * repo chạy tiến trình này trong stack Docker Compose. Chạy cả
- * topology ở local thì khởi động thêm tiến trình API riêng
- * (`apps/api/dist/main.js`) và trỏ `LMS_API_INTERNAL_URL` về API đó.
+ * Chạy độc lập: `node server/prod-server.mjs` (cần `react-router build` trước) — đây cũng là cách target `web` của
+ * Dockerfile ở gốc repo chạy tiến trình này trong stack Docker Compose. Chạy cả topology ở local thì khởi động thêm
+ * tiến trình API riêng (`apps/api/dist/main.js`) và trỏ `LMS_API_INTERNAL_URL` về API đó.
  */
 import { createServer, request as httpRequest } from 'node:http';
 import { connect as netConnect } from 'node:net';
@@ -130,10 +120,9 @@ function proxyUpgrade(req, socket, head) {
 }
 
 /**
- * Tài liệu đã prerender lúc build (khai ở `prerender` trong
- * react-router.config.ts, lát SL-1 của #7): đường dẫn tài liệu → file
- * HTML tĩnh trong build/client (React Router sinh `<path>/index.html`).
- * Chỉ hai mặt công khai `/` và `/login` — xem luật phục vụ ở tryStatic.
+ * Tài liệu đã prerender lúc build (khai ở `prerender` trong react-router.config.ts, lát SL-1 của #7): đường dẫn tài
+ * liệu → file HTML tĩnh trong build/client (React Router sinh `<path>/index.html`). Chỉ hai mặt công khai `/` và
+ * `/login` — xem luật phục vụ ở tryStatic.
  */
 const PRERENDERED_DOCUMENTS = new Map([
   ['/', 'index.html'],

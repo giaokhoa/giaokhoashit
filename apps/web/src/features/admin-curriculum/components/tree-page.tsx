@@ -20,12 +20,10 @@ import { buildProgramOutcomeRows, ProgramDataTable } from './program-data-table'
 import { errorText } from '../utils/shared';
 
 /**
- * Số dòng Nội dung trên một trang đọc cây chương trình. Văn bản in của
- * Bộ trình bày bảng Nội dung | Yêu cầu cần đạt liên tục và ngắt trang
- * theo khổ giấy (mỗi trang in chứa chừng chục dòng nội dung); bản số
- * hoá giữ đúng nhịp đọc đó: 10 dòng/trang, mạch bị cắt qua trang thì
- * lặp lại tiêu đề kèm dấu (tiếp). Phân trang chạy hoàn toàn phía
- * client — cây đã tải một lần, chuyển trang không gọi lại server.
+ * Số dòng Nội dung trên một trang đọc cây chương trình. Văn bản in của Bộ trình bày bảng Nội dung | Yêu cầu cần đạt
+ * liên tục và ngắt trang theo khổ giấy (mỗi trang in chứa chừng chục dòng nội dung); bản số hoá giữ đúng nhịp đọc đó:
+ * 10 dòng/trang, mạch bị cắt qua trang thì lặp lại tiêu đề kèm dấu (tiếp). Phân trang chạy hoàn toàn phía client — cây
+ * đã tải một lần, chuyển trang không gọi lại server.
  *
  * Hằng này hiện chỉ còn trang xem của giáo viên dùng (trang cây quản
  * trị đã chuyển sang phân trang của Data Table dùng chung); giữ

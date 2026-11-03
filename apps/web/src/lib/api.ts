@@ -2,23 +2,17 @@ import type { ProblemDetails } from '@lms/contracts';
 import { problemDetailsSchema } from '@lms/contracts';
 
 /**
- * Tầng gọi API nghiệp vụ của web (issue #7, Giai đoạn 2 — cutover
- * phiên cookie): từ cutover, web KHÔNG còn giữ credential nào ở
- * localStorage. Mọi request đi cùng nguồn và trình duyệt tự mang
- * cookie phiên Better Auth (xem `lib/auth-client.ts`); phía API, guard
- * phiên dịch cookie thành danh tính cho mọi endpoint như trước đây
- * Bearer JWT từng làm. Hệ quả trực tiếp: không còn vòng refresh token
- * phía client — phiên hết hạn thì API trả 401 và tầng phiên
- * (AuthProvider) resolve về ẩn danh, khung đưa người dùng về đăng
- * nhập.
+ * Tầng gọi API nghiệp vụ của web (issue #7, Giai đoạn 2 — cutover phiên cookie): từ cutover, web KHÔNG còn giữ
+ * credential nào ở localStorage. Mọi request đi cùng nguồn và trình duyệt tự mang cookie phiên Better Auth (xem
+ * `lib/auth-client.ts`); phía API, guard phiên dịch cookie thành danh tính cho mọi endpoint như trước đây Bearer JWT
+ * từng làm. Hệ quả trực tiếp: không còn vòng refresh token phía client — phiên hết hạn thì API trả 401 và tầng phiên
+ * (AuthProvider) resolve về ẩn danh, khung đưa người dùng về đăng nhập.
  */
 
 /**
- * Chuyển hướng toàn trang tới một URL ngoài hệ thống (trang authorize
- * của nhà cung cấp OAuth). Gói thành hàm riêng có tên để các luồng
- * đăng nhập ngoài dùng chung một biên điều hướng — và để test thay
- * được biên này, vì jsdom khoá cứng `window.location` (không mock
- * trực tiếp được thuộc tính href).
+ * Chuyển hướng toàn trang tới một URL ngoài hệ thống (trang authorize của nhà cung cấp OAuth). Gói thành hàm riêng có
+ * tên để các luồng đăng nhập ngoài dùng chung một biên điều hướng — và để test thay được biên này, vì jsdom khoá cứng
+ * `window.location` (không mock trực tiếp được thuộc tính href).
  */
 export function redirectToExternalUrl(url: string): void {
   window.location.href = url;
@@ -31,11 +25,9 @@ export class ApiError extends Error {
 }
 
 /**
- * Lỗi kiểu riêng cho bước thách thức hai lớp: khi sign-in bằng mật
- * khẩu trả `twoFactorRedirect`, phía server CHƯA tạo phiên nào — trang
- * login phải chuyển sang bước nhập mã TOTP/mã dự phòng rồi hoàn tất
- * qua client twoFactor. Tách thành class riêng để tầng giao diện phân
- * biệt bằng `instanceof` thay vì dò hình dạng đáp ứng.
+ * Lỗi kiểu riêng cho bước thách thức hai lớp: khi sign-in bằng mật khẩu trả `twoFactorRedirect`, phía server CHƯA tạo
+ * phiên nào — trang login phải chuyển sang bước nhập mã TOTP/mã dự phòng rồi hoàn tất qua client twoFactor. Tách thành
+ * class riêng để tầng giao diện phân biệt bằng `instanceof` thay vì dò hình dạng đáp ứng.
  */
 export class TwoFactorRedirectError extends Error {
   constructor() {

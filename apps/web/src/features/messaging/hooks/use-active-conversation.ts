@@ -25,22 +25,17 @@ export function useActiveConversation({
   const queryClient = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
   /**
-   * Bản tóm tắt hội thoại được truyền vào lúc mở — chỉ là mồi hiển
-   * thị đầu tiên cho các hội thoại chưa có mặt trong cache danh
-   * sách (ensure từ lớp/khoá/nhóm); ngay khi cache chi tiết có dữ
-   * kiện, phần chi tiết (trừ cửa sổ tin) phủ lên bản tóm tắt này.
+   * Bản tóm tắt hội thoại được truyền vào lúc mở — chỉ là mồi hiển thị đầu tiên cho các hội thoại chưa có mặt trong
+   * cache danh sách (ensure từ lớp/khoá/nhóm); ngay khi cache chi tiết có dữ kiện, phần chi tiết (trừ cửa sổ tin) phủ
+   * lên bản tóm tắt này.
    */
   const [openedSummary, setOpenedSummary] = useState<ConversationView | null>(null);
   const [loadedPages, setLoadedPages] = useState<{ conversationId: string; seqs: number[] } | null>(null);
   /**
-   * Tin LẠC QUAN theo từng conversation (bản tạm `localStatus`
-   * đang gửi/đã lỗi): dữ kiện chỉ sinh ở client, chưa có bản phía
-   * server nên không thuộc cache. Vòng đời của bản tạm kết thúc
-   * ngay khi server xác nhận: `mergeServerMessages` dọn bản tạm
-   * khỏi state này theo clientMessageId trong cùng lượt gộp bản
-   * thật vào cache chi tiết; luật khử trùng của `mergeMessages`
-   * ở bước suy ra cửa sổ chỉ còn là lưới an toàn trong lúc xác
-   * nhận đang trên đường về.
+   * Tin LẠC QUAN theo từng conversation (bản tạm `localStatus` đang gửi/đã lỗi): dữ kiện chỉ sinh ở client, chưa có bản
+   * phía server nên không thuộc cache. Vòng đời của bản tạm kết thúc ngay khi server xác nhận: `mergeServerMessages`
+   * dọn bản tạm khỏi state này theo clientMessageId trong cùng lượt gộp bản thật vào cache chi tiết; luật khử trùng của
+   * `mergeMessages` ở bước suy ra cửa sổ chỉ còn là lưới an toàn trong lúc xác nhận đang trên đường về.
    */
   const [localMessages, setLocalMessages] = useState<Record<string, MessageView[]>>({});
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});

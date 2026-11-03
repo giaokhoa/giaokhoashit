@@ -50,11 +50,9 @@ export function NewMessageDialog({
   const { t } = useTranslation('app');
 
   /**
-   * Hành động cuối dòng roster theo ĐÚNG luật quan hệ đã chốt —
-   * giữ nguyên bộ nút của tab Danh bạ cũ, chỉ đổi nơi trình bày:
-   * nhắn thẳng khi có cờ `canDirectMessage` (không ép qua kết bạn),
-   * đã là liên hệ thì nhắn được; chưa quan hệ thì chỉ Kết bạn; đang
-   * chờ đến thì Chấp nhận/Từ chối ngay tại dòng.
+   * Hành động cuối dòng roster theo ĐÚNG luật quan hệ đã chốt — giữ nguyên bộ nút của tab Danh bạ cũ, chỉ đổi nơi trình
+   * bày: nhắn thẳng khi có cờ `canDirectMessage` (không ép qua kết bạn), đã là liên hệ thì nhắn được; chưa quan hệ thì
+   * chỉ Kết bạn; đang chờ đến thì Chấp nhận/Từ chối ngay tại dòng.
    */
   const renderMemberAction = (m: RosterMember) => (
     <>
@@ -192,14 +190,11 @@ export function NewMessageDialog({
             ) : null}
           </div>
           {/*
-            Liên kết mời (issue #591): phần tử thuộc bản demo
-            nhưng là điểm CHƯA có phán quyết về chức năng và hệ
-            không có cơ chế liên kết mời nào — ở đợt này chỉ
-            dựng đúng HÌNH DẠNG (nhãn + ô liên kết + nút sao
-            chép) ở trạng thái vô hiệu: không sinh liên kết,
-            không sao chép gì. Chức năng chỉ được nối ở đợt
-            backend sau khi điểm này có phán quyết.
-          */}
+           * Liên kết mời (issue #591): phần tử thuộc bản demo nhưng là điểm CHƯA có phán quyết về chức năng và hệ không
+           * có cơ chế liên kết mời nào — ở đợt này chỉ dựng đúng HÌNH DẠNG (nhãn + ô liên kết + nút sao chép) ở trạng
+           * thái vô hiệu: không sinh liên kết, không sao chép gì. Chức năng chỉ được nối ở đợt backend sau khi điểm này
+           * có phán quyết.
+           */}
           <div className="space-y-2">
             <h3 className="px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">{t('inviteLinkLabel')}</h3>
             <div className="flex gap-2">

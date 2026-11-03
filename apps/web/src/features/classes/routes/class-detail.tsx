@@ -44,11 +44,9 @@ export function ClassDetailPage() {
   }
 
   /**
-   * Gói tổng quan là nguồn vai DUY NHẤT của trang: quan hệ của người
-   * gọi với lớp + cờ khả năng + khoá đã lọc theo vai đều từ đây. Các
-   * truy vấn quản trị chỉ bật khi vai/cờ tương ứng cho phép — học sinh
-   * không gọi các endpoint quản trị, đồng GV không gọi endpoint mà
-   * mình không có quyền (tránh lỗi 403 vô ích và bề mặt thừa).
+   * Gói tổng quan là nguồn vai DUY NHẤT của trang: quan hệ của người gọi với lớp + cờ khả năng + khoá đã lọc theo vai
+   * đều từ đây. Các truy vấn quản trị chỉ bật khi vai/cờ tương ứng cho phép — học sinh không gọi các endpoint quản trị,
+   * đồng GV không gọi endpoint mà mình không có quyền (tránh lỗi 403 vô ích và bề mặt thừa).
    */
   const overviewQuery = useQuery({ queryKey: queryKeys.classOverview(classId), queryFn: () => fetchClassOverview(classId), enabled: Boolean(classId) });
   const overview = overviewQuery.data;
@@ -194,12 +192,10 @@ export function ClassDetailPage() {
               {t('classChatOpen')}
             </Button>
             {/*
-              Liên kết "Sửa" chỉ render khi gói tổng quan ĐÃ VỀ và vai
-              cho phép: suy "không phải member" từ gói chưa tải xong
-              sẽ làm nút chớp hiện với học viên trong lúc trang đang
-              tải (overview rỗng → isMember = false). Trong lúc tải,
-              header chỉ giữ nút Chat lớp dùng cho mọi vai thuộc lớp.
-            */}
+             * Liên kết "Sửa" chỉ render khi gói tổng quan ĐÃ VỀ và vai cho phép: suy "không phải member" từ gói chưa
+             * tải xong sẽ làm nút chớp hiện với học viên trong lúc trang đang tải (overview rỗng → isMember = false).
+             * Trong lúc tải, header chỉ giữ nút Chat lớp dùng cho mọi vai thuộc lớp.
+             */}
             {overview && !isMember ? (
               <Link className={buttonVariants({ variant: 'outline' })} to={`/classes/${classId}/edit`}>
                 {t('classEdit')}

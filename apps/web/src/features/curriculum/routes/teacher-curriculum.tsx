@@ -287,16 +287,11 @@ export function meta() {
 }
 
 /**
- * Export mặc định cho route module: framework React Router chỉ lấy
- * component của route từ export mặc định (hoặc export tên
- * `Component`) của route module. File trang trước đây chỉ xuất
- * component dưới tên riêng `TeacherCurriculumPage`, không có export
- * mặc định — mà route trỏ thẳng vào file trang thì trình duyệt thật
- * render trống hoàn toàn vùng nội dung (tiêu đề vẫn hiện vì `meta()`
- * chạy độc lập, khung shell vẫn hiện, không có thông báo lỗi; lỗi
- * này không lộ qua spec vì spec gắn component trực tiếp, không qua
- * router). Một wrapper mỏng từng cấp export mặc định này; khi tổ
- * chức lại theo mô hình features/ (issue #500), wrapper gộp thẳng
- * vào route module này.
+ * Export mặc định cho route module: framework React Router chỉ lấy component của route từ export mặc định (hoặc export
+ * tên `Component`) của route module. File trang trước đây chỉ xuất component dưới tên riêng `TeacherCurriculumPage`,
+ * không có export mặc định — mà route trỏ thẳng vào file trang thì trình duyệt thật render trống hoàn toàn vùng nội
+ * dung (tiêu đề vẫn hiện vì `meta()` chạy độc lập, khung shell vẫn hiện, không có thông báo lỗi; lỗi này không lộ qua
+ * spec vì spec gắn component trực tiếp, không qua router). Một wrapper mỏng từng cấp export mặc định này; khi tổ chức
+ * lại theo mô hình features/ (issue #500), wrapper gộp thẳng vào route module này.
  */
 export default TeacherCurriculumPage;

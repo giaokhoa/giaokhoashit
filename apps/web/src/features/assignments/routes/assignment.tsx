@@ -92,11 +92,9 @@ export function AssignmentPage() {
 export default AssignmentPage;
 
 /**
- * clientLoader (F-01 đợt 1 + bổ sung clientLoader, rà soát #133):
- * prefetch query chính vào QueryClient singleton dùng chung (đúng
- * khoá factory) trước khi component mount — điều hướng vào trang
- * không còn thác nước mount-rồi-fetch. prefetchQuery không ném lỗi:
- * tải hỏng thì component tự xử lý qua useQuery như trước.
+ * clientLoader (F-01 đợt 1 + bổ sung clientLoader, rà soát #133): prefetch query chính vào QueryClient singleton dùng
+ * chung (đúng khoá factory) trước khi component mount — điều hướng vào trang không còn thác nước mount-rồi-fetch.
+ * prefetchQuery không ném lỗi: tải hỏng thì component tự xử lý qua useQuery như trước.
  */
 export async function clientLoader({ params }: { params: Record<string, string | undefined> }) {
   if (params.assignmentId) {

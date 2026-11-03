@@ -129,10 +129,9 @@ export function webserviceTokensQueryOptions() {
 }
 
 /**
- * Hook đọc danh sách token cho trang tokens. Bản thủ công nuốt lỗi của
- * riêng danh sách token (coi như danh sách rỗng) trong khi lỗi danh sách
- * dịch vụ mới làm cả trang báo lỗi; trang giữ đúng phân biệt đó bằng
- * cách chỉ đọc `data` của query này (lỗi thì hiển thị rỗng).
+ * Hook đọc danh sách token cho trang tokens. Bản thủ công nuốt lỗi của riêng danh sách token (coi như danh sách rỗng)
+ * trong khi lỗi danh sách dịch vụ mới làm cả trang báo lỗi; trang giữ đúng phân biệt đó bằng cách chỉ đọc `data` của
+ * query này (lỗi thì hiển thị rỗng).
  */
 export function useWebserviceTokens() {
   return useQuery(webserviceTokensQueryOptions());

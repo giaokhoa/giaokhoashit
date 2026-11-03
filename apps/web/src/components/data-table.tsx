@@ -83,8 +83,8 @@ export interface DataTableLabels {
   /**
    * Dòng chữ khoảng dòng đang hiển thị ở chân bảng (ví dụ "Hiển thị 1–20 trong 57 dòng"). Khi được truyền, chân bảng
    * chuyển sang biến thể khoảng dòng: dòng chữ này thay cho pageInfo và cụm nút chuyển trang LUÔN hiển thị (kể cả khi
-   * chỉ có một trang) kèm các nút số trang. Bỏ qua thì chân bảng giữ biến thể mặc định (pageInfo + cụm nút chỉ hiện
-   * khi có từ hai trang).
+   * chỉ có một trang) kèm các nút số trang. Bỏ qua thì chân bảng giữ biến thể mặc định (pageInfo + cụm nút chỉ hiện khi
+   * có từ hai trang).
    */
   rangeInfo?: (from: number, to: number, total: number) => string;
 }
@@ -347,12 +347,14 @@ export function DataTable<T extends Record<string, any>>({
             ? labels.rangeInfo(rangeFrom, rangeTo, totalForRange)
             : labels.pageInfo(table.state.pagination.pageIndex + 1, Math.max(table.getPageCount(), 1))}
         </div>
-        {/* Cụm nút chuyển trang: biến thể mặc định chỉ hiện khi có từ hai trang — bảng một trang mà vẫn bày bốn nút vô
-            hiệu (đầu/trước/sau/cuối) chỉ gây nhiễu, đúng cách rút gọn của mẫu data-table chuẩn. Biến thể khoảng dòng
-            (rangeInfo) thì LUÔN hiện kèm nút số trang như các bảng quản trị mẫu: một trang vẫn bày cụm nút ở trạng
-            thái tắt để bố cục chân bảng ổn định. Hàng chân bảng và chính cụm nút đều cho phép xuống dòng (flex-wrap):
-            ở khung nhìn hẹp, khi có nhiều trang thì cụm nút tự xuống hàng trong bề rộng khả dụng thay vì tràn ngang và
-            bị cắt khuất ở mép thẻ chứa. */}
+        {/*
+         * Cụm nút chuyển trang: biến thể mặc định chỉ hiện khi có từ hai trang — bảng một trang mà vẫn bày bốn nút vô
+         * hiệu (đầu/trước/sau/cuối) chỉ gây nhiễu, đúng cách rút gọn của mẫu data-table chuẩn. Biến thể khoảng dòng
+         * (rangeInfo) thì LUÔN hiện kèm nút số trang như các bảng quản trị mẫu: một trang vẫn bày cụm nút ở trạng thái
+         * tắt để bố cục chân bảng ổn định. Hàng chân bảng và chính cụm nút đều cho phép xuống dòng (flex-wrap): ở khung
+         * nhìn hẹp, khi có nhiều trang thì cụm nút tự xuống hàng trong bề rộng khả dụng thay vì tràn ngang và bị cắt
+         * khuất ở mép thẻ chứa.
+         */}
         {labels.rangeInfo || table.getPageCount() > 1 ? (
           <div className="flex flex-wrap items-center gap-2">
             <Button

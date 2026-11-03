@@ -204,7 +204,10 @@ function renderImport(calls: RecordedCall[], previewBody: unknown, mode: ImportM
   return router;
 }
 
-/** Chờ option của một select xuất hiện rồi mới chọn — query môn/chương trình là bất đồng bộ, chọn ngay khi label vừa hiện sẽ gặp select còn rỗng. */
+/**
+ * Chờ option của một select xuất hiện rồi mới chọn — query môn/chương trình là bất đồng bộ, chọn ngay khi label vừa
+ * hiện sẽ gặp select còn rỗng.
+ */
 async function selectWithOptions(label: string, value: string) {
   const select = await screen.findByLabelText(label);
   await waitFor(() =>

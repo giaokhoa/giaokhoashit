@@ -7,10 +7,9 @@ export function fetchAdminUsers(page: number, pageSize: number, search: string) 
 }
 
 /**
- * Tham số liệt kê người dùng đầy đủ theo hợp đồng truy vấn của đợt 1:
- * lọc trạng thái, sắp xếp và phân trang đều chạy phía server; tham số
- * tuỳ chọn vắng mặt được bỏ khỏi chuỗi truy vấn để server giữ hành vi
- * mặc định vốn có của nó (ẩn tài khoản đã xoá, thứ tự theo id).
+ * Tham số liệt kê người dùng đầy đủ theo hợp đồng truy vấn của đợt 1: lọc trạng thái, sắp xếp và phân trang đều chạy
+ * phía server; tham số tuỳ chọn vắng mặt được bỏ khỏi chuỗi truy vấn để server giữ hành vi mặc định vốn có của nó (ẩn
+ * tài khoản đã xoá, thứ tự theo id).
  */
 export interface ListAdminUsersParams {
   page: number;
@@ -36,13 +35,10 @@ export function fetchAdminUsersList(params: ListAdminUsersParams) {
 const ALL_USERS_PAGE_SIZE = 100;
 
 /**
- * Đọc TOÀN BỘ người dùng khớp bộ lọc/sắp xếp (GET /users, quét lần
- * lượt các trang ở cỡ trần 100). Chỉ dùng cho đường lọc theo vai trò
- * ở ngữ cảnh hệ thống: hợp đồng danh sách không có tham số vai trò,
- * nên trang lấy đủ tập người dùng đã lọc/sắp xếp phía server rồi giao
- * với tập người giữ vai (cũng do server lọc qua endpoint gán vai) —
- * mọi phép lọc vẫn chạy phía server, phía client chỉ giao hai tập
- * định danh và cắt trang để hiển thị.
+ * Đọc TOÀN BỘ người dùng khớp bộ lọc/sắp xếp (GET /users, quét lần lượt các trang ở cỡ trần 100). Chỉ dùng cho đường
+ * lọc theo vai trò ở ngữ cảnh hệ thống: hợp đồng danh sách không có tham số vai trò, nên trang lấy đủ tập người dùng đã
+ * lọc/sắp xếp phía server rồi giao với tập người giữ vai (cũng do server lọc qua endpoint gán vai) — mọi phép lọc vẫn
+ * chạy phía server, phía client chỉ giao hai tập định danh và cắt trang để hiển thị.
  *
  * @param params - Bộ lọc và sắp xếp (không gồm phân trang hiển thị).
  * @returns Toàn bộ người dùng khớp, giữ đúng thứ tự server đã sắp.

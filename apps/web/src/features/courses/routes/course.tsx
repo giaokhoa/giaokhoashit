@@ -16,10 +16,8 @@ import { queryClient } from '#lib/query-client';
 type CourseModuleView = CourseContent['sections'][number]['modules'][number];
 
 /**
- * Module có cho phép đánh dấu thủ công hay không — khớp đúng điều kiện
- * phía server (completion.service markManual): tracking phải bật
- * (completion ≠ 0) và module dùng hoàn thành thủ công
- * (completionManual hoặc completion = 1).
+ * Module có cho phép đánh dấu thủ công hay không — khớp đúng điều kiện phía server (completion.service markManual):
+ * tracking phải bật (completion ≠ 0) và module dùng hoàn thành thủ công (completionManual hoặc completion = 1).
  */
 function allowsManualCompletion(cm: CourseModuleView): boolean {
   return cm.completion !== 0 && (cm.completionManual === true || cm.completion === 1);
@@ -79,10 +77,9 @@ export function CoursePage() {
   }
 
   /**
-   * Tạo payment cho instance fee. Tuyệt đối không gọi self-enrol ở đây:
-   * server trả enrol.payment_required cho fee — ghi danh chỉ kích hoạt
-   * sau khi webhook của cổng thanh toán xác nhận payment thành công.
-   * Mutation invalidate query thanh toán của tôi để hiển thị trạng thái thật.
+   * Tạo payment cho instance fee. Tuyệt đối không gọi self-enrol ở đây: server trả enrol.payment_required cho fee — ghi
+   * danh chỉ kích hoạt sau khi webhook của cổng thanh toán xác nhận payment thành công. Mutation invalidate query thanh
+   * toán của tôi để hiển thị trạng thái thật.
    */
   async function payFee(instanceId: string) {
     setActionError(null);

@@ -39,13 +39,10 @@ export interface ExamSourceInfo {
  * Một câu trong lượt làm như GET /quiz-attempts/:id trả về (nội dung
  * của version đã pin).
  *
- * Hai trường phía đáp án do lát P3 cấp theo mô hình giaokhoa:
- * `guidance` là HƯỚNG DẪN (gợi ý cách làm — hiện kèm câu hỏi ngay
- * trong lúc làm theo điểm quyết D-4, không qua cổng xem lại);
- * `solution` là đáp án đúng dạng cấu trúc, API chỉ trả khi cổng
- * `reviewRightAnswer` của lần ghim cho phép tại cửa sổ xem lại —
- * ngoài cửa sổ đó trường này là `null`. Câu hỏi không còn trường
- * tên: `questionExcerpt` là trích đoạn nội dung thân câu.
+ * Hai trường phía đáp án do lát P3 cấp theo mô hình giaokhoa: `guidance` là HƯỚNG DẪN (gợi ý cách làm — hiện kèm câu
+ * hỏi ngay trong lúc làm theo điểm quyết D-4, không qua cổng xem lại); `solution` là đáp án đúng dạng cấu trúc, API chỉ
+ * trả khi cổng `reviewRightAnswer` của lần ghim cho phép tại cửa sổ xem lại — ngoài cửa sổ đó trường này là `null`. Câu
+ * hỏi không còn trường tên: `questionExcerpt` là trích đoạn nội dung thân câu.
  */
 export interface AttemptQuestion {
   slot: number;

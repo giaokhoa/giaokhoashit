@@ -8,9 +8,8 @@ export interface MyEnrolmentView {
 }
 
 /**
- * Thanh toán của chính người dùng (GET /payments/me — PaymentRow ở tầng
- * API). Trang chỉ cần các trường để lọc theo `itemId` (chính là enrol
- * instance id của payment phí ghi danh) và hiển thị trạng thái thật.
+ * Thanh toán của chính người dùng (GET /payments/me — PaymentRow ở tầng API). Trang chỉ cần các trường để lọc theo
+ * `itemId` (chính là enrol instance id của payment phí ghi danh) và hiển thị trạng thái thật.
  */
 export interface MyPaymentView {
   id: string;
@@ -29,10 +28,9 @@ export interface CompletionActivityView {
 }
 
 /**
- * Shape thật của GET /courses/:id/completion/me (completion.controller):
- * `{ activities, course }` — activities là trạng thái từng cm của chính
- * người xem, course là bản ghi hoàn thành khoá (mang userId của người xem,
- * dùng làm userId khi đánh dấu thủ công lúc chưa có enrolments/me).
+ * Shape thật của GET /courses/:id/completion/me (completion.controller): `{ activities, course }` — activities là trạng
+ * thái từng cm của chính người xem, course là bản ghi hoàn thành khoá (mang userId của người xem, dùng làm userId khi
+ * đánh dấu thủ công lúc chưa có enrolments/me).
  */
 export interface MyCompletionView {
   activities: CompletionActivityView[];

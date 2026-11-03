@@ -23,10 +23,8 @@ export function fetchMatrixBanks() {
 }
 
 /**
- * Đọc danh sách môn học chương trình (GET /curriculum/subjects).
- * Kèm `forCourseId` thì API mở nhánh `course:update` tại chính
- * khoá đó cho giáo viên không có `curriculum:view` tại context hệ
- * thống (điểm nghẽn D-3 của issue #233).
+ * Đọc danh sách môn học chương trình (GET /curriculum/subjects). Kèm `forCourseId` thì API mở nhánh `course:update` tại
+ * chính khoá đó cho giáo viên không có `curriculum:view` tại context hệ thống (điểm nghẽn D-3 của issue #233).
  */
 export function fetchCurriculumSubjects(forCourseId?: string) {
   const frame = forCourseId ? `?forCourseId=${forCourseId}` : '';
@@ -143,12 +141,9 @@ export async function downloadMatrixImportTemplate(input: {
 /**
  * Xem trước file nhập ma trận (bước 3 của wizard I-3).
  *
- * Gửi file trong multipart trường `file` (để trình duyệt tự đặt
- * Content-Type kèm boundary — ép JSON sẽ hỏng tải lên). Server luôn
- * trả 200 kể cả khi file sai khuôn: lỗi nằm trong payload
- * (`valid=false` + `errors[]` định vị theo sheet/dòng/cột), web hiển
- * thị bảng lỗi đó và khoá nút xác nhận — không tự kết luận hợp lệ
- * từ status HTTP.
+ * Gửi file trong multipart trường `file` (để trình duyệt tự đặt Content-Type kèm boundary — ép JSON sẽ hỏng tải lên).
+ * Server luôn trả 200 kể cả khi file sai khuôn: lỗi nằm trong payload (`valid=false` + `errors[]` định vị theo
+ * sheet/dòng/cột), web hiển thị bảng lỗi đó và khoá nút xác nhận — không tự kết luận hợp lệ từ status HTTP.
  *
  * @param file - File .xlsx giáo viên đã điền (đúng file mẫu hệ sinh).
  * @returns Kết quả xem trước `MatrixImportPreview` của contracts.
@@ -162,12 +157,10 @@ export async function previewMatrixImport(file: File): Promise<MatrixImportPrevi
 /**
  * Ghi ma trận từ file đã xem trước (bước 4 của wizard I-3).
  *
- * Gửi lại CHÍNH file đã xem trước (không gửi kèm kết quả xem trước):
- * server parse lại từ đầu tại thời điểm ghi — file bị sửa tay sau
- * xem trước mà vi phạm luật thì server từ chối 422
- * `quiz.matrix_import_invalid` kèm `matrixImportIssues` định vị và
- * KHÔNG ghi một phần; gửi lại cùng nội dung thì server trả ma trận
- * đã có thay vì tạo bản thứ hai (chống ghi trùng của I-2).
+ * Gửi lại CHÍNH file đã xem trước (không gửi kèm kết quả xem trước): server parse lại từ đầu tại thời điểm ghi — file
+ * bị sửa tay sau xem trước mà vi phạm luật thì server từ chối 422 `quiz.matrix_import_invalid` kèm `matrixImportIssues`
+ * định vị và KHÔNG ghi một phần; gửi lại cùng nội dung thì server trả ma trận đã có thay vì tạo bản thứ hai (chống ghi
+ * trùng của I-2).
  *
  * @param file - Cùng file .xlsx đã qua bước xem trước.
  * @returns View ma trận đã ghi (hoặc bản đã có khi trùng nội dung).

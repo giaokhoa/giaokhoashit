@@ -10,16 +10,11 @@ import type {
 const MESSAGES_TAB_STORAGE_KEY = 'lms.messages.tab';
 const MESSAGES_CONVERSATION_STORAGE_KEY = 'lms.messages.conversationId';
 /**
- * Các tab khung trái hợp lệ — giá trị lưu hỏng thì lùi về tab
- * Tất cả. Từ issue #606, thanh tab là bốn tab lọc ngang hàng
- * thay cấu trúc hai tab cũ, nên giá trị lưu cũ "chats" rơi về
- * mặc định "all"; "groups" giữ nguyên nghĩa ở mọi cấu trúc.
- * Từ issue #623, tab Yêu thích bị bỏ và tab Lưu trữ quay lại
- * thành một tab của thanh tab (lưu trữ từng là tab riêng ở
- * cấu trúc cũ, rồi thành mục thu gọn trong tab danh sách
- * chính ở issue #564): giá trị "archived" là giá trị hợp lệ
- * hiện hành, còn giá trị lưu "favourites" của tab đã bỏ rơi
- * về mặc định "all" theo đúng luật này.
+ * Các tab khung trái hợp lệ — giá trị lưu hỏng thì lùi về tab Tất cả. Từ issue #606, thanh tab là bốn tab lọc ngang
+ * hàng thay cấu trúc hai tab cũ, nên giá trị lưu cũ "chats" rơi về mặc định "all"; "groups" giữ nguyên nghĩa ở mọi cấu
+ * trúc. Từ issue #623, tab Yêu thích bị bỏ và tab Lưu trữ quay lại thành một tab của thanh tab (lưu trữ từng là tab
+ * riêng ở cấu trúc cũ, rồi thành mục thu gọn trong tab danh sách chính ở issue #564): giá trị "archived" là giá trị hợp
+ * lệ hiện hành, còn giá trị lưu "favourites" của tab đã bỏ rơi về mặc định "all" theo đúng luật này.
  */
 const MESSAGES_TABS = ['all', 'unread', 'groups', 'archived'] as const;
 

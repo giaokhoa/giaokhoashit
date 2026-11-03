@@ -49,22 +49,19 @@ async function probe<T>(path: string): Promise<T | null> {
 }
 
 /**
- * Capability đã phân giải tại context hệ thống (luôn có trong ảnh chụp quyền).
- * Export để loader SSR của dashboard (lát SL-1, `routes/home-index.tsx`)
- * phân loại khối quản trị bằng ĐÚNG cùng định nghĩa này thay vì chép lại.
+ * Capability đã phân giải tại context hệ thống (luôn có trong ảnh chụp quyền). Export để loader SSR của dashboard (lát
+ * SL-1, `routes/home-index.tsx`) phân loại khối quản trị bằng ĐÚNG cùng định nghĩa này thay vì chép lại.
  */
 export function systemCapabilities(access: MyAccessView): string[] {
   return access.contexts.find((c) => c.contextLevel === CONTEXT_LEVEL.SYSTEM)?.capabilities ?? [];
 }
 
 /**
- * Phân giải capability hiệu lực của người dùng tại context của MỘT khoá học
- * từ ảnh chụp quyền: ưu tiên gán vai trò ngay tại context khoá (sâu nhất),
- * sau đó tới gán tại context danh mục chứa khoá, cuối cùng là context hệ
- * thống — đúng thứ tự kế thừa mà PermissionEvaluator áp dụng khi kiểm quyền
- * tại context khoá. Nhiều gán cùng cấp thì hợp nhất capability.
- * Export để loader SSR của dashboard (lát SL-1) prefetch dữ liệu điểm
- * cho đúng tập khoá dạy/học mà provider sẽ phân loại.
+ * Phân giải capability hiệu lực của người dùng tại context của MỘT khoá học từ ảnh chụp quyền: ưu tiên gán vai trò ngay
+ * tại context khoá (sâu nhất), sau đó tới gán tại context danh mục chứa khoá, cuối cùng là context hệ thống — đúng thứ
+ * tự kế thừa mà PermissionEvaluator áp dụng khi kiểm quyền tại context khoá. Nhiều gán cùng cấp thì hợp nhất
+ * capability. Export để loader SSR của dashboard (lát SL-1) prefetch dữ liệu điểm cho đúng tập khoá dạy/học mà provider
+ * sẽ phân loại.
  */
 export function courseCapabilities(access: MyAccessView, course: Course): string[] {
   const capsByContext = new Map(access.contexts.map((c) => [c.contextId, c.capabilities]));
@@ -89,13 +86,10 @@ export function courseCapabilities(access: MyAccessView, course: Course): string
 /**
  * Capability hiệu lực tại đúng một tenant.
  *
- * Luồng suy luận bám ảnh chụp quyền của API: capability tại context hệ
- * thống luôn được cộng vào vì quyền platform kế thừa xuống context
- * tenant; phần riêng của tenant chỉ lấy từ các gán vai có context cấp
- * tenant và `instanceId` bằng đúng tenant đang xét, sau đó tra capability
- * đã phân giải của chính context đó. Hàm không dùng membership để suy
- * quyền quản trị — thuộc về tenant và quản lý tenant là hai quan hệ khác
- * nhau, API vẫn thực thi lại ở từng endpoint.
+ * Luồng suy luận bám ảnh chụp quyền của API: capability tại context hệ thống luôn được cộng vào vì quyền platform kế
+ * thừa xuống context tenant; phần riêng của tenant chỉ lấy từ các gán vai có context cấp tenant và `instanceId` bằng
+ * đúng tenant đang xét, sau đó tra capability đã phân giải của chính context đó. Hàm không dùng membership để suy quyền
+ * quản trị — thuộc về tenant và quản lý tenant là hai quan hệ khác nhau, API vẫn thực thi lại ở từng endpoint.
  */
 export function tenantCapabilities(access: MyAccessView | null, tenantId: string): string[] {
   if (!access) return [];
@@ -109,10 +103,8 @@ export function tenantCapabilities(access: MyAccessView | null, tenantId: string
 }
 
 /**
- * Người dùng có một capability tenant tại ít nhất một tenant hay không.
- * Hàm chỉ phục vụ việc mở điều hướng: trang đích vẫn phải xét tenant hiệu
- * lực hoặc tenant được chọn bằng `tenantCapabilities` và vẫn chịu cổng
- * 403 của API.
+ * Người dùng có một capability tenant tại ít nhất một tenant hay không. Hàm chỉ phục vụ việc mở điều hướng: trang đích
+ * vẫn phải xét tenant hiệu lực hoặc tenant được chọn bằng `tenantCapabilities` và vẫn chịu cổng 403 của API.
  */
 function hasTenantCapabilitySomewhere(access: MyAccessView, capability: string): boolean {
   if (access.isSiteAdmin || systemCapabilities(access).includes(capability)) return true;
@@ -130,23 +122,16 @@ function isCourseStaff(access: MyAccessView | null, courseAccess: CourseAccess):
 }
 
 /**
- * Người dùng có gán vai trò tại chính context của khoá này hay không —
- * đây là toàn bộ định nghĩa “thuộc khoá” đã chốt ở #33 (ghi danh đang
- * hiệu lực ∪ gán vai tại context khoá) sau khi đối chiếu phía API: nửa
- * “ghi danh” của hợp nhất LUÔN hiện diện trong ảnh chụp dưới dạng gán
- * vai, vì tầng ghi danh của API vật chất hoá mọi ghi danh thành một gán
- * vai tại context khoá — instance ghi danh luôn chốt một vai (mặc định
- * vai học viên), ghi danh thì cấp vai đó, rút ghi danh thì gỡ đúng vai
- * đó, đình chỉ thì giữ vai (khớp hành vi cũ: học viên bị đình chỉ vẫn ở
- * nhóm learning qua nhánh gán vai). Đây cũng là cùng định nghĩa mà
- * roster tin nhắn dùng phía API (listMembershipCourseIds chỉ tính gán
- * vai ở context có contextLevel = COURSE, instanceId = id của khoá).
- * Nhờ vậy phân loại không còn cần probe `enrolments/me` cho từng khoá
- * nữa (F-02, rà soát #133): ảnh chụp quyền đã mang sẵn mọi gán vai của
- * người dùng (MyAccessView.assignments). Giáo viên phụ trách khoá qua
- * gán vai (đúng thiết kế seed: editingteacher tại context khoá, không
- * qua ghi danh) nhờ đó thấy khoá ở nhóm giảng dạy thay vì rơi vào cả
- * hai danh sách đều rỗng.
+ * Người dùng có gán vai trò tại chính context của khoá này hay không — đây là toàn bộ định nghĩa “thuộc khoá” đã chốt ở
+ * #33 (ghi danh đang hiệu lực ∪ gán vai tại context khoá) sau khi đối chiếu phía API: nửa “ghi danh” của hợp nhất LUÔN
+ * hiện diện trong ảnh chụp dưới dạng gán vai, vì tầng ghi danh của API vật chất hoá mọi ghi danh thành một gán vai tại
+ * context khoá — instance ghi danh luôn chốt một vai (mặc định vai học viên), ghi danh thì cấp vai đó, rút ghi danh thì
+ * gỡ đúng vai đó, đình chỉ thì giữ vai (khớp hành vi cũ: học viên bị đình chỉ vẫn ở nhóm learning qua nhánh gán vai).
+ * Đây cũng là cùng định nghĩa mà roster tin nhắn dùng phía API (listMembershipCourseIds chỉ tính gán vai ở context có
+ * contextLevel = COURSE, instanceId = id của khoá). Nhờ vậy phân loại không còn cần probe `enrolments/me` cho từng khoá
+ * nữa (F-02, rà soát #133): ảnh chụp quyền đã mang sẵn mọi gán vai của người dùng (MyAccessView.assignments). Giáo viên
+ * phụ trách khoá qua gán vai (đúng thiết kế seed: editingteacher tại context khoá, không qua ghi danh) nhờ đó thấy khoá
+ * ở nhóm giảng dạy thay vì rơi vào cả hai danh sách đều rỗng.
  *
  * Export để loader SSR của dashboard (lát SL-1) dùng chung định nghĩa.
  */

@@ -19,12 +19,10 @@ export function useMyTenants() {
 }
 
 /**
- * Chuyển tenant: sau cutover phiên cookie (issue #7, GĐ2) web không
- * còn giữ token để ghi đè — hiệu lực đổi tenant phải nằm ở chính
- * phiên cookie phía server (đội BA-4 chuẩn hoá switch-tenant thành
- * cookie-effective trước khi bật cờ cutover; đáp ứng vẫn có thể trả
- * cặp token cho client bearer khác, web BỎ QUA phần đó). Nạp lại
- * trang để áp dụng ngữ cảnh mới ở mọi bề mặt (loader SSR + cache).
+ * Chuyển tenant: sau cutover phiên cookie (issue #7, GĐ2) web không còn giữ token để ghi đè — hiệu lực đổi tenant phải
+ * nằm ở chính phiên cookie phía server (đội BA-4 chuẩn hoá switch-tenant thành cookie-effective trước khi bật cờ
+ * cutover; đáp ứng vẫn có thể trả cặp token cho client bearer khác, web BỎ QUA phần đó). Nạp lại trang để áp dụng ngữ
+ * cảnh mới ở mọi bề mặt (loader SSR + cache).
  */
 export async function switchTenant(tenantId: string): Promise<void> {
   await apiJson(`/api/v1/auth/switch-tenant/${tenantId}`, { method: 'POST' });

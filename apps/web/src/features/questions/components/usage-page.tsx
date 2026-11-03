@@ -46,10 +46,9 @@ export function QuestionUsagePage() {
   const finishAttemptMutation = useFinishUsageAttempt();
 
   /**
-   * Nạp nội dung của phiên bản ĐÃ PIN cho từng attempt đã bắt đầu: usage chỉ
-   * mang questionId/questionVersionId, nên đề và ngữ liệu phải tra qua
-   * endpoint versions (đúng phiên bản đã pin, không phải bản mới nhất) rồi
-   * endpoint stimuli. Lỗi ở bước phụ này không chặn thao tác làm bài.
+   * Nạp nội dung của phiên bản ĐÃ PIN cho từng attempt đã bắt đầu: usage chỉ mang questionId/questionVersionId, nên đề
+   * và ngữ liệu phải tra qua endpoint versions (đúng phiên bản đã pin, không phải bản mới nhất) rồi endpoint stimuli.
+   * Lỗi ở bước phụ này không chặn thao tác làm bài.
    */
   const loadPinned = useCallback(async (fresh: QuestionUsage) => {
     const entries = await Promise.all(

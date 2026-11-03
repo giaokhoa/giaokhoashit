@@ -18,13 +18,11 @@ import { queryKeys } from '../queries/keys';
 import { buildSsrLoaderData, serverQueryFn, type SsrLoaderData } from '#lib/ssr-data';
 
 /**
- * Loader phía server (tầng SL-1 của #7): prefetch bảng cấu hình (key
- * `siteConfig`) và vết thay đổi (key `siteConfigAudit`) bằng cookie
- * của chính request rồi dehydrate cho root.tsx hydrate vào cache
- * (xem `lib/ssr-data.ts`). Người không có capability `site:config`
- * thì cả hai prefetch đều lỗi 403 phía server → không query nào lọt
- * vào state, trang tự fetch lại và hiện thông báo không có quyền như
- * trước SL-1. Không có cookie phiên thì không gọi API nào.
+ * Loader phía server (tầng SL-1 của #7): prefetch bảng cấu hình (key `siteConfig`) và vết thay đổi (key
+ * `siteConfigAudit`) bằng cookie của chính request rồi dehydrate cho root.tsx hydrate vào cache (xem
+ * `lib/ssr-data.ts`). Người không có capability `site:config` thì cả hai prefetch đều lỗi 403 phía server → không query
+ * nào lọt vào state, trang tự fetch lại và hiện thông báo không có quyền như trước SL-1. Không có cookie phiên thì
+ * không gọi API nào.
  */
 export async function loader({ request }: { request: Request }): Promise<SsrLoaderData> {
   return buildSsrLoaderData(request, async (queryClient, req) => {
@@ -43,9 +41,8 @@ export async function loader({ request }: { request: Request }): Promise<SsrLoad
 
 /**
  * Các miền giá trị enum đã biết, đối chiếu registry phía backend
- * (`apps/api/src/modules/site-config/settings-registry.ts` ở branch
- * backend): hiện chỉ `core/lang` là enum, với options `['vi', 'en']`.
- * Setting enum nào không có trong bảng này thì sửa bằng ô nhập văn bản.
+ * (`apps/api/src/modules/site-config/settings-registry.ts` ở branch backend): hiện chỉ `core/lang` là enum, với options
+ * `['vi', 'en']`. Setting enum nào không có trong bảng này thì sửa bằng ô nhập văn bản.
  */
 const KNOWN_ENUM_OPTIONS: Record<string, readonly string[]> = {
   'core/lang': ['vi', 'en'],
@@ -56,19 +53,15 @@ function settingKey(setting: SiteSetting): string {
 }
 
 /**
- * Chính sách thông báo theo loại (NB-7, issue #174): các setting thuộc
- * component `notifications` mang tên `provider_<tên>_enabled` — sinh ở
- * API từ registry provider. Trang trình bày chúng thành mục "Thông
- * báo" riêng với nhãn loại lấy từ i18n (`notifProvider_<tên>`), thay
- * vì tên khoá thô như các component khác.
+ * Chính sách thông báo theo loại (NB-7, issue #174): các setting thuộc component `notifications` mang tên
+ * `provider_<tên>_enabled` — sinh ở API từ registry provider. Trang trình bày chúng thành mục "Thông báo" riêng với
+ * nhãn loại lấy từ i18n (`notifProvider_<tên>`), thay vì tên khoá thô như các component khác.
  */
 const NOTIFICATION_POLICY_COMPONENT = 'notifications';
 
 /**
- * Hai loại bắt buộc (P2) — bản chiếu của `mandatoryInApp` trong
- * registry ở API: công tắc bị khoá trên giao diện và API cũng từ chối
- * đặt false (site_config.notification_mandatory); đường khôi phục duy
- * nhất là Đặt lại về mặc định.
+ * Hai loại bắt buộc (P2) — bản chiếu của `mandatoryInApp` trong registry ở API: công tắc bị khoá trên giao diện và API
+ * cũng từ chối đặt false (site_config.notification_mandatory); đường khôi phục duy nhất là Đặt lại về mặc định.
  */
 const NOTIFICATION_MANDATORY_PROVIDERS = new Set(['enrol_expiry_warning', 'admin_announcement']);
 

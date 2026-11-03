@@ -145,11 +145,9 @@ export function AdminUsersPage() {
     : pageQuery.isError;
 
   /**
-   * Kẹp trang hiện tại theo tổng mới nhất ngay trong lúc render
-   * (mẫu của bảng gán vai, không dùng effect): khi tổng giảm mà
-   * trang hiện tại vượt quá trang cuối thì đưa về trang cuối; lần
-   * render sau điều kiện đã sai nên dừng, truy vấn tự tải lại trang
-   * hợp lệ thay vì kẹt ở trang rỗng.
+   * Kẹp trang hiện tại theo tổng mới nhất ngay trong lúc render (mẫu của bảng gán vai, không dùng effect): khi tổng
+   * giảm mà trang hiện tại vượt quá trang cuối thì đưa về trang cuối; lần render sau điều kiện đã sai nên dừng, truy
+   * vấn tự tải lại trang hợp lệ thay vì kẹt ở trang rỗng.
    */
   if (!listPending && pagination.pageIndex > Math.max(0, pageCount - 1)) {
     setPagination((p) => ({ ...p, pageIndex: Math.max(0, pageCount - 1) }));

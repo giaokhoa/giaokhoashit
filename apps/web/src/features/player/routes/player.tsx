@@ -17,10 +17,8 @@ function isHls(fileName: string, mime: string | null): boolean {
 }
 
 /**
- * Hàng đợi gửi bù sự kiện học (K2-B2): view/progress là hồ sơ quá
- * trình học — khi mạng rớt, sự kiện được giữ trong localStorage và
- * gửi lại khi có mạng hoặc lần mở player sau, học sinh mạng yếu
- * không bị mất tiến độ đã học thật.
+ * Hàng đợi gửi bù sự kiện học (K2-B2): view/progress là hồ sơ quá trình học — khi mạng rớt, sự kiện được giữ trong
+ * localStorage và gửi lại khi có mạng hoặc lần mở player sau, học sinh mạng yếu không bị mất tiến độ đã học thật.
  */
 const QUEUE_KEY = 'lms-learn-event-queue';
 interface QueuedEvent { path: string; body: string }
@@ -337,14 +335,17 @@ export function PlayerPage() {
   );
 }
 
-/** Route module là chính trang này (src/routes.ts trỏ thẳng vào file): cần default export để framework mode coi đây là route có component — thiếu nó, request tài liệu phía server bị xếp vào resource route và trả 400 (GĐ4 của issue #7 phát hiện khi rà SSR toàn bộ route). */
+/**
+ * Route module là chính trang này (src/routes.ts trỏ thẳng vào file): cần default export để framework mode coi đây là
+ * route có component — thiếu nó, request tài liệu phía server bị xếp vào resource route và trả 400 (GĐ4 của issue #7
+ * phát hiện khi rà SSR toàn bộ route).
+ */
 export default PlayerPage;
 
 /**
- * clientLoader (F-01 đợt 1 + bổ sung clientLoader, rà soát #133):
- * prefetch query chính vào QueryClient singleton dùng chung (đúng
- * khoá factory) trước khi component mount. prefetchQuery không ném
- * lỗi: tải hỏng thì component tự xử lý qua useQuery như trước.
+ * clientLoader (F-01 đợt 1 + bổ sung clientLoader, rà soát #133): prefetch query chính vào QueryClient singleton dùng
+ * chung (đúng khoá factory) trước khi component mount. prefetchQuery không ném lỗi: tải hỏng thì component tự xử lý qua
+ * useQuery như trước.
  */
 export async function clientLoader({ params }: { params: Record<string, string | undefined> }) {
   if (params.id && params.cmId) {

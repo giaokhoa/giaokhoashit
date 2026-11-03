@@ -27,32 +27,23 @@ import { AdminSelect } from './admin-select';
  * Hộp thoại gán vai trò của feature admin, dựng trên component
  * Dialog thật của `@lms/ui`.
  *
- * Luồng nghiệp vụ: người quản trị chọn người dùng (tìm theo tên hoặc
- * email qua danh sách người dùng phân trang phía server), chọn vai trò
- * và chọn ngữ cảnh, rồi gửi qua POST /access/assignments. Ngữ cảnh mặc
- * định là ngữ cảnh hệ thống (level 10), suy ra trực tiếp từ cây context
- * mỗi lần render thay vì đặt bằng effect — tránh lỗi lint
- * set-state-in-effect mà form gán cũ từng mang. Nhãn của ô chọn ngữ
- * cảnh lấy qua adapter nhãn ngữ cảnh (tên cấp dạng chữ), không bày
- * chuỗi kỹ thuật của dòng ngữ cảnh. Gán trùng cùng nguồn là no-op lặng
- * ở backend nên hộp thoại đóng như thành công và bảng tải lại không
- * thêm dòng trùng.
+ * Luồng nghiệp vụ: người quản trị chọn người dùng (tìm theo tên hoặc email qua danh sách người dùng phân trang phía
+ * server), chọn vai trò và chọn ngữ cảnh, rồi gửi qua POST /access/assignments. Ngữ cảnh mặc định là ngữ cảnh hệ thống
+ * (level 10), suy ra trực tiếp từ cây context mỗi lần render thay vì đặt bằng effect — tránh lỗi lint
+ * set-state-in-effect mà form gán cũ từng mang. Nhãn của ô chọn ngữ cảnh lấy qua adapter nhãn ngữ cảnh (tên cấp dạng
+ * chữ), không bày chuỗi kỹ thuật của dòng ngữ cảnh. Gán trùng cùng nguồn là no-op lặng ở backend nên hộp thoại đóng như
+ * thành công và bảng tải lại không thêm dòng trùng.
  *
  * Chế độ người dùng chọn sẵn (mở từ hộp thoại quản lý vai trò của một
  * người): ô tìm người dùng thay bằng một dòng tĩnh nêu người được gán
  * — luồng gán không đổi, chỉ bỏ bước chọn người.
  *
- * Khi backend từ chối, hộp thoại GIỮ NGUYÊN kèm đúng lý do backend trả
- * về — chốt gói số chỗ của trung tâm và chốt tách vai theo ngữ cảnh là
- * hai trường hợp phân biệt bằng mã lỗi riêng; mã lạ thì dùng thông báo
- * chung, không hiện mã kỹ thuật và không báo thành công giả. Danh sách
- * người dùng tải thêm từng đợt 20 (nút "Tải thêm người dùng" hiện khi
- * còn người chưa tải) để từ khoá khớp trên 20 người vẫn chọn được
- * người ở đợt sau, thay vì chặn ở 20 kết quả đầu như trước — nhưng
- * chỉ tới trần 100 của API danh sách người dùng: chạm trần thì nút
- * tải thêm ẩn đi kèm gợi ý thu hẹp từ khoá, vì gửi `pageSize` vượt
- * trần bị server trả HTTP 400 và người sau 100 kết quả không chọn
- * được bằng cách bấm thêm nữa.
+ * Khi backend từ chối, hộp thoại GIỮ NGUYÊN kèm đúng lý do backend trả về — chốt gói số chỗ của trung tâm và chốt tách
+ * vai theo ngữ cảnh là hai trường hợp phân biệt bằng mã lỗi riêng; mã lạ thì dùng thông báo chung, không hiện mã kỹ
+ * thuật và không báo thành công giả. Danh sách người dùng tải thêm từng đợt 20 (nút "Tải thêm người dùng" hiện khi còn
+ * người chưa tải) để từ khoá khớp trên 20 người vẫn chọn được người ở đợt sau, thay vì chặn ở 20 kết quả đầu như trước
+ * — nhưng chỉ tới trần 100 của API danh sách người dùng: chạm trần thì nút tải thêm ẩn đi kèm gợi ý thu hẹp từ khoá, vì
+ * gửi `pageSize` vượt trần bị server trả HTTP 400 và người sau 100 kết quả không chọn được bằng cách bấm thêm nữa.
  */
 export interface RoleAssignmentDialogProps {
   open: boolean;

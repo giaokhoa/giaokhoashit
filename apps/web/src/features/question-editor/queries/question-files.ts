@@ -4,10 +4,9 @@ import { questionFileIdFromSrc } from '../utils/question-files';
 import { queryKeys } from './keys';
 
 /**
- * Hook hiển thị cho src lưu trong tài liệu: src không phải định danh bền
- * của hệ (URL ngoài, URL ký server đã phát sẵn) thì dùng nguyên; định danh
- * bền thì đổi sang URL ký và làm mới trước khi hết hạn (hạn ký 300 giây,
- * staleTime 240 giây).
+ * Hook hiển thị cho src lưu trong tài liệu: src không phải định danh bền của hệ (URL ngoài, URL ký server đã phát sẵn)
+ * thì dùng nguyên; định danh bền thì đổi sang URL ký và làm mới trước khi hết hạn (hạn ký 300 giây, staleTime 240
+ * giây).
  */
 export function useResolvedFileSrc(src: string | undefined): string | undefined {
   const fileId = src ? questionFileIdFromSrc(src) : null;

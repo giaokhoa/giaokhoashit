@@ -16,14 +16,11 @@ import { queryKeys } from '../queries/keys';
 import { fetchApiJsonForRequest } from '#lib/server-api';
 
 /**
- * Bản chiếu CÔNG KHAI của gói lớp mà loader phía server được phép đưa
- * vào HTML đầu: đúng các trường mọi người xem đều thấy như nhau của
- * `ClassPublicView` (tên, mã, năm học, mô tả, chủ lớp, trạng thái,
- * học phí công khai). Hai trường do server suy THEO NGƯỜI GỌI —
- * `isMember` và `canPurchase` — TUYỆT ĐỐI không nằm trong bản chiếu
- * này: chúng là dữ kiện cá nhân hoá, chỉ phía client nạp bằng
- * `useQuery` sau khi trang đã mở, và đáp ứng của route này không
- * được bật cache công khai.
+ * Bản chiếu CÔNG KHAI của gói lớp mà loader phía server được phép đưa vào HTML đầu: đúng các trường mọi người xem đều
+ * thấy như nhau của `ClassPublicView` (tên, mã, năm học, mô tả, chủ lớp, trạng thái, học phí công khai). Hai trường do
+ * server suy THEO NGƯỜI GỌI — `isMember` và `canPurchase` — TUYỆT ĐỐI không nằm trong bản chiếu này: chúng là dữ kiện
+ * cá nhân hoá, chỉ phía client nạp bằng `useQuery` sau khi trang đã mở, và đáp ứng của route này không được bật cache
+ * công khai.
  */
 export type ClassPublicSummary = Pick<
   ClassPublicView,
@@ -44,14 +41,11 @@ export interface ClassPublicLoaderData {
 }
 
 /**
- * Loader phía server của trang lớp public: gọi endpoint gói công
- * khai của lớp qua API nội bộ KÈM cookie của chính request (cơ chế
- * `fetchApiJsonForRequest` — endpoint này yêu cầu người gọi đã đăng
- * nhập, không phải endpoint không phiên), parse bằng schema hợp
- * đồng hiện hữu rồi chiếu sang {@link ClassPublicSummary}. Request
- * không có cookie, API lỗi hoặc thân đáp ứng không khớp schema thì
- * trả `classPublic: null` — trang rơi về hành vi tải phía client
- * như trước, không sập và không lộ dữ kiện của ai.
+ * Loader phía server của trang lớp public: gọi endpoint gói công khai của lớp qua API nội bộ KÈM cookie của chính
+ * request (cơ chế `fetchApiJsonForRequest` — endpoint này yêu cầu người gọi đã đăng nhập, không phải endpoint không
+ * phiên), parse bằng schema hợp đồng hiện hữu rồi chiếu sang {@link ClassPublicSummary}. Request không có cookie, API
+ * lỗi hoặc thân đáp ứng không khớp schema thì trả `classPublic: null` — trang rơi về hành vi tải phía client như trước,
+ * không sập và không lộ dữ kiện của ai.
  */
 export async function loader({
   params,

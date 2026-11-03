@@ -6,10 +6,9 @@ import { ApiError } from '#lib/api';
  * một client duy nhất cho cả vòng đời app, khai báo mặc định tập trung
  * tại đây thay vì rải rác từng hook.
  *
- * - staleTime 30 giây: dữ liệu máy chủ (quyền, khoá học, điểm…) coi là
- *   tươi trong 30 giây — các lần F5/điều hướng trong khoảng đó dựng ngay
- *   từ cache rồi mới làm mới nền (stale-while-revalidate), thay cho thác
- *   nước fetch nối tiếp trước đây.
+ * - staleTime 30 giây: dữ liệu máy chủ (quyền, khoá học, điểm…) coi là tươi trong 30 giây — các lần F5/điều hướng trong
+ *   khoảng đó dựng ngay từ cache rồi mới làm mới nền (stale-while-revalidate), thay cho thác nước fetch nối tiếp trước
+ *   đây.
  * - retry: lỗi phân quyền/không tồn tại (401/403/404) không thử lại vì
  *   thử lại không đổi kết quả; lỗi còn lại thử tối đa 2 lần.
  */

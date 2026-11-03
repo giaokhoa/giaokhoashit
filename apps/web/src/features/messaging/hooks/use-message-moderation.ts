@@ -11,10 +11,8 @@ export interface UseMessageModerationParams {
 }
 
 /**
- * Cửa sổ thu hồi mặc định (phút) theo site-config
- * `core/messagingrecallwindowminutes`: server là thẩm quyền cuối
- * (ngoài cửa sổ trả 403) — client chỉ dùng mốc này để ẨN nút thu
- * hồi khi tin đã cũ, không tự quyết cho phép thu hồi.
+ * Cửa sổ thu hồi mặc định (phút) theo site-config `core/messagingrecallwindowminutes`: server là thẩm quyền cuối (ngoài
+ * cửa sổ trả 403) — client chỉ dùng mốc này để ẨN nút thu hồi khi tin đã cũ, không tự quyết cho phép thu hồi.
  */
 const RECALL_WINDOW_MINUTES = 15;
 
@@ -28,10 +26,9 @@ export function useMessageModeration({ active, myId, patchMessages, setActionMes
   const bulkRemoveMutation = useBulkRemoveMessages();
 
   /**
-   * Xoá-phía-mình một tin nhắn (vòng đời tin nhắn theo vai, issue #33):
-   * chỉ tác giả, mọi lúc — tin chỉ ẩn khỏi tầm nhìn của chính người
-   * xoá, phía kia không đổi. Server trả dòng tin kèm dấu vết — áp ngay
-   * vào khung; phía học sinh tin biến mất ở bước render.
+   * Xoá-phía-mình một tin nhắn (vòng đời tin nhắn theo vai, issue #33): chỉ tác giả, mọi lúc — tin chỉ ẩn khỏi tầm nhìn
+   * của chính người xoá, phía kia không đổi. Server trả dòng tin kèm dấu vết — áp ngay vào khung; phía học sinh tin
+   * biến mất ở bước render.
    */
   async function deleteMessage(message: MessageView) {
     setActionMessage(null);
@@ -97,7 +94,10 @@ export function useMessageModeration({ active, myId, patchMessages, setActionMes
     }
   }
 
-  /** Gỡ hàng loạt các tin đã chọn (chỉ moderator): toàn bộ danh sách kiểm tra thẩm quyền trước, một tin ngoài phạm vi là cả lượt bị từ chối. */
+  /**
+   * Gỡ hàng loạt các tin đã chọn (chỉ moderator): toàn bộ danh sách kiểm tra thẩm quyền trước, một tin ngoài phạm vi là
+   * cả lượt bị từ chối.
+   */
   async function bulkRemoveSelected() {
     setActionMessage(null);
     const messageIds = [...selectedForBulk];

@@ -1,13 +1,9 @@
 /**
- * Hook điều phối khôi phục ngữ cảnh của trang Tin nhắn (đợt C của
- * issue #223, lát 1): hai hiệu ứng chạy đúng một lần khi danh sách
- * nạp xong — deep-link từ thông báo (`?conversation=<id>`) thắng
- * ngữ cảnh đã lưu, nếu không có deep-link thì mở lại hội thoại đã
- * lưu bền. Di chuyển từ `pages/messages.tsx` (hiệu ứng dòng
- * 678–742), giữ nguyên kỷ luật: deep-link có sẵn trong danh sách
- * thì mở như cú bấm; chưa có thì lấy chi tiết rồi chèn vào danh
- * sách rồi mở; server là nơi thực thi quyền thành viên nên không
- * phải thành viên/không tồn tại thì bỏ qua êm.
+ * Hook điều phối khôi phục ngữ cảnh của trang Tin nhắn (đợt C của issue #223, lát 1): hai hiệu ứng chạy đúng một lần
+ * khi danh sách nạp xong — deep-link từ thông báo (`?conversation=<id>`) thắng ngữ cảnh đã lưu, nếu không có deep-link
+ * thì mở lại hội thoại đã lưu bền. Di chuyển từ `pages/messages.tsx` (hiệu ứng dòng 678–742), giữ nguyên kỷ luật:
+ * deep-link có sẵn trong danh sách thì mở như cú bấm; chưa có thì lấy chi tiết rồi chèn vào danh sách rồi mở; server là
+ * nơi thực thi quyền thành viên nên không phải thành viên/không tồn tại thì bỏ qua êm.
  */
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,10 +18,8 @@ export interface UseConversationRestoreParams {
   setConversations: (conversations: ConversationView[] | ((prev: ConversationView[]) => ConversationView[])) => void;
   open: (conv: ConversationView) => Promise<void> | void;
   /**
-   * Tab khung trái hiện hành (trang đưa xuống): khi tab đang
-   * là Nhóm thì KHÔNG khôi phục hội thoại đã lưu (issue #608,
-   * điểm A-BS5 — tab Nhóm của bản demo mở vào là trạng thái
-   * chưa chọn; hội thoại đã lưu bền thuộc ngữ cảnh tab Trò
+   * Tab khung trái hiện hành (trang đưa xuống): khi tab đang là Nhóm thì KHÔNG khôi phục hội thoại đã lưu (issue #608,
+   * điểm A-BS5 — tab Nhóm của bản demo mở vào là trạng thái chưa chọn; hội thoại đã lưu bền thuộc ngữ cảnh tab Trò
    * chuyện). Deep-link không chịu cổng này.
    */
   sidebarTab: string;

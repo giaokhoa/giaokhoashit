@@ -231,13 +231,11 @@ export function QuestionsPage({ area = 'my-questions' }: { area?: BankArea }) {
                 {t('newMatrix')}
               </Button>
               {/*
-                Nút nhập từ file (I-3, issue #233): KHÔNG khoá theo
-                personalMatrixBank như nút Ma trận mới — đường ghi I-2
-                tự tạo lười bank ma trận cá nhân (ensurePersonalBank)
-                nên giáo viên chưa có bank vẫn nhập được; cổng quyền
-                thật nằm ở API (matrix:add tại môn) và ở trang
-                import (canUseQuestionBank), không giấu nút ở đây.
-              */}
+               * Nút nhập từ file (I-3, issue #233): KHÔNG khoá theo personalMatrixBank như nút Ma trận mới — đường ghi
+               * I-2 tự tạo lười bank ma trận cá nhân (ensurePersonalBank) nên giáo viên chưa có bank vẫn nhập được;
+               * cổng quyền thật nằm ở API (matrix:add tại môn) và ở trang import (canUseQuestionBank), không giấu nút ở
+               * đây.
+               */}
               <Button type="button" variant="outline" onClick={() => navigate('/matrices/import')}>
                 {t('matrixImportFromFile')}
               </Button>

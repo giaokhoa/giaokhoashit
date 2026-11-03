@@ -34,12 +34,10 @@ const OAUTH_BUTTON_KEYS: Record<OAuthIssuer, string> = {
 };
 
 /**
- * Loader phía server (SSR, Giai đoạn 3 của issue #7): danh sách nhà
- * cung cấp OAuth đang bật là dữ liệu CÔNG KHAI (endpoint @Public) nên
- * lấy ngay trong loader qua API nội bộ và đưa vào HTML + cache truy
- * vấn khởi tạo — trang đăng nhập render đủ nút OAuth từ paint đầu
- * thay vì chờ fetch phía client. Lỗi phía API → trả null, trang vẫn
- * render và truy vấn phía client tự thử lại như trước.
+ * Loader phía server (SSR, Giai đoạn 3 của issue #7): danh sách nhà cung cấp OAuth đang bật là dữ liệu CÔNG KHAI
+ * (endpoint @Public) nên lấy ngay trong loader qua API nội bộ và đưa vào HTML + cache truy vấn khởi tạo — trang đăng
+ * nhập render đủ nút OAuth từ paint đầu thay vì chờ fetch phía client. Lỗi phía API → trả null, trang vẫn render và
+ * truy vấn phía client tự thử lại như trước.
  */
 export async function loader(): Promise<{ providers: OAuthProvidersResponse | null }> {
   const body = await fetchApiJson('/api/v1/auth/oauth/providers');
@@ -74,11 +72,9 @@ export function LoginPage({ initialProviders }: { initialProviders?: OAuthProvid
   const [otpBusy, setOtpBusy] = useState(false);
 
   /**
-   * Danh sách issuer đang bật lấy từ endpoint công khai: issuer chưa
-   * được quản trị cấu hình (enabled=false) thì KHÔNG hiện nút — đúng
-   * hành vi của Moodle với issuer chưa bật ở trang login. Từ GĐ2 nút
-   * này khởi động luồng social của Better Auth (client tự chuyển
-   * hướng tới nhà cung cấp sau khi API cấp URL authorize).
+   * Danh sách issuer đang bật lấy từ endpoint công khai: issuer chưa được quản trị cấu hình (enabled=false) thì KHÔNG
+   * hiện nút — đúng hành vi của Moodle với issuer chưa bật ở trang login. Từ GĐ2 nút này khởi động luồng social của
+   * Better Auth (client tự chuyển hướng tới nhà cung cấp sau khi API cấp URL authorize).
    */
   const providersQuery = useQuery({
     queryKey: queryKeys.oauthProviders,
@@ -171,10 +167,9 @@ export function LoginPage({ initialProviders }: { initialProviders?: OAuthProvid
   }
 
   /**
-   * Bắt đầu luồng đăng nhập ngoài: client Better Auth xin URL
-   * authorize và tự chuyển hướng toàn trang tới nhà cung cấp; callback
-   * phía server đặt cookie phiên rồi đưa về `/oauth/callback`. Lỗi ở
-   * bước xin URL (provider chưa bật phía server) hiện tại trang này.
+   * Bắt đầu luồng đăng nhập ngoài: client Better Auth xin URL authorize và tự chuyển hướng toàn trang tới nhà cung cấp;
+   * callback phía server đặt cookie phiên rồi đưa về `/oauth/callback`. Lỗi ở bước xin URL (provider chưa bật phía
+   * server) hiện tại trang này.
    */
   async function startOAuth(issuer: OAuthIssuer) {
     setError(null);
@@ -385,10 +380,8 @@ export function LoginPage({ initialProviders }: { initialProviders?: OAuthProvid
 }
 
 /**
- * Export mặc định cho route module React Router framework mode (xem
- * src/routes.ts): bọc mỏng đọc dữ liệu loader rồi truyền xuống
- * LoginPage thuần — nhờ vậy test render trực tiếp LoginPage (không qua
- * loader) vẫn chạy như trước.
+ * Export mặc định cho route module React Router framework mode (xem src/routes.ts): bọc mỏng đọc dữ liệu loader rồi
+ * truyền xuống LoginPage thuần — nhờ vậy test render trực tiếp LoginPage (không qua loader) vẫn chạy như trước.
  */
 export default function LoginRoute() {
   const loaderData = useLoaderData<typeof loader>();

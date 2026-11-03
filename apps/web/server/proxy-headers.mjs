@@ -3,29 +3,21 @@
  * bộ (topology C): bộ header của đường proxy HTTP và đầu request thô
  * của đường hầm WebSocket upgrade.
  *
- * Flow: request của trình duyệt tới mặt tiền công khai → prod-server
- * nhận diện đường proxy (xem proxy-paths.mjs) → bộ header dựng ở đây
- * được gắn lên request phía API (node:http) → API xử lý theo đúng
- * địa chỉ công khai mà trình duyệt đã gọi. Đường hầm upgrade của
- * socket.io không đi qua node:http: prod-server tự viết lại dòng
- * request và từng dòng header ra đường hầm TCP — phần viết lại đó
- * cũng dựng ở đây để cùng chịu một bất biến địa chỉ.
+ * Flow: request của trình duyệt tới mặt tiền công khai → prod-server nhận diện đường proxy (xem proxy-paths.mjs) → bộ
+ * header dựng ở đây được gắn lên request phía API (node:http) → API xử lý theo đúng địa chỉ công khai mà trình duyệt đã
+ * gọi. Đường hầm upgrade của socket.io không đi qua node:http: prod-server tự viết lại dòng request và từng dòng header
+ * ra đường hầm TCP — phần viết lại đó cũng dựng ở đây để cùng chịu một bất biến địa chỉ.
  *
- * Bất biến địa chỉ: header `Host` của request gốc là địa chỉ công
- * khai duy nhất mà tầng ứng dụng dùng để phân giải trung tâm theo
- * tên miền con (issue #582: nhãn đầu tiên của Host là slug của
- * trung tâm trong sổ đăng ký). Đích TCP của request phía API do
- * hostname/port của origin nội bộ quyết định (tham số của
- * httpRequest), KHÔNG do header Host quyết — nên giữ nguyên Host
- * gốc không làm lệch đích kết nối, còn ghi đè Host bằng origin nội
- * bộ thì địa chỉ trung tâm biến mất lặng lẽ trước khi tới API: mọi
- * phân giải theo địa chỉ ở API (guard gắn ngữ cảnh, handler đăng
- * nhập Better Auth, socket auth) đều rơi về đường mặc định.
+ * Bất biến địa chỉ: header `Host` của request gốc là địa chỉ công khai duy nhất mà tầng ứng dụng dùng để phân giải
+ * trung tâm theo tên miền con (issue #582: nhãn đầu tiên của Host là slug của trung tâm trong sổ đăng ký). Đích TCP của
+ * request phía API do hostname/port của origin nội bộ quyết định (tham số của httpRequest), KHÔNG do header Host quyết
+ * — nên giữ nguyên Host gốc không làm lệch đích kết nối, còn ghi đè Host bằng origin nội bộ thì địa chỉ trung tâm biến
+ * mất lặng lẽ trước khi tới API: mọi phân giải theo địa chỉ ở API (guard gắn ngữ cảnh, handler đăng nhập Better Auth,
+ * socket auth) đều rơi về đường mặc định.
  *
- * Hai header chuyển tiếp còn lại giữ đúng hành vi hiện hành:
- * X-Forwarded-For nối tiếp chuỗi của các chặng trước rồi thêm IP
- * của chặng này; X-Forwarded-Proto chỉ đặt mặc định `http` khi
- * request chưa mang (chặng tunnel ở biên đã mang thì giữ nguyên).
+ * Hai header chuyển tiếp còn lại giữ đúng hành vi hiện hành: X-Forwarded-For nối tiếp chuỗi của các chặng trước rồi
+ * thêm IP của chặng này; X-Forwarded-Proto chỉ đặt mặc định `http` khi request chưa mang (chặng tunnel ở biên đã mang
+ * thì giữ nguyên).
  */
 
 function forwardedFor(prior, remoteAddress) {

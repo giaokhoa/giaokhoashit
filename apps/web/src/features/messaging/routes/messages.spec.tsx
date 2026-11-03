@@ -10,10 +10,9 @@ import { formatWithOptions } from '#utils/date-format';
 import { MessagesPage } from './messages';
 
 /**
- * Kênh realtime được mock ở đúng biên lib `#lib/messaging-socket`:
- * test cũ (chặn liên lạc, hợp đồng tạo conversation) không cần socket
- * thật; test realtime bên dưới điều khiển handlers mà trang đăng ký
- * để giả lập sự kiện server đẩy xuống.
+ * Kênh realtime được mock ở đúng biên lib `#lib/messaging-socket`: test cũ (chặn liên lạc, hợp đồng tạo conversation)
+ * không cần socket thật; test realtime bên dưới điều khiển handlers mà trang đăng ký để giả lập sự kiện server đẩy
+ * xuống.
  */
 const realtime = vi.hoisted(() => ({
   handlers: null as null | Record<string, (payload: never) => void>,
@@ -34,12 +33,9 @@ vi.mock('../api/messaging-socket', () => ({
 }));
 
 /**
- * Lớp adapter hồ sơ người: mặc định giữ nguyên triển khai thật
- * (mọi trường mở rộng đều null — chưa có nguồn backend). Riêng
- * các ca của giai đoạn 2 vòng sửa PR #610 (hàng liên lạc thành
- * liên kết) cần trường CÓ giá trị để khẳng định, nên mock cho
- * phép ghi đè từng ca qua `profileOverride` — ca nào không đặt
- * thì hành vi y như thật.
+ * Lớp adapter hồ sơ người: mặc định giữ nguyên triển khai thật (mọi trường mở rộng đều null — chưa có nguồn backend).
+ * Riêng các ca của giai đoạn 2 vòng sửa PR #610 (hàng liên lạc thành liên kết) cần trường CÓ giá trị để khẳng định, nên
+ * mock cho phép ghi đè từng ca qua `profileOverride` — ca nào không đặt thì hành vi y như thật.
  */
 const profileOverride = vi.hoisted(() => ({
   value: null as null | Record<string, string | null>,

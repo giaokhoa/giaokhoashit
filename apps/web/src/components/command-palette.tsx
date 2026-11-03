@@ -42,29 +42,19 @@ const CONTENT_AREA_LABEL_KEYS: Record<string, string> = {
  * nhanh…" riêng ở vùng phải header đã BỎ — bề mặt này chỉ còn mở bằng phím tắt; ô tìm kiếm ở giữa header giữ nguyên
  * vai trò đường vào trang kết quả đầy đủ `/search`. Một ô gõ duy nhất cho ra hai nhóm kết quả:
  *
- * - Nhóm "Đi tới": màn hình theo quyền + khoá học của tôi, lọc chữ
- *   tại client và Enter/nhấp là đi thẳng. Tôn trọng quyền theo đúng
- *   cây sidebar: danh sách màn hình dựng từ CÙNG các cổng của
- *   AppSidebar (canUseQuestionBank cho Ngân hàng câu hỏi,
- *   canAdminister cho nhóm quản trị, hasLearnerFootprint cho Huy
- *   hiệu/Kế hoạch học tập theo issue #176) và khoá học lấy từ ảnh
- *   chụp quyền (perms.courses — API /courses đã tự lọc theo người
- *   xem). Mục không có quyền thì KHÔNG xuất hiện. Mục "Tìm kiếm"
- *   trỏ `/search` trần của bảng lệnh cũ đã bỏ: trang kết quả nay là
- *   một trong các đích của chính nhóm nội dung và của ô giữa header,
- *   không còn là một mục điều hướng riêng.
- * - Nhóm "Nội dung": gọi GET /api/v1/search bằng từ khoá đã gỡ
- *   debounce 250 ms (tránh bắn API theo từng phím); server đã lọc
- *   kết quả theo quyền của người tìm. Mỗi kết quả mở được item đích
- *   theo ánh xạ dùng chung ở lib/search-target (cùng ánh xạ với
- *   trang `/search`); kết quả thuộc area chưa có route đích thì
- *   không vào danh sách chọn được. Riêng kết quả `users`: mọi vai
- *   trò đều nhận được từ API nhưng đích duy nhất là màn quản trị
- *   người dùng, nên chỉ vào danh sách khi ảnh chụp quyền của người
- *   đang tìm có quyền quản trị người dùng (site admin hoặc
- *   `user:update` tại context hệ thống — capability màn đích tự
- *   gác); vai trò còn lại không thấy chúng trong danh sách chọn,
- *   tránh điều hướng vào màn quản trị mình không có quyền dùng.
+ * - Nhóm "Đi tới": màn hình theo quyền + khoá học của tôi, lọc chữ tại client và Enter/nhấp là đi thẳng. Tôn trọng
+ *   quyền theo đúng cây sidebar: danh sách màn hình dựng từ CÙNG các cổng của AppSidebar (canUseQuestionBank cho Ngân
+ *   hàng câu hỏi, canAdminister cho nhóm quản trị, hasLearnerFootprint cho Huy hiệu/Kế hoạch học tập theo issue #176)
+ *   và khoá học lấy từ ảnh chụp quyền (perms.courses — API /courses đã tự lọc theo người xem). Mục không có quyền thì
+ *   KHÔNG xuất hiện. Mục "Tìm kiếm" trỏ `/search` trần của bảng lệnh cũ đã bỏ: trang kết quả nay là một trong các đích
+ *   của chính nhóm nội dung và của ô giữa header, không còn là một mục điều hướng riêng.
+ * - Nhóm "Nội dung": gọi GET /api/v1/search bằng từ khoá đã gỡ debounce 250 ms (tránh bắn API theo từng phím); server
+ *   đã lọc kết quả theo quyền của người tìm. Mỗi kết quả mở được item đích theo ánh xạ dùng chung ở lib/search-target
+ *   (cùng ánh xạ với trang `/search`); kết quả thuộc area chưa có route đích thì không vào danh sách chọn được. Riêng
+ *   kết quả `users`: mọi vai trò đều nhận được từ API nhưng đích duy nhất là màn quản trị người dùng, nên chỉ vào danh
+ *   sách khi ảnh chụp quyền của người đang tìm có quyền quản trị người dùng (site admin hoặc `user:update` tại context
+ *   hệ thống — capability màn đích tự gác); vai trò còn lại không thấy chúng trong danh sách chọn, tránh điều hướng vào
+ *   màn quản trị mình không có quyền dùng.
  *
  * Điều hướng bàn phím (mũi tên + Enter) chạy trên MỘT danh sách phẳng theo đúng thứ tự hiển thị: nhóm Đi tới trước,
  * nhóm Nội dung sau. Component mount một lần duy nhất trong SiteHeader (không render gì khi đang đóng) nên phím tắt

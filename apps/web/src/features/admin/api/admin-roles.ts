@@ -29,10 +29,8 @@ export function updateRole(input: { roleId: string; draft: UpdateRole }) {
 }
 
 /**
- * Lưu ma trận thay toàn bộ cho một vai tại đúng một ngữ cảnh
- * (PUT /access/roles/:id/capabilities) — nguyên tử: sau khi áp dụng
- * thành công, tập ghi đè của vai tại ngữ cảnh đó bằng đúng tập gửi
- * lên; phần tử vắng mặt trở về kế thừa.
+ * Lưu ma trận thay toàn bộ cho một vai tại đúng một ngữ cảnh (PUT /access/roles/:id/capabilities) — nguyên tử: sau khi
+ * áp dụng thành công, tập ghi đè của vai tại ngữ cảnh đó bằng đúng tập gửi lên; phần tử vắng mặt trở về kế thừa.
  *
  * @param input - Định danh vai trò, ngữ cảnh và tập ghi đè khác kế thừa.
  * @returns Các ghi đè đã lưu.
@@ -45,9 +43,8 @@ export function replaceRoleCapabilities(input: { roleId: string; payload: Replac
 }
 
 /**
- * Xoá vai trò (DELETE /access/roles/:id) — backend từ chối vai dựng
- * sẵn (có `archetype`) và vai còn người giữ, với mã lỗi riêng cho từng
- * trường hợp; tầng hiển thị dịch mã lỗi thành thông báo cho người dùng.
+ * Xoá vai trò (DELETE /access/roles/:id) — backend từ chối vai dựng sẵn (có `archetype`) và vai còn người giữ, với mã
+ * lỗi riêng cho từng trường hợp; tầng hiển thị dịch mã lỗi thành thông báo cho người dùng.
  *
  * @param roleId - Định danh vai trò cần xoá.
  */
@@ -56,10 +53,9 @@ export function deleteRole(roleId: string) {
 }
 
 /**
- * Tham số liệt kê dòng gán vai của đợt 3 — mọi lọc, tìm và phân trang
- * của bảng đều đi qua các tham số server này, không lọc phía client
- * trên tập đã tải toàn bộ. Bộ lọc/lượt tìm rỗng được bỏ khỏi chuỗi
- * truy vấn để backend hiểu là không lọc theo tiêu chí đó.
+ * Tham số liệt kê dòng gán vai của đợt 3 — mọi lọc, tìm và phân trang của bảng đều đi qua các tham số server này, không
+ * lọc phía client trên tập đã tải toàn bộ. Bộ lọc/lượt tìm rỗng được bỏ khỏi chuỗi truy vấn để backend hiểu là không
+ * lọc theo tiêu chí đó.
  */
 export interface ListAssignmentsParams {
   userId?: string;
@@ -101,11 +97,9 @@ export async function fetchRoleHolderUserIds(roleId: string, contextId: string) 
 }
 
 /**
- * Gán một vai trò cho một người dùng tại một ngữ cảnh
- * (POST /access/assignments) — backend giữ nguyên các chốt chặn: gán
- * trùng cùng nguồn là no-op lặng, gán vai giảng dạy trúng chốt gói số
- * chỗ hoặc chốt tách vai bị từ chối với mã lỗi riêng; tầng hiển thị
- * dịch mã lỗi thành lý do, không báo thành công giả.
+ * Gán một vai trò cho một người dùng tại một ngữ cảnh (POST /access/assignments) — backend giữ nguyên các chốt chặn:
+ * gán trùng cùng nguồn là no-op lặng, gán vai giảng dạy trúng chốt gói số chỗ hoặc chốt tách vai bị từ chối với mã lỗi
+ * riêng; tầng hiển thị dịch mã lỗi thành lý do, không báo thành công giả.
  *
  * @param input - Bộ ba người dùng × vai trò × ngữ cảnh cần gán.
  */
@@ -114,10 +108,9 @@ export function createAssignment(input: AssignRole) {
 }
 
 /**
- * Gỡ một dòng gán (DELETE /access/assignments/:id) — dòng do ghi danh
- * quản lý (`component = 'enrol'`) bị backend từ chối với mã
- * `access.assignment_enrol_managed`; tầng hiển thị phân biệt dòng này
- * ngay trên bảng và dịch mã lỗi khi gặp trường hợp đua dữ kiện.
+ * Gỡ một dòng gán (DELETE /access/assignments/:id) — dòng do ghi danh quản lý (`component = 'enrol'`) bị backend từ
+ * chối với mã `access.assignment_enrol_managed`; tầng hiển thị phân biệt dòng này ngay trên bảng và dịch mã lỗi khi gặp
+ * trường hợp đua dữ kiện.
  *
  * @param assignmentId - Định danh dòng gán cần gỡ.
  */
@@ -126,12 +119,9 @@ export function deleteAssignment(assignmentId: string) {
 }
 
 /**
- * Đọc ma trận quyền toàn trang tại một ngữ cảnh
- * (GET /access/capability-matrix?contextId=…): mọi vai trò kèm số
- * người giữ phân biệt và đúng các ghi đè ĐÃ LƯU tại ngữ cảnh đó —
- * năng lực vắng mặt trong đáp ứng nghĩa là đang ở trạng thái kế thừa
- * tại ngữ cảnh này. Trang Quyền độc lập dùng đáp ứng này làm nền cho
- * bảng ma trận và thẻ đếm ô Cho phép.
+ * Đọc ma trận quyền toàn trang tại một ngữ cảnh (GET /access/capability-matrix?contextId=…): mọi vai trò kèm số người
+ * giữ phân biệt và đúng các ghi đè ĐÃ LƯU tại ngữ cảnh đó — năng lực vắng mặt trong đáp ứng nghĩa là đang ở trạng thái
+ * kế thừa tại ngữ cảnh này. Trang Quyền độc lập dùng đáp ứng này làm nền cho bảng ma trận và thẻ đếm ô Cho phép.
  *
  * @param contextId - Định danh ngữ cảnh cần đọc ma trận.
  * @returns Đáp ứng ma trận của ngữ cảnh.
@@ -142,10 +132,9 @@ export function fetchCapabilityMatrix(contextId: string) {
 }
 
 /**
- * Đặt ghi đè quyền cho đúng một ô (POST /access/overrides): thân gồm
- * vai trò + năng lực + ngữ cảnh + giá trị bốn trạng thái; đặt giá trị
- * kế thừa (0) thì backend xoá dòng ghi đè của ô. Trang Quyền độc lập
- * gọi hàm này cho từng lần đổi ô — không có đường lưu toàn trang.
+ * Đặt ghi đè quyền cho đúng một ô (POST /access/overrides): thân gồm vai trò + năng lực + ngữ cảnh + giá trị bốn trạng
+ * thái; đặt giá trị kế thừa (0) thì backend xoá dòng ghi đè của ô. Trang Quyền độc lập gọi hàm này cho từng lần đổi ô —
+ * không có đường lưu toàn trang.
  *
  * @param input - Bộ bốn vai trò × năng lực × ngữ cảnh × giá trị.
  */
@@ -165,12 +154,10 @@ export interface ListUsersWithAssignmentsParams {
 }
 
 /**
- * Đọc một trang người dùng kèm toàn bộ gán vai của từng người
- * (GET /access/users-with-assignments): một người dùng đúng một phần
- * tử, `total` đếm người dùng khớp (không đếm dòng gán), thứ tự ổn
- * định theo định danh người dùng tăng dần. Bảng người dùng kèm vai
- * trò trên trang vai trò đọc qua hàm này — không tự ghép danh sách
- * người dùng với danh sách gán ở client.
+ * Đọc một trang người dùng kèm toàn bộ gán vai của từng người (GET /access/users-with-assignments): một người dùng đúng
+ * một phần tử, `total` đếm người dùng khớp (không đếm dòng gán), thứ tự ổn định theo định danh người dùng tăng dần.
+ * Bảng người dùng kèm vai trò trên trang vai trò đọc qua hàm này — không tự ghép danh sách người dùng với danh sách gán
+ * ở client.
  *
  * @param params - Bộ lọc/tìm/phân trang của bảng.
  * @returns Trang người dùng kèm gán vai và tổng số người dùng khớp.

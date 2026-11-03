@@ -10,11 +10,9 @@ export function quoteExcerptOfText(text: string): string {
 }
 
 /**
- * Dựng khối trích dẫn LẠC QUAN từ chính tin gốc đang hiển thị khi
- * người dùng bấm Trả lời: nội dung lấy từ bản đang thấy (tin đã thu
- * hồi thì nội dung vốn đã rỗng ở đường đọc thường → unavailable).
- * Server dựng lại bản chính thức khi gửi — bản này chỉ để khung hiện
- * ngay, không chờ mạng.
+ * Dựng khối trích dẫn LẠC QUAN từ chính tin gốc đang hiển thị khi người dùng bấm Trả lời: nội dung lấy từ bản đang thấy
+ * (tin đã thu hồi thì nội dung vốn đã rỗng ở đường đọc thường → unavailable). Server dựng lại bản chính thức khi gửi —
+ * bản này chỉ để khung hiện ngay, không chờ mạng.
  */
 export function localQuoteOf(m: MessageView): MessageQuoteView {
   return {
@@ -104,14 +102,11 @@ export const CHAT_MENU_ITEM_CLASS = 'whitespace-nowrap';
 /**
  * Chữ viết tắt của tên hiển thị — nội dung AvatarFallback.
  *
- * Luật (issue #591): chỉ lấy KÝ TỰ CHỮ — ký tự đặc biệt ở đầu
- * tên (ví dụ tên nhóm bắt đầu bằng dấu ngoặc như "[KT] Nhóm…")
- * bị bỏ qua, không lọt vào chữ viết tắt như trước. Cách lấy giữ
- * cùng khuôn với tên người: tách tên thành các TỪ CHỮ (mỗi từ chỉ
- * giữ các ký tự chữ Unicode của nó, từ không còn ký tự chữ nào
- * thì bỏ hẳn); từ hai từ chữ trở lên thì lấy chữ đầu của từ đầu
- * + chữ đầu của từ cuối; đúng một từ chữ thì lấy hai chữ đầu của
- * từ đó; không có ký tự chữ nào thì rơi về '?'.
+ * Luật (issue #591): chỉ lấy KÝ TỰ CHỮ — ký tự đặc biệt ở đầu tên (ví dụ tên nhóm bắt đầu bằng dấu ngoặc như "[KT]
+ * Nhóm…") bị bỏ qua, không lọt vào chữ viết tắt như trước. Cách lấy giữ cùng khuôn với tên người: tách tên thành các TỪ
+ * CHỮ (mỗi từ chỉ giữ các ký tự chữ Unicode của nó, từ không còn ký tự chữ nào thì bỏ hẳn); từ hai từ chữ trở lên thì
+ * lấy chữ đầu của từ đầu + chữ đầu của từ cuối; đúng một từ chữ thì lấy hai chữ đầu của từ đó; không có ký tự chữ nào
+ * thì rơi về '?'.
  */
 export function initialsOf(name: string): string {
   const letterWords = name
@@ -126,7 +121,10 @@ export function initialsOf(name: string): string {
   return (first + last).toUpperCase();
 }
 
-/** Gộp tin vào danh sách hiện có: chống trùng theo id và clientMessageId, sắp theo seq (tin lạc quan chưa có seq thật nằm cuối). */
+/**
+ * Gộp tin vào danh sách hiện có: chống trùng theo id và clientMessageId, sắp theo seq (tin lạc quan chưa có seq thật
+ * nằm cuối).
+ */
 export function mergeMessages(existing: MessageView[], incoming: MessageView[]): MessageView[] {
   const byId = new Map<string, MessageView>();
   for (const m of existing) byId.set(m.id, m);
@@ -142,10 +140,9 @@ export function mergeMessages(existing: MessageView[], incoming: MessageView[]):
 }
 
 /**
- * Đếm ký tự người dùng thấy (grapheme) của nháp — CÙNG cách đếm với
- * trần phía server (lát M2, issue #212) để bộ đếm ở composer không
- * lệch với cổng 400 `messaging.message_too_long`: emoji ghép và chữ
- * kèm dấu tổ hợp tính là một ký tự, không đếm đơn vị UTF-16.
+ * Đếm ký tự người dùng thấy (grapheme) của nháp — CÙNG cách đếm với trần phía server (lát M2, issue #212) để bộ đếm ở
+ * composer không lệch với cổng 400 `messaging.message_too_long`: emoji ghép và chữ kèm dấu tổ hợp tính là một ký tự,
+ * không đếm đơn vị UTF-16.
  */
 export function countMessageCharacters(text: string): number {
   const SegmenterCtor = (Intl as unknown as {

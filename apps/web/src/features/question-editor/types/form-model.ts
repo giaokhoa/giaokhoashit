@@ -49,19 +49,14 @@ export function entryStatus(view: QuestionView | null | undefined): string | und
 /**
  * Trạng thái form của màn soạn. Ranh giới dữ liệu theo mô hình port
  * giaokhoa (quyết 12:04 + 12:12 ngày 26/10/2026):
- * - multichoice: thân câu + lựa chọn sống trong MỘT tài liệu thống
- *   nhất (`mcDocument`); đáp án đúng là `mcCorrectChoiceId` (id của
- *   choice, nằm NGOÀI tài liệu); phản hồi theo lựa chọn là map theo
- *   id choice (`mcChoiceFeedbacks`) vì nó là metadata của dòng đáp
- *   án, không phải nội dung lựa chọn.
- * - truefalse (TF-A): thân câu + 4 mệnh đề sống trong MỘT tài liệu
- *   (`tfDocument` — cũng chính là tài liệu lưu trữ); đáp án Đ/S của
- *   từng mệnh đề là map theo id mệnh đề (`tfAnswers`, nằm NGOÀI tài
- *   liệu), khi lưu thành `solution.answers` ở phía đáp án.
- * - `guidance` (hướng dẫn) và `essaySolution` (lời giải mẫu của tự
- *   luận) là trường soạn riêng cho MỌI/loại tương ứng — khi lưu
- *   chúng đi ở cấp `guidance`/`solution` của payload (phía đáp án),
- *   không bao giờ nằm trong thân câu.
+ * - multichoice: thân câu + lựa chọn sống trong MỘT tài liệu thống nhất (`mcDocument`); đáp án đúng là
+ *   `mcCorrectChoiceId` (id của choice, nằm NGOÀI tài liệu); phản hồi theo lựa chọn là map theo id choice
+ *   (`mcChoiceFeedbacks`) vì nó là metadata của dòng đáp án, không phải nội dung lựa chọn.
+ * - truefalse (TF-A): thân câu + 4 mệnh đề sống trong MỘT tài liệu (`tfDocument` — cũng chính là tài liệu lưu trữ); đáp
+ *   án Đ/S của từng mệnh đề là map theo id mệnh đề (`tfAnswers`, nằm NGOÀI tài liệu), khi lưu thành `solution.answers`
+ *   ở phía đáp án.
+ * - `guidance` (hướng dẫn) và `essaySolution` (lời giải mẫu của tự luận) là trường soạn riêng cho MỌI/loại tương ứng —
+ *   khi lưu chúng đi ở cấp `guidance`/`solution` của payload (phía đáp án), không bao giờ nằm trong thân câu.
  */
 export interface QuestionEditorFormState {
   qtype: Qtype;
@@ -132,10 +127,9 @@ export function emptyEditorForm(qtype: Qtype = 'multichoice'): QuestionEditorFor
 }
 
 /**
- * Nạp form từ view của một câu có sẵn, GIỮ NGUYÊN tài liệu Tiptap của
- * thân câu/phương án/phản hồi (điều kiện để câu draft MCP mở ra sửa được
- * nguyên trạng). `fallbackOptions` lấy từ endpoint versions khi view
- * chưa mang đủ options của loại câu.
+ * Nạp form từ view của một câu có sẵn, GIỮ NGUYÊN tài liệu Tiptap của thân câu/phương án/phản hồi (điều kiện để câu
+ * draft MCP mở ra sửa được nguyên trạng). `fallbackOptions` lấy từ endpoint versions khi view chưa mang đủ options của
+ * loại câu.
  */
 export function editorFormFromView(
   view: QuestionView,
@@ -222,16 +216,11 @@ function numberOrUndefined(value: string): number | undefined {
  * - Chung: KHÔNG còn trường tên; `guidance` (khi có nội dung) gắn ở
  *   cấp payload để tầng nghiệp vụ ghi vào phía đáp án — nó không bao
  *   giờ nằm trong `questionText`.
- * - Multichoice: TÁCH tài liệu thống nhất bằng
- *   `splitMultipleChoiceDocument` — phần thân câu thành `questionText`
- *   (tài liệu hợp đồng thuần, không node lựa chọn), từng choice theo
- *   đúng thứ tự trong tài liệu thành một dòng `answers` (`correct`
- *   khi id của choice khớp đáp án đúng đã chọn; phản hồi lấy từ map
- *   theo id choice).
- * - Truefalse (TF-A): tài liệu thống nhất đi thẳng vào
- *   `questionText` (thân + 4 mệnh đề); đáp án Đ/S theo từng mệnh đề
- *   thành `solution: {answers}` ở phía đáp án theo đúng thứ tự mệnh
- *   đề trong tài liệu; KHÔNG có dòng answers.
+ * - Multichoice: TÁCH tài liệu thống nhất bằng `splitMultipleChoiceDocument` — phần thân câu thành `questionText` (tài
+ *   liệu hợp đồng thuần, không node lựa chọn), từng choice theo đúng thứ tự trong tài liệu thành một dòng `answers`
+ *   (`correct` khi id của choice khớp đáp án đúng đã chọn; phản hồi lấy từ map theo id choice).
+ * - Truefalse (TF-A): tài liệu thống nhất đi thẳng vào `questionText` (thân + 4 mệnh đề); đáp án Đ/S theo từng mệnh đề
+ *   thành `solution: {answers}` ở phía đáp án theo đúng thứ tự mệnh đề trong tài liệu; KHÔNG có dòng answers.
  * - Shortanswer: mọi mẫu liệt kê đều là đáp án được chấp nhận
  *   (`correct: true`) — chấm khớp chính xác, không tỉ trọng.
  * - Essay: không dòng answers; lời giải mẫu (khi có) đi qua

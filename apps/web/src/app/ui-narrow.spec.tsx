@@ -9,9 +9,9 @@ import { SearchPage } from '#features/platform/routes/platform-search';
 import { QuizAttemptPage } from '#features/quizzes/routes/quiz-attempt';
 
 /**
- * Spec Lát 2 (UI/UX, issue #42): các màn narrow phải đứng trong cột 768px của PageShell (data-width="narrow", lớp
- * trong có max-w-3xl + mx-auto), tiêu đề qua PageHeader (h1), và các luồng chính vẫn chạy. Kiểm trên cây DOM thật
- * (jsdom) theo đúng cách đội review đóng vai người dùng.
+ * Spec Lát 2 (UI/UX, issue #42): các màn narrow phải đứng trong cột 768px của PageShell (data-width="narrow", lớp trong
+ * có max-w-3xl + mx-auto), tiêu đề qua PageHeader (h1), và các luồng chính vẫn chạy. Kiểm trên cây DOM thật (jsdom)
+ * theo đúng cách đội review đóng vai người dùng.
  */
 function expectNarrowShell(container: HTMLElement) {
   const shell = container.querySelector('[data-slot="page-shell"]');

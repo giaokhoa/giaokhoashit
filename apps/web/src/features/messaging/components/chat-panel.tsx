@@ -46,18 +46,14 @@ import {
 } from '../utils/utils';
 
 /**
- * Dựng nội dung tin thành cây React có định dạng nhẹ (giai đoạn 2
- * của vòng sửa PR #610 — mục T-09 của đợt rà soát hành vi bản
- * demo): đúng hai khuôn của bản demo — `**đoạn**` thành chữ đậm
- * (`font-semibold`) và `[nhãn](url)` thành liên kết mở tab mới
- * với rel an toàn. Cặp nút Bold / Insert link ở ô soạn chèn đúng
- * hai khuôn này nên soạn và hiển thị khớp nhau.
+ * Dựng nội dung tin thành cây React có định dạng nhẹ (giai đoạn 2 của vòng sửa PR #610 — mục T-09 của đợt rà soát hành
+ * vi bản demo): đúng hai khuôn của bản demo — `**đoạn**` thành chữ đậm (`font-semibold`) và `[nhãn](url)` thành liên
+ * kết mở tab mới với rel an toàn. Cặp nút Bold / Insert link ở ô soạn chèn đúng hai khuôn này nên soạn và hiển thị khớp
+ * nhau.
  *
- * An toàn hiển thị: nội dung là chữ do người dùng nhập nên mọi
- * phần đều dựng thành TEXT NODE hoặc phần tử React — tuyệt đối
- * không chèn HTML thô chưa qua xử lý; href chỉ chấp nhận sơ đồ
- * `http(s)://` và `mailto:` (khuôn khác dựng thành chữ thường)
- * để không lọt sơ đồ nguy hiểm kiểu `javascript:`.
+ * An toàn hiển thị: nội dung là chữ do người dùng nhập nên mọi phần đều dựng thành TEXT NODE hoặc phần tử React — tuyệt
+ * đối không chèn HTML thô chưa qua xử lý; href chỉ chấp nhận sơ đồ `http(s)://` và `mailto:` (khuôn khác dựng thành chữ
+ * thường) để không lọt sơ đồ nguy hiểm kiểu `javascript:`.
  */
 function RichMessageText({ text }: { text: string }) {
   const parts = text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
@@ -94,18 +90,14 @@ const EMOJI_GRID_OPTIONS = [
 ];
 
 /**
- * Bộ cảm xúc của bộ chọn reactions trên tin — CHỈ HÌNH DẠNG
- * (issue #591, xem khối render ở toolbar nổi của bong bóng):
- * reactions chưa có phán quyết chức năng nên lưới này chỉ để
- * trình bày, các mục đều vô hiệu.
+ * Bộ cảm xúc của bộ chọn reactions trên tin — CHỈ HÌNH DẠNG (issue #591, xem khối render ở toolbar nổi của bong bóng):
+ * reactions chưa có phán quyết chức năng nên lưới này chỉ để trình bày, các mục đều vô hiệu.
  */
 const REACTION_SHAPE_EMOJIS = ['❤️', '😂', '😮', '😢', '👍'];
 
 /**
- * Cầu nối tới handle cuộn của MessageScroller: hook chỉ gọi được
- * trong cây của Provider nên một component con không-render giữ
- * handle vào ref của trang — nút trích dẫn ở bong bóng dùng ref này
- * để nhảy tới tin gốc (lát M3).
+ * Cầu nối tới handle cuộn của MessageScroller: hook chỉ gọi được trong cây của Provider nên một component con
+ * không-render giữ handle vào ref của trang — nút trích dẫn ở bong bóng dùng ref này để nhảy tới tin gốc (lát M3).
  */
 function ScrollerBridge({ bridgeRef }: { bridgeRef: RefObject<ScrollerHandle | null> }) {
   const scroller = useMessageScroller();
@@ -199,22 +191,17 @@ export function ChatPanel({
   const [noteEmojiOpen, setNoteEmojiOpen] = useState(false);
   const [composerTab, setComposerTab] = useState<'reply' | 'note'>('reply');
   /**
-   * Nháp GHI CHÚ NỘI BỘ theo từng conversation — dữ kiện cục
-   * bộ thuần của panel: chức năng ghi chú nội bộ chưa có phán
-   * quyết và chưa có backend, nên nháp không rời client, không
-   * qua đường gửi tin và không phát tín hiệu đang nhập; gửi ở
-   * chế độ ghi chú chỉ hiện thông báo cục bộ rồi xoá nháp,
-   * đúng hành vi phía demo.
+   * Nháp GHI CHÚ NỘI BỘ theo từng conversation — dữ kiện cục bộ thuần của panel: chức năng ghi chú nội bộ chưa có phán
+   * quyết và chưa có backend, nên nháp không rời client, không qua đường gửi tin và không phát tín hiệu đang nhập; gửi
+   * ở chế độ ghi chú chỉ hiện thông báo cục bộ rồi xoá nháp, đúng hành vi phía demo.
    */
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const noteDraft = active ? noteDrafts[active.id] ?? '' : '';
   const [noteNoticeFor, setNoteNoticeFor] = useState<string | null>(null);
 
   /**
-   * Gửi ghi chú nội bộ (issue #623): xử lý CỤC BỘ thuần như
-   * phía demo — chặn submit mặc định, xoá nháp của conversation
-   * đang mở và bật thông báo cục bộ. Không gọi API, không qua
-   * đường gửi tin, không gửi gì vào luồng: chức năng ghi chú
+   * Gửi ghi chú nội bộ (issue #623): xử lý CỤC BỘ thuần như phía demo — chặn submit mặc định, xoá nháp của conversation
+   * đang mở và bật thông báo cục bộ. Không gọi API, không qua đường gửi tin, không gửi gì vào luồng: chức năng ghi chú
    * nội bộ thật chưa có phán quyết nên không nối backend.
    */
   const sendNote = (event: FormEvent) => {
@@ -327,12 +314,10 @@ export function ChatPanel({
   };
 
   /**
-   * Query hồ sơ đối tác 1–1 phục vụ panel thông tin (issue #592):
-   * đặt ở đây — trước return sớm khi chưa chọn hội thoại — nên id
-   * đối tác tính trực tiếp từ props (cùng luật với `otherId` tính
-   * lại ở dưới sau return sớm: thành viên khác mình đầu tiên của
-   * hội thoại 1–1). Query chỉ bật khi panel thông tin đang mở và
-   * đang ở hội thoại 1–1; chưa mở panel thì không tải hồ sơ.
+   * Query hồ sơ đối tác 1–1 phục vụ panel thông tin (issue #592): đặt ở đây — trước return sớm khi chưa chọn hội thoại
+   * — nên id đối tác tính trực tiếp từ props (cùng luật với `otherId` tính lại ở dưới sau return sớm: thành viên khác
+   * mình đầu tiên của hội thoại 1–1). Query chỉ bật khi panel thông tin đang mở và đang ở hội thoại 1–1; chưa mở panel
+   * thì không tải hồ sơ.
    */
   const panelPartnerId = active && active.type !== 2
     ? active.members.find((memberId) => memberId !== myId)
@@ -385,21 +370,14 @@ export function ChatPanel({
   const isGroup = active.type === 2;
   const otherId = !isGroup ? others[0] : undefined;
   /**
-   * Trạng thái hiện diện của đối tác có BA trạng thái theo dữ
-   * kiện client: `true` khi đã có sự kiện hiện diện xác nhận
-   * trực tuyến, `false` khi đã có sự kiện xác nhận ngoại tuyến,
-   * `undefined` khi CHƯA BIẾT — chưa nhận sự kiện nào của đối
-   * tác. Từ đợt backend #592, máy chủ gửi ảnh chụp hiện diện ban
-   * đầu cho socket vừa nối (tập đối tác đang trực tuyến trong phạm
-   * vi hội thoại), nên đối tác trực tuyến sẵn từ trước khi trang
-   * tải đã có bản ghi `true` ngay từ đầu; đối tác ngoại tuyến lúc
-   * nối vắng khỏi ảnh chụp nên vẫn là `undefined` — `undefined`
-   * tuyệt đối không được gộp thành ngoại tuyến, bề mặt hiện chữ
-   * trạng thái chỉ được khẳng định khi đã có sự kiện xác nhận.
-   * Chấm hiện diện trên avatar (đầu khung và panel) bám đúng ba
-   * trạng thái này: xanh lá khi `true`, xám khi `false`, vắng hẳn
-   * khi `undefined` — vắng chấm khi chưa biết không khẳng định
-   * điều gì sai.
+   * Trạng thái hiện diện của đối tác có BA trạng thái theo dữ kiện client: `true` khi đã có sự kiện hiện diện xác nhận
+   * trực tuyến, `false` khi đã có sự kiện xác nhận ngoại tuyến, `undefined` khi CHƯA BIẾT — chưa nhận sự kiện nào của
+   * đối tác. Từ đợt backend #592, máy chủ gửi ảnh chụp hiện diện ban đầu cho socket vừa nối (tập đối tác đang trực
+   * tuyến trong phạm vi hội thoại), nên đối tác trực tuyến sẵn từ trước khi trang tải đã có bản ghi `true` ngay từ đầu;
+   * đối tác ngoại tuyến lúc nối vắng khỏi ảnh chụp nên vẫn là `undefined` — `undefined` tuyệt đối không được gộp thành
+   * ngoại tuyến, bề mặt hiện chữ trạng thái chỉ được khẳng định khi đã có sự kiện xác nhận. Chấm hiện diện trên avatar
+   * (đầu khung và panel) bám đúng ba trạng thái này: xanh lá khi `true`, xám khi `false`, vắng hẳn khi `undefined` —
+   * vắng chấm khi chưa biết không khẳng định điều gì sai.
    */
   const otherPresence = otherId ? onlineUsers[otherId] : undefined;
   const otherStatus = presenceStatusOf(otherPresence);
@@ -620,14 +598,10 @@ export function ChatPanel({
                 ) : null}
                 {showReplyAction ? (
                   /*
-                    Bộ chọn cảm xúc (reactions) — CHỈ HÌNH DẠNG
-                    (issue #591): reactions là điểm chưa có phán
-                    quyết về chức năng và chưa có dữ kiện ở mọi
-                    tầng, nên nút và lưới cảm xúc chỉ hiện đúng
-                    hình dạng của demo ở trạng thái vô hiệu —
-                    không ghi cảm xúc nào, không phát sinh tác
-                    dụng giả.
-                  */
+                   * Bộ chọn cảm xúc (reactions) — CHỈ HÌNH DẠNG (issue #591): reactions là điểm chưa có phán quyết về
+                   * chức năng và chưa có dữ kiện ở mọi tầng, nên nút và lưới cảm xúc chỉ hiện đúng hình dạng của demo ở
+                   * trạng thái vô hiệu — không ghi cảm xúc nào, không phát sinh tác dụng giả.
+                   */
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       render={
@@ -666,16 +640,16 @@ export function ChatPanel({
                     >
                       <Ellipsis aria-hidden />
                     </DropdownMenuTrigger>
-                    {/* Bề rộng + không xuống dòng theo hằng ở utils: mặc định của @lms/ui ghim bề rộng theo nút ⋯ hẹp làm nhãn bẻ nhiều dòng. */}
+                    {/*
+                     * Bề rộng + không xuống dòng theo hằng ở utils: mặc định của @lms/ui ghim bề rộng theo nút ⋯ hẹp
+                     * làm nhãn bẻ nhiều dòng.
+                     */}
                     <DropdownMenuContent align={mine ? 'end' : 'start'} sideOffset={4} className={CHAT_MENU_CONTENT_CLASS}>
                       {/*
-                        Mục Thảo luận (thread) — CHỈ HÌNH DẠNG
-                        (issue #591): thread là điểm chưa có phán
-                        quyết về chức năng, hệ chỉ có trích dẫn
-                        một cấp — mục này hiện đúng hình dạng của
-                        demo ở trạng thái vô hiệu, không mở bề
-                        mặt thread nào.
-                      */}
+                       * Mục Thảo luận (thread) — CHỈ HÌNH DẠNG (issue #591): thread là điểm chưa có phán quyết về chức
+                       * năng, hệ chỉ có trích dẫn một cấp — mục này hiện đúng hình dạng của demo ở trạng thái vô hiệu,
+                       * không mở bề mặt thread nào.
+                       */}
                       <DropdownMenuItem disabled className={CHAT_MENU_ITEM_CLASS}>
                         <MessagesSquare aria-hidden />
                         {t('threadAction')}

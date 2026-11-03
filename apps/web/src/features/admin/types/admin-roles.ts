@@ -3,11 +3,9 @@ import type { Capability } from '@lms/contracts';
 /**
  * Kiểu dữ liệu của hộp thoại ma trận vai trò thuộc feature admin.
  *
- * Ma trận chỉ trình bày các ghi đè đã lưu tại ngữ cảnh đang chọn, không
- * trình bày quyền hiệu lực sau kế thừa: một năng lực vắng mặt trong bản
- * nháp nghĩa là đang ở trạng thái kế thừa (INHERIT = 0) tại ngữ cảnh
- * đó, và khi lưu, endpoint thay toàn bộ chỉ nhận các ghi đè khác kế
- * thừa — phần tử vắng mặt trong tập gửi lên trở về kế thừa.
+ * Ma trận chỉ trình bày các ghi đè đã lưu tại ngữ cảnh đang chọn, không trình bày quyền hiệu lực sau kế thừa: một năng
+ * lực vắng mặt trong bản nháp nghĩa là đang ở trạng thái kế thừa (INHERIT = 0) tại ngữ cảnh đó, và khi lưu, endpoint
+ * thay toàn bộ chỉ nhận các ghi đè khác kế thừa — phần tử vắng mặt trong tập gửi lên trở về kế thừa.
  */
 
 export type RoleMatrixDraft = Record<string, number>;

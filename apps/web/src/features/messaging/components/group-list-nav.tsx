@@ -219,16 +219,11 @@ export function GroupListNav({
   };
 
   /**
-   * Trạng thái ghim của một hàng: đọc thẳng mốc ghim trên
-   * chính dữ kiện cây của nút — server đã gắn từ dòng thành
-   * viên của người xem trên cả hai tập hội thoại chưa lưu trữ
-   * và đã lưu trữ. Không tra `conversationsById` cho việc phân
-   * mục này: mốc ghim phân mục sống trên chính dữ kiện cây,
-   * gồm cả nút chưa có hội thoại vốn không có mặt trong bản
-   * đồ hội thoại, nên phân mục không phụ thuộc danh sách của
-   * trang (bản đồ vẫn dùng cho xem trước tin cuối và biểu
-   * tượng tắt tiếng ở {@link renderEntry} như trước). Hàng
-   * chưa có hội thoại mang mốc ghim null, coi như chưa ghim.
+   * Trạng thái ghim của một hàng: đọc thẳng mốc ghim trên chính dữ kiện cây của nút — server đã gắn từ dòng thành viên
+   * của người xem trên cả hai tập hội thoại chưa lưu trữ và đã lưu trữ. Không tra `conversationsById` cho việc phân mục
+   * này: mốc ghim phân mục sống trên chính dữ kiện cây, gồm cả nút chưa có hội thoại vốn không có mặt trong bản đồ hội
+   * thoại, nên phân mục không phụ thuộc danh sách của trang (bản đồ vẫn dùng cho xem trước tin cuối và biểu tượng tắt
+   * tiếng ở {@link renderEntry} như trước). Hàng chưa có hội thoại mang mốc ghim null, coi như chưa ghim.
    */
   const isPinnedEntry = (entry: GroupListEntry): boolean => Boolean(entry.pinnedAt);
   const pinnedClassEntries = classEntries.filter(isPinnedEntry);

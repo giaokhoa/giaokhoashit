@@ -18,13 +18,10 @@ import { queryKeys as badgesQueryKeys } from '../queries/keys';
 import { buildSsrLoaderData, serverQueryFn, type SsrLoaderData } from '#lib/ssr-data';
 
 /**
- * Loader phía server (tầng SL-1 của #7): prefetch hai danh sách mà
- * trang luôn tải khi mở — huy hiệu của tôi (key `myBadges`) và toàn
- * bộ huy hiệu (key `badgesAll`) — bằng cookie của chính request rồi
- * dehydrate cho root.tsx hydrate vào cache (xem `lib/ssr-data.ts`).
- * Danh sách đã cấp của một badge (key `badgeIssued`) chỉ tải khi
- * người dùng chọn xem một badge cụ thể nên KHÔNG prefetch. Không có
- * cookie phiên thì không gọi API nào.
+ * Loader phía server (tầng SL-1 của #7): prefetch hai danh sách mà trang luôn tải khi mở — huy hiệu của tôi (key
+ * `myBadges`) và toàn bộ huy hiệu (key `badgesAll`) — bằng cookie của chính request rồi dehydrate cho root.tsx hydrate
+ * vào cache (xem `lib/ssr-data.ts`). Danh sách đã cấp của một badge (key `badgeIssued`) chỉ tải khi người dùng chọn xem
+ * một badge cụ thể nên KHÔNG prefetch. Không có cookie phiên thì không gọi API nào.
  */
 export async function loader({ request }: { request: Request }): Promise<SsrLoaderData> {
   return buildSsrLoaderData(request, async (queryClient, req) => {

@@ -131,13 +131,10 @@ export function useSetConversationState() {
 }
 
 /**
- * Đột biến đánh dấu đã đọc một hội thoại (POST .../read).
- * Đột biến này được gọi theo từng tin đến khi hội thoại đang mở nên
- * KHÔNG invalidate danh sách (mỗi lần invalidate là một lần nạp lại
- * danh sách tổng hợp, và ảnh chụp nạp lại có thể ghi đè vá realtime
- * mới hơn); thay vào đó vá tại chỗ mục hội thoại trong cache danh
- * sách bằng chính đáp ứng (chưa đọc về 0, mốc đọc mới) và invalidate
- * khoá số chưa đọc của huy hiệu sidebar.
+ * Đột biến đánh dấu đã đọc một hội thoại (POST .../read). Đột biến này được gọi theo từng tin đến khi hội thoại đang mở
+ * nên KHÔNG invalidate danh sách (mỗi lần invalidate là một lần nạp lại danh sách tổng hợp, và ảnh chụp nạp lại có thể
+ * ghi đè vá realtime mới hơn); thay vào đó vá tại chỗ mục hội thoại trong cache danh sách bằng chính đáp ứng (chưa đọc
+ * về 0, mốc đọc mới) và invalidate khoá số chưa đọc của huy hiệu sidebar.
  */
 export function useMarkConversationRead() {
   const queryClient = useQueryClient();

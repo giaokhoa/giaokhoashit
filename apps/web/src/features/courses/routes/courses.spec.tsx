@@ -112,11 +112,9 @@ function stubFetch(handler: (url: string) => unknown) {
 }
 
 /**
- * Render trang trong đúng khung provider của ứng dụng thật: trang danh
- * mục nay đọc `usePermissions()` để chỉ hiện khu quản trị cho
- * `canAdminister`, nên test phải bọc AuthProvider + PermissionsProvider
- * như main.tsx. Khi không có token đăng nhập, PermissionsProvider kết
- * luận không có quyền quản trị mà không gọi thêm endpoint nào.
+ * Render trang trong đúng khung provider của ứng dụng thật: trang danh mục nay đọc `usePermissions()` để chỉ hiện khu
+ * quản trị cho `canAdminister`, nên test phải bọc AuthProvider + PermissionsProvider như main.tsx. Khi không có token
+ * đăng nhập, PermissionsProvider kết luận không có quyền quản trị mà không gọi thêm endpoint nào.
  */
 function renderWithProviders(router: ReturnType<typeof createMemoryRouter>) {
   render(

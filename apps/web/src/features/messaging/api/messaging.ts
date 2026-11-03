@@ -22,11 +22,9 @@ export function fetchMessagingConversations() {
 }
 
 /**
- * Hồ sơ người phục vụ panel thông tin của chat 1–1 (issue #592,
- * GET /messages/users/:id/profile): chỉ các trường hệ có dữ kiện
- * nguồn — định danh, tên hiển thị, tên đăng nhập và email. Các
- * trường panel còn lại không có nguồn nên không nằm trong
- * response này (xem `person-profile-adapter.ts`).
+ * Hồ sơ người phục vụ panel thông tin của chat 1–1 (issue #592, GET /messages/users/:id/profile): chỉ các trường hệ có
+ * dữ kiện nguồn — định danh, tên hiển thị, tên đăng nhập và email. Các trường panel còn lại không có nguồn nên không
+ * nằm trong response này (xem `person-profile-adapter.ts`).
  */
 export interface PersonProfileServer {
   userId: string;

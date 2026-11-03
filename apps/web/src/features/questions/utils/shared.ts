@@ -62,11 +62,9 @@ export function plainText(doc: RichTextDocument | null | undefined): string {
 }
 
 /**
- * Nhãn hiển thị của một câu hỏi = TRÍCH ĐOẠN nội dung thân câu của
- * phiên bản mới nhất (tối đa 120 ký tự). Câu hỏi không còn trường tên
- * (quyết 11:28 ngày 26/10/2026) nên mọi bề mặt cần nhãn — danh sách,
- * hộp xác nhận xoá, bộ chọn, panel xem trước — đều dùng trích đoạn
- * này thay cho tên.
+ * Nhãn hiển thị của một câu hỏi = TRÍCH ĐOẠN nội dung thân câu của phiên bản mới nhất (tối đa 120 ký tự). Câu hỏi không
+ * còn trường tên (quyết 11:28 ngày 26/10/2026) nên mọi bề mặt cần nhãn — danh sách, hộp xác nhận xoá, bộ chọn, panel
+ * xem trước — đều dùng trích đoạn này thay cho tên.
  *
  * @param view - View câu hỏi như API trả về.
  * @returns Chuỗi thuần trích từ thân câu.
@@ -78,11 +76,9 @@ export function questionExcerpt(view: QuestionView): string {
 export type OptionsRecord = Record<string, unknown>;
 
 /**
- * Các trường options phải còn nguyên khi sửa; thiếu trường nào thì form
- * sẽ tìm thêm ở endpoint versions. Multichoice chỉ còn các trường của
- * mô hình mới — `single`, `showNumCorrect` và `partiallyCorrectFeedback`
- * đã bỏ hẳn cùng tỉ trọng đáp án (quyết 12:04 + điểm quyết D-5 ngày
- * 26/10/2026).
+ * Các trường options phải còn nguyên khi sửa; thiếu trường nào thì form sẽ tìm thêm ở endpoint versions. Multichoice
+ * chỉ còn các trường của mô hình mới — `single`, `showNumCorrect` và `partiallyCorrectFeedback` đã bỏ hẳn cùng tỉ trọng
+ * đáp án (quyết 12:04 + điểm quyết D-5 ngày 26/10/2026).
  */
 const OPTION_KEYS_BY_QTYPE: Record<Qtype, string[]> = {
   multichoice: [
@@ -113,11 +109,9 @@ export function hasAllOptions(qtype: Qtype, options: OptionsRecord | null | unde
 }
 
 /**
- * Khu vực ngân hàng mà trang này đang phục vụ (chuẩn đường dẫn, issue
- * #221 — lát R1): mỗi khu vực có PATH RIÊNG, trang suy ra khu vực từ
- * route (prop do route module truyền vào), KHÔNG còn đọc ?bank=/
- * ?section= từ URL như trước. URL cũ dạng ?bank=... được lớp tương
- * thích ở route module questions chuyển hướng (replace) sang path mới.
+ * Khu vực ngân hàng mà trang này đang phục vụ (chuẩn đường dẫn, issue #221 — lát R1): mỗi khu vực có PATH RIÊNG, trang
+ * suy ra khu vực từ route (prop do route module truyền vào), KHÔNG còn đọc ?bank=/ ?section= từ URL như trước. URL cũ
+ * dạng ?bank=... được lớp tương thích ở route module questions chuyển hướng (replace) sang path mới.
  */
 export type BankArea =
   | 'my-questions'

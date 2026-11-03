@@ -44,9 +44,8 @@ export function useSelfEnrol(courseId: string | undefined) {
 }
 
 /**
- * Tạo payment cho instance fee. Tuyệt đối không tự ghi danh ở đây: ghi
- * danh chỉ kích hoạt sau khi webhook xác nhận payment thành công. Thành
- * công thì invalidate query thanh toán của tôi để hiển thị trạng thái thật.
+ * Tạo payment cho instance fee. Tuyệt đối không tự ghi danh ở đây: ghi danh chỉ kích hoạt sau khi webhook xác nhận
+ * payment thành công. Thành công thì invalidate query thanh toán của tôi để hiển thị trạng thái thật.
  */
 export function usePayFee() {
   const queryClient = useQueryClient();

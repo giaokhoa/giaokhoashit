@@ -24,13 +24,10 @@ import { queryKeys } from './keys';
  *   phiên; trang dùng chính `id` trong đáp ứng này cho mọi lời gọi
  *   membership và người dùng, không tự suy tenant từ danh sách platform.
  *
- * Mọi thao tác ghi đều đi qua API tenant hiện có. Sau khi server xác
- * nhận, tầng này làm mới gốc khoá `admin.tenants` để danh sách tenant,
- * membership và hồ sơ người dùng cùng về trạng thái mới; riêng đổi trạng
- * thái membership còn làm mới ảnh chụp quyền vì membership là một cổng
- * trong quá trình phân giải quyền của chính người bị đổi trạng thái.
- * Lời gọi API thuần nằm ở tầng `api/` của feature; khoá truy vấn
- * riêng của admin nằm ở `keys.ts` cùng tầng này.
+ * Mọi thao tác ghi đều đi qua API tenant hiện có. Sau khi server xác nhận, tầng này làm mới gốc khoá `admin.tenants` để
+ * danh sách tenant, membership và hồ sơ người dùng cùng về trạng thái mới; riêng đổi trạng thái membership còn làm mới
+ * ảnh chụp quyền vì membership là một cổng trong quá trình phân giải quyền của chính người bị đổi trạng thái. Lời gọi
+ * API thuần nằm ở tầng `api/` của feature; khoá truy vấn riêng của admin nằm ở `keys.ts` cùng tầng này.
  */
 
 export function tenantsQueryOptions() {

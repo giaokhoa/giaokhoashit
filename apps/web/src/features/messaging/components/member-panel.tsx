@@ -70,24 +70,17 @@ interface MemberActionMenuProps {
  *
  * Các mục được dựng theo đúng luật quan hệ đã chốt (sổ quyết định
  * mục D + mục 4.3 của hồ sơ cấu trúc nhắn tin):
- * - "Nhắn riêng" chỉ hiện khi luật cho phép NGAY LÚC NÀY: đã là
- *   liên hệ, hoặc có cờ `canDirectMessage` (GV nhắn thẳng HS thuộc
- *   lớp/khoá của mình), hoặc đã có hội thoại 1–1 tồn tại (nhánh GV
- *   đã mở trước ở chiều HS→GV — cổng cuối vẫn là `assertCanContact`
- *   phía server khi mở/gửi). Quan hệ chặn thì mục này KHÔNG hiện —
- *   chặn thắng mọi bề mặt.
- * - Chưa quan hệ, không có cờ nhắn thẳng và cũng chưa có hội
- *   thoại 1–1 nào tồn tại: hiện "Kết bạn" thay cho Nhắn riêng
- *   (HS↔HS vẫn phải kết bạn trước). Đang chờ đến thì Chấp
- *   nhận/Từ chối; đang chờ đi thì một mục mờ ghi trạng thái.
+ * - "Nhắn riêng" chỉ hiện khi luật cho phép NGAY LÚC NÀY: đã là liên hệ, hoặc có cờ `canDirectMessage` (GV nhắn thẳng
+ *   HS thuộc lớp/khoá của mình), hoặc đã có hội thoại 1–1 tồn tại (nhánh GV đã mở trước ở chiều HS→GV — cổng cuối vẫn
+ *   là `assertCanContact` phía server khi mở/gửi). Quan hệ chặn thì mục này KHÔNG hiện — chặn thắng mọi bề mặt.
+ * - Chưa quan hệ, không có cờ nhắn thẳng và cũng chưa có hội thoại 1–1 nào tồn tại: hiện "Kết bạn" thay cho Nhắn riêng
+ *   (HS↔HS vẫn phải kết bạn trước). Đang chờ đến thì Chấp nhận/Từ chối; đang chờ đi thì một mục mờ ghi trạng thái.
  * - "Xem thông tin" luôn có (trừ khi bị chặn hai chiều — dòng đó
  *   vốn đã bị ẩn khỏi roster/panel ở tầng dữ liệu).
- * - Chặn/Bỏ chặn (quyết định 23:16 ngày 26/10/2026 — chặn ở
- *   chat nhóm đi qua menu này, không còn nút ở header): chưa bị
- *   tôi chặn thì có mục "Chặn liên lạc"; người TÔI đã chặn thì
- *   menu rút gọn còn "Bỏ chặn" + "Xem thông tin" để còn đường
- *   mở lại, dù quan hệ đang là `blocked`. Chỉ hiện khi nơi gọi
- *   cấp handler chặn (khung chat luồn từ props của trang).
+ * - Chặn/Bỏ chặn (quyết định 23:16 ngày 26/10/2026 — chặn ở chat nhóm đi qua menu này, không còn nút ở header): chưa bị
+ *   tôi chặn thì có mục "Chặn liên lạc"; người TÔI đã chặn thì menu rút gọn còn "Bỏ chặn" + "Xem thông tin" để còn
+ *   đường mở lại, dù quan hệ đang là `blocked`. Chỉ hiện khi nơi gọi cấp handler chặn (khung chat luồn từ props của
+ *   trang).
  * - Mục quản trị chỉ khi `canManage`: nhóm cấu trúc dẫn về màn
  *   roster (không gỡ tay trong chat); nhóm tự do gỡ thành viên tại
  *   chỗ, trừ người tạo nhóm và trừ chính mình.
@@ -123,7 +116,10 @@ export function MemberActionMenu({
       >
         {children}
       </DropdownMenuTrigger>
-      {/* Bề rộng + không xuống dòng theo hằng ở utils: mặc định của @lms/ui ghim bề rộng theo avatar hẹp làm nhãn bẻ nhiều dòng. */}
+      {/*
+       * Bề rộng + không xuống dòng theo hằng ở utils: mặc định của @lms/ui ghim bề rộng theo avatar hẹp làm nhãn bẻ
+       * nhiều dòng.
+       */}
       <DropdownMenuContent align="start" sideOffset={4} className={CHAT_MENU_CONTENT_CLASS}>
         {canMessageNow ? (
           <DropdownMenuItem className={CHAT_MENU_ITEM_CLASS} onClick={() => onMessageMember(entry.userId)}>

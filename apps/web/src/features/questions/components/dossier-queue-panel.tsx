@@ -33,15 +33,11 @@ export function DossierQueuePanel({
   const [openDossierSpec, setOpenDossierSpec] = useState<{ dossierId: string; spec: DossierSpecLite } | null>(null);
 
   /**
-   * Một mốc duyệt tại hàng chờ BỘ HỒ SƠ: hồ sơ là bề mặt CHỈ-ĐỌC
-   * (lịch sử) — thao tác duyệt thật đi trên ĐÓNG GÓP đã chuyển đổi từ
-   * chính hồ sơ đó, nối bằng `sourceDossierId` (đợt chuyển đổi hồ sơ
-   * treo của Q4); cấp do trạng thái đóng góp quyết định ở phía
-   * server (issue #345, giai đoạn 2): `pending` → cấp 1,
-   * `pending_board` → cấp 2 BGH, cùng gọi một động từ
-   * `approve`/`reject`; từ chối bắt buộc lý do. Hồ sơ chưa
-   * có đóng góp liên kết (chưa qua đợt chuyển đổi) thì không còn thao
-   * tác ghi nào — đường ghi hồ sơ đã đóng (API trả 410).
+   * Một mốc duyệt tại hàng chờ BỘ HỒ SƠ: hồ sơ là bề mặt CHỈ-ĐỌC (lịch sử) — thao tác duyệt thật đi trên ĐÓNG GÓP đã
+   * chuyển đổi từ chính hồ sơ đó, nối bằng `sourceDossierId` (đợt chuyển đổi hồ sơ treo của Q4); cấp do trạng thái đóng
+   * góp quyết định ở phía server (issue #345, giai đoạn 2): `pending` → cấp 1, `pending_board` → cấp 2 BGH, cùng gọi
+   * một động từ `approve`/`reject`; từ chối bắt buộc lý do. Hồ sơ chưa có đóng góp liên kết (chưa qua đợt chuyển đổi)
+   * thì không còn thao tác ghi nào — đường ghi hồ sơ đã đóng (API trả 410).
    */
   async function reviewDossier(dossierId: string, action: 'approve' | 'reject') {
     const contribution = contributionBySourceDossierId.get(dossierId);

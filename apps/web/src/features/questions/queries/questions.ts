@@ -229,10 +229,8 @@ export function clearQuestionBankListCache(client: QueryClient) {
 }
 
 /**
- * clientLoader dùng chung cho các route module bọc trang ngân
- * hàng (F-01 đợt 1 + bổ sung clientLoader, rà soát #133): prefetch
- * cụm tải lúc mở trang (danh mục + bank ba loại) vào QueryClient
- * singleton. prefetchQuery không ném lỗi.
+ * clientLoader dùng chung cho các route module bọc trang ngân hàng (F-01 đợt 1 + bổ sung clientLoader, rà soát #133):
+ * prefetch cụm tải lúc mở trang (danh mục + bank ba loại) vào QueryClient singleton. prefetchQuery không ném lỗi.
  */
 export async function questionsPageClientLoader() {
   await Promise.all([

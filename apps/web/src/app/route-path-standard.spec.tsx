@@ -8,19 +8,14 @@ import routesConfig from './routes';
  * - R2: khu vực phụ huynh có gốc `/guardian` và path theo từng con
  *   `/guardian/students/:studentId` — đối tượng chính của khu vực
  *   nằm trong path, không định danh bằng query.
- * - R3: họ Kho học liệu có cây chính viết tách `/content-bank*` và
- *   cả ba path cũ viết dính `/contentbank*` còn được khai làm lớp
- *   tương thích (hành vi chuyển hướng của chúng được kiểm ở
+ * - R3: họ Kho học liệu có cây chính viết tách `/content-bank*` và cả ba path cũ viết dính `/contentbank*` còn được
+ *   khai làm lớp tương thích (hành vi chuyển hướng của chúng được kiểm ở
  *   `features/questions/routes/legacy-redirects.spec.tsx`).
- * - R4: họ `admin/curriculum` khớp đúng bản đồ rà soát đã duyệt —
- *   danh sách path kỳ vọng viết tay dưới đây là ảnh chụp có chủ
- *   đích của họ, và mọi path đều thuộc đúng một trong hai hình
- *   dạng chuẩn đã tuyên bố cho họ này: (a) TẠO — lồng đúng một cấp
- *   cha trực tiếp, kết thúc bằng `/new`, tối đa một segment tham
- *   số là định danh của cha trực tiếp; (b) SỬA/CHI TIẾT — phẳng
- *   theo định danh của chính tài nguyên. Không tồn tại hình dạng
- *   thứ ba (tạo lồng hai cấp cha, sửa lồng theo cha, path chứa
- *   tham số không phải định danh của tài nguyên đứng trước nó).
+ * - R4: họ `admin/curriculum` khớp đúng bản đồ rà soát đã duyệt — danh sách path kỳ vọng viết tay dưới đây là ảnh chụp
+ *   có chủ đích của họ, và mọi path đều thuộc đúng một trong hai hình dạng chuẩn đã tuyên bố cho họ này: (a) TẠO — lồng
+ *   đúng một cấp cha trực tiếp, kết thúc bằng `/new`, tối đa một segment tham số là định danh của cha trực tiếp; (b)
+ *   SỬA/CHI TIẾT — phẳng theo định danh của chính tài nguyên. Không tồn tại hình dạng thứ ba (tạo lồng hai cấp cha, sửa
+ *   lồng theo cha, path chứa tham số không phải định danh của tài nguyên đứng trước nó).
  */
 
 const ALL_ROUTES: Array<{ path: string; file: string }> = (() => {

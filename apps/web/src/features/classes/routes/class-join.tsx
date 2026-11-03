@@ -13,12 +13,10 @@ import { joinClassByCode, previewJoinClass } from '../api/classes';
 import type { ClassJoinPreview } from '../types/classes';
 
 /**
- * Trang tự báo danh (CLASS-1, issue #184): học sinh có tài khoản nhập mã
- * tham gia (hoặc mở link chứa ?code=) → xem trước lớp + chủ lớp → xin
- * vào. Kết quả theo luật API: lớp trống vào thẳng; lớp đã có HS vào hàng
- * chờ duyệt trừ khi chủ lớp bật tự duyệt; đã là thành viên thì báo rõ.
- * Lỗi mã được dịch thành một thông điệp duy nhất, không lộ lớp nào tồn
- * tại ngoài mã đúng.
+ * Trang tự báo danh (CLASS-1, issue #184): học sinh có tài khoản nhập mã tham gia (hoặc mở link chứa ?code=) → xem
+ * trước lớp + chủ lớp → xin vào. Kết quả theo luật API: lớp trống vào thẳng; lớp đã có HS vào hàng chờ duyệt trừ khi
+ * chủ lớp bật tự duyệt; đã là thành viên thì báo rõ. Lỗi mã được dịch thành một thông điệp duy nhất, không lộ lớp nào
+ * tồn tại ngoài mã đúng.
  */
 export function ClassJoinPage() {
   const { t } = useTranslation('app');

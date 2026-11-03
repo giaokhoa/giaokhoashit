@@ -4,15 +4,11 @@
  * ngày "tháng hiện tại" / "N ngày tới" mà query key phụ thuộc vào đều
  * tính theo múi giờ này ở CẢ hai phía server và client.
  *
- * Lý do phải ghim một múi giờ thay vì múi giờ máy chạy (lát SL-1 của
- * #7): query key của sự kiện lịch chứa đúng chuỗi from/to, nên loader
- * phía server chỉ dehydrate trúng key khi nó tính ra ĐÚNG chuỗi mà
- * phía client sẽ tính. Tiến trình SSR chạy múi giờ UTC còn trình
- * duyệt của người dùng ở Việt Nam — tính theo giờ máy là hai phía
- * lệch nhau và dữ liệu hydrate không bao giờ khớp key. Ghim
- * Asia/Ho_Chi_Minh (không có giờ mùa, lệch UTC cố định) làm hai phía
- * tất định như nhau; người dùng ngoài Việt Nam cũng xem lịch theo
- * ngày Việt Nam, đúng bối cảnh nghiệp vụ của hệ.
+ * Lý do phải ghim một múi giờ thay vì múi giờ máy chạy (lát SL-1 của #7): query key của sự kiện lịch chứa đúng chuỗi
+ * from/to, nên loader phía server chỉ dehydrate trúng key khi nó tính ra ĐÚNG chuỗi mà phía client sẽ tính. Tiến trình
+ * SSR chạy múi giờ UTC còn trình duyệt của người dùng ở Việt Nam — tính theo giờ máy là hai phía lệch nhau và dữ liệu
+ * hydrate không bao giờ khớp key. Ghim Asia/Ho_Chi_Minh (không có giờ mùa, lệch UTC cố định) làm hai phía tất định như
+ * nhau; người dùng ngoài Việt Nam cũng xem lịch theo ngày Việt Nam, đúng bối cảnh nghiệp vụ của hệ.
  */
 export const APP_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 
@@ -67,10 +63,9 @@ function zonedMidnightUtcMs(year: number, month: number, day: number): number {
 }
 
 /**
- * Khoảng sự kiện của THÁNG HIỆN TẠI theo múi giờ ứng dụng, dạng ISO
- * (from = 00:00 ngày 1, to = 23:59:59.999 ngày cuối tháng). Trang
- * lịch và loader SL-1 của nó dùng CHUNG hàm này nên query key
- * `calendarEvents(from, to)` khớp tuyệt đối giữa hai phía.
+ * Khoảng sự kiện của THÁNG HIỆN TẠI theo múi giờ ứng dụng, dạng ISO (from = 00:00 ngày 1, to = 23:59:59.999 ngày cuối
+ * tháng). Trang lịch và loader SL-1 của nó dùng CHUNG hàm này nên query key `calendarEvents(from, to)` khớp tuyệt đối
+ * giữa hai phía.
  */
 export function currentMonthRangeIso(now: Date = new Date()): { from: string; to: string } {
   const { year, month } = zonedDateParts(now);

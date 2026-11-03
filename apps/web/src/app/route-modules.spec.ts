@@ -12,10 +12,8 @@ import { describe, expect, it } from 'vitest';
  *
  *  1. Điều hướng trong ứng dụng: outlet không gắn được component —
  *     khung vỏ hiện, vùng nội dung trống, không thông báo lỗi.
- *  2. Mở thẳng URL / hard reload: nếu route lá đồng thời thiếu cả
- *     `ErrorBoundary`, request tài liệu bị xếp vào đường resource
- *     route và trả HTTP 400 với thân `{"message":"Unexpected Server
- *     Error"}` thay vì HTML của trang.
+ *  2. Mở thẳng URL / hard reload: nếu route lá đồng thời thiếu cả `ErrorBoundary`, request tài liệu bị xếp vào đường
+ *     resource route và trả HTTP 400 với thân `{"message":"Unexpected Server Error"}` thay vì HTML của trang.
  *
  * Lỗi này đã lọt hai lần cùng một cơ chế: trang `/curriculum` (cơ chế được ghi lại trong comment của
  * `features/curriculum/routes/teacher-curriculum.tsx`) và trang `/admin/guardian-links` (chỉ xuất component theo tên

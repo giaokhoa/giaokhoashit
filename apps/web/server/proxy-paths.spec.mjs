@@ -4,12 +4,9 @@ import { isProxyPath } from './proxy-paths.mjs';
 /**
  * Hồi quy bộ khớp đường proxy của prod-server.mjs (topology C).
  *
- * Bối cảnh: MCP-0 (issue #110) mount `/mcp` +
- * `/.well-known/oauth-protected-resource` NGOÀI `/api/v1`, nhưng
- * isProxyPath bản cũ chỉ khớp `/api/*` + `/socket.io/*` → POST /mcp
- * trên production rơi vào SSR, trả 404 kèm HTML (probe live v99).
- * Spec này ghim: đường của API phải qua proxy, đường của SSR và các
- * đường gần giống KHÔNG được qua.
+ * Bối cảnh: MCP-0 (issue #110) mount `/mcp` + `/.well-known/oauth-protected-resource` NGOÀI `/api/v1`, nhưng
+ * isProxyPath bản cũ chỉ khớp `/api/*` + `/socket.io/*` → POST /mcp trên production rơi vào SSR, trả 404 kèm HTML
+ * (probe live v99). Spec này ghim: đường của API phải qua proxy, đường của SSR và các đường gần giống KHÔNG được qua.
  */
 describe('isProxyPath', () => {
   it('chuyển tiếp endpoint MCP (exact, subpath, kèm query)', () => {

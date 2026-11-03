@@ -338,11 +338,11 @@ export function AnswersSection({ form, patchForm, contextId, itemId, moveItem }:
         </fieldset>
       )}
 
-      {/* Hướng dẫn (guidance) có ở MỌI loại câu: gợi ý
-                    cách làm hiện kèm câu hỏi khi học sinh làm bài
-                    (điểm quyết D-4) — khác phản hồi chung/lời giải
-                    là phần chỉ hiện sau khi nộp. Khi lưu nó đi ở
-                    phía đáp án, không nằm trong thân câu. */}
+      {/*
+       * Hướng dẫn (guidance) có ở MỌI loại câu: gợi ý cách làm hiện kèm câu hỏi khi học sinh làm bài (điểm quyết D-4) —
+       * khác phản hồi chung/lời giải là phần chỉ hiện sau khi nộp. Khi lưu nó đi ở phía đáp án, không nằm trong thân
+       * câu.
+       */}
       <div className="space-y-1">
         <RichField
           label={t('guidance')}

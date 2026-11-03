@@ -13,11 +13,9 @@ import {
 import { queryKeys } from './keys';
 
 /**
- * Tải lười dữ liệu điểm của MỘT khoá tại bề mặt tiêu thụ (F-02, rà soát
- * #133): PermissionsProvider KHÔNG còn tải háo hức dữ liệu này cho mọi
- * khoá khi nạp app nữa — chỉ bề mặt nào thật sự hiển thị điểm của khoá
- * (trang grades, khối dashboard) mới gọi hook này, và chỉ cho khoá nó
- * cần. `courseId` rỗng/null thì query tắt.
+ * Tải lười dữ liệu điểm của MỘT khoá tại bề mặt tiêu thụ (F-02, rà soát #133): PermissionsProvider KHÔNG còn tải háo
+ * hức dữ liệu này cho mọi khoá khi nạp app nữa — chỉ bề mặt nào thật sự hiển thị điểm của khoá (trang grades, khối
+ * dashboard) mới gọi hook này, và chỉ cho khoá nó cần. `courseId` rỗng/null thì query tắt.
  */
 export function useCourseGradeData(courseId: string | null | undefined) {
   return useQuery({

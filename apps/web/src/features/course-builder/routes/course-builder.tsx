@@ -569,10 +569,9 @@ export function CourseBuilderPage() {
 export default CourseBuilderPage;
 
 /**
- * clientLoader (F-01 đợt 1 + bổ sung clientLoader, rà soát #133):
- * prefetch gói builder + danh sách khoá vào QueryClient singleton
- * (đúng khoá factory) trước khi component mount. prefetchQuery
- * không ném lỗi: tải hỏng thì component tự xử lý qua useQuery.
+ * clientLoader (F-01 đợt 1 + bổ sung clientLoader, rà soát #133): prefetch gói builder + danh sách khoá vào QueryClient
+ * singleton (đúng khoá factory) trước khi component mount. prefetchQuery không ném lỗi: tải hỏng thì component tự xử lý
+ * qua useQuery.
  */
 export async function clientLoader({ params }: { params: Record<string, string | undefined> }) {
   if (params.id) {

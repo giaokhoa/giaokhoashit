@@ -11,28 +11,19 @@ import '#config/i18n';
  * trò và trang Quyền độc lập) sau phán quyết vòng sửa 3 của PR #601
  * ("hình dạng demo, dữ kiện thật", comment phán quyết 6539398880):
  *
- * - Hình dạng theo ngôn ngữ demo nhưng mỗi ô là MỘT năng lực thật:
- *   hộp thoại dùng Checkbox của `@lms/ui`, trang Quyền dùng Toggle
- *   của `@lms/ui` dạng nút icon size-8 variant outline (bật =
- *   `bg-primary/10 text-primary`, tắt = outline viền/nền/bóng như
- *   nút chưa cấp của demo; icon cỡ 12px theo loại năng lực — read
- *   là Eye, write là PencilLine, đúng cặp icon demo dùng cho
- *   Read/Write). Không có cột/nút Create/Delete vì dữ kiện của hệ
- *   không có hai trục đó.
- * - Vòng sửa bố cục của PR #601: cả hai bề mặt gom mỗi resource
- *   thành đúng MỘT hàng — hộp thoại bày các checkbox của một
- *   resource trên cùng hàng theo cụm Đọc/Ghi kèm nhãn hành động
- *   của năng lực; trang Quyền bày các nút toggle của một resource
- *   cạnh nhau trong cùng ô của hàng resource, tên năng lực truy
- *   được qua aria-label và `title` của nút.
+ * - Hình dạng theo ngôn ngữ demo nhưng mỗi ô là MỘT năng lực thật: hộp thoại dùng Checkbox của `@lms/ui`, trang Quyền
+ *   dùng Toggle của `@lms/ui` dạng nút icon size-8 variant outline (bật = `bg-primary/10 text-primary`, tắt = outline
+ *   viền/nền/bóng như nút chưa cấp của demo; icon cỡ 12px theo loại năng lực — read là Eye, write là PencilLine, đúng
+ *   cặp icon demo dùng cho Read/Write). Không có cột/nút Create/Delete vì dữ kiện của hệ không có hai trục đó.
+ * - Vòng sửa bố cục của PR #601: cả hai bề mặt gom mỗi resource thành đúng MỘT hàng — hộp thoại bày các checkbox của
+ *   một resource trên cùng hàng theo cụm Đọc/Ghi kèm nhãn hành động của năng lực; trang Quyền bày các nút toggle của
+ *   một resource cạnh nhau trong cùng ô của hàng resource, tên năng lực truy được qua aria-label và `title` của nút.
  * - Ánh xạ hai trạng thái của vòng này: bật ⇔ Cho phép (1), tắt ⇔
  *   Kế thừa (0); thao tác bật/tắt chỉ ghi hai giá trị đó qua cơ chế
  *   lưu hiện hữu của từng bề mặt.
- * - Ô đang mang Ngăn chặn (−1) hoặc Cấm hẳn (−1000) đã lưu: bày huy
- *   hiệu mang tên trạng thái ngay cạnh ô (phân biệt rõ với ô Kế
- *   thừa đang tắt) và KHOÁ thao tác boolean trên ô đó — không thao
- *   tác nào ở hai bề mặt đổi được giá trị này trong vòng này. Biên
- *   tập đầy đủ bốn trạng thái thuộc đợt nối backend (issue #598).
+ * - Ô đang mang Ngăn chặn (−1) hoặc Cấm hẳn (−1000) đã lưu: bày huy hiệu mang tên trạng thái ngay cạnh ô (phân biệt rõ
+ *   với ô Kế thừa đang tắt) và KHOÁ thao tác boolean trên ô đó — không thao tác nào ở hai bề mặt đổi được giá trị này
+ *   trong vòng này. Biên tập đầy đủ bốn trạng thái thuộc đợt nối backend (issue #598).
  */
 
 /**
@@ -90,10 +81,8 @@ export interface PermissionToggleCellProps {
   disabled?: boolean;
   ariaLabel: string;
   /**
-   * Tên năng lực đầy đủ đặt ở thuộc tính `title` của nút: từ vòng
-   * sửa bố cục của PR #601, một ô của bảng chứa nhiều nút icon cạnh
-   * nhau nên tên năng lực phải truy được khi di chuột (tooltip gốc
-   * của trình duyệt) bên cạnh aria-label.
+   * Tên năng lực đầy đủ đặt ở thuộc tính `title` của nút: từ vòng sửa bố cục của PR #601, một ô của bảng chứa nhiều nút
+   * icon cạnh nhau nên tên năng lực phải truy được khi di chuột (tooltip gốc của trình duyệt) bên cạnh aria-label.
    */
   title?: string;
   onToggle: (allowed: boolean) => void;

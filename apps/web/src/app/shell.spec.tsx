@@ -21,10 +21,8 @@ import { baNoSessionResponse, baSessionResponse, isGetSessionUrl } from '#test/b
  *   giữ chỗ đúng hình học hiện thay, và không lóe khung công khai.
  * - Sau khi resolve có người dùng: trang con mount bên trong provider
  *   quyền (usePermissions đọc được dữ liệu thật, không ném lỗi).
- * - Sau khi resolve KHÔNG có người dùng: trang con vẫn mount trong
- *   provider (nay bọc ở root) — usePermissions trả ảnh chụp rỗng sẵn
- *   sàng thay vì ném "must be used inside PermissionsProvider" như lỗi
- *   sập trang /courses trên bản live.
+ * - Sau khi resolve KHÔNG có người dùng: trang con vẫn mount trong provider (nay bọc ở root) — usePermissions trả ảnh
+ *   chụp rỗng sẵn sàng thay vì ném "must be used inside PermissionsProvider" như lỗi sập trang /courses trên bản live.
  * - Đăng xuất: phiên cookie bị huỷ phía server và toàn bộ Query
  *   cache (gồm ảnh chụp quyền của phiên trước) bị dọn sạch; web
  *   không còn giữ token nào ở localStorage (cutover GĐ2, issue #7).

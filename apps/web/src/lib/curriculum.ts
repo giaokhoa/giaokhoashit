@@ -63,12 +63,10 @@ export async function fetchSystemContextId(): Promise<string | null> {
 }
 
 /**
- * Môn học trong context hệ thống. Kèm `forCourseId` (bề mặt chọn khung
- * trong quản trị khoá): API còn chấp nhận nhánh course:update tại chính
- * khoá đó cho giáo viên cấp khoá không có curriculum:view hệ thống.
- * `contextId` vắng thì không kèm tham số — API mặc định về context hệ
- * thống (điểm nghẽn D-3 của issue #233: trang /curriculum không còn
- * bắt buộc đọc được `/access/contexts` mới xem được chương trình).
+ * Môn học trong context hệ thống. Kèm `forCourseId` (bề mặt chọn khung trong quản trị khoá): API còn chấp nhận nhánh
+ * course:update tại chính khoá đó cho giáo viên cấp khoá không có curriculum:view hệ thống. `contextId` vắng thì không
+ * kèm tham số — API mặc định về context hệ thống (điểm nghẽn D-3 của issue #233: trang /curriculum không còn bắt buộc
+ * đọc được `/access/contexts` mới xem được chương trình).
  */
 export async function fetchSubjects(contextId?: string, forCourseId?: string): Promise<CurriculumSubject[]> {
   const params = new URLSearchParams();
@@ -151,9 +149,8 @@ export interface FrameUnit {
   depth: number;
   outcomeCount: number;
   /**
-   * YCCĐ của các bài (lesson) mà đơn vị này là tổ tiên-không-phải-lesson
-   * gần nhất — để bề mặt chọn khung trình bày theo mẫu Bộ (Nội dung |
-   * Yêu cầu cần đạt) mà không nhân bản một YCCĐ lên nhiều đơn vị tổ tiên.
+   * YCCĐ của các bài (lesson) mà đơn vị này là tổ tiên-không-phải-lesson gần nhất — để bề mặt chọn khung trình bày theo
+   * mẫu Bộ (Nội dung | Yêu cầu cần đạt) mà không nhân bản một YCCĐ lên nhiều đơn vị tổ tiên.
    */
   outcomeTexts: { lesson: string; texts: string[] }[];
 }

@@ -104,11 +104,9 @@ export function useFrameworkCompetencies(selectedFrameworkId: string) {
 }
 
 /**
- * Tuỳ chọn truy vấn tài liệu xuất của một framework (GET
- * /competencies/frameworks/:id/export), dành cho component lấy qua
- * `fetchQuery` khi quản trị bấm xuất. `staleTime: 0`: file tải xuống
- * phải là ảnh chụp mới nhất từ máy chủ tại thời điểm bấm, không dùng
- * lại bản đã cache từ lần xuất trước.
+ * Tuỳ chọn truy vấn tài liệu xuất của một framework (GET /competencies/frameworks/:id/export), dành cho component lấy
+ * qua `fetchQuery` khi quản trị bấm xuất. `staleTime: 0`: file tải xuống phải là ảnh chụp mới nhất từ máy chủ tại thời
+ * điểm bấm, không dùng lại bản đã cache từ lần xuất trước.
  */
 export function frameworkExportQueryOptions(frameworkId: string) {
   return queryOptions({

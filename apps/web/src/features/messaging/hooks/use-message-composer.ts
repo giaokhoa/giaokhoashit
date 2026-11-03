@@ -28,10 +28,9 @@ export function useMessageComposer({
 }: UseMessageComposerParams) {
   const { t } = useTranslation('app');
   /**
-   * Nháp soạn tin THEO TỪNG conversation (lát M1, issue #204): map
-   * theo conversationId, giữ trong bộ nhớ trang — chuyển qua
-   * conversation khác rồi quay lại vẫn còn nguyên nháp của conversation
-   * đó; gửi thành công thì chỉ xoá nháp của đúng conversation đã gửi.
+   * Nháp soạn tin THEO TỪNG conversation (lát M1, issue #204): map theo conversationId, giữ trong bộ nhớ trang — chuyển
+   * qua conversation khác rồi quay lại vẫn còn nguyên nháp của conversation đó; gửi thành công thì chỉ xoá nháp của
+   * đúng conversation đã gửi.
    */
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [replyTargets, setReplyTargets] = useState<Record<string, MessageView | null>>({});
@@ -39,20 +38,15 @@ export function useMessageComposer({
   const sendMessageMutation = useSendMessage();
   const lastTypingSentRef = useRef(0);
   /**
-   * Khoá idempotency của BẢN NHÁP hiện tại theo conversation (fix
-   * nhân đôi tin, issue #33): sinh một lần cho một bản nháp và giữ
-   * nguyên qua mọi lượt submit lặp của cùng bản nháp — server chống
-   * trùng theo (conversation, người gửi, clientMessageId) nên hai POST
-   * lặp mang CÙNG khoá chỉ thành một tin. Chỉ bỏ khoá khi lượt gửi đã
-   * có kết quả từ server; lượt gửi lỗi thì tin failed tự giữ khoá của
-   * nó cho đường retrySend, bản nháp sau đó phải là khoá mới.
+   * Khoá idempotency của BẢN NHÁP hiện tại theo conversation (fix nhân đôi tin, issue #33): sinh một lần cho một bản
+   * nháp và giữ nguyên qua mọi lượt submit lặp của cùng bản nháp — server chống trùng theo (conversation, người gửi,
+   * clientMessageId) nên hai POST lặp mang CÙNG khoá chỉ thành một tin. Chỉ bỏ khoá khi lượt gửi đã có kết quả từ
+   * server; lượt gửi lỗi thì tin failed tự giữ khoá của nó cho đường retrySend, bản nháp sau đó phải là khoá mới.
    */
   const draftClientIdRef = useRef<Map<string, string>>(new Map());
   /**
-   * Conversation đang có lượt send() bay (fix nhân đôi tin, issue
-   * #33): lượt gọi trùng cho cùng conversation bị bỏ qua ngay tại ref
-   * — không chờ setState nên hai submit trong cùng một nhịp render
-   * cũng không lọt cả hai.
+   * Conversation đang có lượt send() bay (fix nhân đôi tin, issue #33): lượt gọi trùng cho cùng conversation bị bỏ qua
+   * ngay tại ref — không chờ setState nên hai submit trong cùng một nhịp render cũng không lọt cả hai.
    */
   const sendInFlightRef = useRef<Set<string>>(new Set());
   const [sendingConversationIds, setSendingConversationIds] = useState<ReadonlySet<string>>(new Set());
@@ -162,7 +156,10 @@ export function useMessageComposer({
     }
   }
 
-  /** Thử gửi lại một tin đã lỗi — dùng lại đúng clientMessageId nên server không tạo trùng kể cả khi lần trước đã tới nơi. */
+  /**
+   * Thử gửi lại một tin đã lỗi — dùng lại đúng clientMessageId nên server không tạo trùng kể cả khi lần trước đã tới
+   * nơi.
+   */
   async function retrySend(message: MessageView) {
     if (!active || !message.clientMessageId) return;
     setLocalMessageStatus(active.id, message.clientMessageId, 'sending');

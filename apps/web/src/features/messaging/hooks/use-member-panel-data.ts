@@ -112,17 +112,12 @@ export function useMemberPanelData({
     return () => {
       cancelled = true;
     };
-    // Chạy theo id conversation + khoá ngữ cảnh + mốc làm mới; các
-    // giá trị còn lại mà thân hiệu ứng đọc (active, panelContext,
-    // queryClient) là ảnh chụp tại thời điểm chạy, chỉ dùng để xác
-    // định (conversation, ngữ cảnh) và đường roster của lần mồi đó.
-    // Giữ disable CÓ CHỦ ĐÍCH cho react-hooks/exhaustive-deps:
-    // hiệu ứng mồi roster chạy theo (id conversation, khoá ngữ
-    // cảnh, mốc làm mới). Đưa các giá trị ảnh chụp vào mảng phụ
-    // thuộc sẽ mồi lại toàn bộ roster (tới 25 trang) và đặt panel
-    // về trạng thái đang tải mỗi khi đối tượng conversation đổi —
-    // ví dụ mỗi tin nhắn mới trong nhóm — tức đổi hành vi người
-    // dùng thấy được, nên không sửa mảng phụ thuộc tại điểm này.
+    // Chạy theo id conversation + khoá ngữ cảnh + mốc làm mới; các giá trị còn lại mà thân hiệu ứng đọc (active,
+    // panelContext, queryClient) là ảnh chụp tại thời điểm chạy, chỉ dùng để xác định (conversation, ngữ cảnh) và đường
+    // roster của lần mồi đó. Giữ disable CÓ CHỦ ĐÍCH cho react-hooks/exhaustive-deps: hiệu ứng mồi roster chạy theo (id
+    // conversation, khoá ngữ cảnh, mốc làm mới). Đưa các giá trị ảnh chụp vào mảng phụ thuộc sẽ mồi lại toàn bộ roster
+    // (tới 25 trang) và đặt panel về trạng thái đang tải mỗi khi đối tượng conversation đổi — ví dụ mỗi tin nhắn mới
+    // trong nhóm — tức đổi hành vi người dùng thấy được, nên không sửa mảng phụ thuộc tại điểm này.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id, panelContextKey, panelRefreshTick]);
 

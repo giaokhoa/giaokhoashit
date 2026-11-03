@@ -15,12 +15,10 @@ export function useDashboardOverview() {
 }
 
 /**
- * Tuỳ chọn truy vấn số thông báo chưa đọc cho thẻ thống kê của học
- * sinh (GET /notifications/unread-count): dùng CHUNG khoá
- * `notificationUnreadCount` với chuông/sidebar — một dữ kiện chỉ có
- * một khoá để stream SSE và các đột biến đọc/xoá cập nhật đúng mục
- * cache mà thẻ này đọc. Loader SL-1 của route `/` cũng nạp trước
- * đúng khoá này để dehydrate cho cả hai bề mặt.
+ * Tuỳ chọn truy vấn số thông báo chưa đọc cho thẻ thống kê của học sinh (GET /notifications/unread-count): dùng CHUNG
+ * khoá `notificationUnreadCount` với chuông/sidebar — một dữ kiện chỉ có một khoá để stream SSE và các đột biến đọc/xoá
+ * cập nhật đúng mục cache mà thẻ này đọc. Loader SL-1 của route `/` cũng nạp trước đúng khoá này để dehydrate cho cả
+ * hai bề mặt.
  */
 export function dashboardUnreadCountQueryOptions() {
   return queryOptions({

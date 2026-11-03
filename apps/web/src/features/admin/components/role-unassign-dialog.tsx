@@ -31,14 +31,11 @@ export interface UnassignTarget {
  * Hộp thoại xác nhận gỡ dòng gán vai, dựng trên component Dialog
  * thật của `@lms/ui`.
  *
- * Luồng nghiệp vụ: hộp thoại nêu rõ bộ ba sắp gỡ (người dùng × vai trò
- * × ngữ cảnh) và yêu cầu xác nhận. Khi backend từ chối, hộp thoại GIỮ
- * NGUYÊN kèm đúng lý do — trường hợp đua dữ kiện khiến dòng thường bị
- * chuyển thành dòng do ghi danh quản lý giữa lúc liệt kê và lúc bấm gỡ
- * thì mã `access.assignment_enrol_managed` được dịch thành lý do rút
- * ghi danh; mã lạ thì dùng thông báo chung, không hiện mã kỹ thuật.
- * Gỡ thành công thì hộp thoại đóng và bảng tải lại đúng trang hiện hành
- * qua việc làm mới truy vấn danh sách.
+ * Luồng nghiệp vụ: hộp thoại nêu rõ bộ ba sắp gỡ (người dùng × vai trò × ngữ cảnh) và yêu cầu xác nhận. Khi backend từ
+ * chối, hộp thoại GIỮ NGUYÊN kèm đúng lý do — trường hợp đua dữ kiện khiến dòng thường bị chuyển thành dòng do ghi danh
+ * quản lý giữa lúc liệt kê và lúc bấm gỡ thì mã `access.assignment_enrol_managed` được dịch thành lý do rút ghi danh;
+ * mã lạ thì dùng thông báo chung, không hiện mã kỹ thuật. Gỡ thành công thì hộp thoại đóng và bảng tải lại đúng trang
+ * hiện hành qua việc làm mới truy vấn danh sách.
  *
  * Dòng do ghi danh quản lý không tới được hộp thoại này: bảng hiển thị
  * thẳng trạng thái không gỡ trực tiếp được thay cho nút gỡ.

@@ -28,28 +28,19 @@ import { MyBadgeView } from '#features/badges/types/badges';
  *   - CHƯA đăng nhập (không cookie phiên Better Auth): loader không
  *     gọi API nghiệp vụ nào, trả dehydrated state rỗng — mặt công
  *     khai giữ nguyên và là bản được prerender lúc build.
- *   - ĐÃ đăng nhập: prefetch bằng cookie của chính request (xem
- *     `lib/ssr-data.ts`) rồi dehydrate cho root.tsx hydrate:
- *     lượt 1 gồm hai query gốc của PermissionsProvider (ảnh chụp
- *     quyền `capabilities` + danh sách khoá `courses` — có chúng thì
- *     provider phân loại vai ngay từ lần render đầu, dashboard hết
- *     hiện khung giữ chỗ chờ phân loại) và các query key cố định của
- *     các khối (tổng hợp `dashboardOverview`, huy hiệu của tôi
- *     `myBadges`, số chưa đọc `notifications`, sự kiện 30 ngày tới
- *     `calendarEvents` với khoảng ngày từ `upcomingDaysRangeIso`
- *     dùng chung hai phía); lượt 2 — chỉ khi lượt 1 có đủ ảnh chụp
- *     quyền + danh sách khoá — prefetch dữ liệu điểm theo khoá
- *     (`courseAccess`) cho đúng tập khoá người dùng THUỘC về (dạy ∪
- *     học, phân loại bằng chính các hàm thuần của `lib/permissions`)
- *     và, khi người dùng có quyền quản trị theo đúng công thức
- *     `canAdminister` của provider, ba query của khối quản trị
- *     (`adminUsers(1, 100)`, `categoryTree`, `roles`).
+ *   - ĐÃ đăng nhập: prefetch bằng cookie của chính request (xem `lib/ssr-data.ts`) rồi dehydrate cho root.tsx hydrate:
+ *     lượt 1 gồm hai query gốc của PermissionsProvider (ảnh chụp quyền `capabilities` + danh sách khoá `courses` — có
+ *     chúng thì provider phân loại vai ngay từ lần render đầu, dashboard hết hiện khung giữ chỗ chờ phân loại) và các
+ *     query key cố định của các khối (tổng hợp `dashboardOverview`, huy hiệu của tôi `myBadges`, số chưa đọc
+ *     `notifications`, sự kiện 30 ngày tới `calendarEvents` với khoảng ngày từ `upcomingDaysRangeIso` dùng chung hai
+ *     phía); lượt 2 — chỉ khi lượt 1 có đủ ảnh chụp quyền + danh sách khoá — prefetch dữ liệu điểm theo khoá
+ *     (`courseAccess`) cho đúng tập khoá người dùng THUỘC về (dạy ∪ học, phân loại bằng chính các hàm thuần của
+ *     `lib/permissions`) và, khi người dùng có quyền quản trị theo đúng công thức `canAdminister` của provider, ba
+ *     query của khối quản trị (`adminUsers(1, 100)`, `categoryTree`, `roles`).
  *
- * Phần CHƯA lên loader (khai rõ): pref thẻ khoá (key `courseCards`)
- * — dữ liệu của query đó là một `Map` do `fetchCourseCardPrefs` dựng
- * phía client, không serialize qua dehydrate được (sẽ thành object
- * rỗng và làm hỏng lời gọi `.get()` của các khối); khối GV/HS vẫn
- * fetch query này phía client như trước SL-1.
+ * Phần CHƯA lên loader (khai rõ): pref thẻ khoá (key `courseCards`) — dữ liệu của query đó là một `Map` do
+ * `fetchCourseCardPrefs` dựng phía client, không serialize qua dehydrate được (sẽ thành object rỗng và làm hỏng lời gọi
+ * `.get()` của các khối); khối GV/HS vẫn fetch query này phía client như trước SL-1.
  */
 export async function loader({ request }: { request: Request }): Promise<SsrLoaderData> {
   return buildSsrLoaderData(request, async (queryClient, req) => {

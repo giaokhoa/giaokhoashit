@@ -6,8 +6,8 @@ import { cn } from '@lms/ui/lib/utils';
  * Bậc bề rộng nội dung chuẩn của khung trang (hồ sơ UI/UX §3.1): màn ít thông tin (đọc, form một cột, cài đặt) đứng ở
  * cột 768px; màn nhiều thông tin hơn nới dần; bảng dày/workspace/chat dùng toàn bề rộng. Bậc `app` là khung của
  * template quản trị mẫu: cột trần 1440px và đệm nằm BÊN TRONG trần (đệm ngang 16px, từ bề rộng 640px là 24px; đệm dọc
- * 24px) nên bề mặt hiệu dụng tối đa là 1392px — đệm phải đi cùng trần ở lớp trong, vì đệm đặt ở lớp ngoài sẽ làm bề
- * mặt phình thêm đúng phần đệm so với khung mẫu.
+ * 24px) nên bề mặt hiệu dụng tối đa là 1392px — đệm phải đi cùng trần ở lớp trong, vì đệm đặt ở lớp ngoài sẽ làm bề mặt
+ * phình thêm đúng phần đệm so với khung mẫu.
  */
 export type PageWidth = 'narrow' | 'medium' | 'wide' | 'app' | 'full';
 

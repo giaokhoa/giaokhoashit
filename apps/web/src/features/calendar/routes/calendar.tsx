@@ -36,14 +36,11 @@ const TYPES = ['all', 'site', 'category', 'course', 'group', 'user'] as const;
 const EVENT_TYPES = ['user', 'site', 'category', 'course', 'group'] as const;
 
 /**
- * Loader phía server (tầng SL-1 của #7): prefetch cả ba query của
- * trang bằng cookie của chính request — sự kiện tháng hiện tại (key
- * `calendarEvents(from, to)` với khoảng tháng từ `currentMonthRangeIso`
- * dùng chung hai phía), đăng ký lịch ngoài và đường dẫn xuất lịch —
- * rồi dehydrate cho root.tsx hydrate vào cache (xem `lib/ssr-data.ts`).
- * Không có cookie phiên thì không gọi API nào (trang tải phía client
- * như trước SL-1). Lỗi ở một endpoint chỉ làm query đó vắng mặt trong
- * state, trang tự fetch lại đúng key đó.
+ * Loader phía server (tầng SL-1 của #7): prefetch cả ba query của trang bằng cookie của chính request — sự kiện tháng
+ * hiện tại (key `calendarEvents(from, to)` với khoảng tháng từ `currentMonthRangeIso` dùng chung hai phía), đăng ký
+ * lịch ngoài và đường dẫn xuất lịch — rồi dehydrate cho root.tsx hydrate vào cache (xem `lib/ssr-data.ts`). Không có
+ * cookie phiên thì không gọi API nào (trang tải phía client như trước SL-1). Lỗi ở một endpoint chỉ làm query đó vắng
+ * mặt trong state, trang tự fetch lại đúng key đó.
  */
 export async function loader({ request }: { request: Request }): Promise<SsrLoaderData> {
   const range = currentMonthRangeIso();

@@ -9,8 +9,8 @@ import { renderToPipeableStream } from 'react-dom/server';
 /**
  * Điểm vào phía server (SSR, Giai đoạn 3 của issue #7) — mẫu streaming chính chủ của React Router framework mode:
  * bot/crawler chờ render toàn bộ (`onAllReady`) để nhận HTML đầy đủ, trình duyệt thường nhận vỏ trang ngay khi khung
- * sẵn sàng (`onShellReady`) rồi stream phần còn lại. Hủy render khi quá `streamTimeout` để một route treo không giữ
- * kết nối vô hạn.
+ * sẵn sàng (`onShellReady`) rồi stream phần còn lại. Hủy render khi quá `streamTimeout` để một route treo không giữ kết
+ * nối vô hạn.
  */
 export const streamTimeout = 5_000;
 

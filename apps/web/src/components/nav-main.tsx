@@ -32,16 +32,12 @@ export interface NavItem {
  *
  * - KHÔNG có `url`: cha là nút thu/mở thuần — bấm chỉ mở/đóng danh sách
  *   mục con (vd "Học tập", "Cài đặt hệ thống").
- * - CÓ `url`: thân mục cha là LINK điều hướng tới trang danh sách của
- *   chính nó (vd "Ngân hàng câu hỏi" → /questions); khi nhóm có mục
- *   con, chevron thu/mở GẮN Ở CUỐI CÙNG MỘT bề mặt nút với nhãn
- *   (trigger định vị tuyệt đối bên trong SidebarMenuItem, `toggleLabel`
- *   là nhãn aria của trigger đó) — KHÔNG tách thành một nút chevron
- *   riêng đứng cạnh nhãn, để hai biến thể trình bày giống nhau (chốt
- *   sổ quyết định [26/10 23:16], việc nối tiếp issue #70). Nhóm có
- *   `url` mà chưa có mục con vẫn render thành mục cấp cao nhất điều
- *   hướng được, không chevron — chờ bổ sung mục con sau (đính chính
- *   sidebar ngân hàng, issue #70).
+ * - CÓ `url`: thân mục cha là LINK điều hướng tới trang danh sách của chính nó (vd "Ngân hàng câu hỏi" → /questions);
+ *   khi nhóm có mục con, chevron thu/mở GẮN Ở CUỐI CÙNG MỘT bề mặt nút với nhãn (trigger định vị tuyệt đối bên trong
+ *   SidebarMenuItem, `toggleLabel` là nhãn aria của trigger đó) — KHÔNG tách thành một nút chevron riêng đứng cạnh
+ *   nhãn, để hai biến thể trình bày giống nhau (chốt sổ quyết định [26/10 23:16], việc nối tiếp issue #70). Nhóm có
+ *   `url` mà chưa có mục con vẫn render thành mục cấp cao nhất điều hướng được, không chevron — chờ bổ sung mục con sau
+ *   (đính chính sidebar ngân hàng, issue #70).
  *
  * `groupId` là định danh ổn định để lưu trạng thái mở của nhóm (xem AppSidebar).
  */
@@ -113,8 +109,8 @@ function NavLeafButton({ item, pathname, search }: { item: NavItem; pathname: st
 /**
  * Mục cha collapse: Collapsible bọc trong SidebarMenuItem, nút cha kèm chevron xoay 90° khi mở (đúng cơ chế của
  * sidebar-07). Trạng thái mở do AppSidebar kiểm soát (đã gồm quy tắc nhóm chứa route đang xem thì luôn mở). Ở chế độ
- * rail icon, mục con bị primitive ẩn bằng CSS — bấm vào cha khi đó sẽ bung sidebar ra rồi mở nhóm, thay vì bấm mà
- * không thấy gì xảy ra.
+ * rail icon, mục con bị primitive ẩn bằng CSS — bấm vào cha khi đó sẽ bung sidebar ra rồi mở nhóm, thay vì bấm mà không
+ * thấy gì xảy ra.
  */
 function NavGroupCollapsible({
   item,

@@ -25,11 +25,9 @@ interface UploadOutcome {
 }
 
 /**
- * Cache promise tải blob ảnh phiếu theo scanId ở tầng module: một
- * scan hiện ở nhiều vùng cắt trên cùng màn chấm (RegionCrop ×2 +
- * RowCrop từng dòng) nhưng chỉ tải xuống MỘT lần; lượt tải lỗi bị
- * xoá khỏi cache để lần gắn sau thử lại. Object URL vẫn do từng
- * instance tự tạo từ blob dùng chung và tự thu hồi khi unmount.
+ * Cache promise tải blob ảnh phiếu theo scanId ở tầng module: một scan hiện ở nhiều vùng cắt trên cùng màn chấm
+ * (RegionCrop ×2 + RowCrop từng dòng) nhưng chỉ tải xuống MỘT lần; lượt tải lỗi bị xoá khỏi cache để lần gắn sau thử
+ * lại. Object URL vẫn do từng instance tự tạo từ blob dùng chung và tự thu hồi khi unmount.
  */
 const warpedBlobPromises = new Map<string, Promise<Blob>>();
 

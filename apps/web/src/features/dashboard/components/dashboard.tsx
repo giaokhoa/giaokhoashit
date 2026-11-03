@@ -46,11 +46,9 @@ function SectionHeading({ title }: { title: string }) {
 }
 
 /**
- * Khối tổng hợp DASH1 dùng chung cho cả hai vai: đúng MỘT query
- * `GET /dashboard/overview` (TanStack dedupe theo queryKey nên khối GV và
- * khối HS trên cùng trang chỉ phát một request). Endpoint đồng thời cập
- * nhật mốc xem trước phía server khi tính xong danh sách "mới".
- * Hook nay nằm ở tầng queries của feature notifications (F-01 của rà soát #133).
+ * Khối tổng hợp DASH1 dùng chung cho cả hai vai: đúng MỘT query `GET /dashboard/overview` (TanStack dedupe theo
+ * queryKey nên khối GV và khối HS trên cùng trang chỉ phát một request). Endpoint đồng thời cập nhật mốc xem trước phía
+ * server khi tính xong danh sách "mới". Hook nay nằm ở tầng queries của feature notifications (F-01 của rà soát #133).
  */
 
 function StudentTodoBlock() {

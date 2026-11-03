@@ -1,26 +1,18 @@
 /**
- * Tầng adapter nhãn ngữ cảnh của feature admin: biến các dòng ngữ
- * cảnh của API (`ContextRow` — chỉ có cấp số, định danh thực thể và
- * đường dẫn cây, KHÔNG có tên hiển thị) thành nhãn dạng chữ đọc được
- * cho mọi bề mặt vai trò & quyền.
+ * Tầng adapter nhãn ngữ cảnh của feature admin: biến các dòng ngữ cảnh của API (`ContextRow` — chỉ có cấp số, định danh
+ * thực thể và đường dẫn cây, KHÔNG có tên hiển thị) thành nhãn dạng chữ đọc được cho mọi bề mặt vai trò & quyền.
  *
- * Vấn đề adapter này giải quyết: đáp ứng `GET /access/contexts`
- * không mang tên của thực thể mà ngữ cảnh trỏ tới (tên khoá học, tên
- * lớp…), nên trước đây các ô chọn và cột ngữ cảnh bày thẳng chuỗi kỹ
- * thuật "cấp <số> · thực thể <id> · /<đường dẫn>" — chuỗi đó không
- * phải thông tin nghiệp vụ của quản trị viên. Adapter suy nhãn từ
- * CẤP của ngữ cảnh (10 hệ thống, 20 trung tâm, 30 người dùng, 40
- * danh mục khoá, 45 lớp, 50 khoá học, 70 module, 80 block) — cấp là
- * dữ kiện nghiệp vụ thật, đọc được bằng chữ.
+ * Vấn đề adapter này giải quyết: đáp ứng `GET /access/contexts` không mang tên của thực thể mà ngữ cảnh trỏ tới (tên
+ * khoá học, tên lớp…), nên trước đây các ô chọn và cột ngữ cảnh bày thẳng chuỗi kỹ thuật "cấp <số> · thực thể <id> ·
+ * /<đường dẫn>" — chuỗi đó không phải thông tin nghiệp vụ của quản trị viên. Adapter suy nhãn từ CẤP của ngữ cảnh (10
+ * hệ thống, 20 trung tâm, 30 người dùng, 40 danh mục khoá, 45 lớp, 50 khoá học, 70 module, 80 block) — cấp là dữ kiện
+ * nghiệp vụ thật, đọc được bằng chữ.
  *
- * Giới hạn đã biết của adapter (việc của đợt nối backend): nhiều ngữ
- * cảnh cùng cấp (ví dụ nhiều khoá học) thì nhãn cấp trùng nhau; để
- * các lựa chọn trong ô chọn vẫn phân biệt được mà không lộ định danh
- * kỹ thuật, adapter đánh số thứ tự trong cùng cấp theo thứ tự cây
- * ("Khoá học 2", "Khoá học 3"…; ngữ cảnh đầu tiên của cấp giữ nhãn
- * trần). Tên thật của từng thực thể chỉ có khi backend bổ sung tên
- * vào đáp ứng ngữ cảnh — khi đó adapter này là nơi duy nhất cần đổi,
- * các bề mặt gọi qua đây không đổi.
+ * Giới hạn đã biết của adapter (việc của đợt nối backend): nhiều ngữ cảnh cùng cấp (ví dụ nhiều khoá học) thì nhãn cấp
+ * trùng nhau; để các lựa chọn trong ô chọn vẫn phân biệt được mà không lộ định danh kỹ thuật, adapter đánh số thứ tự
+ * trong cùng cấp theo thứ tự cây ("Khoá học 2", "Khoá học 3"…; ngữ cảnh đầu tiên của cấp giữ nhãn trần). Tên thật của
+ * từng thực thể chỉ có khi backend bổ sung tên vào đáp ứng ngữ cảnh — khi đó adapter này là nơi duy nhất cần đổi, các
+ * bề mặt gọi qua đây không đổi.
  *
  * Module này thuần hàm, không phụ thuộc React: hàm trả về KHOÁ i18n
  * hoặc nhãn đã lắp, nơi gọi tự dịch bằng `t()` của namespace `app`
@@ -44,12 +36,10 @@ export function contextLevelLabelKey(level: number): string {
 }
 
 /**
- * Nhãn hiển thị của một dòng gán vai: khi ngữ cảnh của dòng gán có
- * trong cây ngữ cảnh đã tải thì dùng nhãn ô chọn của chính ngữ cảnh
- * đó (cấp dạng chữ kèm số thứ tự trong cấp) để hai dòng gán cùng vai
- * ở hai ngữ cảnh cùng cấp phân biệt được; khi cây không chứa ngữ cảnh
- * đó (dữ kiện cũ, cây tải thiếu) thì lùi về nhãn cấp trần như trước
- * thay vì lộ định danh hay đường dẫn kỹ thuật.
+ * Nhãn hiển thị của một dòng gán vai: khi ngữ cảnh của dòng gán có trong cây ngữ cảnh đã tải thì dùng nhãn ô chọn của
+ * chính ngữ cảnh đó (cấp dạng chữ kèm số thứ tự trong cấp) để hai dòng gán cùng vai ở hai ngữ cảnh cùng cấp phân biệt
+ * được; khi cây không chứa ngữ cảnh đó (dữ kiện cũ, cây tải thiếu) thì lùi về nhãn cấp trần như trước thay vì lộ định
+ * danh hay đường dẫn kỹ thuật.
  */
 export function assignmentContextLabel(
   contexts: ContextRow[],

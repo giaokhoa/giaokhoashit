@@ -14,10 +14,9 @@ export function fetchPlayerView(courseId: string, cmId: string) {
 }
 
 /**
- * "Đánh dấu đã học" cho mục hoàn thành thủ công: trước hết probe
- * completion của chính người dùng để lấy userId (endpoint manual
- * đòi userId trong thân), rồi POST completion/manual với
- * complete=true — đúng hai bước của bản thủ công.
+ * "Đánh dấu đã học" cho mục hoàn thành thủ công: trước hết probe completion của chính người dùng để lấy userId
+ * (endpoint manual đòi userId trong thân), rồi POST completion/manual với complete=true — đúng hai bước của bản thủ
+ * công.
  *
  * @param courseId - Định danh khoá.
  * @param cmId - Định danh module.

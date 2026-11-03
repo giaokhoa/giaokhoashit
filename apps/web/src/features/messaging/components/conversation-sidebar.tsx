@@ -267,14 +267,10 @@ export function ConversationSidebar({
           </div>
         ) : panelStatus?.error ? (
           /*
-            Nhánh lỗi của CHÍNH tập nguồn (vòng sửa issue
-            #623): query của tập lỗi mà chưa từng có dữ kiện
-            thì hiện báo lỗi kèm nút thử lại ngay trong panel
-            — không im lặng hiện rỗng như thể tập thật sự
-            trống. Chỉ áp cho panel có trạng thái riêng (tab
-            Lưu trữ); hai tab của danh sách chính giữ cơ chế
-            banner lỗi dùng chung ở trên.
-          */
+           * Nhánh lỗi của CHÍNH tập nguồn (vòng sửa issue #623): query của tập lỗi mà chưa từng có dữ kiện thì hiện báo
+           * lỗi kèm nút thử lại ngay trong panel — không im lặng hiện rỗng như thể tập thật sự trống. Chỉ áp cho panel
+           * có trạng thái riêng (tab Lưu trữ); hai tab của danh sách chính giữ cơ chế banner lỗi dùng chung ở trên.
+           */
           <div className="flex flex-col items-center gap-2 p-10 text-center">
             <MessageSquare className="size-9 text-muted-foreground/40" aria-hidden />
             <p role="alert" className="text-sm font-medium">{panelStatus.error}</p>
@@ -286,17 +282,12 @@ export function ConversationSidebar({
           </div>
         ) : (panelStatus ? visible.length === 0 : !error && visible.length === 0) ? (
           /*
-            Nhánh rỗng chỉ hiện khi KHÔNG có lỗi tải (vòng
-            sửa 2 PR #593): tải lần đầu lỗi thì chỉ banner
-            lỗi ở trên hiện — câu "chưa có hội thoại" trên
-            đường lỗi là trạng thái rỗng giả mà issue #591
-            cấm (chưa tải xong, chưa xác nhận là rỗng thật).
-            Panel có trạng thái riêng (vòng sửa issue #623)
-            chỉ tới được nhánh này sau khi query của chính
-            nó đã thành công — đang nạp và lỗi đã rẽ nhánh ở
-            trên — nên rỗng ở đây là rỗng thật của chính tập
-            đó.
-          */
+           * Nhánh rỗng chỉ hiện khi KHÔNG có lỗi tải (vòng sửa 2 PR #593): tải lần đầu lỗi thì chỉ banner lỗi ở trên
+           * hiện — câu "chưa có hội thoại" trên đường lỗi là trạng thái rỗng giả mà issue #591 cấm (chưa tải xong, chưa
+           * xác nhận là rỗng thật). Panel có trạng thái riêng (vòng sửa issue #623) chỉ tới được nhánh này sau khi
+           * query của chính nó đã thành công — đang nạp và lỗi đã rẽ nhánh ở trên — nên rỗng ở đây là rỗng thật của
+           * chính tập đó.
+           */
           <div className="flex flex-col items-center gap-2 p-10 text-center">
             <MessageSquare className="size-9 text-muted-foreground/40" aria-hidden />
             <p className="text-sm font-medium">

@@ -316,12 +316,10 @@ export function GradebookPage() {
 }
 
 /**
- * Export mặc định cho đích route `courses/:id/grades` trong routes.ts:
- * quy ước framework lấy component của route từ export mặc định (hoặc
- * export tên `Component`) của route module, mà file trang trước đây
- * chỉ export theo tên nên qua router component không được gắn (vùng
- * nội dung trống dù spec gắn trực tiếp vẫn xanh). Export theo tên
- * `GradebookPage` ở trên giữ nguyên cho các nơi tiêu thụ hiện hữu.
+ * Export mặc định cho đích route `courses/:id/grades` trong routes.ts: quy ước framework lấy component của route từ
+ * export mặc định (hoặc export tên `Component`) của route module, mà file trang trước đây chỉ export theo tên nên qua
+ * router component không được gắn (vùng nội dung trống dù spec gắn trực tiếp vẫn xanh). Export theo tên `GradebookPage`
+ * ở trên giữ nguyên cho các nơi tiêu thụ hiện hữu.
  */
 export default GradebookPage;
 

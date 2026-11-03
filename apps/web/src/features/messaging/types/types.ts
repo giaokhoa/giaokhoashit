@@ -26,10 +26,8 @@ export interface MessageView {
   deletedAt?: string | null;
   deletedBy?: string | null;
   /**
-   * Dấu vết THU HỒI (vòng đời tin nhắn theo vai, issue #33): đường đọc
-   * thường trả nội dung rỗng kèm hai trường này để hiện dòng "tin nhắn
-   * đã được thu hồi"; chỉ đường truy vết có thẩm quyền mới thấy nội
-   * dung gốc.
+   * Dấu vết THU HỒI (vòng đời tin nhắn theo vai, issue #33): đường đọc thường trả nội dung rỗng kèm hai trường này để
+   * hiện dòng "tin nhắn đã được thu hồi"; chỉ đường truy vết có thẩm quyền mới thấy nội dung gốc.
    */
   recalledAt?: string | null;
   recalledBy?: string | null;
@@ -66,14 +64,10 @@ export interface PersonSummary {
 export type ContactRelationship = 'contact' | 'pending_incoming' | 'pending_outgoing' | 'blocked' | 'none';
 
 /**
- * Trạng thái hiện diện ở TẦNG HIỂN THỊ của tính năng nhắn tin
- * (issue #608): bản demo có đủ bốn trạng thái — trực tuyến, vắng
- * mặt (away), đang bận (busy), ngoại tuyến — với bản đồ màu và
- * nhãn riêng. Dữ kiện hiện diện hiện hành phía server chỉ phát
- * trực tuyến/ngoại tuyến (xem `presenceStatusOf` ở utils), nên
- * hai trạng thái vắng mặt/bận mới chỉ tồn tại ở tầng hiển thị:
- * khi dữ kiện mang được chúng, mọi bề mặt chat tự hiện đúng màu
- * và nhãn mà không phải sửa lại component.
+ * Trạng thái hiện diện ở TẦNG HIỂN THỊ của tính năng nhắn tin (issue #608): bản demo có đủ bốn trạng thái — trực tuyến,
+ * vắng mặt (away), đang bận (busy), ngoại tuyến — với bản đồ màu và nhãn riêng. Dữ kiện hiện diện hiện hành phía server
+ * chỉ phát trực tuyến/ngoại tuyến (xem `presenceStatusOf` ở utils), nên hai trạng thái vắng mặt/bận mới chỉ tồn tại ở
+ * tầng hiển thị: khi dữ kiện mang được chúng, mọi bề mặt chat tự hiện đúng màu và nhãn mà không phải sửa lại component.
  */
 export type PresenceStatus = 'online' | 'away' | 'busy' | 'offline';
 export interface MessagingCourse {
@@ -102,11 +96,9 @@ export interface ConversationView {
   type: number;
   name: string | null;
   /**
-   * Phân loại cấu trúc (lát MSG-T1, issue #33): `core_course`/`course`
-   * = chat cấp khoá, `core_group`/`groups` = chat nhóm con,
-   * `core_class`/`class` = chat cấp lớp (MSG-T2); null ở hội thoại
-   * cá nhân và nhóm tự do. Phân loại CHỈ theo ba trường này, không
-   * đoán theo tên.
+   * Phân loại cấu trúc (lát MSG-T1, issue #33): `core_course`/`course` = chat cấp khoá, `core_group`/`groups` = chat
+   * nhóm con, `core_class`/`class` = chat cấp lớp (MSG-T2); null ở hội thoại cá nhân và nhóm tự do. Phân loại CHỈ theo
+   * ba trường này, không đoán theo tên.
    */
   component?: string | null;
   itemType?: string | null;
@@ -114,12 +106,9 @@ export interface ConversationView {
   members: string[];
   memberProfiles?: Record<string, PersonSummary>;
   /**
-   * Số tin chưa đọc THEO VŨ TRỤ CHUẨN (issue #592): server trả 0
-   * cho hội thoại đã tắt tiếng dù tin chưa đọc vẫn còn, nên mọi
-   * số đếm suy từ danh sách này (huy hiệu đầu trang, chip lọc,
-   * huy hiệu hàng) khớp với huy hiệu thanh bên mà không cần lọc
-   * lại ở client; hội thoại 1–1 bị ẩn do chặn không có trong
-   * danh sách nên cũng không đóng góp số.
+   * Số tin chưa đọc THEO VŨ TRỤ CHUẨN (issue #592): server trả 0 cho hội thoại đã tắt tiếng dù tin chưa đọc vẫn còn,
+   * nên mọi số đếm suy từ danh sách này (huy hiệu đầu trang, chip lọc, huy hiệu hàng) khớp với huy hiệu thanh bên mà
+   * không cần lọc lại ở client; hội thoại 1–1 bị ẩn do chặn không có trong danh sách nên cũng không đóng góp số.
    */
   unread?: number;
   lastReadSeq?: number;

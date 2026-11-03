@@ -21,7 +21,10 @@ import type { CurriculumTreeNode } from '#features/questions/utils/shared';
 
 const SELECT_CLASS = 'h-9 w-full rounded-md border border-input bg-transparent px-2.5 text-sm shadow-xs';
 
-/** Bung cây chương trình thành danh sách ĐƠN VỊ KIẾN THỨC (node) cho bộ chọn ô ma trận — ô neo ĐVK, không neo YCCĐ (issue #249). Nhãn kèm thụt cấp theo độ sâu để phân biệt chủ đề/bài. */
+/**
+ * Bung cây chương trình thành danh sách ĐƠN VỊ KIẾN THỨC (node) cho bộ chọn ô ma trận — ô neo ĐVK, không neo YCCĐ
+ * (issue #249). Nhãn kèm thụt cấp theo độ sâu để phân biệt chủ đề/bài.
+ */
 function flattenNodes(nodes: CurriculumTreeNode[], depth = 0): { id: string; title: string }[] {
   const out: { id: string; title: string }[] = [];
   for (const node of nodes) {
@@ -516,7 +519,10 @@ export function MatrixEditPage() {
                                   <td className="p-2">{rowIndex + 1}</td>
                                   <td className="p-2">{topic.topicTitle}</td>
                                   <td className="p-2">{node.nodeTitle}</td>
-                                  {/* Cột YCCĐ đọc từ NODE chứ không từ ô: mọi ô của cùng một ĐVK dùng chung danh sách YCCĐ của ĐVK đó (mô hình #249). */}
+                                  {/*
+                                   * Cột YCCĐ đọc từ NODE chứ không từ ô: mọi ô của cùng một ĐVK dùng chung danh sách
+                                   * YCCĐ của ĐVK đó (mô hình #249).
+                                   */}
                                   <td className="p-2">
                                     {node.outcomes.length === 0 ? (
                                       <span className="text-muted-foreground">—</span>

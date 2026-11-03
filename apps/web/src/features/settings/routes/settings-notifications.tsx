@@ -106,14 +106,11 @@ export function SettingsNotificationsPage() {
   }
 
   /**
-   * Ghi một thay đổi THEO NHÓM (lớp 1): fan-out thành PUT cho từng
-   * provider còn chỉnh được trong nhóm mà giá trị hiện tại khác giá
-   * trị đích — chạy TUẦN TỰ để mỗi mutation lạc quan ở lib chụp đúng
-   * trạng thái cache trước nó, tránh các bản chụp chồng nhau ghi đè
-   * khi hoàn lại. Loại bắt buộc P2 không bao giờ bị tắt popup qua
-   * đường nhóm (bật thì vô hại vì chúng vốn luôn bật); loại admin đã
-   * tắt ở cấp site bị bỏ qua hẳn — server không phát chúng nữa nên
-   * ghi tuỳ chọn cho chúng là vô nghĩa.
+   * Ghi một thay đổi THEO NHÓM (lớp 1): fan-out thành PUT cho từng provider còn chỉnh được trong nhóm mà giá trị hiện
+   * tại khác giá trị đích — chạy TUẦN TỰ để mỗi mutation lạc quan ở lib chụp đúng trạng thái cache trước nó, tránh các
+   * bản chụp chồng nhau ghi đè khi hoàn lại. Loại bắt buộc P2 không bao giờ bị tắt popup qua đường nhóm (bật thì vô hại
+   * vì chúng vốn luôn bật); loại admin đã tắt ở cấp site bị bỏ qua hẳn — server không phát chúng nữa nên ghi tuỳ chọn
+   * cho chúng là vô nghĩa.
    */
   async function saveGroup(summary: GroupSummary, field: 'popup' | 'email', target: boolean | EmailFrequency) {
     if (savingGroups.has(summary.group)) return;

@@ -105,7 +105,10 @@ export function CourseNewPage() {
     await navigate(`/courses/${courseId}/builder`);
   }
 
-  /** Đường nhân bản + mẫu: POST /courses/:id/copy (bản sao nháp; startDate mới = mốc lùi hạn). Mẫu tổ/trường đã thuộc lớp của khoá mẫu — giữ nguyên lớp đó, không ép lớp đã chọn. */
+  /**
+   * Đường nhân bản + mẫu: POST /courses/:id/copy (bản sao nháp; startDate mới = mốc lùi hạn). Mẫu tổ/trường đã thuộc
+   * lớp của khoá mẫu — giữ nguyên lớp đó, không ép lớp đã chọn.
+   */
   async function submitDuplicate(event: FormEvent) {
     event.preventDefault();
     const fromId = path === 'template' ? templateId : sourceId;
@@ -374,11 +377,9 @@ export function CourseNewPage() {
 export default CourseNewPage;
 
 /**
- * clientLoader (F-01, rà soát #133): prefetch các danh sách nền của
- * wizard vào QueryClient singleton dùng chung (đúng khoá factory)
- * trước khi component mount — điều hướng vào trang không còn thác
- * nước mount-rồi-fetch. prefetchQuery không ném lỗi: tải hỏng thì
- * component tự xử lý qua useQuery như trước.
+ * clientLoader (F-01, rà soát #133): prefetch các danh sách nền của wizard vào QueryClient singleton dùng chung (đúng
+ * khoá factory) trước khi component mount — điều hướng vào trang không còn thác nước mount-rồi-fetch. prefetchQuery
+ * không ném lỗi: tải hỏng thì component tự xử lý qua useQuery như trước.
  */
 export async function clientLoader() {
   await courseNewPageClientLoader();

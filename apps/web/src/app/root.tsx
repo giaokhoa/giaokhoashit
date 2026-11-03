@@ -103,10 +103,10 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 /**
- * Gom dehydrated state TanStack từ dữ liệu loader của các route đã khớp (lát SL-1 của #7): loader của route tầng SL
- * trả `{ dehydratedState }` (xem `lib/ssr-data.ts`); route gốc là nơi DUY NHẤT đặt HydrationBoundary nên state được
- * lấy từ `useMatches` — duyệt mọi match đang hoạt động và giữ state của match SÂU NHẤT có mang nó (một lần điều hướng
- * chỉ có tối đa một route lá tầng SL). Route không thuộc tầng SL thì không match nào mang state → trả undefined và
+ * Gom dehydrated state TanStack từ dữ liệu loader của các route đã khớp (lát SL-1 của #7): loader của route tầng SL trả
+ * `{ dehydratedState }` (xem `lib/ssr-data.ts`); route gốc là nơi DUY NHẤT đặt HydrationBoundary nên state được lấy từ
+ * `useMatches` — duyệt mọi match đang hoạt động và giữ state của match SÂU NHẤT có mang nó (một lần điều hướng chỉ có
+ * tối đa một route lá tầng SL). Route không thuộc tầng SL thì không match nào mang state → trả undefined và
  * HydrationBoundary thành no-op.
  */
 function collectDehydratedState(matches: ReturnType<typeof useMatches>): DehydratedState | undefined {
@@ -120,18 +120,17 @@ function collectDehydratedState(matches: ReturnType<typeof useMatches>): Dehydra
 
 /**
  * Gốc ứng dụng: MỌI provider toàn cục bọc tại đây theo đúng vị trí framework mode quy định cho root route —
- * QueryClientProvider (một QueryClient duy nhất cho cả app), AuthProvider (phiên đăng nhập) và PermissionsProvider
- * (ảnh chụp quyền) bao phủ TOÀN BỘ cây route vô điều kiện, không phụ thuộc khung nào đang hiển thị. Nhờ vậy không
- * trang nào có thể mount ngoài provider nó cần: lỗi "usePermissions must be used inside PermissionsProvider" khi vào
- * thẳng/F5 một trang cần quyền bị loại ở mức kiến trúc, thay vì trông vào cổng chờ phiên của từng khung.
- * PermissionsProvider chỉ bật các query khi đã có người dùng; khi chưa đăng nhập nó trả ảnh chụp rỗng ở trạng thái sẵn
- * sàng nên các trang công khai vẫn đọc quyền an toàn. Cổng chờ phiên (chặn mount trang con cho tới khi phiên resolve)
- * nằm ở layout Shell.
+ * QueryClientProvider (một QueryClient duy nhất cho cả app), AuthProvider (phiên đăng nhập) và PermissionsProvider (ảnh
+ * chụp quyền) bao phủ TOÀN BỘ cây route vô điều kiện, không phụ thuộc khung nào đang hiển thị. Nhờ vậy không trang nào
+ * có thể mount ngoài provider nó cần: lỗi "usePermissions must be used inside PermissionsProvider" khi vào thẳng/F5 một
+ * trang cần quyền bị loại ở mức kiến trúc, thay vì trông vào cổng chờ phiên của từng khung. PermissionsProvider chỉ bật
+ * các query khi đã có người dùng; khi chưa đăng nhập nó trả ảnh chụp rỗng ở trạng thái sẵn sàng nên các trang công khai
+ * vẫn đọc quyền an toàn. Cổng chờ phiên (chặn mount trang con cho tới khi phiên resolve) nằm ở layout Shell.
  *
  * Bên trong QueryClientProvider còn có HydrationBoundary (lát SL-1): nó hydrate các query mà loader của route tầng SL
  * đã prefetch phía server vào ĐÚNG QueryClient đang phục vụ cây này (phía server là client theo-từng-request, phía
- * client là singleton) — nhờ vậy cả PermissionsProvider lẫn trang lá đều đọc được dữ liệu đã tải sẵn ngay từ lần
- * render đầu, không fetch trùng.
+ * client là singleton) — nhờ vậy cả PermissionsProvider lẫn trang lá đều đọc được dữ liệu đã tải sẵn ngay từ lần render
+ * đầu, không fetch trùng.
  */
 export default function App() {
   // Cây render ngoài route gốc (test nhúng, bản nhúng từng phần) có thể không có dữ liệu loader: khi đó initialUser là

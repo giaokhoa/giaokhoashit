@@ -2,9 +2,9 @@
  * Khối báo lỗi/thông báo dùng chung ở tầng ứng dụng, dựng trên nguyên tử `Alert` của `@lms/ui`.
  *
  * Trước đây mọi trang tự lắp lại cùng một khuôn khối: một `Alert` (variant `destructive` hoặc mặc định), tuỳ chọn một
- * `AlertTitle`, và đúng một `AlertDescription` chứa nội dung — rà soát toàn bộ giao diện cho thấy mọi khối báo lỗi
- * đang có đều thuộc đúng khuôn này. Component này là nơi duy nhất lắp khuôn đó; các trang chỉ truyền nội dung và biến
- * thể, hình thức render giữ nguyên như khi tự lắp tại chỗ.
+ * `AlertTitle`, và đúng một `AlertDescription` chứa nội dung — rà soát toàn bộ giao diện cho thấy mọi khối báo lỗi đang
+ * có đều thuộc đúng khuôn này. Component này là nơi duy nhất lắp khuôn đó; các trang chỉ truyền nội dung và biến thể,
+ * hình thức render giữ nguyên như khi tự lắp tại chỗ.
  */
 import type { ReactNode } from 'react';
 

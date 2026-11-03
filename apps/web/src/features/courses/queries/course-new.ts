@@ -80,10 +80,8 @@ export function useDuplicateCourse() {
 }
 
 /**
- * Đột biến nạp khung chương trình vào khoá vừa tạo (POST
- * /courses/:id/curriculum-frame): khoá đã tồn tại trước khi nạp khung
- * nên lỗi nạp khung không huỷ khoá — trang báo rõ và vẫn vào builder
- * như bản thủ công.
+ * Đột biến nạp khung chương trình vào khoá vừa tạo (POST /courses/:id/curriculum-frame): khoá đã tồn tại trước khi nạp
+ * khung nên lỗi nạp khung không huỷ khoá — trang báo rõ và vẫn vào builder như bản thủ công.
  */
 export function useApplyCurriculumFrame() {
   return useMutation({

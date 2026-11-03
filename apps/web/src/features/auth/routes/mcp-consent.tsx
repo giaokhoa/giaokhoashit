@@ -7,14 +7,11 @@ import { ErrorAlert } from '#components/error-alert';
  * Trang đồng ý (consent) cho luồng uỷ quyền MCP (lát MCP-1, issue
  * #163) — `consentPage` của máy chủ OAuth Better Auth.
  *
- * AS chuyển trình duyệt tới đây kèm chuỗi query authorize ĐÃ KÝ.
- * Trang hiển thị tên client (lấy từ `/oauth2/public-client` bằng
- * chính phiên BA) + danh sách scope xin cấp dạng tích chọn. Scope
- * `lms.questions.write` (phát hành câu hỏi) KHÔNG tích sẵn — giáo
- * viên phải chủ động bật. Khi bấm đồng ý/từ chối, trang POST về
- * `/oauth2/consent` kèm `oauth_query` nguyên văn và đi tiếp theo
- * đúng `url` máy chủ trả về (không tự ghép redirect_uri — bài học
- * CVE-2026-67337 ghi trong addendum của issue).
+ * AS chuyển trình duyệt tới đây kèm chuỗi query authorize ĐÃ KÝ. Trang hiển thị tên client (lấy từ
+ * `/oauth2/public-client` bằng chính phiên BA) + danh sách scope xin cấp dạng tích chọn. Scope `lms.questions.write`
+ * (phát hành câu hỏi) KHÔNG tích sẵn — giáo viên phải chủ động bật. Khi bấm đồng ý/từ chối, trang POST về
+ * `/oauth2/consent` kèm `oauth_query` nguyên văn và đi tiếp theo đúng `url` máy chủ trả về (không tự ghép redirect_uri
+ * — bài học CVE-2026-67337 ghi trong addendum của issue).
  */
 
 const SCOPE_LABELS: Record<string, { label: string; sensitive?: boolean }> = {

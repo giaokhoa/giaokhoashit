@@ -34,10 +34,9 @@ interface StubRoute {
 }
 
 /**
- * Stub fetch theo pathname: loader gọi URL tuyệt đối tới API nội bộ,
- * phía client gọi đường dẫn tương đối — cả hai đều quy về pathname.
- * Trả spy để đếm lượt gọi (khẳng định "không fetch trùng/không gọi
- * khi ẩn danh" là khẳng định về số lượt gọi này).
+ * Stub fetch theo pathname: loader gọi URL tuyệt đối tới API nội bộ, phía client gọi đường dẫn tương đối — cả hai đều
+ * quy về pathname. Trả spy để đếm lượt gọi (khẳng định "không fetch trùng/không gọi khi ẩn danh" là khẳng định về số
+ * lượt gọi này).
  */
 function stubApi(routes: Record<string, StubRoute>) {
   const spy = vi.fn(async (input: unknown) => {

@@ -1,11 +1,9 @@
 /**
- * Kiểm chứng hành vi nạp lười catalog tiếng Anh (issue #503): catalog vi
- * đóng gói sẵn là mặc định; catalog en nằm ở module riêng `i18n-en.ts` và
- * chỉ được nạp khi ngôn ngữ chuyển sang `en` — sau khi nạp, mọi khoá của
- * cả bốn namespace phải tra được đúng chuỗi tiếng Anh (không thiếu khoá
- * nào so với catalog nguồn) và chuyển về lại tiếng Việt vẫn đúng. Riêng
- * ca nạp lỗi: lần nạp đầu thất bại không được khoá cứng các lần sau —
- * lần chuyển ngôn ngữ kế tiếp phải nạp lại từ đầu và thành công.
+ * Kiểm chứng hành vi nạp lười catalog tiếng Anh (issue #503): catalog vi đóng gói sẵn là mặc định; catalog en nằm ở
+ * module riêng `i18n-en.ts` và chỉ được nạp khi ngôn ngữ chuyển sang `en` — sau khi nạp, mọi khoá của cả bốn namespace
+ * phải tra được đúng chuỗi tiếng Anh (không thiếu khoá nào so với catalog nguồn) và chuyển về lại tiếng Việt vẫn đúng.
+ * Riêng ca nạp lỗi: lần nạp đầu thất bại không được khoá cứng các lần sau — lần chuyển ngôn ngữ kế tiếp phải nạp lại từ
+ * đầu và thành công.
  */
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import i18n, {

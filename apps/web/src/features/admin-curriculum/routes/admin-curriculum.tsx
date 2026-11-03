@@ -498,10 +498,9 @@ export function AdminCurriculumPage() {
 }
 
 /**
- * Nạp trước cho route danh sách quản trị chương trình: bốn nguồn nền
- * của trang; danh sách môn cần id context hệ thống nên nạp sau khi
- * contexts về (đúng thứ tự phụ thuộc của trang). Lỗi nạp bỏ qua —
- * trang tự hiện trạng thái lỗi/cấm như khi không có loader.
+ * Nạp trước cho route danh sách quản trị chương trình: bốn nguồn nền của trang; danh sách môn cần id context hệ thống
+ * nên nạp sau khi contexts về (đúng thứ tự phụ thuộc của trang). Lỗi nạp bỏ qua — trang tự hiện trạng thái lỗi/cấm như
+ * khi không có loader.
  */
 export async function adminCurriculumPageClientLoader() {
   await Promise.allSettled([

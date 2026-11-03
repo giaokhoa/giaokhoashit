@@ -13,7 +13,10 @@ export default [
   ]),
 ] satisfies RouteConfig;
 
-/** Trang cấu hình site của khu quản trị — khai riêng để file gộp ở tầng app giữ đúng thứ tự gốc quanh route liên kết giám hộ của feature guardians. */
+/**
+ * Trang cấu hình site của khu quản trị — khai riêng để file gộp ở tầng app giữ đúng thứ tự gốc quanh route liên kết
+ * giám hộ của feature guardians.
+ */
 export const siteConfigRoutes = [
   route('admin/site-config', 'routes/admin-site-config.tsx'),
 ] satisfies RouteConfig;

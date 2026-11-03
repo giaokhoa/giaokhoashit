@@ -19,12 +19,10 @@ import { apiFetch, apiJson } from '#lib/api';
 import type { ClassFeePaymentView } from '../types/classes';
 
 /**
- * Đường gọi API lớp học (CLASS-1, issue #184) — web chỉ trình bày +
- * dẫn luồng; mọi gác quyền và luật vòng đời nằm ở API module classes.
- * Kiểu dữ liệu lấy thẳng từ @lms/contracts để không lệch hợp đồng.
- * Đây là tầng api/ của feature classes sau khi tổ chức lại apps/web
- * theo mô hình features/ (issue #500): file này giữ toàn bộ hàm gọi
- * API; phần tái xuất kiểu và hằng đã tách sang `../types/classes`.
+ * Đường gọi API lớp học (CLASS-1, issue #184) — web chỉ trình bày + dẫn luồng; mọi gác quyền và luật vòng đời nằm ở API
+ * module classes. Kiểu dữ liệu lấy thẳng từ @lms/contracts để không lệch hợp đồng. Đây là tầng api/ của feature classes
+ * sau khi tổ chức lại apps/web theo mô hình features/ (issue #500): file này giữ toàn bộ hàm gọi API; phần tái xuất
+ * kiểu và hằng đã tách sang `../types/classes`.
  */
 
 export function fetchClasses(): Promise<ClassListItem[]> {
@@ -36,11 +34,9 @@ export function fetchClass(classId: string): Promise<ClassView> {
 }
 
 /**
- * Gói tổng quan cho DASHBOARD THEO LỚP (CLASS-2): server suy quan hệ
- * của người gọi với lớp (chủ lớp / đồng GV / học sinh) và lọc sẵn danh
- * sách khoá theo vai — học sinh chỉ nhận các khoá mình đang ghi danh
- * ACTIVE trong lớp. Trang chi tiết lớp dựng mọi khối hiển thị theo gói
- * này; quyền thật vẫn gác ở từng endpoint phía API.
+ * Gói tổng quan cho DASHBOARD THEO LỚP (CLASS-2): server suy quan hệ của người gọi với lớp (chủ lớp / đồng GV / học
+ * sinh) và lọc sẵn danh sách khoá theo vai — học sinh chỉ nhận các khoá mình đang ghi danh ACTIVE trong lớp. Trang chi
+ * tiết lớp dựng mọi khối hiển thị theo gói này; quyền thật vẫn gác ở từng endpoint phía API.
  *
  * @param classId - Id của lớp cần xem tổng quan.
  * @returns Gói tổng quan khớp `classOverviewSchema` của contracts.
@@ -50,10 +46,9 @@ export function fetchClassOverview(classId: string): Promise<ClassOverview> {
 }
 
 /**
- * Mở (ensure) CHAT CẤP LỚP phía messaging (lát MSG-T2): server cấp
- * phát lười conversation riêng của lớp và trả id của nó — trang lớp
- * chỉ điều hướng sang trang Tin nhắn mở đúng conversation đó. Gác
- * quyền (chỉ người thuộc lớp mở được) nằm ở API messaging.
+ * Mở (ensure) CHAT CẤP LỚP phía messaging (lát MSG-T2): server cấp phát lười conversation riêng của lớp và trả id của
+ * nó — trang lớp chỉ điều hướng sang trang Tin nhắn mở đúng conversation đó. Gác quyền (chỉ người thuộc lớp mở được)
+ * nằm ở API messaging.
  *
  * @param classId - Id của lớp cần mở chat.
  * @returns Id của conversation cấp lớp (tạo mới ở lần mở đầu hoặc
@@ -74,7 +69,10 @@ export function updateClass(
   input: {
     name?: string; code?: string | null; schoolYear?: string | null; description?: string;
     allowSelfReport?: boolean; joinAutoApprove?: boolean; onLeave?: 'suspend' | 'unenrol'; rotateJoinCode?: boolean;
-    /** CLASS-3: đặt/đổi học phí gói lớp (`feeCost` null/0 = tắt thu qua hệ; `feePaymentAccountId` null = tài khoản mặc định của tenant). */
+    /**
+     * CLASS-3: đặt/đổi học phí gói lớp (`feeCost` null/0 = tắt thu qua hệ; `feePaymentAccountId` null = tài khoản mặc
+     * định của tenant).
+     */
     feeCost?: number | null; feeCurrency?: string; feePaymentAccountId?: string | null;
   },
 ): Promise<ClassView> {
@@ -94,11 +92,9 @@ export function fetchClassCourses(classId: string): Promise<Course[]> {
 }
 
 /**
- * Roster của lớp (GET /classes/:id/roster): trường liên hệ (email,
- * username) chỉ đầy đủ khi người gọi có quyền quản roster của lớp —
- * server làm rỗng hai trường này với các vai xem lớp còn lại, trang
- * chi tiết chỉ tải roster cho vai được quản trị nên hiển thị không
- * đổi.
+ * Roster của lớp (GET /classes/:id/roster): trường liên hệ (email, username) chỉ đầy đủ khi người gọi có quyền quản
+ * roster của lớp — server làm rỗng hai trường này với các vai xem lớp còn lại, trang chi tiết chỉ tải roster cho vai
+ * được quản trị nên hiển thị không đổi.
  */
 export function fetchRoster(classId: string): Promise<ClassRosterMember[]> {
   return apiJson<ClassRosterMember[]>(`/api/v1/classes/${classId}/roster`);
@@ -181,10 +177,9 @@ export function fetchClassPublic(classId: string): Promise<ClassPublicView> {
 }
 
 /**
- * Bắt đầu thanh toán gói lớp (POST /payments/class-fee/:classId): tạo
- * payment `class_fee` ở trạng thái chờ. TUYỆT ĐỐI không ghi danh tại
- * đây — ghi danh cấp lớp chỉ kích hoạt khi payment `succeeded` qua đối
- * soát SePay/webhook ở phía API.
+ * Bắt đầu thanh toán gói lớp (POST /payments/class-fee/:classId): tạo payment `class_fee` ở trạng thái chờ. TUYỆT ĐỐI
+ * không ghi danh tại đây — ghi danh cấp lớp chỉ kích hoạt khi payment `succeeded` qua đối soát SePay/webhook ở phía
+ * API.
  *
  * @param classId - Id của lớp được mua gói.
  * @returns Payment vừa tạo (kèm payload VietQR khi tài khoản nhận là SePay).

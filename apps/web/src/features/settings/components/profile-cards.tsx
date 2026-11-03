@@ -131,13 +131,10 @@ export function LinkedAccountsCard() {
 }
 
 /**
- * Thẻ "Xác thực hai lớp" (factor TOTP của tool_mfa trong Moodle): MFA
- * mặc định TẮT và chỉ bật khi chính người dùng đi hết luồng tại đây —
- * gọi setup lấy secret + otpauth URL (chỉ lộ ở bước này), vẽ QR cho
- * ứng dụng xác thực quét (hoặc nhập tay khoá bí mật), rồi confirm bằng
- * mã 6 số hiện tại. Trạng thái hiển thị đọc từ GET /auth/mfa/status
- * nên setup chưa confirm vẫn hiện là chưa bật. Tắt cũng phải có mã
- * hiện tại; mã sai trả `auth.mfa_invalid_code` và được dịch sang
+ * Thẻ "Xác thực hai lớp" (factor TOTP của tool_mfa trong Moodle): MFA mặc định TẮT và chỉ bật khi chính người dùng đi
+ * hết luồng tại đây — gọi setup lấy secret + otpauth URL (chỉ lộ ở bước này), vẽ QR cho ứng dụng xác thực quét (hoặc
+ * nhập tay khoá bí mật), rồi confirm bằng mã 6 số hiện tại. Trạng thái hiển thị đọc từ GET /auth/mfa/status nên setup
+ * chưa confirm vẫn hiện là chưa bật. Tắt cũng phải có mã hiện tại; mã sai trả `auth.mfa_invalid_code` và được dịch sang
  * thông báo riêng, giữ nguyên bước để người dùng nhập lại.
  */
 export function TwoFactorCard() {

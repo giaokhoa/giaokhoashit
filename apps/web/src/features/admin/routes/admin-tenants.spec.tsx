@@ -90,10 +90,9 @@ interface StubOptions extends AccessOptions {
 }
 
 /**
- * Stub toàn bộ bề mặt API mà trang và hai provider nền chạm tới.
- * Membership của Alpha là trạng thái có thể đổi trong bộ nhớ stub để
- * PATCH đổi trạng thái có hiệu lực quan sát được sau khi trang làm mới
- * truy vấn, đúng như server thật xác nhận rồi trang mới hiển thị.
+ * Stub toàn bộ bề mặt API mà trang và hai provider nền chạm tới. Membership của Alpha là trạng thái có thể đổi trong bộ
+ * nhớ stub để PATCH đổi trạng thái có hiệu lực quan sát được sau khi trang làm mới truy vấn, đúng như server thật xác
+ * nhận rồi trang mới hiển thị.
  */
 function stubFetch(calls: RecordedCall[], options: StubOptions) {
   const tenants = [TENANT_A, TENANT_B];

@@ -117,12 +117,10 @@ export function OwnProfileSheet({
               ))}
               <Separator />
               {/*
-                Bộ chọn trạng thái hiện diện của chính người xem:
-                lưới 2 cột bốn mức như bản demo. Online/offline là
-                nút THẬT (đổi nối socket qua trang chứa); away/busy
-                vô hiệu vì backend chưa có dữ kiện tương ứng —
-                ngoại lệ có tên trong thân PR.
-              */}
+               * Bộ chọn trạng thái hiện diện của chính người xem: lưới 2 cột bốn mức như bản demo. Online/offline là
+               * nút THẬT (đổi nối socket qua trang chứa); away/busy vô hiệu vì backend chưa có dữ kiện tương ứng —
+               * ngoại lệ có tên trong thân PR.
+               */}
               <div className="space-y-2">
                 <p className="text-sm leading-none font-medium">{t('memberProfilePresence')}</p>
                 <div className="grid grid-cols-2 gap-2">
