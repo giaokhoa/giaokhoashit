@@ -126,7 +126,7 @@ class FilePostgresRlsTests {
 	}
 
 	@Test
-	@DisplayName("Chain migration trên PostgreSQL thật chạy đủ tới V96.1: khối nội dung V90–V91, nền tệp V92–V93, bản ghi render V94 và tệp bài làm V96–V96.1 nằm trong danh sách phiên bản đã áp thành công")
+	@DisplayName("Chain migration trên PostgreSQL thật chạy đủ tới V97: khối nội dung V90–V91, nền tệp V92–V93, bản ghi render V94, tệp bài làm V96–V96.1 và vòng đời tệp V97 nằm trong danh sách phiên bản đã áp thành công")
 	void migrationChainEndsWithFileFoundation() {
 		List<String> versions = adminJdbc().queryForList(
 				"select version from flyway_schema_history where success order by installed_rank", String.class);

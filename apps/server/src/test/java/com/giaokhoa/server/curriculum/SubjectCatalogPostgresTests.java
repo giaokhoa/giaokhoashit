@@ -183,7 +183,7 @@ class SubjectCatalogPostgresTests {
 			new ExpectedSubject("ngoai-ngu-2-thpt", "Ngoại ngữ 2", "UPPER_SECONDARY", 10, 12, "OPTIONAL"));
 
 	@Test
-	@DisplayName("Chuỗi migration đầy đủ áp sạch trên database trống, gồm V80 của miền môn học và các migration của nền tệp tới V93")
+	@DisplayName("Chuỗi migration đầy đủ áp sạch trên database trống, gồm V80 của miền môn học và các migration của nền tệp tới V97")
 	void migrationChainEndsWithSubjectsMigration() {
 		List<String> versions = adminJdbc().queryForList(
 				"select version from flyway_schema_history where success order by installed_rank", String.class);
