@@ -171,9 +171,14 @@ services:
       # DataSource của server (Spring Boot bind SPRING_DATASOURCE_* vào spring.datasource.*): trỏ vào PostgreSQL riêng
       # của server (service server-db ở dưới) thay vì dùng chung database nghiệp vụ với hệ cũ — hai phía tách dữ kiện
       # để chuyển đổi dần độc lập, và schema của server không còn làm lệch hậu kiểm số bảng của bước migrate phía hệ cũ.
+      # Tài khoản datasource là role runtime lms_server_app (không superuser, không BYPASSRLS, không sở hữu bảng):
+      # Row Level Security chỉ có hiệu lực thật khi kết nối runtime không có đường nào vượt qua nó. Flyway tách
+      # riêng về tài khoản quản trị lms_server (SPRING_FLYWAY_*), cũng là POSTGRES_USER của server-db.
       SPRING_DATASOURCE_URL: jdbc:postgresql://server-db:5432/lms_server
-      SPRING_DATASOURCE_USERNAME: lms_server
-      SPRING_DATASOURCE_PASSWORD: ${SERVER_DB_PASSWORD:?Can dat SERVER_DB_PASSWORD trong file .env}
+      SPRING_DATASOURCE_USERNAME: lms_server_app
+      SPRING_DATASOURCE_PASSWORD: ${SERVER_DB_APP_PASSWORD:?Can dat SERVER_DB_APP_PASSWORD trong file .env}
+      SPRING_FLYWAY_USER: lms_server
+      SPRING_FLYWAY_PASSWORD: ${SERVER_DB_PASSWORD:?Can dat SERVER_DB_PASSWORD trong file .env}
     depends_on:
       server-db:
         condition: service_healthy
