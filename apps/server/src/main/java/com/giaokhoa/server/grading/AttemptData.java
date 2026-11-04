@@ -14,12 +14,13 @@ import com.giaokhoa.server.tenancy.TenantContext;
 import com.giaokhoa.server.tenancy.TenantContexts;
 
 /**
- * Điểm nối dữ kiện sang các bảng của khối tổ chức dạy học và khối giao/làm bài ({@code teaching_class},
- * {@code class_member}, {@code exam_assignment}, {@code exam_attempt}, {@code attempt_answer}): khối này chỉ đọc
- * và chuyển trạng thái lượt làm qua SQL thuần trong đúng phân vùng của ngữ cảnh trang, không định nghĩa lại
- * entity của các bảng đó. Mọi truy vấn đều kèm khoá phân vùng của ngữ cảnh hiện hành — trên PostgreSQL, Row
- * Level Security là lớp chặn chính; điều kiện tường minh này giữ cùng một ranh giới khi chạy trên database không
- * có RLS. Ngữ cảnh khách không có khoá phân vùng nên không đọc được gì qua điểm nối này.
+ * Điểm nối dữ kiện sang các bảng của khối tổ chức dạy học và khối giao/làm bài ({@code class_member},
+ * {@code exam_assignment}, {@code exam_attempt}, {@code attempt_answer}): khối này chỉ đọc và chuyển trạng
+ * thái lượt làm qua SQL thuần trong đúng phân vùng của ngữ cảnh trang, không định nghĩa lại entity của các
+ * bảng đó. Mọi truy vấn đều kèm khoá phân vùng của ngữ cảnh hiện hành — trên PostgreSQL, Row Level Security
+ * là lớp chặn chính; điều kiện tường minh này giữ cùng một ranh giới khi chạy trên database không có RLS.
+ * Ngữ cảnh khách không có khoá phân vùng nên không đọc được gì qua điểm nối này; phép kiểm phân công dạy
+ * không nằm ở đây mà dùng chung {@code TeachingAccessChecks} của khối tổ chức dạy học.
  */
 @Component
 public class AttemptData {
@@ -103,30 +104,6 @@ public class AttemptData {
 				update exam_attempt set status = ?, updated_at = current_timestamp
 				where id = ? and partition_key = ?
 				""", status, attemptId, partitionKey);
-	}
-
-	public Optional<String> teacherSubOfClass(UUID classId) {
-		String partitionKey = partitionKey();
-		if (partitionKey == null) {
-			return Optional.empty();
-		}
-		return this.jdbc
-				.query("select teacher_sub from teaching_class where id = ? and partition_key = ?",
-						(rs, row) -> rs.getString("teacher_sub"), classId, partitionKey)
-				.stream()
-				.findFirst()
-				.filter(teacherSub -> teacherSub != null);
-	}
-
-	public List<String> activeStudentSubsOfClass(UUID classId) {
-		String partitionKey = partitionKey();
-		if (partitionKey == null) {
-			return List.of();
-		}
-		return this.jdbc.query("""
-				select student_sub from class_member
-				where class_id = ? and partition_key = ? and removed_at is null
-				""", (rs, row) -> rs.getString("student_sub"), classId, partitionKey);
 	}
 
 	private String partitionKey() {

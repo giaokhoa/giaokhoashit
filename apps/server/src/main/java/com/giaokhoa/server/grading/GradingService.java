@@ -14,15 +14,17 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.giaokhoa.server.organization.TeachingAccessChecks;
 import com.giaokhoa.server.tenancy.TenantContext;
 import com.giaokhoa.server.tenancy.TenantContexts;
 
 /**
- * Các thao tác của khối chấm: chấm tay tự luận, công bố theo lần giao, bảng bài nộp của lớp và hai hình chiếu
- * đọc lượt làm (học viên và giáo viên). Quyền chấm và công bố gắn với phân công dạy hiện hành của lớp
- * ({@code teaching_class.teacher_sub}) lấy qua điểm nối dữ kiện — không suy từ quyền sở hữu đề, không qua cơ chế
- * quyết quyền của khối quyền trên tài nguyên. Hình chiếu của học viên là kiểu dữ kiện riêng không có trường điểm,
- * đáp án đúng hay tiêu chí chấm, nên việc lộ chúng qua màn kết quả là không thể ở tầng kiểu.
+ * Các thao tác của khối chấm: chấm tay tự luận, công bố theo lần giao và hình chiếu đọc lượt làm (học viên và
+ * giáo viên) mà đường đọc hợp nhất của lát giao/làm bài tiêu thụ. Quyền chấm và công bố gắn với phân công dạy hiện hành của lớp, quyết
+ * bằng đúng phép kiểm dùng chung {@link TeachingAccessChecks} của khối tổ chức dạy học — không suy từ quyền sở
+ * hữu đề, không qua cơ chế quyết quyền của khối quyền trên tài nguyên. Hình chiếu của học viên là kiểu dữ kiện
+ * riêng không có trường điểm, đáp án đúng hay tiêu chí chấm, nên việc lộ chúng qua màn kết quả là không thể ở
+ * tầng kiểu.
  */
 @Service
 public class GradingService {
@@ -41,9 +43,12 @@ public class GradingService {
 
 	private final AnswerJson answerJson;
 
+	private final TeachingAccessChecks teachingChecks;
+
 	public GradingService(AttemptData attemptData, ExamSnapshotSource snapshotSource,
 			AttemptItemGradeRepository itemGrades, AttemptGradeSummaryRepository summaries,
-			AssignmentPublicationRepository publications, GradeCompletion completion, AnswerJson answerJson) {
+			AssignmentPublicationRepository publications, GradeCompletion completion, AnswerJson answerJson,
+			TeachingAccessChecks teachingChecks) {
 		this.attemptData = attemptData;
 		this.snapshotSource = snapshotSource;
 		this.itemGrades = itemGrades;
@@ -51,6 +56,7 @@ public class GradingService {
 		this.publications = publications;
 		this.completion = completion;
 		this.answerJson = answerJson;
+		this.teachingChecks = teachingChecks;
 	}
 
 	@Transactional
@@ -135,39 +141,6 @@ public class GradingService {
 		}
 		return new PublicationView(publication.getAssignmentId(), publication.getPublishedBySub(),
 				publication.getPublishedAt());
-	}
-
-	@Transactional(readOnly = true)
-	public List<SubmissionRowView> submissions(UUID assignmentId) {
-		TenantContext context = TenantContexts.current();
-		AttemptData.AssignmentRow assignment = this.attemptData.findAssignment(assignmentId)
-			.orElseThrow(GradingErrors::notFound);
-		if (!isAssignedTeacher(context, assignment.classId()) && !isTenantAdmin(context)) {
-			throw GradingErrors.forbidden();
-		}
-		List<SnapshotItem> items = sortedItems(assignment.examVersionId());
-		BigDecimal maxScore = totalMaxScore(items);
-		Set<String> activeStudents = new HashSet<>(this.attemptData.activeStudentSubsOfClass(assignment.classId()));
-		Map<String, SubmissionRowView> rowsByStudent = new HashMap<>();
-		for (AttemptData.AttemptRow attempt : this.attemptData.attemptsOfAssignment(assignmentId)) {
-			List<AttemptItemGrade> grades = this.itemGrades.findByAttemptId(attempt.id());
-			boolean published = "PUBLISHED".equals(attempt.status());
-			boolean complete = "GRADED".equals(attempt.status()) || published;
-			BigDecimal totalScore = "IN_PROGRESS".equals(attempt.status()) ? null
-					: grades.stream().map(AttemptItemGrade::getScore).reduce(BigDecimal.ZERO, BigDecimal::add);
-			rowsByStudent.put(attempt.studentSub(),
-					new SubmissionRowView(attempt.studentSub(), attempt.status(), attempt.startedAt(),
-							attempt.submittedAt(), attempt.submitMode(),
-							!activeStudents.contains(attempt.studentSub()),
-							totalScore != null ? num(totalScore) : null, num(maxScore), !complete, published));
-		}
-		for (String studentSub : activeStudents) {
-			rowsByStudent.putIfAbsent(studentSub, new SubmissionRowView(studentSub, "NOT_STARTED", null, null,
-					null, false, null, num(maxScore), true, false));
-		}
-		List<SubmissionRowView> rows = new ArrayList<>(rowsByStudent.values());
-		rows.sort(Comparator.comparing(SubmissionRowView::studentSub));
-		return rows;
 	}
 
 	@Transactional(readOnly = true)
@@ -296,16 +269,10 @@ public class GradingService {
 		return items;
 	}
 
+	// Phép kiểm "được phân công dạy lớp X" là định nghĩa dùng chung của khối tổ chức dạy học; khối chấm chỉ
+	// tiêu thụ nó nguyên trạng, không tự đọc lại dữ kiện phân công theo cách riêng.
 	private boolean isAssignedTeacher(TenantContext context, UUID classId) {
-		if (context == null || context.guest() || context.organizationId() == null) {
-			return false;
-		}
-		return this.attemptData.teacherSubOfClass(classId).filter(context.sub()::equals).isPresent();
-	}
-
-	private boolean isTenantAdmin(TenantContext context) {
-		return context != null && !context.guest() && context.organizationId() != null
-				&& context.organizationRoles().contains("tenant-admin");
+		return context != null && this.teachingChecks.isAssignedTeacher(classId);
 	}
 
 	private static List<ChoiceView> choicesOf(SnapshotItem item) {
@@ -334,11 +301,6 @@ public class GradingService {
 	}
 
 	public record PublicationView(UUID assignmentId, String publishedBySub, OffsetDateTime publishedAt) {
-	}
-
-	public record SubmissionRowView(String studentSub, String status, OffsetDateTime startedAt,
-			OffsetDateTime submittedAt, String submitMode, boolean removed, BigDecimal totalScore,
-			BigDecimal maxScore, boolean provisional, boolean published) {
 	}
 
 	public record ChoiceView(String id, String text) {

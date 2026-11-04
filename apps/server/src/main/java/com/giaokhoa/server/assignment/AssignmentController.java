@@ -94,8 +94,10 @@ public class AssignmentController {
 		return this.attempts.submit(context(), id);
 	}
 
+	// Một endpoint duy nhất cho đường đọc lượt làm của cả hai lát: hình dạng đáp ứng tuỳ vai của người gọi
+	// (học viên chủ lượt, giáo viên phụ trách hoặc bị từ chối) do tầng dịch vụ quyết định.
 	@GetMapping("/attempts/{id}")
-	public AttemptService.AttemptView getAttempt(@PathVariable UUID id) {
+	public Object getAttempt(@PathVariable UUID id) {
 		return this.attempts.get(context(), id);
 	}
 

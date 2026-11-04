@@ -5,8 +5,8 @@ import java.util.UUID;
 
 /**
  * Điểm nối đọc snapshot của một phiên bản đề đã giao: điểm và đáp án dùng để chấm lấy từ đúng snapshot đã đóng
- * băng của phiên bản đó, không đọc câu nguồn sống. Feat đề sở hữu bảng snapshot và cung cấp bản đọc thật tại điểm
- * nối này khi hợp nhất; trước đó bản cài đặt mặc định trả danh sách rỗng.
+ * băng của phiên bản đó, không đọc câu nguồn sống. Bản cài đặt thật là {@link JdbcExamSnapshotSource}, đọc các
+ * hàng snapshot mà feat đề đã đóng băng trong bảng của chính feat đó tại thời điểm phát hành.
  */
 public interface ExamSnapshotSource {
 

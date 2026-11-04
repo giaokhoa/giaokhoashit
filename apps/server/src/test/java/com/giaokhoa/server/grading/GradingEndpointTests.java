@@ -23,6 +23,7 @@ import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.nimbusds.jose.JWSAlgorithm;
@@ -51,6 +52,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.giaokhoa.server.assignment.OrganizationIds;
+import com.giaokhoa.server.assignment.OrganizationIds;
 import com.giaokhoa.server.tenancy.MembershipChecker;
 import com.giaokhoa.server.tenancy.TenantContext;
 import com.giaokhoa.server.tenancy.TenantContexts;
@@ -110,6 +113,11 @@ class GradingEndpointTests {
 	@MockitoBean
 	private MembershipChecker membershipChecker;
 
+	// Tra định danh Organization theo alias của trang là điểm nối duy nhất một vị khách cần để đường đọc/nộp
+	// ghim được phân vùng của trung tâm: bản giả lập trả đúng định danh của trung tâm trong bối cảnh này.
+	@MockitoBean
+	private OrganizationIds organizationIds;
+
 	private MockMvc mockMvc;
 
 	@BeforeEach
@@ -119,6 +127,8 @@ class GradingEndpointTests {
 				.build();
 		lenient().when(this.membershipChecker.check(anyString(), anyString()))
 				.thenReturn(MembershipChecker.Result.MEMBER);
+		lenient().when(this.organizationIds.findOrganizationIdByAlias(ALIAS))
+				.thenReturn(Optional.of(UUID.fromString(ORG_ID)));
 	}
 
 	@TestConfiguration
@@ -442,6 +452,52 @@ class GradingEndpointTests {
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("\"status\":\"PUBLISHED\"")))
 				.andExpect(content().string(containsString("\"totalScore\":9")));
+	}
+
+	@Test
+	@DisplayName("Khách đã ghi danh nộp qua endpoint thật thì trắc nghiệm được chấm tự động ngay trong lượt nộp; trước công bố khách không thấy trường điểm nào, sau công bố đọc được kết quả của chính mình")
+	void guestStudentSubmitsThroughRealEndpointAndReadsPublishedResult() throws Exception {
+		UUID classId = seedClass(TEACHER, TEACHER);
+		seedMember(classId, STUDENT_2, false);
+		UUID assignmentId = seedAssignment(classId, VERSION_FULL);
+		UUID attemptId = seedAttempt(assignmentId, STUDENT_2, "IN_PROGRESS");
+		seedAnswer(attemptId, MCQ_1, "{\"choiceId\":\"c1\"}");
+		seedAnswer(attemptId, ESSAY, "{\"text\":\"Bai lam cua khach\"}");
+		String guest = mint(STUDENT_2, Map.of("organization",
+				Map.of("trung-tam-b", orgEntry("22222222-2222-2222-2222-222222222222", List.of("tenant-member")))));
+		this.mockMvc.perform(post("/api/attempts/" + attemptId + "/submit")
+				.header("Authorization", "Bearer " + guest)
+				.header("X-LMS-Organization-Alias", ALIAS))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"status\":\"SUBMITTED\"")));
+		assertEquals("SUBMITTED", attemptStatus(attemptId));
+		assertEquals(new BigDecimal("4.00"), itemScore(attemptId, MCQ_1));
+		assertEquals("auto", itemSource(attemptId, MCQ_1));
+		assertEquals(2, gradeCount(attemptId));
+		this.mockMvc.perform(get("/api/attempts/" + attemptId)
+				.header("Authorization", "Bearer " + guest)
+				.header("X-LMS-Organization-Alias", ALIAS))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"result\":null")))
+				.andExpect(content().string(not(containsString("totalScore"))))
+				.andExpect(content().string(not(containsString("correctChoiceId"))));
+		String teacher = token(TEACHER, List.of("tenant-teacher"));
+		gradeEssay(teacher, attemptId, 5);
+		assertEquals("GRADED", attemptStatus(attemptId));
+		this.mockMvc.perform(post("/api/assignments/" + assignmentId + "/publish-results")
+				.header("Authorization", "Bearer " + teacher)
+				.header("X-LMS-Organization-Alias", ALIAS))
+				.andExpect(status().isOk());
+		assertEquals("PUBLISHED", attemptStatus(attemptId));
+		this.mockMvc.perform(get("/api/attempts/" + attemptId)
+				.header("Authorization", "Bearer " + guest)
+				.header("X-LMS-Organization-Alias", ALIAS))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"status\":\"PUBLISHED\"")))
+				.andExpect(content().string(containsString("\"totalScore\":9")))
+				.andExpect(content().string(containsString("\"maxScore\":12")))
+				.andExpect(content().string(not(containsString("correctChoiceId"))))
+				.andExpect(content().string(not(containsString("RUBRIC-BI-MAT"))));
 	}
 
 	@Test

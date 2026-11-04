@@ -51,9 +51,22 @@ public class JpaTeachingChecks implements TeachingChecks {
 				.getResultStream()
 				.map(row -> {
 					Object[] columns = (Object[]) row;
-					return new ClassView((UUID) columns[0], (String) columns[1]);
+					return new ClassView(toUuid(columns[0]), (String) columns[1]);
 				})
 				.findFirst();
+	}
+
+	// Truy vấn native trả cột uuid theo hình dạng riêng của từng driver (PostgreSQL là UUID, H2 là mảng
+	// byte) nên phải chuyển đổi tường minh thay vì ép kiểu thẳng.
+	private static UUID toUuid(Object value) {
+		if (value instanceof UUID uuid) {
+			return uuid;
+		}
+		if (value instanceof byte[] bytes) {
+			java.nio.ByteBuffer buffer = java.nio.ByteBuffer.wrap(bytes);
+			return new UUID(buffer.getLong(), buffer.getLong());
+		}
+		return UUID.fromString(String.valueOf(value));
 	}
 
 	@Override
