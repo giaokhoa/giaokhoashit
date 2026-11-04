@@ -17,6 +17,13 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.giaokhoa.server.access.AccessResource;
+import com.giaokhoa.server.access.AccessResourceRepository;
+import com.giaokhoa.server.access.PartitionSessions;
+import com.giaokhoa.server.access.ResourceDependency;
+import com.giaokhoa.server.access.ResourceDependencyRepository;
+import com.giaokhoa.server.access.ResourceVersion;
+import com.giaokhoa.server.access.ResourceVersionRepository;
 import com.giaokhoa.server.exam.ExamAccessDecider.Decision;
 import com.giaokhoa.server.exam.QuestionVersionSource.QuestionVersionInfo;
 import com.giaokhoa.server.tenancy.TenantContext;
@@ -28,8 +35,11 @@ import tools.jackson.databind.node.ObjectNode;
 /**
  * Nghiệp vụ soạn đề thủ công và đóng băng snapshot khi phát hành. Service không bọc giao dịch ở tầng này: một đề
  * nằm ở đúng một phân vùng trong khi người gọi có thể đang ở ngữ cảnh của một trang khác, nên mọi thao tác đọc
- * và ghi đều chạy trong phiên của đúng phân vùng của đề qua {@link ExamPartitionSessions} — một giao dịch bao
- * ngoài sẽ mở session theo phân vùng của request và xung đột với việc đổi tenant giữa chừng.
+ * và ghi đều chạy trong phiên của đúng phân vùng của đề qua {@link PartitionSessions} — một giao dịch bao
+ * ngoài sẽ mở session theo phân vùng của request và xung đột với việc đổi tenant giữa chừng. Đề dùng chung định
+ * danh với tài nguyên của lõi quyền (id của đề là id của hàng {@code resource}, id của phiên bản đề là id của
+ * hàng {@code resource_version}), nên tạo đề và tạo phiên bản đều ghi kèm hàng lõi tương ứng trong cùng phiên
+ * phân vùng, và phát hành ghi thêm hàng phụ thuộc từ phiên bản đề tới từng phiên bản câu nó dùng.
  */
 @Service
 public class ExamService {
@@ -65,13 +75,21 @@ public class ExamService {
 
 	private final QuestionVersionSource questionVersions;
 
-	private final ExamPartitionSessions sessions;
+	private final PartitionSessions sessions;
+
+	private final AccessResourceRepository resources;
+
+	private final ResourceVersionRepository coreVersions;
+
+	private final ResourceDependencyRepository dependencies;
 
 	private final ObjectMapper objectMapper;
 
 	public ExamService(ExamRepository exams, ExamVersionRepository versions, ExamItemRepository items,
 			ExamItemSnapshotRepository snapshots, ExamAccessDecider decider, QuestionVersionSource questionVersions,
-			ExamPartitionSessions sessions, ObjectMapper objectMapper) {
+			PartitionSessions sessions, AccessResourceRepository resources,
+			ResourceVersionRepository coreVersions, ResourceDependencyRepository dependencies,
+			ObjectMapper objectMapper) {
 		this.exams = exams;
 		this.versions = versions;
 		this.items = items;
@@ -79,6 +97,9 @@ public class ExamService {
 		this.decider = decider;
 		this.questionVersions = questionVersions;
 		this.sessions = sessions;
+		this.resources = resources;
+		this.coreVersions = coreVersions;
+		this.dependencies = dependencies;
 		this.objectMapper = objectMapper;
 	}
 
@@ -129,9 +150,11 @@ public class ExamService {
 		first.setCreatedBySub(context.sub());
 		first.setCreatedAt(now);
 		first.setUpdatedAt(now);
-		this.sessions.inPartition(context.sub(), partition, () -> {
+		this.sessions.inPartition(partition, context.sub(), () -> {
 			this.exams.save(exam);
 			this.versions.save(first);
+			saveResourceMirror(exam);
+			saveVersionMirror(first);
 			return null;
 		});
 		return readView(context, partition, exam.getId(), first.getId());
@@ -144,7 +167,7 @@ public class ExamService {
 	public ExamView updateDraft(TenantContext context, UUID examId, UUID versionId, String title, Long lockVersion,
 			List<ItemInput> itemInputs) {
 		String partition = locatePartition(context, examId);
-		this.sessions.readInPartition(context.sub(), partition, () -> {
+		this.sessions.inPartition(partition, context.sub(), () -> {
 			Exam exam = this.exams.findById(examId).orElseThrow(ExamService::notFound);
 			ExamVersion version = versionOf(examId, versionId);
 			Decision decision = this.decider.decide(context, exam, version, ExamAction.EDIT_DRAFT);
@@ -158,7 +181,7 @@ public class ExamService {
 		});
 		checkItemsUsable(context, itemInputs);
 		OffsetDateTime now = OffsetDateTime.now();
-		this.sessions.inPartition(context.sub(), partition, () -> {
+		this.sessions.inPartition(partition, context.sub(), () -> {
 			Exam exam = this.exams.findById(examId).orElseThrow(ExamService::notFound);
 			ExamVersion version = versionOf(examId, versionId);
 			if (!"draft".equals(version.getStatus())) {
@@ -204,7 +227,7 @@ public class ExamService {
 	public ExamView createVersion(TenantContext context, UUID examId, UUID sourceVersionId) {
 		String partition = locatePartition(context, examId);
 		OffsetDateTime now = OffsetDateTime.now();
-		UUID newVersionId = this.sessions.inPartition(context.sub(), partition, () -> {
+		UUID newVersionId = this.sessions.inPartition(partition, context.sub(), () -> {
 			Exam exam = this.exams.findById(examId).orElseThrow(ExamService::notFound);
 			// Tạo bản nháp mới là đường sửa duy nhất của bản đã khoá nên quyết định ở mức tài nguyên, không áp
 			// thu hẹp theo trạng thái của bản nguồn.
@@ -227,6 +250,7 @@ public class ExamService {
 			created.setCreatedAt(now);
 			created.setUpdatedAt(now);
 			this.versions.save(created);
+			saveVersionMirror(created);
 			for (ExamItem sourceItem : this.items.findByExamVersionIdOrderByPositionAsc(source.getId())) {
 				ExamItem copy = new ExamItem();
 				copy.setId(UUID.randomUUID());
@@ -247,7 +271,7 @@ public class ExamService {
 
 	public ExamView publish(TenantContext context, UUID examId, UUID versionId) {
 		String partition = locatePartition(context, examId);
-		LoadedData data = this.sessions.readInPartition(context.sub(), partition, () -> {
+		LoadedData data = this.sessions.inPartition(partition, context.sub(), () -> {
 			Exam exam = this.exams.findById(examId).orElseThrow(ExamService::notFound);
 			ExamVersion version = versionOf(examId, versionId);
 			return new LoadedData(exam, version, this.items.findByExamVersionIdOrderByPositionAsc(version.getId()),
@@ -279,7 +303,7 @@ public class ExamService {
 			infos.add(info);
 		}
 		OffsetDateTime now = OffsetDateTime.now();
-		this.sessions.inPartition(context.sub(), partition, () -> {
+		this.sessions.inPartition(partition, context.sub(), () -> {
 			ExamVersion version = versionOf(examId, versionId);
 			if (!"draft".equals(version.getStatus())) {
 				throw stateConflict();
@@ -307,13 +331,35 @@ public class ExamService {
 			version.setLockedAt(now);
 			version.setContentHash(contentHash(frozen));
 			version.setUpdatedAt(now);
+			// Phát hành là điểm đóng băng của tập mục: hàng lõi của phiên bản chuyển trạng thái cùng lúc và
+			// phụ thuộc tới từng phiên bản câu thành phần được ghi đúng tại đây, không ghi lúc soạn vì tập mục
+			// của bản nháp còn thay đổi được và chưa bị đóng băng.
+			ResourceVersion mirror = this.coreVersions.findByIdAndResourceId(version.getId(), examId)
+				.orElseThrow(() -> new IllegalStateException(
+						"Phiên bản đề chưa có hàng resource_version tương ứng ở lõi quyền."));
+			mirror.setStatus(ResourceVersion.STATUS_PUBLISHED);
+			mirror.setLockedAt(now);
+			mirror.setPublishedAt(now);
+			mirror.setContentHash(version.getContentHash());
+			mirror.setUpdatedAt(now);
+			for (int i = 0; i < data.itemRows().size(); i++) {
+				ResourceDependency dependency = new ResourceDependency();
+				dependency.setId(UUID.randomUUID());
+				dependency.setResourceId(examId);
+				dependency.setResourceVersionId(version.getId());
+				dependency.setDependsOnResourceId(infos.get(i).questionId());
+				dependency.setDependsOnVersionId(data.itemRows().get(i).getQuestionVersionId());
+				dependency.setCreatedAt(now);
+				dependency.setUpdatedAt(now);
+				this.dependencies.save(dependency);
+			}
 			return null;
 		});
 		return readView(context, partition, examId, versionId);
 	}
 
 	private ExamView readView(TenantContext context, String partition, UUID examId, UUID versionId) {
-		LoadedData data = this.sessions.readInPartition(context.sub(), partition, () -> {
+		LoadedData data = this.sessions.inPartition(partition, context.sub(), () -> {
 			Exam exam = this.exams.findById(examId).orElseThrow(ExamService::notFound);
 			ExamVersion version = resolveVersion(examId, versionId);
 			List<ExamItem> itemRows = this.items.findByExamVersionIdOrderByPositionAsc(version.getId());
@@ -409,7 +455,7 @@ public class ExamService {
 
 	private String locatePartition(TenantContext context, UUID examId) {
 		for (String partition : candidatePartitions(context)) {
-			boolean present = this.sessions.readInPartition(context.sub(), partition,
+			boolean present = this.sessions.inPartition(partition, context.sub(),
 					() -> this.exams.existsById(examId));
 			if (present) {
 				return partition;
@@ -431,6 +477,36 @@ public class ExamService {
 	private ExamVersion versionOf(UUID examId, UUID versionId) {
 		return this.versions.findByExamIdAndId(examId, versionId)
 			.orElseThrow(() -> forbidden("Phiên bản được gọi không thuộc về đề này."));
+	}
+
+	// Hàng lõi của đề mang đúng các trường chủ sở hữu và workspace của hàng đề; khoá phân vùng của hàng lõi do
+	// Hibernate đóng dấu từ tenant của phiên phân vùng đang chạy, trùng phân vùng của chính đề.
+	private void saveResourceMirror(Exam exam) {
+		AccessResource mirror = new AccessResource();
+		mirror.setId(exam.getId());
+		mirror.setResourceType("exam");
+		mirror.setWorkspaceKind(exam.getWorkspaceKind());
+		mirror.setOwnerType(exam.getOwnerType());
+		mirror.setOwnerUserSub(exam.getOwnerUserSub());
+		mirror.setOwnerOrganizationId(exam.getOwnerOrganizationId());
+		mirror.setCollectionId(exam.getCollectionId());
+		mirror.setCustodyKind(exam.getCustodyKind());
+		mirror.setCreatedBySub(exam.getCreatedBySub());
+		mirror.setCreatedAt(exam.getCreatedAt());
+		mirror.setUpdatedAt(exam.getUpdatedAt());
+		this.resources.save(mirror);
+	}
+
+	private void saveVersionMirror(ExamVersion version) {
+		ResourceVersion mirror = new ResourceVersion();
+		mirror.setId(version.getId());
+		mirror.setResourceId(version.getExamId());
+		mirror.setVersionNumber(version.getVersionNumber());
+		mirror.setStatus(version.getStatus());
+		mirror.setCreatedBySub(version.getCreatedBySub());
+		mirror.setCreatedAt(version.getCreatedAt());
+		mirror.setUpdatedAt(version.getUpdatedAt());
+		this.coreVersions.save(mirror);
 	}
 
 	private static JsonNode stripAnswers(JsonNode content, String questionType) {

@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -24,7 +23,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -60,9 +58,11 @@ import tools.jackson.databind.ObjectMapper;
 
 // Kiểm thử lát soạn đề trên cùng khuôn với TenancyEndpointTests: chuỗi lọc bảo mật thật, tầng dữ kiện thật
 // (Flyway + Hibernate/JPA với discriminator) trên H2 ở chế độ PostgreSQL; membership được giả lập mặc định xác
-// nhận còn hiệu lực. Cổng đọc phiên bản câu được thay bằng một nguồn có kiểm soát trong bộ nhớ để test chủ động
-// được nội dung và quyền trên từng câu thành phần — đúng vai trò của feat câu hỏi khi nó nối bảng nội dung câu
-// vào cổng này. Lớp RLS của PostgreSQL kiểm chứng riêng trên môi trường PostgreSQL thật.
+// nhận còn hiệu lực. Cổng đọc phiên bản câu là cài đặt thật đọc các bảng nội dung của feat câu hỏi và quyết định
+// quyền đi qua dịch vụ quyết định của lõi quyền: mỗi test gieo hàng ngân hàng/câu/phiên bản câu thật vào đúng
+// các bảng đó bằng JdbcTemplate trước khi soạn, nên đường soạn, xem trước và phát hành chạy qua đúng các điểm
+// nối tích hợp thay vì một nguồn có kiểm soát trong bộ nhớ. Lớp RLS của PostgreSQL kiểm chứng riêng trên môi
+// trường PostgreSQL thật.
 @SpringBootTest(properties = { "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + ExamEndpointTests.ISSUER,
 		"spring.datasource.url=jdbc:h2:mem:exams;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
 		"spring.datasource.username=sa", "spring.datasource.password=",
@@ -91,13 +91,15 @@ class ExamEndpointTests {
 	@Autowired
 	private ObjectMapper objectMapper;
 
+	@Autowired
+	private QuestionVersionSource questionSource;
+
 	@MockitoBean
 	private MembershipChecker membershipChecker;
 
-	@MockitoBean
-	private QuestionVersionSource questionSource;
+	private final Map<String, UUID> banksByOwner = new ConcurrentHashMap<>();
 
-	private final Map<UUID, QuestionVersionSource.QuestionVersionInfo> questions = new ConcurrentHashMap<>();
+	private final Map<UUID, UUID> questionIdByVersion = new ConcurrentHashMap<>();
 
 	private MockMvc mockMvc;
 
@@ -108,9 +110,6 @@ class ExamEndpointTests {
 				.build();
 		lenient().when(this.membershipChecker.check(anyString(), anyString()))
 				.thenReturn(MembershipChecker.Result.MEMBER);
-		this.questions.clear();
-		lenient().when(this.questionSource.find(any()))
-				.thenAnswer(invocation -> Optional.ofNullable(this.questions.get(invocation.getArgument(0))));
 	}
 
 	@TestConfiguration
@@ -197,8 +196,8 @@ class ExamEndpointTests {
 	@DisplayName("Soạn đề kiểm quyền từng thành phần: mục trỏ tới câu của người khác mà người soạn không có quyền dùng thì toàn bộ lượt sửa bị 403 nêu rõ thành phần và bản nháp giữ nguyên; mục trỏ tới phiên bản câu không tồn tại bị 422 nêu rõ định danh")
 	void composeChecksEveryComponent() throws Exception {
 		String teacher = teacherToken("gv-a");
-		UUID ownQuestion = addQuestion("gv-a", "single_choice", false, SINGLE_CHOICE_CONTENT);
-		UUID otherQuestion = addQuestion("gv-b", "single_choice", false, SINGLE_CHOICE_CONTENT);
+		UUID ownQuestion = addQuestion("gv-a", "single_choice", SINGLE_CHOICE_CONTENT);
+		UUID otherQuestion = addQuestion("gv-b", "single_choice", SINGLE_CHOICE_CONTENT);
 		JsonNode created = createExamOk(teacher, null, "{\"title\":\"Đề kiểm thành phần\"}");
 		UUID examId = UUID.fromString(created.get("id").asText());
 		UUID versionId = UUID.fromString(created.get("versionId").asText());
@@ -224,8 +223,8 @@ class ExamEndpointTests {
 	@DisplayName("Thứ tự và điểm của mục: sửa bản nháp đặt mục theo thứ tự danh sách và điểm từng mục, đọc lại đúng cả hai; sắp xếp lại thứ tự ở bản nháp thì thứ tự mới có hiệu lực")
 	void itemOrderAndScoresRoundTrip() throws Exception {
 		String teacher = teacherToken("gv-a");
-		UUID first = addQuestion("gv-a", "single_choice", false, SINGLE_CHOICE_CONTENT);
-		UUID second = addQuestion("gv-a", "essay_text", false, ESSAY_CONTENT);
+		UUID first = addQuestion("gv-a", "single_choice", SINGLE_CHOICE_CONTENT);
+		UUID second = addQuestion("gv-a", "essay_text", ESSAY_CONTENT);
 		JsonNode created = createExamOk(teacher, null, "{\"title\":\"Đề thứ tự và điểm\"}");
 		UUID examId = UUID.fromString(created.get("id").asText());
 		UUID versionId = UUID.fromString(created.get("versionId").asText());
@@ -242,10 +241,10 @@ class ExamEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Xem trước phân tầng đáp án: chủ sở hữu thấy đủ đáp án trong bản nháp của mình; tenant-admin đọc đề thuộc trung tâm thấy nội dung câu nhưng đáp án và tiêu chí chấm bị lược bỏ")
+	@DisplayName("Xem trước phân tầng đáp án: chủ sở hữu thấy đủ đáp án trong bản nháp của mình; tenant-admin đọc đề thuộc trung tâm thấy nội dung câu nhưng đáp án và tiêu chí chấm bị lược bỏ vì nguồn tenant-admin ở lõi quyền không có hành động xem đáp án")
 	void previewStripsAnswersByLayer() throws Exception {
 		String teacher = teacherToken("gv-a");
-		UUID ownQuestion = addQuestion("gv-a", "single_choice", false, SINGLE_CHOICE_CONTENT);
+		UUID ownQuestion = addQuestion("gv-a", "single_choice", SINGLE_CHOICE_CONTENT);
 		JsonNode created = createExamOk(teacher, null, "{\"title\":\"Đề xem trước\"}");
 		UUID examId = UUID.fromString(created.get("id").asText());
 		UUID versionId = UUID.fromString(created.get("versionId").asText());
@@ -258,14 +257,14 @@ class ExamEndpointTests {
 
 		String admin = orgToken("qt-1", List.of("tenant-admin"));
 		String secondAdmin = orgToken("qt-2", List.of("tenant-admin"));
-		UUID catalogQuestion = addQuestion("gv-b", "single_choice", true, SINGLE_CHOICE_CONTENT);
-		UUID catalogEssay = addQuestion("gv-b", "essay_text", true, ESSAY_CONTENT);
+		UUID adminQuestion = addQuestion("qt-1", "single_choice", SINGLE_CHOICE_CONTENT);
+		UUID adminEssay = addQuestion("qt-1", "essay_text", ESSAY_CONTENT);
 		JsonNode centerExam = createExamOk(admin, CENTER_ALIAS,
 				"{\"title\":\"Đề trung tâm xem trước\",\"workspace\":\"center\"}");
 		UUID centerExamId = UUID.fromString(centerExam.get("id").asText());
 		UUID centerVersionId = UUID.fromString(centerExam.get("versionId").asText());
 		putDraftOkAt(admin, CENTER_ALIAS, centerExamId, centerVersionId, centerExam.get("lockVersion").asLong(),
-				"[" + itemJson(catalogQuestion, "5") + "," + itemJson(catalogEssay, "6") + "]");
+				"[" + itemJson(adminQuestion, "5") + "," + itemJson(adminEssay, "6") + "]");
 		JsonNode adminView = getExamOk(secondAdmin, CENTER_ALIAS, centerExamId, null);
 		JsonNode adminContent = adminView.get("items").get(0).get("content");
 		assertEquals("2 + 2 bằng mấy?", adminContent.get("stem").asText());
@@ -282,13 +281,13 @@ class ExamEndpointTests {
 	@DisplayName("Phát hành đóng băng snapshot: phiên bản chuyển published, locked_at và content_hash được ghi, snapshot trong database chứa đủ nội dung câu, đáp án, tiêu chí chấm, điểm và thứ tự của từng mục")
 	void publishFreezesSnapshot() throws Exception {
 		String teacher = teacherToken("gv-a");
-		UUID ownQuestion = addQuestion("gv-a", "single_choice", false, SINGLE_CHOICE_CONTENT);
-		UUID catalogEssay = addQuestion("gv-b", "essay_text", true, ESSAY_CONTENT);
+		UUID ownQuestion = addQuestion("gv-a", "single_choice", SINGLE_CHOICE_CONTENT);
+		UUID ownEssay = addQuestion("gv-a", "essay_text", ESSAY_CONTENT);
 		JsonNode created = createExamOk(teacher, null, "{\"title\":\"Đề phát hành\"}");
 		UUID examId = UUID.fromString(created.get("id").asText());
 		UUID versionId = UUID.fromString(created.get("versionId").asText());
 		putDraftOk(teacher, examId, versionId, created.get("lockVersion").asLong(),
-				"[" + itemJson(ownQuestion, "4") + "," + itemJson(catalogEssay, "6") + "]");
+				"[" + itemJson(ownQuestion, "4") + "," + itemJson(ownEssay, "6") + "]");
 		JsonNode published = publishOk(teacher, examId, versionId);
 		assertEquals("published", published.get("status").asText());
 		assertTrue(!published.get("lockedAt").isNull());
@@ -312,22 +311,21 @@ class ExamEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Snapshot không đổi khi nguồn đổi: sau phát hành, sửa nội dung một câu nguồn và xoá một câu nguồn khác khỏi nguồn dữ kiện thì nội dung đề trả qua API và content_hash giữ nguyên")
+	@DisplayName("Snapshot không đổi khi nguồn đổi: sau phát hành, sửa nội dung một câu nguồn và xoá một câu nguồn khác khỏi bảng nội dung thì nội dung đề trả qua API và content_hash giữ nguyên")
 	void snapshotSurvivesSourceChanges() throws Exception {
 		String teacher = teacherToken("gv-a");
-		UUID ownQuestion = addQuestion("gv-a", "single_choice", false, SINGLE_CHOICE_CONTENT);
-		UUID catalogEssay = addQuestion("gv-b", "essay_text", true, ESSAY_CONTENT);
+		UUID ownQuestion = addQuestion("gv-a", "single_choice", SINGLE_CHOICE_CONTENT);
+		UUID ownEssay = addQuestion("gv-a", "essay_text", ESSAY_CONTENT);
 		JsonNode created = createExamOk(teacher, null, "{\"title\":\"Đề bất biến\"}");
 		UUID examId = UUID.fromString(created.get("id").asText());
 		UUID versionId = UUID.fromString(created.get("versionId").asText());
 		putDraftOk(teacher, examId, versionId, created.get("lockVersion").asLong(),
-				"[" + itemJson(ownQuestion, "4") + "," + itemJson(catalogEssay, "6") + "]");
+				"[" + itemJson(ownQuestion, "4") + "," + itemJson(ownEssay, "6") + "]");
 		JsonNode published = publishOk(teacher, examId, versionId);
 		String hashBefore = published.get("contentHash").asText();
-		addQuestionAt(ownQuestion, "gv-a", "single_choice", false,
-				"{\"stem\":\"ĐÃ SỬA TẠI NGUỒN\",\"choices\":[{\"id\":\"a\",\"text\":\"3\"}],"
-						+ "\"correctChoiceId\":\"a\",\"solution\":\"Khác.\"}");
-		this.questions.remove(catalogEssay);
+		this.jdbcTemplate.update("update question_version set stem = 'ĐÃ SỬA TẠI NGUỒN' where id = ?",
+				ownQuestion);
+		this.jdbcTemplate.update("delete from question_version where id = ?", ownEssay);
 		JsonNode after = getExamOk(teacher, null, examId, null);
 		assertEquals(hashBefore, after.get("contentHash").asText());
 		assertEquals("2 + 2 bằng mấy?", after.get("items").get(0).get("content").get("stem").asText());
@@ -342,7 +340,7 @@ class ExamEndpointTests {
 	@DisplayName("Sửa bản đã phát hành: sửa trực tiếp bị 409 VERSION_LOCKED; tạo phiên bản nháp mới từ bản đã phát hành thì sửa được ở bản mới, bản đã phát hành và snapshot của nó giữ nguyên")
 	void editingPublishedGoesThroughNewDraftVersion() throws Exception {
 		String teacher = teacherToken("gv-a");
-		UUID ownQuestion = addQuestion("gv-a", "single_choice", false, SINGLE_CHOICE_CONTENT);
+		UUID ownQuestion = addQuestion("gv-a", "single_choice", SINGLE_CHOICE_CONTENT);
 		JsonNode created = createExamOk(teacher, null, "{\"title\":\"Đề sửa sau phát hành\"}");
 		UUID examId = UUID.fromString(created.get("id").asText());
 		UUID versionId = UUID.fromString(created.get("versionId").asText());
@@ -380,8 +378,8 @@ class ExamEndpointTests {
 	@DisplayName("Chống ghi đè đồng thời: hai lượt sửa cùng một bản nháp với cùng lockVersion thì lượt lưu sau bị 409 VERSION_CONFLICT và nội dung của lượt trước giữ nguyên")
 	void staleLockVersionIsRejected() throws Exception {
 		String teacher = teacherToken("gv-a");
-		UUID first = addQuestion("gv-a", "single_choice", false, SINGLE_CHOICE_CONTENT);
-		UUID second = addQuestion("gv-a", "essay_text", false, ESSAY_CONTENT);
+		UUID first = addQuestion("gv-a", "single_choice", SINGLE_CHOICE_CONTENT);
+		UUID second = addQuestion("gv-a", "essay_text", ESSAY_CONTENT);
 		JsonNode created = createExamOk(teacher, null, "{\"title\":\"Đề chống ghi đè\"}");
 		UUID examId = UUID.fromString(created.get("id").asText());
 		UUID versionId = UUID.fromString(created.get("versionId").asText());
@@ -400,20 +398,28 @@ class ExamEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Đánh giá lại quyền tại thời điểm phát hành: quyền dùng trên một câu thành phần bị mất sau khi soạn thì phát hành bị 403 nêu rõ thành phần, phiên bản vẫn là draft và không snapshot nào được tạo")
+	@DisplayName("Đánh giá lại quyền tại thời điểm phát hành: grant dùng câu của giáo viên khác cấp cho người soạn bị thu hồi sau khi soạn thì phát hành bị 403 nêu rõ thành phần, phiên bản vẫn là draft và không snapshot nào được tạo")
 	void publishReDecidesComponentRights() throws Exception {
 		String teacher = teacherToken("gv-a");
-		UUID mutableQuestion = addQuestion("gv-a", "single_choice", false, SINGLE_CHOICE_CONTENT);
+		UUID grantedQuestion = addQuestion("gv-b", "single_choice", SINGLE_CHOICE_CONTENT);
+		registerQuestion(grantedQuestion);
+		UUID grantId = UUID.randomUUID();
+		this.jdbcTemplate.update(
+				"insert into resource_grant (id, resource_id, resource_version_id, grantee_type, grantee_user_sub, "
+						+ "action, starts_at, grantor_sub, source_partition_key, partition_key, created_at, updated_at) "
+						+ "values (?, ?, ?, 'user', 'gv-a', 'use', current_timestamp - interval '1' minute, 'gv-b', "
+						+ "'user:gv-b', 'user:gv-a', current_timestamp, current_timestamp)",
+				grantId, this.questionIdByVersion.get(grantedQuestion), grantedQuestion);
 		JsonNode created = createExamOk(teacher, null, "{\"title\":\"Đề mất quyền giữa chừng\"}");
 		UUID examId = UUID.fromString(created.get("id").asText());
 		UUID versionId = UUID.fromString(created.get("versionId").asText());
 		putDraftOk(teacher, examId, versionId, created.get("lockVersion").asLong(),
-				"[" + itemJson(mutableQuestion, "5") + "]");
-		addQuestionAt(mutableQuestion, "gv-b", "single_choice", false, SINGLE_CHOICE_CONTENT);
+				"[" + itemJson(grantedQuestion, "5") + "]");
+		this.jdbcTemplate.update("update resource_grant set revoked_at = current_timestamp where id = ?", grantId);
 		this.mockMvc.perform(authed(post("/api/exams/" + examId + "/versions/" + versionId + "/publish"),
 				teacher, null))
 				.andExpect(status().isForbidden())
-				.andExpect(content().string(containsString(mutableQuestion.toString())));
+				.andExpect(content().string(containsString(grantedQuestion.toString())));
 		JsonNode after = getExamOk(teacher, null, examId, null);
 		assertEquals("draft", after.get("status").asText());
 		Integer snapshotCount = this.jdbcTemplate.queryForObject(
@@ -432,7 +438,7 @@ class ExamEndpointTests {
 				teacher, null))
 				.andExpect(status().isUnprocessableContent())
 				.andExpect(content().string(containsString("\"code\":\"VALIDATION_FAILED\"")));
-		UUID ownQuestion = addQuestion("gv-a", "single_choice", false, SINGLE_CHOICE_CONTENT);
+		UUID ownQuestion = addQuestion("gv-a", "single_choice", SINGLE_CHOICE_CONTENT);
 		JsonNode created = createExamOk(teacher, null, "{\"title\":\"Đề phát hành hai lần\"}");
 		UUID examId = UUID.fromString(created.get("id").asText());
 		UUID versionId = UUID.fromString(created.get("versionId").asText());
@@ -449,7 +455,7 @@ class ExamEndpointTests {
 	@DisplayName("Quan hệ phiên bản–đề không khớp: sửa và phát hành bằng versionId thuộc về một đề khác bị 403 và không dữ kiện nào thay đổi")
 	void versionOfAnotherExamIsForbidden() throws Exception {
 		String teacher = teacherToken("gv-a");
-		UUID ownQuestion = addQuestion("gv-a", "single_choice", false, SINGLE_CHOICE_CONTENT);
+		UUID ownQuestion = addQuestion("gv-a", "single_choice", SINGLE_CHOICE_CONTENT);
 		JsonNode examA = createExamOk(teacher, null, "{\"title\":\"Đề A\"}");
 		JsonNode examB = createExamOk(teacher, null, "{\"title\":\"Đề B\"}");
 		UUID examAId = UUID.fromString(examA.get("id").asText());
@@ -486,18 +492,43 @@ class ExamEndpointTests {
 				.andExpect(status().isNotFound());
 	}
 
-	private UUID addQuestion(String ownerSub, String type, boolean catalogPublished, String content)
-			throws Exception {
+	// Gieo một phiên bản câu thật vào các bảng nội dung của feat câu hỏi: ngân hàng riêng cho mỗi chủ sở hữu,
+	// câu và phiên bản draft mang đúng các cột nội dung mà hình JSON đầu vào mô tả. Trả định danh phiên bản câu.
+	private UUID addQuestion(String ownerSub, String type, String content) throws Exception {
+		UUID bankId = this.banksByOwner.computeIfAbsent(ownerSub, owner -> {
+			UUID id = UUID.randomUUID();
+			this.jdbcTemplate.update(
+					"insert into question_bank (id, owner_sub, name, created_at, updated_at) "
+							+ "values (?, ?, 'Ngân hàng kiểm thử', current_timestamp, current_timestamp)",
+					id, owner);
+			return id;
+		});
+		UUID questionId = UUID.randomUUID();
 		UUID questionVersionId = UUID.randomUUID();
-		addQuestionAt(questionVersionId, ownerSub, type, catalogPublished, content);
+		this.jdbcTemplate.update(
+				"insert into question (id, bank_id, owner_sub, created_at, updated_at) "
+						+ "values (?, ?, ?, current_timestamp, current_timestamp)",
+				questionId, bankId, ownerSub);
+		JsonNode node = this.objectMapper.readTree(content);
+		this.jdbcTemplate.update(
+				"insert into question_version (id, question_id, owner_sub, version_number, question_type, "
+						+ "content_contract_version, stem, choices, correct_choice_id, solution, rubric, "
+						+ "content_hash, status, revision, created_at, updated_at) values (?, ?, ?, 1, ?, 1, ?, "
+						+ "?, ?, ?, ?, '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', "
+						+ "'draft', 0, current_timestamp, current_timestamp)",
+				questionVersionId, questionId, ownerSub, type, node.get("stem").asText(),
+				node.has("choices") ? this.objectMapper.writeValueAsString(node.get("choices")) : null,
+				node.has("correctChoiceId") ? node.get("correctChoiceId").asText() : null,
+				node.has("solution") ? node.get("solution").asText() : null,
+				node.has("rubric") ? node.get("rubric").asText() : null);
+		this.questionIdByVersion.put(questionVersionId, questionId);
 		return questionVersionId;
 	}
 
-	private void addQuestionAt(UUID questionVersionId, String ownerSub, String type, boolean catalogPublished,
-			String content) throws Exception {
-		this.questions.put(questionVersionId,
-				new QuestionVersionSource.QuestionVersionInfo(UUID.randomUUID(), questionVersionId, type,
-						"personal", ownerSub, null, catalogPublished, this.objectMapper.readTree(content)));
+	// Chạy cổng đọc thật một lần để các hàng lõi tương ứng của câu được đăng ký trước khi test ghi grant trỏ
+	// tới chúng: khoá ngoại của resource_grant yêu cầu hàng resource_version của câu đã tồn tại.
+	private void registerQuestion(UUID questionVersionId) {
+		assertTrue(this.questionSource.find(questionVersionId).isPresent());
 	}
 
 	private JsonNode createExamOk(String token, String alias, String body) throws Exception {
