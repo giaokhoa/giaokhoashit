@@ -85,10 +85,6 @@ public class ExamItemSnapshot {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public UUID getQuestionVersionId() {
 		return this.questionVersionId;
 	}

@@ -69,10 +69,6 @@ public class Exam {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public String getWorkspaceKind() {
 		return this.workspaceKind;
 	}

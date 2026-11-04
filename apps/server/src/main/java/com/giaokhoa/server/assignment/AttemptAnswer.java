@@ -53,10 +53,6 @@ public class AttemptAnswer {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public UUID getAttemptId() {
 		return this.attemptId;
 	}

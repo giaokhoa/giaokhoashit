@@ -62,10 +62,6 @@ public class ExamAssignment {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public UUID getClassId() {
 		return this.classId;
 	}

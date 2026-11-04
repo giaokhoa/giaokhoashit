@@ -74,10 +74,6 @@ public class ExamAttempt {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public UUID getAssignmentId() {
 		return this.assignmentId;
 	}
