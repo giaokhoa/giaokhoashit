@@ -12,4 +12,10 @@ public interface UploadSessionRepository extends JpaRepository<UploadSession, UU
 
 	List<UploadSession> findByTargetVersionId(UUID targetVersionId);
 
+	List<UploadSession> findByStatusAndUpdatedAtBefore(String status, OffsetDateTime updatedAt);
+
+	List<UploadSession> findByBlobId(UUID blobId);
+
+	List<UploadSession> findByBlobIdAndStatusIn(UUID blobId, List<String> statuses);
+
 }

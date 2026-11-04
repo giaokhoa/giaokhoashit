@@ -100,6 +100,16 @@ public class FilesystemBlobStorage implements BlobStorage {
 	}
 
 	@Override
+	public void delete(String storageKey) {
+		try {
+			Files.deleteIfExists(resolve(this.blobDir, storageKey));
+		}
+		catch (IOException ex) {
+			throw new UncheckedIOException("Không xoá được blob trong kho lưu trữ", ex);
+		}
+	}
+
+	@Override
 	public int sweepStaging(Instant olderThan) {
 		int removed = 0;
 		try (Stream<Path> files = Files.list(this.stagingDir)) {
