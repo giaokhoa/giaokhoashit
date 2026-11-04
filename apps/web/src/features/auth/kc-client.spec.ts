@@ -4,7 +4,7 @@ import type { TenantIdentity } from './kc-tenant';
 /**
  * Kiểm thử hợp đồng của adapter Keycloak phía trình duyệt (issue #38): thư viện `keycloak-js` được mock tại biên,
  * spec ghim đúng cấu hình client công khai, tuỳ chọn khởi tạo theo tài liệu của adapter (check-sso im lặng, PKCE
- * S256, scope organization), phép đọc danh tính từ `tokenParsed`, và lời gọi `/api/me` có làm mới token trước khi
+ * S256, scope organization:*), phép đọc danh tính từ `tokenParsed`, và lời gọi `/api/me` có làm mới token trước khi
  * gửi Bearer.
  */
 const adapterMock = vi.hoisted(() => ({
@@ -57,7 +57,7 @@ afterEach(() => {
 });
 
 describe('initializeKeycloak', () => {
-  it('tạo adapter bằng client công khai lms-web của realm giaokhoa và khởi tạo một lần với check-sso im lặng, PKCE S256, scope organization', async () => {
+  it('tạo adapter bằng client công khai lms-web của realm giaokhoa và khởi tạo một lần với check-sso im lặng, PKCE S256, scope organization:*', async () => {
     const mod = await import('./kc-client');
     await expect(mod.initializeKeycloak()).resolves.toBe(true);
     await expect(mod.initializeKeycloak()).resolves.toBe(true);
@@ -67,7 +67,7 @@ describe('initializeKeycloak', () => {
       onLoad: 'check-sso',
       silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
       pkceMethod: 'S256',
-      scope: 'organization',
+      scope: 'organization:*',
     });
   });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildProxyHeaders, buildUpgradeRequestLines } from './proxy-headers.mjs';
+import { buildProxyHeaders, buildUpgradeRequestLines, organizationAliasForHostname, withOrganizationAliasHeader } from './proxy-headers.mjs';
 
 /**
  * Hồi quy header của đường proxy HTTP trong prod-server.mjs
@@ -195,5 +195,36 @@ describe('buildUpgradeRequestLines', () => {
       'Cookie: better-auth.session_token=token-phien',
       'X-Forwarded-For: 203.0.113.7',
     ]);
+  });
+});
+
+/**
+ * Header ngữ cảnh trang cho apps/server (issue #57): server phân giải ngữ cảnh trung tâm từ header
+ * `X-LMS-Organization-Alias` mà chỉ tầng web này mới đặt được, suy từ Host của request. Khối này ghim: hostname
+ * trung tâm cho đúng alias (kể cả khi Host kèm cổng), hostname nền tảng và Host thiếu cho null, và giá trị do
+ * client tự gửi không bao giờ được chuyển tiếp — ở trang nền tảng header bị xoá hẳn, ở trang trung tâm header bị
+ * ghi đè bằng alias đúng của trang.
+ */
+describe('organizationAliasForHostname / withOrganizationAliasHeader', () => {
+  it('suy đúng alias từ Host của hai trang trung tâm, kể cả khi Host kèm cổng', () => {
+    expect(organizationAliasForHostname('trung-tam-1.fuckr.net')).toBe('trung-tam-1');
+    expect(organizationAliasForHostname('trung-tam-2.fuckr.net')).toBe('trung-tam-2');
+    expect(organizationAliasForHostname('trung-tam-1.fuckr.net:8443')).toBe('trung-tam-1');
+  });
+
+  it('trang nền tảng và request không mang Host không có alias', () => {
+    expect(organizationAliasForHostname('giaokhoa.fuckr.net')).toBeNull();
+    expect(organizationAliasForHostname(undefined)).toBeNull();
+    expect(organizationAliasForHostname('')).toBeNull();
+  });
+
+  it('đặt header alias đúng của trang, ghi đè giá trị client tự gửi', () => {
+    const headers = withOrganizationAliasHeader({ 'x-lms-organization-alias': 'trung-tam-2' }, 'trung-tam-1.fuckr.net');
+    expect(headers['x-lms-organization-alias']).toBe('trung-tam-1');
+  });
+
+  it('xoá hẳn header ở trang nền tảng để giá trị client tự gửi không lọt về server', () => {
+    const headers = withOrganizationAliasHeader({ 'x-lms-organization-alias': 'trung-tam-1' }, 'giaokhoa.fuckr.net');
+    expect('x-lms-organization-alias' in headers).toBe(false);
   });
 });

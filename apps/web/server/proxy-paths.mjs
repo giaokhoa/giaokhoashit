@@ -2,9 +2,9 @@
  * Bộ khớp đường proxy của SSR topology C (prod-server.mjs).
  *
  * Các đường thuộc về tiến trình API nội bộ, SSR chỉ chuyển tiếp:
- *   - `/api` và mọi subpath: REST API (`/api/v1/...`). Riêng đúng đường `/api/me` là endpoint danh tính do
- *     `apps/server` (Spring Boot) phục vụ: vẫn là đường proxy nhưng đi upstream server riêng — xem
- *     `isServerProxyPath` ở dưới.
+ *   - `/api` và mọi subpath: REST API (`/api/v1/...`). Riêng đúng đường `/api/me` và họ đường
+ *     `/api/tenancy-check/...` là các endpoint do `apps/server` (Spring Boot) phục vụ: vẫn là đường proxy nhưng đi
+ *     upstream server riêng — xem `isServerProxyPath` ở dưới.
  *   - `/socket.io/...`: realtime (HTTP polling + đường hầm upgrade).
  *   - `/mcp` và mọi subpath: endpoint MCP của issue #110 (MCP-0 mount NGOÀI `/api/v1` theo thiết kế — Streamable HTTP
  *     stateless).
@@ -41,13 +41,17 @@ export function isProxyPath(url) {
 
 const SERVER_PROXY_EXACT = new Set(['/api/me']);
 
+const SERVER_PROXY_PREFIXES = ['/api/tenancy-check/'];
+
 /**
- * Đường proxy đi upstream `apps/server` thay vì upstream API chung: chỉ đúng endpoint danh tính `/api/me` (issue
- * #38). prod-server phải xét luật này TRƯỚC khi rơi về upstream `/api` chung, vì `/api/me` cũng khớp tiền tố `/api/`
- * mà service API (NestJS) không phục vụ endpoint này. Khớp exact trên pathname (đã bỏ query string) như
- * `isProxyPath`: `/api/me/...` không tồn tại nên không mở tiền tố.
+ * Đường proxy đi upstream `apps/server` thay vì upstream API chung: endpoint danh tính `/api/me` (issue #38) và
+ * các endpoint kiểm chứng khung tenancy `/api/tenancy-check/...` (issue #57). prod-server phải xét luật này TRƯỚC
+ * khi rơi về upstream `/api` chung, vì các đường này cũng khớp tiền tố `/api/` mà service API (NestJS) không phục
+ * vụ. Khớp trên pathname (đã bỏ query string) như `isProxyPath`: `/api/me` chỉ khớp exact (`/api/me/...` không tồn
+ * tại nên không mở tiền tố), còn `/api/tenancy-check` là một họ endpoint nên khớp theo tiền tố có dấu `/` cuối —
+ * đường gần giống `/api/tenancy-checkfoo` không bị nuốt.
  */
 export function isServerProxyPath(url) {
   const path = url.split('?')[0];
-  return SERVER_PROXY_EXACT.has(path);
+  return SERVER_PROXY_EXACT.has(path) || SERVER_PROXY_PREFIXES.some((prefix) => path.startsWith(prefix));
 }

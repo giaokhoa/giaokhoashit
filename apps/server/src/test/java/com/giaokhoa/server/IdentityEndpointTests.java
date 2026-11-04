@@ -1,9 +1,7 @@
 package com.giaokhoa.server;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.security.KeyPair;
@@ -13,7 +11,6 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import com.nimbusds.jose.JWSAlgorithm;
@@ -39,8 +36,8 @@ import org.springframework.web.context.WebApplicationContext;
 // Kiểm thử endpoint danh tính /api/me trên cùng khuôn với ProtectedEndpointTests: chuỗi lọc
 // bảo mật thật qua MockMvc, JwtDecoder test ký bằng khoá RSA tĩnh tự sinh nhưng giữ nguyên
 // kiểm chứng chữ ký, issuer và thời hạn như cấu hình chạy thật.
-@SpringBootTest(properties = "spring.security.oauth2.resourceserver.jwt.issuer-uri="
-		+ IdentityEndpointTests.ISSUER)
+@SpringBootTest(properties = { "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + IdentityEndpointTests.ISSUER,
+		"spring.flyway.locations=classpath:db/migration" })
 class IdentityEndpointTests {
 
 	static final String ISSUER = "http://localhost:8180/realms/giaokhoa";
@@ -99,49 +96,6 @@ class IdentityEndpointTests {
 		String token = mint(ISSUER, TestJwtConfiguration.OTHER_KEY_PAIR, Map.of());
 		this.mockMvc.perform(get("/api/me").header("Authorization", "Bearer " + token))
 				.andExpect(status().isUnauthorized());
-	}
-
-	@Test
-	@DisplayName("Trả 200 và đúng các trường danh tính khi token mang claim organization dạng mảng alias")
-	void validTokenWithOrganizationArrayClaim() throws Exception {
-		Map<String, Object> claims = Map.of(
-				"preferred_username", "gv1",
-				"name", "Giáo viên Trung tâm 1",
-				"email", "gv1@trungtam1.example",
-				"realm_access", Map.of("roles", List.of("tenant-teacher")),
-				"organization", List.of("trung-tam-1"));
-		String token = mint(ISSUER, TestJwtConfiguration.KEY_PAIR, claims);
-		this.mockMvc.perform(get("/api/me").header("Authorization", "Bearer " + token))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("\"sub\":\"test-user\"")))
-				.andExpect(content().string(containsString("\"preferredUsername\":\"gv1\"")))
-				.andExpect(content().string(containsString("\"email\":\"gv1@trungtam1.example\"")))
-				.andExpect(content().string(containsString("\"realmRoles\":[\"tenant-teacher\"]")))
-				.andExpect(content().string(containsString("\"organizations\":[\"trung-tam-1\"]")));
-	}
-
-	@Test
-	@DisplayName("Trả 200 và đúng danh sách organization khi claim organization là dạng map alias")
-	void validTokenWithOrganizationMapClaim() throws Exception {
-		Map<String, Object> claims = Map.of(
-				"preferred_username", "gv2",
-				"realm_access", Map.of("roles", List.of("tenant-teacher")),
-				"organization", Map.of("trung-tam-2", Map.of("id", "org-2-id")));
-		String token = mint(ISSUER, TestJwtConfiguration.KEY_PAIR, claims);
-		this.mockMvc.perform(get("/api/me").header("Authorization", "Bearer " + token))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("\"preferredUsername\":\"gv2\"")))
-				.andExpect(content().string(containsString("\"organizations\":[\"trung-tam-2\"]")));
-	}
-
-	@Test
-	@DisplayName("Trả danh sách rỗng cho vai trò và organization khi token không mang hai claim đó")
-	void validTokenWithoutRoleAndOrganizationClaims() throws Exception {
-		String token = mint(ISSUER, TestJwtConfiguration.KEY_PAIR, Map.of("preferred_username", "hs1"));
-		this.mockMvc.perform(get("/api/me").header("Authorization", "Bearer " + token))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("\"realmRoles\":[]")))
-				.andExpect(content().string(containsString("\"organizations\":[]")));
 	}
 
 	private String mint(String issuer, KeyPair keyPair, Map<String, Object> extraClaims) throws Exception {

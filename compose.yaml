@@ -171,9 +171,25 @@ services:
       # DataSource của server (Spring Boot bind SPRING_DATASOURCE_* vào spring.datasource.*): trỏ vào PostgreSQL riêng
       # của server (service server-db ở dưới) thay vì dùng chung database nghiệp vụ với hệ cũ — hai phía tách dữ kiện
       # để chuyển đổi dần độc lập, và schema của server không còn làm lệch hậu kiểm số bảng của bước migrate phía hệ cũ.
+      # Tài khoản datasource là role runtime lms_server_app (không superuser, không BYPASSRLS, không sở hữu bảng):
+      # Row Level Security chỉ có hiệu lực thật khi kết nối runtime không có đường nào vượt qua nó. Flyway tách
+      # riêng về tài khoản quản trị lms_server: theo tài liệu Spring Boot, đặt spring.flyway.user là đủ để
+      # Flyway dùng DataSource riêng của nó; SPRING_FLYWAY_URL ghi tường minh ở đây cho rõ đích, thuộc tính nào
+      # chưa đặt thì Flyway lấy giá trị tương đương của datasource chính.
       SPRING_DATASOURCE_URL: jdbc:postgresql://server-db:5432/lms_server
-      SPRING_DATASOURCE_USERNAME: lms_server
-      SPRING_DATASOURCE_PASSWORD: ${SERVER_DB_PASSWORD:?Can dat SERVER_DB_PASSWORD trong file .env}
+      SPRING_DATASOURCE_USERNAME: lms_server_app
+      SPRING_DATASOURCE_PASSWORD: ${SERVER_DB_APP_PASSWORD:?Can dat SERVER_DB_APP_PASSWORD trong file .env}
+      # Placeholder mật khẩu role runtime trong migration (application.properties) đọc biến này TỪ MÔI TRƯỜNG BÊN
+      # TRONG container: nội suy compose ở dòng trên chỉ đưa giá trị vào SPRING_DATASOURCE_PASSWORD chứ không tạo
+      # biến này trong container, thiếu dòng này là ứng dụng không khởi động được vì không resolve được placeholder.
+      SERVER_DB_APP_PASSWORD: ${SERVER_DB_APP_PASSWORD:?Can dat SERVER_DB_APP_PASSWORD trong file .env}
+      # Secret của client lms-api: server dùng nó lấy token Client Credentials để đọc Admin REST API khi kiểm
+      # membership hiện hành trước khi mở chế độ trung tâm; thiếu secret thì các request đó bị từ chối
+      # (fail-closed) thay vì tin claim trong token.
+      KEYCLOAK_MEMBERSHIP_CLIENT_SECRET: ${KEYCLOAK_MEMBERSHIP_CLIENT_SECRET:?Can dat KEYCLOAK_MEMBERSHIP_CLIENT_SECRET trong file .env}
+      SPRING_FLYWAY_URL: jdbc:postgresql://server-db:5432/lms_server
+      SPRING_FLYWAY_USER: lms_server
+      SPRING_FLYWAY_PASSWORD: ${SERVER_DB_PASSWORD:?Can dat SERVER_DB_PASSWORD trong file .env}
     depends_on:
       server-db:
         condition: service_healthy
