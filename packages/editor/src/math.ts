@@ -13,12 +13,19 @@ import 'katex/contrib/mhchem';
 /**
  * Render một công thức LaTeX thành HTML bằng KaTeX.
  *
- * Không ném lỗi khi LaTeX sai cú pháp (`throwOnError: false`): KaTeX tự hiển thị phần lỗi bằng màu đỏ — một công thức
- * hỏng không được làm sập cả bề mặt hiển thị. Muốn chặn lưu khi sai cú pháp thì dùng {@link validateMathLatex}.
- * @returns Chuỗi HTML của công thức đã render.
+ * Hai chốt chặn rò nguồn theo tài liệu KaTeX: kết quả chỉ lấy phần HTML (`output: 'html'`) vì phần MathML luôn nhúng
+ * nguyên mã TeX vào annotation `encoding="application/x-tex"`; và lỗi cú pháp được bắt tại đây thay vì dùng
+ * `throwOnError: false` — chế độ đó tự hiển thị mã TeX gốc của công thức lỗi. Công thức lỗi cho ra một placeholder
+ * không chứa nguồn: bề mặt hiển thị không sập và người xem không thấy mã TeX, còn tác giả biết lỗi qua
+ * {@link validateMathLatex} ở panel soạn.
+ * @returns Chuỗi HTML của công thức đã render; placeholder không chứa nguồn khi công thức lỗi.
  */
 export function renderMathHtml(latex: string, displayMode: boolean): string {
-  return renderToString(latex, { displayMode, throwOnError: false, trust: false });
+  try {
+    return renderToString(latex, { displayMode, throwOnError: true, trust: false, output: 'html' });
+  } catch {
+    return '<span class="math-render-error">Công thức không hợp lệ</span>';
+  }
 }
 
 /**

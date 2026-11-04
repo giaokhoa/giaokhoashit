@@ -104,12 +104,14 @@ describe('Khối RichTextView', () => {
 
     const inline = container.querySelector('[data-type="inline-math"]');
     expect(inline).not.toBeNull();
-    expect(inline?.getAttribute('data-latex')).toBe('y = ax + b');
+    expect(inline?.getAttribute('data-latex')).toBeNull();
     expect(inline?.querySelector('.katex')).not.toBeNull();
     const block = container.querySelector('[data-type="block-math"]');
     expect(block).not.toBeNull();
-    expect(block?.getAttribute('data-latex')).toBe('\\frac{a}{b}');
+    expect(block?.getAttribute('data-latex')).toBeNull();
     expect(block?.querySelector('.katex')).not.toBeNull();
+    expect(container.innerHTML).not.toContain('application/x-tex');
+    expect(container.innerHTML).not.toContain('\\frac');
   });
 
   it('kết xuất danh sách dấu đầu dòng kèm các mục của nó', () => {
