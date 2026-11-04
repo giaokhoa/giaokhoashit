@@ -13,7 +13,7 @@
    và biên dịch bằng Tailwind CSS 4.3.4 (bản stable mới nhất tại thời điểm dựng, cùng thế hệ v4 với mẫu —
    CSS của mẫu có @property --tw-*, @layer theme và token màu lab()). Các template .ftl mang đúng các lớp
    utility như markup của mẫu; cấm viết CSS tay mô phỏng lại các utility đó trong file này.
-   Lệnh dựng: npx @tailwindcss/cli -i tailwind.input.css -o login/resources/css/giaokhoa-login.css --minify
+   Lệnh dựng: npx @tailwindcss/cli -i tailwind.input.css -o login/resources/css/giaokhoa-login-2.css --minify
    (chạy tại thư mục chứa file này, @source quét thư mục login/ cạnh nó). */
 
 @font-face {
