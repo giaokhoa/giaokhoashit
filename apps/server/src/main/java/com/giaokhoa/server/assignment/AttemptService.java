@@ -1,0 +1,409 @@
+package com.giaokhoa.server.assignment;
+
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import com.giaokhoa.server.tenancy.TenantContext;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+/**
+ * Vòng đời của một lượt làm: bắt đầu/mở lại là một thao tác duy nhất đứng trên ràng buộc duy nhất của
+ * (lần giao, học viên); lưu câu trả lời từng phần có kiểm dạng theo snapshot; nộp là chuyển trạng thái một
+ * chiều nên gọi lại chỉ trả kết quả đã có. Hết hạn không có job nền — mọi điểm chạm (đọc, lưu, nộp, bảng trạng
+ * thái) đều chốt lười lượt còn đang làm trước khi xử lý tiếp, để không bề mặt nào trình bày một lượt đã quá
+ * hạn như còn đang làm.
+ */
+@Service
+public class AttemptService {
+
+	private final ExamAssignmentRepository assignments;
+
+	private final ExamAttemptRepository attempts;
+
+	private final AttemptAnswerRepository answers;
+
+	private final TeachingChecks teaching;
+
+	private final ExamVersionSnapshots snapshots;
+
+	private final AssignmentPartitions partitions;
+
+	private final ObjectMapper objectMapper;
+
+	public AttemptService(ExamAssignmentRepository assignments, ExamAttemptRepository attempts,
+			AttemptAnswerRepository answers, TeachingChecks teaching, ExamVersionSnapshots snapshots,
+			AssignmentPartitions partitions, ObjectMapper objectMapper) {
+		this.assignments = assignments;
+		this.attempts = attempts;
+		this.answers = answers;
+		this.teaching = teaching;
+		this.snapshots = snapshots;
+		this.partitions = partitions;
+		this.objectMapper = objectMapper;
+	}
+
+	public record AttemptView(UUID attemptId, UUID assignmentId, String status, OffsetDateTime startedAt,
+			OffsetDateTime submittedAt, String submitMode, OffsetDateTime opensAt, OffsetDateTime dueAt,
+			List<ItemView> items, List<AnswerView> answers) {
+	}
+
+	public record ItemView(UUID examItemId, String type, int position, java.math.BigDecimal points, String prompt,
+			List<ChoiceView> choices) {
+	}
+
+	public record ChoiceView(String choiceId, String text) {
+	}
+
+	public record AnswerView(UUID examItemId, JsonNode answer) {
+	}
+
+	public record SubmitView(UUID attemptId, String status, OffsetDateTime submittedAt, String submitMode) {
+	}
+
+	public record SubmissionRow(String studentSub, String status, OffsetDateTime startedAt,
+			OffsetDateTime submittedAt, String submitMode, boolean removed) {
+	}
+
+	public record AnswerInput(UUID examItemId, JsonNode answer) {
+	}
+
+	public AttemptView startOrResume(TenantContext context, UUID assignmentId) {
+		String partition = this.partitions.requirePagePartition(context);
+		AttemptView existing = this.partitions.inPartition(partition, context.sub(),
+				() -> loadForStart(context, partition, assignmentId));
+		if (existing != null) {
+			return existing;
+		}
+		try {
+			return this.partitions.inPartition(partition, context.sub(),
+					() -> createAttempt(context, partition, assignmentId));
+		}
+		catch (DataIntegrityViolationException duplicate) {
+			// Hai lần gọi đồng thời cùng tạo lượt: giao dịch thua cuộc bị ràng buộc duy nhất chặn và đã rollback,
+			// nên phải đọc lại bằng giao dịch mới — session của giao dịch hỏng không dùng lại được.
+			AttemptView winner = this.partitions.inPartition(partition, context.sub(),
+					() -> loadForStart(context, partition, assignmentId));
+			if (winner == null) {
+				throw duplicate;
+			}
+			return winner;
+		}
+	}
+
+	public AttemptView get(TenantContext context, UUID attemptId) {
+		String partition = readPartition(context);
+		return this.partitions.inPartition(partition, context.sub(), () -> {
+			ExamAttempt attempt = this.attempts.findById(attemptId)
+					.orElseThrow(() -> AssignmentException.notFound("Lượt làm không tồn tại."));
+			ExamAssignment assignment = assignmentOf(attempt);
+			finalizeIfPastDue(attempt, assignment);
+			requireReadable(context, partition, attempt, assignment);
+			return view(attempt, assignment);
+		});
+	}
+
+	public AttemptView saveAnswers(TenantContext context, UUID attemptId, List<AnswerInput> inputs) {
+		String partition = readPartition(context);
+		return this.partitions.inPartition(partition, context.sub(), () -> {
+			ExamAttempt attempt = this.attempts.findById(attemptId)
+					.orElseThrow(() -> AssignmentException.notFound("Lượt làm không tồn tại."));
+			ExamAssignment assignment = assignmentOf(attempt);
+			requireOwner(context, partition, attempt, assignment);
+			if (finalizeIfPastDue(attempt, assignment)) {
+				// Câu trả lời đến sau hạn không được ghi: lượt đã chốt ở thao tác chạm này, và chính thao tác
+				// lưu bị từ chối.
+				throw AssignmentException.stateConflict("Đã quá hạn nộp; lượt làm đã được chốt.");
+			}
+			if (!ExamAttempt.IN_PROGRESS.equals(attempt.getStatus())) {
+				throw AssignmentException.stateConflict("Lượt làm không còn ở trạng thái đang làm.");
+			}
+			if (!this.teaching.isEnrolled(context.sub(), partition, assignment.getClassId())) {
+				throw AssignmentException.forbidden("Ghi danh vào lớp đã bị gỡ nên không lưu tiếp được.");
+			}
+			ExamVersionSnapshots.Snapshot snapshot = snapshotOf(assignment);
+			Map<UUID, ExamVersionSnapshots.Item> itemsById = snapshot.items().stream()
+					.collect(Collectors.toMap(ExamVersionSnapshots.Item::itemId, Function.identity()));
+			// Kiểm toàn bộ dữ kiện vào trước khi ghi bất kỳ mục nào: một mục sai là cả lần gọi bị từ chối và
+			// không mục nào được ghi.
+			for (AnswerInput input : inputs) {
+				ExamVersionSnapshots.Item item = input.examItemId() != null ? itemsById.get(input.examItemId())
+						: null;
+				if (item == null) {
+					throw AssignmentException.validation("Mục đề không thuộc bài đã giao.");
+				}
+				validateAnswer(item, input.answer());
+			}
+			OffsetDateTime now = now();
+			for (AnswerInput input : inputs) {
+				String answerJson = writeJson(input.answer());
+				this.answers.findByAttemptIdAndExamItemId(attempt.getId(), input.examItemId())
+						.ifPresentOrElse(saved -> {
+							saved.setAnswer(answerJson);
+							saved.setUpdatedAt(now);
+							this.answers.saveAndFlush(saved);
+						}, () -> {
+							AttemptAnswer answer = new AttemptAnswer();
+							answer.setId(UUID.randomUUID());
+							answer.setAttemptId(attempt.getId());
+							answer.setExamItemId(input.examItemId());
+							answer.setAnswer(answerJson);
+							answer.setCreatedAt(now);
+							answer.setUpdatedAt(now);
+							this.answers.saveAndFlush(answer);
+						});
+			}
+			attempt.setUpdatedAt(now);
+			this.attempts.saveAndFlush(attempt);
+			return view(attempt, assignment);
+		});
+	}
+
+	public SubmitView submit(TenantContext context, UUID attemptId) {
+		String partition = readPartition(context);
+		return this.partitions.inPartition(partition, context.sub(), () -> {
+			ExamAttempt attempt = this.attempts.findById(attemptId)
+					.orElseThrow(() -> AssignmentException.notFound("Lượt làm không tồn tại."));
+			ExamAssignment assignment = assignmentOf(attempt);
+			requireOwner(context, partition, attempt, assignment);
+			if (ExamAttempt.IN_PROGRESS.equals(attempt.getStatus())) {
+				if (!finalizeIfPastDue(attempt, assignment)) {
+					if (!this.teaching.isEnrolled(context.sub(), partition, assignment.getClassId())) {
+						throw AssignmentException.forbidden("Ghi danh vào lớp đã bị gỡ nên không nộp tay được.");
+					}
+					attempt.setStatus(ExamAttempt.SUBMITTED);
+					attempt.setSubmittedAt(now());
+					attempt.setSubmitMode(ExamAttempt.SUBMIT_MANUAL);
+					attempt.setUpdatedAt(now());
+					// Điểm gắn của feat chấm/công bố: chấm tự động trắc nghiệm chạy trong cùng giao dịch nộp
+					// tại đây, trên đáp án của snapshot và câu trả lời đã chốt của lượt này.
+					this.attempts.saveAndFlush(attempt);
+				}
+			}
+			// Lượt đã nộp (tay, tự chốt, hay đã chấm/công bố) thì nộp lại chỉ trả nguyên kết quả đã có: không
+			// tạo bài nộp thứ hai, không đổi submitted_at, không chấm lại.
+			return new SubmitView(attempt.getId(), attempt.getStatus(), attempt.getSubmittedAt(),
+					attempt.getSubmitMode());
+		});
+	}
+
+	public List<SubmissionRow> submissions(TenantContext context, UUID assignmentId) {
+		String partition = readPartition(context);
+		return this.partitions.inPartition(partition, context.sub(), () -> {
+			ExamAssignment assignment = this.assignments.findById(assignmentId)
+					.orElseThrow(() -> AssignmentException.notFound("Lần giao không tồn tại."));
+			boolean admin = !context.guest() && context.organizationRoles().contains("tenant-admin");
+			boolean teacher = !context.guest()
+					&& this.teaching.isAssignedToTeach(context.sub(), partition, assignment.getClassId());
+			if (!admin && !teacher) {
+				throw AssignmentException.forbidden(
+						"Chỉ giáo viên phụ trách lớp hoặc quản trị trung tâm mới xem được bảng trạng thái nộp.");
+			}
+			List<ExamAttempt> classAttempts = this.attempts.findByAssignmentId(assignmentId);
+			classAttempts.forEach(attempt -> finalizeIfPastDue(attempt, assignment));
+			Map<String, ExamAttempt> attemptsByStudent = classAttempts.stream()
+					.collect(Collectors.toMap(ExamAttempt::getStudentSub, Function.identity()));
+			List<SubmissionRow> rows = new ArrayList<>();
+			java.util.Set<String> activeStudents = new java.util.HashSet<>(
+					this.teaching.activeRoster(partition, assignment.getClassId()));
+			for (String studentSub : activeStudents) {
+				ExamAttempt attempt = attemptsByStudent.get(studentSub);
+				rows.add(attempt != null
+						? new SubmissionRow(studentSub, attempt.getStatus(), attempt.getStartedAt(),
+								attempt.getSubmittedAt(), attempt.getSubmitMode(), false)
+						: new SubmissionRow(studentSub, "NOT_STARTED", null, null, null, false));
+			}
+			// Học viên đã bị gỡ ghi danh nhưng đã có lượt làm vẫn thuộc diện chấm/công bố, nên vẫn xuất hiện
+			// trong bảng với dấu đã gỡ.
+			for (ExamAttempt attempt : classAttempts) {
+				if (!activeStudents.contains(attempt.getStudentSub())) {
+					rows.add(new SubmissionRow(attempt.getStudentSub(), attempt.getStatus(),
+							attempt.getStartedAt(), attempt.getSubmittedAt(), attempt.getSubmitMode(), true));
+				}
+			}
+			rows.sort(Comparator.comparing(SubmissionRow::studentSub));
+			return rows;
+		});
+	}
+
+	private AttemptView loadForStart(TenantContext context, String partition, UUID assignmentId) {
+		ExamAssignment assignment = this.assignments.findById(assignmentId)
+				.orElseThrow(() -> AssignmentException.notFound("Lần giao không tồn tại."));
+		requireEnrolled(context, partition, assignment);
+		return this.attempts.findByAssignmentIdAndStudentSub(assignmentId, context.sub())
+				.map(attempt -> {
+					finalizeIfPastDue(attempt, assignment);
+					return view(attempt, assignment);
+				})
+				.orElse(null);
+	}
+
+	private AttemptView createAttempt(TenantContext context, String partition, UUID assignmentId) {
+		ExamAssignment assignment = this.assignments.findById(assignmentId)
+				.orElseThrow(() -> AssignmentException.notFound("Lần giao không tồn tại."));
+		requireEnrolled(context, partition, assignment);
+		OffsetDateTime now = now();
+		if (now.isBefore(assignment.getOpensAt()) || now.isAfter(assignment.getDueAt())) {
+			throw AssignmentException.stateConflict("Lượt làm chỉ bắt đầu được trong cửa sổ mở bài của lần giao.");
+		}
+		ExamAttempt attempt = new ExamAttempt();
+		attempt.setId(UUID.randomUUID());
+		attempt.setAssignmentId(assignmentId);
+		attempt.setStudentSub(context.sub());
+		attempt.setStatus(ExamAttempt.IN_PROGRESS);
+		attempt.setStartedAt(now);
+		attempt.setCreatedAt(now);
+		attempt.setUpdatedAt(now);
+		this.attempts.saveAndFlush(attempt);
+		return view(attempt, assignment);
+	}
+
+	private void requireEnrolled(TenantContext context, String partition, ExamAssignment assignment) {
+		if (!this.teaching.isEnrolled(context.sub(), partition, assignment.getClassId())) {
+			throw AssignmentException.forbidden("Người gọi không có ghi danh đang hiệu lực vào lớp đích.");
+		}
+	}
+
+	// Người không phải chủ lượt làm: bạn học cùng lớp thì coi như lượt không tồn tại (404, không kèm dữ kiện),
+	// các vai còn lại bị từ chối quyền (403) — khớp quy ước phân biệt của đặc tả cho từng nhóm người gọi.
+	private void requireOwner(TenantContext context, String partition, ExamAttempt attempt,
+			ExamAssignment assignment) {
+		if (context.sub().equals(attempt.getStudentSub())) {
+			return;
+		}
+		if (this.teaching.isEnrolled(context.sub(), partition, assignment.getClassId())) {
+			throw AssignmentException.notFound("Lượt làm không tồn tại.");
+		}
+		throw AssignmentException.forbidden("Lượt làm thuộc về học viên khác.");
+	}
+
+	private void requireReadable(TenantContext context, String partition, ExamAttempt attempt,
+			ExamAssignment assignment) {
+		if (context.sub().equals(attempt.getStudentSub())) {
+			return;
+		}
+		if (!context.guest() && this.teaching.isAssignedToTeach(context.sub(), partition,
+				assignment.getClassId())) {
+			return;
+		}
+		requireOwner(context, partition, attempt, assignment);
+	}
+
+	// Chốt lười: quá hạn mà lượt còn đang làm thì chuyển đã nộp với submit_mode auto_deadline và mốc nộp là
+	// chính hạn nộp (thời điểm lượt được coi là đã nộp), giữ nguyên câu trả lời đã lưu gần nhất. Trả true khi
+	// có chốt thật ở lần chạm này.
+	private boolean finalizeIfPastDue(ExamAttempt attempt, ExamAssignment assignment) {
+		if (!ExamAttempt.IN_PROGRESS.equals(attempt.getStatus())
+				|| !OffsetDateTime.now().isAfter(assignment.getDueAt())) {
+			return false;
+		}
+		attempt.setStatus(ExamAttempt.SUBMITTED);
+		attempt.setSubmittedAt(assignment.getDueAt());
+		attempt.setSubmitMode(ExamAttempt.SUBMIT_AUTO_DEADLINE);
+		attempt.setUpdatedAt(now());
+		this.attempts.saveAndFlush(attempt);
+		return true;
+	}
+
+	private ExamAssignment assignmentOf(ExamAttempt attempt) {
+		return this.assignments.findById(attempt.getAssignmentId())
+				.orElseThrow(() -> AssignmentException.notFound("Lần giao không tồn tại."));
+	}
+
+	private ExamVersionSnapshots.Snapshot snapshotOf(ExamAssignment assignment) {
+		return this.snapshots.findByVersionId(assignment.getExamVersionId())
+				.orElseThrow(() -> new AssignmentException(HttpStatus.INTERNAL_SERVER_ERROR, "SNAPSHOT_UNAVAILABLE",
+						"Không đọc được snapshot của phiên bản đề đã giao."));
+	}
+
+	// Hình chiếu cho học viên do server tạo từ snapshot: chỉ định danh mục, loại câu, thân câu, các lựa chọn và
+	// điểm — đáp án đúng và tiêu chí chấm của snapshot không bao giờ được chép sang DTO này, ở bất kỳ trường
+	// nào.
+	private AttemptView view(ExamAttempt attempt, ExamAssignment assignment) {
+		List<ItemView> items = this.snapshots.findByVersionId(assignment.getExamVersionId())
+				.map(snapshot -> snapshot.items().stream()
+						.sorted(Comparator.comparingInt(ExamVersionSnapshots.Item::position))
+						.map(item -> new ItemView(item.itemId(), item.type(), item.position(), item.points(),
+								item.prompt(),
+								item.choices().stream()
+										.map(choice -> new ChoiceView(choice.choiceId(), choice.text()))
+										.toList()))
+						.toList())
+				.orElse(List.of());
+		List<AnswerView> savedAnswers = this.answers.findByAttemptId(attempt.getId()).stream()
+				.map(answer -> new AnswerView(answer.getExamItemId(), readJson(answer.getAnswer())))
+				.toList();
+		return new AttemptView(attempt.getId(), assignment.getId(), attempt.getStatus(), attempt.getStartedAt(),
+				attempt.getSubmittedAt(), attempt.getSubmitMode(), assignment.getOpensAt(), assignment.getDueAt(),
+				items, savedAnswers);
+	}
+
+	private void validateAnswer(ExamVersionSnapshots.Item item, JsonNode answer) {
+		if (answer == null || !answer.isObject()) {
+			throw AssignmentException.validation("Câu trả lời phải là một đối tượng JSON theo loại câu.");
+		}
+		switch (item.type()) {
+			case "single_choice" -> {
+				JsonNode choiceId = answer.get("choiceId");
+				if (choiceId == null || !choiceId.isTextual() || item.choices().stream()
+						.noneMatch(choice -> choice.choiceId().equals(choiceId.asText()))) {
+					throw AssignmentException.validation("Lựa chọn không nằm trong các lựa chọn của mục.");
+				}
+			}
+			case "essay_text" -> {
+				JsonNode text = answer.get("text");
+				if (text == null || !text.isTextual()) {
+					throw AssignmentException.validation("Câu trả lời tự luận phải là văn bản.");
+				}
+				// Hợp đồng nội dung của ngân hàng câu hỏi chưa chốt độ dài tối đa cho tự luận, nên tại đây chỉ
+				// kiểm dạng văn bản; giới hạn độ dài được áp tại tầng này khi hợp đồng đó chốt con số.
+			}
+			default -> throw AssignmentException.validation("Loại câu không thuộc phạm vi của bản này.");
+		}
+	}
+
+	// Mốc thời gian đóng dấu lên hàng được cắt về micro giây: đó là độ chính xác của timestamptz trong
+	// PostgreSQL, nên giá trị trả ngay trong request tạo và giá trị đọc lại từ database ở các request sau
+	// khớp nhau tuyệt đối (nộp chống trùng so bằng chính submitted_at này).
+	private static OffsetDateTime now() {
+		return OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS);
+	}
+
+	private String readPartition(TenantContext context) {
+		if (context == null || context.organizationAlias() == null) {
+			throw AssignmentException.notFound("Không tìm thấy dữ kiện trong ngữ cảnh trang hiện tại.");
+		}
+		return this.partitions.requirePagePartition(context);
+	}
+
+	private String writeJson(JsonNode node) {
+		try {
+			return this.objectMapper.writeValueAsString(node);
+		}
+		catch (JacksonException ex) {
+			throw AssignmentException.validation("Câu trả lời không phải JSON hợp lệ.");
+		}
+	}
+
+	private JsonNode readJson(String json) {
+		try {
+			return this.objectMapper.readTree(json);
+		}
+		catch (JacksonException ex) {
+			throw new IllegalStateException("Câu trả lời đã lưu không phải JSON hợp lệ", ex);
+		}
+	}
+
+}
