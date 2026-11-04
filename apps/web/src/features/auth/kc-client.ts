@@ -1,7 +1,9 @@
 /**
  * Adapter Keycloak phía trình duyệt cho trang tenant (issue #38).
  *
- * File này là điểm duy nhất của feature auth sở hữu instance `keycloak-js`. Flow tổng thể:
+ * File này sở hữu vòng đời khởi tạo của adapter; instance dùng chung sống ở tầng dùng chung (`#lib/kc-adapter`)
+ * vì các feature khác (màn hình nghiệp vụ của bản phát hành 07/11) cũng cần token của đúng adapter này. Flow
+ * tổng thể:
  *
  *   1. Điểm vào phía client khởi tạo adapter trước router trên hai hostname tenant; các lần gọi sau dùng lại đúng
  *      một promise khởi tạo. Adapter chạy `check-sso` im lặng, dùng authorization code flow mặc định của nó cùng
@@ -17,28 +19,21 @@
  * Adapter chỉ được tạo lười khi một hàm phía client thật sự chạy: module có thể được nạp trong bản build SSR,
  * nhưng việc chạm vào `window` và khởi tạo Keycloak không bao giờ xảy ra phía server.
  */
-import Keycloak from 'keycloak-js';
+import type Keycloak from 'keycloak-js';
+import { getKeycloakAdapter } from '#lib/kc-adapter';
 import { identityFromTokenClaims, type TenantIdentity } from './kc-tenant';
-
-/** Instance adapter duy nhất của trang tenant; chỉ tồn tại sau lần gọi phía trình duyệt đầu tiên. */
-let keycloak: Keycloak | null = null;
 
 /** Promise khởi tạo dùng chung để điểm vào và component không khởi tạo adapter hai lần. */
 let initialization: Promise<boolean> | null = null;
 
 /**
- * Tạo hoặc lấy adapter với cấu hình client công khai `lms-web` của realm `giaokhoa` trên Keycloak dev — đúng ba
- * giá trị cấu hình mà tài liệu của adapter yêu cầu, không thêm lớp biến môi trường cho lát nghiệm thu này.
+ * Lấy instance adapter dùng chung của app (tầng dùng chung `#lib/kc-adapter`): đúng một instance cho mọi
+ * feature, vì token chỉ sống trong bộ nhớ của instance đã khởi tạo.
  *
- * @returns Instance adapter dùng chung của feature auth.
+ * @returns Instance adapter dùng chung.
  */
 function getKeycloak(): Keycloak {
-  keycloak ??= new Keycloak({
-    url: 'https://auth.fuckr.net',
-    realm: 'giaokhoa',
-    clientId: 'lms-web',
-  });
-  return keycloak;
+  return getKeycloakAdapter();
 }
 
 /**

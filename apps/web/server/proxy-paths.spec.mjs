@@ -55,7 +55,7 @@ describe('isProxyPath', () => {
   });
 });
 
-describe('isServerProxyPath (upstream riêng của /api/me)', () => {
+describe('isServerProxyPath (upstream riêng của apps/server)', () => {
   it('đúng đường /api/me đi upstream server, kể cả khi kèm query string', () => {
     expect(isProxyPath('/api/me')).toBe(true);
     expect(isServerProxyPath('/api/me')).toBe(true);
@@ -83,5 +83,37 @@ describe('isServerProxyPath (upstream riêng của /api/me)', () => {
   it('đường gần giống họ tenancy-check vẫn đi upstream api cũ', () => {
     expect(isServerProxyPath('/api/tenancy-checkfoo')).toBe(false);
     expect(isServerProxyPath('/api/tenancy-check')).toBe(false);
+  });
+});
+
+describe('isServerProxyPath (các họ đường nghiệp vụ của bản phát hành 07/11, issue #102)', () => {
+  it('đường gốc của từng họ đi upstream server, kể cả khi kèm query string', () => {
+    for (const path of ['/api/courses', '/api/classes', '/api/question-banks', '/api/questions', '/api/exams', '/api/assignments']) {
+      expect(isServerProxyPath(path)).toBe(true);
+      expect(isServerProxyPath(`${path}?x=1`)).toBe(true);
+    }
+  });
+
+  it('subpath của từng họ đi upstream server', () => {
+    expect(isServerProxyPath('/api/classes/123/members')).toBe(true);
+    expect(isServerProxyPath('/api/classes/123/teacher')).toBe(true);
+    expect(isServerProxyPath('/api/question-banks/123/entries')).toBe(true);
+    expect(isServerProxyPath('/api/question-banks/123/entries/456')).toBe(true);
+    expect(isServerProxyPath('/api/questions/123/versions/456/publish')).toBe(true);
+    expect(isServerProxyPath('/api/exams/123/versions/456/publish')).toBe(true);
+    expect(isServerProxyPath('/api/assignments/123/attempts')).toBe(true);
+    expect(isServerProxyPath('/api/assignments/123/submissions')).toBe(true);
+    expect(isServerProxyPath('/api/assignments/123/publish-results')).toBe(true);
+    expect(isServerProxyPath('/api/attempts/123/answers')).toBe(true);
+    expect(isServerProxyPath('/api/attempts/123/submit')).toBe(true);
+    expect(isServerProxyPath('/api/attempts/123/grade')).toBe(true);
+  });
+
+  it('đường gần giống và đường gốc không tồn tại trên server vẫn đi upstream api cũ', () => {
+    expect(isServerProxyPath('/api/classesfoo')).toBe(false);
+    expect(isServerProxyPath('/api/questionsXYZ')).toBe(false);
+    expect(isServerProxyPath('/api/assignments2')).toBe(false);
+    expect(isServerProxyPath('/api/courses/123')).toBe(false);
+    expect(isServerProxyPath('/api/attempts')).toBe(false);
   });
 });
