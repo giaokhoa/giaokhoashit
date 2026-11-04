@@ -1,4 +1,4 @@
-package com.giaokhoa.server;
+package com.giaokhoa.server.tenancy;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.giaokhoa.server.tenancy.MembershipChecker;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.RSASSASigner;
@@ -119,6 +118,14 @@ class TenancyEndpointTests {
 				.header("X-LMS-Organization-Alias", "trung-tam-1"))
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("\"partitionKey\":\"" + ORG_1_ID + "\"")))
+				.andExpect(content().string(containsString("\"organizationRoles\":[\"tenant-teacher\"]")))
+				.andExpect(content().string(containsString("\"guest\":false")));
+		String token2 = mint("gv-2", Map.of("organization",
+				Map.of("trung-tam-2", orgEntry(ORG_2_ID, List.of("tenant-teacher")))));
+		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + token2)
+				.header("X-LMS-Organization-Alias", "trung-tam-2"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"partitionKey\":\"" + ORG_2_ID + "\"")))
 				.andExpect(content().string(containsString("\"organizationRoles\":[\"tenant-teacher\"]")))
 				.andExpect(content().string(containsString("\"guest\":false")));
 	}
@@ -274,6 +281,73 @@ class TenancyEndpointTests {
 				.header("X-LMS-Organization-Alias", "trung-tam-1"))
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("\"keycloakSub\":\"hai-ngu-canh\"")));
+	}
+
+	@Test
+	@DisplayName("Organization bị tắt thì token đã cấp trước đó chỉ còn tư cách khách tại trung tâm đó, bật lại Organization thì cùng token mở lại chế độ trung tâm")
+	void disabledOrganizationDowngradesToGuestUntilReenabled() throws Exception {
+		String token = mint("gv-1", Map.of("organization",
+				Map.of("trung-tam-1", orgEntry(ORG_1_ID, List.of("tenant-teacher")))));
+		when(this.membershipChecker.check(ORG_1_ID, "gv-1"))
+				.thenReturn(MembershipChecker.Result.NOT_MEMBER);
+		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + token)
+				.header("X-LMS-Organization-Alias", "trung-tam-1"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"guest\":true")))
+				.andExpect(content().string(containsString("\"organizationRoles\":[]")))
+				.andExpect(content().string(containsString("\"partitionKey\":null")));
+		this.mockMvc.perform(post("/api/tenancy-check/records").header("Authorization", "Bearer " + token)
+				.header("X-LMS-Organization-Alias", "trung-tam-1")
+				.contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"luc-bi-tat\"}"))
+				.andExpect(status().isForbidden());
+		when(this.membershipChecker.check(ORG_1_ID, "gv-1"))
+				.thenReturn(MembershipChecker.Result.MEMBER);
+		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + token)
+				.header("X-LMS-Organization-Alias", "trung-tam-1"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"guest\":false")))
+				.andExpect(content().string(containsString("\"partitionKey\":\"" + ORG_1_ID + "\"")));
+	}
+
+	@Test
+	@DisplayName("Luân phiên ngữ cảnh giữa các request liên tiếp: trung tâm 1, khách ở trang trung tâm không phải thành viên, rồi trung tâm 2 — mỗi request giữ đúng ngữ cảnh của nó, dữ kiện không rò qua chế độ khách")
+	void contextRotatesAcrossRequestsWithoutLeakage() throws Exception {
+		String token = mint("hai-ngu-canh", Map.of("organization", Map.of(
+				"trung-tam-1", orgEntry(ORG_1_ID, List.of("tenant-admin")),
+				"trung-tam-2", orgEntry(ORG_2_ID, List.of("tenant-member")))));
+		this.mockMvc.perform(post("/api/tenancy-check/records").header("Authorization", "Bearer " + token)
+				.header("X-LMS-Organization-Alias", "trung-tam-1")
+				.contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"ban-ghi-luan-phien\"}"))
+				.andExpect(status().isOk());
+		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + token)
+				.header("X-LMS-Organization-Alias", "trung-tam-3"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"guest\":true")))
+				.andExpect(content().string(containsString("\"partitionKey\":null")));
+		this.mockMvc.perform(get("/api/tenancy-check/records").header("Authorization", "Bearer " + token)
+				.header("X-LMS-Organization-Alias", "trung-tam-3"))
+				.andExpect(status().isOk())
+				.andExpect(content().string("[]"));
+		this.mockMvc.perform(post("/api/tenancy-check/records").header("Authorization", "Bearer " + token)
+				.header("X-LMS-Organization-Alias", "trung-tam-3")
+				.contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"khach-khong-ghi-duoc\"}"))
+				.andExpect(status().isForbidden());
+		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + token)
+				.header("X-LMS-Organization-Alias", "trung-tam-2"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"guest\":false")))
+				.andExpect(content().string(containsString("\"partitionKey\":\"" + ORG_2_ID + "\"")))
+				.andExpect(content().string(containsString("\"organizationRoles\":[\"tenant-member\"]")));
+		this.mockMvc.perform(get("/api/tenancy-check/records").header("Authorization", "Bearer " + token)
+				.header("X-LMS-Organization-Alias", "trung-tam-2"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(not(containsString("ban-ghi-luan-phien"))));
+		String free = mint("gv-tu-do-1", Map.of());
+		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + free)
+				.header("X-LMS-Organization-Alias", "trung-tam-1"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"guest\":true")))
+				.andExpect(content().string(containsString("\"organizationRoles\":[]")));
 	}
 
 	@Test

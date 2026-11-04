@@ -1,4 +1,4 @@
-package com.giaokhoa.server;
+package com.giaokhoa.server.profile;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
