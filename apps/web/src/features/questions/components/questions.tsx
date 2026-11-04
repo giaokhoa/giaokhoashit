@@ -5,7 +5,6 @@ import { Button } from '@lms/ui/components/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@lms/ui/components/card';
 import { ErrorAlert } from '#components/error-alert';
 import { useTranslation } from 'react-i18next';
-import { BankAreaTabs } from './bank-area-tabs';
 import { CategoryBrowser } from './category-browser';
 import { DiscoveryPanel } from './discovery-panel';
 import { DossierQueuePanel } from './dossier-queue-panel';
@@ -243,7 +242,6 @@ export function QuestionsPage({ area = 'my-questions' }: { area?: BankArea }) {
           ) : undefined
         }
       />
-      <BankAreaTabs area={area} />
       {displayMessage ? (
         <ErrorAlert>
           {displayMessage}

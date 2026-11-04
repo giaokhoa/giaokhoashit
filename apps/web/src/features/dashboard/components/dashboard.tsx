@@ -1,21 +1,12 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import type { CourseCategoryTreeNode, UserListResponse } from '@lms/contracts';
 import '#config/i18n';
-import { ApiError } from '#lib/api';
 import { useAuth } from '#lib/auth';
 import { usePermissions, type CourseAccess } from '#lib/permissions';
 import { useCoursesGradeData } from '#hooks/use-courses-grade-data';
-import { upcomingDaysRangeIso } from '#features/calendar/utils/calendar';
-import { useCalendarEvents } from '#features/calendar/queries/calendar';
 import { formatWithOptions } from '#utils/date-format';
-import { useAccessRoles } from '#lib/access';
-import { adminUsersQueryOptions } from '#features/admin/queries/admin-users';
-import { useMyBadges } from '#features/badges/queries/badges';
-import { categoryTreeQueryOptions } from '#features/courses/queries/courses';
-import { dashboardUnreadCountQueryOptions, useDashboardOverview } from '../queries/dashboard';
+import { useDashboardOverview } from '../queries/dashboard';
 import { displayCourseName, useCourseCardPrefs } from '#lib/course-cards';
 import { DashboardSkeleton } from './dashboard-skeleton';
 import { SectionCards, type StatCard } from '#components/section-cards';
@@ -26,16 +17,6 @@ import { Badge } from '@lms/ui/components/badge';
 import { Button } from '@lms/ui/components/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@lms/ui/components/card';
 import { PageShell } from '#components/page-shell';
-
-interface CalendarEventView {
-  id: string;
-  name: string;
-  timeStart: string;
-}
-
-function isForbidden(error: unknown): boolean {
-  return error instanceof ApiError && error.problem.status === 403;
-}
 
 function SectionHeading({ title }: { title: string }) {
   return (
@@ -86,16 +67,10 @@ function StudentTodoBlock() {
                   <Badge variant={item.status === 'overdue' ? 'destructive' : 'secondary'}>
                     {statusLabel(item.status)}
                   </Badge>
-                  <Link
-                    to={
-                      item.kind === 'quiz'
-                        ? `/courses/${item.courseId}/exams/${item.activityId}`
-                        : `/courses/${item.courseId}/assignments/${item.activityId}`
-                    }
-                    className="font-medium hover:underline"
-                  >
-                    {item.name}
-                  </Link>
+                  {/* Tên việc chỉ hiện dạng chữ, không bọc liên kết: cả hai đích cũ của mục này (trang làm quiz và
+                      trang nộp bài tập theo khoá) đều thuộc bề mặt đã ẩn khỏi bản phát hành 07/11 (issue #79) — giữ
+                      liên kết sẽ thành đường cụt. */}
+                  <span className="font-medium">{item.name}</span>
                   <span className="text-muted-foreground">
                     {item.kind === 'quiz' ? t('todoKindQuiz') : t('todoKindAssignment')} · {item.courseName} ·{' '}
                     {t('todoDueAt', { date: formatWithOptions(item.dueAt, i18n.language, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) })}
@@ -163,15 +138,9 @@ function TeacherGradingBlock() {
                   {row.assignmentPending > 0 && row.quizPending > 0 ? ' · ' : null}
                   {row.quizPending > 0 ? t('gradingQuizPart', { count: row.quizPending }) : null}
                   {(row.assignmentPending > 0 || row.quizPending > 0) && row.paperPending > 0 ? ' · ' : null}
-                  {row.paperPending > 0 && row.paperPinId ? (
-                    <Link
-                      to={`/courses/${row.courseId}/exams/${row.paperPinId}/paper`}
-                      className="font-medium text-foreground hover:underline"
-                      data-testid="grading-paper-link"
-                    >
-                      {t('gradingPaperPart', { count: row.paperPending })}
-                    </Link>
-                  ) : null}
+                  {/* Số phiếu giấy chỉ hiện dạng chữ: đích xử lý phiếu giấy thuộc bề mặt quiz đã ẩn khỏi bản phát
+                      hành 07/11 (issue #79) — giữ liên kết sẽ thành đường cụt. */}
+                  {row.paperPending > 0 ? t('gradingPaperPart', { count: row.paperPending }) : null}
                   {row.oldestPendingAt
                     ? ` · ${t('gradingOldest', { date: formatWithOptions(row.oldestPendingAt, i18n.language, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) })}`
                     : ''}
@@ -185,148 +154,6 @@ function TeacherGradingBlock() {
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function BlockNotice() {
-  const { t } = useTranslation('dashboard');
-  return <p className="px-4 text-sm text-muted-foreground lg:px-6">{t('blockForbidden')}</p>;
-}
-
-function AdminSection() {
-  const { t, i18n } = useTranslation(['dashboard', 'app']);
-  const perms = usePermissions();
-  const usersQuery = useQuery(adminUsersQueryOptions(1, 100, ''));
-  const treeQuery = useQuery(categoryTreeQueryOptions());
-  const rolesQuery = useAccessRoles();
-
-  const users = usersQuery.data ?? null;
-  const categoryCount = useMemo(() => {
-    if (!treeQuery.data) return null;
-    let total = 0;
-    const walk = (nodes: CourseCategoryTreeNode[]) => {
-      for (const node of nodes) {
-        total += 1;
-        walk(node.children);
-      }
-    };
-    walk(treeQuery.data);
-    return { total, topLevel: treeQuery.data.length };
-  }, [treeQuery.data]);
-  const roles = rolesQuery.data ?? null;
-  const failed = usersQuery.isError && isForbidden(usersQuery.error);
-
-  const active = users ? users.users.filter((u) => !u.suspended && !u.deleted).length : 0;
-  const cards: StatCard[] = [
-    {
-      id: 'admin-users',
-      label: t('dashboard:statTotalUsers'),
-      value: users ? String(users.total) : '—',
-      footer:
-        users && users.users.length >= users.total ? t('dashboard:statUsersFooter', { count: active }) : undefined,
-      loading: usersQuery.isPending,
-    },
-    {
-      id: 'admin-courses',
-      label: t('dashboard:statTotalCourses'),
-      value: String(perms.courses.length),
-      footer: t('dashboard:statCoursesFooter', {
-        count: perms.courses.filter((c) => c.course.visible).length,
-      }),
-    },
-    {
-      id: 'admin-categories',
-      label: t('dashboard:statTotalCategories'),
-      value: categoryCount ? String(categoryCount.total) : '—',
-      footer: categoryCount ? t('dashboard:statCategoriesFooter', { count: categoryCount.topLevel }) : undefined,
-      loading: treeQuery.isPending,
-    },
-    {
-      id: 'admin-roles',
-      label: t('dashboard:statTotalRoles'),
-      value: roles ? String(roles.length) : '—',
-      footer: roles
-        ? t('dashboard:statRolesFooter', {
-            count: roles.filter((r) => r.archetype !== null).length,
-          })
-        : undefined,
-      loading: rolesQuery.isPending,
-    },
-  ];
-
-  const chartData: ChartPoint[] = useMemo(() => {
-    if (!users) return [];
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return Array.from({ length: 8 }, (_, i) => {
-      const start = new Date(now.getTime() - (7 - i) * 7 * 86_400_000);
-      const end = new Date(start.getTime() + 7 * 86_400_000);
-      const value = users.users.filter((u) => {
-        const created = new Date(u.createdAt);
-        return created >= start && created < end;
-      }).length;
-      return { label: formatWithOptions(start, i18n.language, { day: '2-digit', month: '2-digit' }), value };
-    });
-  }, [users, i18n.language]);
-
-  const columns: DataColumn<UserListResponse['users'][number]>[] = [
-    { id: 'username', header: t('app:username'), cell: (u) => u.username, sortValue: (u) => u.username },
-    {
-      id: 'fullName',
-      header: t('dashboard:colFullName'),
-      cell: (u) => `${u.firstName} ${u.lastName}`.trim(),
-      sortValue: (u) => `${u.firstName} ${u.lastName}`,
-    },
-    { id: 'email', header: t('app:email'), cell: (u) => u.email ?? '—', sortValue: (u) => u.email ?? '' },
-    {
-      id: 'status',
-      header: t('app:status'),
-      cell: (u) =>
-        u.deleted ? (
-          <Badge variant="destructive">{t('app:deletedSuffix')}</Badge>
-        ) : u.suspended ? (
-          <Badge variant="secondary">{t('dashboard:statusSuspended')}</Badge>
-        ) : (
-          <Badge variant="outline">{t('dashboard:statusActive')}</Badge>
-        ),
-    },
-  ];
-
-  if (failed) return <BlockNotice />;
-  return (
-    <section className="flex flex-col gap-4 md:gap-6" data-testid="dashboard-admin">
-      <SectionHeading title={t('dashboard:adminSection')} />
-      <SectionCards cards={cards} />
-      {usersQuery.isPending ? (
-        <Skeleton className="mx-4 h-97 lg:mx-6" />
-      ) : (
-        <ChartAreaInteractive
-          title={t('dashboard:chartAdminTitle')}
-          description={t('dashboard:chartAdminDescription')}
-          seriesLabel={t('dashboard:chartAdminSeries')}
-          emptyText={t('dashboard:chartNoData')}
-          data={chartData}
-        />
-      )}
-      {usersQuery.isPending ? (
-        <Skeleton className="mx-4 h-75 lg:mx-6" />
-      ) : users ? (
-        <DataTable
-          title={t('dashboard:tableUsersTitle')}
-          data={users.users}
-          columns={columns}
-          getRowId={(u) => u.id}
-          labels={{
-            columns: t('dashboard:tableColumns'),
-            previous: t('dashboard:tablePrevious'),
-            next: t('dashboard:tableNext'),
-            empty: t('dashboard:emptyTable'),
-            filterPlaceholder: t('dashboard:tableFilterPlaceholder'),
-            pageInfo: (page, pages) => t('dashboard:tablePageInfo', { page, pages }),
-          }}
-        />
-      ) : null}
-    </section>
   );
 }
 
@@ -455,24 +282,12 @@ function TeacherSection() {
 }
 
 function StudentSection() {
-  const { t, i18n } = useTranslation(['dashboard', 'app']);
+  const { t } = useTranslation(['dashboard', 'app']);
   const perms = usePermissions();
   const prefs = useCourseCardPrefs();
   const learning = perms.learning;
   const gradeData = useCoursesGradeData(learning.map((c) => c.course.id));
   const gradebookOf = (c: CourseAccess) => gradeData.get(c.course.id)?.gradebook ?? null;
-  const badgesQuery = useMyBadges();
-  const notificationsQuery = useQuery(dashboardUnreadCountQueryOptions());
-  // Cửa sổ sự kiện 30 ngày: tính theo múi giờ ứng dụng qua helper dùng chung với loader SL-1 của route `/` (trước đây
-  // lấy đúng mốc tức thời lúc mount — key chứa mốc mili-giây thì loader phía server không bao giờ tính lại trùng để
-  // dehydrate được; xem `upcomingDaysRangeIso` ở features/calendar/utils/calendar). Cửa sổ mới bắt đầu từ 00:00 hôm nay
-  // nên phủ đúng ô ngày đầu của biểu đồ bên dưới.
-  const eventRange = useMemo(() => upcomingDaysRangeIso(30), []);
-  const eventsQuery = useCalendarEvents(eventRange.from, eventRange.to);
-
-  const badgeCount = badgesQuery.data ? badgesQuery.data.length : null;
-  const unread = notificationsQuery.data ? notificationsQuery.data.unread : null;
-  const events = eventsQuery.data ?? [];
 
   const activityPcts: number[] = [];
   for (const access of learning) {
@@ -500,35 +315,7 @@ function StudentSection() {
       value: average === null ? '—' : `${average.toFixed(1)}%`,
       footer: t('statAverageFooter', { count: activityPcts.length }),
     },
-    {
-      id: 'student-badges',
-      label: t('statMyBadges'),
-      value: badgeCount === null ? '—' : String(badgeCount),
-      footer: t('statBadgesFooter'),
-      loading: badgesQuery.isPending,
-    },
-    {
-      id: 'student-unread',
-      label: t('statUnread'),
-      value: unread === null ? '—' : String(unread),
-      footer: t('statUnreadFooter'),
-      loading: notificationsQuery.isPending,
-    },
   ];
-
-  const chartData: ChartPoint[] = useMemo(() => {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    return Array.from({ length: 30 }, (_, i) => {
-      const day = new Date(start.getTime() + i * 86_400_000);
-      const next = new Date(day.getTime() + 86_400_000);
-      const value = events.filter((e) => {
-        const at = new Date(e.timeStart);
-        return at >= day && at < next;
-      }).length;
-      return { label: formatWithOptions(day, i18n.language, { day: '2-digit', month: '2-digit' }), value };
-    });
-  }, [events, i18n.language]);
 
   const columns: DataColumn<CourseAccess>[] = [
     {
@@ -575,17 +362,6 @@ function StudentSection() {
       <SectionHeading title={t('studentSection')} />
       <StudentTodoBlock />
       <SectionCards cards={cards} />
-      <ChartAreaInteractive
-        title={t('chartStudentTitle')}
-        description={t('chartStudentDescription')}
-        seriesLabel={t('chartStudentSeries')}
-        emptyText={t('chartNoData')}
-        data={chartData}
-        ranges={[
-          { value: '7', label: t('rangeDays', { count: 7 }), count: 7 },
-          { value: '30', label: t('rangeDays', { count: 30 }), count: 30 },
-        ]}
-      />
       <DataTable
         title={t('tableLearningTitle')}
         data={learning}
@@ -613,13 +389,12 @@ export function DashboardPage() {
     return <DashboardSkeleton />;
   }
 
-  const hasBlocks = perms.canAdminister || perms.teaching.length > 0 || perms.learning.length > 0;
+  const hasBlocks = perms.teaching.length > 0 || perms.learning.length > 0;
   const name = user ? `${user.firstName} ${user.lastName}`.trim() || user.username : '';
 
   return (
     <PageShell width="wide" className="px-0 lg:px-0">
       <h1 className="px-4 text-2xl font-semibold lg:px-6">{t('dashboard:welcome', { name })}</h1>
-      {perms.canAdminister ? <AdminSection /> : null}
       {perms.teaching.length > 0 ? <TeacherSection /> : null}
       {perms.learning.length > 0 ? <StudentSection /> : null}
       {!hasBlocks ? (

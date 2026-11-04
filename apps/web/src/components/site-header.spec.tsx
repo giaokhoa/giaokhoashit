@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, Outlet, RouterProvider, useLocation } from 'react-router';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -7,38 +7,17 @@ import { TestProviders } from '#test/providers';
 import { SiteHeader } from '#components/site-header';
 
 /**
- * Test cho header ba vùng sau chốt 23:52 ngày 26/10/2026 (issue #303 — ô tìm kiếm ra giữa header theo khuôn
- * Facebook/YouTube):
+ * Test cho header của bản phát hành 07/11 (issue #79). Header chỉ còn vùng tiêu đề (nút thu/mở sidebar + tiêu đề
+ * trang theo route):
  *
- * - Gõ từ khoá vào ô giữa + Enter → điều hướng tới `/search?q=…` (từ khoá được mã hoá URL); đây là đường chính tới
- *   trang kết quả kể từ khi sidebar bỏ mục "Tìm kiếm".
- * - Đang ở `/search` thì ô giữa đồng bộ đúng tham số `q` hiện tại: mở thẳng link có `q` là ô hiện sẵn `q`, `q` đổi thì
- *   ô đổi theo.
- * - Ô trống (hoặc chỉ khoảng trắng) + Enter → KHÔNG điều hướng.
- * - Bề mặt tìm kiếm hợp nhất (chốt gộp 27/10/2026): nút "Tìm nhanh…" riêng ở vùng phải đã BỎ (không còn trigger trong
- *   header) nhưng Ctrl+K vẫn mở được bề mặt từ header.
+ * - Tiêu đề tra theo tiền tố path trong catalog i18n: `/` là "Tổng quan", họ `/courses` là "Khoá học"; path không
+ *   có trong catalog thì rơi về "LMS".
+ * - Ô tìm kiếm toàn cục ở giữa header, chuông thông báo và bảng lệnh Cmd+K thuộc các tính năng đã hoãn (tìm kiếm
+ *   toàn hệ thống, thông báo) nên đã gỡ: không còn ô nhập nào trong header, không còn nút chuông, và Ctrl+K không
+ *   mở bề mặt nào. Header tự nó không gọi API nào khi hiển thị.
  *
- * Dựng SiteHeader thật trong SidebarProvider + router nhớ giống shell thật; fetch chỉ stub cho chuông thông báo (số
- * chưa đọc) vì header tự nó không gọi API nào khác khi hiển thị.
+ * Dựng SiteHeader thật trong SidebarProvider + router nhớ giống shell thật.
  */
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-function stubFetch() {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) => {
-      if (url === '/api/v1/notifications/unread-count') return jsonResponse({ unread: 0 });
-      if (url.startsWith('/api/v1/notifications?')) return jsonResponse({ items: [], nextCursor: null });
-      return jsonResponse({}, 404);
-    }),
-  );
-}
 
 function CurrentPath() {
   const location = useLocation();
@@ -63,7 +42,7 @@ function renderHeader(initialPath = '/') {
         children: [
           { index: true, element: <p>Trang chủ thử</p> },
           { path: 'courses', element: <p>Trang khoá học thử</p> },
-          { path: 'search', element: <p>Trang kết quả thử</p> },
+          { path: 'other', element: <p>Trang lạ thử</p> },
         ],
       },
     ],
@@ -75,10 +54,6 @@ function renderHeader(initialPath = '/') {
     </TestProviders>,
   );
   return router;
-}
-
-function headerSearchInput(): HTMLElement {
-  return screen.getByRole('textbox', { name: 'Từ khoá tìm kiếm' });
 }
 
 beforeAll(() => {
@@ -99,45 +74,25 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('site-header — ô tìm kiếm ở giữa (issue #303)', () => {
-  it('gõ từ khoá + Enter ở ô giữa → tới /search?q=… đã mã hoá', async () => {
-    stubFetch();
+describe('site-header — bản phát hành 07/11', () => {
+  it('ở trang chủ: tiêu đề là "Tổng quan" và header không còn ô tìm kiếm, chuông thông báo hay bảng lệnh', async () => {
     renderHeader('/');
-    const user = userEvent.setup();
-    await user.type(headerSearchInput(), 'khoá học{Enter}');
-    await waitFor(() =>
-      expect(screen.getByTestId('current-path')).toHaveTextContent(`/search?q=${encodeURIComponent('khoá học')}`),
-    );
-    expect(await screen.findByText('Trang kết quả thử')).toBeInTheDocument();
-  });
-
-  it('mở thẳng /search?q=abc → ô giữa hiện sẵn abc; q đổi thì ô đổi theo', async () => {
-    stubFetch();
-    const router = renderHeader('/search?q=abc');
-    expect(headerSearchInput()).toHaveValue('abc');
-    await act(async () => {
-      await router.navigate('/search?q=xyz');
-    });
-    expect(headerSearchInput()).toHaveValue('xyz');
-  });
-
-  it('ô trống hoặc chỉ khoảng trắng + Enter → không điều hướng', async () => {
-    stubFetch();
-    renderHeader('/courses');
-    const user = userEvent.setup();
-    await user.type(headerSearchInput(), '{Enter}');
-    await user.type(headerSearchInput(), '   {Enter}');
-    expect(screen.getByTestId('current-path')).toHaveTextContent('/courses');
-    expect(screen.queryByText('Trang kết quả thử')).not.toBeInTheDocument();
-  });
-
-  it('không còn nút Tìm nhanh riêng ở header; Ctrl+K vẫn mở bề mặt hợp nhất', async () => {
-    stubFetch();
-    renderHeader('/');
-    expect(screen.queryByTestId('command-palette-trigger')).not.toBeInTheDocument();
-    expect(screen.queryByText('Tìm nhanh…')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Tổng quan' })).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('search')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /thông báo/i })).not.toBeInTheDocument();
     const user = userEvent.setup();
     await user.keyboard('{Control>}k{/Control}');
-    expect(await screen.findByTestId('command-palette')).toBeInTheDocument();
+    expect(screen.queryByTestId('command-palette')).not.toBeInTheDocument();
+  });
+
+  it('ở họ /courses: tiêu đề là "Khoá học"', () => {
+    renderHeader('/courses');
+    expect(screen.getByRole('heading', { name: 'Khoá học' })).toBeInTheDocument();
+  });
+
+  it('ở path lạ: tiêu đề rơi về "LMS"', () => {
+    renderHeader('/other');
+    expect(screen.getByRole('heading', { name: 'LMS' })).toBeInTheDocument();
   });
 });
