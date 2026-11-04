@@ -347,8 +347,8 @@ thu xuyên suốt thực hiện tay trong Admin Console của Keycloak thử ngh
       dùng lâu dài theo điều kiện của grant, bản đã nộp và biên nhận; chặn token cấp trước khi gỡ membership.
 - [ ] Bộ hành động của câu hỏi nối vào dịch vụ quyết quyền của F4, kèm test cho từng hành động và từng chế độ
       chia sẻ.
-- [ ] Test tại local cho `apps/server` và kiểm chứng runtime theo mục Nghiệm thu, gồm lát của feat này trong ca
-      nghiệm thu trọng tâm xuyên suốt.
+- [ ] Test tự động cho `apps/server` và kiểm chứng runtime theo mục Nghiệm thu, gồm lát của feat này trong ca
+      nghiệm thu trọng tâm xuyên suốt; phần cần database thật chạy trên test-pg online theo quyết định 12.
 
 ## Quyết định liên quan
 
@@ -418,8 +418,11 @@ Các quyết định dưới đây được viết lại trọn vẹn; đặc t�
     đi qua tài nguyên/phiên bản được cấp quyền. Không để việc sửa một bản sao thay đổi nội dung tệp mà bản gốc
     đang sử dụng.
 12. Giai đoạn hiện tại không có dữ kiện thật phải di trú và không có yêu cầu tương thích ngược: schema dựng
-    theo mô hình mới ngay từ đầu; database tại local/test dựng lại từ đầu khi cần, còn stack DEV đang chạy
-    nằm im, không dựng lại. Schema do Flyway sở hữu, Hibernate `ddl-auto=none`. Mọi quyết định quyền được
+    theo mô hình mới ngay từ đầu; database phục vụ test là database riêng của từng lượt test trên test-pg —
+    một PostgreSQL test riêng (hostname `test-pg.fuckr.net`), tách hẳn khỏi stack DEV: mỗi lượt test tạo một
+    database trống của riêng nó trên test-pg và xoá database đó khi test xong; không dựng hạ tầng test tại
+    local. Stack DEV đang chạy nằm im, không dựng lại, và dữ kiện của nó không làm bãi test. Schema do Flyway
+    sở hữu, Hibernate `ddl-auto=none`. Mọi quyết định quyền được
     kiểm lại trong giao dịch tại API; các đường truy vấn native, xuất dữ kiện hay hàng loạt vẫn phải áp đúng
     điều kiện phân vùng và quyền như đường truy vấn thường.
 
@@ -513,10 +516,10 @@ Các quyết định dưới đây được viết lại trọn vẹn; đặc t�
 - [ ] Cách ly ở mức database: bằng kết nối SQL với role runtime trên database của server, đặt biến ngữ cảnh
       phân vùng của `trung-tam-1` thì `SELECT` trên bảng nội dung phiên bản câu hỏi chỉ trả hàng của trung tâm
       đó — không trả hàng cá nhân và không trả hàng của `trung-tam-2`; không đặt biến ngữ cảnh thì trả 0 hàng.
-- [ ] Migration và test: dựng database trống từ đầu, toàn bộ migration (của F2, F3, F4 và feat này) áp sạch;
-      bộ test của `apps/server` tại local đạt, gồm test cho ba workspace, vòng đời phiên bản, catalog, sao
-      chép, ba chế độ chia sẻ, quy trình nộp và xử lý rời trung tâm; `GET /api/profile` và các endpoint kiểm
-      chứng của F3 vẫn trả kết quả đúng như trước (hồi quy).
+- [ ] Migration và test: dựng database test trống trên test-pg từ đầu (xoá sau lượt chạy), toàn bộ migration
+      (của F2, F3, F4 và feat này) áp sạch; bộ test của `apps/server` đạt, gồm test cho ba workspace, vòng đời
+      phiên bản, catalog, sao chép, ba chế độ chia sẻ, quy trình nộp và xử lý rời trung tâm; `GET /api/profile`
+      và các endpoint kiểm chứng của F3 vẫn trả kết quả đúng như trước (hồi quy).
 
 ## Phụ thuộc và thứ tự
 

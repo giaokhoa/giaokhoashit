@@ -27,8 +27,8 @@ Nội dung chuyên biệt của câu hỏi, ngân hàng câu hỏi, đề và ma
 - `created_by` chỉ là dữ kiện truy vết. Người tạo một tài nguyên đã thuộc trung tâm không vì thế được xem, sửa,
   duyệt, phát hành hoặc chia sẻ tài nguyên đó.
 - Phiên bản đã phát hành hoặc đã được grant không bị sửa tại chỗ; thao tác sửa hợp lệ tạo một phiên bản nháp mới.
-- Toàn bộ lõi được kiểm chứng bằng test tại local và bằng request runtime qua các endpoint kiểm chứng chuyên dụng,
-  theo các tiêu chí ở mục Nghiệm thu.
+- Toàn bộ lõi được kiểm chứng bằng test tự động và bằng request runtime qua các endpoint kiểm chứng chuyên dụng,
+  theo các tiêu chí ở mục Nghiệm thu; phần test cần database thật chạy trên test-pg online theo quyết định 11.
 
 ## Phạm vi
 
@@ -53,7 +53,7 @@ Nội dung chuyên biệt của câu hỏi, ngân hàng câu hỏi, đề và ma
 - Các endpoint `/api/access-check/...` tối thiểu để tạo dữ kiện mẫu, tạo/gỡ phân công, tạo/thu hồi grant tạm thời,
   chạy phần bàn giao dùng chung với tài nguyên mẫu, hỏi quyết định quyền và kiểm chứng hành vi của dịch vụ trên
   đường runtime thật. Đây là bề mặt kiểm chứng, không phải bề mặt sản phẩm, theo giới hạn ở mục 10.
-- Test tại local cho tầng dữ kiện, thuật toán quyết định, cách ly giữa hai trung tâm và hồi quy của F2/F3.
+- Test tự động cho tầng dữ kiện, thuật toán quyết định, cách ly giữa hai trung tâm và hồi quy của F2/F3.
 
 ### Không làm
 
@@ -640,7 +640,7 @@ Quy tắc của phần bàn giao dùng chung:
 - [ ] Các endpoint `/api/access-check/...` cho tài nguyên mẫu, phiên bản, phân công, grant, bàn giao và hỏi
       quyết định.
 - [ ] Tích hợp quy tắc khoá phiên bản khi phát hành hoặc tạo grant, bảo đảm sửa luôn tạo phiên bản nháp mới.
-- [ ] Test tại local cho mô hình dữ kiện, thuật toán quyết định, RLS và các endpoint kiểm chứng.
+- [ ] Test tự động cho mô hình dữ kiện, thuật toán quyết định, RLS và các endpoint kiểm chứng.
 - [ ] Kiểm chứng runtime bằng hai ngữ cảnh trung tâm, tài khoản tự do và tài khoản `platform-admin` theo mục
       Nghiệm thu; đồng thời chạy hồi quy cho `GET /api/profile` và các endpoint kiểm chứng của F3.
 
@@ -700,8 +700,11 @@ Các quyết định dưới đây được viết lại trọn vẹn; đặc t�
     bảng nội dung của tài nguyên cá nhân hoặc trung tâm.
 11. Giai đoạn hiện tại chỉ xây bộ khung có kiểm chứng cho mỗi feat. Không mang logic của module `access` cũ
     sang, không dựng cơ chế cho nhu cầu chưa có nơi dùng thật, không viết backfill hoặc tương thích ngược cho
-    dữ kiện cũ. Schema do Flyway sở hữu và Hibernate giữ `ddl-auto=none`. Database tại local/test dựng lại
-    từ đầu khi cần; stack DEV đang chạy trên Dokploy nằm im, không dựng lại.
+    dữ kiện cũ. Schema do Flyway sở hữu và Hibernate giữ `ddl-auto=none`. Database phục vụ test là database
+    riêng của từng lượt test trên test-pg — một PostgreSQL test riêng (hostname `test-pg.fuckr.net`), tách hẳn
+    khỏi stack DEV: mỗi lượt test tạo một database trống của riêng nó trên test-pg và xoá database đó khi test
+    xong; không dựng hạ tầng test tại local. Stack DEV đang chạy trên Dokploy nằm im, không dựng lại, và dữ
+    kiện của nó không làm bãi test.
 12. Service account và Admin REST API không thuộc feat này. Feat này không tạo Organization, không thêm hoặc
     gỡ thành viên và không thay đổi vòng đời membership. Đóng một trung tâm ở các feat quản trị sau là
     disable Organization, không xoá Organization và dữ kiện của nó.
@@ -739,11 +742,11 @@ Trong các tiêu chí dưới đây, A là Organization của `trung-tam-1` và 
 kiểm chứng runtime dùng token thật và ngữ cảnh trang tương ứng; kết quả của `POST /api/access-check/decisions`,
 mã trạng thái HTTP và truy vấn trực tiếp vào database là bằng chứng.
 
-- [ ] Migration và schema: dựng database tại local/test trống từ đầu sau các migration của F3, migration của
-      feat này áp sạch. Các bảng lõi tồn tại với các ràng buộc workspace/chủ sở hữu/`custody_kind`, khoá ngoại
-      và chỉ mục đã nêu; `resource_version` không gắn được sang một `resource` thuộc phân vùng khác; một grant
-      không trỏ được tới phiên bản thuộc tài nguyên khác; một bản nhận `licensed` không tồn tại được khi thiếu
-      grant cấp phép.
+- [ ] Migration và schema: dựng database test trống trên test-pg từ đầu (xoá sau lượt chạy) sau các migration
+      của F3, migration của feat này áp sạch. Các bảng lõi tồn tại với các ràng buộc
+      workspace/chủ sở hữu/`custody_kind`, khoá ngoại và chỉ mục đã nêu; `resource_version` không gắn được sang
+      một `resource` thuộc phân vùng khác; một grant không trỏ được tới phiên bản thuộc tài nguyên khác; một bản
+      nhận `licensed` không tồn tại được khi thiếu grant cấp phép.
 - [ ] Quyết định chỉ dùng ngữ cảnh đã xác thực: gọi `POST /api/access-check/decisions` kèm các trường giả về
       người gọi, Organization, vai, chủ sở hữu và khoá phân vùng trong thân request cho cùng một trường hợp đã
       biết kết quả. Kết quả không đổi so với lần gọi không có các trường giả đó.
@@ -829,9 +832,10 @@ mã trạng thái HTTP và truy vấn trực tiếp vào database là bằng ch�
       Authorization Services, policy enforcer, Protection API hoặc lời gọi tạo role/object Keycloak cho tài
       nguyên; toàn bộ kết quả ở các tiêu chí trên đến từ dịch vụ quyết định tại API và dữ kiện trong database
       của LMS.
-- [ ] Hồi quy và test tại local: bộ test của `apps/server` tại local đạt, gồm test cho mô hình dữ kiện, thuật
-      toán quyết định, RLS và endpoint kiểm chứng. `GET /api/profile` và các endpoint `/api/tenancy-check/...`
-      của F3 giữ nguyên kết quả trên các tài khoản thử đã có.
+- [ ] Hồi quy và test tự động: bộ test của `apps/server` đạt, gồm test cho mô hình dữ kiện, thuật toán quyết
+      định, RLS và endpoint kiểm chứng; phần cần database thật chạy trên test-pg theo quyết định 11.
+      `GET /api/profile` và các endpoint `/api/tenancy-check/...` của F3 giữ nguyên kết quả trên các tài khoản
+      thử đã có.
 
 ## Phụ thuộc và thứ tự
 
@@ -841,7 +845,7 @@ mã trạng thái HTTP và truy vấn trực tiếp vào database là bằng ch�
 - Phụ thuộc nền đã xong: F0 cho khung `apps/server` và kiểm chứng JWT; F2 cho Hibernate/JPA, Flyway, bảng
   `app_user` và `GET /api/profile`.
 - Thứ tự việc con: migration và RLS cho các bảng lõi trước; sau đó tới dịch vụ quyết định quyền; sau đó tới
-  bề mặt kiểm chứng và quy tắc khoá phiên bản; cuối cùng là test tại local và kiểm chứng runtime theo mục
+  bề mặt kiểm chứng và quy tắc khoá phiên bản; cuối cùng là test tự động và kiểm chứng runtime theo mục
   Nghiệm thu.
 - Feat này là nền cho F5 ở phần quyền quản trị khoá học và là nền trực tiếp cho F10/F11. Các feat tài nguyên
   dùng dịch vụ quyết định của feat này và định nghĩa nội dung, hành động chuyên biệt cùng quy trình share, nộp

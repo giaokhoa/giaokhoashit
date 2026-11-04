@@ -70,8 +70,9 @@ nguồn câu thật, và hai thao tác share/nộp áp cho đề và ma trận v
   không tích hợp policy enforcer.
 - Không dựng chức năng xuất tệp đề ra định dạng ngoài trong feat này: hành động xuất (có đáp án / không có đáp án) chỉ
   được định nghĩa ở tầng quyền để các feat sau sử dụng; định dạng xuất chưa chốt (xem mục Điểm để ngỏ).
-- Không di trú dữ kiện đề/ma trận từ `apps/api`: database tại local/test dựng lại từ đầu khi cần và stack DEV đang
-  chạy nằm im; migration của feat này chỉ tạo cấu trúc mới trên nền các migration đã có.
+- Không di trú dữ kiện đề/ma trận từ `apps/api`: database phục vụ test là database riêng của từng lượt test trên
+  test-pg, dựng lại từ đầu khi cần (mỗi lượt một database, xoá sau lượt chạy; không dựng hạ tầng test tại local)
+  và stack DEV đang chạy nằm im; migration của feat này chỉ tạo cấu trúc mới trên nền các migration đã có.
 
 ## Chi tiết việc cần làm
 
@@ -265,8 +266,8 @@ người thực hiện từ thân request.
 - [ ] Bộ sưu tập đề và ma trận theo hợp đồng bộ sưu tập của F4: tạo/quản lý bởi `tenant-admin` của trung tâm, phân
       công trên đúng bộ sưu tập và loại tài nguyên, bộ sưu tập đích và người tiếp nhận cho bản chờ duyệt (trạng
       thái chờ duyệt qua điểm tích hợp điều kiện nghiệp vụ của F4).
-- [ ] Test tại local cho `apps/server` (snapshot, sinh đề có kiểm quyền, phạm vi bàn giao, cách ly workspace/RLS) và
-      kiểm chứng runtime theo mục Nghiệm thu.
+- [ ] Test tự động cho `apps/server` (snapshot, sinh đề có kiểm quyền, phạm vi bàn giao, cách ly workspace/RLS) và
+      kiểm chứng runtime theo mục Nghiệm thu; phần cần database thật chạy trên test-pg online theo quyết định 12.
 
 ## Quyết định liên quan
 
@@ -343,8 +344,11 @@ Các quyết định dưới đây được viết lại trọn vẹn; đặc t�
     sưu tập cụ thể. `tenant-admin` quản lý yêu cầu nộp, phân công và tài nguyên đã thuộc trung tâm, nhưng không tự
     đọc, sửa hay đổi chủ sở hữu tài nguyên cá nhân. Sở hữu một đề không cấp quyền trên bài làm và điểm của học viên.
 12. Giai đoạn hiện tại chỉ xây đúng phần có nơi dùng thật theo mô hình cuối: không mang logic của module cũ sang
-    nguyên vẹn, không viết backfill hay tương thích ngược cho dữ kiện cũ (database tại local/test dựng lại từ đầu
-    khi cần; stack DEV đang chạy nằm im, không ai đụng vào). Chức năng của module cũ — kể cả `site-config` — chỉ
+    nguyên vẹn, không viết backfill hay tương thích ngược cho dữ kiện cũ (database phục vụ test là database
+    riêng của từng lượt test trên test-pg — một PostgreSQL test riêng (hostname `test-pg.fuckr.net`), tách hẳn
+    khỏi stack DEV: mỗi lượt test tạo một database trống của riêng nó trên test-pg và xoá database đó khi test
+    xong; không dựng hạ tầng test tại local. Stack DEV đang chạy nằm im, không ai đụng vào, và dữ kiện của nó
+    không làm bãi test). Chức năng của module cũ — kể cả `site-config` — chỉ
     được dựng khi nghiệp vụ của feat này thực sự cần tới nó; không rà soát module cũ để quyết định phạm vi của
     feat. Schema do Flyway sở hữu, Hibernate `ddl-auto=none`. Khung phân vùng và RLS của F3 áp cho mọi bảng mới:
     mỗi bảng có cột phân vùng đều bật RLS và có policy riêng theo mẫu của F3, kiểm chứng bằng chính role runtime.
@@ -431,8 +435,8 @@ Các quyết định dưới đây được viết lại trọn vẹn; đặc t�
 - [ ] RLS chặn ở mức database: bằng kết nối SQL với role runtime `lms_server_app` trên database của server, không
       đặt biến ngữ cảnh thì `SELECT` trên các bảng nội dung đề/ma trận của feat này trả 0 hàng; đặt biến ngữ cảnh của
       một phân vùng thì chỉ thấy hàng của phân vùng đó.
-- [ ] Migration và test: dựng database trống từ đầu, toàn bộ migration áp sạch; bộ test của `apps/server` tại local
-      đạt, gồm test mới của feat này và không làm gãy test của F3/F4/F10.
+- [ ] Migration và test: dựng database test trống trên test-pg từ đầu (xoá sau lượt chạy), toàn bộ migration áp
+      sạch; bộ test của `apps/server` đạt, gồm test mới của feat này và không làm gãy test của F3/F4/F10.
 
 ## Phụ thuộc và thứ tự
 
