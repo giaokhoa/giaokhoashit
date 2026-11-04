@@ -51,9 +51,9 @@ public class QuestionController {
 	}
 
 	@PostMapping("/{questionId}/versions/{versionId}/copies")
-	public QuestionService.QuestionView copy(@PathVariable UUID questionId, @PathVariable UUID versionId,
-			@RequestBody(required = false) QuestionService.CopyRequest request) {
-		return this.service.copy(questionId, versionId, request);
+	public QuestionService.QuestionView copy(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID questionId,
+			@PathVariable UUID versionId, @RequestBody(required = false) QuestionService.CopyRequest request) {
+		return this.service.copy(jwt, questionId, versionId, request);
 	}
 
 }

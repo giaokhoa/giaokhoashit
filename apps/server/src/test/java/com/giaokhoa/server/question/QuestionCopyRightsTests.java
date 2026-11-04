@@ -169,6 +169,49 @@ class QuestionCopyRightsTests {
 	}
 
 	@Test
+	@DisplayName("Có quyền copy nhưng không có view_content trên phiên bản nguồn: thao tác sao chép bị từ chối 403 và không tài nguyên nào được tạo")
+	void copyWithoutViewContentCreatesNothing() throws Exception {
+		String actor = mint("gv-khong-duoc-doc", Map.of());
+		String bankId = createBank(actor, "ngan-hang-bi-chan-doc");
+		String sourceId = createBankAndQuestion(actor, bankId);
+		String sourceVersionId = versionIdOf(actor, sourceId);
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.COPY))).thenReturn(true);
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.VIEW_CONTENT))).thenReturn(false);
+		this.mockMvc
+			.perform(post("/api/questions/" + sourceId + "/versions/" + sourceVersionId + "/copies")
+				.header("Authorization", "Bearer " + actor)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"targetBankId\":\"" + bankId + "\"}"))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("RESOURCE_FORBIDDEN"));
+		Integer copies = this.jdbcTemplate.queryForObject(
+				"select count(*) from question where source_question_id = ?", Integer.class, UUID.fromString(sourceId));
+		assertEquals(0, copies);
+	}
+
+	@Test
+	@DisplayName("Có quyền copy và view_content trên phiên bản nguồn nhưng không có quyền tạo ở đích: thao tác sao chép bị từ chối 403 và không tài nguyên nào được tạo")
+	void copyWithoutCreateRightAtDestinationCreatesNothing() throws Exception {
+		String actor = mint("gv-khong-duoc-tao", Map.of());
+		String bankId = createBank(actor, "ngan-hang-bi-chan-tao");
+		String sourceId = createBankAndQuestion(actor, bankId);
+		String sourceVersionId = versionIdOf(actor, sourceId);
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.COPY))).thenReturn(true);
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.VIEW_CONTENT))).thenReturn(true);
+		when(this.rights.personalAuthor(any())).thenReturn(false);
+		this.mockMvc
+			.perform(post("/api/questions/" + sourceId + "/versions/" + sourceVersionId + "/copies")
+				.header("Authorization", "Bearer " + actor)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"targetBankId\":\"" + bankId + "\"}"))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("RESOURCE_FORBIDDEN"));
+		Integer copies = this.jdbcTemplate.queryForObject(
+				"select count(*) from question where source_question_id = ?", Integer.class, UUID.fromString(sourceId));
+		assertEquals(0, copies);
+	}
+
+	@Test
 	@DisplayName("Đáp án, lời giải và tiêu chí chấm của một phiên bản chỉ xuất hiện trong dữ kiện trả về khi người gọi có view_answer trên đúng phiên bản đó")
 	void answersAppearOnlyWithViewAnswer() throws Exception {
 		String actor = mint("gv-doc-cau", Map.of());

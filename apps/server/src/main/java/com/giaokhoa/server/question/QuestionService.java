@@ -231,11 +231,19 @@ public class QuestionService {
 	// phiên bản nguồn chỉ đi theo khi người sao chép có view_answer trên đúng phiên bản nguồn đó, còn truy vết
 	// nguồn và giới hạn sử dụng của nguồn thì luôn đi theo và ràng buộc cả bản sao.
 	@Transactional
-	public QuestionView copy(UUID questionId, UUID versionId, CopyRequest request) {
+	public QuestionView copy(Jwt jwt, UUID questionId, UUID versionId, CopyRequest request) {
 		TenantContext context = requireContext();
 		Question source = this.questions.findById(questionId).orElseThrow(QuestionException::notFound);
 		QuestionVersion sourceVersion = resolveVersion(source, versionId);
 		if (!this.rights.allowed(context, source, sourceVersion, QuestionRights.COPY)) {
+			throw QuestionException.forbidden();
+		}
+		// Sao chép cần đủ ba điều kiện của đặc tả mục 6 trước khi tạo gì: quyền tạo bản riêng và quyền đọc trên
+		// phiên bản nguồn, cộng quyền tạo câu trong ngân hàng đích; thiếu một điều là 403, không tạo tài nguyên.
+		if (!this.rights.allowed(context, source, sourceVersion, QuestionRights.VIEW_CONTENT)) {
+			throw QuestionException.forbidden();
+		}
+		if (!this.rights.personalAuthor(jwt)) {
 			throw QuestionException.forbidden();
 		}
 		UUID targetBankId = (request != null) ? request.targetBankId() : null;
@@ -356,7 +364,9 @@ public class QuestionService {
 			}
 			long distinctIds = choices.stream().map(ChoiceInput::id).distinct().count();
 			if (distinctIds != choices.size()
-					|| choices.stream().anyMatch((choice) -> choice.text() == null || choice.text().isBlank())) {
+					|| choices.stream()
+						.anyMatch((choice) -> choice.id() == null || choice.id().isBlank() || choice.text() == null
+								|| choice.text().isBlank())) {
 				throw QuestionException.validation("Mỗi lựa chọn cần một mã riêng và nội dung không trống.");
 			}
 			if (version.getCorrectChoiceId() == null

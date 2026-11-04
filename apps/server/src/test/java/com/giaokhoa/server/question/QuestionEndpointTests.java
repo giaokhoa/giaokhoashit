@@ -193,7 +193,7 @@ class QuestionEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Phát hành kiểm tra hợp lệ tối thiểu theo loại: trắc nghiệm thiếu lựa chọn hoặc đáp án sai chỗ và tự luận thiếu tiêu chí chấm đều bị 422 và phiên bản vẫn là bản nháp")
+	@DisplayName("Phát hành kiểm tra hợp lệ tối thiểu theo loại: trắc nghiệm thiếu lựa chọn, lựa chọn không mã hoặc đáp án sai chỗ và tự luận thiếu tiêu chí chấm đều bị 422 và phiên bản vẫn là bản nháp")
 	void publishValidatesContentMinimum() throws Exception {
 		String teacher = teacher("gv-f10-6");
 		String bankId = createBank(teacher, "ngan-hang-phat-hanh");
@@ -207,6 +207,17 @@ class QuestionEndpointTests {
 				.header("Authorization", "Bearer " + teacher))
 			.andExpect(status().isUnprocessableContent())
 			.andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+		String noIdMcId = createQuestion(teacher,
+				"{\"bankId\":\"" + bankId + "\",\"questionType\":\"single_choice\",\"stem\":\"than-cau-khong-ma\","
+						+ "\"choices\":[{\"text\":\"lua-chon-khong-ma\"},{\"id\":\"\",\"text\":\"lua-chon-ma-rong\"}],"
+						+ "\"correctChoiceId\":\"c2\"}",
+				null);
+		String noIdMcVersionId = versionIdOf(teacher, noIdMcId, 0);
+		this.mockMvc
+			.perform(post("/api/questions/" + noIdMcId + "/versions/" + noIdMcVersionId + "/publish")
+				.header("Authorization", "Bearer " + teacher))
+			.andExpect(status().isUnprocessableContent())
+			.andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
 		String essayId = createQuestion(teacher,
 				"{\"bankId\":\"" + bankId + "\",\"questionType\":\"essay_text\",\"stem\":\"than-cau-tu-luan\"}",
 				null);
@@ -217,6 +228,10 @@ class QuestionEndpointTests {
 			.andExpect(status().isUnprocessableContent())
 			.andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
 		this.mockMvc.perform(get("/api/questions/" + mcId).header("Authorization", "Bearer " + teacher))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.versions[0].status").value("draft"))
+			.andExpect(jsonPath("$.versions[0].lockedAt").value(org.hamcrest.Matchers.nullValue()));
+		this.mockMvc.perform(get("/api/questions/" + noIdMcId).header("Authorization", "Bearer " + teacher))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.versions[0].status").value("draft"))
 			.andExpect(jsonPath("$.versions[0].lockedAt").value(org.hamcrest.Matchers.nullValue()));
