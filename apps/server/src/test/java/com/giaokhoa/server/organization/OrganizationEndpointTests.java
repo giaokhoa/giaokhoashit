@@ -535,7 +535,7 @@ class OrganizationEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Nhánh lỗi của hợp đồng: tạo lớp với courseId thuộc trung tâm khác hoặc không tồn tại bị 422; ghi danh và đặt giáo viên khi không xác minh được tư cách thành viên tại Keycloak bị 503 và không để lại bất kỳ thay đổi nào")
+	@DisplayName("Nhánh lỗi của hợp đồng: tạo lớp với courseId thuộc trung tâm khác hoặc không tồn tại bị 422; ghi danh và đặt giáo viên khi không xác minh được tư cách thành viên hoặc vai trò giáo viên tại Keycloak bị 503 và không để lại bất kỳ thay đổi nào")
 	void contractErrorBranches() throws Exception {
 		String adminA = adminAToken();
 		String courseB = createCourseOk(adminBToken(), ALIAS_2, "Khoa C10 Cua B");
@@ -576,6 +576,19 @@ class OrganizationEndpointTests {
 		String teacherSub = this.jdbcTemplate.queryForObject(
 				"select teacher_sub from teaching_class where id = ?", String.class, UUID.fromString(classId));
 		assertNull(teacherSub);
+		when(this.membershipChecker.check(ORG_1_ID, "gv-trung-tam-1"))
+			.thenReturn(MembershipChecker.Result.MEMBER);
+		when(this.directory.checkTeacherRole(UUID.fromString(ORG_1_ID), "gv-trung-tam-1"))
+			.thenReturn(OrganizationDirectory.TeacherRoleResult.UNVERIFIABLE);
+		this.mockMvc
+			.perform(put("/api/classes/" + classId + "/teacher").header("Authorization", "Bearer " + adminA)
+				.header("X-LMS-Organization-Alias", ALIAS_1)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"teacherSub\":\"gv-trung-tam-1\"}"))
+			.andExpect(status().isServiceUnavailable())
+			.andExpect(content().string(containsString("\"code\":\"MEMBERSHIP_UNVERIFIABLE\"")));
+		assertNull(this.jdbcTemplate.queryForObject("select teacher_sub from teaching_class where id = ?",
+				String.class, UUID.fromString(classId)));
 	}
 
 	private String partitionOf(String table, String id) {

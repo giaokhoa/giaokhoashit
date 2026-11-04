@@ -11,10 +11,12 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -39,18 +41,25 @@ public class KeycloakOrganizationDirectory implements OrganizationDirectory {
 
 	private final String clientSecret;
 
+	@Autowired
 	public KeycloakOrganizationDirectory(@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri,
 			@Value("${app.keycloak.membership.client-secret:}") String clientSecret) {
-		// Issuer có dạng <địa chỉ Keycloak>/realms/<realm>; token endpoint và Admin REST API suy ra từ cùng gốc này.
-		int realmMarker = issuerUri.indexOf("/realms/");
-		String serverBase = issuerUri.substring(0, realmMarker);
-		this.realm = issuerUri.substring(realmMarker + "/realms/".length());
 		// Chặn thời gian chờ ở cả hai chiều như đường kiểm membership của khung tenancy: một lần đọc treo không
 		// được treo theo request đang chờ.
 		JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(
 				HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
 		requestFactory.setReadTimeout(Duration.ofSeconds(5));
-		this.keycloak = RestClient.builder().baseUrl(serverBase).requestFactory(requestFactory).build();
+		this(issuerUri, clientSecret, RestClient.builder().requestFactory(requestFactory));
+	}
+
+	// Constructor nhận builder để test ghim được máy chủ HTTP giả lập (MockRestServiceServer) vào đúng RestClient
+	// mà bản đọc này dùng, thay vì stub tại seam OrganizationDirectory.
+	KeycloakOrganizationDirectory(String issuerUri, String clientSecret, RestClient.Builder restClientBuilder) {
+		// Issuer có dạng <địa chỉ Keycloak>/realms/<realm>; token endpoint và Admin REST API suy ra từ cùng gốc này.
+		int realmMarker = issuerUri.indexOf("/realms/");
+		String serverBase = issuerUri.substring(0, realmMarker);
+		this.realm = issuerUri.substring(realmMarker + "/realms/".length());
+		this.keycloak = restClientBuilder.baseUrl(serverBase).build();
 		this.clientSecret = clientSecret;
 	}
 
@@ -84,7 +93,7 @@ public class KeycloakOrganizationDirectory implements OrganizationDirectory {
 				.map(organization -> UUID.fromString(organization.id()))
 				.findFirst();
 		}
-		catch (RestClientException | IllegalArgumentException ex) {
+		catch (RestClientException | HttpMessageConversionException | IllegalArgumentException ex) {
 			return Optional.empty();
 		}
 	}
@@ -105,14 +114,13 @@ public class KeycloakOrganizationDirectory implements OrganizationDirectory {
 			}
 			Set<String> teacherGroupIds = new HashSet<>();
 			for (String groupId : flattenGroupIds(groups)) {
-				RoleMappingsView mappings = getGroupRoleMappings(accessToken, organizationId, groupId);
+				List<RoleView> mappings = getGroupRoleMappings(accessToken, organizationId, groupId);
 				if (mappings == null) {
 					return TeacherRoleResult.UNVERIFIABLE;
 				}
 				// Chỉ ánh xạ trực tiếp mới được tính: ánh xạ composite sẽ kéo theo vai trò do nhóm của Organization
 				// khác đóng góp, trong khi vai trò giáo viên phải là của đúng Organization đang xét.
-				if (mappings.realmMappings() != null && mappings.realmMappings().stream()
-					.anyMatch(role -> TEACHER_ROLE.equals(role.name()))) {
+				if (mappings.stream().anyMatch(role -> TEACHER_ROLE.equals(role.name()))) {
 					teacherGroupIds.add(groupId);
 				}
 			}
@@ -126,7 +134,10 @@ public class KeycloakOrganizationDirectory implements OrganizationDirectory {
 			return memberGroupIds.stream().anyMatch(teacherGroupIds::contains) ? TeacherRoleResult.TEACHER
 					: TeacherRoleResult.NOT_TEACHER;
 		}
-		catch (RestClientException ex) {
+		catch (RestClientException | HttpMessageConversionException ex) {
+			// HttpMessageConversionException không phải RestClientException trong Spring 7 (hai nhánh độc lập cùng
+			// kế thừa NestedRuntimeException): đáp ứng Keycloak sai hình dạng văng lỗi này, không bắt riêng thì nó
+			// lọt ra ngoài thành 500 thay vì 503 fail-closed như thiết kế.
 			return TeacherRoleResult.UNVERIFIABLE;
 		}
 	}
@@ -146,13 +157,17 @@ public class KeycloakOrganizationDirectory implements OrganizationDirectory {
 			});
 	}
 
-	private RoleMappingsView getGroupRoleMappings(String accessToken, UUID organizationId, String groupId) {
+	private List<RoleView> getGroupRoleMappings(String accessToken, UUID organizationId, String groupId) {
+		// Theo tài liệu Admin REST API, endpoint .../role-mappings/realm trả về List[RoleRepresentation] — một
+		// mảng JSON; kiểu object có trường realmMappings là MappingsRepresentation của endpoint gộp
+		// .../role-mappings, không phải của endpoint này.
 		return this.keycloak.get()
 			.uri("/admin/realms/{realm}/organizations/{organizationId}/groups/{groupId}/role-mappings/realm",
 					this.realm, organizationId, groupId)
 			.headers(headers -> headers.setBearerAuth(accessToken))
 			.retrieve()
-			.body(RoleMappingsView.class);
+			.body(new ParameterizedTypeReference<List<RoleView>>() {
+			});
 	}
 
 	private Set<String> getMemberGroupIds(String accessToken, UUID organizationId, String memberSub) {
@@ -208,9 +223,6 @@ public class KeycloakOrganizationDirectory implements OrganizationDirectory {
 	}
 
 	private record GroupView(String id, List<GroupView> subGroups) {
-	}
-
-	private record RoleMappingsView(List<RoleView> realmMappings) {
 	}
 
 	private record RoleView(String name) {
