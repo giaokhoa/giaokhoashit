@@ -5,9 +5,11 @@ import java.time.Duration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -30,18 +32,25 @@ public class KeycloakMembershipChecker implements MembershipChecker {
 
 	private final String clientSecret;
 
+	@Autowired
 	public KeycloakMembershipChecker(@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri,
 			@Value("${app.keycloak.membership.client-secret:}") String clientSecret) {
-		// Issuer có dạng <địa chỉ Keycloak>/realms/<realm>; token endpoint và Admin REST API suy ra từ cùng gốc này.
-		int realmMarker = issuerUri.indexOf("/realms/");
-		String serverBase = issuerUri.substring(0, realmMarker);
-		this.realm = issuerUri.substring(realmMarker + "/realms/".length());
 		// Chặn thời gian chờ ở cả hai chiều: một lần kiểm membership treo không được treo theo request đang chờ mở
 		// phân vùng trung tâm.
 		JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(
 				HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
 		requestFactory.setReadTimeout(Duration.ofSeconds(5));
-		this.keycloak = RestClient.builder().baseUrl(serverBase).requestFactory(requestFactory).build();
+		this(issuerUri, clientSecret, RestClient.builder().requestFactory(requestFactory));
+	}
+
+	// Constructor nhận builder để test ghim được máy chủ HTTP giả lập (MockRestServiceServer) vào đúng RestClient
+	// mà bản kiểm này dùng, thay vì stub tại seam MembershipChecker.
+	KeycloakMembershipChecker(String issuerUri, String clientSecret, RestClient.Builder restClientBuilder) {
+		// Issuer có dạng <địa chỉ Keycloak>/realms/<realm>; token endpoint và Admin REST API suy ra từ cùng gốc này.
+		int realmMarker = issuerUri.indexOf("/realms/");
+		String serverBase = issuerUri.substring(0, realmMarker);
+		this.realm = issuerUri.substring(realmMarker + "/realms/".length());
+		this.keycloak = restClientBuilder.baseUrl(serverBase).build();
 		this.clientSecret = clientSecret;
 	}
 
@@ -61,7 +70,10 @@ public class KeycloakMembershipChecker implements MembershipChecker {
 			}
 			return isMember(accessToken, organizationId, memberId) ? Result.MEMBER : Result.NOT_MEMBER;
 		}
-		catch (RestClientException ex) {
+		catch (RestClientException | HttpMessageConversionException ex) {
+			// HttpMessageConversionException không phải RestClientException trong Spring 7 (hai nhánh độc lập cùng
+			// kế thừa NestedRuntimeException): đáp ứng Keycloak sai hình dạng văng lỗi này, không bắt riêng thì nó
+			// lọt ra ngoài thành 500 thay vì 503 fail-closed như thiết kế.
 			return Result.UNVERIFIABLE;
 		}
 	}
