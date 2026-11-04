@@ -177,9 +177,11 @@ public class QuestionService {
 		applyContent(version, request.questionType(), request.stem(), request.choices(), request.correctChoiceId(),
 				request.solution(), request.rubric());
 		version.setUpdatedAt(OffsetDateTime.now());
-		// Lượt ghi này còn được khoá lạc quan @Version chặn ở tầng JPA nếu một giao dịch khác đã ghi trước kể
-		// từ lúc phiên bản được đọc; phép so revision ở trên cho tín hiệu sớm và rõ cho client.
-		return versionView(context, question, this.versions.save(version));
+		// Ghi và flush ngay để số revision trong đáp ứng là số thật sau lượt ghi: Hibernate chỉ tăng cột
+		// @Version lúc flush, nếu đọc entity trước flush thì đáp ứng mang revision cũ và client không có số
+		// đúng cho lượt sửa tiếp theo. Flush tại đây cũng làm xung đột lạc quan thật sự nổ thành
+		// ObjectOptimisticLockingFailureException ngay trong service thay vì lúc commit.
+		return versionView(context, question, this.versions.saveAndFlush(version));
 	}
 
 	@Transactional
@@ -222,7 +224,7 @@ public class QuestionService {
 		version.setLockedAt(now);
 		version.setUpdatedAt(now);
 		version.setContentHash(contentHash(version));
-		return versionView(context, question, this.versions.save(version));
+		return versionView(context, question, this.versions.saveAndFlush(version));
 	}
 
 	// Sao chép luôn tạo một tài nguyên mới thuộc về người sao chép; đáp án, lời giải và tiêu chí chấm của
