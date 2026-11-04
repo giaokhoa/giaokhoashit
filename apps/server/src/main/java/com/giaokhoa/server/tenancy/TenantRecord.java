@@ -51,10 +51,6 @@ public class TenantRecord {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public String getOwnerSub() {
 		return this.ownerSub;
 	}
