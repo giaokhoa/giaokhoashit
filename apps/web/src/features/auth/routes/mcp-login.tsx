@@ -105,7 +105,7 @@ export default function McpLoginPage() {
         <CardHeader>
           <CardTitle>Đăng nhập để uỷ quyền ứng dụng AI</CardTitle>
           <CardDescription>
-            Một ứng dụng AI đang xin quyền truy cập ngân hàng câu hỏi thay bạn. Đăng nhập bằng tài khoản LMS
+            Một ứng dụng AI đang xin quyền truy cập ngân hàng câu hỏi thay bạn. Đăng nhập bằng tài khoản Giáo khoa
             của bạn để tiếp tục tới bước xác nhận quyền.
           </CardDescription>
         </CardHeader>

@@ -58,7 +58,7 @@ function PublicShell() {
     <div>
       <header className="flex items-center gap-4 border-b px-8 py-3">
         <Link to="/" className="font-semibold">
-          LMS
+          Giáo khoa
         </Link>
         {/* Không có bộ chọn ngôn ngữ: site chỉ dành cho người Việt, i18n chỉ quản lý chuỗi tập trung với locale cố
             định vi. */}

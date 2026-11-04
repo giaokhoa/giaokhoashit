@@ -11,7 +11,7 @@ import { SiteHeader } from '#components/site-header';
  * trang theo route):
  *
  * - Tiêu đề tra theo tiền tố path trong catalog i18n: `/` là "Tổng quan", họ `/courses` là "Khoá học"; path không
- *   có trong catalog thì rơi về "LMS".
+ *   có trong catalog thì rơi về "Giáo khoa".
  * - Ô tìm kiếm toàn cục ở giữa header, chuông thông báo và bảng lệnh Cmd+K thuộc các tính năng đã hoãn (tìm kiếm
  *   toàn hệ thống, thông báo) nên đã gỡ: không còn ô nhập nào trong header, không còn nút chuông, và Ctrl+K không
  *   mở bề mặt nào. Header tự nó không gọi API nào khi hiển thị.
@@ -91,8 +91,8 @@ describe('site-header — bản phát hành 07/11', () => {
     expect(screen.getByRole('heading', { name: 'Khoá học' })).toBeInTheDocument();
   });
 
-  it('ở path lạ: tiêu đề rơi về "LMS"', () => {
+  it('ở path lạ: tiêu đề rơi về "Giáo khoa"', () => {
     renderHeader('/other');
-    expect(screen.getByRole('heading', { name: 'LMS' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Giáo khoa' })).toBeInTheDocument();
   });
 });

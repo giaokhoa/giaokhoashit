@@ -11,7 +11,7 @@ export function HomePage() {
     <PageShell width="wide">
       <Card>
         <CardHeader>
-          <CardTitle>LMS</CardTitle>
+          <CardTitle>Giáo khoa</CardTitle>
           <CardDescription>{t('homeDescription')}</CardDescription>
         </CardHeader>
         <CardContent>

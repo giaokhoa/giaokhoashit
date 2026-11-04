@@ -175,5 +175,5 @@ function IdentitySection({ tenantAlias, identity }: { tenantAlias: string; ident
  * @returns Mảng meta của React Router.
  */
 export function meta() {
-  return [{ title: 'Trang tenant — LMS' }];
+  return [{ title: 'Trang tenant — Giáo khoa' }];
 }

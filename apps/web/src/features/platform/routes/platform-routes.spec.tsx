@@ -26,7 +26,7 @@ describe('F-07/F-08 (#133): 6 route module platform thật — ErrorBoundary dù
     it(`route ${name} meta() trả tiêu đề dựng từ khoá platform riêng ${key}`, () => {
       const expectedTitle = i18n.t(key, { ns: 'platform' });
       expect(expectedTitle).not.toBe(key);
-      expect(route.meta()).toEqual([{ title: `${expectedTitle} · LMS` }]);
+      expect(route.meta()).toEqual([{ title: `${expectedTitle} · Giáo khoa` }]);
     });
   }
 });

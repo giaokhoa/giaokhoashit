@@ -211,7 +211,7 @@ describe('Loader phía server của trang lớp public (HTML đầu mang dữ ki
 
   it('meta dùng tên lớp thật + mô tả công khai khi có dữ kiện loader; không có thì rơi về tiêu đề tĩnh', () => {
     expect(classPublicMeta({ data: { classPublic: PUBLIC_SUMMARY } })).toEqual([
-      { title: 'Lớp 10A1 · LMS' },
+      { title: 'Lớp 10A1 · Giáo khoa' },
       { name: 'description', content: 'Lớp toán nâng cao' },
     ]);
     const fallback = classPublicMeta({ data: { classPublic: null } });
