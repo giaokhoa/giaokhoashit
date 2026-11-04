@@ -48,9 +48,11 @@ biến nằm ở `apps/api`; web không tự "gác" nghiệp vụ bằng cách g
   (client gửi kèm credentials cùng nguồn — xem `src/lib/api.ts` và
   `lib/auth-client.ts`); phía server, `lib/server-api.ts` đọc cùng cookie
   đó cho loader/SSR. Không còn token Bearer ở localStorage (đã chuyển sang
-  cookie từ PR #257). **Đích theo hợp đồng**:
-  phiên OIDC phía server do BFF trong API giữ kết quả OIDC của Keycloak,
-  web chỉ mang opaque cookie và không giữ token nào — trạng thái **chưa
-  triển khai runtime**, cookie phiên Better Auth ở trên là hiện tại tạm
-  thời và thuộc danh sách xoá.
+  cookie từ PR #257). **Mô hình xác thực đích**: Keycloak một realm
+  `giaokhoa`, mỗi trung tâm là một Organization trong realm; web đăng
+  nhập bằng `keycloak-js` theo mẫu SPA (adapter tại
+  `src/features/auth/kc-client.ts`, đã chạy cho lát trang tenant), token
+  do adapter giữ và gắn Bearer vào lời gọi API. Cookie phiên Better Auth
+  ở trên là hiện tại tạm thời của phần app còn lại, thuộc diện thay thế
+  khi chuyển hẳn sang Keycloak.
 - Dev: `pnpm dev` (proxy `/api` sang backend cổng 3000).
