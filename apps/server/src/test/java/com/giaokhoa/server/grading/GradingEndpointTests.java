@@ -18,8 +18,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -46,8 +44,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -60,17 +56,13 @@ import com.giaokhoa.server.tenancy.TenantContext;
 import com.giaokhoa.server.tenancy.TenantContexts;
 
 // Kiểm thử khối chấm trên H2 theo khuôn của TenancyEndpointTests: chuỗi bảo mật thật, tầng dữ kiện thật (Flyway
-// chạy V60 trên các bảng tạm của điểm nối được dựng trước khi context khởi động) và nguồn snapshot là bản giả lập
-// có kiểm soát đúng hình dạng snapshot đã đóng băng. Điểm nối nộp bài được gọi trong đúng giao dịch chuyển trạng
-// thái nộp, mô phỏng đúng cách khối giao/làm bài sẽ gọi khi hợp nhất. Phần Row Level Security của khối này được
-// kiểm chứng riêng trên PostgreSQL thật ở GradingPostgresTests. Vì bảng tạm có trước Flyway, cấu hình test bật
-// baselineOnMigrate với baseline version 0 — cơ chế Flyway dành cho schema chưa có bảng lịch sử nhưng đã có đối
-// tượng — để toàn bộ migration vẫn áp từ V1; chuỗi chạy thật không có đối tượng nào có trước nên không dùng cơ
-// chế này.
+// chạy toàn bộ chuỗi migration gồm V50 của khối giao/làm bài và V60 của khối này trên các bảng thật) và nguồn
+// snapshot là bản giả lập có kiểm soát đúng hình dạng snapshot đã đóng băng. Điểm nối nộp bài được gọi trong
+// đúng giao dịch chuyển trạng thái nộp, mô phỏng đúng cách khối giao/làm bài sẽ gọi khi hợp nhất. Phần Row
+// Level Security của khối này được kiểm chứng riêng trên PostgreSQL thật ở GradingPostgresTests.
 @SpringBootTest(properties = { "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + GradingEndpointTests.ISSUER,
 		"spring.datasource.url=" + GradingEndpointTests.DB_URL, "spring.datasource.username=sa",
-		"spring.datasource.password=", "spring.flyway.locations=classpath:db/migration",
-		"spring.flyway.baseline-on-migrate=true", "spring.flyway.baseline-version=0" })
+		"spring.datasource.password=", "spring.flyway.locations=classpath:db/migration" })
 class GradingEndpointTests {
 
 	static final String ISSUER = "http://localhost:8180/realms/giaokhoa";
@@ -102,13 +94,6 @@ class GradingEndpointTests {
 	private static final UUID ESSAY = UUID.fromString("10000000-0000-0000-0000-000000000002");
 
 	private static final UUID MCQ_2 = UUID.fromString("10000000-0000-0000-0000-000000000003");
-
-	@DynamicPropertySource
-	static void seamTables(DynamicPropertyRegistry registry) throws Exception {
-		try (Connection connection = DriverManager.getConnection(DB_URL, "sa", "")) {
-			SeamTables.create(connection);
-		}
-	}
 
 	@Autowired
 	private WebApplicationContext context;
@@ -687,8 +672,9 @@ class GradingEndpointTests {
 	private UUID seedAssignment(UUID classId, UUID examVersionId) {
 		UUID id = UUID.randomUUID();
 		this.jdbcTemplate.update(
-				"insert into exam_assignment (id, partition_key, class_id, exam_resource_id, exam_version_id, assigned_by_sub) values (?, ?, ?, ?, ?, ?)",
-				id, ORG_ID, classId, UUID.randomUUID(), examVersionId, TEACHER);
+				"insert into exam_assignment (id, partition_key, class_id, exam_resource_id, exam_version_id, assigned_by_sub, opens_at, due_at) values (?, ?, ?, ?, ?, ?, ?, ?)",
+				id, ORG_ID, classId, UUID.randomUUID(), examVersionId, TEACHER, OffsetDateTime.now(),
+				OffsetDateTime.now().plusDays(1));
 		return id;
 	}
 

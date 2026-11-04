@@ -68,13 +68,10 @@ import com.giaokhoa.server.tenancy.TenantContext;
 import com.giaokhoa.server.tenancy.TenantContexts;
 
 // Kiểm chứng trên PostgreSQL thật những gì H2 không thực thi được của khối chấm: chuỗi migration đầy đủ gồm
-// V60/V61, khoá ngoại hợp thành sang bảng của khối giao/làm bài được gắn thật vì bảng tạm của điểm nối được dựng
-// trước khi Flyway chạy, Row Level Security cô lập ba bảng chấm theo phân vùng, và một vòng nộp → chấm → công bố
+// V60/V61, khoá ngoại hợp thành sang bảng của khối giao/làm bài được gắn thật vì các bảng đó đã có trong
+// chuỗi qua V50/V51, Row Level Security cô lập ba bảng chấm theo phân vùng, và một vòng nộp → chấm → công bố
 // → xem kết quả trọn vẹn chạy bằng role runtime dưới RLS. Database test riêng được tạo trước lượt và xoá sau
-// lượt theo khuôn PostgresRlsTests; các bảng tạm của điểm nối được cấp quyền và bật RLS giống hệt cách migration
-// thật của các khối kề sẽ làm khi hợp nhất. Vì bảng tạm có trước Flyway, lượt test bật baselineOnMigrate với
-// baseline version 0 để Flyway nhận schema chưa có bảng lịch sử mà vẫn áp toàn bộ migration từ V1; khẳng định
-// phiên bản vì thế chỉ đếm các hàng migration kiểu SQL, bỏ qua hàng mốc baseline.
+// lượt theo khuôn PostgresRlsTests; khẳng định phiên bản chỉ đếm các hàng migration kiểu SQL.
 @SpringBootTest(properties = "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + GradingPostgresTests.ISSUER)
 @EnabledIfEnvironmentVariable(named = "LMS_TEST_PG_URL", matches = ".+")
 class GradingPostgresTests {
@@ -110,20 +107,17 @@ class GradingPostgresTests {
 	private static final String TEST_DATABASE = "lms_server_test_"
 			+ UUID.randomUUID().toString().replace("-", "").substring(0, 12);
 
-	private static final AtomicBoolean SEAM_READY = new AtomicBoolean();
+	private static final AtomicBoolean TABLES_READY = new AtomicBoolean();
 
 	@DynamicPropertySource
 	static void properties(DynamicPropertyRegistry registry) {
 		createTestDatabase();
-		createSeamTables();
 		registry.add("spring.datasource.url", GradingPostgresTests::testDatabaseUrl);
 		registry.add("spring.datasource.username", () -> "lms_server_app");
 		registry.add("spring.datasource.password", () -> APP_PASSWORD);
 		registry.add("spring.flyway.user", () -> ADMIN_USER);
 		registry.add("spring.flyway.password", () -> ADMIN_PASSWORD);
 		registry.add("spring.flyway.placeholders.lms-server-app-password", () -> APP_PASSWORD);
-		registry.add("spring.flyway.baseline-on-migrate", () -> "true");
-		registry.add("spring.flyway.baseline-version", () -> "0");
 	}
 
 	@AfterAll
@@ -153,15 +147,6 @@ class GradingPostgresTests {
 		}
 	}
 
-	private static void createSeamTables() {
-		try (Connection connection = DriverManager.getConnection(testDatabaseUrl(), ADMIN_USER, ADMIN_PASSWORD)) {
-			SeamTables.create(connection);
-		}
-		catch (SQLException ex) {
-			throw new IllegalStateException("Không dựng được bảng tạm của điểm nối trong " + TEST_DATABASE, ex);
-		}
-	}
-
 	@Autowired
 	private WebApplicationContext context;
 
@@ -186,8 +171,8 @@ class GradingPostgresTests {
 				.build();
 		lenient().when(this.membershipChecker.check(anyString(), anyString()))
 				.thenReturn(MembershipChecker.Result.MEMBER);
-		if (SEAM_READY.compareAndSet(false, true)) {
-			prepareSeamTablesForRuntimeRole();
+		if (TABLES_READY.compareAndSet(false, true)) {
+			prepareTablesForRuntimeRole();
 		}
 	}
 
@@ -241,7 +226,8 @@ class GradingPostgresTests {
 		List<String> versions = adminJdbc().queryForList(
 				"select version from flyway_schema_history where success and type = 'SQL' order by installed_rank",
 				String.class);
-		assertEquals(List.of("1", "2", "3", "10", "11", "20", "21", "40", "41", "60", "61"), versions);
+		assertEquals(List.of("1", "2", "3", "10", "11", "20", "21", "30", "31", "40", "41", "50", "51", "60", "61"),
+				versions);
 		List<String> constraints = adminJdbc().queryForList(
 				"select conname from pg_constraint where contype = 'f' and conname like '%_fk' order by conname",
 				String.class);
@@ -313,7 +299,7 @@ class GradingPostgresTests {
 				UUID.randomUUID(), ORG_1_ID, classId, STUDENT, TEACHER);
 		UUID assignmentId = UUID.randomUUID();
 		admin.update(
-				"insert into exam_assignment (id, partition_key, class_id, exam_resource_id, exam_version_id, assigned_by_sub) values (?, ?, ?, ?, ?, ?)",
+				"insert into exam_assignment (id, partition_key, class_id, exam_resource_id, exam_version_id, assigned_by_sub, opens_at, due_at) values (?, ?, ?, ?, ?, ?, current_timestamp, current_timestamp + interval '1 day')",
 				assignmentId, ORG_1_ID, classId, UUID.randomUUID(), VERSION_FULL, TEACHER);
 		UUID attemptId = UUID.randomUUID();
 		admin.update(
@@ -355,7 +341,7 @@ class GradingPostgresTests {
 				.andExpect(content().string(not(containsString("rubric"))));
 	}
 
-	private void prepareSeamTablesForRuntimeRole() {
+	private void prepareTablesForRuntimeRole() {
 		adminJdbc().execute("""
 				grant select, insert, update, delete on teaching_class, class_member, exam_assignment,
 				    exam_attempt, attempt_answer to lms_server_app;
@@ -419,17 +405,22 @@ class GradingPostgresTests {
 
 	private UUID seedAttemptRow(JdbcTemplate admin, String partitionKey) {
 		UUID attemptId = UUID.randomUUID();
+		UUID assignmentId = seedAssignmentRow(admin, partitionKey);
 		admin.update(
 				"insert into exam_attempt (id, partition_key, assignment_id, student_sub, status) values (?, ?, ?, ?, 'SUBMITTED')",
-				attemptId, partitionKey, UUID.randomUUID(), "hs-rls-" + partitionKey.substring(0, 1));
+				attemptId, partitionKey, assignmentId, "hs-rls-" + partitionKey.substring(0, 1));
 		return attemptId;
 	}
 
 	private UUID seedAssignmentRow(JdbcTemplate admin, String partitionKey) {
 		UUID assignmentId = UUID.randomUUID();
+		UUID classId = UUID.randomUUID();
 		admin.update(
-				"insert into exam_assignment (id, partition_key, class_id, exam_resource_id, exam_version_id, assigned_by_sub) values (?, ?, ?, ?, ?, ?)",
-				assignmentId, partitionKey, UUID.randomUUID(), UUID.randomUUID(), VERSION_FULL, TEACHER);
+				"insert into teaching_class (id, partition_key, course_id, name, teacher_sub, created_by_sub) values (?, ?, ?, ?, ?, ?)",
+				classId, partitionKey, null, "Lop RLS", TEACHER, TEACHER);
+		admin.update(
+				"insert into exam_assignment (id, partition_key, class_id, exam_resource_id, exam_version_id, assigned_by_sub, opens_at, due_at) values (?, ?, ?, ?, ?, ?, current_timestamp, current_timestamp + interval '1 day')",
+				assignmentId, partitionKey, classId, UUID.randomUUID(), VERSION_FULL, TEACHER);
 		return assignmentId;
 	}
 

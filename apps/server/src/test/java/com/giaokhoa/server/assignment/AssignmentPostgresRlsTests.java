@@ -133,7 +133,8 @@ class AssignmentPostgresRlsTests {
 				versions.add(result.getString(1));
 			}
 		}
-		assertEquals(List.of("1", "2", "3", "10", "11", "20", "21", "30", "31", "40", "41", "50", "51"), versions);
+		assertEquals(List.of("1", "2", "3", "10", "11", "20", "21", "30", "31", "40", "41", "50", "51", "60", "61"),
+				versions);
 	}
 
 	@Test
