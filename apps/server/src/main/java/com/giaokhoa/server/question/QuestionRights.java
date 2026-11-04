@@ -30,6 +30,12 @@ public interface QuestionRights {
 
 	String PUBLISH = "publish";
 
+	// Hai hành động chuyên biệt cho nguồn LaTeX của khối công thức, quyết trên cùng điểm nối quyền này: đọc
+	// nguồn và sửa nguồn độc lập với mọi hành động trên, không hành động nào suy ra hai hành động này.
+	String READ_MATH_SOURCE = "read_math_source";
+
+	String EDIT_MATH_SOURCE = "edit_math_source";
+
 	// Quyền soạn nền tảng của người gọi: điều kiện để tạo tài nguyên cá nhân mới, không cấp quyền gì trên tài
 	// nguyên của người khác.
 	boolean personalAuthor(Jwt jwt);
