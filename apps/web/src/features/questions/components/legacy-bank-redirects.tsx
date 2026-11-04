@@ -19,15 +19,6 @@ export function legacyQuestionsTarget(search: string): string | null {
     target = section === 'stimuli' ? '/questions/stimuli' : '/questions';
   } else if (bank === 'my-papers') {
     target = '/exams';
-  } else if (bank === 'my-matrices') {
-    target = '/matrices';
-  } else if (bank === 'system') {
-    target =
-      section === 'papers'
-        ? '/system-bank/exams'
-        : section === 'matrices'
-          ? '/system-bank/matrices'
-          : '/system-bank/questions';
   }
   if (!target) return null;
   params.delete('bank');

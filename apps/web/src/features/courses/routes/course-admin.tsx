@@ -23,7 +23,7 @@ import { useTranslation } from 'react-i18next';
 import { PageHeader, PageShell } from '#components/page-shell';
 import '#config/i18n';
 import { usePermissions } from '#lib/permissions';
-import { courseAdminPageClientLoader, useAddCohortMember, useAddCourseGroupMember, useAddGroupToGrouping, useCohortMembers, useCohorts, useCourseCompletions, useCourseConversation, useCourseDetail, useCourseEnrolInstances, useCourseEnrolments, useCourseGroupingGroups, useCourseGroupings, useCourseGroupMembers, useCourseGroups, useCreateCourseGroup, useCreateCourseGrouping, useDeleteCourseGroup, useDeleteCourseGrouping, useEnrolUserManually, useRemoveCohortMember, useRemoveCourseGroupMember, useRenameCourseGroup, useSaveCourseGroupMode, useToggleCourseConversation, useToggleEnrolSuspend } from '../queries/course-admin';
+import { courseAdminPageClientLoader, useAddCohortMember, useAddCourseGroupMember, useAddGroupToGrouping, useCohortMembers, useCohorts, useCourseCompletions, useCourseDetail, useCourseEnrolInstances, useCourseEnrolments, useCourseGroupingGroups, useCourseGroupings, useCourseGroupMembers, useCourseGroups, useCreateCourseGroup, useCreateCourseGrouping, useDeleteCourseGroup, useDeleteCourseGrouping, useEnrolUserManually, useRemoveCohortMember, useRemoveCourseGroupMember, useRenameCourseGroup, useSaveCourseGroupMode, useToggleEnrolSuspend } from '../queries/course-admin';
 
 function GroupMembersSection({
   courseId,
@@ -355,7 +355,6 @@ export function CourseAdminPage() {
   const instancesQuery = useCourseEnrolInstances(courseId);
   const enrolmentsQuery = useCourseEnrolments(courseId);
   const completionsQuery = useCourseCompletions(courseId);
-  const chatQuery = useCourseConversation(courseId);
   const courseQuery = useCourseDetail(courseId);
 
   const groups = groupsQuery.data ?? [];
@@ -364,10 +363,9 @@ export function CourseAdminPage() {
   const instances = instancesQuery.data ?? [];
   const enrolments = enrolmentsQuery.data ?? [];
   const completions = completionsQuery.data ?? [];
-  const courseChat = chatQuery.data ?? null;
   const loading = [
     groupsQuery, groupingsQuery, cohortsQuery, instancesQuery,
-    enrolmentsQuery, completionsQuery, chatQuery, courseQuery,
+    enrolmentsQuery, completionsQuery, courseQuery,
   ].some((q) => q.isPending);
 
   // Khởi tạo bản nháp chế độ nhóm đúng một lần từ chi tiết khoá —
@@ -385,7 +383,6 @@ export function CourseAdminPage() {
   const renameGroupMutation = useRenameCourseGroup(courseId);
   const deleteGroupMutation = useDeleteCourseGroup(courseId);
   const saveGroupModeMutation = useSaveCourseGroupMode(courseId);
-  const toggleChatMutation = useToggleCourseConversation(courseId);
   const createGroupingMutation = useCreateCourseGrouping(courseId);
   const deleteGroupingMutation = useDeleteCourseGrouping(courseId);
   const enrolMutation = useEnrolUserManually(courseId);
@@ -440,16 +437,6 @@ export function CourseAdminPage() {
       setMessage(t('groupModeSaved'));
     } catch {
       setMessage(t('groupModeSaveFailed'));
-    }
-  }
-
-  async function toggleCourseChat() {
-    if (!courseChat) return;
-    try {
-      await toggleChatMutation.mutateAsync({ conversationId: courseChat.id, enabled: !courseChat.enabled });
-      setMessage(t('courseChatUpdated'));
-    } catch {
-      setMessage(t('courseChatUpdateFailed'));
     }
   }
 
@@ -512,25 +499,6 @@ export function CourseAdminPage() {
         <PageSkeleton className="flex flex-col gap-4" ariaHidden rows={['h-40 w-full', 'h-40 w-full', 'h-40 w-full']} />
       ) : null}
       {!loading && (<>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('courseChatSettings')}</CardTitle>
-          <CardDescription>{t('courseChatSettingsDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {courseChat ? (
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-sm">{courseChat.enabled ? t('courseChatStateOn') : t('courseChatStateOff')}</span>
-              <Button type="button" variant="outline" size="sm" disabled={toggleChatMutation.isPending} onClick={() => void toggleCourseChat()}>
-                {courseChat.enabled ? t('courseChatDisable') : t('courseChatEnable')}
-              </Button>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t('courseChatLoadFailed')}</p>
-          )}
-        </CardContent>
-      </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>{t('groups')}</CardTitle>
