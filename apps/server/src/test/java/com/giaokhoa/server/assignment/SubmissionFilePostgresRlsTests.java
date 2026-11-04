@@ -86,6 +86,11 @@ class SubmissionFilePostgresRlsTests {
 						+ "status, started_at) values ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1', '"
 						+ PARTITION_A + "', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', 'hs-trung-tam-1', "
 						+ "'IN_PROGRESS', now())");
+				statement.execute("insert into file_blob (id, storage_key, content_type, size_bytes, "
+						+ "checksum_sha256, status, uploaded_by_sub, partition_key) values "
+						+ "('99999999-9999-9999-9999-999999999993', 'rls-test-blob', 'image/png', 1024, "
+						+ "'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'READY', "
+						+ "'hs-trung-tam-1', '" + PARTITION_A + "')");
 				statement.execute("insert into submission_file (id, partition_key, attempt_id, "
 						+ "upload_session_id, blob_id, display_name, content_type, size_bytes, status, "
 						+ "attached_at) values ('99999999-9999-9999-9999-999999999991', '" + PARTITION_A

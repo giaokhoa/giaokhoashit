@@ -1,15 +1,15 @@
 -- Tệp bài làm của học viên (lát L2c của gói tệp + LaTeX): một hàng là một liên kết từ một lượt làm tới một
 -- blob của nền tệp (lát L1), gắn qua phiên tải lên của chính học viên. Hàng chỉ ghi định danh blob và phiên
--- tải lên, không ghi khoá lưu trữ hay byte: byte và vòng đời của blob thuộc nền tệp. Cột blob_id không có
--- khoá ngoại tại đây vì bảng file_blob do lát L1 tạo ở V92 — khi tích hợp trên nền đó, khoá ngoại được bổ
--- sung vào đúng migration này trước khi merge. Trạng thái ghi tại bước chốt gắn; tệp hoàn tất chốt sau hạn
--- của lượt làm được suy trạng thái bị từ chối khi đọc, không sửa hàng đã ghi.
+-- tải lên, không ghi khoá lưu trữ hay byte: byte và vòng đời của blob thuộc nền tệp. Cột blob_id mang khoá
+-- ngoại sang bảng file_blob của nền tệp (tạo ở V92, đã có trên main khi migration này chạy). Trạng thái ghi
+-- tại bước chốt gắn; tệp hoàn tất chốt sau hạn của lượt làm được suy trạng thái bị từ chối khi đọc, không
+-- sửa hàng đã ghi.
 create table submission_file (
     id uuid primary key,
     partition_key varchar(255) not null,
     attempt_id uuid not null,
     upload_session_id uuid not null,
-    blob_id uuid,
+    blob_id uuid references file_blob (id),
     display_name varchar(255) not null,
     content_type varchar(64),
     size_bytes bigint,

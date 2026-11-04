@@ -49,6 +49,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -99,6 +100,9 @@ class SubmissionFileEndpointTests {
 
 	@Autowired
 	private ObjectMapper objectMapper;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@MockitoBean
 	private MembershipChecker membershipChecker;
@@ -398,8 +402,14 @@ class SubmissionFileEndpointTests {
 
 	private UUID readySession(String ownerSub, OffsetDateTime finalizedAt) {
 		UUID sessionId = UUID.randomUUID();
-		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "COMPLETED", UUID.randomUUID(),
+		UUID blobId = UUID.randomUUID();
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "COMPLETED", blobId,
 				"READY", "bai-lam.png", "image/png", 1024L, ownerSub, finalizedAt));
+		// Blob của phiên phải tồn tại thật trong nền tệp: submission_file mang khoá ngoại sang file_blob.
+		this.jdbcTemplate.update("insert into file_blob (id, storage_key, content_type, size_bytes, "
+				+ "checksum_sha256, status, uploaded_by_sub, partition_key) values (?, ?, 'image/png', 1024, "
+				+ "'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'READY', ?, ?)",
+				blobId, "test-" + blobId, ownerSub, ORG_1_ID);
 		return sessionId;
 	}
 

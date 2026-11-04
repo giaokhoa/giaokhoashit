@@ -18,8 +18,8 @@ import org.springframework.stereotype.Component;
 /**
  * Hiện thực của điểm nối nền tệp trên đúng hình dạng dữ kiện của lát L1: phiên tải lên và blob đọc từ hai
  * bảng `upload_session`/`file_blob` của nền đó, byte đọc từ vùng blob đã chốt của kho filesystem mà cổng lưu
- * trữ của nền tệp ghi (cấu hình `app.files.root` dùng chung). Khi nền tệp chưa hiện diện, bảng chưa tồn tại
- * thì mọi tra cứu trả rỗng — đường gắn tệp khép kín theo hướng từ chối, không suy đoán dữ kiện.
+ * trữ của nền tệp ghi (cấu hình `app.files.root` dùng chung). Lỗi đọc dữ kiện nền tệp được khép thành kết
+ * quả rỗng — đường gắn tệp khép kín theo hướng từ chối, không suy đoán dữ kiện.
  */
 @Component
 public class JdbcSubmissionFileBlobs implements SubmissionFileBlobs {
