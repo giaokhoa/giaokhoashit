@@ -1,9 +1,10 @@
 package com.giaokhoa.server.tenancy;
 
 /**
- * Kiểm membership hiện hành của một người dùng trong một Organization tại Keycloak. Resolver chỉ hỏi thành phần này
- * khi sắp mở chế độ trung tâm: claim trong token chỉ phản ánh membership tại thời điểm phát hành token, nên một token
- * chưa hết hạn không đủ căn cứ mở phân vùng của trung tâm sau khi membership đã bị gỡ.
+ * Kiểm membership hiện hành của một người dùng trong một Organization tại Keycloak, dùng tại các quyết định ghi
+ * thực hiện một lần trong lát tổ chức dạy học (đặt giáo viên, ghi danh): các quyết định đó phải dựa trên dữ kiện
+ * hiện hành tại đúng thời điểm thực hiện, không dựa trên claim của một token được cấp trước đó. Ngữ cảnh request
+ * không qua thành phần này: ngữ cảnh quyết theo claim {@code organization} của token đã kiểm chứng.
  */
 public interface MembershipChecker {
 

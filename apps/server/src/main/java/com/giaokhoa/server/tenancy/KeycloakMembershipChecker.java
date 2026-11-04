@@ -19,9 +19,9 @@ import org.springframework.web.client.RestClientException;
 
 /**
  * Đọc membership hiện hành trực tiếp từ Admin REST API của Keycloak bằng service account của client {@code lms-api},
- * không cache: mỗi lần resolver sắp mở chế độ trung tâm đều đọc lại, để việc gỡ membership hoặc tắt Organization có
- * hiệu lực ngay cả với token chưa hết hạn. Service account chỉ cần hai client role chỉ đọc {@code view-organizations}
- * và {@code view-users} của client {@code realm-management}.
+ * không cache: mỗi lần kiểm đều đọc lại, để quyết định ghi tại thời điểm đó (đặt giáo viên, ghi danh) thấy đúng
+ * trạng thái membership hiện hành. Service account chỉ cần hai client role chỉ đọc {@code view-organizations} và
+ * {@code view-users} của client {@code realm-management}.
  */
 @Component
 public class KeycloakMembershipChecker implements MembershipChecker {
@@ -35,8 +35,8 @@ public class KeycloakMembershipChecker implements MembershipChecker {
 	@Autowired
 	public KeycloakMembershipChecker(@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri,
 			@Value("${app.keycloak.membership.client-secret:}") String clientSecret) {
-		// Chặn thời gian chờ ở cả hai chiều: một lần kiểm membership treo không được treo theo request đang chờ mở
-		// phân vùng trung tâm.
+		// Chặn thời gian chờ ở cả hai chiều: một lần kiểm membership treo không được treo theo request đang chờ
+		// kết quả kiểm.
 		JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(
 				HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
 		requestFactory.setReadTimeout(Duration.ofSeconds(5));

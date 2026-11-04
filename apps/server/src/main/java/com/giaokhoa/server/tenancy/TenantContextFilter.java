@@ -38,11 +38,6 @@ public class TenantContextFilter extends OncePerRequestFilter {
 			}
 			chain.doFilter(request, response);
 		}
-		catch (MembershipVerificationException ex) {
-			// Không xác minh được membership hiện hành thì từ chối request tại đây (503), không cho request đi tiếp
-			// với bất kỳ ngữ cảnh nào suy ra từ claim.
-			response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-		}
 		finally {
 			TenantContexts.clear();
 		}
