@@ -60,4 +60,11 @@ export const classroomKeys = {
    * @returns Khoá cache của hình chiếu chấm.
    */
   teacherAttempt: (attemptId: string) => ['classroom', 'attempts', attemptId, 'teacher'] as const,
+  /**
+   * Danh sách tệp bài làm của một lượt làm.
+   *
+   * @param attemptId - Định danh lượt làm.
+   * @returns Khoá cache của danh sách tệp bài làm của lượt đó.
+   */
+  submissionFiles: (attemptId: string) => ['classroom', 'attempts', attemptId, 'files'] as const,
 };
