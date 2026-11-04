@@ -178,6 +178,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://server-db:5432/lms_server
       SPRING_DATASOURCE_USERNAME: lms_server_app
       SPRING_DATASOURCE_PASSWORD: ${SERVER_DB_APP_PASSWORD:?Can dat SERVER_DB_APP_PASSWORD trong file .env}
+      # Placeholder mật khẩu role runtime trong migration (application.properties) đọc biến này TỪ MÔI TRƯỜNG BÊN
+      # TRONG container: nội suy compose ở dòng trên chỉ đưa giá trị vào SPRING_DATASOURCE_PASSWORD chứ không tạo
+      # biến này trong container, thiếu dòng này là ứng dụng không khởi động được vì không resolve được placeholder.
+      SERVER_DB_APP_PASSWORD: ${SERVER_DB_APP_PASSWORD:?Can dat SERVER_DB_APP_PASSWORD trong file .env}
       SPRING_FLYWAY_URL: jdbc:postgresql://server-db:5432/lms_server
       SPRING_FLYWAY_USER: lms_server
       SPRING_FLYWAY_PASSWORD: ${SERVER_DB_PASSWORD:?Can dat SERVER_DB_PASSWORD trong file .env}
