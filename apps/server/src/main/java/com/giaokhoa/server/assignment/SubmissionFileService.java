@@ -190,9 +190,12 @@ public class SubmissionFileService {
 		});
 	}
 
-	// Trạng thái hiệu lực của một hàng khi đọc: hàng đang xử lý được đối chiếu với phiên tải lên hiện hành —
-	// phiên đã chốt blob trong hạn thì tệp thành ready, chốt sau hạn thì bị từ chối; hàng đã chốt hoặc đã
-	// cách ly giữ nguyên trạng thái đã ghi.
+	// Trạng thái hiệu lực của một hàng khi đọc: hàng đang xử lý được đối chiếu với phiên tải lên hiện hành và
+	// kiểm lại đúng các kiểm của bước gắn — vì lúc gắn dữ kiện phiên còn rỗng nên các kiểm này chưa chạy được.
+	// Chỉ trạng thái ready mới ghi lại xuống hàng đã lưu, để đường đọc nội dung — vốn kiểm blobId trên hàng
+	// đã lưu — đọc được đúng blob; trạng thái bị từ chối và cách ly chỉ suy ra khi đọc, vì ràng buộc CHECK
+	// của V96 không cho phép ghi trạng thái bị từ chối và định dạng của một blob bị cách ly có thể nằm ngoài
+	// danh sách định dạng V96 cho phép.
 	private FileView view(SubmissionFile file, ExamAssignment assignment) {
 		String status = file.getStatus();
 		UUID blobId = file.getBlobId();
@@ -213,14 +216,43 @@ public class SubmissionFileService {
 						&& session.blobCreatedAt().isAfter(assignment.getDueAt())) {
 					status = SubmissionFile.REJECTED;
 				}
+				else if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType) || sizeBytes == null
+						|| sizeBytes <= 0 || sizeBytes > this.maxFileBytes) {
+					status = SubmissionFile.REJECTED;
+				}
+				else if (readyTotalBytes(file) + sizeBytes > this.maxTotalBytes) {
+					// Chốt muộn làm tổng vượt hạn: các tệp ready khác đã chiếm hết hạn mức từ khi hàng này còn
+					// đang xử lý, nên tệp này bị từ chối thay vì thành ready và phá hạn mức tổng.
+					status = SubmissionFile.REJECTED;
+				}
 				else {
 					status = SubmissionFile.READY;
 					attachedAt = session.blobCreatedAt();
+				}
+				if (SubmissionFile.READY.equals(status)) {
+					file.setBlobId(blobId);
+					file.setContentType(contentType);
+					file.setSizeBytes(sizeBytes);
+					file.setStatus(status);
+					file.setAttachedAt(attachedAt);
+					file.setUpdatedAt(now());
+					this.files.saveAndFlush(file);
 				}
 			}
 		}
 		return new FileView(file.getId(), file.getAttemptId(), blobId, file.getDisplayName(), contentType,
 				sizeBytes, status, SubmissionFile.READY.equals(status), attachedAt);
+	}
+
+	// Tổng dung lượng các tệp đã ready của cùng lượt làm, trừ chính hàng đang đối chiếu: mốc tính hạn mức tổng
+	// cho một tệp chốt muộn, vì các tệp ready khác có thể đã chốt xong sau khi hàng này được gắn lúc còn xử lý.
+	private long readyTotalBytes(SubmissionFile file) {
+		return this.files.findByAttemptIdOrderByCreatedAtAsc(file.getAttemptId())
+				.stream()
+				.filter(candidate -> !candidate.getId().equals(file.getId())
+						&& SubmissionFile.READY.equals(candidate.getStatus()))
+				.mapToLong(candidate -> candidate.getSizeBytes() != null ? candidate.getSizeBytes() : 0L)
+				.sum();
 	}
 
 	// Cổng khoá dùng chung cho gắn và gỡ: lượt còn đang làm nhưng đã qua hạn thì thao tác chốt tại thời điểm

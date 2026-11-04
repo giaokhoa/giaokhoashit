@@ -13,8 +13,9 @@ import org.hibernate.annotations.TenantId;
 /**
  * Một tệp bài làm gắn vào một lượt làm: liên kết tới blob của nền tệp qua phiên tải lên của chính học viên.
  * Trạng thái ghi tại bước chốt gắn là `processing` (phiên chưa chốt thành blob), `ready` (blob đã chốt trong
- * hạn của lượt làm) hoặc `quarantined`; một tệp hoàn tất chốt sau hạn được suy ra trạng thái bị từ chối khi
- * đọc chứ không sửa hàng, nên hàng đã ghi là bất biến sau khi lượt làm khoá như chính lượt làm.
+ * hạn của lượt làm) hoặc `quarantined`; một hàng đang xử lý được đối chiếu khi đọc và trạng thái ready đã
+ * chốt được ghi lại xuống hàng đã lưu, còn trạng thái bị từ chối và cách ly chỉ suy ra khi đọc, nên hàng đã
+ * ghi là bất biến sau khi lượt làm khoá như chính lượt làm.
  */
 @Entity
 @Table(name = "submission_file")

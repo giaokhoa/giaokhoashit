@@ -347,8 +347,10 @@ class SubmissionFileEndpointTests {
 		assertFalse(json(attached).get("submitted").asBoolean());
 
 		OffsetDateTime finalizedAt = OffsetDateTime.now();
-		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "COMPLETED", UUID.randomUUID(),
+		UUID blobId = UUID.randomUUID();
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "COMPLETED", blobId,
 				"READY", "bai-lam.png", "image/png", 2048L, STUDENT_1, finalizedAt));
+		insertBlobRow(blobId, 2048L, STUDENT_1);
 		MvcResult listed = this.mockMvc
 				.perform(get("/api/attempts/" + attemptId + "/files").header("Authorization", "Bearer " + student1)
 						.header("X-LMS-Organization-Alias", "trung-tam-1"))
@@ -358,6 +360,135 @@ class SubmissionFileEndpointTests {
 		assertTrue(json(listed).get(0).get("submitted").asBoolean());
 		assertEquals("image/png", json(listed).get(0).get("contentType").asText());
 		assertEquals(2048, json(listed).get(0).get("sizeBytes").asLong());
+	}
+
+	@Test
+	@DisplayName("Tệp đang xử lý chốt thành định dạng ngoài cho phép thì bị từ chối khi đọc và không tính là đã nộp")
+	void processingFileFinalizedWithDisallowedFormatIsRejected() throws Exception {
+		String student1 = studentToken(STUDENT_1);
+		UUID attemptId = startAttemptFor(student1);
+		UUID sessionId = UUID.randomUUID();
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "OPEN", null, null,
+				"bai-lam.pdf", null, null, STUDENT_1, null));
+		attach(student1, attemptId, sessionId);
+
+		UUID blobId = UUID.randomUUID();
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "COMPLETED", blobId, "READY",
+				"bai-lam.pdf", "application/pdf", 1024L, STUDENT_1, OffsetDateTime.now()));
+		MvcResult listed = this.mockMvc
+				.perform(get("/api/attempts/" + attemptId + "/files").header("Authorization", "Bearer " + student1)
+						.header("X-LMS-Organization-Alias", "trung-tam-1"))
+				.andExpect(status().isOk())
+				.andReturn();
+		assertEquals("rejected", json(listed).get(0).get("status").asText());
+		assertFalse(json(listed).get(0).get("submitted").asBoolean());
+	}
+
+	@Test
+	@DisplayName("Tệp đang xử lý chốt vượt 5 MiB cho một tệp thì bị từ chối khi đọc và không tính là đã nộp")
+	void processingFileFinalizedOverSingleFileLimitIsRejected() throws Exception {
+		String student1 = studentToken(STUDENT_1);
+		UUID attemptId = startAttemptFor(student1);
+		UUID sessionId = UUID.randomUUID();
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "OPEN", null, null,
+				"bai-lam.png", null, null, STUDENT_1, null));
+		attach(student1, attemptId, sessionId);
+
+		UUID blobId = UUID.randomUUID();
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "COMPLETED", blobId, "READY",
+				"bai-lam.png", "image/png", 5242881L, STUDENT_1, OffsetDateTime.now()));
+		MvcResult listed = this.mockMvc
+				.perform(get("/api/attempts/" + attemptId + "/files").header("Authorization", "Bearer " + student1)
+						.header("X-LMS-Organization-Alias", "trung-tam-1"))
+				.andExpect(status().isOk())
+				.andReturn();
+		assertEquals("rejected", json(listed).get(0).get("status").asText());
+		assertFalse(json(listed).get(0).get("submitted").asBoolean());
+	}
+
+	@Test
+	@DisplayName("Tệp đang xử lý chốt muộn làm tổng vượt 20 MiB thì bị từ chối và không tính là đã nộp")
+	void processingFileFinalizedOverTotalLimitIsRejected() throws Exception {
+		String student1 = studentToken(STUDENT_1);
+		UUID attemptId = startAttemptFor(student1);
+		for (int i = 0; i < 4; i++) {
+			attach(student1, attemptId, readySessionOfSize(STUDENT_1, OffsetDateTime.now(), 5242880L));
+		}
+		UUID sessionId = UUID.randomUUID();
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "OPEN", null, null,
+				"bai-lam.png", null, null, STUDENT_1, null));
+		MvcResult attached = attach(student1, attemptId, sessionId);
+		UUID fileId = UUID.fromString(json(attached).get("id").asText());
+
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "COMPLETED", UUID.randomUUID(),
+				"READY", "bai-lam.png", "image/png", 1024L, STUDENT_1, OffsetDateTime.now()));
+		MvcResult listed = this.mockMvc
+				.perform(get("/api/attempts/" + attemptId + "/files").header("Authorization", "Bearer " + student1)
+						.header("X-LMS-Organization-Alias", "trung-tam-1"))
+				.andExpect(status().isOk())
+				.andReturn();
+		assertEquals(5, json(listed).size());
+		for (JsonNode entry : json(listed)) {
+			if (entry.get("id").asText().equals(fileId.toString())) {
+				assertEquals("rejected", entry.get("status").asText());
+				assertFalse(entry.get("submitted").asBoolean());
+			}
+			else {
+				assertEquals("ready", entry.get("status").asText());
+			}
+		}
+	}
+
+	@Test
+	@DisplayName("Tệp đang xử lý chốt hợp lệ thì thành ready và đọc được nội dung, không 404")
+	void processingFileFinalizedValidlyIsReadable() throws Exception {
+		String student1 = studentToken(STUDENT_1);
+		UUID attemptId = startAttemptFor(student1);
+		UUID sessionId = UUID.randomUUID();
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "OPEN", null, null,
+				"bai-lam.png", null, null, STUDENT_1, null));
+		MvcResult attached = attach(student1, attemptId, sessionId);
+		UUID fileId = UUID.fromString(json(attached).get("id").asText());
+
+		UUID blobId = UUID.randomUUID();
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "COMPLETED", blobId,
+				"READY", "bai-lam.png", "image/png", 2048L, STUDENT_1, OffsetDateTime.now()));
+		insertBlobRow(blobId, 2048L, STUDENT_1);
+		MvcResult listed = this.mockMvc
+				.perform(get("/api/attempts/" + attemptId + "/files").header("Authorization", "Bearer " + student1)
+						.header("X-LMS-Organization-Alias", "trung-tam-1"))
+				.andExpect(status().isOk())
+				.andReturn();
+		assertEquals("ready", json(listed).get(0).get("status").asText());
+		assertTrue(json(listed).get(0).get("submitted").asBoolean());
+
+		this.mockMvc
+				.perform(get("/api/attempts/" + attemptId + "/files/" + fileId + "/content")
+						.header("Authorization", "Bearer " + student1)
+						.header("X-LMS-Organization-Alias", "trung-tam-1"))
+				.andExpect(status().isOk())
+				.andExpect(content().bytes(PNG_BYTES));
+	}
+
+	@Test
+	@DisplayName("Tệp đang xử lý chốt thành blob bị cách ly mang định dạng ngoài cho phép thì đọc ra quarantined, không lỗi và không tính là đã nộp")
+	void processingFileFinalizedQuarantinedWithForeignFormatStaysReadable() throws Exception {
+		String student1 = studentToken(STUDENT_1);
+		UUID attemptId = startAttemptFor(student1);
+		UUID sessionId = UUID.randomUUID();
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "OPEN", null, null,
+				"bai-lam.pdf", null, null, STUDENT_1, null));
+		attach(student1, attemptId, sessionId);
+
+		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "COMPLETED", UUID.randomUUID(),
+				"QUARANTINED", "bai-lam.pdf", "application/pdf", 1024L, STUDENT_1, OffsetDateTime.now()));
+		MvcResult listed = this.mockMvc
+				.perform(get("/api/attempts/" + attemptId + "/files").header("Authorization", "Bearer " + student1)
+						.header("X-LMS-Organization-Alias", "trung-tam-1"))
+				.andExpect(status().isOk())
+				.andReturn();
+		assertEquals("quarantined", json(listed).get(0).get("status").asText());
+		assertFalse(json(listed).get(0).get("submitted").asBoolean());
 	}
 
 	@Test
@@ -401,16 +532,24 @@ class SubmissionFileEndpointTests {
 	}
 
 	private UUID readySession(String ownerSub, OffsetDateTime finalizedAt) {
+		return readySessionOfSize(ownerSub, finalizedAt, 1024L);
+	}
+
+	private UUID readySessionOfSize(String ownerSub, OffsetDateTime finalizedAt, long sizeBytes) {
 		UUID sessionId = UUID.randomUUID();
 		UUID blobId = UUID.randomUUID();
 		this.sessions.put(sessionId, new SubmissionFileBlobs.SessionInfo(sessionId, "COMPLETED", blobId,
-				"READY", "bai-lam.png", "image/png", 1024L, ownerSub, finalizedAt));
-		// Blob của phiên phải tồn tại thật trong nền tệp: submission_file mang khoá ngoại sang file_blob.
-		this.jdbcTemplate.update("insert into file_blob (id, storage_key, content_type, size_bytes, "
-				+ "checksum_sha256, status, uploaded_by_sub, partition_key) values (?, ?, 'image/png', 1024, "
-				+ "'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'READY', ?, ?)",
-				blobId, "test-" + blobId, ownerSub, ORG_1_ID);
+				"READY", "bai-lam.png", "image/png", sizeBytes, ownerSub, finalizedAt));
+		insertBlobRow(blobId, sizeBytes, ownerSub);
 		return sessionId;
+	}
+
+	// Blob của phiên phải tồn tại thật trong nền tệp: submission_file mang khoá ngoại sang file_blob.
+	private void insertBlobRow(UUID blobId, long sizeBytes, String ownerSub) {
+		this.jdbcTemplate.update("insert into file_blob (id, storage_key, content_type, size_bytes, "
+				+ "checksum_sha256, status, uploaded_by_sub, partition_key) values (?, ?, 'image/png', ?, "
+				+ "'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'READY', ?, ?)",
+				blobId, "test-" + blobId, sizeBytes, ownerSub, ORG_1_ID);
 	}
 
 	private UUID startAttemptFor(String studentToken) throws Exception {
