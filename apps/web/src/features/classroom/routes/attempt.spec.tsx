@@ -49,6 +49,9 @@ const clientMock = vi.hoisted(() => ({
   fetchAttemptResult: vi.fn(),
   fetchTeacherAttempt: vi.fn(),
   fetchSubmissions: vi.fn(),
+  fetchSubmissionFiles: vi.fn(async () => []),
+  attachSubmissionFile: vi.fn(),
+  removeSubmissionFile: vi.fn(),
   gradeAttempt: vi.fn(),
   publishResults: vi.fn(),
 }));

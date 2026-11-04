@@ -208,6 +208,23 @@ export interface AttemptView {
   result: StudentResultView | null;
 }
 
+/**
+ * Một tệp bài làm gắn vào một lượt làm. `status` là trạng thái xử lý do server chốt (`uploading`,
+ * `processing`, `ready`, `rejected`, `quarantined`) và `submitted` chỉ bật với tệp `ready` — giao diện căn
+ * cứ đúng hai trường này để báo trạng thái, không tự suy từ việc byte đã truyền xong.
+ */
+export interface SubmissionFileView {
+  id: string;
+  attemptId: string;
+  blobId: string | null;
+  displayName: string;
+  contentType: string | null;
+  sizeBytes: number | null;
+  status: string;
+  submitted: boolean;
+  attachedAt: string | null;
+}
+
 /** Đáp ứng của thao tác nộp bài. */
 export interface SubmitView {
   attemptId: string;

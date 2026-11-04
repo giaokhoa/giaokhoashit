@@ -19,6 +19,7 @@ import { Label } from '@lms/ui/components/label';
 import { Textarea } from '@lms/ui/components/textarea';
 import { PageShell } from '#components/page-shell';
 import { EmptyNote, ErrorNote, LoadingNote, SessionGate } from '../components/states';
+import { SubmissionFilesPanel } from '../components/submission-files';
 import { useClassroomSession } from '../hooks/use-session';
 import { useAttemptResult, useSaveAnswers, useStartAttempt, useSubmitAttempt } from '../queries/hooks';
 import type { AttemptView } from '../types/server';
@@ -82,8 +83,9 @@ function AttemptBody({ assignmentId }: { assignmentId: string }) {
 }
 
 /**
- * Không gian làm bài của một lượt: danh sách mục kèm ô trả lời, nút lưu và nút nộp khi lượt còn đang làm; khi
- * lượt đã nộp thì chuyển sang chỉ đọc và hiển thị khối kết quả.
+ * Không gian làm bài của một lượt: danh sách mục kèm ô trả lời, khối tệp bài làm (trạng thái theo dữ kiện
+ * server đã chốt, chỉ đọc khi lượt đã nộp), nút lưu và nút nộp khi lượt còn đang làm; khi lượt đã nộp thì
+ * chuyển sang chỉ đọc và hiển thị khối kết quả.
  *
  * Side-effect: lưu gửi `PUT /api/attempts/{id}/answers`, nộp gửi `POST /api/attempts/{id}/submit`; đáp ứng của
  * server thay thế state của lượt qua `onAttemptChange`.
@@ -192,6 +194,8 @@ function AttemptWorkspace({
           </Card>
         );
       })}
+
+      <SubmissionFilesPanel attemptId={attempt.attemptId} locked={!isWorking} />
 
       {isWorking ? (
         <div className="flex flex-col gap-2">

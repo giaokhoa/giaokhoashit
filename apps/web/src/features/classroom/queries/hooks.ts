@@ -39,6 +39,9 @@ import {
   removeBankEntry,
   removeMember,
   saveAnswers,
+  attachSubmissionFile,
+  fetchSubmissionFiles,
+  removeSubmissionFile,
   setClassTeacher,
   startAttempt,
   submitAttempt,
@@ -59,6 +62,7 @@ import type {
   MeView,
   PublicationView,
   QuestionView,
+  SubmissionFileView,
   SubmissionRowView,
   SubmitView,
   TeacherAttemptView,
@@ -356,6 +360,45 @@ export function useStartAttempt(): UseMutationResult<AttemptView, Error, string>
 export function useSaveAnswers(): UseMutationResult<AttemptView, Error, { attemptId: string; answers: { examItemId: string; answer: unknown }[] }> {
   return useMutation({
     mutationFn: ({ attemptId, answers }) => saveAnswers(attemptId, answers),
+  });
+}
+
+/**
+ * @param attemptId - Định danh lượt làm.
+ * @returns Truy vấn danh sách tệp bài làm của lượt, trạng thái theo dữ kiện server đã chốt.
+ */
+export function useSubmissionFiles(attemptId: string): UseQueryResult<SubmissionFileView[]> {
+  return useQuery({
+    queryKey: classroomKeys.submissionFiles(attemptId),
+    queryFn: () => fetchSubmissionFiles(attemptId),
+  });
+}
+
+/** @returns Mutation gắn một phiên tải lên thành tệp bài làm; xong thì vô hiệu hoá danh sách tệp của lượt. */
+export function useAttachSubmissionFile(): UseMutationResult<
+  SubmissionFileView,
+  Error,
+  { attemptId: string; uploadSessionId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ attemptId, uploadSessionId }) => attachSubmissionFile(attemptId, uploadSessionId),
+    onSuccess: (_data, { attemptId }) =>
+      void queryClient.invalidateQueries({ queryKey: classroomKeys.submissionFiles(attemptId) }),
+  });
+}
+
+/** @returns Mutation gỡ một tệp bài làm; xong thì vô hiệu hoá danh sách tệp của lượt. */
+export function useRemoveSubmissionFile(): UseMutationResult<
+  SubmissionFileView[],
+  Error,
+  { attemptId: string; fileId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ attemptId, fileId }) => removeSubmissionFile(attemptId, fileId),
+    onSuccess: (_data, { attemptId }) =>
+      void queryClient.invalidateQueries({ queryKey: classroomKeys.submissionFiles(attemptId) }),
   });
 }
 

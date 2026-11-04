@@ -23,6 +23,7 @@ import type {
   MeView,
   PublicationView,
   QuestionView,
+  SubmissionFileView,
   SubmissionRowView,
   SubmitView,
   TeacherAttemptView,
@@ -564,6 +565,41 @@ export function saveAnswers(
  */
 export function submitAttempt(attemptId: string): Promise<SubmitView> {
   return request<SubmitView>(`/api/attempts/${attemptId}/submit`, { method: 'POST' });
+}
+
+/**
+ * Đọc danh sách tệp bài làm của một lượt làm; trạng thái của từng tệp là dữ kiện server đã chốt.
+ *
+ * @param attemptId - Định danh lượt làm.
+ * @returns Danh sách tệp bài làm kèm trạng thái xử lý và cờ đã nộp của từng tệp.
+ */
+export function fetchSubmissionFiles(attemptId: string): Promise<SubmissionFileView[]> {
+  return request<SubmissionFileView[]>(`/api/attempts/${attemptId}/files`);
+}
+
+/**
+ * Gắn một phiên tải lên của nền tệp vào lượt làm; server quyết trạng thái của tệp tại bước chốt gắn.
+ *
+ * @param attemptId - Định danh lượt làm.
+ * @param uploadSessionId - Định danh phiên tải lên của chính học viên.
+ * @returns Tệp bài làm sau khi gắn, mang trạng thái server đã ghi.
+ */
+export function attachSubmissionFile(attemptId: string, uploadSessionId: string): Promise<SubmissionFileView> {
+  return request<SubmissionFileView>(`/api/attempts/${attemptId}/files`, {
+    method: 'POST',
+    body: json({ uploadSessionId }),
+  });
+}
+
+/**
+ * Gỡ một tệp bài làm khỏi lượt làm; server chỉ nhận khi lượt còn đang làm và chưa qua hạn.
+ *
+ * @param attemptId - Định danh lượt làm.
+ * @param fileId - Định danh tệp bài làm.
+ * @returns Danh sách tệp bài làm còn lại của lượt.
+ */
+export function removeSubmissionFile(attemptId: string, fileId: string): Promise<SubmissionFileView[]> {
+  return request<SubmissionFileView[]>(`/api/attempts/${attemptId}/files/${fileId}`, { method: 'DELETE' });
 }
 
 /**
