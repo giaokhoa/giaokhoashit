@@ -9,6 +9,4 @@ public interface QuestionVersionBlockRepository extends JpaRepository<QuestionVe
 
 	List<QuestionVersionBlock> findByQuestionVersionId(UUID questionVersionId);
 
-	void deleteByQuestionVersionId(UUID questionVersionId);
-
 }

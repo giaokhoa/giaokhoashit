@@ -236,6 +236,69 @@ class QuestionBlockEndpointTests {
 	}
 
 	@Test
+	@DisplayName("Định danh khối ổn định: lưu lại với blockId giữ nguyên định danh, và khi nguồn không đổi thì giữ nguyên revision nguồn, trạng thái render và ảnh của khối; đổi nguồn thì revision nguồn tăng và trạng thái render quay về đang chờ")
+	void blockIdsAreStableAcrossSaves() throws Exception {
+		String teacher = token("gv-dinh-danh-on-dinh");
+		QuestionRef question = createEssayQuestion(teacher);
+		MvcResult first = replaceBlocks(teacher, question, 0, blocksJson("\"" + SOURCE_MARKER + "\""));
+		String firstBody = body(first);
+		String formulaId = JsonPath.read(firstBody, "$.blocks[1].blockId");
+		String solutionId = JsonPath.read(firstBody, "$.blocks[2].blockId");
+		int revision = ((Number) JsonPath.read(firstBody, "$.revision")).intValue();
+		String blobId = "00000000-0000-7000-8000-0000000000aa";
+		this.jdbcTemplate.update(
+				"insert into file_blob (id, storage_key, content_type, size_bytes, checksum_sha256, status, "
+						+ "uploaded_by_sub, partition_key) values (?, 'kho-test-117', 'image/png', 128, "
+						+ "'aabbcc', 'READY', 'gv-dinh-danh-on-dinh', 'gv-dinh-danh-on-dinh')",
+				java.util.UUID.fromString(blobId));
+		this.jdbcTemplate.update(
+				"update question_version_block set image_blob_id = ?, image_width = 132, image_height = 40, "
+						+ "baseline_offset = 6, render_state = 'ready', source_revision = 3 where id = ?",
+				java.util.UUID.fromString(blobId), java.util.UUID.fromString(formulaId));
+
+		String second = "{\"revision\":" + revision + ",\"blocks\":["
+				+ "{\"part\":\"stem\",\"kind\":\"text\",\"text\":\"tinh gia tri moi\"},"
+				+ "{\"blockId\":\"" + formulaId + "\",\"part\":\"stem\",\"kind\":\"formula\",\"source\":\""
+				+ SOURCE_MARKER + "\"},"
+				+ "{\"part\":\"solution\",\"kind\":\"formula\",\"source\":\"\\\\frac{2}{2}\"}]}";
+		MvcResult secondResult = putBlocks(teacher, question, second);
+		assertEquals(200, secondResult.getResponse().getStatus(), body(secondResult));
+		String secondBody = body(secondResult);
+		assertEquals(formulaId, JsonPath.read(secondBody, "$.blocks[1].blockId"));
+		assertEquals("ready", JsonPath.read(secondBody, "$.blocks[1].renderState"));
+		assertEquals(3, ((Number) JsonPath.read(secondBody, "$.blocks[1].revision")).intValue());
+		assertEquals(blobId, JsonPath.read(secondBody, "$.blocks[1].image.fileRef"));
+		assertFalse(solutionId.equals(JsonPath.read(secondBody, "$.blocks[2].blockId")));
+
+		int revision2 = ((Number) JsonPath.read(secondBody, "$.revision")).intValue();
+		String third = "{\"revision\":" + revision2 + ",\"blocks\":[" + "{\"blockId\":\"" + formulaId
+				+ "\",\"part\":\"stem\",\"kind\":\"formula\",\"source\":\"NGUON-MOI\"}]}";
+		MvcResult thirdResult = putBlocks(teacher, question, third);
+		assertEquals(200, thirdResult.getResponse().getStatus(), body(thirdResult));
+		String thirdBody = body(thirdResult);
+		assertEquals(formulaId, JsonPath.read(thirdBody, "$.blocks[0].blockId"));
+		assertEquals("pending", JsonPath.read(thirdBody, "$.blocks[0].renderState"));
+		assertEquals(4, ((Number) JsonPath.read(thirdBody, "$.blocks[0].revision")).intValue());
+	}
+
+	@Test
+	@DisplayName("Định danh khối lạ hoặc lặp: blockId của một phiên bản khác và blockId bị dùng hai lần trong cùng một lượt lưu đều bị từ chối 422")
+	void foreignOrDuplicateBlockIdsAreRejected() throws Exception {
+		String teacher = token("gv-dinh-danh-la");
+		QuestionRef first = createEssayQuestion(teacher);
+		QuestionRef second = createEssayQuestion(teacher);
+		MvcResult saved = replaceBlocks(teacher, first, 0, blocksJson("\"x^2\""));
+		String foreignId = JsonPath.read(body(saved), "$.blocks[0].blockId");
+		String foreign = "{\"revision\":0,\"blocks\":[{\"blockId\":\"" + foreignId
+				+ "\",\"part\":\"stem\",\"kind\":\"text\",\"text\":\"than\"}]}";
+		putBlocksExpect(teacher, second, foreign, 422);
+		String duplicate = "{\"revision\":1,\"blocks\":["
+				+ "{\"blockId\":\"" + foreignId + "\",\"part\":\"stem\",\"kind\":\"text\",\"text\":\"than\"},"
+				+ "{\"blockId\":\"" + foreignId + "\",\"part\":\"stem\",\"kind\":\"text\",\"text\":\"than hai\"}]}";
+		putBlocksExpect(teacher, first, duplicate, 422);
+	}
+
+	@Test
 	@DisplayName("Giới hạn của hợp đồng soạn thảo: nguồn công thức dài quá 2000 ký tự bị từ chối 422")
 	void formulaSourceOverLimitIsRejected() throws Exception {
 		String teacher = token("gv-gioi-han-nguon");

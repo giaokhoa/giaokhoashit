@@ -33,8 +33,9 @@ public class QuestionService {
 	}
 
 	public record VersionView(UUID versionId, int versionNumber, String status, OffsetDateTime lockedAt,
-			String contentHash, int revision, String questionType, int contentContractVersion, String stem,
-			List<ChoiceInput> choices,
+			String contentHash, int revision, String questionType, int contentContractVersion,
+			@JsonInclude(JsonInclude.Include.NON_NULL) String stem,
+			@JsonInclude(JsonInclude.Include.NON_NULL) List<ChoiceInput> choices,
 			@JsonInclude(JsonInclude.Include.NON_NULL) String correctChoiceId,
 			@JsonInclude(JsonInclude.Include.NON_NULL) String solution,
 			@JsonInclude(JsonInclude.Include.NON_NULL) String rubric) {
@@ -460,15 +461,20 @@ public class QuestionService {
 				question.getUsageLimits(), versionViews, question.getCreatedAt(), question.getUpdatedAt());
 	}
 
-	// Phần đáp án của một phiên bản chỉ được điền khi người gọi có view_answer trên đúng phiên bản đó; thiếu
-	// quyền thì ba trường đó vắng hẳn trong dữ kiện trả về, không trả dạng che hay rỗng.
+	// Các trường văn bản cũ của một phiên bản là dữ kiện mang nguồn LaTeX, nên mặt xem chỉ điền chúng cho
+	// người có quyền đọc nguồn trên đúng phiên bản đó; phần đáp án còn phải kết hợp quyền xem đáp án. Thiếu
+	// quyền thì các trường đó vắng hẳn trong dữ kiện trả về, không trả dạng che hay rỗng — cùng khuôn với
+	// việc loại đáp án và lời giải khỏi API khi chưa được phép xem.
 	private VersionView versionView(TenantContext context, Question question, QuestionVersion version) {
 		boolean includeAnswers = this.rights.allowed(context, question, version, QuestionRights.VIEW_ANSWER);
+		boolean includeSource = this.rights.allowed(context, question, version, QuestionRights.READ_MATH_SOURCE);
 		return new VersionView(version.getId(), version.getVersionNumber(), version.getStatus(),
 				version.getLockedAt(), version.getContentHash(), version.getRevision(), version.getQuestionType(),
-				version.getContentContractVersion(), version.getStem(), parseChoices(version.getChoices()),
+				version.getContentContractVersion(), includeSource ? version.getStem() : null,
+				includeSource ? parseChoices(version.getChoices()) : null,
 				includeAnswers ? version.getCorrectChoiceId() : null,
-				includeAnswers ? version.getSolution() : null, includeAnswers ? version.getRubric() : null);
+				includeAnswers && includeSource ? version.getSolution() : null,
+				includeAnswers && includeSource ? version.getRubric() : null);
 	}
 
 	private BankView bankView(QuestionBank bank) {
