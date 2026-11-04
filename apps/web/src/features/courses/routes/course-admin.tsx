@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import type {
   Cohort,
   CourseGroup,
@@ -23,7 +23,7 @@ import { useTranslation } from 'react-i18next';
 import { PageHeader, PageShell } from '#components/page-shell';
 import '#config/i18n';
 import { usePermissions } from '#lib/permissions';
-import { courseAdminPageClientLoader, useAddCohortMember, useAddCourseGroupMember, useAddGroupToGrouping, useCohortMembers, useCohorts, useCourseCompletions, useCourseConversation, useCourseDetail, useCourseEnrolInstances, useCourseEnrolments, useCourseGroupingGroups, useCourseGroupings, useCourseGroupMembers, useCourseGroups, useCreateCourseGroup, useCreateCourseGrouping, useDeleteCourseGroup, useDeleteCourseGrouping, useEnrolUserManually, useOpenGroupConversation, useRemoveCohortMember, useRemoveCourseGroupMember, useRenameCourseGroup, useSaveCourseGroupMode, useToggleCourseConversation, useToggleEnrolSuspend } from '../queries/course-admin';
+import { courseAdminPageClientLoader, useAddCohortMember, useAddCourseGroupMember, useAddGroupToGrouping, useCohortMembers, useCohorts, useCourseCompletions, useCourseConversation, useCourseDetail, useCourseEnrolInstances, useCourseEnrolments, useCourseGroupingGroups, useCourseGroupings, useCourseGroupMembers, useCourseGroups, useCreateCourseGroup, useCreateCourseGrouping, useDeleteCourseGroup, useDeleteCourseGrouping, useEnrolUserManually, useRemoveCohortMember, useRemoveCourseGroupMember, useRenameCourseGroup, useSaveCourseGroupMode, useToggleCourseConversation, useToggleEnrolSuspend } from '../queries/course-admin';
 
 function GroupMembersSection({
   courseId,
@@ -315,7 +315,6 @@ function CohortMembersSection({
 export function CourseAdminPage() {
   const { t } = useTranslation('app');
   const { id } = useParams();
-  const navigate = useNavigate();
   const courseId = id ?? '';
   const perms = usePermissions();
   const [groupName, setGroupName] = useState('');
@@ -387,7 +386,6 @@ export function CourseAdminPage() {
   const deleteGroupMutation = useDeleteCourseGroup(courseId);
   const saveGroupModeMutation = useSaveCourseGroupMode(courseId);
   const toggleChatMutation = useToggleCourseConversation(courseId);
-  const openGroupChatMutation = useOpenGroupConversation();
   const createGroupingMutation = useCreateCourseGrouping(courseId);
   const deleteGroupingMutation = useDeleteCourseGrouping(courseId);
   const enrolMutation = useEnrolUserManually(courseId);
@@ -455,15 +453,6 @@ export function CourseAdminPage() {
     }
   }
 
-  async function openGroupChat(groupId: string) {
-    try {
-      const conv = await openGroupChatMutation.mutateAsync(groupId);
-      navigate(`/messages?conversation=${conv.id}`);
-    } catch {
-      setMessage(t('groupChatOpenFailed'));
-    }
-  }
-
   async function createGrouping(event: FormEvent) {
     event.preventDefault();
     try {
@@ -523,18 +512,6 @@ export function CourseAdminPage() {
         <PageSkeleton className="flex flex-col gap-4" ariaHidden rows={['h-40 w-full', 'h-40 w-full', 'h-40 w-full']} />
       ) : null}
       {!loading && (<>
-      {canBuild && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('courseBuilder')}</CardTitle>
-            <CardDescription>{t('builderMovedDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground" to={`/courses/${courseId}/builder`}>{t('builderOpen')}</Link>
-          </CardContent>
-        </Card>
-      )}
-
       <Card>
         <CardHeader>
           <CardTitle>{t('courseChatSettings')}</CardTitle>
@@ -546,13 +523,6 @@ export function CourseAdminPage() {
               <span className="text-sm">{courseChat.enabled ? t('courseChatStateOn') : t('courseChatStateOff')}</span>
               <Button type="button" variant="outline" size="sm" disabled={toggleChatMutation.isPending} onClick={() => void toggleCourseChat()}>
                 {courseChat.enabled ? t('courseChatDisable') : t('courseChatEnable')}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => navigate(`/messages?conversation=${courseChat.id}`)}
-              >
-                {t('courseChatOpen')}
               </Button>
             </div>
           ) : (
@@ -600,9 +570,6 @@ export function CourseAdminPage() {
                         <span className="font-medium">{g.name}</span>
                         <Button type="button" variant="outline" size="sm" onClick={() => toggleGroupMembers(g.id)}>
                           {t('groupViewMembers')}
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => void openGroupChat(g.id)}>
-                          {t('groupChatOpen')}
                         </Button>
                         {canManageGroups && (
                           <>

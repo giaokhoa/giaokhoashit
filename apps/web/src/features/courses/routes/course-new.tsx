@@ -101,8 +101,8 @@ export function CourseNewPage() {
     }
   }
 
-  async function goToBuilder(courseId: string) {
-    await navigate(`/courses/${courseId}/builder`);
+  async function goToCourseAdmin(courseId: string) {
+    await navigate(`/courses/${courseId}/admin`);
   }
 
   /**
@@ -140,7 +140,7 @@ export function CourseNewPage() {
           ...(effectiveClassId ? { classId: effectiveClassId } : {}),
         },
       });
-      await goToBuilder(created.id);
+      await goToCourseAdmin(created.id);
     } catch {
       setMessage(t('wizardCreateFailed'));
       setBusy(false);
@@ -178,11 +178,11 @@ export function CourseNewPage() {
         } catch {
           setMessage(t('courseCreatedFrameFailed'));
           setBusy(false);
-          await goToBuilder(created.id);
+          await goToCourseAdmin(created.id);
           return;
         }
       }
-      await goToBuilder(created.id);
+      await goToCourseAdmin(created.id);
     } catch {
       setMessage(t('wizardCreateFailed'));
       setBusy(false);

@@ -253,22 +253,19 @@ describe('Chi tiết lớp — roster và các luồng quản trị (CLASS-1)', 
   });
 });
 
-describe('Chi tiết lớp — nút Chat lớp (MSG-T2)', () => {
+describe('Chi tiết lớp — bề mặt phát hành 07/11 (issue #79)', () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
     localStorage.clear();
   });
 
-  it('nút "Chat lớp" gọi ensure chat cấp lớp phía messages rồi điều hướng sang Tin nhắn mở đúng conversation', async () => {
+  it('trang chi tiết lớp không còn nút "Chat lớp" và không gọi ensure conversation của tính năng tin nhắn đã hoãn', async () => {
     const calls: RecordedCall[] = [];
     stubFetch(calls);
     localStorage.setItem('lms.accessToken', 'test-token');
     const router = createMemoryRouter(
-      [
-        { path: '/classes/:id', element: <ClassDetailPage /> },
-        { path: '/messages', element: <div>Trang tin nhắn</div> },
-      ],
+      [{ path: '/classes/:id', element: <ClassDetailPage /> }],
       { initialEntries: [`/classes/${CLASS_ID}`] },
     );
     render(
@@ -278,12 +275,9 @@ describe('Chi tiết lớp — nút Chat lớp (MSG-T2)', () => {
     );
 
     expect(await screen.findByText('Nguyễn Văn An')).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: 'Chat lớp' }));
-
-    expect(await screen.findByText('Trang tin nhắn')).toBeTruthy();
-    expect(calls.some((c) => c.url === `/api/v1/messages/classes/${CLASS_ID}/conversation` && c.method === 'GET')).toBe(true);
-    expect(router.state.location.pathname).toBe('/messages');
-    expect(router.state.location.search).toBe(`?conversation=${CONVERSATION_ID}`);
+    expect(screen.queryByRole('button', { name: 'Chat lớp' })).toBeNull();
+    expect(calls.some((c) => c.url === `/api/v1/messages/classes/${CLASS_ID}/conversation`)).toBe(false);
+    expect(router.state.location.pathname).toBe(`/classes/${CLASS_ID}`);
   });
 });
 
@@ -317,7 +311,7 @@ describe('Chi tiết lớp — dashboard theo vai (CLASS-2)', () => {
     expect(screen.queryByText('Văn 10')).toBeNull();
     expect(screen.getByText('Giáo viên của lớp')).toBeTruthy();
     expect(screen.getByText('Lê Cô')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Chat lớp' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Chat lớp' })).toBeNull();
     expect(screen.queryByText('Danh sách học sinh')).toBeNull();
     expect(screen.queryByText('Nguyễn Văn An')).toBeNull();
     expect(screen.queryByLabelText(/Họ tên học sinh/)).toBeNull();
@@ -385,7 +379,7 @@ describe('Danh sách lớp — hành động theo cờ quyền của server (iss
     );
     renderDetail();
 
-    expect(await screen.findByRole('button', { name: 'Chat lớp' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Lớp học của tôi' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Sửa' })).toBeNull();
   });
 });
