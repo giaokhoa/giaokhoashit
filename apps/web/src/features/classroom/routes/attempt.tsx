@@ -108,8 +108,10 @@ function AttemptWorkspace({
     return initial;
   });
   const [submitView, setSubmitView] = useState<{ status: string; submittedAt: string | null } | null>(null);
-  const isWorking = attempt.status === 'IN_PROGRESS' || attempt.status === 'NOT_STARTED';
+  // Trạng thái hiệu lực của lượt: sau khi nộp thành công, đáp ứng nộp là sự thật mới nhất dù state của lượt
+  // chưa được thay — màn hình phải rời trạng thái đang làm ngay khi nộp xong.
   const status = submitView?.status ?? attempt.status;
+  const isWorking = status === 'IN_PROGRESS' || status === 'NOT_STARTED';
 
   const collectAnswers = () =>
     attempt.items
@@ -134,8 +136,11 @@ function AttemptWorkspace({
         <CardContent className="flex flex-col gap-1">
           <p className="text-sm text-muted-foreground">
             Trạng thái: {status} · Mở: {formatDateTime(attempt.opensAt)} · Hạn: {formatDateTime(attempt.dueAt)}
-            {submitView?.submittedAt ? ` · Đã nộp lúc ${formatDateTime(submitView.submittedAt)}` : ''}
-            {attempt.submittedAt ? ` · Đã nộp lúc ${formatDateTime(attempt.submittedAt)}` : ''}
+            {attempt.submittedAt
+              ? ` · Đã nộp lúc ${formatDateTime(attempt.submittedAt)}`
+              : submitView?.submittedAt
+                ? ` · Đã nộp lúc ${formatDateTime(submitView.submittedAt)}`
+                : ''}
           </p>
         </CardContent>
       </Card>
