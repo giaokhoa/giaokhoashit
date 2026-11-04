@@ -54,7 +54,6 @@ function renderPlainDocument(value: RichTextDocument): ReactNode {
           return (
             <span
               data-type="inline-math"
-              data-latex={latex}
               dangerouslySetInnerHTML={{ __html: renderMathHtml(latex, false) }}
             />
           );
@@ -64,7 +63,6 @@ function renderPlainDocument(value: RichTextDocument): ReactNode {
           return (
             <div
               data-type="block-math"
-              data-latex={latex}
               dangerouslySetInnerHTML={{ __html: renderMathHtml(latex, true) }}
             />
           );
@@ -79,8 +77,9 @@ function renderPlainDocument(value: RichTextDocument): ReactNode {
  * (`renderToReactElement` từ `@tiptap/static-renderer/pm/react`) theo đúng bộ extension của hợp đồng.
  *
  * Riêng hai node công thức được ánh xạ thủ công: static renderer mặc định chỉ cho ra thẻ chứa `data-latex` mà không có
- * hình công thức, nên ở đây render thẳng bằng KaTeX (`trust: false`, một công thức lỗi không làm sập cả trang). Ảnh và
- * danh sách đi qua `renderHTML` của extension.
+ * hình công thức, nên ở đây render thẳng bằng KaTeX qua {@link renderMathHtml} — kết quả chỉ là HTML trình bày và thẻ
+ * bọc cũng không mang `data-latex`: người xem không nhận mã TeX ở bất kỳ dạng nào, và một công thức lỗi không làm sập
+ * cả trang. Ảnh và danh sách đi qua `renderHTML` của extension.
  *
  * Tài liệu thân câu đúng/sai chùm (TF-A) mang node `statementList` — node này KHÔNG thuộc bộ extension hiển thị thuần,
  * nên tài liệu được tách tại các `statementList`: các block thường render bằng static renderer như trên, mỗi danh sách
