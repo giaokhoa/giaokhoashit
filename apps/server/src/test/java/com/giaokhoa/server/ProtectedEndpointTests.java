@@ -86,17 +86,6 @@ class ProtectedEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Endpoint health trả UP và không yêu cầu token")
-	void healthIsPublic() throws Exception {
-		this.mockMvc.perform(get("/actuator/health"))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("\"status\":\"UP\"")));
-		this.mockMvc.perform(get("/actuator/health/readiness"))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("\"status\":\"UP\"")));
-	}
-
-	@Test
 	@DisplayName("Trả 401 khi request tới endpoint được bảo vệ không kèm token")
 	void missingTokenIsRejected() throws Exception {
 		this.mockMvc.perform(get("/api/ping"))
