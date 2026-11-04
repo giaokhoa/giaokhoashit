@@ -22,6 +22,7 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HexFormat;
@@ -136,7 +137,10 @@ class FileLifecycleTests {
 		String teacher = authorToken("gv-don-phien-xong");
 		UUID[] target = createPersonalResource(teacher);
 		String partition = "user:gv-don-phien-xong";
-		OffsetDateTime t0 = OffsetDateTime.now();
+		// Mốc thời gian của lượt quét được cắt về giây: cơ sở dữ liệu lưu timestamptz ở độ mịn nhỏ hơn nano giây
+		// của đồng hồ trong bộ nhớ, và khẳng định ở biên "đánh dấu ở mốc này thì chưa bị dọn ở chính mốc này"
+		// phải xác định trên giá trị đã lưu thật.
+		OffsetDateTime t0 = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
 		UUID openSession = createSession(teacher, target);
 		UUID readySession = createSession(teacher, target);
