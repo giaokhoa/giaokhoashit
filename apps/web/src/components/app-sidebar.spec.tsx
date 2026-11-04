@@ -8,23 +8,20 @@ import { queryClient } from '#lib/query-client';
 import { baSessionResponse, isGetSessionUrl } from '#test/ba-session';
 
 /**
- * Test cho cây điều hướng sidebar sau Lát 1 của hồ sơ UI/UX (sidebar collapse theo cơ chế sidebar-07): 5 mục trực
- * tiếp + các mục cha thu/mở (Học tập / Người dùng & quyền / Vai trò & Quyền / Cài đặt hệ thống) thay cho 3 nhóm phẳng
- * cũ — nhóm Vai trò & Quyền tách riêng mang hai mục Vai trò và Quyền. Mục "Tìm kiếm" không còn ở sidebar từ chốt 23:52
- * ngày 26/10/2026 (issue #303 — ô tìm kiếm chuyển ra giữa header). Dựng đúng cây thật (App → Shell → AppSidebar) như
- * sidebar-notification-count.spec, stub fetch theo vai trò:
+ * Test cho cây điều hướng sidebar của bản phát hành 07/11 (issue #79). Cây chỉ còn bề mặt thuộc vòng dạy–học:
  *
- * - Admin thấy đủ cây (3 mục cha); nhóm cha đóng mặc định, bấm mới mở mục con; các nhóm mở độc lập (không accordion).
- * - Trạng thái mở của nhóm lưu ở localStorage `lms:sidebar:open-groups` — "F5" (gỡ cây, dựng lại) vẫn giữ; nhóm chứa
- *   route đang xem thì luôn tự mở và mục con + nút cha cùng mang trạng thái active.
- * - Ba mục ngân hàng CẤP CAO NHẤT ngay sau Học tập (chốt lại của Lão gia 11:40 ngày 26/10/2026, issue #228 — BỎ hẳn mục
- *   "Ngân hàng hệ thống" ở sidebar), gác canUseQuestionBank: "Ngân hàng câu hỏi" (link /questions, thu/mở ra mục con
- *   "Ngữ liệu" ở /questions/stimuli), "Ngân hàng đề" (/exams), "Ngân hàng ma trận" (/matrices) — mỗi khu vực một PATH
- *   RIÊNG theo chuẩn đường dẫn (issue #221, lát R1); khu hệ thống đi qua thanh tab Cá nhân | Hệ thống trong chính màn
- *   danh sách, không qua sidebar. Đang ở path của khu vực thì mục/nhóm tương ứng tự mở và active. Học viên không thấy
- *   mục ngân hàng nào; giáo viên có capability câu hỏi thì thấy đủ ba.
- * - Cookie `sidebar_state=false` → sidebar ở chế độ rail icon (data-collapsible="icon", có SidebarRail); bấm mục cha ở
- *   chế độ này bung sidebar ra và mở nhóm.
+ * - 3 mục trực tiếp mọi người dùng đăng nhập đều thấy: "Tổng quan" (/), "Khoá học" (/courses), "Lớp" (/classes).
+ * - Cụm ngân hàng cá nhân gác canUseQuestionBank: "Ngân hàng câu hỏi" (link /questions, thu/mở ra mục con "Ngữ
+ *   liệu" ở /questions/stimuli) và "Ngân hàng đề" (/exams). Học viên thuần không thấy mục ngân hàng nào.
+ * - Mọi bề mặt đã hoãn đều vắng: lịch, tin nhắn, thông báo, phụ huynh và liên kết phụ huynh, nhóm Học tập (huy
+ *   hiệu, kế hoạch học tập), ngân hàng ma trận, chương trình, và cả ba nhóm quản trị (Người dùng & quyền, Vai trò
+ *   & Quyền, Cài đặt hệ thống) — kể cả với tài khoản quản trị site. Sidebar cũng không còn tự chạy truy vấn nền
+ *   nào (số chưa đọc tin nhắn/thông báo, tra cứu liên kết phụ huynh đã gỡ cùng các mục đó).
+ *
+ * Dựng đúng cây thật (App → Shell → AppSidebar), stub fetch theo vai trò. Trạng thái mở của nhóm lưu ở
+ * localStorage `lms:sidebar:open-groups`; nhóm chứa route đang xem luôn tự mở và mục con + nút cha cùng mang
+ * trạng thái active. Cookie `sidebar_state=false` → sidebar ở chế độ rail icon (data-collapsible="icon", có
+ * SidebarRail).
  */
 
 const ADMIN_ID = '01900000-0000-7000-8000-0000000000a1';
@@ -49,11 +46,6 @@ function profileOf(id: string, username: string) {
   };
 }
 
-/**
- * Fixture ảnh chụp quyền dùng chung: cả ba đều có dấu chân học tập qua hiện vật (hasLearnerArtifacts: true) nên nhóm
- * "Học tập" hiện đủ cho các test cây điều hướng — quy tắc dấu chân (kể cả ca GV thuần ẩn) khoá riêng ở describe "nhóm
- * Học tập theo dấu chân" cuối file.
- */
 const ADMIN_ACCESS = { userId: ADMIN_ID, isSiteAdmin: true, assignments: [], contexts: [], hasLearnerArtifacts: true };
 const STUDENT_ACCESS = { userId: STUDENT_ID, isSiteAdmin: false, assignments: [], contexts: [], hasLearnerArtifacts: true };
 const TEACHER_ACCESS = {
@@ -71,11 +63,6 @@ const TEACHER_ACCESS = {
   hasLearnerArtifacts: true,
 };
 
-const COURSE_CONTEXT_ID = '01900000-0000-7000-8000-0000000000e5';
-const COURSE_ID = '01900000-0000-7000-8000-0000000000f6';
-const COURSE_CATEGORY_ID = '01900000-0000-7000-8000-0000000000a7';
-const COURSE = { id: COURSE_ID, category: COURSE_CATEGORY_ID, fullName: 'Toán 6', shortName: 'TOAN6' };
-
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -83,54 +70,42 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function stubFetch(
-  profile: unknown,
-  access: unknown,
-  unread = 0,
-  opts: { courses?: unknown[]; guardianChildren?: unknown[] } = {},
-) {
+function stubFetch(profile: unknown, access: unknown) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
       if (isGetSessionUrl(url)) return baSessionResponse({ id: (profile as { id: string }).id });
       if (url === '/api/v1/users/me') return jsonResponse(profile);
       if (url === '/api/v1/users/me/capabilities') return jsonResponse(access);
-      if (url === '/api/v1/courses') return jsonResponse(opts.courses ?? []);
-      if (url === '/api/v1/guardian-links/mine/students') {
-        return opts.guardianChildren ? jsonResponse(opts.guardianChildren) : jsonResponse({}, 404);
-      }
-      if (url === '/api/v1/notifications/unread-count') return jsonResponse({ unread });
+      if (url === '/api/v1/courses') return jsonResponse([]);
       if (url === '/api/v1/auth/refresh') return jsonResponse({}, 401);
       return jsonResponse({}, 404);
     }),
   );
 }
 
-const PROBE_PATHS = [
-  'courses',
-  'calendar',
-  'messages',
-  'notifications',
-  'search',
-  'badges',
-  'learning-plan',
-  'questions',
-  'questions/stimuli',
-  'exams',
-  'matrices',
-  'system-bank/questions',
-  'system-bank/exams',
-  'system-bank/matrices',
-  'admin/users',
-  'admin/roles',
-  'tokens',
-  'admin/site-config',
-  'reports',
-  'insights',
-  'content-bank',
-  'backup',
-  'privacy',
-  'health',
+const PROBE_PATHS = ['courses', 'classes', 'questions', 'questions/stimuli', 'exams'];
+
+/** Tiền tố đích của mọi bề mặt đã hoãn: sidebar của bản phát hành không được chứa link nào trỏ vào chúng. */
+const HIDDEN_HREF_PREFIXES = [
+  '/calendar',
+  '/messages',
+  '/notifications',
+  '/matrices',
+  '/system-bank',
+  '/admin',
+  '/badges',
+  '/learning-plan',
+  '/guardian',
+  '/curriculum',
+  '/content-bank',
+  '/reports',
+  '/insights',
+  '/backup',
+  '/privacy',
+  '/health',
+  '/search',
+  '/tokens',
 ];
 
 function renderShell(initialPath = '/') {
@@ -184,37 +159,47 @@ afterEach(() => {
   queryClient.clear();
 });
 
-describe('cây điều hướng sidebar — admin', () => {
-  it('thấy 5 mục trực tiếp + 3 mục cha; nhóm đóng mặc định nên chưa thấy mục con', async () => {
-    stubFetch(profileOf(ADMIN_ID, 'admin'), ADMIN_ACCESS, 2);
-    renderShell();
+describe('cây điều hướng sidebar — bản phát hành 07/11', () => {
+  it('quản trị site: thấy 3 mục trực tiếp + 2 mục ngân hàng, và không thấy bất kỳ bề mặt đã hoãn nào', async () => {
+    stubFetch(profileOf(ADMIN_ID, 'admin'), ADMIN_ACCESS);
+    const { container } = renderShell();
 
-    for (const name of ['Tổng quan', 'Khoá học', 'Lịch', 'Tin nhắn', 'Thông báo']) {
+    for (const name of ['Tổng quan', 'Khoá học', 'Lớp']) {
       expect(await screen.findByRole('link', { name: new RegExp(name) })).toBeInTheDocument();
     }
-    // Mục "Tìm kiếm" KHÔNG còn ở sidebar (chốt 23:52 ngày 26/10/2026, issue #303): tìm nội dung đi qua ô giữa header,
-    // sidebar không giữ link /search nữa — ai thêm lại link này thì test phải đỏ.
-    expect(screen.queryByRole('link', { name: /Tìm kiếm/ })).not.toBeInTheDocument();
-    const notifications = await screen.findByRole('link', { name: /Thông báo/ });
-    expect(await within(notifications).findByText('2')).toBeInTheDocument();
-
-    for (const name of ['Học tập', 'Người dùng & quyền', 'Vai trò & Quyền', 'Cài đặt hệ thống']) {
-      expect(await screen.findByRole('button', { name })).toBeInTheDocument();
-      expect(screen.queryByRole('link', { name })).not.toBeInTheDocument();
-    }
-    for (const name of ['Ngân hàng câu hỏi', 'Ngân hàng đề', 'Ngân hàng ma trận']) {
+    for (const name of ['Ngân hàng câu hỏi', 'Ngân hàng đề']) {
       expect(await screen.findByRole('link', { name })).toBeInTheDocument();
     }
-    expect(screen.queryByRole('button', { name: 'Ngân hàng câu hỏi' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ngân hàng hệ thống' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Ngân hàng hệ thống' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Sao lưu' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Vai trò' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Huy hiệu' })).not.toBeInTheDocument();
+    // Nhóm ngân hàng đóng mặc định: mục con chưa hiện.
     expect(screen.queryByRole('link', { name: 'Ngữ liệu' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Câu hỏi hệ thống' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Đề hệ thống' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Ma trận hệ thống' })).not.toBeInTheDocument();
+
+    for (const name of [
+      'Lịch',
+      'Tin nhắn',
+      'Thông báo',
+      'Tìm kiếm',
+      'Ngân hàng ma trận',
+      'Ngân hàng hệ thống',
+      'Phụ huynh',
+      'Liên kết phụ huynh',
+      'Huy hiệu',
+      'Kế hoạch học tập',
+      'Người dùng',
+      'Trung tâm',
+      'Vai trò',
+      'Quyền',
+      'Cấu hình site',
+      'Báo cáo',
+      'Sao lưu',
+    ]) {
+      expect(screen.queryByRole('link', { name: new RegExp(name) })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: new RegExp(name) })).not.toBeInTheDocument();
+    }
+    const sidebar = sidebarRoot(container);
+    for (const anchor of sidebar.querySelectorAll('a[href]')) {
+      const href = anchor.getAttribute('href')!;
+      expect(HIDDEN_HREF_PREFIXES.some((prefix) => href === prefix || href.startsWith(`${prefix}/`))).toBe(false);
+    }
   });
 
   it('mở thu/mở của "Ngân hàng câu hỏi" thấy mục con "Ngữ liệu" đúng href theo path riêng (chuẩn #221)', async () => {
@@ -243,7 +228,6 @@ describe('cây điều hướng sidebar — admin', () => {
     expect(toggle.className).not.toMatch(/\bh-8\b/);
     expect(toggle.className).not.toMatch(/\bw-8\b/);
     expect(screen.queryByRole('button', { name: 'Thu/mở Ngân hàng đề' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Thu/mở Ngân hàng ma trận' })).not.toBeInTheDocument();
   });
 
   it('bấm thân "Ngân hàng câu hỏi" điều hướng tới trang /questions', async () => {
@@ -254,7 +238,7 @@ describe('cây điều hướng sidebar — admin', () => {
     expect(await screen.findByTestId('probe-questions')).toBeInTheDocument();
   });
 
-  it('sidebar không còn đường nào tới khu hệ thống — khu hệ thống chỉ vào bằng tab trong trang danh sách', async () => {
+  it('sidebar không còn đường nào tới khu hệ thống — đích /system-bank đã gỡ khỏi bản phát hành', async () => {
     stubFetch(profileOf(ADMIN_ID, 'admin'), ADMIN_ACCESS);
     const { container } = renderShell();
 
@@ -263,54 +247,6 @@ describe('cây điều hướng sidebar — admin', () => {
     expect(sidebar.querySelector('a[href^="/system-bank"]')).toBeNull();
     expect(within(sidebar).queryByText('Ngân hàng hệ thống')).not.toBeInTheDocument();
   });
-
-  it('mở "Cài đặt hệ thống" thấy đủ 7 mục con đúng thứ tự; các nhóm mở độc lập và đóng riêng được', async () => {
-    stubFetch(profileOf(ADMIN_ID, 'admin'), ADMIN_ACCESS);
-    renderShell();
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Cài đặt hệ thống' }));
-
-    const expectedOrder = [
-      '/admin/site-config',
-      '/reports',
-      '/insights',
-      '/content-bank',
-      '/backup',
-      '/privacy',
-      '/health',
-    ];
-    const hrefs: string[] = [];
-    for (const name of [
-      'Cấu hình site',
-      'Báo cáo',
-      'Nhận định',
-      'Ngân hàng nội dung',
-      'Sao lưu',
-      'Quyền riêng tư',
-      'Trạng thái hệ thống',
-    ]) {
-      const link = await screen.findByRole('link', { name });
-      hrefs.push(link.getAttribute('href')!);
-    }
-    expect(hrefs).toEqual(expectedOrder);
-
-    await userEvent.click(screen.getByRole('button', { name: 'Vai trò & Quyền' }));
-    expect(await screen.findByRole('link', { name: 'Vai trò' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Sao lưu' })).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Cài đặt hệ thống' }));
-    expect(screen.queryByRole('link', { name: 'Sao lưu' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Vai trò' })).toBeInTheDocument();
-  });
-
-  it('bấm mục con điều hướng tới đúng trang', async () => {
-    stubFetch(profileOf(ADMIN_ID, 'admin'), ADMIN_ACCESS);
-    renderShell();
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Cài đặt hệ thống' }));
-    await userEvent.click(await screen.findByRole('link', { name: 'Sao lưu' }));
-    expect(await screen.findByTestId('probe-backup')).toBeInTheDocument();
-  });
 });
 
 describe('cây điều hướng sidebar — trạng thái nhóm', () => {
@@ -318,28 +254,16 @@ describe('cây điều hướng sidebar — trạng thái nhóm', () => {
     stubFetch(profileOf(ADMIN_ID, 'admin'), ADMIN_ACCESS);
     const first = renderShell();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Học tập' }));
-    expect(await screen.findByRole('link', { name: 'Huy hiệu' })).toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem('lms:sidebar:open-groups') ?? '[]')).toEqual(['learning']);
+    await userEvent.click(await screen.findByRole('button', { name: 'Thu/mở Ngân hàng câu hỏi' }));
+    expect(await screen.findByRole('link', { name: 'Ngữ liệu' })).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('lms:sidebar:open-groups') ?? '[]')).toEqual(['my-questions']);
 
     first.unmount();
     renderShell();
-    expect(await screen.findByRole('link', { name: 'Huy hiệu' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Sao lưu' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Ngữ liệu' })).toBeInTheDocument();
   });
 
-  it('nhóm chứa route đang xem luôn tự mở; mục con và nút cha cùng mang trạng thái active', async () => {
-    stubFetch(profileOf(ADMIN_ID, 'admin'), ADMIN_ACCESS);
-    renderShell('/admin/roles');
-
-    const child = await screen.findByRole('link', { name: 'Vai trò' });
-    expect(child).toHaveAttribute('href', '/admin/roles');
-    expect(child.hasAttribute('data-active')).toBe(true);
-    const parent = screen.getByRole('button', { name: 'Vai trò & Quyền' });
-    expect(parent.hasAttribute('data-active')).toBe(true);
-  });
-
-  it('đang ở /exams: mục top level "Ngân hàng đề" là link active, hai mục ngân hàng còn lại không', async () => {
+  it('đang ở /exams: mục top level "Ngân hàng đề" là link active, "Ngân hàng câu hỏi" thì không', async () => {
     stubFetch(profileOf(TEACHER_ID, 'teacher1'), TEACHER_ACCESS);
     renderShell('/exams');
 
@@ -347,19 +271,6 @@ describe('cây điều hướng sidebar — trạng thái nhóm', () => {
     expect(child).toHaveAttribute('href', '/exams');
     expect(child.hasAttribute('data-active')).toBe(true);
     expect(screen.getByRole('link', { name: 'Ngân hàng câu hỏi' }).hasAttribute('data-active')).toBe(false);
-    expect(screen.getByRole('link', { name: 'Ngân hàng ma trận' }).hasAttribute('data-active')).toBe(false);
-  });
-
-  it('đang ở /system-bank/exams: sidebar không có mục hệ thống nào; ba mục ngân hàng hiện đúng tên và không mục nào active lây', async () => {
-    stubFetch(profileOf(TEACHER_ID, 'teacher1'), TEACHER_ACCESS);
-    renderShell('/system-bank/exams');
-
-    expect(await screen.findByRole('link', { name: 'Ngân hàng đề' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ngân hàng hệ thống' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Đề hệ thống' })).not.toBeInTheDocument();
-    for (const name of ['Ngân hàng câu hỏi', 'Ngân hàng đề', 'Ngân hàng ma trận']) {
-      expect(screen.getByRole('link', { name }).hasAttribute('data-active')).toBe(false);
-    }
   });
 
   it('đang ở /questions: "Ngân hàng câu hỏi" active và collapse tự mở thấy "Ngữ liệu" chưa active', async () => {
@@ -386,215 +297,46 @@ describe('cây điều hướng sidebar — trạng thái nhóm', () => {
 });
 
 describe('cây điều hướng sidebar — lọc theo quyền', () => {
-  it('học viên: không thấy hai nhóm quản trị và không thấy mục ngân hàng nào', async () => {
+  it('học viên: chỉ thấy 3 mục trực tiếp, không thấy mục ngân hàng nào', async () => {
     stubFetch(profileOf(STUDENT_ID, 'student1'), STUDENT_ACCESS);
     renderShell();
 
     expect(await screen.findByRole('link', { name: 'Tổng quan' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Người dùng & quyền' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Cài đặt hệ thống' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ngân hàng hệ thống' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Khoá học' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Lớp học' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Ngân hàng câu hỏi' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Ngân hàng đề' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Ngân hàng ma trận' })).not.toBeInTheDocument();
-
-    // Nhóm Học tập nay gác theo ảnh chụp quyền (bất đồng bộ): phải chờ nút cha xuất hiện sau khi snapshot về, không
-    // dùng getByRole đồng bộ như khi nhóm còn render vô điều kiện.
-    await userEvent.click(await screen.findByRole('button', { name: 'Học tập' }));
-    expect(await screen.findByRole('link', { name: 'Huy hiệu' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Kế hoạch học tập' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Ngữ liệu' })).not.toBeInTheDocument();
   });
 
-  it('giáo viên có capability câu hỏi: 3 mục ngân hàng ở cấp cao nhất, đúng href path riêng từng khu vực (chuẩn #221)', async () => {
+  it('giáo viên có capability câu hỏi: 2 mục ngân hàng ở cấp cao nhất, đúng href path riêng từng khu vực (chuẩn #221)', async () => {
     stubFetch(profileOf(TEACHER_ID, 'teacher1'), TEACHER_ACCESS);
     renderShell();
 
     expect(await screen.findByRole('link', { name: 'Ngân hàng câu hỏi' })).toHaveAttribute('href', '/questions');
     expect(screen.getByRole('link', { name: 'Ngân hàng đề' })).toHaveAttribute('href', '/exams');
-    expect(screen.getByRole('link', { name: 'Ngân hàng ma trận' })).toHaveAttribute('href', '/matrices');
     expect(screen.queryByRole('link', { name: 'Ngữ liệu' })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Thu/mở Ngân hàng câu hỏi' }));
     expect(await screen.findByRole('link', { name: 'Ngữ liệu' })).toHaveAttribute('href', '/questions/stimuli');
-    expect(screen.queryByRole('button', { name: 'Ngân hàng hệ thống' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ngân hàng ma trận' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Câu hỏi hệ thống' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Đề hệ thống' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Ma trận hệ thống' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Người dùng & quyền' })).not.toBeInTheDocument();
-  });
-
-  it('chủ trung tâm không có quyền quản trị site: nhóm Người dùng & quyền chỉ chứa mục Trung tâm', async () => {
-    const tenantOwnerAccess = {
-      userId: TEACHER_ID,
-      isSiteAdmin: false,
-      assignments: [
-        {
-          id: '01900000-0000-7000-8000-0000000000f9',
-          roleId: '01900000-0000-7000-8000-0000000000b9',
-          roleShortname: 'manager',
-          roleName: 'Chủ trung tâm',
-          contextId: '01900000-0000-7000-8000-0000000000e9',
-          contextLevel: 20,
-          contextPath: '/1/2',
-          instanceId: '01900000-0000-7000-8000-0000000000a9',
-        },
-      ],
-      contexts: [
-        { contextId: SYSTEM_CONTEXT_ID, contextLevel: 10, contextPath: '/1', capabilities: [] as string[] },
-        {
-          contextId: '01900000-0000-7000-8000-0000000000e9',
-          contextLevel: 20,
-          contextPath: '/1/2',
-          capabilities: ['tenant:manage'],
-        },
-      ],
-      hasLearnerArtifacts: true,
-    };
-    stubFetch(profileOf(TEACHER_ID, 'owner1'), tenantOwnerAccess);
-    renderShell();
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Người dùng & quyền' }, { timeout: 10000 }));
-    expect(await screen.findByRole('link', { name: 'Trung tâm' })).toHaveAttribute('href', '/admin/tenants');
-    expect(screen.queryByRole('link', { name: 'Người dùng' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Vai trò' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Cài đặt hệ thống' })).not.toBeInTheDocument();
   });
 });
 
 describe('cây điều hướng sidebar — chế độ rail icon', () => {
-  it('cookie sidebar_state=false → rail icon có SidebarRail; bấm mục cha bung sidebar và mở nhóm', async () => {
+  it('cookie sidebar_state=false → rail icon có SidebarRail và các link trực tiếp vẫn điều hướng được', async () => {
     document.cookie = 'sidebar_state=false; path=/';
     stubFetch(profileOf(ADMIN_ID, 'admin'), ADMIN_ACCESS);
     const { container } = renderShell();
 
-    const parentButton = await screen.findByRole('button', { name: 'Học tập' });
+    expect(await screen.findByRole('link', { name: 'Khoá học' })).toBeInTheDocument();
     const root = sidebarRoot(container);
     expect(root).toHaveAttribute('data-state', 'collapsed');
     expect(root).toHaveAttribute('data-collapsible', 'icon');
     expect(container.querySelector('[data-slot="sidebar-rail"]')).not.toBeNull();
 
-    await userEvent.click(parentButton);
-    expect(sidebarRoot(container)).toHaveAttribute('data-state', 'expanded');
-    expect(await screen.findByRole('link', { name: 'Huy hiệu' })).toBeInTheDocument();
-  });
-});
-
-describe('nhóm Học tập theo dấu chân (issue #176, quy tắc M+A)', () => {
-  const TEACHER_PURE = { ...TEACHER_ACCESS, hasLearnerArtifacts: false };
-  const NO_FOOTPRINT = { userId: STUDENT_ID, isSiteAdmin: false, assignments: [], contexts: [], hasLearnerArtifacts: false };
-  // Gán vai học viên tại context khoá (không phải staff: không có grade:viewall) — nhánh (M): khoá lọt vào
-  // perms.learning.
-  const LEARNER_ACCESS = {
-    userId: STUDENT_ID,
-    isSiteAdmin: false,
-    assignments: [
-      {
-        id: '01900000-0000-7000-8000-0000000000b8',
-        roleId: '01900000-0000-7000-8000-0000000000b9',
-        roleShortname: 'student',
-        roleName: 'Học viên',
-        contextId: COURSE_CONTEXT_ID,
-        contextLevel: 50,
-        contextPath: `/1/${COURSE_CONTEXT_ID}`,
-        instanceId: COURSE_ID,
-      },
-    ],
-    contexts: [
-      {
-        contextId: COURSE_CONTEXT_ID,
-        contextLevel: 50,
-        contextPath: `/1/${COURSE_CONTEXT_ID}`,
-        capabilities: ['course:view'],
-      },
-    ],
-    hasLearnerArtifacts: false,
-  };
-
-  it('1. GV thuần (dạy, không học ở đâu, không hiện vật): không có nút nhóm Học tập', async () => {
-    stubFetch(profileOf(TEACHER_ID, 'teacher1'), TEACHER_PURE);
-    renderShell();
-
-    expect(await screen.findByRole('link', { name: 'Tổng quan' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Học tập' })).not.toBeInTheDocument();
-  });
-
-  it('2. GV có ghi danh học viên ở khoá khác: nhóm hiện, mở ra thấy Huy hiệu + Kế hoạch học tập', async () => {
-    stubFetch(profileOf(TEACHER_ID, 'teacher1'), { ...LEARNER_ACCESS, userId: TEACHER_ID }, 0, { courses: [COURSE] });
-    renderShell();
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Học tập' }));
-    expect(await screen.findByRole('link', { name: 'Huy hiệu' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Kế hoạch học tập' })).toBeInTheDocument();
-  });
-
-  it('3. HS (ghi danh học viên): nhóm hiện như hiện tại', async () => {
-    stubFetch(profileOf(STUDENT_ID, 'student1'), LEARNER_ACCESS, 0, { courses: [COURSE] });
-    renderShell();
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Học tập' }));
-    expect(await screen.findByRole('link', { name: 'Huy hiệu' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Kế hoạch học tập' })).toBeInTheDocument();
-  });
-
-  it('4. Hết ghi danh nhưng còn hiện vật: nhóm vẫn hiện', async () => {
-    stubFetch(profileOf(STUDENT_ID, 'student1'), STUDENT_ACCESS);
-    renderShell();
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Học tập' }));
-    expect(await screen.findByRole('link', { name: 'Huy hiệu' })).toBeInTheDocument();
-  });
-
-  it('5. Tài khoản mới (mọi tín hiệu rỗng): nhóm ẩn nhưng mục trực tiếp Khoá học vẫn hiện', async () => {
-    stubFetch(profileOf(STUDENT_ID, 'newuser'), NO_FOOTPRINT);
-    renderShell();
-
-    expect(await screen.findByRole('link', { name: 'Khoá học' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Học tập' })).not.toBeInTheDocument();
-  });
-
-  it('6. Phụ huynh thuần (có liên kết giám hộ, không dấu chân): nhóm ẩn, mục Phụ huynh hiện', async () => {
-    stubFetch(profileOf(STUDENT_ID, 'parent1'), NO_FOOTPRINT, 0, {
-      guardianChildren: [{ student: { id: '01900000-0000-7000-8000-0000000000c0' } }],
-    });
-    renderShell();
-
-    expect(await screen.findByRole('link', { name: 'Phụ huynh' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Học tập' })).not.toBeInTheDocument();
-  });
-});
-
-describe('mục quản lý liên kết phụ huynh — gác theo guardian:manage (gói kích hoạt phụ huynh)', () => {
-  // Người phụ trách có guardian:manage ở một context tenant (cấp 30) — đúng hình dạng gán vai thật mà cổng API của
-  // module guardians kiểm (capability từ gán vai ở bất kỳ context nào).
-  const GUARDIAN_MANAGER_ACCESS = {
-    userId: TEACHER_ID,
-    isSiteAdmin: false,
-    assignments: [],
-    contexts: [
-      {
-        contextId: '01900000-0000-7000-8000-0000000000d5',
-        contextLevel: 30,
-        contextPath: '/1/2',
-        capabilities: ['guardian:manage'],
-      },
-    ],
-    hasLearnerArtifacts: false,
-  };
-
-  it('người có guardian:manage thấy mục Liên kết phụ huynh dẫn tới trang quản lý', async () => {
-    stubFetch(profileOf(TEACHER_ID, 'teacher1'), GUARDIAN_MANAGER_ACCESS);
-    renderShell();
-
-    const link = await screen.findByRole('link', { name: 'Liên kết phụ huynh' });
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/admin/guardian-links');
-  });
-
-  it('học viên không có guardian:manage thì không thấy mục Liên kết phụ huynh', async () => {
-    stubFetch(profileOf(STUDENT_ID, 'student1'), STUDENT_ACCESS);
-    renderShell();
-
-    expect(await screen.findByRole('link', { name: 'Khoá học' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Liên kết phụ huynh' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('link', { name: 'Khoá học' }));
+    expect(await screen.findByTestId('probe-courses')).toBeInTheDocument();
   });
 });

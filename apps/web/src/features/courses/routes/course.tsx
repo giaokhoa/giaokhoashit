@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import type { CourseContent } from '@lms/contracts';
 import { Button } from '@lms/ui/components/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@lms/ui/components/card';
@@ -9,7 +9,6 @@ import { ErrorAlert } from '#components/error-alert';
 import { useTranslation } from 'react-i18next';
 import { PageHeader, PageShell } from '#components/page-shell';
 import '#config/i18n';
-import { courseConversationQueryOptions } from '#features/messaging/queries/messaging';
 import { coursePageQueryOptions, myPaymentsQueryOptions, useCoursePage, useMyPayments, usePayFee, useSelfEnrol, useToggleManualCompletion } from '../queries/course';
 import { queryClient } from '#lib/query-client';
 
@@ -26,7 +25,6 @@ function allowsManualCompletion(cm: CourseModuleView): boolean {
 export function CoursePage() {
   const { t } = useTranslation('app');
   const { id } = useParams();
-  const navigate = useNavigate();
   const pageQuery = useCoursePage(id);
   const page = pageQuery.data;
   const course = page?.course ?? null;
@@ -46,24 +44,9 @@ export function CoursePage() {
       ? (payFeeMutation.variables ?? null)
       : null;
   const busyCmId = toggleMutation.isPending ? (toggleMutation.variables?.cmId ?? null) : null;
-  const [chatBusy, setChatBusy] = useState(false);
-  const [chatError, setChatError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [completionError, setCompletionError] = useState<string | null>(null);
-
-  async function openClassChat() {
-    setChatBusy(true);
-    setChatError(null);
-    try {
-      const conv = await queryClient.fetchQuery(courseConversationQueryOptions(id ?? ''));
-      navigate(`/messages?conversation=${conv.id}`);
-    } catch {
-      setChatError(t('courseChatOpenFailed'));
-    } finally {
-      setChatBusy(false);
-    }
-  }
 
   async function selfEnrol(instanceId: string) {
     setActionError(null);
@@ -136,42 +119,10 @@ export function CoursePage() {
               <span className="text-sm text-muted-foreground">
                 {t('courseProgressDetail', { completed: progress.completed, total: progress.total })}
               </span>
-              {progress.resume ? (
-                <Link to={`/courses/${id}/learn/${progress.resume.cmId}`}>
-                  <Button type="button" size="sm">{t('learnContinue')}</Button>
-                </Link>
-              ) : null}
-              {(() => {
-                const weakest = [...progress.sections]
-                  .filter((s) => s.percent !== null && s.percent < 100)
-                  .sort((a, b) => (a.percent ?? 0) - (b.percent ?? 0))[0];
-                const target = weakest?.items.find((i) => i.completion !== 0 && !i.done);
-                return target && target.cmId !== progress.resume?.cmId ? (
-                  <Link to={`/courses/${id}/learn/${target.cmId}`} className="text-sm underline">
-                    {t('reviewWeakest')}
-                  </Link>
-                ) : null;
-              })()}
-              <Link to={`/courses/${id}/progress`} className="text-sm underline">
-                {t('progressReportLink')}
-              </Link>
             </CardContent>
           </Card>
         ) : null}
         {isEnrolledActive ? <p className="text-sm text-muted-foreground">{t('enrolledNotice')}</p> : null}
-        <Card>
-          <CardContent className="flex flex-wrap items-center gap-3">
-            <span className="text-sm font-medium">{t('courseChatOpen')}</span>
-            <Button type="button" size="sm" disabled={chatBusy} onClick={() => void openClassChat()}>
-              {t('courseChatOpen')}
-            </Button>
-            {chatError ? (
-              <span role="alert" className="text-sm text-destructive">
-                {chatError}
-              </span>
-            ) : null}
-          </CardContent>
-        </Card>
         {completionError ? (
           <ErrorAlert variant="destructive">
             {completionError}
@@ -240,15 +191,7 @@ export function CoursePage() {
                       className={locked ? 'opacity-50' : undefined}
                     >
                       {isComplete ? <span aria-label={t('completionCompleted')}>✓ </span> : null}
-                      {cm.component === 'mod_quiz' && cm.instanceId && !locked ? (
-                        <Link to={`/courses/${id}/exams/${cm.instanceId}`}>{cm.name || cm.component}</Link>
-                      ) : cm.component === 'mod_assign' && cm.instanceId && !locked ? (
-                        <Link to={`/courses/${id}/assignments/${cm.instanceId}`}>{cm.name || cm.component}</Link>
-                      ) : (cm.component === 'mod_page' || cm.component === 'mod_resource') && !locked ? (
-                        <Link to={`/courses/${id}/learn/${cm.id}`}>{cm.name || cm.component}</Link>
-                      ) : (
-                        <span>{cm.name || cm.component}</span>
-                      )}
+                      <span>{cm.name || cm.component}</span>
                       {(markerNamesByCm.get(cm.id) ?? []).map((groupName) => (
                         <span key={groupName} className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">
                           {t('classMarkerBadge', { name: groupName })}

@@ -17,9 +17,6 @@ export function HomePage() {
         <CardContent>
           <div className="flex gap-2">
             <Button render={<Link to="/login" />}>{t('signIn')}</Button>
-            <Button variant="outline" render={<Link to="/health" />}>
-              {t('checkApiHealth')}
-            </Button>
           </div>
         </CardContent>
       </Card>

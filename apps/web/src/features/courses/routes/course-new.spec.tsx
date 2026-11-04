@@ -80,7 +80,7 @@ function renderWizard() {
   const router = createMemoryRouter(
     [
       { path: '/courses/new', element: <CourseNewPage /> },
-      { path: '/courses/:id/builder', element: <p>builder-page</p> },
+      { path: '/courses/:id/admin', element: <p>course-admin-page</p> },
     ],
     { initialEntries: ['/courses/new'] },
   );
@@ -98,7 +98,7 @@ describe('Wizard tạo khoá K1', () => {
     localStorage.clear();
   });
 
-  it('nhân bản khoá: chọn nguồn thì tên/mã được điền sẵn, tạo gọi POST copy kèm mốc bắt đầu mới và vào thẳng builder', async () => {
+  it('nhân bản khoá: chọn nguồn thì tên/mã được điền sẵn, tạo gọi POST copy kèm mốc bắt đầu mới và vào thẳng trang quản trị khoá', async () => {
     const calls: RecordedCall[] = [];
     stubFetch(calls);
     renderWizard();
@@ -121,7 +121,7 @@ describe('Wizard tạo khoá K1', () => {
       startDate: '2027-09-06',
       classId: CLASS_ID,
     });
-    expect(await screen.findByText('builder-page')).toBeTruthy();
+    expect(await screen.findByText('course-admin-page')).toBeTruthy();
   });
 
   it('khoá trắng: điền tên/mã/danh mục rồi POST /courses', async () => {

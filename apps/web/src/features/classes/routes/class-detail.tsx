@@ -11,10 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ErrorAlert } from '#components/error-alert';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { PageHeader, PageShell } from '#components/page-shell';
 import '#config/i18n';
-import { addRosterMember, addRosterStudentByIdentity, decideJoinRequest, downloadRosterTemplate, ensureClassConversation, fetchClassOverview, fetchClassStaff, fetchJoinRequests, fetchRoster, fetchSuspendedMembers, importRosterFile, personName, removeRosterMember, setClassStaffRoles } from '../api/classes';
+import { addRosterMember, addRosterStudentByIdentity, decideJoinRequest, downloadRosterTemplate, fetchClassOverview, fetchClassStaff, fetchJoinRequests, fetchRoster, fetchSuspendedMembers, importRosterFile, personName, removeRosterMember, setClassStaffRoles } from '../api/classes';
 import { CLASS_STAFF_ROLE_ORDER } from '../types/classes';
 import type { ClassRosterImportReport, ClassStaffRole } from '../types/classes';
 import { formatDate } from '#utils/date-format';
@@ -24,24 +24,8 @@ export function ClassDetailPage() {
   const { t } = useTranslation('app');
   const { id } = useParams<{ id: string }>();
   const classId = id ?? '';
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<string | null>(null);
-  const [chatBusy, setChatBusy] = useState(false);
-  const [chatError, setChatError] = useState<string | null>(null);
-
-  async function openClassChat() {
-    setChatBusy(true);
-    setChatError(null);
-    try {
-      const conv = await ensureClassConversation(classId);
-      navigate(`/messages?conversation=${conv.id}`);
-    } catch {
-      setChatError(t('classChatOpenFailed'));
-    } finally {
-      setChatBusy(false);
-    }
-  }
 
   /**
    * Gói tổng quan là nguồn vai DUY NHẤT của trang: quan hệ của người gọi với lớp + cờ khả năng + khoá đã lọc theo vai
@@ -188,13 +172,10 @@ export function ClassDetailPage() {
         description={cls?.description || undefined}
         actions={
           <>
-            <Button type="button" variant="outline" disabled={chatBusy} onClick={() => void openClassChat()}>
-              {t('classChatOpen')}
-            </Button>
             {/*
              * Liên kết "Sửa" chỉ render khi gói tổng quan ĐÃ VỀ và vai cho phép: suy "không phải member" từ gói chưa
              * tải xong sẽ làm nút chớp hiện với học viên trong lúc trang đang tải (overview rỗng → isMember = false).
-             * Trong lúc tải, header chỉ giữ nút Chat lớp dùng cho mọi vai thuộc lớp.
+             * Trong lúc tải, header chưa hiện liên kết "Sửa".
              */}
             {overview && !isMember ? (
               <Link className={buttonVariants({ variant: 'outline' })} to={`/classes/${classId}/edit`}>
@@ -204,11 +185,6 @@ export function ClassDetailPage() {
           </>
         }
       />
-      {chatError ? (
-        <ErrorAlert variant="destructive">
-          {chatError}
-        </ErrorAlert>
-      ) : null}
       {message ? (
         <ErrorAlert>
           {message}

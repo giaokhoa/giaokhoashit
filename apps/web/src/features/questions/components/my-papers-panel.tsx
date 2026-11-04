@@ -108,7 +108,7 @@ export function MyPapersPanel({
   async function runDeploy() {
     if (!deployPaper || !deployCourseId || !deploySectionId) return;
     try {
-      const pin = await deployPinMutation.mutateAsync({
+      await deployPinMutation.mutateAsync({
         courseId: deployCourseId,
         body: {
           sectionId: deploySectionId,
@@ -119,7 +119,6 @@ export function MyPapersPanel({
       });
       setMessage(t('pinOk', { version: deployPaper.latestVersion }));
       setDeployPaper(null);
-      navigate(`/courses/${deployCourseId}/exams/${pin.id}`);
     } catch (err) {
       setMessage(withApiReason(t('pinFailed'), err));
     }

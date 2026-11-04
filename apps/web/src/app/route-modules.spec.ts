@@ -35,7 +35,8 @@ import { describe, expect, it } from 'vitest';
  *  - `export { X as default }` — kể cả viết nhiều dòng và kèm `from`;
  *  - `export { default } from '...'` — chuyển tiếp export mặc định.
  *
- * Chống xanh giả: ca đầu tiên khẳng định danh sách suy ra phải đủ lớn và chứa đúng module của lỗi gốc. Nếu cách suy
+ * Chống xanh giả: ca đầu tiên khẳng định danh sách suy ra phải đủ lớn và chứa đúng hai module neo thuộc hai cách
+ * đăng ký khác nhau (gộp trực tiếp ở tầng app và qua config riêng của feature). Nếu cách suy
  * danh sách hỏng (quét ra rỗng hoặc thiếu), ca đó đỏ thay vì toàn bộ spec xanh rỗng.
  */
 const SRC_DIR = dirname(fileURLToPath(import.meta.url));
@@ -74,11 +75,13 @@ const ROUTE_MODULE_FILES = listRouteModuleFiles();
 
 describe('Gác route module (issue #406): mọi module đăng ký trong src/app/routes.ts đều có export mặc định', () => {
   it('suy ra đầy đủ danh sách module route từ chính routes.ts', () => {
-    // Số route module tại thời điểm viết spec là 94; ngưỡng 50 chỉ để bắt trường hợp cách suy danh sách hỏng và quét
-    // thiếu hàng loạt.
-    expect(ROUTE_MODULE_FILES.length).toBeGreaterThan(50);
-    // Neo hồi quy của chính lỗi gốc: module này từng là module duy nhất trong toàn app thiếu export mặc định.
-    expect(ROUTE_MODULE_FILES).toContain('features/guardians/routes/admin-guardian-links.tsx');
+    // Số route module của bề mặt phát hành 07/11 là 32 (bản đồ đầy đủ trước issue #79 là 94); ngưỡng 20 chỉ để bắt
+    // trường hợp cách suy danh sách hỏng và quét thiếu hàng loạt.
+    expect(ROUTE_MODULE_FILES.length).toBeGreaterThan(20);
+    // Neo hồi quy: hai module thuộc hai cách đăng ký khác nhau — gộp trực tiếp ở tầng app (trang chủ) và qua config
+    // riêng của feature (chi tiết lớp) — đều phải nằm trong danh sách suy ra.
+    expect(ROUTE_MODULE_FILES).toContain('features/dashboard/routes/home-index.tsx');
+    expect(ROUTE_MODULE_FILES).toContain('features/classes/routes/class-detail.tsx');
   });
 
   for (const file of ROUTE_MODULE_FILES) {

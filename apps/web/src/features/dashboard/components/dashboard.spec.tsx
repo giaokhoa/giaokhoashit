@@ -306,8 +306,10 @@ describe('Dashboard theo vai trò', () => {
     expect(items[0]).toHaveTextContent('Bài nộp quá hạn');
     expect(items[0]).toHaveTextContent('Quá hạn');
     expect(items[1]).toHaveTextContent('Quiz sắp đến hạn');
-    expect(items[0].querySelector('a')?.getAttribute('href')).toBe(`/courses/${COURSE_ID}/assignments/a-overdue`);
-    expect(items[1].querySelector('a')?.getAttribute('href')).toBe(`/courses/${COURSE_ID}/exams/q-soon`);
+    // Bản phát hành 07/11 (issue #79): đích cũ của hai mục này (trang nộp bài tập, trang làm quiz theo khoá) đã ẩn —
+    // mục việc chỉ hiện dạng chữ, không còn liên kết dẫn tới route không tồn tại.
+    expect(items[0].querySelector('a')).toBeNull();
+    expect(items[1].querySelector('a')).toBeNull();
     const fresh = screen.getByTestId('todo-new-result');
     expect(fresh).toHaveTextContent('Điểm kiểm tra');
     expect(fresh).toHaveTextContent('9 / 10');
@@ -322,17 +324,23 @@ describe('Dashboard theo vai trò', () => {
     expect(row).toHaveTextContent('5');
     const queueLink = row.closest('a') ?? row.querySelector('a');
     expect(queueLink?.getAttribute('href')).toBe(`/courses/${COURSE_ID}/grades`);
-    const paperLink = screen.getByTestId('grading-paper-link');
-    expect(paperLink).toHaveTextContent('2 phiếu giấy chờ xử lý');
-    expect(paperLink.getAttribute('href')).toBe(`/courses/${COURSE_ID}/exams/quiz-paper-1/paper`);
+    // Bản phát hành 07/11 (issue #79): số phiếu giấy chờ chỉ hiện dạng chữ — trang xử lý phiếu giấy thuộc bề mặt quiz
+    // đã ẩn, không còn liên kết tới route không tồn tại.
+    expect(row).toHaveTextContent('2 phiếu giấy chờ xử lý');
+    expect(screen.queryByTestId('grading-paper-link')).not.toBeInTheDocument();
   });
 
-  it('admin thấy khối quản trị hệ thống, không thấy khối giảng dạy/học tập', async () => {
+  it('admin không còn khối quản trị trên trang chủ bản phát hành, chỉ thấy thẻ chưa có khối tổng quan', async () => {
     stubFetch(baseHandler('admin'));
     renderApp();
-    expect(await screen.findByText('Quản trị hệ thống')).toBeInTheDocument();
-    expect(await screen.findByText('Tổng người dùng')).toBeInTheDocument();
-    expect(await screen.findByText('teacher1')).toBeInTheDocument();
+    // Chờ theo waitFor bọc cả truy vấn: thẻ rỗng hiện ngay ở lần render yên đầu tiên sau hai query gốc, và findByText
+    // trong môi trường này có thể resolved trúng cây render tạm đã tách khỏi document — truy vấn lại ở mỗi nhịp chờ
+    // mới bám đúng cây đang gắn.
+    await waitFor(() => expect(screen.getByText('Chưa có khối tổng quan nào')).toBeInTheDocument(), {
+      timeout: 10_000,
+    });
+    expect(screen.queryByText('Quản trị hệ thống')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tổng người dùng')).not.toBeInTheDocument();
     expect(screen.queryByText('Giảng dạy')).not.toBeInTheDocument();
     expect(screen.queryByText('Học tập của tôi')).not.toBeInTheDocument();
   });

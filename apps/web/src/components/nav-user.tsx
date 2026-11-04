@@ -14,7 +14,6 @@ import {
 } from '@lms/ui/components/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@lms/ui/components/sidebar';
 import { useAuth } from '#lib/auth';
-import { TenantSwitcherMenu } from '#components/tenant-switcher';
 import '#config/i18n';
 
 function initialsOf(name: string): string {
@@ -90,7 +89,6 @@ export function NavUser() {
               <IconSettings />
               {t('navSettings')}
             </DropdownMenuItem>
-            <TenantSwitcherMenu />
             <DropdownMenuItem
               onClick={() => {
                 void logout().then(() => navigate('/login'));

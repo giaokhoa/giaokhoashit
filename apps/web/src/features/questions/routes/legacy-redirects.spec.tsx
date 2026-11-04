@@ -1,4 +1,4 @@
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestProviders } from '#test/providers';
@@ -47,6 +47,24 @@ const CATEGORY_ID = '01900000-0000-7000-8000-000000000001';
 const SYSTEM_CTX_ID = '01900000-0000-7000-8000-0000000000a1';
 const ITEM_ID = '01900000-0000-7000-8000-0000000000e5';
 
+function stubRedirectFetch() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      const respond = (body: unknown) =>
+        new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (isGetSessionUrl(url)) return respond(baSessionBody({ id: PROFILE.id, username: PROFILE.username, email: PROFILE.email }));
+      if (url === '/api/v1/users/me') return respond({ ...PROFILE, username: 'admin' });
+      if (url === '/api/v1/users/me/capabilities')
+        return respond({ userId: PROFILE.id, isSiteAdmin: true, assignments: [], contexts: [] });
+      if (url === '/api/v1/courses') return respond([]);
+      if (url === '/api/v1/questions/categories')
+        return respond([{ id: CATEGORY_ID, name: 'General', contextId: SYSTEM_CTX_ID, info: '', parent: null }]);
+      return new Response('{}', { status: 404, headers: { 'Content-Type': 'application/json' } });
+    }),
+  );
+}
+
 describe('URL ngân hàng cũ — chuyển hướng sang path mới (issue #221)', () => {
   afterEach(() => {
     cleanup();
@@ -54,35 +72,11 @@ describe('URL ngân hàng cũ — chuyển hướng sang path mới (issue #221)
     localStorage.clear();
   });
 
-  function stubRedirectFetch() {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (url: string) => {
-        const respond = (body: unknown) =>
-          new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
-        if (isGetSessionUrl(url)) return respond(baSessionBody({ id: PROFILE.id, username: PROFILE.username, email: PROFILE.email }));
-        if (url === '/api/v1/users/me') return respond({ ...PROFILE, username: 'admin' });
-        if (url === '/api/v1/users/me/capabilities')
-          return respond({ userId: PROFILE.id, isSiteAdmin: true, assignments: [], contexts: [] });
-        if (url === '/api/v1/courses') return respond([]);
-        if (url === '/api/v1/questions/categories')
-          return respond([{ id: CATEGORY_ID, name: 'General', contextId: SYSTEM_CTX_ID, info: '', parent: null }]);
-        return new Response('{}', { status: 404, headers: { 'Content-Type': 'application/json' } });
-      }),
-    );
-  }
-
   const MATRIX_ID = '01900000-0000-7000-8000-0000000000c9';
   const REDIRECT_CASES: Array<{ from: string; toPath: string; toSearch?: string }> = [
     { from: '/questions?bank=my-questions', toPath: '/questions', toSearch: '' },
     { from: '/questions?bank=my-questions&section=stimuli', toPath: '/questions/stimuli' },
     { from: '/questions?bank=my-papers', toPath: '/exams' },
-    { from: '/questions?bank=my-matrices', toPath: '/matrices' },
-    { from: '/questions?bank=system', toPath: '/system-bank/questions' },
-    { from: '/questions?bank=system&section=questions', toPath: '/system-bank/questions' },
-    { from: '/questions?bank=system&section=papers', toPath: '/system-bank/exams' },
-    { from: '/questions?bank=system&section=matrices', toPath: '/system-bank/matrices' },
-    { from: '/questions?bank=system&section=papers&x=1', toPath: '/system-bank/exams', toSearch: '?x=1' },
     { from: '/exam-papers', toPath: '/exams' },
     { from: '/exam-papers/new', toPath: '/exams/new' },
     { from: '/exam-papers/01900000-0000-7000-8000-0000000000d7/edit', toPath: '/exams/01900000-0000-7000-8000-0000000000d7/edit' },
@@ -128,6 +122,41 @@ describe('URL ngân hàng cũ — chuyển hướng sang path mới (issue #221)
       if (redirectCase.toSearch !== undefined) {
         expect(router.state.location.search).toBe(redirectCase.toSearch);
       }
+    });
+  }
+});
+
+describe('URL ngân hàng cũ thuộc bank đã gỡ đăng ký — không còn chuyển hướng (issue #79)', () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  const REMOVED_BANK_URLS = [
+    '/questions?bank=my-matrices',
+    '/questions?bank=system',
+    '/questions?bank=system&section=questions',
+    '/questions?bank=system&section=papers',
+    '/questions?bank=system&section=matrices',
+  ];
+
+  for (const from of REMOVED_BANK_URLS) {
+    it(`không chuyển hướng ${from} — ở lại trang ngân hàng câu hỏi cá nhân còn sống`, async () => {
+      stubRedirectFetch();
+      const router = createMemoryRouter([{ path: '/questions', element: <QuestionsRoute /> }], {
+        initialEntries: [from],
+      });
+      render(
+        <TestProviders>
+          <RouterProvider router={router} />
+        </TestProviders>,
+      );
+
+      // Trang ngân hàng câu hỏi cá nhân đã render xong (nút tạo câu hỏi đã hiện) mà đường dẫn vẫn là /questions:
+      // lớp tương thích không còn đưa người dùng tới /matrices hay /system-bank/* đã gỡ đăng ký.
+      expect(await screen.findByRole('link', { name: 'Câu hỏi mới' })).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe('/questions');
     });
   }
 });

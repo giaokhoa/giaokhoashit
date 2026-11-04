@@ -361,28 +361,30 @@ describe('SL-1 — bộ nạp / (dashboard)', () => {
     expect(findQuery(dehydratedState, queryKeys.capabilities)?.state.data).toEqual(STUDENT_ACCESS);
     expect(findQuery(dehydratedState, queryKeys.courses)?.state.status).toBe('success');
     expect(findQuery(dehydratedState, dashboardQueryKeys.dashboardOverview)?.state.status).toBe('success');
-    expect(findQuery(dehydratedState, queryKeys.myBadges)?.state.status).toBe('success');
-    expect(findQuery(dehydratedState, queryKeys.notificationUnreadCount)?.state.data).toEqual({ unread: 3 });
-    const range = upcomingDaysRangeIso(30);
-    expect(
-      findQuery(dehydratedState, queryKeys.calendarEvents(range.from, range.to))?.state.data,
-    ).toEqual(CALENDAR_EVENTS);
     expect(findQuery(dehydratedState, queryKeys.courseAccess('course-1'))?.state.data).toEqual({
       report: GRADE_REPORT,
       gradebook: GRADEBOOK,
     });
 
+    // Bản phát hành 07/11 (issue #79): loader không prefetch query của tính năng đã ẩn — huy hiệu, số thông báo chưa
+    // đọc, sự kiện lịch và cả ba query của khối quản trị đều vắng khỏi state dù stub API vẫn trả dữ liệu cho chúng.
+    expect(findQuery(dehydratedState, queryKeys.myBadges)).toBeUndefined();
+    expect(findQuery(dehydratedState, queryKeys.notificationUnreadCount)).toBeUndefined();
+    const range = upcomingDaysRangeIso(30);
+    expect(findQuery(dehydratedState, queryKeys.calendarEvents(range.from, range.to))).toBeUndefined();
     expect(findQuery(dehydratedState, queryKeys.adminUsers(1, 100))).toBeUndefined();
     expect(findQuery(dehydratedState, queryKeys.categoryTree)).toBeUndefined();
     expect(findQuery(dehydratedState, queryKeys.roles)).toBeUndefined();
   });
 
-  it('quản trị viên: dehydrate thêm ba query của khối quản trị', async () => {
+  it('quản trị viên: chỉ dehydrate query gốc + tổng hợp, KHÔNG còn ba query của khối quản trị', async () => {
     stubHomeApi({ ...STUDENT_ACCESS, isSiteAdmin: true, assignments: [] });
     const { dehydratedState } = await homeLoader({ request: sessionRequest('/') });
-    expect(findQuery(dehydratedState, queryKeys.adminUsers(1, 100))?.state.status).toBe('success');
-    expect(findQuery(dehydratedState, queryKeys.categoryTree)?.state.status).toBe('success');
-    expect(findQuery(dehydratedState, queryKeys.roles)?.state.status).toBe('success');
+    expect(findQuery(dehydratedState, queryKeys.capabilities)?.state.status).toBe('success');
+    expect(findQuery(dehydratedState, dashboardQueryKeys.dashboardOverview)?.state.status).toBe('success');
+    expect(findQuery(dehydratedState, queryKeys.adminUsers(1, 100))).toBeUndefined();
+    expect(findQuery(dehydratedState, queryKeys.categoryTree)).toBeUndefined();
+    expect(findQuery(dehydratedState, queryKeys.roles)).toBeUndefined();
     expect(findQuery(dehydratedState, queryKeys.courseAccess('course-1'))).toBeUndefined();
   });
 
