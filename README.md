@@ -16,11 +16,8 @@ packages/
   contracts/  Các schema zod dùng chung (Problem Details, health, …) — hợp đồng duy nhất giữa api và web
   config/     Các tsconfig cơ sở dùng chung
 docs/
-  Tài liệu kiến trúc và hợp đồng còn giữ trong repo: hợp đồng tích hợp
-  Keycloak (`keycloak-auth-contract.md`), kiểm kê capability
-  (`capability-inventory.md`), oracle quyết quyền (`access-oracle.md`),
-  dữ kiện kiểm chứng (`access-verification-fixtures.md`) và danh sách
-  xoá xác thực cũ (`auth-removal-list.md`)
+  Tài liệu kiến trúc và hợp đồng còn giữ trong repo: kiểm kê capability
+  (`capability-inventory.md`)
 ```
 
 Luật phụ thuộc: `web` chỉ phụ thuộc vào `contracts`; `api`/`worker` dùng
@@ -185,8 +182,7 @@ khoá học vào 09:00 ngày mai.
 > và nhắn giáo viên có quan hệ hợp lệ, **không xem điểm/bài làm**.
 > Trạng thái hiện tại: **chưa triển khai runtime** — đăng nhập vẫn
 > là JWT tự viết + Better Auth và bề mặt phụ huynh hiện tại còn
-> hiển thị điểm đã công bố của con; các sai lệch được ghi ở
-> `docs/access-verification-fixtures.md`.
+> hiển thị điểm đã công bố của con.
 
 Seed cũng nạp **toàn bộ chương trình GDPT 2018 cấp quốc gia**: cả 21
 dataset đã kiểm chứng được đóng gói sẵn trong repo (2.115 bản ghi trên 19 môn
