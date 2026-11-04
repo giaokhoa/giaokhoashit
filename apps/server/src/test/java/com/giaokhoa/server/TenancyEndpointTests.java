@@ -47,7 +47,8 @@ import org.springframework.web.context.WebApplicationContext;
 // nên được kiểm chứng riêng trên môi trường PostgreSQL thật.
 @SpringBootTest(properties = { "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + TenancyEndpointTests.ISSUER,
 		"spring.datasource.url=jdbc:h2:mem:tenancy;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
-		"spring.datasource.username=sa", "spring.datasource.password=" })
+		"spring.datasource.username=sa", "spring.datasource.password=",
+		"spring.flyway.locations=classpath:db/migration" })
 class TenancyEndpointTests {
 
 	static final String ISSUER = "http://localhost:8180/realms/giaokhoa";

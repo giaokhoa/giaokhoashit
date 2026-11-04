@@ -38,8 +38,8 @@ import org.springframework.web.context.WebApplicationContext;
 // dùng khoá RSA tĩnh tự sinh thay cho bước tải JWKS từ issuer qua mạng, nhưng vẫn là
 // NimbusJwtDecoder kèm validator issuer + hạn token giống cấu hình chạy thật, nên chữ ký,
 // issuer và thời hạn của token đều được kiểm chứng thật.
-@SpringBootTest(properties = "spring.security.oauth2.resourceserver.jwt.issuer-uri="
-		+ ProtectedEndpointTests.ISSUER)
+@SpringBootTest(properties = { "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + ProtectedEndpointTests.ISSUER,
+		"spring.flyway.locations=classpath:db/migration" })
 class ProtectedEndpointTests {
 
 	static final String ISSUER = "http://localhost:8180/realms/giaokhoa";

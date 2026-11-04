@@ -39,8 +39,8 @@ import org.springframework.web.context.WebApplicationContext;
 // Kiểm thử endpoint danh tính /api/me trên cùng khuôn với ProtectedEndpointTests: chuỗi lọc
 // bảo mật thật qua MockMvc, JwtDecoder test ký bằng khoá RSA tĩnh tự sinh nhưng giữ nguyên
 // kiểm chứng chữ ký, issuer và thời hạn như cấu hình chạy thật.
-@SpringBootTest(properties = "spring.security.oauth2.resourceserver.jwt.issuer-uri="
-		+ IdentityEndpointTests.ISSUER)
+@SpringBootTest(properties = { "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + IdentityEndpointTests.ISSUER,
+		"spring.flyway.locations=classpath:db/migration" })
 class IdentityEndpointTests {
 
 	static final String ISSUER = "http://localhost:8180/realms/giaokhoa";

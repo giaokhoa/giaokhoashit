@@ -45,7 +45,8 @@ import org.springframework.web.context.WebApplicationContext;
 // ProtectedEndpointTests.
 @SpringBootTest(properties = { "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + ProfileEndpointTests.ISSUER,
 		"spring.datasource.url=jdbc:h2:mem:profile;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
-		"spring.datasource.username=sa", "spring.datasource.password=" })
+		"spring.datasource.username=sa", "spring.datasource.password=",
+		"spring.flyway.locations=classpath:db/migration" })
 class ProfileEndpointTests {
 
 	static final String ISSUER = "http://localhost:8180/realms/giaokhoa";
