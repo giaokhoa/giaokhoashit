@@ -5,21 +5,6 @@
         ${msg("gkLoginTitle")}
     <#elseif section = "subtitle">
         <p class="text-muted-foreground text-base">${msg("gkLoginSubtitle")}</p>
-    <#elseif section = "form-top">
-        <#if realm.password && !usernameHidden??>
-            <#-- Chọn vai trò chỉ đổi nhãn và gợi ý của trường username qua các data-* dưới đây; cả hai vai
-                 trò vẫn nộp cùng một trường username của biểu mẫu chuẩn. Trạng thái chọn nằm ở
-                 aria-pressed để các lớp aria-pressed: của Tailwind nhuộm nút đang chọn như nút chính. -->
-            <div class="mb-6 flex flex-wrap gap-4 sm:gap-6" role="group" aria-label="${msg("gkLoginTitle")}"
-                 data-gk-role-toggle
-                 data-gk-label-teacher="${msg("gkUsernameLabelTeacher")}"
-                 data-gk-placeholder-teacher="${msg("gkUsernamePlaceholderTeacher")}"
-                 data-gk-label-student="${msg("gkUsernameLabelStudent")}"
-                 data-gk-placeholder-student="${msg("gkUsernamePlaceholderStudent")}">
-                <button type="button" class="group/button focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 inline-flex shrink-0 items-center justify-center rounded-md border bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-3 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:ring-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 shadow-xs h-9 gap-1.5 px-2.5 in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 grow aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary/80" data-gk-role="teacher" aria-pressed="true" tabindex="1">${msg("gkRoleTeacher")}</button>
-                <button type="button" class="group/button focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 inline-flex shrink-0 items-center justify-center rounded-md border bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-3 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:ring-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 shadow-xs h-9 gap-1.5 px-2.5 in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 grow aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary/80" data-gk-role="student" aria-pressed="false" tabindex="1">${msg("gkRoleStudent")}</button>
-            </div>
-        </#if>
     <#elseif section = "form">
         <#-- Trang này là bước đầu của luồng Identity-First: chỉ thu tài khoản, mật khẩu hỏi ở bước sau.
              Lỗi của trường tài khoản hiển thị ngay trong thẻ như ở login.ftl vì layout đã tắt thông báo
@@ -37,10 +22,11 @@
                         <div class="group/field-group @container/field-group flex w-full flex-col data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4 gap-4">
                             <#if !usernameHidden??>
                                 <div class="group/field data-[invalid=true]:text-destructive flex w-full flex-col *:w-full [&>.sr-only]:w-auto gap-2"<#if messagesPerField.existsError('username')> data-invalid="true"</#if>>
-                                    <label for="username" class="items-center text-sm font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group/field-label peer/field-label has-data-checked:border-primary/30 has-data-checked:bg-primary/5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10 flex w-fit gap-2 group-data-[disabled=true]/field:opacity-50 has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border *:data-[slot=field]:p-3 has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col leading-5" id="gk-username-label">${msg("gkUsernameLabelTeacher")}</label>
+                                    <#-- Nhãn trường tài khoản theo khuôn theme base: tự đổi theo cấu hình realm,
+                                         không chia theo vai trò của người đăng nhập. -->
+                                    <label for="username" class="items-center text-sm font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group/field-label peer/field-label has-data-checked:border-primary/30 has-data-checked:bg-primary/5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10 flex w-fit gap-2 group-data-[disabled=true]/field:opacity-50 has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border *:data-[slot=field]:p-3 has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col leading-5"><#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if></label>
 
                                     <input tabindex="2" id="username" class="border-input file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 h-9 w-full min-w-0 rounded-md border bg-transparent px-2.5 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-3 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-3 md:text-sm" name="username" value="${(login.username!'')}" type="text"
-                                           placeholder="${msg("gkUsernamePlaceholderTeacher")}"
                                            autofocus autocomplete="${(enableWebAuthnConditionalUI?has_content)?then('username webauthn', 'username')}"
                                            aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"
                                            dir="ltr"
