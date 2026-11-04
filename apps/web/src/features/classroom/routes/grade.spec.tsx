@@ -2,7 +2,7 @@
  * Spec luồng chấm và công bố của giáo viên theo lần giao (issue #102).
  *
  * Hành vi được kiểm chứng theo hợp đồng của lát chấm/công bố: bảng bài nộp hiển thị điểm đã công bố và điểm
- * tạm đúng theo các trường điểm server trả, và hiển thị dấu gạch ngang khi server chưa trả trường điểm; khung
+ * tạm đúng theo các trường điểm server trả, và hiển thị dấu gạch ngang khi dòng chưa có điểm tổng; khung
  * chấm mở theo mã lượt hiển thị đáp án đúng và tiêu chí chấm cho giáo viên phụ trách, chấm mục tự luận theo
  * mục kèm nhận xét được gửi đúng hình lên tầng api; công bố theo lần giao gọi đúng endpoint. Biên mock là tầng
  * `api/client` và hook phiên; hook React Query và component chạy thật.
@@ -106,7 +106,7 @@ const teacherAttempt: TeacherAttemptView = {
       rubric: 'Đúng ý chính đạt tối đa.',
       maxScore: 5,
       answer: { text: 'Trường em rất đẹp.' },
-      grade: { score: null, maxScore: 5, source: null, comment: null },
+      grade: null,
     },
   ],
   totalScore: 5,
@@ -120,7 +120,7 @@ afterEach(() => {
 });
 
 describe('scoreLabelOf (nhãn điểm của một dòng bài nộp)', () => {
-  it('chưa có trường điểm thì hiện dấu gạch ngang; điểm tạm và điểm đã công bố được ghi rõ', () => {
+  it('chưa có điểm tổng thì hiện dấu gạch ngang; điểm tạm và điểm đã công bố được ghi rõ', () => {
     const base = {
       studentSub: 'hs-1',
       status: 'SUBMITTED',
@@ -128,6 +128,10 @@ describe('scoreLabelOf (nhãn điểm của một dòng bài nộp)', () => {
       submittedAt: null,
       submitMode: null,
       removed: false,
+      totalScore: null,
+      maxScore: 10,
+      provisional: true,
+      published: false,
     };
     expect(scoreLabelOf(base)).toBe('—');
     expect(scoreLabelOf({ ...base, totalScore: 7, maxScore: 10, provisional: true, published: false })).toBe(
@@ -162,6 +166,10 @@ describe('Màn chấm và công bố theo lần giao', () => {
         submittedAt: null,
         submitMode: null,
         removed: false,
+        totalScore: null,
+        maxScore: 10,
+        provisional: true,
+        published: false,
       },
     ]);
     clientMock.publishResults.mockResolvedValue({

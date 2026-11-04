@@ -6,10 +6,9 @@
  * hình chiếu chấm (thân câu, đáp án đúng, tiêu chí chấm, câu trả lời và điểm hiện có của từng mục), chấm các
  * mục tự luận theo từng mục kèm nhận xét, rồi công bố kết quả cho cả lần giao bằng một thao tác riêng.
  *
- * Bất biến hiển thị: điểm của học viên chỉ xuất hiện ở màn hình này khi server trả trường điểm — trước khi lát
- * chấm/công bố merge, các trường điểm vắng mặt và bảng chỉ hiện trạng thái; màn hình không tự tính điểm. Phần
- * này xây theo hợp đồng của lát chấm/công bố và chờ PR #86 merge để kiểm chứng tích hợp cuối trên server thật
- * (ghi rõ trong PR của issue này).
+ * Bất biến hiển thị: các trường điểm luôn có mặt trong đáp ứng của lát chấm/công bố đã merge, và bảng chỉ
+ * hiện điểm khi dòng có điểm tổng (`totalScore` khác rỗng) — màn hình không tự tính điểm. Hình chiếu chấm
+ * mang `grade` rỗng cho mục chưa được chấm; khung chấm khởi tạo ô điểm/nhận xét trống cho các mục đó.
  */
 import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router';
@@ -117,8 +116,8 @@ function GradeBody({ assignmentId }: { assignmentId: string }) {
 }
 
 /**
- * Bảng bài nộp: một dòng cho mỗi học viên với trạng thái lượt, thời điểm nộp và điểm khi server trả trường
- * điểm. Cột điểm phân biệt điểm tạm (còn mục tự luận chưa chấm) và điểm đã công bố đúng theo các cờ của server.
+ * Bảng bài nộp: một dòng cho mỗi học viên với trạng thái lượt, thời điểm nộp và điểm của lượt. Cột điểm phân
+ * biệt điểm tạm (còn mục tự luận chưa chấm) và điểm đã công bố đúng theo các cờ của server.
  *
  * @param props - Các dòng bài nộp.
  * @returns Phần tử bảng bài nộp.
@@ -142,7 +141,7 @@ function SubmissionsTable({ rows }: { rows: SubmissionRowView[] }) {
               {row.studentSub}
               {row.removed ? ' (đã gỡ ghi danh)' : ''}
             </td>
-            <td className="py-1 pr-2">{row.status ?? 'Chưa bắt đầu'}</td>
+            <td className="py-1 pr-2">{row.status}</td>
             <td className="py-1 pr-2">{formatDateTime(row.submittedAt)}</td>
             <td className="py-1 pr-2">{scoreLabelOf(row)}</td>
           </tr>
@@ -153,15 +152,15 @@ function SubmissionsTable({ rows }: { rows: SubmissionRowView[] }) {
 }
 
 /**
- * Diễn giải trường điểm của một dòng bài nộp thành nhãn hiển thị: chưa có điểm khi server chưa trả, điểm tạm
- * khi còn cờ `provisional`, và điểm đã công bố khi cờ `published` bật.
+ * Diễn giải trường điểm của một dòng bài nộp thành nhãn hiển thị: chưa có điểm khi `totalScore` rỗng, điểm
+ * tạm khi còn cờ `provisional`, và điểm đã công bố khi cờ `published` bật.
  *
  * @param row - Dòng bài nộp.
  * @returns Nhãn điểm để hiển thị.
  */
 export function scoreLabelOf(row: SubmissionRowView): string {
-  if (row.totalScore === undefined || row.totalScore === null) return '—';
-  const score = `${row.totalScore}/${row.maxScore ?? '—'}`;
+  if (row.totalScore === null) return '—';
+  const score = `${row.totalScore}/${row.maxScore}`;
   if (row.published) return `${score} (đã công bố)`;
   if (row.provisional) return `${score} (tạm)`;
   return score;
@@ -238,14 +237,14 @@ function GradingForm({ assignmentId, attempt }: { assignmentId: string; attempt:
   const [scores, setScores] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     for (const item of essayItems) {
-      initial[item.examItemId] = item.grade.score === null ? '' : String(item.grade.score);
+      initial[item.examItemId] = item.grade ? String(item.grade.score) : '';
     }
     return initial;
   });
   const [comments, setComments] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     for (const item of essayItems) {
-      initial[item.examItemId] = item.grade.comment ?? '';
+      initial[item.examItemId] = item.grade?.comment ?? '';
     }
     return initial;
   });
@@ -296,7 +295,7 @@ function GradingForm({ assignmentId, attempt }: { assignmentId: string; attempt:
                     {item.choices.find((choice) => choice.id === item.answer?.['choiceId'])?.text ?? 'Chưa trả lời'}
                   </p>
                   <p className="text-sm">
-                    Điểm tự động: {item.grade.score ?? '—'}/{item.grade.maxScore}
+                    Điểm tự động: {item.grade?.score ?? '—'}/{item.maxScore}
                   </p>
                 </>
               ) : (
