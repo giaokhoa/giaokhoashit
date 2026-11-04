@@ -38,20 +38,20 @@ public class AttachmentController {
 	@PostMapping(value = "/sessions/{sessionId}/content", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public AttachmentService.SessionView uploadContent(@PathVariable UUID questionId, @PathVariable UUID versionId,
 			@PathVariable UUID sessionId, @RequestParam("file") MultipartFile file) {
-		return this.service.uploadContent(sessionId, file);
+		return this.service.uploadContent(questionId, versionId, sessionId, file);
 	}
 
 	@GetMapping("/sessions/{sessionId}/preview")
 	public ResponseEntity<byte[]> previewContent(@PathVariable UUID questionId, @PathVariable UUID versionId,
 			@PathVariable UUID sessionId) {
-		return content(this.service.previewContent(sessionId));
+		return content(this.service.previewContent(questionId, versionId, sessionId));
 	}
 
 	@PostMapping("/sessions/{sessionId}/complete")
 	public AttachmentService.LinkView complete(@PathVariable UUID questionId, @PathVariable UUID versionId,
 			@PathVariable UUID sessionId,
 			@RequestBody(required = false) AttachmentService.CompleteRequest request) {
-		return this.service.complete(sessionId, request);
+		return this.service.complete(questionId, versionId, sessionId, request);
 	}
 
 	@GetMapping

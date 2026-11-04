@@ -6,12 +6,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.springframework.stereotype.Component;
-
-// shortcut: bản cài đặt tạm giữ metadata và byte trong bộ nhớ tiến trình để lát L2a chạy được đầu-cuối trước
-// khi nền L1 (issue #117) merge; khi L1 về, thay đúng bean này bằng bản cài đặt trên bảng blob/phiên/liên kết
-// và kho byte riêng tư của L1, hợp đồng AttachmentStore và mọi phía trên nó không đổi.
-@Component
+// Bản cài đặt trong bộ nhớ của cổng kho, chỉ còn dùng làm double cho các test tầng dịch vụ của lát đính kèm:
+// đường chạy thật dùng FoundationAttachmentStore trên nền tệp L1, còn test tầng dịch vụ cần một cổng kho nhẹ
+// không dính DB để kiểm đúng các quyết định quyền và trạng thái của AttachmentService.
 class LocalAttachmentStore implements AttachmentStore {
 
 	private final Map<UUID, Session> sessions = new ConcurrentHashMap<>();

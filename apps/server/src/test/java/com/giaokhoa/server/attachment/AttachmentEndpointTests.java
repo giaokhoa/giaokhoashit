@@ -56,11 +56,13 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.giaokhoa.server.tenancy.MembershipChecker;
+import com.giaokhoa.server.tenancy.TenantContext;
+import com.giaokhoa.server.tenancy.TenantContexts;
 
 // Kiểm thử lát tệp đính kèm trên cùng khuôn với QuestionEndpointTests: chuỗi lọc bảo mật thật và tầng dữ
-// kiện thật của feat câu hỏi (Flyway + JPA trên H2 ở chế độ PostgreSQL); phần kho của nền tệp đi qua cổng
-// AttachmentStore, tại lượt này là bản cài đặt tạm trong bộ nhớ vì nền L1 (issue #117) chưa merge — các ca ở
-// đây kiểm đúng hợp đồng của cổng đó, tích hợp kho thật kiểm lại khi L1 về.
+// kiện thật của feat câu hỏi (Flyway + JPA trên H2 ở chế độ PostgreSQL); phần kho đi qua cổng AttachmentStore
+// với bản cài đặt thật trên nền tệp L1 (ba bảng blob/phiên/liên kết và cổng byte BlobStorage), nên các ca ở
+// đây kiểm cả hợp đồng của cổng lẫn việc dữ kiện đính kèm thật sự nằm trên nền đó.
 @SpringBootTest(properties = { "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + AttachmentEndpointTests.ISSUER,
 		"spring.datasource.url=jdbc:h2:mem:attachment;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
 		"spring.datasource.username=sa", "spring.datasource.password=",
@@ -237,11 +239,11 @@ class AttachmentEndpointTests {
 				.andExpect(status().isForbidden());
 		this.mockMvc.perform(get(baseUrl(target)).header("Authorization", "Bearer " + other))
 				.andExpect(status().isForbidden());
-		String otherSession = openSession(other, draftQuestion(other, "ngan-hang-l2a-5"), "content");
+		String[] otherTarget = draftQuestion(other, "ngan-hang-l2a-5");
+		String otherSession = openSession(other, otherTarget, "content");
 		upload(other, target, sessionId, png(4, 4), "anh-chiem-phien.png").andExpect(status().isNotFound());
 		complete(other, target, sessionId, "{}").andExpect(status().isNotFound());
-		upload(other, draftQuestion(other, "ngan-hang-l2a-5b"), otherSession, png(4, 4), "anh-cua-minh.png")
-				.andExpect(status().isOk());
+		upload(other, otherTarget, otherSession, png(4, 4), "anh-cua-minh.png").andExpect(status().isOk());
 
 		this.mockMvc
 				.perform(get("/api/questions/" + UUID.randomUUID() + "/versions/" + target[1] + "/attachments/"
@@ -282,6 +284,44 @@ class AttachmentEndpointTests {
 		if (lateSession != null) {
 			upload(teacher, target, lateSession, png(4, 4), "anh-muon.png").andExpect(status().isOk());
 			complete(teacher, target, lateSession, "{}").andExpect(status().isConflict());
+		}
+	}
+
+	@Test
+	@DisplayName("NT-20: phiên tải lên dở đã quá hạn thì bị đánh dấu hết hạn ở cổng phát hành và không chặn phát hành nữa")
+	void expiredStaleSessionDoesNotBlockPublish() throws Exception {
+		String teacher = teacher("gv-l2a-7");
+		String[] target = draftQuestion(teacher, "ngan-hang-l2a-7");
+		String sessionId = openSession(teacher, target, "content");
+		upload(teacher, target, sessionId, png(4, 4), "anh-bo-do.png").andExpect(status().isOk());
+
+		// Đẩy phiên về quá hạn qua chính cổng kho, như một phiên bị bỏ dở quá thời hạn cấu hình mà không còn
+		// ai chạm tới; lời gọi cổng kho trực tiếp cần ngữ cảnh tenant của chính chủ phiên như một request thật.
+		TenantContexts.set(new TenantContext("gv-l2a-7", null, null, List.of(), false, false, "user:gv-l2a-7"));
+		try {
+			AttachmentStore.Session session = this.store.findSession(UUID.fromString(sessionId)).orElseThrow();
+			this.store.saveSession(new AttachmentStore.Session(session.id(), session.uploaderSub(),
+					session.questionId(), session.versionId(), session.position(), session.blockId(),
+					session.displayName(), session.status(), session.contentType(), session.sizeBytes(),
+					session.width(), session.height(), session.stagedChecksum(), session.blobId(),
+					session.linkId(), session.expiresAt().minusHours(48)));
+		}
+		finally {
+			TenantContexts.clear();
+		}
+
+		this.mockMvc
+				.perform(post("/api/questions/" + target[0] + "/versions/" + target[1] + "/publish")
+						.header("Authorization", "Bearer " + teacher))
+				.andExpect(status().isOk());
+
+		TenantContexts.set(new TenantContext("gv-l2a-7", null, null, List.of(), false, false, "user:gv-l2a-7"));
+		try {
+			assertEquals("EXPIRED",
+					this.store.findSession(UUID.fromString(sessionId)).orElseThrow().status());
+		}
+		finally {
+			TenantContexts.clear();
 		}
 	}
 

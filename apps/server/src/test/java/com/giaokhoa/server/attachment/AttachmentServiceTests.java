@@ -110,9 +110,9 @@ class AttachmentServiceTests {
 		BufferedImage image = new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		ImageIO.write(image, "png", out);
-		this.service.uploadContent(session.sessionId(),
+		this.service.uploadContent(this.questionId, this.versionId, session.sessionId(),
 				new MockMultipartFile("file", "anh.png", "image/png", out.toByteArray()));
-		return this.service.complete(session.sessionId(), null);
+		return this.service.complete(this.questionId, this.versionId, session.sessionId(), null);
 	}
 
 }

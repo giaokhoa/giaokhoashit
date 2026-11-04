@@ -91,9 +91,10 @@ public class AttachmentService implements QuestionPublishGate {
 		return sessionView(this.store.saveSession(session));
 	}
 
-	public SessionView uploadContent(UUID sessionId, MultipartFile file) {
+	public SessionView uploadContent(UUID questionId, UUID versionId, UUID sessionId, MultipartFile file) {
 		TenantContext context = requireContext();
 		AttachmentStore.Session session = requireOwnSession(context, sessionId);
+		requireSessionContext(session, questionId, versionId);
 		requireLiveSession(session);
 		if (!AttachmentStore.STATUS_OPEN.equals(session.status())
 				&& !AttachmentStore.STATUS_READY.equals(session.status())) {
@@ -116,9 +117,10 @@ public class AttachmentService implements QuestionPublishGate {
 		return sessionView(this.store.saveSession(updated));
 	}
 
-	public Content previewContent(UUID sessionId) {
+	public Content previewContent(UUID questionId, UUID versionId, UUID sessionId) {
 		TenantContext context = requireContext();
 		AttachmentStore.Session session = requireOwnSession(context, sessionId);
+		requireSessionContext(session, questionId, versionId);
 		if (AttachmentStore.STATUS_COMPLETED.equals(session.status()) && session.blobId() != null) {
 			byte[] bytes = this.store.readBlob(session.blobId()).orElseThrow(AttachmentException::notFound);
 			return new Content(bytes, session.contentType(), session.displayName());
@@ -126,13 +128,15 @@ public class AttachmentService implements QuestionPublishGate {
 		if (!AttachmentStore.STATUS_READY.equals(session.status())) {
 			throw AttachmentException.conflict("STATE_CONFLICT", "Phiên chưa có ảnh đã xử lý để xem trước.");
 		}
+		requireLiveSession(session);
 		byte[] bytes = this.store.staged(sessionId).orElseThrow(AttachmentException::notFound);
 		return new Content(bytes, session.contentType(), session.displayName());
 	}
 
-	public LinkView complete(UUID sessionId, CompleteRequest request) {
+	public LinkView complete(UUID questionId, UUID versionId, UUID sessionId, CompleteRequest request) {
 		TenantContext context = requireContext();
 		AttachmentStore.Session session = requireOwnSession(context, sessionId);
+		requireSessionContext(session, questionId, versionId);
 		// Retry hoàn tất chỉ hợp lệ trên đúng đích đã khoá trong phiên: đích khác trong request bị từ chối
 		// trước mọi xử lý, kể cả khi phiên đã chốt xong ở một lượt retry trước đó.
 		if (request != null && ((request.versionId() != null && !request.versionId().equals(session.versionId()))
@@ -185,13 +189,13 @@ public class AttachmentService implements QuestionPublishGate {
 		TenantContext context = requireContext();
 		Question question = requireQuestion(questionId);
 		QuestionVersion version = requireVersion(question, versionId);
+		if (!this.rights.allowed(context, question, version, QuestionRights.VIEW_CONTENT)) {
+			throw AttachmentException.forbidden();
+		}
 		AttachmentStore.Link link = this.store.findLink(linkId)
 				.filter((candidate) -> candidate.versionId().equals(versionId)
 						&& candidate.questionId().equals(questionId))
 				.orElseThrow(AttachmentException::notFound);
-		if (!this.rights.allowed(context, question, version, QuestionRights.VIEW_CONTENT)) {
-			throw AttachmentException.forbidden();
-		}
 		// Tệp đáp án tách quyền tới từng tệp: người xem được nội dung nhưng không có view_answer thì đáp ứng
 		// như tệp không tồn tại, trên mọi đường đọc kể cả khi đã biết định danh liên kết.
 		if (ANSWER_POSITIONS.contains(link.position())
@@ -207,12 +211,26 @@ public class AttachmentService implements QuestionPublishGate {
 	}
 
 	// Cổng phát hành của feat câu hỏi: phiên bản còn phiên tải lên chưa chốt, hoặc còn liên kết trỏ tới blob
-	// chưa sẵn sàng hay đã mất byte, thì chưa được phát hành hay giao bài.
+	// chưa sẵn sàng hay đã mất byte, thì chưa được phát hành hay giao bài. Phiên chưa chốt nhưng đã quá hạn
+	// thì đã chết theo đúng thời hạn của nó: cổng đánh dấu hết hạn và dọn byte tạm ngay khi bắt gặp, thay vì
+	// để một phiên bị bỏ dở chặn phát hành vô thời hạn dù không còn ai chạm được vào nó nữa.
 	@Override
 	public void assertPublishable(UUID versionId) {
-		boolean pending = this.store.findSessionsForVersion(versionId).stream()
-				.anyMatch((session) -> AttachmentStore.STATUS_OPEN.equals(session.status())
-						|| AttachmentStore.STATUS_READY.equals(session.status()));
+		OffsetDateTime now = OffsetDateTime.now();
+		boolean pending = false;
+		for (AttachmentStore.Session session : this.store.findSessionsForVersion(versionId)) {
+			if (!AttachmentStore.STATUS_OPEN.equals(session.status())
+					&& !AttachmentStore.STATUS_READY.equals(session.status())) {
+				continue;
+			}
+			if (session.expiresAt().isBefore(now)) {
+				this.store.saveSession(session.withStatus(AttachmentStore.STATUS_EXPIRED));
+				this.store.dropStaged(session.id());
+			}
+			else {
+				pending = true;
+			}
+		}
 		if (pending) {
 			throw AttachmentException.conflict("ATTACHMENT_NOT_READY",
 					"Phiên bản còn tệp đính kèm chưa hoàn tất tải lên nên chưa phát hành được.");
@@ -224,6 +242,14 @@ public class AttachmentService implements QuestionPublishGate {
 				throw AttachmentException.conflict("ATTACHMENT_NOT_READY",
 						"Phiên bản có tệp đính kèm chưa sẵn sàng hoặc đã mất dữ kiện nên chưa phát hành được.");
 			}
+		}
+	}
+
+	// Định danh câu và phiên bản trên đường dẫn phải đúng đích đã khoá trong phiên: một phiên chỉ dùng được
+	// trong đúng ngữ cảnh của nó, sai ngữ cảnh thì đáp ứng như phiên không tồn tại.
+	private void requireSessionContext(AttachmentStore.Session session, UUID questionId, UUID versionId) {
+		if (!session.questionId().equals(questionId) || !session.versionId().equals(versionId)) {
+			throw AttachmentException.notFound();
 		}
 	}
 
