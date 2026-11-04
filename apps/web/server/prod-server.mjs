@@ -66,8 +66,9 @@ const MIME = {
 };
 
 function proxyHttp(req, res) {
-  // Chọn upstream TRƯỚC khi rơi về upstream API chung: đúng đường `/api/me` và họ đường `/api/tenancy-check/...`
-  // thuộc `apps/server` (xem isServerProxyPath trong proxy-paths.mjs), mọi đường proxy còn lại thuộc API. Header
+  // Chọn upstream TRƯỚC khi rơi về upstream API chung: các đường `isServerProxyPath` khớp (danh tính, kiểm
+  // chứng tenancy và các họ đường nghiệp vụ của bản phát hành 07/11) thuộc `apps/server` (xem isServerProxyPath
+  // trong proxy-paths.mjs), mọi đường proxy còn lại thuộc API. Header
   // dựng ở proxy-headers.mjs: Host GIỮ NGUYÊN của request gốc — tầng ứng dụng phân giải trung tâm theo Host (issue
   // #582), ghi đè bằng origin nội bộ là địa chỉ trung tâm biến mất trước khi tới đích (tiền điều kiện TĐ5 của issue
   // #587). Đích kết nối vẫn là origin nội bộ đã chọn qua hostname/port dưới đây.
