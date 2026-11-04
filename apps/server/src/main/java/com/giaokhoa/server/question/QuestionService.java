@@ -8,6 +8,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,9 +81,11 @@ public class QuestionService {
 
 	private final ObjectMapper objectMapper;
 
+	private final ObjectProvider<QuestionPublishGate> publishGates;
+
 	public QuestionService(QuestionBankRepository banks, QuestionRepository questions,
 			QuestionVersionRepository versions, BankEntryRepository entries, QuestionVersionBlockRepository blocks,
-			QuestionRights rights, ObjectMapper objectMapper) {
+			QuestionRights rights, ObjectMapper objectMapper, ObjectProvider<QuestionPublishGate> publishGates) {
 		this.banks = banks;
 		this.questions = questions;
 		this.versions = versions;
@@ -90,6 +93,7 @@ public class QuestionService {
 		this.blocks = blocks;
 		this.rights = rights;
 		this.objectMapper = objectMapper;
+		this.publishGates = publishGates;
 	}
 
 	// Tài nguyên do giáo viên soạn mặc định thuộc workspace cá nhân của chính tài khoản đó: chủ sở hữu luôn lấy
@@ -225,6 +229,9 @@ public class QuestionService {
 			throw QuestionException.stateConflict("Phiên bản đã phát hành và đã khoá.");
 		}
 		validateForPublish(version);
+		for (QuestionPublishGate gate : this.publishGates) {
+			gate.assertPublishable(versionId);
+		}
 		OffsetDateTime now = OffsetDateTime.now();
 		version.setStatus(QuestionVersion.STATUS_PUBLISHED);
 		version.setLockedAt(now);
