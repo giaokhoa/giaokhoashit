@@ -108,6 +108,7 @@ const attemptInProgress: AttemptView = {
     },
   ],
   answers: [],
+  result: null,
 };
 
 /**
@@ -145,7 +146,7 @@ describe('Màn làm bài của học viên (luồng bắt đầu, lưu, nộp v�
 
   it('bắt đầu một lượt, lưu câu trả lời đúng hình từng loại câu và nộp bài; chưa công bố thì không hiện điểm', async () => {
     clientMock.startAttempt.mockResolvedValue(attemptInProgress);
-    clientMock.fetchAttemptResult.mockResolvedValue({ attemptId: 'att-1', status: 'SUBMITTED', result: null });
+    clientMock.fetchAttemptResult.mockResolvedValue({ ...attemptInProgress, status: 'SUBMITTED' });
     const user = userEvent.setup();
     renderAttempt();
 
@@ -170,7 +171,7 @@ describe('Màn làm bài của học viên (luồng bắt đầu, lưu, nộp v�
   it('sau khi giáo viên công bố, học viên thấy điểm từng mục và tổng điểm của chính mình, vẫn không thấy đáp án', async () => {
     clientMock.startAttempt.mockResolvedValue({ ...attemptInProgress, status: 'PUBLISHED' });
     clientMock.fetchAttemptResult.mockResolvedValue({
-      attemptId: 'att-1',
+      ...attemptInProgress,
       status: 'PUBLISHED',
       result: {
         items: [

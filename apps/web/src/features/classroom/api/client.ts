@@ -21,7 +21,6 @@ import type {
   MeView,
   PublicationView,
   QuestionView,
-  StudentAttemptView,
   SubmissionRowView,
   SubmitView,
   TeacherAttemptView,
@@ -424,13 +423,14 @@ export function submitAttempt(attemptId: string): Promise<SubmitView> {
 }
 
 /**
- * Đọc hình chiếu kết quả của lượt cho học viên: `result` chỉ có dữ kiện sau khi giáo viên công bố.
+ * Đọc một lượt làm của học viên (cùng endpoint với hình làm bài): trường `result` của đáp ứng rỗng cho tới
+ * khi lượt được công bố, có dữ kiện điểm/nhận xét sau công bố.
  *
  * @param attemptId - Định danh lượt làm.
- * @returns Hình chiếu kết quả (hoặc hình làm bài chưa có kết quả trước khi lát chấm merge).
+ * @returns Lượt làm kèm phần kết quả (rỗng khi chưa công bố).
  */
-export function fetchAttemptResult(attemptId: string): Promise<StudentAttemptView> {
-  return request<StudentAttemptView>(`/api/attempts/${attemptId}`);
+export function fetchAttemptResult(attemptId: string): Promise<AttemptView> {
+  return request<AttemptView>(`/api/attempts/${attemptId}`);
 }
 
 /**
@@ -445,7 +445,8 @@ export function fetchTeacherAttempt(attemptId: string): Promise<TeacherAttemptVi
 
 /**
  * @param assignmentId - Định danh lần giao.
- * @returns Bảng bài nộp của lần giao, kèm trường điểm khi lát chấm/công bố đã phục vụ.
+ * @returns Bảng bài nộp của lần giao, kèm phần điểm của lát chấm/công bố (luôn có mặt; điểm tổng rỗng khi
+ * lượt chưa có điểm).
  */
 export function fetchSubmissions(assignmentId: string): Promise<SubmissionRowView[]> {
   return request<SubmissionRowView[]>(`/api/assignments/${assignmentId}/submissions`);

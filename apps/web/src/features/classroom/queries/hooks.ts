@@ -56,7 +56,6 @@ import type {
   MeView,
   PublicationView,
   QuestionView,
-  StudentAttemptView,
   SubmissionRowView,
   SubmitView,
   TeacherAttemptView,
@@ -126,9 +125,10 @@ export function useSubmissions(assignmentId: string): UseQueryResult<SubmissionR
 
 /**
  * @param attemptId - Định danh lượt làm.
- * @returns Truy vấn hình chiếu kết quả của lượt cho học viên (có dữ kiện điểm chỉ sau công bố).
+ * @returns Truy vấn một lượt làm của học viên để đọc phần kết quả (trường `result` có dữ kiện điểm chỉ sau
+ * công bố).
  */
-export function useAttemptResult(attemptId: string): UseQueryResult<StudentAttemptView> {
+export function useAttemptResult(attemptId: string): UseQueryResult<AttemptView> {
   return useQuery({
     queryKey: classroomKeys.attemptResult(attemptId),
     queryFn: () => fetchAttemptResult(attemptId),

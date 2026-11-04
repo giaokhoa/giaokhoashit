@@ -6,10 +6,9 @@
  * tạo hình chiếu cho từng vai — phía web chỉ trình bày đúng các trường server trả, điển hình là hình chiếu bài
  * làm cho học viên không hề có trường đáp án/lời giải/tiêu chí chấm nên màn hình không thể lộ chúng.
  *
- * Hai điểm chờ tích hợp với lát chấm/công bố (PR #86 chưa merge khi viết file này): dòng bài nộp có thêm các
- * trường điểm và `GET /api/attempts/{id}` trả thêm hình chiếu kết quả của học viên sau công bố. Các trường đó
- * khai báo không bắt buộc ở đây để cùng một màn hình chạy đúng với cả hai hình đáp ứng; khi PR #86 merge, lượt
- * kiểm chứng tích hợp đối chiếu lại hình đáp ứng thật với các kiểu này.
+ * Hình đáp ứng của lát chấm/công bố dưới đây đã đối chiếu với server sau khi lát đó merge (PR #86): dòng bài
+ * nộp luôn mang đủ bốn trường điểm (điểm tổng rỗng khi lượt chưa có điểm), và đáp ứng đọc một lượt làm luôn
+ * mang trường `result` — rỗng cho tới khi lượt được công bố, có dữ kiện điểm/nhận xét sau công bố.
  */
 
 /** Đáp ứng `GET /api/me`: danh tính đã kiểm chứng từ token, vai realm và các alias Organization là thành viên. */
@@ -149,7 +148,11 @@ export interface AttemptAnswerView {
   answer: unknown;
 }
 
-/** Một lượt làm bài của học viên, kèm các mục và câu trả lời đã lưu. */
+/**
+ * Một lượt làm bài của học viên, kèm các mục và câu trả lời đã lưu. Trường `result` luôn có mặt trong đáp
+ * ứng: rỗng ở mọi đáp ứng làm bài và ở lượt chưa công bố; chỉ đáp ứng đọc một lượt đã công bố mới mang dữ
+ * kiện kết quả trong đó.
+ */
 export interface AttemptView {
   attemptId: string;
   assignmentId: string;
@@ -161,6 +164,7 @@ export interface AttemptView {
   dueAt: string;
   items: AttemptItemView[];
   answers: AttemptAnswerView[];
+  result: StudentResultView | null;
 }
 
 /** Đáp ứng của thao tác nộp bài. */
@@ -172,20 +176,22 @@ export interface SubmitView {
 }
 
 /**
- * Một dòng trong bảng bài nộp của một lần giao. Bốn trường điểm cuối dòng do lát chấm/công bố bổ sung; trước
- * khi lát đó merge, server chỉ trả các trường trạng thái nên các trường điểm khai báo không bắt buộc.
+ * Một dòng trong bảng bài nộp của một lần giao: trạng thái lượt của học viên kèm phần điểm do lát chấm/công
+ * bố tính. Cả bốn trường điểm luôn có mặt: `totalScore` rỗng khi lượt chưa có điểm để cộng (đang làm hoặc
+ * chưa bắt đầu — dòng chưa bắt đầu mang trạng thái `NOT_STARTED` do server tự ghi), `provisional` bật cho
+ * tới khi lượt chấm xong, `published` bật khi lượt đã công bố.
  */
 export interface SubmissionRowView {
   studentSub: string;
-  status: string | null;
+  status: string;
   startedAt: string | null;
   submittedAt: string | null;
   submitMode: string | null;
   removed: boolean;
-  totalScore?: number | null;
-  maxScore?: number | null;
-  provisional?: boolean;
-  published?: boolean;
+  totalScore: number | null;
+  maxScore: number;
+  provisional: boolean;
+  published: boolean;
 }
 
 /** Đáp ứng của thao tác chấm một lượt làm. */
@@ -221,25 +227,21 @@ export interface StudentResultView {
 }
 
 /**
- * Hình chiếu `GET /api/attempts/{id}` cho học viên theo hợp đồng của lát chấm/công bố: `result` chỉ khác rỗng
- * khi lượt đã công bố. Trước khi lát đó merge, đáp ứng thật là hình làm bài nên `result` vắng mặt — màn kết quả
- * hiểu vắng mặt là chưa công bố.
+ * Điểm hiện có của một mục trong hình chiếu chấm cho giáo viên phụ trách. Cả điểm, điểm tối đa và nguồn điểm
+ * đều luôn có mặt khi mục đã có điểm; nhận xét có thể rỗng.
  */
-export interface StudentAttemptView {
-  attemptId: string;
-  status: string;
-  result?: StudentResultView | null;
-}
-
-/** Điểm hiện có của một mục trong hình chiếu chấm cho giáo viên phụ trách. */
 export interface TeacherItemGradeView {
-  score: number | null;
+  score: number;
   maxScore: number;
-  source: string | null;
+  source: string;
   comment: string | null;
 }
 
-/** Một mục trong hình chiếu chấm: kèm đáp án đúng/tiêu chí chấm, câu trả lời và điểm hiện có của mục. */
+/**
+ * Một mục trong hình chiếu chấm: kèm đáp án đúng/tiêu chí chấm, câu trả lời và điểm hiện có của mục. Trường
+ * `grade` rỗng khi mục chưa được chấm — mục tự luận trước khi giáo viên chấm, hoặc mọi mục khi lượt còn đang
+ * làm; mục trắc nghiệm có điểm tự động ngay khi lượt được nộp.
+ */
 export interface TeacherAttemptItemView {
   examItemId: string;
   questionType: string;
@@ -250,7 +252,7 @@ export interface TeacherAttemptItemView {
   rubric: string | null;
   maxScore: number;
   answer: Record<string, unknown> | null;
-  grade: TeacherItemGradeView;
+  grade: TeacherItemGradeView | null;
 }
 
 /** Hình chiếu `GET /api/attempts/{id}` cho giáo viên phụ trách, phục vụ màn chấm theo mục. */
