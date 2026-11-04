@@ -1,8 +1,7 @@
 # Kiểm kê capability và nhóm resource
 
-Kiểm kê toàn bộ capability của engine quyết quyền tại head, làm căn
-cứ cho hợp đồng ở `docs/keycloak-auth-contract.md` và oracle ở
-`docs/access-oracle.md`. Nguồn đếm là sổ đăng ký trong mã:
+Kiểm kê toàn bộ capability của engine quyết quyền tại head. Nguồn
+đếm là sổ đăng ký trong mã:
 `apps/api/src/modules/access/domain/capabilities.ts`
 (`CAPABILITY_DEFINITIONS`), đối chiếu với mọi điểm gác trong
 `apps/api/src` và `apps/worker/src`.

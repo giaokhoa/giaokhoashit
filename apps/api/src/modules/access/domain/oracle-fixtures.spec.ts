@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { aggregateRoleResults, CAP_ALLOW, CAP_INHERIT, CAP_PREVENT, CAP_PROHIBIT, evaluateSingleRole, type RoleOverridePoint } from './permission';
 
 /**
- * Bộ dữ kiện oracle bốn trạng thái ở tầng hàm thuần, dịch từ
- * `docs/access-oracle.md` (mục 3 và 4) và các ca nhóm A của
- * `docs/access-verification-fixtures.md`.
+ * Bộ dữ kiện oracle bốn trạng thái ở tầng hàm thuần: các ca quyết
+ * quyền trên cây context (điểm gần lá nhất thắng, `PROHIBIT` phủ
+ * quyết) và các ca tổng hợp nhiều nhánh vai.
  *
  * Phạm vi trung thực của file này: chỉ kiểm chứng thuật toán thuần (`evaluateSingleRole` + `aggregateRoleResults`) —
  * tức một nhánh vai duyệt lá → gốc và phép tổng hợp nhiều nhánh. Các ca nghiệp vụ ở tầng service/người dùng (cổng
