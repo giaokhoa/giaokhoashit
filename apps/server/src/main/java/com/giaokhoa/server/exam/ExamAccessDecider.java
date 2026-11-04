@@ -22,9 +22,10 @@ public interface ExamAccessDecider {
 			ExamAction action);
 
 	/**
-	 * Kết quả quyết định: {@code allowed} kèm {@code reasonCode} (một trong các mã {@code ALLOWED},
-	 * {@code NO_MATCHING_SOURCE}, {@code VERSION_LOCKED}, {@code VERSION_NOT_DRAFT}) và {@code source} là nhãn
-	 * của nguồn quyền đã cấp khi được phép, vắng khi bị từ chối.
+	 * Kết quả quyết định: {@code allowed} kèm {@code reasonCode} và {@code source} là nhãn của nguồn quyền đã
+	 * cấp khi được phép, vắng khi bị từ chối. Cả hai giá trị đều là của dịch vụ quyết định ở lõi quyền, được
+	 * chuyển nguyên vẹn qua cổng này (các mã lý do gồm {@code ALLOWED}, {@code NO_MATCHING_SOURCE},
+	 * {@code VERSION_LOCKED}, {@code VERSION_NOT_DRAFT} và các mã từ chối khác của lõi).
 	 */
 	record Decision(boolean allowed, String reasonCode, String source) {
 	}

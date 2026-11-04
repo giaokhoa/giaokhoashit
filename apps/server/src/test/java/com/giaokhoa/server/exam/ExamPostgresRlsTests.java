@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -29,9 +28,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -69,8 +66,9 @@ import tools.jackson.databind.ObjectMapper;
 
 // Kiểm chứng lớp PostgreSQL của lát soạn đề trên cùng khuôn với PostgresRlsTests của khung tenancy: ứng dụng
 // chạy trên PostgreSQL 18 online qua một database test riêng cho lượt chạy (tạo trước, xoá sau), Flyway bằng
-// tài khoản quản trị, datasource của ứng dụng bằng role runtime lms_server_app. Cổng đọc phiên bản câu được
-// thay bằng nguồn có kiểm soát trong bộ nhớ như ở bộ test H2.
+// tài khoản quản trị, datasource của ứng dụng bằng role runtime lms_server_app. Cổng đọc phiên bản câu là cài
+// đặt thật như ở bộ test H2: test gieo hàng câu thật vào các bảng nội dung của feat câu hỏi bằng tài khoản quản
+// trị, nên luồng chạy qua đúng điểm nối tích hợp dưới RLS thật của cả bảng câu lẫn bảng lõi.
 @SpringBootTest(properties = "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + ExamPostgresRlsTests.ISSUER)
 @EnabledIfEnvironmentVariable(named = "LMS_TEST_PG_URL", matches = ".+")
 class ExamPostgresRlsTests {
@@ -82,10 +80,6 @@ class ExamPostgresRlsTests {
 	private static final String ORG_2_ID = "22222222-2222-2222-2222-222222222222";
 
 	private static final String APP_PASSWORD = "app-secret";
-
-	private static final String SINGLE_CHOICE_CONTENT = "{\"stem\":\"2 + 2 bằng mấy?\",\"choices\":"
-			+ "[{\"id\":\"a\",\"text\":\"3\"},{\"id\":\"b\",\"text\":\"4\"}],"
-			+ "\"correctChoiceId\":\"b\",\"solution\":\"2 + 2 = 4.\"}";
 
 	private static final String ADMIN_BASE_URL = System.getenv("LMS_TEST_PG_URL");
 
@@ -144,11 +138,6 @@ class ExamPostgresRlsTests {
 	@MockitoBean
 	private MembershipChecker membershipChecker;
 
-	@MockitoBean
-	private QuestionVersionSource questionSource;
-
-	private final Map<UUID, QuestionVersionSource.QuestionVersionInfo> questions = new ConcurrentHashMap<>();
-
 	private MockMvc mockMvc;
 
 	@BeforeEach
@@ -158,9 +147,6 @@ class ExamPostgresRlsTests {
 				.build();
 		lenient().when(this.membershipChecker.check(anyString(), anyString()))
 				.thenReturn(MembershipChecker.Result.MEMBER);
-		this.questions.clear();
-		lenient().when(this.questionSource.find(any()))
-				.thenAnswer(invocation -> Optional.ofNullable(this.questions.get(invocation.getArgument(0))));
 	}
 
 	@TestConfiguration
@@ -261,12 +247,27 @@ class ExamPostgresRlsTests {
 	}
 
 	@Test
-	@DisplayName("Luồng soạn đề chạy trọn trên PostgreSQL bằng role runtime: soạn, phát hành đóng băng snapshot trong database và đọc lại giữ nguyên nội dung cùng content_hash dù nội dung câu nguồn đã đổi")
+	@DisplayName("Luồng soạn đề chạy trọn trên PostgreSQL bằng role runtime: soạn từ câu thật trong bảng nội dung, phát hành đóng băng snapshot trong database, ghi đúng hàng lõi và hàng phụ thuộc, đọc lại giữ nguyên nội dung cùng content_hash dù nội dung câu nguồn đã đổi")
 	void examFlowFreezesSnapshotOnRealPostgres() throws Exception {
+		UUID bankId = UUID.randomUUID();
+		UUID questionId = UUID.randomUUID();
 		UUID questionVersion = UUID.randomUUID();
-		this.questions.put(questionVersion,
-				new QuestionVersionSource.QuestionVersionInfo(UUID.randomUUID(), questionVersion, "single_choice",
-						"personal", "gv-pg", null, false, this.objectMapper.readTree(SINGLE_CHOICE_CONTENT)));
+		adminJdbc().update(
+				"insert into question_bank (id, owner_sub, name, created_at, updated_at) "
+						+ "values (?, 'gv-pg', 'Ngân hàng trên PostgreSQL', now(), now())",
+				bankId);
+		adminJdbc().update(
+				"insert into question (id, bank_id, owner_sub, created_at, updated_at) "
+						+ "values (?, ?, 'gv-pg', now(), now())",
+				questionId, bankId);
+		adminJdbc().update(
+				"insert into question_version (id, question_id, owner_sub, version_number, status, question_type, "
+						+ "content_contract_version, stem, choices, correct_choice_id, solution, content_hash, "
+						+ "revision, created_at, updated_at) values (?, ?, 'gv-pg', 1, 'draft', 'single_choice', 1, "
+						+ "'2 + 2 bằng mấy?', '[{\"id\":\"a\",\"text\":\"3\"},{\"id\":\"b\",\"text\":\"4\"}]', "
+						+ "'b', '2 + 2 = 4.', "
+						+ "'0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', 0, now(), now())",
+				questionVersion, questionId);
 		String teacher = mint("gv-pg", Map.of("realm_access", Map.of("roles", List.of("personal-author"))));
 		MvcResult created = this.mockMvc.perform(post("/api/exams").header("Authorization", "Bearer " + teacher)
 				.contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"Đề trên PostgreSQL\"}"))
@@ -296,11 +297,18 @@ class ExamPostgresRlsTests {
 				UUID.fromString(versionId));
 		assertTrue(frozen.contains("\"correctChoiceId\":\"b\""));
 		assertTrue(frozen.contains("2 + 2 bằng mấy?"));
-		this.questions.put(questionVersion,
-				new QuestionVersionSource.QuestionVersionInfo(UUID.randomUUID(), questionVersion, "single_choice",
-						"personal", "gv-pg", null, false,
-						this.objectMapper.readTree("{\"stem\":\"ĐÃ SỬA TẠI NGUỒN\",\"choices\":[],"
-								+ "\"correctChoiceId\":\"a\",\"solution\":\"Khác.\"}")));
+		Integer mirrorCount = adminJdbc().queryForObject(
+				"select count(*) from resource_version where id = ? and resource_id = ? and status = 'published' "
+						+ "and content_hash = ? and partition_key = 'user:gv-pg'",
+				Integer.class, UUID.fromString(versionId), UUID.fromString(examId), contentHash);
+		assertEquals(1, mirrorCount);
+		Integer dependencyCount = adminJdbc().queryForObject(
+				"select count(*) from resource_dependency where resource_version_id = ? and resource_id = ? "
+						+ "and depends_on_version_id = ? and depends_on_resource_id = ? "
+						+ "and partition_key = 'user:gv-pg'",
+				Integer.class, UUID.fromString(versionId), UUID.fromString(examId), questionVersion, questionId);
+		assertEquals(1, dependencyCount);
+		adminJdbc().update("update question_version set stem = 'ĐÃ SỬA TẠI NGUỒN' where id = ?", questionVersion);
 		MvcResult after = this.mockMvc.perform(get("/api/exams/" + examId)
 				.header("Authorization", "Bearer " + teacher))
 				.andExpect(status().isOk())
