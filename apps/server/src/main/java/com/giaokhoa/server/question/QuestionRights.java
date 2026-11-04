@@ -24,6 +24,10 @@ public interface QuestionRights {
 
 	String EDIT_DRAFT = "edit_draft";
 
+	String READ_MATH_SOURCE = "read_math_source";
+
+	String EDIT_MATH_SOURCE = "edit_math_source";
+
 	String PUBLISH = "publish";
 
 	// Quyền soạn nền tảng của người gọi: điều kiện để tạo tài nguyên cá nhân mới, không cấp quyền gì trên tài

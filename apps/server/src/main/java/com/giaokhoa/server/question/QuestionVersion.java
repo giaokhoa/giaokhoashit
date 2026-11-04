@@ -21,7 +21,7 @@ public class QuestionVersion {
 
 	public static final String TYPE_ESSAY_TEXT = "essay_text";
 
-	public static final int CONTENT_CONTRACT_VERSION = 1;
+	public static final int CONTENT_CONTRACT_VERSION = 2;
 
 	@Id
 	private UUID id;

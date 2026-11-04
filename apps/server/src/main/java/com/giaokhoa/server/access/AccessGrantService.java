@@ -73,6 +73,9 @@ public class AccessGrantService {
 		}
 		AccessAction action = AccessAction.fromCode(request.action())
 				.orElseThrow(() -> AccessException.validation("action không hợp lệ"));
+		if (action == AccessAction.READ_MATH_SOURCE || action == AccessAction.EDIT_MATH_SOURCE) {
+			throw AccessException.validation("Hành động trên nguồn LaTeX không được cấp qua grant chia sẻ");
+		}
 		boolean toUser = ResourceGrant.GRANTEE_USER.equals(request.granteeType());
 		boolean toOrganization = ResourceGrant.GRANTEE_ORGANIZATION.equals(request.granteeType());
 		if (!toUser && !toOrganization) {

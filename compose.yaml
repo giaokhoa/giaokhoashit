@@ -193,6 +193,8 @@ services:
     depends_on:
       server-db:
         condition: service_healthy
+    volumes:
+      - server-files:/data/server-files
     healthcheck:
       # Image JRE không có curl: thăm health bằng Bash /dev/tcp như
       # healthcheck của service keycloak ở dưới.
@@ -408,3 +410,5 @@ volumes:
   # Dữ kiện PostgreSQL riêng của apps/server (issue #53) — xem
   # service server-db trong khối services.
   server-db-data:
+  # Byte của các blob đã chốt của nền tệp apps/server.
+  server-files:

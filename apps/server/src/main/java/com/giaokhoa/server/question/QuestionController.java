@@ -18,8 +18,11 @@ public class QuestionController {
 
 	private final QuestionService service;
 
-	public QuestionController(QuestionService service) {
+	private final QuestionBlockService blockService;
+
+	public QuestionController(QuestionService service, QuestionBlockService blockService) {
 		this.service = service;
+		this.blockService = blockService;
 	}
 
 	@PostMapping
@@ -48,6 +51,24 @@ public class QuestionController {
 	@PostMapping("/{questionId}/versions/{versionId}/publish")
 	public QuestionService.VersionView publish(@PathVariable UUID questionId, @PathVariable UUID versionId) {
 		return this.service.publish(questionId, versionId);
+	}
+
+	@GetMapping("/{questionId}/versions/{versionId}/blocks")
+	public QuestionBlockService.DisplayBlocksView displayBlocks(@PathVariable UUID questionId,
+			@PathVariable UUID versionId) {
+		return this.blockService.displayBlocks(questionId, versionId);
+	}
+
+	@GetMapping("/{questionId}/versions/{versionId}/blocks/draft")
+	public QuestionBlockService.DraftBlocksView draftBlocks(@PathVariable UUID questionId,
+			@PathVariable UUID versionId) {
+		return this.blockService.draftBlocks(questionId, versionId);
+	}
+
+	@PutMapping("/{questionId}/versions/{versionId}/blocks")
+	public QuestionBlockService.DraftBlocksView replaceBlocks(@PathVariable UUID questionId,
+			@PathVariable UUID versionId, @RequestBody QuestionBlockService.ReplaceBlocksRequest request) {
+		return this.blockService.replaceBlocks(questionId, versionId, request);
 	}
 
 	@PostMapping("/{questionId}/versions/{versionId}/copies")

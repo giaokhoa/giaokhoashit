@@ -3,6 +3,8 @@ package com.giaokhoa.server.question;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -11,6 +13,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -47,6 +50,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -125,6 +129,7 @@ class QuestionCopyRightsTests {
 		String sourceVersionId = versionIdOf(actor, sourceId);
 		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.COPY))).thenReturn(true);
 		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.VIEW_CONTENT))).thenReturn(true);
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.READ_MATH_SOURCE))).thenReturn(true);
 		MvcResult copy = this.mockMvc
 			.perform(post("/api/questions/" + sourceId + "/versions/" + sourceVersionId + "/copies")
 				.header("Authorization", "Bearer " + actor)
@@ -218,6 +223,7 @@ class QuestionCopyRightsTests {
 		String bankId = createBank(actor, "ngan-hang-doc-cau");
 		String questionId = createBankAndQuestion(actor, bankId);
 		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.VIEW_CONTENT))).thenReturn(true);
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.READ_MATH_SOURCE))).thenReturn(true);
 		this.mockMvc.perform(get("/api/questions/" + questionId).header("Authorization", "Bearer " + actor))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.versions[0].stem").value("than-cau-nguon"))
@@ -229,6 +235,153 @@ class QuestionCopyRightsTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.versions[0].correctChoiceId").value("c1"))
 			.andExpect(jsonPath("$.versions[0].solution").value("loi-giai-bi-mat"));
+	}
+
+	@Test
+	@DisplayName("Mặt xem cũ: người gọi có view_answer nhưng không có read_math_source không nhận được nguồn LaTeX trong bất kỳ trường văn bản nào; có read_math_source thì nhận đủ thân câu, lựa chọn và lời giải")
+	void viewResponseHidesLatexWithoutReadMathSource() throws Exception {
+		String actor = mint("gv-xem-che-nguon", Map.of());
+		String bankId = createBank(actor, "ngan-hang-xem-che-nguon");
+		MvcResult created = this.mockMvc
+			.perform(post("/api/questions").header("Authorization", "Bearer " + actor)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"bankId\":\"" + bankId + "\",\"questionType\":\"single_choice\","
+						+ "\"stem\":\"tinh \\\\frac{NGUON-BI-MAT-125}{2}\",\"choices\":[{\"id\":\"c1\",\"text\":\"dung\"},"
+						+ "{\"id\":\"c2\",\"text\":\"sai\"}],\"correctChoiceId\":\"c1\","
+						+ "\"solution\":\"giai \\\\frac{NGUON-BI-MAT-125}{3}\"}"))
+			.andExpect(status().isOk())
+			.andReturn();
+		String questionId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.VIEW_CONTENT))).thenReturn(true);
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.VIEW_ANSWER))).thenReturn(true);
+		this.mockMvc.perform(get("/api/questions/" + questionId).header("Authorization", "Bearer " + actor))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.versions[0].stem").doesNotExist())
+			.andExpect(jsonPath("$.versions[0].choices").doesNotExist())
+			.andExpect(jsonPath("$.versions[0].solution").doesNotExist())
+			.andExpect(jsonPath("$.versions[0].correctChoiceId").value("c1"))
+			.andExpect(content().string(not(containsString("NGUON-BI-MAT-125"))));
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.READ_MATH_SOURCE))).thenReturn(true);
+		this.mockMvc.perform(get("/api/questions/" + questionId).header("Authorization", "Bearer " + actor))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.versions[0].stem").value(containsString("NGUON-BI-MAT-125")))
+			.andExpect(jsonPath("$.versions[0].solution").value(containsString("NGUON-BI-MAT-125")));
+	}
+
+	@Test
+	@DisplayName("NT-29 chiều đọc: biên tập viên không có view_answer không thấy khối thuộc đáp án hay lời giải ở cả mặt soạn thảo lẫn mặt hiển thị, nhưng vẫn đọc được nguồn của khối thân câu")
+	void editorWithoutViewAnswerCannotReadAnswerBlocks() throws Exception {
+		String actor = mint("gv-bien-tap-thieu-view-answer", Map.of());
+		allowBlockRights();
+		String bankId = createBank(actor, "ngan-hang-nt29-doc");
+		String[] ids = createEssay(actor, bankId);
+		putBlocks(actor, ids[0], ids[1], blockSetJson(0)).andExpect(status().isOk());
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.VIEW_ANSWER))).thenReturn(false);
+		MvcResult draft = this.mockMvc
+			.perform(get("/api/questions/" + ids[0] + "/versions/" + ids[1] + "/blocks/draft")
+				.header("Authorization", "Bearer " + actor))
+			.andExpect(status().isOk())
+			.andReturn();
+		String draftBody = draft.getResponse().getContentAsString();
+		assertTrue(draftBody.contains("NGUON-THAN-CAU"), draftBody);
+		assertFalse(draftBody.contains("NGUON-DAP-AN"), draftBody);
+		assertFalse(draftBody.contains("LOI-GIAI-VAN-BAN"), draftBody);
+		assertEquals(2, (int) JsonPath.read(draftBody, "$.blocks.length()"));
+		MvcResult display = this.mockMvc
+			.perform(get("/api/questions/" + ids[0] + "/versions/" + ids[1] + "/blocks")
+				.header("Authorization", "Bearer " + actor))
+			.andExpect(status().isOk())
+			.andReturn();
+		String displayBody = display.getResponse().getContentAsString();
+		assertEquals(2, (int) JsonPath.read(displayBody, "$.blocks.length()"));
+		assertFalse(displayBody.contains("LOI-GIAI-VAN-BAN"), displayBody);
+	}
+
+	@Test
+	@DisplayName("NT-29 chiều ghi: biên tập viên không có view_answer bị từ chối khi ghi khối thuộc đáp án; ghi khối thân câu được chấp nhận và các khối đáp án cũ không bị lượt lưu đó xoá mất")
+	void editorWithoutViewAnswerCannotWriteAnswerBlocks() throws Exception {
+		String actor = mint("gv-bien-tap-thieu-view-answer-ghi", Map.of());
+		allowBlockRights();
+		String bankId = createBank(actor, "ngan-hang-nt29-ghi");
+		String[] ids = createEssay(actor, bankId);
+		MvcResult setup = putBlocks(actor, ids[0], ids[1], blockSetJson(0)).andExpect(status().isOk()).andReturn();
+		int revision = ((Number) JsonPath.read(setup.getResponse().getContentAsString(), "$.revision")).intValue();
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.VIEW_ANSWER))).thenReturn(false);
+		String withAnswer = "{\"revision\":" + revision
+				+ ",\"blocks\":[{\"part\":\"solution\",\"kind\":\"formula\",\"source\":\"NGUON-MOI\"}]}";
+		putBlocks(actor, ids[0], ids[1], withAnswer).andExpect(status().isForbidden());
+		String stemOnly = "{\"revision\":" + revision + ",\"blocks\":["
+				+ "{\"part\":\"stem\",\"kind\":\"text\",\"text\":\"than cau moi\"},"
+				+ "{\"part\":\"stem\",\"kind\":\"formula\",\"source\":\"NGUON-THAN-CAU-MOI\"}]}";
+		putBlocks(actor, ids[0], ids[1], stemOnly).andExpect(status().isOk());
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.VIEW_ANSWER))).thenReturn(true);
+		MvcResult draft = this.mockMvc
+			.perform(get("/api/questions/" + ids[0] + "/versions/" + ids[1] + "/blocks/draft")
+				.header("Authorization", "Bearer " + actor))
+			.andExpect(status().isOk())
+			.andReturn();
+		String draftBody = draft.getResponse().getContentAsString();
+		assertTrue(draftBody.contains("NGUON-DAP-AN"), draftBody);
+		assertTrue(draftBody.contains("NGUON-THAN-CAU-MOI"), draftBody);
+		assertEquals(4, (int) JsonPath.read(draftBody, "$.blocks.length()"));
+	}
+
+	@Test
+	@DisplayName("Sửa nguồn là hành động độc lập với sửa nội dung: có edit_draft nhưng không có edit_math_source thì bị từ chối khi ghi khối công thức, vẫn ghi được khối văn bản, và cùng payload công thức được chấp nhận khi có edit_math_source")
+	void editDraftWithoutEditMathSourceCannotWriteFormula() throws Exception {
+		String actor = mint("gv-khong-sua-nguon", Map.of());
+		allowBlockRights();
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.EDIT_MATH_SOURCE))).thenReturn(false);
+		String bankId = createBank(actor, "ngan-hang-khong-sua-nguon");
+		String[] ids = createEssay(actor, bankId);
+		putBlocks(actor, ids[0], ids[1],
+				"{\"revision\":0,\"blocks\":[{\"part\":\"stem\",\"kind\":\"formula\",\"source\":\"x^2\"}]}")
+			.andExpect(status().isForbidden());
+		MvcResult textOnly = putBlocks(actor, ids[0], ids[1],
+				"{\"revision\":0,\"blocks\":[{\"part\":\"stem\",\"kind\":\"text\",\"text\":\"than cau\"}]}")
+			.andExpect(status().isOk())
+			.andReturn();
+		int revision = ((Number) JsonPath.read(textOnly.getResponse().getContentAsString(), "$.revision")).intValue();
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.EDIT_MATH_SOURCE))).thenReturn(true);
+		putBlocks(actor, ids[0], ids[1], "{\"revision\":" + revision
+				+ ",\"blocks\":[{\"part\":\"stem\",\"kind\":\"formula\",\"source\":\"x^2\"}]}")
+			.andExpect(status().isOk());
+	}
+
+	private void allowBlockRights() {
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.VIEW_CONTENT))).thenReturn(true);
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.VIEW_ANSWER))).thenReturn(true);
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.EDIT_DRAFT))).thenReturn(true);
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.READ_MATH_SOURCE))).thenReturn(true);
+		when(this.rights.allowed(any(), any(), any(), eq(QuestionRights.EDIT_MATH_SOURCE))).thenReturn(true);
+	}
+
+	private String[] createEssay(String token, String bankId) throws Exception {
+		MvcResult result = this.mockMvc
+			.perform(post("/api/questions").header("Authorization", "Bearer " + token)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"bankId\":\"" + bankId + "\",\"questionType\":\"essay_text\",\"stem\":\"than cau\","
+						+ "\"rubric\":\"tieu chi cham\"}"))
+			.andExpect(status().isOk())
+			.andReturn();
+		String body = result.getResponse().getContentAsString();
+		return new String[] { JsonPath.read(body, "$.id"), JsonPath.read(body, "$.versions[0].versionId") };
+	}
+
+	private ResultActions putBlocks(String token, String questionId, String versionId, String json)
+			throws Exception {
+		return this.mockMvc.perform(put("/api/questions/" + questionId + "/versions/" + versionId + "/blocks")
+			.header("Authorization", "Bearer " + token)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(json));
+	}
+
+	private String blockSetJson(int revision) {
+		return "{\"revision\":" + revision + ",\"blocks\":["
+				+ "{\"part\":\"stem\",\"kind\":\"text\",\"text\":\"than cau\"},"
+				+ "{\"part\":\"stem\",\"kind\":\"formula\",\"source\":\"NGUON-THAN-CAU\"},"
+				+ "{\"part\":\"solution\",\"kind\":\"text\",\"text\":\"LOI-GIAI-VAN-BAN\"},"
+				+ "{\"part\":\"solution\",\"kind\":\"formula\",\"source\":\"NGUON-DAP-AN\"}]}";
 	}
 
 	private String createBank(String token, String name) throws Exception {

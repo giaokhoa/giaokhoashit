@@ -33,8 +33,9 @@ public class QuestionService {
 	}
 
 	public record VersionView(UUID versionId, int versionNumber, String status, OffsetDateTime lockedAt,
-			String contentHash, int revision, String questionType, int contentContractVersion, String stem,
-			List<ChoiceInput> choices,
+			String contentHash, int revision, String questionType, int contentContractVersion,
+			@JsonInclude(JsonInclude.Include.NON_NULL) String stem,
+			@JsonInclude(JsonInclude.Include.NON_NULL) List<ChoiceInput> choices,
 			@JsonInclude(JsonInclude.Include.NON_NULL) String correctChoiceId,
 			@JsonInclude(JsonInclude.Include.NON_NULL) String solution,
 			@JsonInclude(JsonInclude.Include.NON_NULL) String rubric) {
@@ -73,17 +74,20 @@ public class QuestionService {
 
 	private final BankEntryRepository entries;
 
+	private final QuestionVersionBlockRepository blocks;
+
 	private final QuestionRights rights;
 
 	private final ObjectMapper objectMapper;
 
 	public QuestionService(QuestionBankRepository banks, QuestionRepository questions,
-			QuestionVersionRepository versions, BankEntryRepository entries, QuestionRights rights,
-			ObjectMapper objectMapper) {
+			QuestionVersionRepository versions, BankEntryRepository entries, QuestionVersionBlockRepository blocks,
+			QuestionRights rights, ObjectMapper objectMapper) {
 		this.banks = banks;
 		this.questions = questions;
 		this.versions = versions;
 		this.entries = entries;
+		this.blocks = blocks;
 		this.rights = rights;
 		this.objectMapper = objectMapper;
 	}
@@ -204,7 +208,9 @@ public class QuestionService {
 		QuestionVersion version = newVersionEntity(question, nextNumber, OffsetDateTime.now());
 		applyContent(version, source.getQuestionType(), source.getStem(), parseChoices(source.getChoices()),
 				source.getCorrectChoiceId(), source.getSolution(), source.getRubric());
-		return versionView(context, question, this.versions.save(version));
+		QuestionVersion saved = this.versions.save(version);
+		carryBlocks(source, saved, true);
+		return versionView(context, question, saved);
 	}
 
 	@Transactional
@@ -273,7 +279,8 @@ public class QuestionService {
 				includeAnswers ? sourceVersion.getCorrectChoiceId() : null,
 				includeAnswers ? sourceVersion.getSolution() : null,
 				includeAnswers ? sourceVersion.getRubric() : null);
-		this.versions.save(version);
+		QuestionVersion savedCopy = this.versions.save(version);
+		carryBlocks(sourceVersion, savedCopy, false);
 		return questionView(context, copy);
 	}
 
@@ -317,6 +324,46 @@ public class QuestionService {
 		this.entries.delete(entry);
 	}
 
+	// Khối nội dung đi theo phiên bản khi tạo nháp mới hoặc sao chép. Tạo nháp mới của cùng một tài nguyên
+	// không phải chuyển chủ nên nguồn hợp lệ của chủ sở hữu được giữ nguyên; sao chép sang chủ khác thì khối
+	// công thức thành chỉ-có-ảnh — nguồn không tự chuyển theo bản sao, kể cả nguồn do chính giáo viên tự soạn.
+	private void carryBlocks(QuestionVersion source, QuestionVersion target, boolean keepSource) {
+		OffsetDateTime now = OffsetDateTime.now();
+		for (QuestionVersionBlock sourceBlock : this.blocks.findByQuestionVersionId(source.getId())) {
+			QuestionVersionBlock block = new QuestionVersionBlock();
+			block.setId(com.giaokhoa.server.files.UuidV7.next());
+			block.setQuestionVersionId(target.getId());
+			block.setOwnerSub(target.getOwnerSub());
+			block.setPart(sourceBlock.getPart());
+			block.setChoiceId(sourceBlock.getChoiceId());
+			block.setPosition(sourceBlock.getPosition());
+			block.setKind(sourceBlock.getKind());
+			block.setTextContent(sourceBlock.getTextContent());
+			block.setDescription(sourceBlock.getDescription());
+			block.setSystemOrigin(sourceBlock.isSystemOrigin());
+			block.setImageBlobId(sourceBlock.getImageBlobId());
+			block.setImageWidth(sourceBlock.getImageWidth());
+			block.setImageHeight(sourceBlock.getImageHeight());
+			block.setBaselineOffset(sourceBlock.getBaselineOffset());
+			if (QuestionVersionBlock.KIND_FORMULA.equals(sourceBlock.getKind())) {
+				if (keepSource && QuestionVersionBlock.FORM_SOURCE_BACKED.equals(sourceBlock.getFormulaForm())) {
+					block.setFormulaForm(QuestionVersionBlock.FORM_SOURCE_BACKED);
+					block.setMathSource(sourceBlock.getMathSource());
+					block.setRenderState(sourceBlock.getRenderState());
+					block.setSourceRevision(sourceBlock.getSourceRevision());
+				}
+				else {
+					block.setFormulaForm(QuestionVersionBlock.FORM_RENDER_ONLY);
+					block.setRenderState(
+							sourceBlock.getImageBlobId() != null ? QuestionVersionBlock.RENDER_READY : null);
+				}
+			}
+			block.setCreatedAt(now);
+			block.setUpdatedAt(now);
+			this.blocks.save(block);
+		}
+	}
+
 	private QuestionVersion resolveVersion(Question question, UUID versionId) {
 		QuestionVersion version = this.versions.findById(versionId).orElseThrow(QuestionException::notFound);
 		if (!version.getQuestionId().equals(question.getId())) {
@@ -342,6 +389,14 @@ public class QuestionService {
 
 	private void applyContent(QuestionVersion version, String questionType, String stem, List<ChoiceInput> choices,
 			String correctChoiceId, String solution, String rubric) {
+		ExternalContentReferences.rejectIfPresent(stem);
+		ExternalContentReferences.rejectIfPresent(solution);
+		ExternalContentReferences.rejectIfPresent(rubric);
+		if (choices != null) {
+			for (ChoiceInput choice : choices) {
+				ExternalContentReferences.rejectIfPresent(choice.text());
+			}
+		}
 		version.setQuestionType(questionType);
 		version.setStem(stem != null ? stem : "");
 		version.setChoices(QuestionVersion.TYPE_SINGLE_CHOICE.equals(questionType) ? choicesJson(choices) : null);
@@ -406,15 +461,20 @@ public class QuestionService {
 				question.getUsageLimits(), versionViews, question.getCreatedAt(), question.getUpdatedAt());
 	}
 
-	// Phần đáp án của một phiên bản chỉ được điền khi người gọi có view_answer trên đúng phiên bản đó; thiếu
-	// quyền thì ba trường đó vắng hẳn trong dữ kiện trả về, không trả dạng che hay rỗng.
+	// Các trường văn bản cũ của một phiên bản là dữ kiện mang nguồn LaTeX, nên mặt xem chỉ điền chúng cho
+	// người có quyền đọc nguồn trên đúng phiên bản đó; phần đáp án còn phải kết hợp quyền xem đáp án. Thiếu
+	// quyền thì các trường đó vắng hẳn trong dữ kiện trả về, không trả dạng che hay rỗng — cùng khuôn với
+	// việc loại đáp án và lời giải khỏi API khi chưa được phép xem.
 	private VersionView versionView(TenantContext context, Question question, QuestionVersion version) {
 		boolean includeAnswers = this.rights.allowed(context, question, version, QuestionRights.VIEW_ANSWER);
+		boolean includeSource = this.rights.allowed(context, question, version, QuestionRights.READ_MATH_SOURCE);
 		return new VersionView(version.getId(), version.getVersionNumber(), version.getStatus(),
 				version.getLockedAt(), version.getContentHash(), version.getRevision(), version.getQuestionType(),
-				version.getContentContractVersion(), version.getStem(), parseChoices(version.getChoices()),
+				version.getContentContractVersion(), includeSource ? version.getStem() : null,
+				includeSource ? parseChoices(version.getChoices()) : null,
 				includeAnswers ? version.getCorrectChoiceId() : null,
-				includeAnswers ? version.getSolution() : null, includeAnswers ? version.getRubric() : null);
+				includeAnswers && includeSource ? version.getSolution() : null,
+				includeAnswers && includeSource ? version.getRubric() : null);
 	}
 
 	private BankView bankView(QuestionBank bank) {
