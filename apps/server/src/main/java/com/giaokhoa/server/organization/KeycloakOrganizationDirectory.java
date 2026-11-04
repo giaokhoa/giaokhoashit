@@ -25,8 +25,8 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 /**
- * Bản đọc qua Admin REST API của Keycloak bằng cùng service account chỉ đọc của client {@code lms-api} mà khung
- * tenancy dùng để kiểm membership (hai client role {@code view-organizations} và {@code view-users} của client
+ * Bản đọc qua Admin REST API của Keycloak bằng cùng service account chỉ đọc của client {@code lms-api} mà bản
+ * kiểm membership hiện hành dùng (hai client role {@code view-organizations} và {@code view-users} của client
  * {@code realm-management}). Không cache: vai trò giáo viên và định danh Organization phải là dữ kiện hiện hành tại
  * đúng thời điểm đặt giáo viên hoặc mở đọc cho khách.
  */

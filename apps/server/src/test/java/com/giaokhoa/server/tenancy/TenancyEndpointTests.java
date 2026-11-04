@@ -3,9 +3,6 @@ package com.giaokhoa.server.tenancy;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -38,7 +35,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -47,9 +43,10 @@ import org.springframework.web.context.WebApplicationContext;
 
 // Kiểm thử khung tenancy trên cùng khuôn với ProfileEndpointTests: chuỗi lọc bảo mật thật (gồm filter ngữ cảnh
 // tenant đứng sau filter Bearer) và tầng dữ kiện thật (Flyway + Hibernate/JPA với discriminator) trên H2 ở chế độ
-// PostgreSQL; chỉ bước tải JWKS qua mạng được thay bằng khoá RSA tĩnh, và thành phần kiểm membership hiện hành được
-// thay bằng bản giả lập có kiểm soát (mặc định xác nhận còn membership). Lớp RLS của PostgreSQL không chạy trên H2
-// nên được kiểm chứng riêng trên môi trường PostgreSQL thật.
+// PostgreSQL; chỉ bước tải JWKS qua mạng được thay bằng khoá RSA tĩnh. Ngữ cảnh quyết hoàn toàn theo claim của
+// token nên suite này không đăng ký bản giả lập kiểm membership nào và không cần máy chủ Keycloak giả lập: request
+// vẫn mở đúng chế độ khi trên đường ngữ cảnh không còn lời gọi Admin API nào. Lớp RLS của PostgreSQL không chạy
+// trên H2 nên được kiểm chứng riêng trên môi trường PostgreSQL thật.
 @SpringBootTest(properties = { "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + TenancyEndpointTests.ISSUER,
 		"spring.datasource.url=jdbc:h2:mem:tenancy;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
 		"spring.datasource.username=sa", "spring.datasource.password=",
@@ -68,9 +65,6 @@ class TenancyEndpointTests {
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
-	@MockitoBean
-	private MembershipChecker membershipChecker;
-
 	private MockMvc mockMvc;
 
 	@BeforeEach
@@ -78,8 +72,6 @@ class TenancyEndpointTests {
 		this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
 				.apply(springSecurity())
 				.build();
-		lenient().when(this.membershipChecker.check(anyString(), anyString()))
-				.thenReturn(MembershipChecker.Result.MEMBER);
 	}
 
 	@TestConfiguration
@@ -253,14 +245,9 @@ class TenancyEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Token cũ sau khi bị gỡ membership ở trung-tam-1 thành khách tại trung-tam-1 nhưng vẫn là thành viên tại trung-tam-2 và vẫn đọc được hồ sơ của mình")
-	void revokedMembershipDowngradesToGuestOnlyAtThatCenter() throws Exception {
-		when(this.membershipChecker.check(ORG_1_ID, "hai-ngu-canh"))
-				.thenReturn(MembershipChecker.Result.NOT_MEMBER);
-		when(this.membershipChecker.check(ORG_2_ID, "hai-ngu-canh"))
-				.thenReturn(MembershipChecker.Result.MEMBER);
+	@DisplayName("Tài khoản bị gỡ khỏi trung-tam-1 nhận token mới không còn mang trung-tam-1 trong claim: thành khách tại trung-tam-1 nhưng vẫn là thành viên tại trung-tam-2 và vẫn đọc được hồ sơ của mình")
+	void removedMemberNewTokenIsGuestOnlyAtThatCenter() throws Exception {
 		String token = mint("hai-ngu-canh", Map.of("organization", Map.of(
-				"trung-tam-1", orgEntry(ORG_1_ID, List.of("tenant-admin")),
 				"trung-tam-2", orgEntry(ORG_2_ID, List.of("tenant-member")))));
 		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + token)
 				.header("X-LMS-Organization-Alias", "trung-tam-1"))
@@ -287,50 +274,6 @@ class TenancyEndpointTests {
 				.header("X-LMS-Organization-Alias", "trung-tam-1"))
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("\"keycloakSub\":\"hai-ngu-canh\"")));
-	}
-
-	@Test
-	@DisplayName("Organization bị tắt thì token đã cấp trước đó chỉ còn tư cách khách tại trung tâm đó, bật lại Organization thì cùng token mở lại chế độ trung tâm")
-	void disabledOrganizationDowngradesToGuestUntilReenabled() throws Exception {
-		String token = mint("gv-1", Map.of("organization",
-				Map.of("trung-tam-1", orgEntry(ORG_1_ID, List.of("tenant-teacher")))));
-		when(this.membershipChecker.check(ORG_1_ID, "gv-1"))
-				.thenReturn(MembershipChecker.Result.NOT_MEMBER);
-		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + token)
-				.header("X-LMS-Organization-Alias", "trung-tam-1"))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("\"guest\":true")))
-				.andExpect(content().string(containsString("\"organizationRoles\":[]")))
-				.andExpect(content().string(containsString("\"partitionKey\":null")));
-		this.mockMvc.perform(post("/api/tenancy-check/records").header("Authorization", "Bearer " + token)
-				.header("X-LMS-Organization-Alias", "trung-tam-1")
-				.contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"luc-bi-tat\"}"))
-				.andExpect(status().isForbidden());
-		when(this.membershipChecker.check(ORG_1_ID, "gv-1"))
-				.thenReturn(MembershipChecker.Result.MEMBER);
-		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + token)
-				.header("X-LMS-Organization-Alias", "trung-tam-1"))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("\"guest\":false")))
-				.andExpect(content().string(containsString("\"partitionKey\":\"" + ORG_1_ID + "\"")));
-	}
-
-	@Test
-	@DisplayName("Không xác minh được membership thì request vào ngữ cảnh trung tâm bị từ chối 503, còn đường không mang ngữ cảnh trung tâm vẫn chạy")
-	void unverifiableMembershipRejectsCenterRequest() throws Exception {
-		when(this.membershipChecker.check(anyString(), anyString()))
-				.thenReturn(MembershipChecker.Result.UNVERIFIABLE);
-		String token = mint("gv-1", Map.of("organization",
-				Map.of("trung-tam-1", orgEntry(ORG_1_ID, List.of("tenant-teacher")))));
-		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + token)
-				.header("X-LMS-Organization-Alias", "trung-tam-1"))
-				.andExpect(status().isServiceUnavailable());
-		this.mockMvc.perform(get("/api/tenancy-check/records").header("Authorization", "Bearer " + token)
-				.header("X-LMS-Organization-Alias", "trung-tam-1"))
-				.andExpect(status().isServiceUnavailable());
-		this.mockMvc.perform(get("/api/profile").header("Authorization", "Bearer " + token))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("\"keycloakSub\":\"gv-1\"")));
 	}
 
 	@Test

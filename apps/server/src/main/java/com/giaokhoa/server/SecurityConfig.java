@@ -1,6 +1,5 @@
 package com.giaokhoa.server;
 
-import com.giaokhoa.server.tenancy.MembershipChecker;
 import com.giaokhoa.server.tenancy.TenantContextFilter;
 import com.giaokhoa.server.tenancy.TenantContextResolver;
 
@@ -18,7 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http, MembershipChecker membershipChecker) throws Exception {
+	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
 				// API chỉ nhận Bearer token, không dùng session hay cookie nên tắt CSRF và ép stateless.
 				.csrf(csrf -> csrf.disable())
@@ -30,7 +29,7 @@ public class SecurityConfig {
 				.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
 				// Ngữ cảnh tenant chỉ dựng được sau khi JWT đã qua cổng kiểm chứng, nên filter ngữ cảnh đứng ngay
 				// sau filter xác thực Bearer.
-				.addFilterAfter(new TenantContextFilter(new TenantContextResolver(membershipChecker)),
+				.addFilterAfter(new TenantContextFilter(new TenantContextResolver()),
 						BearerTokenAuthenticationFilter.class);
 		return http.build();
 	}

@@ -22,7 +22,7 @@ import org.springframework.web.client.RestClientException;
 
 /**
  * Đọc định danh Organization theo alias qua Admin REST API của Keycloak bằng cùng service account chỉ đọc của
- * client `lms-api` mà khung tenancy dùng để kiểm membership, không cache: phân vùng của trang khách phải là dữ
+ * client `lms-api` mà bản kiểm membership hiện hành dùng, không cache: phân vùng của trang khách phải là dữ
  * kiện hiện hành tại đúng thời điểm mở đọc. Endpoint liệt kê Organization không tìm theo alias, nên đọc danh
  * sách rồi đối chiếu trường alias của từng Organization tại đây — cùng cách khối tổ chức dạy học dùng cho đọc
  * của khách.

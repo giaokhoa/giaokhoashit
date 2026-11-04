@@ -167,9 +167,7 @@ class AccessEndpointTests {
 		String admin = adminToken("admin-cach-ly");
 		assertFalse(decide(admin, ALIAS_1, resourceId, v1, "view_content"));
 		assertEquals(404, get(admin, ALIAS_1, "/api/access-check/resources/" + resourceId).getResponse().getStatus());
-		lenient().when(this.membershipChecker.check(ORG_1_ID, "khach-cach-ly"))
-				.thenReturn(MembershipChecker.Result.NOT_MEMBER);
-		String guest = memberToken("khach-cach-ly", ALIAS_1, ORG_1_ID, List.of("tenant-member"));
+		String guest = plainToken("khach-cach-ly");
 		assertFalse(decide(guest, ALIAS_1, resourceId, v1, "view_content"));
 	}
 
@@ -456,8 +454,8 @@ class AccessEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Token cũ sau khi tư cách thành viên bị gỡ không còn mở được tài nguyên của trung tâm, nhưng kho cá nhân của chính người đó vẫn nguyên vẹn")
-	void membershipRemovalOldToken() throws Exception {
+	@DisplayName("Token được cấp sau khi tư cách thành viên bị gỡ không còn mang trung tâm trong claim nên không mở được tài nguyên của trung tâm, nhưng kho cá nhân của chính người đó vẫn nguyên vẹn")
+	void membershipRemovalNewToken() throws Exception {
 		String admin = adminToken("admin-go-tu-cach");
 		UUID collectionId = createCollection(admin, ALIAS_1);
 		MvcResult created = post(admin, ALIAS_1, "/api/access-check/resources",
@@ -472,9 +470,8 @@ class AccessEndpointTests {
 				"{\"resourceType\":\"question\",\"workspace\":\"personal\",\"contentHash\":\"h1\"}");
 		UUID ownId = extract(RESOURCE_ID, ownResource);
 		UUID ownV1 = extract(VERSION_ID, ownResource);
-		lenient().when(this.membershipChecker.check(ORG_1_ID, "hv-bi-go"))
-				.thenReturn(MembershipChecker.Result.NOT_MEMBER);
-		assertFalse(decide(member, ALIAS_1, resourceId, v1, "view_content"));
+		String afterRemoval = plainToken("hv-bi-go");
+		assertFalse(decide(afterRemoval, ALIAS_1, resourceId, v1, "view_content"));
 		assertTrue(decide(personal, null, ownId, ownV1, "view_content"));
 	}
 
@@ -591,9 +588,7 @@ class AccessEndpointTests {
 				"{\"resourceType\":\"question\",\"workspace\":\"center\",\"collectionId\":\"" + collectionId + "\"}");
 		UUID resourceId = extract(RESOURCE_ID, created);
 		UUID v1 = extract(VERSION_ID, created);
-		lenient().when(this.membershipChecker.check(ORG_1_ID, "khach-trang"))
-				.thenReturn(MembershipChecker.Result.NOT_MEMBER);
-		String guest = authorMemberToken("khach-trang", ALIAS_1, ORG_1_ID, List.of("tenant-member"));
+		String guest = authorToken("khach-trang");
 		MvcResult contextView = get(guest, ALIAS_1, "/api/tenancy-check/context");
 		assertEquals(200, contextView.getResponse().getStatus(), body(contextView));
 		assertTrue(body(contextView).contains("\"guest\":true"), body(contextView));

@@ -8,20 +8,16 @@ import org.springframework.security.oauth2.jwt.Jwt;
 /**
  * Suy ra {@link TenantContext} từ JWT đã kiểm chứng và alias trung tâm của trang. Bốn chế độ: trung tâm (thành viên
  * của Organization của trang), khách (có ngữ cảnh trang nhưng không phải thành viên), cá nhân (trang nền tảng) và hệ
- * thống (trang nền tảng với realm role {@code platform-admin}). Chế độ trung tâm chỉ mở khi membership hiện hành đã
- * được {@link MembershipChecker} xác minh, vì claim chỉ phản ánh membership tại thời điểm phát hành token.
+ * thống (trang nền tảng với realm role {@code platform-admin}). Tư cách thành viên quyết hoàn toàn theo claim
+ * {@code organization} của token đã kiểm chứng, đúng flow chuẩn của docs Keycloak: claim chỉ chứa các Organization
+ * mà người dùng là thành viên tường minh, nên việc gỡ membership có hiệu lực từ token được cấp sau, không phải
+ * ngay với token đang còn hạn.
  */
 public class TenantContextResolver {
 
 	private static final String PLATFORM_ADMIN_ROLE = "platform-admin";
 
 	private static final String SYSTEM_PARTITION_KEY = "system";
-
-	private final MembershipChecker membershipChecker;
-
-	public TenantContextResolver(MembershipChecker membershipChecker) {
-		this.membershipChecker = membershipChecker;
-	}
 
 	public TenantContext resolve(Jwt jwt, String pageOrganizationAlias) {
 		String sub = jwt.getSubject();
@@ -33,17 +29,13 @@ public class TenantContextResolver {
 			}
 			String organizationId = organization.get("id") instanceof String id ? id : null;
 			if (organizationId == null) {
-				// Claim mang alias nhưng thiếu id (mapper Organization Membership chưa bật "Add organization id") thì
-				// không có căn cứ để kiểm membership hiện hành: fail-closed thay vì mở phân vùng theo claim.
-				throw new MembershipVerificationException(pageOrganizationAlias);
+				// Claim mang alias nhưng thiếu id (mapper Organization Membership chưa bật "Add organization id")
+				// thì không có khoá phân vùng của trung tâm để mở: theo chế độ khách thay vì tin một claim thiếu
+				// căn cứ định danh.
+				return new TenantContext(sub, pageOrganizationAlias, null, List.of(), true, platformAdmin, null);
 			}
-			return switch (this.membershipChecker.check(organizationId, sub)) {
-				case MEMBER -> new TenantContext(sub, pageOrganizationAlias, organizationId,
-						organizationRoles(organization), false, platformAdmin, organizationId);
-				case NOT_MEMBER -> new TenantContext(sub, pageOrganizationAlias, null, List.of(), true, platformAdmin,
-						null);
-				case UNVERIFIABLE -> throw new MembershipVerificationException(organizationId);
-			};
+			return new TenantContext(sub, pageOrganizationAlias, organizationId, organizationRoles(organization),
+					false, platformAdmin, organizationId);
 		}
 		if (platformAdmin) {
 			return new TenantContext(sub, null, null, List.of(), false, true, SYSTEM_PARTITION_KEY);
