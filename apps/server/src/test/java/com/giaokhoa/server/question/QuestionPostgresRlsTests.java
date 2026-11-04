@@ -167,7 +167,8 @@ class QuestionPostgresRlsTests {
 	void migrationsApplyCleanlyOnEmptyDatabase() {
 		List<String> versions = adminJdbc().queryForList(
 				"select version from flyway_schema_history where success order by installed_rank", String.class);
-		assertEquals(List.of("1", "2", "3", "10", "11", "20", "21", "30", "31", "40", "41", "50", "51"), versions);
+		assertEquals(List.of("1", "2", "3", "10", "11", "20", "21", "30", "31", "40", "41", "50", "51", "60", "61"),
+				versions);
 	}
 
 	@Test

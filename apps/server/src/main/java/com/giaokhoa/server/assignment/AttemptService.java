@@ -13,6 +13,14 @@ import java.util.stream.Collectors;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.giaokhoa.server.grading.AttemptGradeSummary;
+import com.giaokhoa.server.grading.AttemptItemGrade;
+import com.giaokhoa.server.grading.AttemptItemGradeRepository;
+import com.giaokhoa.server.grading.AttemptGradeSummaryRepository;
+import com.giaokhoa.server.grading.ExamSnapshotSource;
+import com.giaokhoa.server.grading.GradingService;
+import com.giaokhoa.server.grading.SnapshotItem;
+import com.giaokhoa.server.grading.SubmissionGrading;
 import com.giaokhoa.server.tenancy.TenantContext;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -43,9 +51,21 @@ public class AttemptService {
 
 	private final ObjectMapper objectMapper;
 
+	private final SubmissionGrading submissionGrading;
+
+	private final GradingService grading;
+
+	private final AttemptItemGradeRepository itemGrades;
+
+	private final AttemptGradeSummaryRepository gradeSummaries;
+
+	private final ExamSnapshotSource gradingSnapshots;
+
 	public AttemptService(ExamAssignmentRepository assignments, ExamAttemptRepository attempts,
 			AttemptAnswerRepository answers, TeachingChecks teaching, ExamVersionSnapshots snapshots,
-			AssignmentPartitions partitions, ObjectMapper objectMapper) {
+			AssignmentPartitions partitions, ObjectMapper objectMapper, SubmissionGrading submissionGrading,
+			GradingService grading, AttemptItemGradeRepository itemGrades,
+			AttemptGradeSummaryRepository gradeSummaries, ExamSnapshotSource gradingSnapshots) {
 		this.assignments = assignments;
 		this.attempts = attempts;
 		this.answers = answers;
@@ -53,11 +73,18 @@ public class AttemptService {
 		this.snapshots = snapshots;
 		this.partitions = partitions;
 		this.objectMapper = objectMapper;
+		this.submissionGrading = submissionGrading;
+		this.grading = grading;
+		this.itemGrades = itemGrades;
+		this.gradeSummaries = gradeSummaries;
+		this.gradingSnapshots = gradingSnapshots;
 	}
 
+	// Phần kết quả chỉ tồn tại khi lượt làm đã công bố: trước mốc đó trường này luôn null và đáp ứng không mang
+	// bất kỳ trường điểm nào, đúng quy tắc học viên chỉ thấy điểm của chính mình sau công bố.
 	public record AttemptView(UUID attemptId, UUID assignmentId, String status, OffsetDateTime startedAt,
 			OffsetDateTime submittedAt, String submitMode, OffsetDateTime opensAt, OffsetDateTime dueAt,
-			List<ItemView> items, List<AnswerView> answers) {
+			List<ItemView> items, List<AnswerView> answers, GradingService.StudentResultView result) {
 	}
 
 	public record ItemView(UUID examItemId, String type, int position, java.math.BigDecimal points, String prompt,
@@ -73,8 +100,12 @@ public class AttemptService {
 	public record SubmitView(UUID attemptId, String status, OffsetDateTime submittedAt, String submitMode) {
 	}
 
+	// Một dòng của bảng trạng thái nộp: phần trạng thái thuộc lát giao/làm bài, phần điểm thuộc lát chấm —
+	// điểm tạm chừng nào còn mục chưa chấm (provisional), điểm của một lượt đang làm là null vì chưa có gì
+	// để cộng, và cờ công bố suy từ chính trạng thái của lượt.
 	public record SubmissionRow(String studentSub, String status, OffsetDateTime startedAt,
-			OffsetDateTime submittedAt, String submitMode, boolean removed) {
+			OffsetDateTime submittedAt, String submitMode, boolean removed, java.math.BigDecimal totalScore,
+			java.math.BigDecimal maxScore, boolean provisional, boolean published) {
 	}
 
 	public record AnswerInput(UUID examItemId, JsonNode answer) {
@@ -103,16 +134,33 @@ public class AttemptService {
 		}
 	}
 
-	public AttemptView get(TenantContext context, UUID attemptId) {
+	// Đường đọc hợp nhất của một lượt làm: học viên chủ lượt nhận hình chiếu của lát giao/làm bài, kèm phần
+	// kết quả của lát chấm khi lượt đã công bố; giáo viên phụ trách lớp đích nhận hình chiếu chấm đầy đủ của
+	// lát chấm. Nhánh đọc vẫn quyết theo phép đọc của lát giao/làm bài và chốt hạn lười diễn ra trước khi
+	// phân nhánh như mọi điểm chạm khác.
+	public Object get(TenantContext context, UUID attemptId) {
 		String partition = readPartition(context);
-		return this.partitions.inPartition(partition, context.sub(), () -> {
+		ReadOutcome outcome = this.partitions.inPartition(partition, context.sub(), () -> {
 			ExamAttempt attempt = this.attempts.findById(attemptId)
 					.orElseThrow(() -> AssignmentException.notFound("Lượt làm không tồn tại."));
 			ExamAssignment assignment = assignmentOf(attempt);
 			finalizeIfPastDue(attempt, assignment);
-			requireReadable(context, partition, attempt, assignment);
-			return view(attempt, assignment);
+			if (context.sub().equals(attempt.getStudentSub())) {
+				return new ReadOutcome(viewWithResult(attempt, assignment), false);
+			}
+			if (!context.guest() && this.teaching.isAssignedToTeach(context.sub(), partition,
+					assignment.getClassId())) {
+				return new ReadOutcome(null, true);
+			}
+			requireOwner(context, partition, attempt, assignment);
+			throw new IllegalStateException("Người gọi không thuộc nhánh đọc nào của lượt làm.");
 		});
+		// Hình chiếu chấm do lát chấm dựng bằng giao dịch riêng trên ngữ cảnh thật của request, vì ngữ cảnh
+		// dữ kiện đã ghim trong phạm vi phân vùng ở trên không mang vai của người gọi.
+		return outcome.teacherView() ? this.grading.attemptView(attemptId) : outcome.view();
+	}
+
+	private record ReadOutcome(AttemptView view, boolean teacherView) {
 	}
 
 	public AttemptView saveAnswers(TenantContext context, UUID attemptId, List<AnswerInput> inputs) {
@@ -187,9 +235,10 @@ public class AttemptService {
 					attempt.setSubmittedAt(now());
 					attempt.setSubmitMode(ExamAttempt.SUBMIT_MANUAL);
 					attempt.setUpdatedAt(now());
-					// Điểm gắn của feat chấm/công bố: chấm tự động trắc nghiệm chạy trong cùng giao dịch nộp
-					// tại đây, trên đáp án của snapshot và câu trả lời đã chốt của lượt này.
 					this.attempts.saveAndFlush(attempt);
+					// Chấm tự động trắc nghiệm của lát chấm chạy trong cùng giao dịch nộp tại đây, trên đáp án
+					// của snapshot và câu trả lời đã chốt của lượt này, ngay sau chuyển trạng thái sang đã nộp.
+					this.submissionGrading.gradeOnSubmit(attempt.getId());
 				}
 			}
 			// Lượt đã nộp (tay, tự chốt, hay đã chấm/công bố) thì nộp lại chỉ trả nguyên kết quả đã có: không
@@ -215,27 +264,46 @@ public class AttemptService {
 			classAttempts.forEach(attempt -> finalizeIfPastDue(attempt, assignment));
 			Map<String, ExamAttempt> attemptsByStudent = classAttempts.stream()
 					.collect(Collectors.toMap(ExamAttempt::getStudentSub, Function.identity()));
+			java.math.BigDecimal maxScore = totalMaxScore(assignment);
 			List<SubmissionRow> rows = new ArrayList<>();
 			java.util.Set<String> activeStudents = new java.util.HashSet<>(
 					this.teaching.activeRoster(partition, assignment.getClassId()));
 			for (String studentSub : activeStudents) {
 				ExamAttempt attempt = attemptsByStudent.get(studentSub);
-				rows.add(attempt != null
-						? new SubmissionRow(studentSub, attempt.getStatus(), attempt.getStartedAt(),
-								attempt.getSubmittedAt(), attempt.getSubmitMode(), false)
-						: new SubmissionRow(studentSub, "NOT_STARTED", null, null, null, false));
+				rows.add(attempt != null ? row(attempt, false, maxScore)
+						: new SubmissionRow(studentSub, "NOT_STARTED", null, null, null, false, null,
+								num(maxScore), true, false));
 			}
 			// Học viên đã bị gỡ ghi danh nhưng đã có lượt làm vẫn thuộc diện chấm/công bố, nên vẫn xuất hiện
 			// trong bảng với dấu đã gỡ.
 			for (ExamAttempt attempt : classAttempts) {
 				if (!activeStudents.contains(attempt.getStudentSub())) {
-					rows.add(new SubmissionRow(attempt.getStudentSub(), attempt.getStatus(),
-							attempt.getStartedAt(), attempt.getSubmittedAt(), attempt.getSubmitMode(), true));
+					rows.add(row(attempt, true, maxScore));
 				}
 			}
 			rows.sort(Comparator.comparing(SubmissionRow::studentSub));
 			return rows;
 		});
+	}
+
+	// Phần điểm của một dòng bảng trạng thái, tính từ dữ kiện điểm hiện hành của lát chấm theo đúng quy tắc
+	// của lát đó: lượt đang làm chưa có tổng điểm, tổng điểm là tạm cho tới khi mọi mục đều đã có điểm.
+	private SubmissionRow row(ExamAttempt attempt, boolean removed, java.math.BigDecimal maxScore) {
+		boolean published = ExamAttempt.PUBLISHED.equals(attempt.getStatus());
+		boolean complete = published || ExamAttempt.GRADED.equals(attempt.getStatus());
+		java.math.BigDecimal totalScore = ExamAttempt.IN_PROGRESS.equals(attempt.getStatus()) ? null
+				: num(this.itemGrades.findByAttemptId(attempt.getId()).stream()
+						.map(AttemptItemGrade::getScore)
+						.reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add));
+		return new SubmissionRow(attempt.getStudentSub(), attempt.getStatus(), attempt.getStartedAt(),
+				attempt.getSubmittedAt(), attempt.getSubmitMode(), removed, totalScore, num(maxScore),
+				!complete, published);
+	}
+
+	private java.math.BigDecimal totalMaxScore(ExamAssignment assignment) {
+		return this.gradingSnapshots.itemsOf(assignment.getExamVersionId()).stream()
+				.map(SnapshotItem::maxScore)
+				.reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 	}
 
 	private AttemptView loadForStart(TenantContext context, String partition, UUID assignmentId) {
@@ -289,18 +357,6 @@ public class AttemptService {
 		throw AssignmentException.forbidden("Lượt làm thuộc về học viên khác.");
 	}
 
-	private void requireReadable(TenantContext context, String partition, ExamAttempt attempt,
-			ExamAssignment assignment) {
-		if (context.sub().equals(attempt.getStudentSub())) {
-			return;
-		}
-		if (!context.guest() && this.teaching.isAssignedToTeach(context.sub(), partition,
-				assignment.getClassId())) {
-			return;
-		}
-		requireOwner(context, partition, attempt, assignment);
-	}
-
 	// Chốt lười: quá hạn mà lượt còn đang làm thì chuyển đã nộp với submit_mode auto_deadline và mốc nộp là
 	// chính hạn nộp (thời điểm lượt được coi là đã nộp), giữ nguyên câu trả lời đã lưu gần nhất. Trả true khi
 	// có chốt thật ở lần chạm này.
@@ -314,6 +370,8 @@ public class AttemptService {
 		attempt.setSubmitMode(ExamAttempt.SUBMIT_AUTO_DEADLINE);
 		attempt.setUpdatedAt(now());
 		this.attempts.saveAndFlush(attempt);
+		// Chốt hạn là một đường nộp như nộp tay: chấm tự động chạy ngay trong cùng giao dịch chốt này.
+		this.submissionGrading.gradeOnSubmit(attempt.getId());
 		return true;
 	}
 
@@ -347,7 +405,45 @@ public class AttemptService {
 				.toList();
 		return new AttemptView(attempt.getId(), assignment.getId(), attempt.getStatus(), attempt.getStartedAt(),
 				attempt.getSubmittedAt(), attempt.getSubmitMode(), assignment.getOpensAt(), assignment.getDueAt(),
-				items, savedAnswers);
+				items, savedAnswers, null);
+	}
+
+	// Hình chiếu của học viên kèm phần kết quả khi lượt đã công bố: điểm và nhận xét theo từng mục theo đúng
+	// thứ tự của snapshot, nhận xét chung và hai con số tổng — tất cả lấy từ dữ kiện điểm của lát chấm; đáp án
+	// đúng và tiêu chí chấm không bao giờ đi qua đường này.
+	private AttemptView viewWithResult(ExamAttempt attempt, ExamAssignment assignment) {
+		AttemptView base = view(attempt, assignment);
+		if (!ExamAttempt.PUBLISHED.equals(attempt.getStatus())) {
+			return base;
+		}
+		Map<UUID, AttemptItemGrade> gradesByItem = this.itemGrades.findByAttemptId(attempt.getId()).stream()
+				.collect(Collectors.toMap(AttemptItemGrade::getExamItemId, Function.identity()));
+		List<SnapshotItem> items = this.gradingSnapshots.itemsOf(assignment.getExamVersionId()).stream()
+				.sorted(Comparator.comparingInt(SnapshotItem::order))
+				.toList();
+		List<GradingService.StudentResultItemView> resultItems = items.stream()
+				.filter(item -> gradesByItem.containsKey(item.examItemId()))
+				.map(item -> {
+					AttemptItemGrade grade = gradesByItem.get(item.examItemId());
+					return new GradingService.StudentResultItemView(item.examItemId(), num(grade.getScore()),
+							num(grade.getMaxScore()), grade.getComment());
+				})
+				.toList();
+		java.math.BigDecimal totalScore = gradesByItem.values().stream().map(AttemptItemGrade::getScore)
+				.reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+		java.math.BigDecimal maxScore = items.stream().map(SnapshotItem::maxScore)
+				.reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+		String overallComment = this.gradeSummaries.findById(attempt.getId())
+				.map(AttemptGradeSummary::getOverallComment)
+				.orElse(null);
+		return new AttemptView(base.attemptId(), base.assignmentId(), base.status(), base.startedAt(),
+				base.submittedAt(), base.submitMode(), base.opensAt(), base.dueAt(), base.items(),
+				base.answers(), new GradingService.StudentResultView(resultItems, overallComment,
+						num(totalScore), num(maxScore)));
+	}
+
+	private static java.math.BigDecimal num(java.math.BigDecimal value) {
+		return value != null ? value.stripTrailingZeros() : null;
 	}
 
 	private void validateAnswer(ExamVersionSnapshots.Item item, JsonNode answer) {
