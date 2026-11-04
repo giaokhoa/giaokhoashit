@@ -588,9 +588,7 @@ class AccessEndpointTests {
 				"{\"resourceType\":\"question\",\"workspace\":\"center\",\"collectionId\":\"" + collectionId + "\"}");
 		UUID resourceId = extract(RESOURCE_ID, created);
 		UUID v1 = extract(VERSION_ID, created);
-		lenient().when(this.membershipChecker.check(ORG_1_ID, "khach-trang"))
-				.thenReturn(MembershipChecker.Result.NOT_MEMBER);
-		String guest = authorMemberToken("khach-trang", ALIAS_1, ORG_1_ID, List.of("tenant-member"));
+		String guest = authorToken("khach-trang");
 		MvcResult contextView = get(guest, ALIAS_1, "/api/tenancy-check/context");
 		assertEquals(200, contextView.getResponse().getStatus(), body(contextView));
 		assertTrue(body(contextView).contains("\"guest\":true"), body(contextView));

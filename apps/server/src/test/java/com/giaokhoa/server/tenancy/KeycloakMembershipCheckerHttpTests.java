@@ -21,7 +21,8 @@ import com.giaokhoa.server.tenancy.MembershipChecker.Result;
 // lỗi chuyển đổi thuộc nhánh HttpMessageConversionException, tách hẳn khỏi RestClientException trong Spring 7.
 // Các bộ test ở mức endpoint stub tại seam MembershipChecker hoặc để secret trống nên không tạo được đáp ứng
 // sai hình dạng; lớp này stub ở tầng HTTP bằng MockRestServiceServer để ghim hành vi fail-closed: đáp ứng sai
-// hình dạng quy về UNVERIFIABLE — kết quả mà tầng resolver dịch thành HTTP 503 — thay vì lọt ra ngoài thành 500.
+// hình dạng quy về UNVERIFIABLE — kết quả mà lát tổ chức dịch thành 503 MEMBERSHIP_UNVERIFIABLE tại các quyết
+// định ghi dùng bản kiểm này — thay vì lọt ra ngoài thành 500.
 class KeycloakMembershipCheckerHttpTests {
 
 	private static final String ISSUER = "http://keycloak.test/realms/giaokhoa";

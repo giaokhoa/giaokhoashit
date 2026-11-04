@@ -453,28 +453,27 @@ class OrganizationEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Tiêu chí 8: giáo viên bị gỡ tư cách thành viên khỏi trung tâm thì mất quyền dạy ngay dù teacher_sub vẫn ghi tên họ — danh sách lớp rỗng, roster bị từ chối, phép kiểm phân công dạy trả sai; ghi danh của học viên trong lớp không đổi")
+	@DisplayName("Tiêu chí 8: giáo viên bị gỡ tư cách thành viên khỏi trung tâm, token được cấp sau đó không còn mang trung tâm trong claim nên mất quyền dạy dù teacher_sub vẫn ghi tên họ — danh sách lớp rỗng, roster bị từ chối, phép kiểm phân công dạy trả sai; ghi danh của học viên trong lớp không đổi")
 	void criterion8TeacherLosesMembershipLosesTeachingRights() throws Exception {
 		String adminA = adminAToken();
 		String classL1 = createClassOk(adminA, ALIAS_1, "Lop C8 L1", null);
 		assignTeacherOk(adminA, ALIAS_1, classL1, "gv-trung-tam-1");
 		enrollOk(adminA, ALIAS_1, classL1, "hs-trung-tam-1");
 		TeachingClass loaded = loadClass(classL1);
-		when(this.membershipChecker.check(ORG_1_ID, "gv-trung-tam-1"))
-			.thenReturn(MembershipChecker.Result.NOT_MEMBER);
+		String tokenAfterRemoval = mint("gv-trung-tam-1", Map.of());
 		this.mockMvc
-			.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + teacherA1Token())
+			.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + tokenAfterRemoval)
 				.header("X-LMS-Organization-Alias", ALIAS_1))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("\"guest\":true")));
 		this.mockMvc
-			.perform(get("/api/classes").header("Authorization", "Bearer " + teacherA1Token())
+			.perform(get("/api/classes").header("Authorization", "Bearer " + tokenAfterRemoval)
 				.header("X-LMS-Organization-Alias", ALIAS_1))
 			.andExpect(status().isOk())
 			.andExpect(content().string("[]"));
 		this.mockMvc
 			.perform(get("/api/classes/" + classL1 + "/members")
-				.header("Authorization", "Bearer " + teacherA1Token())
+				.header("Authorization", "Bearer " + tokenAfterRemoval)
 				.header("X-LMS-Organization-Alias", ALIAS_1))
 			.andExpect(status().isForbidden());
 		TenantContexts.set(new TenantContext("gv-trung-tam-1", ALIAS_1, null, List.of(), true, false, null));
@@ -492,44 +491,43 @@ class OrganizationEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Tiêu chí 9: học viên bị gỡ tư cách thành viên nhưng ghi danh còn hiệu lực vẫn thấy đúng lớp đã ghi danh và khoá chứa lớp tại trang trung tâm với tư cách khách, xem được chi tiết lớp đó, không thấy thêm gì khác của trung tâm")
+	@DisplayName("Tiêu chí 9: học viên bị gỡ tư cách thành viên, token được cấp sau đó không còn mang trung tâm trong claim nhưng ghi danh còn hiệu lực vẫn thấy đúng lớp đã ghi danh và khoá chứa lớp tại trang trung tâm với tư cách khách, xem được chi tiết lớp đó, không thấy thêm gì khác của trung tâm")
 	void criterion9StudentLosesMembershipKeepsEnrolledClassesAsGuest() throws Exception {
 		String adminA = adminAToken();
 		String courseId = createCourseOk(adminA, ALIAS_1, "Khoa C9");
 		String classL1 = createClassOk(adminA, ALIAS_1, "Lop C9 L1", courseId);
 		String classL2 = createClassOk(adminA, ALIAS_1, "Lop C9 L2", null);
 		enrollOk(adminA, ALIAS_1, classL1, "hs-trung-tam-1");
-		when(this.membershipChecker.check(ORG_1_ID, "hs-trung-tam-1"))
-			.thenReturn(MembershipChecker.Result.NOT_MEMBER);
+		String tokenAfterRemoval = mint("hs-trung-tam-1", Map.of());
 		this.mockMvc
-			.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + studentAToken())
+			.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + tokenAfterRemoval)
 				.header("X-LMS-Organization-Alias", ALIAS_1))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("\"guest\":true")))
 			.andExpect(content().string(containsString("\"organizationRoles\":[]")));
 		this.mockMvc
-			.perform(get("/api/classes").header("Authorization", "Bearer " + studentAToken())
+			.perform(get("/api/classes").header("Authorization", "Bearer " + tokenAfterRemoval)
 				.header("X-LMS-Organization-Alias", ALIAS_1))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("Lop C9 L1")))
 			.andExpect(content().string(not(containsString("Lop C9 L2"))));
 		this.mockMvc
-			.perform(get("/api/courses").header("Authorization", "Bearer " + studentAToken())
+			.perform(get("/api/courses").header("Authorization", "Bearer " + tokenAfterRemoval)
 				.header("X-LMS-Organization-Alias", ALIAS_1))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("Khoa C9")));
 		this.mockMvc
-			.perform(get("/api/classes/" + classL1).header("Authorization", "Bearer " + studentAToken())
+			.perform(get("/api/classes/" + classL1).header("Authorization", "Bearer " + tokenAfterRemoval)
 				.header("X-LMS-Organization-Alias", ALIAS_1))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("Lop C9 L1")));
 		this.mockMvc
-			.perform(get("/api/classes/" + classL2).header("Authorization", "Bearer " + studentAToken())
+			.perform(get("/api/classes/" + classL2).header("Authorization", "Bearer " + tokenAfterRemoval)
 				.header("X-LMS-Organization-Alias", ALIAS_1))
 			.andExpect(status().isForbidden());
 		this.mockMvc
 			.perform(get("/api/classes/" + classL1 + "/members")
-				.header("Authorization", "Bearer " + studentAToken())
+				.header("Authorization", "Bearer " + tokenAfterRemoval)
 				.header("X-LMS-Organization-Alias", ALIAS_1))
 			.andExpect(status().isForbidden());
 	}
