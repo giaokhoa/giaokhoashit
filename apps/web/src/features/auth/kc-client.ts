@@ -5,7 +5,8 @@
  *
  *   1. Điểm vào phía client khởi tạo adapter trước router trên hai hostname tenant; các lần gọi sau dùng lại đúng
  *      một promise khởi tạo. Adapter chạy `check-sso` im lặng, dùng authorization code flow mặc định của nó cùng
- *      PKCE S256 và xin scope `organization` (adapter luôn tự thêm `openid`).
+ *      PKCE S256 và xin scope `organization:*` để token mang mọi Organization mà người dùng là thành viên, kèm id
+ *      và vai theo từng Organization (adapter luôn tự thêm `openid`).
  *   2. Sau khởi tạo, token nằm trong bộ nhớ do adapter quản; component đọc danh tính đã ánh xạ từ `tokenParsed`,
  *      không đọc cookie phiên và không tự giải mã chuỗi JWT.
  *   3. Khi cần gọi `apps/server`, hàm lấy danh tính phía server làm mới token bằng `updateToken(30)` trước rồi mới
@@ -63,7 +64,7 @@ export function initializeKeycloak(): Promise<boolean> {
         onLoad: 'check-sso',
         silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
         pkceMethod: 'S256',
-        scope: 'organization',
+        scope: 'organization:*',
       });
     } catch (error) {
       console.error('Failed to initialize Keycloak adapter', error);

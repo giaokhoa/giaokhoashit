@@ -72,4 +72,16 @@ describe('isServerProxyPath (upstream riêng của /api/me)', () => {
     expect(isServerProxyPath('/api/me/extra')).toBe(false);
     expect(isServerProxyPath('/api/me2')).toBe(false);
   });
+
+  it('họ đường kiểm chứng khung tenancy đi upstream server (issue #57)', () => {
+    expect(isProxyPath('/api/tenancy-check/context')).toBe(true);
+    expect(isServerProxyPath('/api/tenancy-check/context')).toBe(true);
+    expect(isServerProxyPath('/api/tenancy-check/records')).toBe(true);
+    expect(isServerProxyPath('/api/tenancy-check/records?x=1')).toBe(true);
+  });
+
+  it('đường gần giống họ tenancy-check vẫn đi upstream api cũ', () => {
+    expect(isServerProxyPath('/api/tenancy-checkfoo')).toBe(false);
+    expect(isServerProxyPath('/api/tenancy-check')).toBe(false);
+  });
 });

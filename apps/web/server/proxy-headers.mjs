@@ -25,6 +25,36 @@ function forwardedFor(prior, remoteAddress) {
   return prior ? `${prior}, ${clientIp}` : clientIp;
 }
 
+/**
+ * Ánh xạ hostname trung tâm → alias Organization của Keycloak, dùng để đặt header ngữ cảnh trang
+ * `X-LMS-Organization-Alias` cho các request đi `apps/server` (issue #57). Phải khớp bảng hostname phía client
+ * `src/lib/kc-tenant-hosts.ts` — hai bảng cùng liệt kê đúng hai hostname trung tâm hiện có; hostname không có
+ * trong bảng là trang nền tảng (không ngữ cảnh trung tâm).
+ */
+const ORGANIZATION_ALIAS_BY_HOSTNAME = {
+  'trung-tam-1.fuckr.net': 'trung-tam-1',
+  'trung-tam-2.fuckr.net': 'trung-tam-2',
+};
+
+export function organizationAliasForHostname(host) {
+  if (!host) return null;
+  const hostname = host.split(':')[0].toLowerCase();
+  return ORGANIZATION_ALIAS_BY_HOSTNAME[hostname] ?? null;
+}
+
+/**
+ * Đặt header ngữ cảnh trang lên bộ header sẽ gửi về `apps/server`: hostname trung tâm thì đặt alias tương ứng,
+ * hostname nền tảng thì XOÁ hẳn header. Việc xoá khi không có alias là bắt buộc về bảo mật: header này là dữ kiện
+ * để server phân giải ngữ cảnh trung tâm, nên giá trị do client tự gửi không bao giờ được chuyển tiếp nguyên trạng
+ * — chỉ giá trị suy từ Host của request (địa chỉ công khai mà trình duyệt đã gọi) mới được dùng.
+ */
+export function withOrganizationAliasHeader(headers, host) {
+  const alias = organizationAliasForHostname(host);
+  if (alias) headers['x-lms-organization-alias'] = alias;
+  else delete headers['x-lms-organization-alias'];
+  return headers;
+}
+
 export function buildProxyHeaders(incomingHeaders, remoteAddress, apiHost) {
   const headers = {
     ...incomingHeaders,

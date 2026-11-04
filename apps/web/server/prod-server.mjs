@@ -5,7 +5,8 @@
  *   1. Mặt tiền HTTP duy nhất: bind cổng PUBLIC_PORT (mặc định $PORT do môi trường triển khai cấp).
  *   2. Proxy các đường của API (xem `proxy-paths.mjs`: `/api/*`, `/socket.io/*`, `/mcp`,
  *      `/.well-known/oauth-protected-resource`) về API ở địa chỉ nội bộ (LMS_API_INTERNAL_URL, mặc định
- *      http://127.0.0.1:3000) — riêng đúng đường `/api/me` đi về `apps/server` ở địa chỉ LMS_SERVER_INTERNAL_URL
+ *      http://127.0.0.1:3000) — riêng đúng đường `/api/me` và họ đường `/api/tenancy-check/...` đi về `apps/server`
+ *      ở địa chỉ LMS_SERVER_INTERNAL_URL
  *      (mặc định http://127.0.0.1:8081): chuyển nguyên header (Cookie đi lên, Set-Cookie — kể cả nhiều header — đi
  *      xuống; Host GIỮ NGUYÊN của request gốc vì tầng ứng dụng phân giải trung tâm theo Host, xem
  *      proxy-headers.mjs), nối tiếp chuỗi X-Forwarded-For của chặng trước, và STREAM không đệm để SSE sống qua
@@ -31,7 +32,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequestListener } from '@react-router/node';
 import * as serverBuild from '../build/server/index.js';
 import { isProxyPath, isServerProxyPath } from './proxy-paths.mjs';
-import { buildProxyHeaders, buildUpgradeRequestLines } from './proxy-headers.mjs';
+import { buildProxyHeaders, buildUpgradeRequestLines, withOrganizationAliasHeader } from './proxy-headers.mjs';
 import { compressBuffer, isCompressibleType, MIN_COMPRESS_BYTES, pickEncoding } from './compression.mjs';
 import { applyDocumentSecurityHeaders } from './security-headers.mjs';
 
@@ -65,13 +66,18 @@ const MIME = {
 };
 
 function proxyHttp(req, res) {
-  // Chọn upstream TRƯỚC khi rơi về upstream API chung: đúng đường `/api/me` thuộc `apps/server` (xem
-  // isServerProxyPath trong proxy-paths.mjs), mọi đường proxy còn lại thuộc API. Header dựng ở proxy-headers.mjs:
-  // Host GIỮ NGUYÊN của request gốc — tầng ứng dụng phân giải trung tâm theo Host (issue #582), ghi đè bằng origin
-  // nội bộ là địa chỉ trung tâm biến mất trước khi tới đích (tiền điều kiện TĐ5 của issue #587). Đích kết nối vẫn là
-  // origin nội bộ đã chọn qua hostname/port dưới đây.
-  const origin = isServerProxyPath(req.url ?? '') ? serverOrigin : apiOrigin;
+  // Chọn upstream TRƯỚC khi rơi về upstream API chung: đúng đường `/api/me` và họ đường `/api/tenancy-check/...`
+  // thuộc `apps/server` (xem isServerProxyPath trong proxy-paths.mjs), mọi đường proxy còn lại thuộc API. Header
+  // dựng ở proxy-headers.mjs: Host GIỮ NGUYÊN của request gốc — tầng ứng dụng phân giải trung tâm theo Host (issue
+  // #582), ghi đè bằng origin nội bộ là địa chỉ trung tâm biến mất trước khi tới đích (tiền điều kiện TĐ5 của issue
+  // #587). Đích kết nối vẫn là origin nội bộ đã chọn qua hostname/port dưới đây.
+  const toServer = isServerProxyPath(req.url ?? '');
+  const origin = toServer ? serverOrigin : apiOrigin;
   const headers = buildProxyHeaders(req.headers, req.socket.remoteAddress, origin.host);
+  // Riêng các request đi apps/server: đặt header ngữ cảnh trang X-LMS-Organization-Alias suy từ Host của request
+  // (issue #57) — server không có cổng công khai nên chỉ tầng web này mới biết người dùng đang ở trang trung tâm
+  // nào; header do client tự gửi bị thay bằng giá trị suy từ Host hoặc bị xoá ở trang nền tảng.
+  if (toServer) withOrganizationAliasHeader(headers, req.headers.host);
   const upstream = httpRequest(
     {
       hostname: origin.hostname,
