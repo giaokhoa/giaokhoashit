@@ -80,10 +80,6 @@ public class ExamVersion {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public int getVersionNumber() {
 		return this.versionNumber;
 	}
