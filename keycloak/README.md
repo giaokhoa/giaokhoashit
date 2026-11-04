@@ -6,7 +6,8 @@ Thư mục này chỉ giữ login theme của Keycloak. Mọi cấu trúc realm 
 ## Mô hình
 
 - Keycloak là một service riêng: chạy image chính thức `quay.io/keycloak/keycloak:26.8.1` (service `keycloak`
-  trong `compose.yaml`), dữ kiện của nó nằm trong PostgreSQL riêng (service `kc-db`, volume `keycloak-db-data`).
+  trong `compose.keycloak.yaml`), dữ kiện của nó nằm trong PostgreSQL riêng (service `kc-db`, volume
+  `keycloak-db-data`).
   Toàn bộ trạng thái và cấu hình của Keycloak sống trong database đó; LMS không bao giờ đọc hay ghi trực tiếp
   database của Keycloak.
 - Một realm duy nhất tên `giaokhoa`; mỗi trung tâm là một Organization trong realm. Realm role: `tenant-admin`,
@@ -17,8 +18,8 @@ Thư mục này chỉ giữ login theme của Keycloak. Mọi cấu trúc realm 
 
 ## Tạo cấu trúc cho môi trường dev
 
-1. Dựng stack trong `compose.yaml` (hai service `kc-db` và `keycloak`) trên database trống; lần khởi động đầu
-   tiên Keycloak tạo tài khoản quản trị bootstrap từ biến môi trường của stack.
+1. Dựng stack trong `compose.keycloak.yaml` (hai service `kc-db` và `keycloak`) trên database trống; lần khởi
+   động đầu tiên Keycloak tạo tài khoản quản trị bootstrap từ biến môi trường của stack.
 2. Đăng nhập Admin Console bằng tài khoản quản trị và tạo tay: realm `giaokhoa` (bật Organizations), bốn realm
    role ở trên, hai client ở trên kèm client scope `organization`, và một Organization cho mỗi trung tâm.
 3. Gán login theme `giaokhoa` cho realm tại mục Themes của Admin Console.
@@ -37,4 +38,4 @@ bước (`login.ftl`) và hai trang bước của luồng Organization Identity-
 `themes/giaokhoa/tailwind.input.css`.
 
 Theme được gắn vào container qua volume `./keycloak/themes` → `/opt/keycloak/themes` (chỉ đọc) trong
-`compose.yaml`; việc chọn theme cho realm thực hiện tại mục Themes của Admin Console.
+`compose.keycloak.yaml`; việc chọn theme cho realm thực hiện tại mục Themes của Admin Console.

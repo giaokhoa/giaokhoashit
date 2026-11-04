@@ -247,7 +247,7 @@ ghim/trở ngại hiện tại:
   bằng runner của chính package (các carrier đóng băng giữ nguyên
   từng byte).
 - Test runner: Vitest ở mọi nơi — không dùng Jest.
-- Keycloak **26.8.1** (image ghim trong `compose.yaml`): thư mục
+- Keycloak **26.8.1** (image ghim trong `compose.keycloak.yaml`): thư mục
   `keycloak/` chỉ giữ login theme; cấu trúc realm được tạo tay
   trong Admin Console (xem `keycloak/README.md`). Nâng phiên bản
   Keycloak bắt buộc kiểm chứng lại luồng đăng nhập và login
