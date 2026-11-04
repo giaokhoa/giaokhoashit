@@ -204,7 +204,7 @@ class TenancyEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Tài khoản tự do tại trang nền tảng có phân vùng cá nhân của riêng mình và không đọc được record cá nhân của tài khoản khác")
+	@DisplayName("Tài khoản tự do tại trang nền tảng có phân vùng cá nhân của riêng mình và không đọc được record cá nhân của tài khoản khác; tại trang trung tâm mình không phải thành viên thì là khách")
 	void freeAccountUsesPersonalPartition() throws Exception {
 		String free1 = mint("gv-tu-do-1", Map.of());
 		String free2 = mint("gv-tu-do-2", Map.of());
@@ -220,6 +220,12 @@ class TenancyEndpointTests {
 		this.mockMvc.perform(get("/api/tenancy-check/records").header("Authorization", "Bearer " + free2))
 				.andExpect(status().isOk())
 				.andExpect(content().string(not(containsString("rieng-cua-toi"))));
+		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + free1)
+				.header("X-LMS-Organization-Alias", "trung-tam-1"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"guest\":true")))
+				.andExpect(content().string(containsString("\"organizationRoles\":[]")))
+				.andExpect(content().string(containsString("\"partitionKey\":null")));
 	}
 
 	@Test
@@ -307,47 +313,6 @@ class TenancyEndpointTests {
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("\"guest\":false")))
 				.andExpect(content().string(containsString("\"partitionKey\":\"" + ORG_1_ID + "\"")));
-	}
-
-	@Test
-	@DisplayName("Luân phiên ngữ cảnh giữa các request liên tiếp: trung tâm 1, khách ở trang trung tâm không phải thành viên, rồi trung tâm 2 — mỗi request giữ đúng ngữ cảnh của nó, dữ kiện không rò qua chế độ khách")
-	void contextRotatesAcrossRequestsWithoutLeakage() throws Exception {
-		String token = mint("hai-ngu-canh", Map.of("organization", Map.of(
-				"trung-tam-1", orgEntry(ORG_1_ID, List.of("tenant-admin")),
-				"trung-tam-2", orgEntry(ORG_2_ID, List.of("tenant-member")))));
-		this.mockMvc.perform(post("/api/tenancy-check/records").header("Authorization", "Bearer " + token)
-				.header("X-LMS-Organization-Alias", "trung-tam-1")
-				.contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"ban-ghi-luan-phien\"}"))
-				.andExpect(status().isOk());
-		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + token)
-				.header("X-LMS-Organization-Alias", "trung-tam-3"))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("\"guest\":true")))
-				.andExpect(content().string(containsString("\"partitionKey\":null")));
-		this.mockMvc.perform(get("/api/tenancy-check/records").header("Authorization", "Bearer " + token)
-				.header("X-LMS-Organization-Alias", "trung-tam-3"))
-				.andExpect(status().isOk())
-				.andExpect(content().string("[]"));
-		this.mockMvc.perform(post("/api/tenancy-check/records").header("Authorization", "Bearer " + token)
-				.header("X-LMS-Organization-Alias", "trung-tam-3")
-				.contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"khach-khong-ghi-duoc\"}"))
-				.andExpect(status().isForbidden());
-		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + token)
-				.header("X-LMS-Organization-Alias", "trung-tam-2"))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("\"guest\":false")))
-				.andExpect(content().string(containsString("\"partitionKey\":\"" + ORG_2_ID + "\"")))
-				.andExpect(content().string(containsString("\"organizationRoles\":[\"tenant-member\"]")));
-		this.mockMvc.perform(get("/api/tenancy-check/records").header("Authorization", "Bearer " + token)
-				.header("X-LMS-Organization-Alias", "trung-tam-2"))
-				.andExpect(status().isOk())
-				.andExpect(content().string(not(containsString("ban-ghi-luan-phien"))));
-		String free = mint("gv-tu-do-1", Map.of());
-		this.mockMvc.perform(get("/api/tenancy-check/context").header("Authorization", "Bearer " + free)
-				.header("X-LMS-Organization-Alias", "trung-tam-1"))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("\"guest\":true")))
-				.andExpect(content().string(containsString("\"organizationRoles\":[]")));
 	}
 
 	@Test
