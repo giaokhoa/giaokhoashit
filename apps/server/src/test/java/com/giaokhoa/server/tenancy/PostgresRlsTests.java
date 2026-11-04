@@ -65,7 +65,7 @@ import org.springframework.web.context.WebApplicationContext;
 // chạy ứng dụng trên PostgreSQL 18 online của stack qua một database test riêng: database được tạo ngay trước
 // lượt test và bị xoá ngay sau lượt dù test đạt hay hỏng, không đụng vào bất kỳ database sẵn có nào. Thông tin
 // kết nối quản trị lấy từ biến môi trường LMS_TEST_PG_URL (JDBC URL không kèm tên database, ví dụ
-// jdbc:postgresql://dev-pg.fuckr.net:5433), LMS_TEST_PG_USER và LMS_TEST_PG_PASSWORD; chưa đặt biến thì toàn bộ
+// jdbc:postgresql://test-pg.fuckr.net:5434), LMS_TEST_PG_USER và LMS_TEST_PG_PASSWORD; chưa đặt biến thì toàn bộ
 // lớp bị bỏ qua, và kết quả bỏ qua đó không được tính là đạt. Topology nối đúng mô hình chạy thật: Flyway chạy
 // bằng tài khoản quản trị được cấp, datasource của ứng dụng chạy bằng role runtime lms_server_app mà migration
 // V3 tạo.

@@ -173,8 +173,9 @@ services:
       # để chuyển đổi dần độc lập, và schema của server không còn làm lệch hậu kiểm số bảng của bước migrate phía hệ cũ.
       # Tài khoản datasource là role runtime lms_server_app (không superuser, không BYPASSRLS, không sở hữu bảng):
       # Row Level Security chỉ có hiệu lực thật khi kết nối runtime không có đường nào vượt qua nó. Flyway tách
-      # riêng về tài khoản quản trị lms_server: SPRING_FLYWAY_URL phải có mặt cùng user/password, vì thiếu URL thì
-      # Spring Boot cho Flyway dùng chung datasource runtime và bỏ qua hai biến tài khoản này.
+      # riêng về tài khoản quản trị lms_server: theo tài liệu Spring Boot, đặt spring.flyway.user là đủ để
+      # Flyway dùng DataSource riêng của nó; SPRING_FLYWAY_URL ghi tường minh ở đây cho rõ đích, thuộc tính nào
+      # chưa đặt thì Flyway lấy giá trị tương đương của datasource chính.
       SPRING_DATASOURCE_URL: jdbc:postgresql://server-db:5432/lms_server
       SPRING_DATASOURCE_USERNAME: lms_server_app
       SPRING_DATASOURCE_PASSWORD: ${SERVER_DB_APP_PASSWORD:?Can dat SERVER_DB_APP_PASSWORD trong file .env}
