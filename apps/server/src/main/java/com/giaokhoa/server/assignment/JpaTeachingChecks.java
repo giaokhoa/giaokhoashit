@@ -77,7 +77,7 @@ public class JpaTeachingChecks implements TeachingChecks {
 				.setParameter("partitionKey", organizationId)
 				.setParameter("teacherSub", teacherSub)
 				.getResultStream()
-				.map(UUID.class::cast)
+				.map(JpaTeachingChecks::toUuid)
 				.toList();
 	}
 
@@ -90,7 +90,7 @@ public class JpaTeachingChecks implements TeachingChecks {
 				.setParameter("partitionKey", organizationId)
 				.setParameter("studentSub", studentSub)
 				.getResultStream()
-				.map(UUID.class::cast)
+				.map(JpaTeachingChecks::toUuid)
 				.toList();
 	}
 
