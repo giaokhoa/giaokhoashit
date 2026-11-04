@@ -1,8 +1,8 @@
 -- Bản ghi render của các khối công thức: mỗi ảnh công thức sinh ra từ một revision cụ thể của nguồn, kèm
 -- toàn bộ cấu hình render và phiên bản bộ render đã sinh ảnh, để ảnh của một phiên bản đã chốt không bị
--- render lại âm thầm khi bộ render nâng cấp. Cột image_png là nơi giữ byte ảnh cho tới khi nền tệp (bảng
--- blob và cổng lưu trữ của lát nền) sẵn sàng: khi tích hợp, byte chuyển vào blob, cột image_blob_id được
--- điền và image_png được dọn; mọi cột còn lại của bản ghi giữ nguyên. Role runtime được cấp quyền dữ kiện
+-- render lại âm thầm khi bộ render nâng cấp. Byte ảnh không nằm ở bản ghi: mỗi ảnh công thức là một blob
+-- của nền tệp (V92), được chốt vào kho lưu trữ qua cổng của nền tệp khi render xong, và bản ghi chỉ giữ
+-- định danh blob ở cột image_blob_id cùng các số đo hiển thị. Role runtime được cấp quyền dữ kiện
 -- trên các bảng này qua default privileges mà migration V3 đã đặt cho mọi bảng tạo sau.
 create table formula_block (
     id uuid primary key,
@@ -29,7 +29,6 @@ create table formula_render (
     source_hash varchar(64) not null,
     status varchar(16) not null,
     image_blob_id uuid,
-    image_png bytea,
     image_width integer,
     image_height integer,
     baseline_offset integer,
@@ -40,3 +39,6 @@ create table formula_render (
     updated_at timestamp with time zone not null default current_timestamp,
     unique (formula_block_id, source_revision)
 );
+
+alter table formula_render
+    add constraint formula_render_image_blob_fk foreign key (image_blob_id) references file_blob (id);

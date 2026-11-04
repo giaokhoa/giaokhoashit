@@ -39,11 +39,6 @@ public class FormulaRender {
 	@Column(name = "image_blob_id")
 	private UUID imageBlobId;
 
-	// Byte ảnh giữ ngay tại bản ghi cho tới khi nền tệp sẵn sàng; điểm nối tích hợp là chuyển byte này vào
-	// blob và điền image_blob_id, xem migration V94.
-	@Column(name = "image_png")
-	private byte[] imagePng;
-
 	@Column(name = "image_width")
 	private Integer imageWidth;
 
@@ -110,14 +105,6 @@ public class FormulaRender {
 
 	public void setStatus(String status) {
 		this.status = status;
-	}
-
-	public byte[] getImagePng() {
-		return this.imagePng;
-	}
-
-	public void setImagePng(byte[] imagePng) {
-		this.imagePng = imagePng;
 	}
 
 	public UUID getImageBlobId() {

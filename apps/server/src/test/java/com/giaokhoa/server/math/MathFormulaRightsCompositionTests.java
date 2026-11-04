@@ -62,7 +62,7 @@ import com.giaokhoa.server.tenancy.MembershipChecker;
 		"spring.security.oauth2.resourceserver.jwt.issuer-uri=" + MathFormulaRightsCompositionTests.ISSUER,
 		"spring.datasource.url=jdbc:h2:mem:mathrights;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
 		"spring.datasource.username=sa", "spring.datasource.password=",
-		"spring.flyway.locations=classpath:db/migration" })
+		"spring.flyway.locations=classpath:db/migration", "app.files.root=./target/test-files-math-rights" })
 class MathFormulaRightsCompositionTests {
 
 	static final String ISSUER = "http://localhost:8180/realms/giaokhoa";

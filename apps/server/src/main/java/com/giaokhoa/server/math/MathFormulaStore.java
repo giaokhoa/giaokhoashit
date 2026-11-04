@@ -12,6 +12,11 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.giaokhoa.server.access.PartitionSessions;
+import com.giaokhoa.server.files.BlobStorage;
+import com.giaokhoa.server.files.FileBlob;
+import com.giaokhoa.server.files.FileBlobRepository;
+
 // Tầng ghi dữ kiện của lát LaTeX, tách khỏi dịch vụ điều phối để bước render (gọi worker ngoài) không nằm
 // trong bất kỳ giao dịch nào: mỗi phương thức ở đây là một giao dịch ngắn quanh một bước ghi, và việc gắn kết
 // quả render luôn kiểm lại revision tại chính giao dịch gắn.
@@ -22,9 +27,19 @@ class MathFormulaStore {
 
 	private final FormulaRenderRepository renders;
 
-	MathFormulaStore(FormulaBlockRepository blocks, FormulaRenderRepository renders) {
+	private final BlobStorage storage;
+
+	private final FileBlobRepository blobs;
+
+	private final PartitionSessions sessions;
+
+	MathFormulaStore(FormulaBlockRepository blocks, FormulaRenderRepository renders, BlobStorage storage,
+			FileBlobRepository blobs, PartitionSessions sessions) {
 		this.blocks = blocks;
 		this.renders = renders;
+		this.storage = storage;
+		this.blobs = blobs;
+		this.sessions = sessions;
 	}
 
 	@Transactional(readOnly = true)
@@ -125,7 +140,7 @@ class MathFormulaStore {
 	// tất sau khi nguồn đã sửa tiếp không ghi đè được kết quả của revision mới, và bản ghi của nó được đóng
 	// dấu lỗi STALE_REVISION để truy vết thay vì biến mất.
 	@Transactional
-	boolean attachResult(UUID renderId, MathRenderer.RenderedImage image) {
+	boolean attachResult(UUID renderId, MathRenderer.RenderedImage image, String actorSub) {
 		FormulaRender render = this.renders.findById(renderId).orElseThrow();
 		FormulaBlock block = this.blocks.findById(render.getFormulaBlockId()).orElseThrow();
 		if (block.getRevision() != render.getSourceRevision()) {
@@ -136,7 +151,7 @@ class MathFormulaStore {
 			return false;
 		}
 		render.setStatus(FormulaRender.STATUS_READY);
-		render.setImagePng(image.png());
+		render.setImageBlobId(storeImage(block, render, image, actorSub));
 		render.setImageWidth(image.width());
 		render.setImageHeight(image.height());
 		render.setBaselineOffset(image.baselineOffset());
@@ -146,6 +161,57 @@ class MathFormulaStore {
 		render.setUpdatedAt(OffsetDateTime.now());
 		this.renders.save(render);
 		return true;
+	}
+
+	// Ảnh render là một blob của nền tệp: byte được chốt qua cổng lưu trữ ở khoá bất biến do server sinh, và
+	// hàng blob ghi trong phân vùng cá nhân của chủ khối — theo khuôn dịch vụ tệp ghi blob trong phân vùng
+	// của tài nguyên đích, vì người bấm render có thể là biên tập viên được phân công chứ không nhất thiết
+	// là chủ khối. Người tải lên ghi trên blob là chủ khối để truy vết, không mang quyền gì.
+	private UUID storeImage(FormulaBlock block, FormulaRender render, MathRenderer.RenderedImage image,
+			String actorSub) {
+		UUID blobId = UuidV7.generate();
+		String storageKey = "blobs/" + blobId;
+		String stagingKey = this.storage.stage(render.getId(), image.png());
+		try {
+			return this.sessions.inPartition("user:" + block.getOwnerSub(), actorSub, () -> {
+				this.storage.promote(stagingKey, storageKey);
+				FileBlob blob = new FileBlob();
+				blob.setId(blobId);
+				blob.setStorageKey(storageKey);
+				blob.setContentType("image/png");
+				blob.setSizeBytes(image.png().length);
+				blob.setChecksumSha256(bytesHash(image.png()));
+				blob.setWidth(image.width());
+				blob.setHeight(image.height());
+				blob.setStatus(FileBlob.STATUS_READY);
+				blob.setUploadedBySub(block.getOwnerSub());
+				OffsetDateTime now = OffsetDateTime.now();
+				blob.setCreatedAt(now);
+				blob.setUpdatedAt(now);
+				this.blobs.save(blob);
+				return blobId;
+			});
+		}
+		catch (RuntimeException ex) {
+			this.storage.deleteStaged(stagingKey);
+			throw ex;
+		}
+	}
+
+	// Đọc byte của ảnh qua hàng blob trong phân vùng của chủ khối, khi lớp dịch vụ đã quyết quyền trên câu
+	// hỏi: blob không ở trạng thái sẵn sàng (ví dụ đã bị cách ly) thì coi như không có ảnh — cùng khuôn
+	// đường đọc nội dung của dịch vụ tệp.
+	byte[] readImage(FormulaRender render, FormulaBlock block, String actorSub) {
+		if (render.getImageBlobId() == null) {
+			return null;
+		}
+		return this.sessions.inPartition("user:" + block.getOwnerSub(), actorSub, () -> {
+			FileBlob blob = this.blobs.findById(render.getImageBlobId()).orElse(null);
+			if (blob == null || !FileBlob.STATUS_READY.equals(blob.getStatus())) {
+				return null;
+			}
+			return this.storage.read(blob.getStorageKey());
+		});
 	}
 
 	@Transactional
@@ -179,10 +245,12 @@ class MathFormulaStore {
 	}
 
 	static String sourceHash(String source) {
+		return bytesHash((source != null ? source : "").getBytes(StandardCharsets.UTF_8));
+	}
+
+	static String bytesHash(byte[] bytes) {
 		try {
-			byte[] digest = MessageDigest.getInstance("SHA-256")
-				.digest((source != null ? source : "").getBytes(StandardCharsets.UTF_8));
-			return HexFormat.of().formatHex(digest);
+			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
 		}
 		catch (NoSuchAlgorithmException ex) {
 			throw new IllegalStateException("Thiếu thuật toán SHA-256.", ex);

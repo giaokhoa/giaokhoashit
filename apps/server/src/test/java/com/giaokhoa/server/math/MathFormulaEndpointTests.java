@@ -59,7 +59,12 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.giaokhoa.server.files.BlobStorage;
+import com.giaokhoa.server.files.FileBlob;
+import com.giaokhoa.server.files.FileBlobRepository;
 import com.giaokhoa.server.tenancy.MembershipChecker;
+import com.giaokhoa.server.tenancy.TenantContext;
+import com.giaokhoa.server.tenancy.TenantContexts;
 
 // Bộ kiểm của lát LaTeX trên khuôn H2 như các bộ endpoint khác: chuỗi bảo mật thật và tầng dữ kiện thật, chỉ
 // cổng render được thay bằng bản giả lập điều khiển được (độ trễ, lỗi, thứ tự hoàn tất) để các ca đồng thời
@@ -67,7 +72,7 @@ import com.giaokhoa.server.tenancy.MembershipChecker;
 @SpringBootTest(properties = { "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + MathFormulaEndpointTests.ISSUER,
 		"spring.datasource.url=jdbc:h2:mem:mathformula;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
 		"spring.datasource.username=sa", "spring.datasource.password=",
-		"spring.flyway.locations=classpath:db/migration" })
+		"spring.flyway.locations=classpath:db/migration", "app.files.root=./target/test-files-math" })
 class MathFormulaEndpointTests {
 
 	static final String ISSUER = "http://localhost:8180/realms/giaokhoa";
@@ -84,6 +89,12 @@ class MathFormulaEndpointTests {
 
 	@Autowired
 	private FormulaBlockRepository blocks;
+
+	@Autowired
+	private BlobStorage storage;
+
+	@Autowired
+	private FileBlobRepository fileBlobs;
 
 	@MockitoBean
 	private MembershipChecker membershipChecker;
@@ -407,7 +418,7 @@ class MathFormulaEndpointTests {
 		ready.setSourceRevision(0);
 		ready.setSourceHash("");
 		ready.setStatus(FormulaRender.STATUS_READY);
-		ready.setImagePng(FAKE_PNG);
+		ready.setImageBlobId(seedImageBlob("gv-latex-1"));
 		ready.setImageWidth(30);
 		ready.setImageHeight(18);
 		ready.setBaselineOffset(4);
@@ -470,6 +481,44 @@ class MathFormulaEndpointTests {
 
 	private String base(String[] ids) {
 		return "/api/questions/" + ids[0] + "/versions/" + ids[1] + "/formula-blocks";
+	}
+
+	// Ảnh của bản ghi render seed sẵn là một blob thật của nền tệp: byte chốt qua cổng lưu trữ ở khoá bất
+	// biến và hàng blob ghi trong phân vùng cá nhân của chủ khối, đúng hình dạng đường render thật tạo ra.
+	private UUID seedImageBlob(String ownerSub) {
+		UUID blobId = UUID.fromString("01890000-0000-7000-8000-000000000003");
+		String stagingKey = this.storage.stage(blobId, FAKE_PNG);
+		this.storage.promote(stagingKey, "blobs/" + blobId);
+		FileBlob blob = new FileBlob();
+		blob.setId(blobId);
+		blob.setStorageKey("blobs/" + blobId);
+		blob.setContentType("image/png");
+		blob.setSizeBytes(FAKE_PNG.length);
+		blob.setChecksumSha256(sha256Bytes(FAKE_PNG));
+		blob.setWidth(30);
+		blob.setHeight(18);
+		blob.setStatus(FileBlob.STATUS_READY);
+		blob.setUploadedBySub(ownerSub);
+		java.time.OffsetDateTime now = java.time.OffsetDateTime.now();
+		blob.setCreatedAt(now);
+		blob.setUpdatedAt(now);
+		TenantContexts.set(new TenantContext(ownerSub, null, null, List.of(), false, false, "user:" + ownerSub));
+		try {
+			this.fileBlobs.saveAndFlush(blob);
+		}
+		finally {
+			TenantContexts.clear();
+		}
+		return blobId;
+	}
+
+	private String sha256Bytes(byte[] bytes) {
+		try {
+			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+		}
+		catch (NoSuchAlgorithmException ex) {
+			throw new IllegalStateException(ex);
+		}
 	}
 
 	private String[] createQuestion(String teacher) throws Exception {

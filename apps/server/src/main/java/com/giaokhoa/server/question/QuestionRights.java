@@ -24,10 +24,6 @@ public interface QuestionRights {
 
 	String EDIT_DRAFT = "edit_draft";
 
-	String READ_MATH_SOURCE = "read_math_source";
-
-	String EDIT_MATH_SOURCE = "edit_math_source";
-
 	String PUBLISH = "publish";
 
 	// Hai hành động chuyên biệt cho nguồn LaTeX của khối công thức, quyết trên cùng điểm nối quyền này: đọc

@@ -137,7 +137,7 @@ public class MathFormulaService {
 			saved = this.store.updateSource(existing.getId(), request.source(),
 					request.description() != null ? request.description() : existing.getDescription(), display);
 		}
-		renderAndAttach(saved);
+		renderAndAttach(saved, context.sub());
 		return draftView(context, question, version, reload(saved.block()));
 	}
 
@@ -163,7 +163,7 @@ public class MathFormulaService {
 		}
 		MathFormulaStore.SavedSource saved = this.store.authorSource(block.getId(), request.source(),
 				request.description());
-		renderAndAttach(saved);
+		renderAndAttach(saved, context.sub());
 		return draftView(context, question, version, reload(saved.block()));
 	}
 
@@ -178,7 +178,7 @@ public class MathFormulaService {
 		}
 		FormulaRender render = this.store.reopenRender(block.getId());
 		if (!render.ready()) {
-			runRender(block, render);
+			runRender(block, render, context.sub());
 		}
 		return draftView(context, question, version, reload(block));
 	}
@@ -195,10 +195,14 @@ public class MathFormulaService {
 				&& !this.rights.allowed(context, question, version, QuestionRights.VIEW_ANSWER)) {
 			throw QuestionException.notFound();
 		}
-		return this.store.currentRender(block)
+		FormulaRender render = this.store.currentRender(block)
 			.filter(FormulaRender::ready)
-			.map(FormulaRender::getImagePng)
 			.orElseThrow(QuestionException::notFound);
+		byte[] image = this.store.readImage(render, block, context.sub());
+		if (image == null) {
+			throw QuestionException.notFound();
+		}
+		return image;
 	}
 
 	// Cổng phát hành của lát này: mọi khối công thức của phiên bản phải có ảnh sẵn sàng khớp revision hiện
@@ -213,18 +217,18 @@ public class MathFormulaService {
 		}
 	}
 
-	private void renderAndAttach(MathFormulaStore.SavedSource saved) {
+	private void renderAndAttach(MathFormulaStore.SavedSource saved, String actorSub) {
 		FormulaRender render = saved.render();
 		if (render.ready()) {
 			return;
 		}
-		runRender(saved.block(), render);
+		runRender(saved.block(), render, actorSub);
 	}
 
-	private void runRender(FormulaBlock block, FormulaRender render) {
+	private void runRender(FormulaBlock block, FormulaRender render, String actorSub) {
 		try {
 			MathRenderer.RenderedImage image = this.renderer.render(block.getSource(), block.isDisplay());
-			this.store.attachResult(render.getId(), image);
+			this.store.attachResult(render.getId(), image, actorSub);
 		}
 		catch (MathRenderer.MathRenderException ex) {
 			this.store.markFailed(render.getId(), ex.code());
