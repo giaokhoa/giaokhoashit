@@ -426,6 +426,12 @@ class AccessEndpointTests {
 				"org:" + ORG_1_ID, null, "admin-b-gioi-han");
 		UUID copyBV1 = insertVersion(copyB, ORG_2_ID, 1, "admin-b-gioi-han");
 		String memberB = memberToken("hv-b-gioi-han", ALIAS_2, ORG_2_ID, List.of("tenant-member"));
+		// Grant use cho chính thành viên là nguồn hợp lệ để quyết định đi tới bước thu hẹp theo giới hạn của nguồn;
+		// phân công một mình không cấp use theo bảng ở mục 7 của đặc tả.
+		this.jdbcTemplate.update(
+				"insert into resource_grant (id, resource_id, resource_version_id, grantee_type, grantee_user_sub, action, starts_at, grantor_sub, source_partition_key, partition_key) values (?, ?, ?, ?, ?, ?, current_timestamp, ?, ?, ?)",
+				UUID.randomUUID(), copyB, copyBV1, "user", "hv-b-gioi-han", "use", "admin-b-gioi-han", ORG_2_ID,
+				"user:hv-b-gioi-han");
 		assertEquals("USAGE_LIMIT_EXCEEDED", decideReason(memberB, ALIAS_2, copyB, copyBV1, "use"));
 		String teacher = authorToken("gv-gioi-han");
 		UUID plain = insertResource("user:gv-gioi-han", "personal", "user", "gv-gioi-han", null, null, "owned", null,
@@ -482,6 +488,10 @@ class AccessEndpointTests {
 		UUID copyV1 = insertVersion(copy, ORG_1_ID, 1, "gv-nop-ban");
 		assign(admin, ALIAS_1, collectionId, "question", "hv-sua-ban", "bank-editor");
 		assign(admin, ALIAS_1, collectionId, "question", "hv-quan-ly-ban", "bank-manager");
+		MvcResult useGrant = post(admin, ALIAS_1, "/api/access-check/grants",
+				"{\"resourceId\":\"" + copy + "\",\"resourceVersionId\":\"" + copyV1
+						+ "\",\"action\":\"use\",\"granteeType\":\"user\",\"granteeUserSub\":\"hv-sua-ban\"}");
+		assertEquals(200, useGrant.getResponse().getStatus(), body(useGrant));
 		String editor = memberToken("hv-sua-ban", ALIAS_1, ORG_1_ID, List.of("tenant-teacher"));
 		String manager = memberToken("hv-quan-ly-ban", ALIAS_1, ORG_1_ID, List.of("tenant-teacher"));
 		assertFalse(decide(editor, ALIAS_1, copy, copyV1, "view_content"));
@@ -518,14 +528,18 @@ class AccessEndpointTests {
 		UUID receivedId = extract(RECEIVED_RESOURCE_ID, submitted);
 		assign(admin, ALIAS_1, destination, "question", "hv-dung-ban-nhan", "bank-manager");
 		String manager = memberToken("hv-dung-ban-nhan", ALIAS_1, ORG_1_ID, List.of("tenant-teacher"));
-		assertFalse(decide(manager, ALIAS_1, receivedId, null, "use"));
+		UUID receivedV1 = this.jdbcTemplate.queryForObject(
+				"select received_version_id from submission_item where submission_id = ?", UUID.class, submissionId);
+		MvcResult useGrant = post(admin, ALIAS_1, "/api/access-check/grants",
+				"{\"resourceId\":\"" + receivedId + "\",\"resourceVersionId\":\"" + receivedV1
+						+ "\",\"action\":\"use\",\"granteeType\":\"user\",\"granteeUserSub\":\"hv-dung-ban-nhan\"}");
+		assertEquals(200, useGrant.getResponse().getStatus(), body(useGrant));
+		assertFalse(decide(manager, ALIAS_1, receivedId, receivedV1, "use"));
 		MvcResult duplicate = submit(teacher, requestId, resourceId, v1);
 		assertEquals(submissionId, extract(SUBMISSION_ID, duplicate));
 		MvcResult reviewed = post(admin, ALIAS_1, "/api/access-check/submissions/" + submissionId + "/review",
 				"{\"decision\":\"accept\"}");
 		assertEquals(200, reviewed.getResponse().getStatus(), body(reviewed));
-		UUID receivedV1 = this.jdbcTemplate.queryForObject(
-				"select received_version_id from submission_item where submission_id = ?", UUID.class, submissionId);
 		assertTrue(decide(manager, ALIAS_1, receivedId, receivedV1, "use"));
 		assertTrue(decide(teacher, null, resourceId, v1, "view_content"));
 		String owner = this.jdbcTemplate.queryForObject("select owner_user_sub from resource where id = ?",

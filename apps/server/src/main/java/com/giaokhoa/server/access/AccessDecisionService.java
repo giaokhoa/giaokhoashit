@@ -197,7 +197,7 @@ public class AccessDecisionService {
 					}
 				}
 				else if (isCenterMember(context) && context.organizationId().equals(grant.getGranteeOrganizationId())
-						&& grant.getReceivingCollectionId() != null && assignmentCoversOn(context,
+						&& grant.getReceivingCollectionId() != null && assignmentGrantConditionCoversOn(context,
 								grant.getReceivingCollectionId(), resource.getResourceType(), action)) {
 					source = SOURCE_ORG_GRANT;
 					break;
@@ -326,8 +326,8 @@ public class AccessDecisionService {
 				actionGranted = true;
 			}
 		}
-		return actionGranted && licenseAnchorEffective(context, resource, now) && assignmentCoversOn(context,
-				resource.getCollectionId(), resource.getResourceType(), action);
+		return actionGranted && licenseAnchorEffective(context, resource, now) && assignmentGrantConditionCoversOn(
+				context, resource.getCollectionId(), resource.getResourceType(), action);
 	}
 
 	private boolean licenseAnchorEffective(TenantContext context, AccessResource resource, OffsetDateTime now) {
@@ -355,6 +355,28 @@ public class AccessDecisionService {
 						resourceType, context.sub()));
 		for (CollectionAssignment row : rows) {
 			if (AssignmentRole.fromCode(row.getAssignmentRole()).map(role -> role.covers(action)).orElse(false)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Điều kiện phân công ở hai đường giao nhau — grant cho Organization (bước 6 của thuật toán ở mục 8 của đặc
+	 * tả) và điều kiện của bản được cấp phép: hành động do grant xác lập, phân công chỉ là điều kiện bao phủ
+	 * theo {@link AssignmentRole#coversAsGrantCondition(AccessAction)}, không phải nguồn quyền độc lập.
+	 */
+	private boolean assignmentGrantConditionCoversOn(TenantContext context, UUID collectionId, String resourceType,
+			AccessAction action) {
+		if (!isCenterMember(context)) {
+			return false;
+		}
+		List<CollectionAssignment> rows = this.sessions.inPartition(context.organizationId(), context.sub(),
+				() -> this.assignments.findByCollectionIdAndResourceTypeAndAssigneeSubAndRevokedAtIsNull(collectionId,
+						resourceType, context.sub()));
+		for (CollectionAssignment row : rows) {
+			if (AssignmentRole.fromCode(row.getAssignmentRole()).map(role -> role.coversAsGrantCondition(action))
+					.orElse(false)) {
 				return true;
 			}
 		}

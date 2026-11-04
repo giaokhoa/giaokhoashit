@@ -5,13 +5,16 @@ import java.util.Set;
 
 /**
  * Ánh xạ vai phân công thành tập hành động lõi được công nhận trong đúng phạm vi phân công (đúng Organization,
- * đúng bộ sưu tập, đúng loại tài nguyên). Không vai nào gồm {@code view_answer}.
+ * đúng bộ sưu tập, đúng loại tài nguyên), đúng bảng ở mục 7 của đặc tả lõi quyền. Không vai nào gồm
+ * {@code view_answer} và không vai nào gồm {@code use}: nguồn phân công đứng một mình chỉ cấp đúng các hành
+ * động trong bảng này.
  *
  * <p>
- * Không vai nào trong bảng này mang {@code use}: đó là hành động tiêu thụ mà feat sở hữu loại tài nguyên định
- * nghĩa phạm vi cụ thể, nên một phân công còn hiệu lực trên bộ sưu tập và loại tài nguyên tự nó đã là điều kiện
- * bao phủ cho {@code use} khi một nguồn quyền khác (chủ sở hữu, grant) cho phép hành động đó. Mọi hành động còn
- * lại đều phải khớp đúng ánh xạ trong bảng này.
+ * Riêng ở hai đường mà đặc tả dùng phân công làm điều kiện giao — grant cho Organization (bước 6 của thuật toán
+ * quyết định ở mục 8) và điều kiện của bản được cấp phép — hành động do grant xác lập, còn phân công chỉ xác
+ * nhận người gọi có vai trong đúng phạm vi tiếp nhận; ở hai đường đó một phân công còn hiệu lực được coi là bao
+ * phủ cả {@code use}, vì phạm vi cụ thể của {@code use} do feat sở hữu loại tài nguyên định nghĩa trên nền
+ * grant đã cấp. Xem {@link #coversAsGrantCondition(AccessAction)}.
  */
 public enum AssignmentRole {
 
@@ -38,7 +41,16 @@ public enum AssignmentRole {
 	}
 
 	public boolean covers(AccessAction action) {
-		return action == AccessAction.USE || this.actions.contains(action);
+		return this.actions.contains(action);
+	}
+
+	/**
+	 * Điều kiện bao phủ khi phân công là vế giao của một grant: ngoài các hành động trong bảng ánh xạ, một phân
+	 * công còn hiệu lực trong đúng phạm vi cũng bao phủ {@code use} — hành động này do grant xác lập, không do
+	 * phân công tự cấp. Chỉ dùng ở đường grant cho Organization và điều kiện của bản được cấp phép.
+	 */
+	public boolean coversAsGrantCondition(AccessAction action) {
+		return action == AccessAction.USE || covers(action);
 	}
 
 	public static Optional<AssignmentRole> fromCode(String code) {
