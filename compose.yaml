@@ -168,15 +168,14 @@ services:
     environment:
       OIDC_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-https://auth.fuckr.net/realms/giaokhoa}
       SERVER_PORT: 8081
-      # DataSource của server (Spring Boot bind SPRING_DATASOURCE_* vào spring.datasource.*): lấy từ cùng bộ biến stack
-      # của service postgres, vì Flyway của server sở hữu schema của nó trong chính database nghiệp vụ này.
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-lms}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Can dat POSTGRES_PASSWORD trong file .env}
-      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
-      SPRING_FLYWAY_BASELINE_VERSION: "0"
+      # DataSource của server (Spring Boot bind SPRING_DATASOURCE_* vào spring.datasource.*): trỏ vào PostgreSQL riêng
+      # của server (service server-db ở dưới) thay vì dùng chung database nghiệp vụ với hệ cũ — hai phía tách dữ kiện
+      # để chuyển đổi dần độc lập, và schema của server không còn làm lệch hậu kiểm số bảng của bước migrate phía hệ cũ.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://server-db:5432/lms_server
+      SPRING_DATASOURCE_USERNAME: lms_server
+      SPRING_DATASOURCE_PASSWORD: ${SERVER_DB_PASSWORD:?Can dat SERVER_DB_PASSWORD trong file .env}
     depends_on:
-      postgres:
+      server-db:
         condition: service_healthy
     healthcheck:
       # Image JRE không có curl: thăm health bằng Bash /dev/tcp như
@@ -186,6 +185,28 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
+
+  # PostgreSQL riêng của apps/server (issue #53): dữ kiện của server tách khỏi database nghiệp vụ của hệ cũ để hai
+  # phía chuyển đổi dần độc lập — dùng chung database làm Flyway của server tạo bảng ngay trong schema mà bước
+  # migrate của hệ cũ hậu kiểm số đếm, và deploy gãy ở khâu hậu kiểm đó.
+  server-db:
+    image: postgres:18.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lms_server
+      POSTGRES_USER: lms_server
+      # Một biến bí mật duy nhất cho cả hai phía của cùng một mật khẩu: POSTGRES_PASSWORD ở đây (phía server-db) và
+      # SPRING_DATASOURCE_PASSWORD của service server (phía client) cùng nội suy từ SERVER_DB_PASSWORD của môi trường
+      # triển khai.
+      POSTGRES_PASSWORD: ${SERVER_DB_PASSWORD:?Can dat SERVER_DB_PASSWORD trong file .env}
+    volumes:
+      # Bố cục PostgreSQL 18: mount tại /var/lib/postgresql như service postgres (xem ghi chú ở service đó).
+      - server-db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lms_server -d lms_server"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   worker:
     build:
@@ -549,6 +570,9 @@ volumes:
   # Dữ kiện PostgreSQL riêng của Keycloak (issue #704) — xem
   # service kc-db trong khối services.
   keycloak-db-data:
+  # Dữ kiện PostgreSQL riêng của apps/server (issue #53) — xem
+  # service server-db trong khối services.
+  server-db-data:
 
 networks:
   # Mạng riêng của cặp Keycloak (issue #704): chỉ kc-db và
