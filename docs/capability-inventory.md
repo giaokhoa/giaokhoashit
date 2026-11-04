@@ -14,7 +14,7 @@ Kiểm kê toàn bộ capability của engine quyết quyền tại head. Nguồ
 | Nhóm resource (diện `area` — phần trước dấu `:` của tên capability) | **38** | Khớp con số trong đặc tả (38) — không có diff |
 | Tên capability trùng lặp | 0 | 124 tên phân biệt |
 | Component khai báo trong sổ đăng ký | 37 | Khác số nhóm resource: `core_course` gánh hai diện `course` và `category`; `core_message` gánh `site` (một phần) và `moderation` — nhóm resource tính theo diện `area`, không tính theo component |
-| Role mặc định được seed | 7 | `manager`, `coursecreator`, `editingteacher`, `teacher`, `student`, `guest`, `user` (archetype kiểu Moodle — mô hình đích một vai chính xem hợp đồng) |
+| Role mặc định được seed | 7 | `manager`, `coursecreator`, `editingteacher`, `teacher`, `student`, `guest`, `user` (archetype kiểu Moodle) |
 | Capability đã đăng ký nhưng **chưa có điểm gác nào trong mã** | 6 | Xem mục 5 |
 
 Số capability theo nhóm resource: `site` 3, `tenant` 2, `user` 5,
@@ -57,7 +57,7 @@ context** (khoá, lớp, module, bank — quyền tính trên cây context)
 khác **resource hệ thống** (cấu hình site, webservice, backup… —
 quyền tại context hệ thống/tenant), và khác **scope OAuth của MCP**
 (`lms.questions.*`, `lms.banks.contribute` — không phải capability;
-mỗi tool MCP vẫn kiểm capability sau khi qua scope, xem hợp đồng).
+mỗi tool MCP vẫn kiểm capability sau khi qua scope).
 
 ## 3. Cách đọc bảng kiểm kê (Phụ lục A)
 
@@ -67,7 +67,7 @@ mỗi tool MCP vẫn kiểm capability sau khi qua scope, xem hợp đồng).
   `CAP_ALLOW` tại context hệ thống (`ALL_STAFF` trong mã = manager,
   coursecreator, editingteacher, teacher). Đây là mặc định khởi
   điểm, không phải kết quả quyết quyền cuối: ghi đè tại context con
-  và gán vai thật quyết định kết quả theo oracle.
+  và gán vai thật quyết định kết quả cuối.
 - **Điểm gác trong mã**: các file (ngoài sổ đăng ký và file spec)
   nhắc tới capability — gồm cổng controller (decorator
   `@RequireCapability`, ghi chú "cổng controller") và các điểm kiểm
@@ -102,17 +102,16 @@ mỗi tool MCP vẫn kiểm capability sau khi qua scope, xem hợp đồng).
   hình: quyết toán thanh toán ở
   `apps/worker/src/worker-payment-settlement.service.ts` ghi rõ
   không kiểm lại capability của actor, tin vào cổng `enrol:manage`
-  phía API). Đây là quy ước hiện tại được kiểm kê nguyên trạng;
-  hợp đồng đích giữ kiểm tra nghiệp vụ trong giao dịch ghi ở phía
-  API.
+  phía API). Đây là quy ước hiện tại được kiểm kê nguyên trạng: kiểm
+  tra nghiệp vụ nằm trong giao dịch ghi ở phía API.
 
 ## 5. Capability đã đăng ký nhưng chưa có điểm gác
 
 Sáu capability dưới đây chỉ tồn tại trong sổ đăng ký, **không file
 nào trong `apps/api`/`apps/worker`/`apps/web` kiểm tra chúng** tại
 head. Chúng vẫn được seed, vẫn xuất hiện trong ảnh chụp quyền và
-vẫn tính trong oracle — nhưng không cổng nghiệp vụ nào dùng chúng
-làm điều kiện:
+vẫn được tính khi phân giải quyền — nhưng không cổng nghiệp vụ nào
+dùng chúng làm điều kiện:
 
 | Capability | Loại | Cấp | Component |
 | --- | --- | --- | --- |
@@ -124,7 +123,7 @@ làm điều kiện:
 | `privacy:request` | write | 30 | `core_privacy` |
 
 Ghi nhận để các việc sau quyết định (gắn điểm gác thật hoặc bỏ
-khỏi sổ đăng ký kèm cập nhật spec đếm); việc hợp đồng này **không
+khỏi sổ đăng ký kèm cập nhật spec đếm); lượt kiểm kê này **không
 đổi tên, không xoá** capability nào.
 
 ## Phụ lục A — Bảng kiểm kê 124 capability
