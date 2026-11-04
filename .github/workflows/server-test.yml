@@ -15,6 +15,19 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-java@v6.1.0
@@ -22,28 +35,10 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-      - name: Install cloudflared
-        run: |
-          curl -fsSL -o "$RUNNER_TEMP/cloudflared" https://github.com/cloudflare/cloudflared/releases/download/2026.10.7/cloudflared-linux-amd64
-          sudo install -m 0755 "$RUNNER_TEMP/cloudflared" /usr/local/bin/cloudflared
-      - name: Open the test-pg bridge and wait for its port
-        run: |
-          cloudflared access tcp --hostname test-pg.fuckr.net --url 127.0.0.1:5434 > "$RUNNER_TEMP/cloudflared.log" 2>&1 &
-          for attempt in $(seq 1 30); do
-            if (exec 3<>/dev/tcp/127.0.0.1/5434) 2>/dev/null; then
-              exec 3>&- 3<&-
-              echo "test-pg bridge is ready on 127.0.0.1:5434"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "::error::test-pg bridge did not become ready within 60 seconds"
-          cat "$RUNNER_TEMP/cloudflared.log"
-          exit 1
       - name: Run apps/server tests
         working-directory: apps/server
         env:
-          LMS_TEST_PG_URL: jdbc:postgresql://127.0.0.1:5434
-          LMS_TEST_PG_USER: testpg
-          LMS_TEST_PG_PASSWORD: ${{ secrets.LMS_TEST_PG_PASSWORD }}
+          LMS_TEST_PG_URL: jdbc:postgresql://127.0.0.1:5432
+          LMS_TEST_PG_USER: postgres
+          LMS_TEST_PG_PASSWORD: postgres
         run: ./mvnw -B -ntp test
