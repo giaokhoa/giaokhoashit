@@ -83,9 +83,12 @@ public class QuestionService {
 
 	private final ObjectProvider<QuestionPublishGate> publishGates;
 
+	private final List<VersionPublishCheck> publishChecks;
+
 	public QuestionService(QuestionBankRepository banks, QuestionRepository questions,
 			QuestionVersionRepository versions, BankEntryRepository entries, QuestionVersionBlockRepository blocks,
-			QuestionRights rights, ObjectMapper objectMapper, ObjectProvider<QuestionPublishGate> publishGates) {
+			QuestionRights rights, ObjectMapper objectMapper, ObjectProvider<QuestionPublishGate> publishGates,
+			List<VersionPublishCheck> publishChecks) {
 		this.banks = banks;
 		this.questions = questions;
 		this.versions = versions;
@@ -94,6 +97,7 @@ public class QuestionService {
 		this.rights = rights;
 		this.objectMapper = objectMapper;
 		this.publishGates = publishGates;
+		this.publishChecks = publishChecks;
 	}
 
 	// Tài nguyên do giáo viên soạn mặc định thuộc workspace cá nhân của chính tài khoản đó: chủ sở hữu luôn lấy
@@ -227,6 +231,9 @@ public class QuestionService {
 		}
 		if (version.locked()) {
 			throw QuestionException.stateConflict("Phiên bản đã phát hành và đã khoá.");
+		}
+		for (VersionPublishCheck check : this.publishChecks) {
+			check.checkPublishable(version);
 		}
 		validateForPublish(version);
 		for (QuestionPublishGate gate : this.publishGates) {

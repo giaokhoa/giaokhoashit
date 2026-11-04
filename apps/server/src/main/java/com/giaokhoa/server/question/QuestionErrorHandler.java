@@ -7,7 +7,9 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice(basePackages = "com.giaokhoa.server.question")
+// Package math của lát LaTeX dùng chung hợp đồng lỗi này vì các thao tác của nó đứng trên đúng tài nguyên
+// câu hỏi và ném cùng QuestionException; không mở rộng thì lỗi của lát đó rơi về 500 thay vì mã hợp đồng.
+@RestControllerAdvice(basePackages = { "com.giaokhoa.server.question", "com.giaokhoa.server.math" })
 public class QuestionErrorHandler {
 
 	public record ErrorBody(String code, String message) {
