@@ -132,6 +132,9 @@ public class AccessDecisionService {
 	}
 
 	public Decision decide(TenantContext context, UUID resourceId, UUID versionId, AccessAction action) {
+		if (action == AccessAction.READ_MATH_SOURCE || action == AccessAction.EDIT_MATH_SOURCE) {
+			return decideMathSource(context, resourceId, versionId, action, false);
+		}
 		Located located = locate(context, resourceId);
 		if (located == null) {
 			return deny(REASON_NOT_FOUND);
@@ -209,6 +212,79 @@ public class AccessDecisionService {
 			return deny(REASON_NO_SOURCE);
 		}
 		return narrow(context, resource, version, action, source, now);
+	}
+
+	/**
+	 * Quyết định hai hành động chuyên biệt trên nguồn LaTeX của một khối công thức. Nguồn quyền chỉ đến từ chủ sở
+	 * hữu hiện hành, quản trị nền tảng trên tài nguyên hệ thống, hoặc phân công biên tập (vai editor) của trung
+	 * tâm sở hữu — không bao giờ từ grant chia sẻ, không từ vai quản trị trung tâm đứng một mình và không từ tư
+	 * cách người tạo hay người tải tệp lên. Khi khối nằm trong phần đáp án hay lời giải ({@code answerArea}), quyết
+	 * định còn phải kết hợp điều kiện {@code view_answer} trên đúng tài nguyên và phiên bản đó.
+	 */
+	public Decision decideMathSource(TenantContext context, UUID resourceId, UUID versionId, AccessAction action,
+			boolean answerArea) {
+		if (action != AccessAction.READ_MATH_SOURCE && action != AccessAction.EDIT_MATH_SOURCE) {
+			throw new IllegalArgumentException("decideMathSource chỉ quyết hai hành động nguồn LaTeX: " + action);
+		}
+		Located located = locate(context, resourceId);
+		if (located == null) {
+			return deny(REASON_NOT_FOUND);
+		}
+		if (located.viaGrant()) {
+			return deny(REASON_NO_SOURCE);
+		}
+		AccessResource resource = located.resource();
+		ResourceVersion version = null;
+		if (versionId != null) {
+			version = this.sessions.inPartition(located.partitionKey(), context.sub(),
+					() -> this.versions.findByIdAndResourceId(versionId, resourceId).orElse(null));
+			if (version == null) {
+				return deny(REASON_VERSION_MISMATCH);
+			}
+		}
+		String source = null;
+		if (AccessResource.WORKSPACE_PERSONAL.equals(resource.getWorkspaceKind())
+				&& context.sub().equals(resource.getOwnerUserSub())) {
+			source = SOURCE_OWNER;
+		}
+		else if (AccessResource.WORKSPACE_SYSTEM.equals(resource.getWorkspaceKind()) && context.platformAdmin()) {
+			source = SOURCE_PLATFORM_ADMIN;
+		}
+		else if (AccessResource.OWNER_ORGANIZATION.equals(resource.getOwnerType())
+				&& AccessResource.CUSTODY_OWNED.equals(resource.getCustodyKind()) && isCenterMember(context)
+				&& context.organizationId().equals(resource.getOwnerOrganizationId())
+				&& editorAssignmentCovers(context, resource)) {
+			source = SOURCE_ASSIGNMENT;
+		}
+		if (source == null) {
+			return deny(REASON_NO_SOURCE);
+		}
+		if (answerArea && !decide(context, resourceId, versionId, AccessAction.VIEW_ANSWER).allowed()) {
+			return deny(REASON_NO_SOURCE);
+		}
+		if (action == AccessAction.EDIT_MATH_SOURCE && version != null
+				&& (ResourceVersion.STATUS_PUBLISHED.equals(version.getStatus()) || version.getLockedAt() != null)) {
+			return new Decision(false, REASON_VERSION_LOCKED, source);
+		}
+		UsageLimits limits = UsageLimits.parse(resource.getInheritedUsageLimits());
+		if (limits.restrictsActions() && !limits.actionCodes().contains(action.code())) {
+			return new Decision(false, REASON_USAGE_LIMIT, source);
+		}
+		return new Decision(true, REASON_ALLOWED, source);
+	}
+
+	private boolean editorAssignmentCovers(TenantContext context, AccessResource resource) {
+		UUID collectionKey = (resource.getCollectionId() != null) ? resource.getCollectionId() : resource.getId();
+		List<CollectionAssignment> rows = this.sessions.inPartition(context.organizationId(), context.sub(),
+				() -> this.assignments.findByCollectionIdAndResourceTypeAndAssigneeSubAndRevokedAtIsNull(collectionKey,
+						resource.getResourceType(), context.sub()));
+		for (CollectionAssignment row : rows) {
+			AssignmentRole role = AssignmentRole.fromCode(row.getAssignmentRole()).orElse(null);
+			if (role == AssignmentRole.BANK_EDITOR || role == AssignmentRole.RESOURCE_EDITOR) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

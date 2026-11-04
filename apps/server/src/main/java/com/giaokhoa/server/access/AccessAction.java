@@ -20,7 +20,9 @@ public enum AccessAction {
 	REVIEW("review"),
 	PUBLISH("publish"),
 	MANAGE_COLLECTION("manage_collection"),
-	MANAGE_ASSIGNMENT("manage_assignment");
+	MANAGE_ASSIGNMENT("manage_assignment"),
+	READ_MATH_SOURCE("read_math_source"),
+	EDIT_MATH_SOURCE("edit_math_source");
 
 	private final String code;
 
