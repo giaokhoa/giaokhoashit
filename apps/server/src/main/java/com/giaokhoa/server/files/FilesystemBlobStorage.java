@@ -25,7 +25,9 @@ public class FilesystemBlobStorage implements BlobStorage {
 	private final Path blobDir;
 
 	public FilesystemBlobStorage(@Value("${app.files.root:./data/server-files}") String root) {
-		Path base = Path.of(root);
+		// Chuẩn hoá tuyệt đối ngay tại gốc: bước resolve so sánh tiền tố thư mục trên đường đã chuẩn hoá, một
+		// gốc còn chứa thành phần tương đối như "./" sẽ làm mọi khoá bị phán là thoát khỏi thư mục kho.
+		Path base = Path.of(root).toAbsolutePath().normalize();
 		this.stagingDir = base.resolve("staging");
 		this.blobDir = base.resolve("blobs");
 		try {

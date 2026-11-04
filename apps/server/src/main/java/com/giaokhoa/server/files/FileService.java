@@ -16,6 +16,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.giaokhoa.server.access.AccessAction;
 import com.giaokhoa.server.access.AccessDecisionService;
+import com.giaokhoa.server.access.ResourceGrant;
+import com.giaokhoa.server.access.ResourceGrantRepository;
 import com.giaokhoa.server.access.AccessDecisionService.Decision;
 import com.giaokhoa.server.access.AccessDecisionService.Located;
 import com.giaokhoa.server.access.AccessException;
@@ -69,6 +71,8 @@ public class FileService {
 
 	private final AccessDecisionService decisions;
 
+	private final ResourceGrantRepository grants;
+
 	private final PartitionSessions sessions;
 
 	private final BlobStorage storage;
@@ -86,7 +90,8 @@ public class FileService {
 	private final long maxWorkspaceBytes;
 
 	public FileService(FileBlobRepository blobs, UploadSessionRepository sessionsRepo, FileLinkRepository links,
-			FileAuditLogRepository audit, AccessDecisionService decisions, PartitionSessions sessions,
+			FileAuditLogRepository audit, AccessDecisionService decisions, ResourceGrantRepository grants,
+			PartitionSessions sessions,
 			BlobStorage storage, ImageVerifier verifier,
 			@Value("${app.files.max-file-size-bytes:5242880}") long maxFileSizeBytes,
 			@Value("${app.files.max-megapixels:20000000}") long maxMegapixels,
@@ -98,6 +103,7 @@ public class FileService {
 		this.links = links;
 		this.audit = audit;
 		this.decisions = decisions;
+		this.grants = grants;
 		this.sessions = sessions;
 		this.storage = storage;
 		this.verifier = verifier;
@@ -423,7 +429,32 @@ public class FileService {
 				return new LocatedLink(link, partition);
 			}
 		}
+		// Hàng grant của người gọi nằm ở phân vùng bên nhận và mang khoá phân vùng nguồn của tài nguyên — cùng
+		// cơ chế locate của lõi quyền: liên kết của một tài nguyên được grant nằm ở phân vùng nguồn đó, không
+		// nằm ở các phân vùng của chính người gọi.
+		java.util.LinkedHashSet<String> sourcePartitions = new java.util.LinkedHashSet<>();
+		for (ResourceGrant grant : callerGrants(context)) {
+			sourcePartitions.add(grant.getSourcePartitionKey());
+		}
+		for (String partition : sourcePartitions) {
+			FileLink link = this.sessions.inPartition(partition, context.sub(),
+					() -> this.links.findById(linkId).orElse(null));
+			if (link != null) {
+				return new LocatedLink(link, partition);
+			}
+		}
 		throw AccessException.notFound("Không tìm thấy liên kết tệp");
+	}
+
+	private java.util.List<ResourceGrant> callerGrants(TenantContext context) {
+		java.util.List<ResourceGrant> result = new java.util.ArrayList<>();
+		result.addAll(this.sessions.inPartition("user:" + context.sub(), context.sub(),
+				() -> this.grants.findByGranteeUserSub(context.sub())));
+		if (context.organizationId() != null && !context.guest()) {
+			result.addAll(this.sessions.inPartition(context.organizationId(), context.sub(),
+					() -> this.grants.findByGranteeOrganizationId(context.organizationId())));
+		}
+		return result;
 	}
 
 	private LocatedBlob locateBlob(TenantContext context, UUID blobId) {

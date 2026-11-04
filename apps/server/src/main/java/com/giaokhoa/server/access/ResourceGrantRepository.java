@@ -9,4 +9,8 @@ public interface ResourceGrantRepository extends JpaRepository<ResourceGrant, UU
 
 	List<ResourceGrant> findByResourceId(UUID resourceId);
 
+	List<ResourceGrant> findByGranteeUserSub(String granteeUserSub);
+
+	List<ResourceGrant> findByGranteeOrganizationId(String granteeOrganizationId);
+
 }

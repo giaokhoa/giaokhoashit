@@ -176,10 +176,11 @@ public class QuestionBlockService {
 		return new DraftBlocksView(question.getId(), version.getId(), version.getRevision(), view);
 	}
 
+	// Mặt hiển thị không mang dạng khối: người xem không phân biệt được khối có-nguồn với khối chỉ-có-ảnh, cả
+	// hai đều chỉ là ảnh — và không có trường nguồn ở bất kỳ dạng nào.
 	private static DisplayBlock displayBlock(QuestionVersionBlock block) {
 		return new DisplayBlock(block.getId(), block.getPart(), block.getChoiceId(), block.getKind(),
-				block.getTextContent(), block.getFormulaForm(), block.getRenderState(), imageRef(block),
-				block.getDescription());
+				block.getTextContent(), null, block.getRenderState(), imageRef(block), block.getDescription());
 	}
 
 	private static ImageRef imageRef(QuestionVersionBlock block) {
