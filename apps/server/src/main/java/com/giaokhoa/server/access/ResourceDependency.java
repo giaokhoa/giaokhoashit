@@ -88,10 +88,6 @@ public class ResourceDependency {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public OffsetDateTime getCreatedAt() {
 		return this.createdAt;
 	}

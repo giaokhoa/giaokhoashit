@@ -73,10 +73,6 @@ public class CollectionAssignment {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public UUID getCollectionId() {
 		return this.collectionId;
 	}

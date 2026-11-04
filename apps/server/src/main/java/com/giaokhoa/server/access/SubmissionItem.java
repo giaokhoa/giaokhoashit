@@ -63,10 +63,6 @@ public class SubmissionItem {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public UUID getSourceResourceId() {
 		return this.sourceResourceId;
 	}

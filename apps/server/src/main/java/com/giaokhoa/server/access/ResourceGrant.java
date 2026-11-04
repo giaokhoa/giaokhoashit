@@ -204,10 +204,6 @@ public class ResourceGrant {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public OffsetDateTime getRevokedAt() {
 		return this.revokedAt;
 	}

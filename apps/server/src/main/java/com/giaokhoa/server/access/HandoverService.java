@@ -93,7 +93,6 @@ public class HandoverService {
 			HandoverRequest row = new HandoverRequest();
 			row.setId(UUID.randomUUID());
 			row.setOrganizationId(context.organizationId());
-			row.setPartitionKey(context.organizationId());
 			row.setRequestedTeacherSub(request.requestedTeacherSub());
 			row.setResourceTypes(request.resourceTypes());
 			row.setDestinationCollectionId(request.destinationCollectionId());
@@ -173,7 +172,6 @@ public class HandoverService {
 			Submission submission = new Submission();
 			submission.setId(UUID.randomUUID());
 			submission.setHandoverRequestId(requestId);
-			submission.setPartitionKey(partition);
 			submission.setSubmitterSub(context.sub());
 			submission.setSubmittedAt(now);
 			submission.setCreatedAt(now);
@@ -188,7 +186,6 @@ public class HandoverService {
 				received.setOwnerType(AccessResource.OWNER_ORGANIZATION);
 				received.setOwnerOrganizationId(partition);
 				received.setCollectionId(target.getDestinationCollectionId());
-				received.setPartitionKey(partition);
 				received.setCustodyKind(AccessResource.CUSTODY_OWNED);
 				received.setSourceResourceId(item.source().getId());
 				received.setSourceVersionId(item.sourceVersion().getId());
@@ -204,7 +201,6 @@ public class HandoverService {
 				SubmissionItem row = new SubmissionItem();
 				row.setId(UUID.randomUUID());
 				row.setSubmissionId(submission.getId());
-				row.setPartitionKey(partition);
 				row.setSourceResourceId(item.source().getId());
 				row.setSourceVersionId(item.sourceVersion().getId());
 				row.setReceivedResourceId(received.getId());

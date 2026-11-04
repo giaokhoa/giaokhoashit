@@ -158,10 +158,6 @@ public class AccessResource {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public String getCustodyKind() {
 		return this.custodyKind;
 	}

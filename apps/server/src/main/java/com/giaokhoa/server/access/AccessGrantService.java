@@ -147,7 +147,6 @@ public class AccessGrantService {
 		grant.setRevocationTerms(request.revocationTerms());
 		grant.setGrantorSub(context.sub());
 		grant.setSourcePartitionKey(located.partitionKey());
-		grant.setPartitionKey(granteePartition);
 		grant.setCreatedAt(now);
 		grant.setUpdatedAt(now);
 		this.sessions.inPartition(granteePartition, context.sub(), () -> this.grants.save(grant));

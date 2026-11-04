@@ -76,10 +76,6 @@ public class HandoverRequest {
 		return this.partitionKey;
 	}
 
-	public void setPartitionKey(String partitionKey) {
-		this.partitionKey = partitionKey;
-	}
-
 	public String getRequestedTeacherSub() {
 		return this.requestedTeacherSub;
 	}

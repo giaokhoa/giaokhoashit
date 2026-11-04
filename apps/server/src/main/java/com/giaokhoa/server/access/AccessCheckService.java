@@ -100,6 +100,7 @@ public class AccessCheckService {
 		resource.setCreatedAt(now);
 		resource.setUpdatedAt(now);
 		boolean withVersion;
+		String partition;
 		String workspace = (request.workspace() != null) ? request.workspace() : "";
 		switch (workspace) {
 			case AccessResource.WORKSPACE_PERSONAL -> {
@@ -117,7 +118,7 @@ public class AccessCheckService {
 				resource.setWorkspaceKind(AccessResource.WORKSPACE_PERSONAL);
 				resource.setOwnerType(AccessResource.OWNER_USER);
 				resource.setOwnerUserSub(context.sub());
-				resource.setPartitionKey("user:" + context.sub());
+				partition = "user:" + context.sub();
 				resource.setCollectionId(request.collectionId());
 				withVersion = true;
 			}
@@ -128,7 +129,7 @@ public class AccessCheckService {
 				resource.setWorkspaceKind(AccessResource.WORKSPACE_CENTER);
 				resource.setOwnerType(AccessResource.OWNER_ORGANIZATION);
 				resource.setOwnerOrganizationId(context.organizationId());
-				resource.setPartitionKey(context.organizationId());
+				partition = context.organizationId();
 				if (request.collectionId() == null) {
 					if (!this.decisions.isTenantAdmin(context)) {
 						throw AccessException
@@ -152,14 +153,14 @@ public class AccessCheckService {
 				}
 				resource.setWorkspaceKind(AccessResource.WORKSPACE_SYSTEM);
 				resource.setOwnerType(AccessResource.OWNER_PLATFORM);
-				resource.setPartitionKey("system");
+				partition = "system";
 				withVersion = true;
 			}
 			default -> throw AccessException.validation("workspace không hợp lệ");
 		}
 		ResourceVersion version1 = withVersion ? newVersion(resource, 1, request.contentHash(), context.sub(), now)
 				: null;
-		this.sessions.inPartition(resource.getPartitionKey(), context.sub(), () -> {
+		this.sessions.inPartition(partition, context.sub(), () -> {
 			this.resources.save(resource);
 			if (version1 != null) {
 				this.versions.save(version1);
@@ -242,7 +243,6 @@ public class AccessCheckService {
 			CollectionAssignment row = new CollectionAssignment();
 			row.setId(UUID.randomUUID());
 			row.setOrganizationId(context.organizationId());
-			row.setPartitionKey(context.organizationId());
 			row.setCollectionId(request.collectionId());
 			row.setResourceType(request.resourceType());
 			row.setAssigneeSub(request.assigneeSub());
@@ -288,7 +288,6 @@ public class AccessCheckService {
 		ResourceVersion version = new ResourceVersion();
 		version.setId(UUID.randomUUID());
 		version.setResourceId(resource.getId());
-		version.setPartitionKey(resource.getPartitionKey());
 		version.setVersionNumber(number);
 		version.setStatus(ResourceVersion.STATUS_DRAFT);
 		version.setContentHash(contentHash);
