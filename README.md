@@ -177,14 +177,15 @@ hiệu "Huy hiệu khởi đầu" đã trao cho student1, và một sự kiện 
 khoá học vào 09:00 ngày mai.
 
 > **Mô hình xác thực và quyền (đích):** Keycloak 26.8.1 là hệ xác
-> thực duy nhất theo hợp đồng ở `docs/keycloak-auth-contract.md` —
-> mỗi trung tâm một realm, tài khoản mẫu ở trên thuộc realm của
-> trung tâm chứa dữ liệu mẫu (không phải tài khoản platform), phụ
-> huynh chỉ đọc thông báo lớp/khoá của con và nhắn giáo viên có
-> quan hệ hợp lệ, **không xem điểm/bài làm**. Trạng thái hiện tại:
-> **chưa triển khai runtime** — đăng nhập vẫn là JWT tự viết +
-> Better Auth và bề mặt phụ huynh hiện tại còn hiển thị điểm đã
-> công bố của con; các sai lệch được ghi ở
+> thực duy nhất — một realm duy nhất `giaokhoa`, mỗi trung tâm là
+> một Organization trong realm, cấu trúc realm được tạo tay trong
+> Admin Console (xem `keycloak/README.md`). Tài khoản mẫu ở trên
+> thuộc Organization của trung tâm chứa dữ liệu mẫu (không phải
+> tài khoản platform), phụ huynh chỉ đọc thông báo lớp/khoá của con
+> và nhắn giáo viên có quan hệ hợp lệ, **không xem điểm/bài làm**.
+> Trạng thái hiện tại: **chưa triển khai runtime** — đăng nhập vẫn
+> là JWT tự viết + Better Auth và bề mặt phụ huynh hiện tại còn
+> hiển thị điểm đã công bố của con; các sai lệch được ghi ở
 > `docs/access-verification-fixtures.md`.
 
 Seed cũng nạp **toàn bộ chương trình GDPT 2018 cấp quốc gia**: cả 21
