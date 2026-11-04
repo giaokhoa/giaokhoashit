@@ -37,6 +37,11 @@ các phần đó thuộc các lát cắt tiếp theo.
 |                              |          | relaxed binding; không ghi sẵn địa chỉ của bất kỳ môi trường nào.       |
 | `SPRING_DATASOURCE_USERNAME` | Có       | Tên đăng nhập database của ứng dụng.                                    |
 | `SPRING_DATASOURCE_PASSWORD` | Có       | Mật khẩu database của ứng dụng.                                         |
+| `KEYCLOAK_MEMBERSHIP_CLIENT_SECRET` | Không | Secret của client `lms-api`: server lấy token Client          |
+|                              |          | Credentials bằng secret này để đọc Admin REST API khi kiểm membership   |
+|                              |          | hiện hành trước khi mở chế độ trung tâm. Thiếu biến này thì các request |
+|                              |          | mở chế độ trung tâm bị từ chối (fail-closed) thay vì tin claim trong    |
+|                              |          | token; các chế độ còn lại không bị ảnh hưởng.                           |
 
 ## Chạy tại local
 

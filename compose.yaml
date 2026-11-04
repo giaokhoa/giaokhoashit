@@ -182,6 +182,10 @@ services:
       # TRONG container: nội suy compose ở dòng trên chỉ đưa giá trị vào SPRING_DATASOURCE_PASSWORD chứ không tạo
       # biến này trong container, thiếu dòng này là ứng dụng không khởi động được vì không resolve được placeholder.
       SERVER_DB_APP_PASSWORD: ${SERVER_DB_APP_PASSWORD:?Can dat SERVER_DB_APP_PASSWORD trong file .env}
+      # Secret của client lms-api: server dùng nó lấy token Client Credentials để đọc Admin REST API khi kiểm
+      # membership hiện hành trước khi mở chế độ trung tâm; thiếu secret thì các request đó bị từ chối
+      # (fail-closed) thay vì tin claim trong token.
+      KEYCLOAK_MEMBERSHIP_CLIENT_SECRET: ${KEYCLOAK_MEMBERSHIP_CLIENT_SECRET:?Can dat KEYCLOAK_MEMBERSHIP_CLIENT_SECRET trong file .env}
       SPRING_FLYWAY_URL: jdbc:postgresql://server-db:5432/lms_server
       SPRING_FLYWAY_USER: lms_server
       SPRING_FLYWAY_PASSWORD: ${SERVER_DB_PASSWORD:?Can dat SERVER_DB_PASSWORD trong file .env}
