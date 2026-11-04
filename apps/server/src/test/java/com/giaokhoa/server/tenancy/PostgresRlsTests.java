@@ -37,12 +37,11 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -63,12 +62,15 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 // Lớp RLS và việc tách role runtime là cơ chế riêng của PostgreSQL nên bộ test H2 không thực thi được; bộ này
-// chạy ứng dụng trên PostgreSQL thật (image postgres:18.6 như stack) do Testcontainers dựng. Topology nối đúng
-// mô hình chạy thật: Flyway chạy bằng tài khoản quản trị của container (vai lms_server), datasource của ứng dụng
-// chạy bằng role runtime lms_server_app mà migration V3 tạo. Môi trường không có Docker thì toàn bộ lớp bị bỏ qua
-// thay vì báo lỗi, và kết quả bỏ qua đó không được tính là đạt.
+// chạy ứng dụng trên PostgreSQL 18 online của stack qua một database test riêng: database được tạo ngay trước
+// lượt test và bị xoá ngay sau lượt dù test đạt hay hỏng, không đụng vào bất kỳ database sẵn có nào. Thông tin
+// kết nối quản trị lấy từ biến môi trường LMS_TEST_PG_URL (JDBC URL không kèm tên database, ví dụ
+// jdbc:postgresql://dev-pg.fuckr.net:5433), LMS_TEST_PG_USER và LMS_TEST_PG_PASSWORD; chưa đặt biến thì toàn bộ
+// lớp bị bỏ qua, và kết quả bỏ qua đó không được tính là đạt. Topology nối đúng mô hình chạy thật: Flyway chạy
+// bằng tài khoản quản trị được cấp, datasource của ứng dụng chạy bằng role runtime lms_server_app mà migration
+// V3 tạo.
 @SpringBootTest(properties = "spring.security.oauth2.resourceserver.jwt.issuer-uri=" + PostgresRlsTests.ISSUER)
-@Testcontainers(disabledWithoutDocker = true)
+@EnabledIfEnvironmentVariable(named = "LMS_TEST_PG_URL", matches = ".+")
 class PostgresRlsTests {
 
 	static final String ISSUER = "http://localhost:8180/realms/giaokhoa";
@@ -81,20 +83,52 @@ class PostgresRlsTests {
 
 	private static final Pattern ID_PATTERN = Pattern.compile("\"id\":\"([^\"]+)\"");
 
-	@Container
-	static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18.6")
-			.withDatabaseName("lms_server")
-			.withUsername("lms_server")
-			.withPassword("admin-secret");
+	private static final String ADMIN_BASE_URL = System.getenv("LMS_TEST_PG_URL");
+
+	private static final String ADMIN_USER = System.getenv("LMS_TEST_PG_USER");
+
+	private static final String ADMIN_PASSWORD = System.getenv("LMS_TEST_PG_PASSWORD");
+
+	private static final String TEST_DATABASE = "lms_server_test_"
+			+ UUID.randomUUID().toString().replace("-", "").substring(0, 12);
 
 	@DynamicPropertySource
 	static void properties(DynamicPropertyRegistry registry) {
-		registry.add("spring.datasource.url", postgres::getJdbcUrl);
+		createTestDatabase();
+		registry.add("spring.datasource.url", PostgresRlsTests::testDatabaseUrl);
 		registry.add("spring.datasource.username", () -> "lms_server_app");
 		registry.add("spring.datasource.password", () -> APP_PASSWORD);
-		registry.add("spring.flyway.user", postgres::getUsername);
-		registry.add("spring.flyway.password", postgres::getPassword);
+		registry.add("spring.flyway.user", () -> ADMIN_USER);
+		registry.add("spring.flyway.password", () -> ADMIN_PASSWORD);
 		registry.add("spring.flyway.placeholders.lms-server-app-password", () -> APP_PASSWORD);
+	}
+
+	@AfterAll
+	static void dropTestDatabase() {
+		// Xoá database test là một phần của hợp đồng lượt chạy: lỗi dọn dẹp chỉ ghi ra log, không che kết quả test.
+		try (Connection connection = DriverManager.getConnection(ADMIN_BASE_URL + "/postgres", ADMIN_USER,
+				ADMIN_PASSWORD); Statement statement = connection.createStatement()) {
+			statement.execute("select pg_terminate_backend(pid) from pg_stat_activity where datname = '"
+					+ TEST_DATABASE + "'");
+			statement.execute("drop database if exists " + TEST_DATABASE);
+		}
+		catch (SQLException ex) {
+			System.err.println("Không xoá được database test " + TEST_DATABASE + ": " + ex.getMessage());
+		}
+	}
+
+	private static String testDatabaseUrl() {
+		return ADMIN_BASE_URL + "/" + TEST_DATABASE;
+	}
+
+	private static void createTestDatabase() {
+		try (Connection connection = DriverManager.getConnection(ADMIN_BASE_URL + "/postgres", ADMIN_USER,
+				ADMIN_PASSWORD); Statement statement = connection.createStatement()) {
+			statement.execute("create database " + TEST_DATABASE);
+		}
+		catch (SQLException ex) {
+			throw new IllegalStateException("Không tạo được database test " + TEST_DATABASE, ex);
+		}
 	}
 
 	@Autowired
@@ -249,12 +283,11 @@ class PostgresRlsTests {
 	}
 
 	private JdbcTemplate adminJdbc() {
-		return new JdbcTemplate(new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(),
-				postgres.getPassword()));
+		return new JdbcTemplate(new DriverManagerDataSource(testDatabaseUrl(), ADMIN_USER, ADMIN_PASSWORD));
 	}
 
 	private Connection appConnection() throws SQLException {
-		return DriverManager.getConnection(postgres.getJdbcUrl(), "lms_server_app", APP_PASSWORD);
+		return DriverManager.getConnection(testDatabaseUrl(), "lms_server_app", APP_PASSWORD);
 	}
 
 	private void setConfig(Connection connection, String name, String value) throws SQLException {
