@@ -397,16 +397,14 @@ services:
   # dùng chung cụm Postgres của ứng dụng và không được mất khi
   # container bị tạo lại ở các lần deploy.
   #
-  # Realm, client và cấu hình trong realm được cấp phát từ mẫu
-  # có phiên bản trong repo: thư mục keycloak/ giữ mẫu realm
-  # (keycloak/templates/) và bộ cấp phát keycloak/provision.mjs
-  # áp mẫu qua Admin REST API — xem keycloak/README.md. Service
-  # keycloak dưới đây vẫn chạy thẳng image gốc của Keycloak và
-  # không tự nạp realm lúc khởi động: sau khi stack lên (kể cả
-  # khi cơ sở dữ liệu của Keycloak bị xoá sạch và dựng lại từ
-  # đầu), vận hành chạy bộ cấp phát một lần để dựng lại toàn bộ
-  # realm theo mẫu; chạy lại bộ cấp phát là an toàn (không tạo
-  # trùng, không ghi đè bí mật đã cấp).
+  # Realm, client và cấu hình trong realm được tạo tay trong
+  # Admin Console — repo không giữ mẫu realm hay bộ cấp phát
+  # bằng code; thư mục keycloak/ chỉ giữ login theme, xem
+  # keycloak/README.md. Service keycloak dưới đây chạy thẳng
+  # image gốc của Keycloak và không tự nạp realm lúc khởi
+  # động: sau khi stack lên (kể cả khi cơ sở dữ liệu của
+  # Keycloak bị xoá sạch và dựng lại từ đầu), vận hành tạo lại
+  # cấu trúc realm trong Admin Console.
   #
   # Hai service này chạy trên mạng riêng keycloak-net (khai ở
   # khối networks cuối file), tách khỏi mạng mặc định của

@@ -250,13 +250,11 @@ ghim/trở ngại hiện tại:
   bằng runner của chính package (các carrier đóng băng giữ nguyên
   từng byte).
 - Test runner: Vitest ở mọi nơi — không dùng Jest.
-- Keycloak **26.8.1** (image ghim trong `compose.yaml`, mẫu realm
-  trong thư mục `keycloak/`): mẫu realm và bộ kiểm chứng
-  `keycloak/verify/` được kiểm chứng trên đúng hành vi của bản
-  này — gồm các trường brute force hiện hành và tính năng thử
-  nghiệm resource indicators (RFC 8707). Nâng phiên bản Keycloak
-  bắt buộc chạy lại toàn bộ kiểm chứng trong `keycloak/verify/`
-  trước khi áp dụng.
+- Keycloak **26.8.1** (image ghim trong `compose.yaml`): thư mục
+  `keycloak/` chỉ giữ login theme; cấu trúc realm được tạo tay
+  trong Admin Console (xem `keycloak/README.md`). Nâng phiên bản
+  Keycloak bắt buộc kiểm chứng lại luồng đăng nhập và login
+  theme trên bản mới trước khi áp dụng.
 
 ## Các đơn giản hoá đã biết
 
