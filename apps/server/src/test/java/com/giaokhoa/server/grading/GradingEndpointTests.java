@@ -673,7 +673,7 @@ class GradingEndpointTests {
 		UUID id = UUID.randomUUID();
 		this.jdbcTemplate.update(
 				"insert into teaching_class (id, partition_key, course_id, name, teacher_sub, created_by_sub) values (?, ?, ?, ?, ?, ?)",
-				id, ORG_ID, UUID.randomUUID(), "Lop kiem thu", teacherSub, createdBySub);
+				id, ORG_ID, null, "Lop kiem thu", teacherSub, createdBySub);
 		return id;
 	}
 

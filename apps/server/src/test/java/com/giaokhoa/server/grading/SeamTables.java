@@ -5,40 +5,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
- * Bảng tạm của các khối kề (tổ chức dạy học và giao/làm bài) chỉ tồn tại trong database test của khối này: khối
- * chấm đọc và chuyển trạng thái qua các bảng đó bằng điểm nối dữ kiện nhưng không sở hữu migration của chúng,
- * nên bộ test tự dựng đúng hình dạng đã đặc tả để chạy trên đường thật. Khi các khối kề hợp nhất, migration thật
- * của chúng (V20–V29 và V50–V59, đều đứng trước V60) tạo bảng trước và phần dựng tạm này phải được gỡ.
+ * Bảng tạm của khối giao/làm bài chỉ tồn tại trong database test của khối này: khối chấm đọc và chuyển trạng
+ * thái qua các bảng đó bằng điểm nối dữ kiện nhưng không sở hữu migration của chúng, nên bộ test tự dựng đúng
+ * hình dạng đã đặc tả để chạy trên đường thật. Hai bảng của khối tổ chức dạy học (teaching_class, class_member)
+ * đã có migration thật V20/V21 trong cây nên không dựng tạm nữa. Khi khối giao/làm bài hợp nhất, migration thật
+ * của nó (V50–V59, đứng trước V60) tạo bảng trước và phần dựng tạm còn lại này phải được gỡ.
  */
 final class SeamTables {
 
 	private static final String[] DDL = {
-			"""
-			create table if not exists teaching_class (
-			    id uuid primary key,
-			    partition_key varchar(255) not null,
-			    course_id uuid not null,
-			    name varchar(255) not null,
-			    teacher_sub varchar(255),
-			    created_by_sub varchar(255) not null,
-			    created_at timestamp with time zone not null default current_timestamp,
-			    updated_at timestamp with time zone not null default current_timestamp,
-			    unique (id, partition_key)
-			)
-			""",
-			"""
-			create table if not exists class_member (
-			    id uuid primary key,
-			    partition_key varchar(255) not null,
-			    class_id uuid not null,
-			    student_sub varchar(255) not null,
-			    enrolled_by_sub varchar(255) not null,
-			    removed_at timestamp with time zone,
-			    created_at timestamp with time zone not null default current_timestamp,
-			    updated_at timestamp with time zone not null default current_timestamp,
-			    unique (class_id, partition_key, student_sub)
-			)
-			""",
 			"""
 			create table if not exists exam_assignment (
 			    id uuid primary key,

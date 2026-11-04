@@ -236,12 +236,12 @@ class GradingPostgresTests {
 	}
 
 	@Test
-	@DisplayName("Chuỗi migration tích hợp áp sạch gồm V60 và V61 sau V1–V3, và khoá ngoại hợp thành sang exam_attempt/exam_assignment được gắn thật khi các bảng đó đã có trong chuỗi")
+	@DisplayName("Chuỗi migration tích hợp áp sạch toàn bộ các phiên bản trong cây gồm cả V60 và V61, và khoá ngoại hợp thành sang exam_attempt/exam_assignment được gắn thật khi các bảng đó đã có trong chuỗi")
 	void migrationChainIncludesGradingVersionsAndBindsForeignKeys() {
 		List<String> versions = adminJdbc().queryForList(
 				"select version from flyway_schema_history where success and type = 'SQL' order by installed_rank",
 				String.class);
-		assertEquals(List.of("1", "2", "3", "60", "61"), versions);
+		assertEquals(List.of("1", "2", "3", "10", "11", "20", "21", "40", "41", "60", "61"), versions);
 		List<String> constraints = adminJdbc().queryForList(
 				"select conname from pg_constraint where contype = 'f' and conname like '%_fk' order by conname",
 				String.class);
@@ -307,7 +307,7 @@ class GradingPostgresTests {
 		UUID classId = UUID.randomUUID();
 		admin.update(
 				"insert into teaching_class (id, partition_key, course_id, name, teacher_sub, created_by_sub) values (?, ?, ?, ?, ?, ?)",
-				classId, ORG_1_ID, UUID.randomUUID(), "Lop PG", TEACHER, TEACHER);
+				classId, ORG_1_ID, null, "Lop PG", TEACHER, TEACHER);
 		admin.update(
 				"insert into class_member (id, partition_key, class_id, student_sub, enrolled_by_sub) values (?, ?, ?, ?, ?)",
 				UUID.randomUUID(), ORG_1_ID, classId, STUDENT, TEACHER);
