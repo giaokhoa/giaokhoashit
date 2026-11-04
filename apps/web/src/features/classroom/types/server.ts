@@ -98,6 +98,47 @@ export interface QuestionView {
   updatedAt: string;
 }
 
+/** Vị trí gắn một tệp đính kèm trong nội dung một phiên bản câu; `answer` và `solution` là vị trí mang đáp án. */
+export type AttachmentPosition = 'content' | 'choice' | 'answer' | 'solution' | 'document';
+
+/**
+ * Một phiên tải lên tệp đính kèm. `status` là trạng thái xử lý của hợp đồng tệp: `uploading` khi phiên mới
+ * mở, `ready` khi byte đã qua kiểm tra và gắn được (hoặc đã gắn xong), `rejected` khi phiên hết hạn/bị huỷ.
+ * Các trường mô tả ảnh chỉ có sau khi byte đã qua kiểm tra; `checksumSha256` là dấu của đúng bản ảnh đã xử lý
+ * mà người tải lên xác nhận trước khi gắn.
+ */
+export interface UploadSessionView {
+  sessionId: string;
+  questionId: string;
+  versionId: string;
+  position: AttachmentPosition;
+  blockId: string | null;
+  displayName: string;
+  status: 'uploading' | 'ready' | 'rejected';
+  contentType: string | null;
+  sizeBytes: number | null;
+  width: number | null;
+  height: number | null;
+  checksumSha256: string | null;
+  blobId: string | null;
+  linkId: string | null;
+  expiresAt: string;
+}
+
+/** Một liên kết tệp đính kèm đã gắn vào một phiên bản câu, kèm dấu của blob bất biến mà nó trỏ tới. */
+export interface AttachmentLinkView {
+  linkId: string;
+  questionId: string;
+  versionId: string;
+  position: AttachmentPosition;
+  blockId: string | null;
+  blobId: string;
+  displayName: string;
+  contentType: string;
+  sizeBytes: number;
+  checksumSha256: string;
+}
+
 /** Một mục của phiên bản đề: câu được ghim theo `questionVersionId` kèm điểm và nội dung snapshot đã đóng băng. */
 export interface ExamItemView {
   id: string;

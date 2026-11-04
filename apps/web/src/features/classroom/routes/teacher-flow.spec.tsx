@@ -51,6 +51,12 @@ const clientMock = vi.hoisted(() => ({
   fetchSubmissions: vi.fn(),
   gradeAttempt: vi.fn(),
   publishResults: vi.fn(),
+  fetchAttachments: vi.fn(),
+  fetchAttachmentContent: vi.fn(),
+  fetchAttachmentPreview: vi.fn(),
+  openAttachmentSession: vi.fn(),
+  uploadAttachmentContent: vi.fn(),
+  completeAttachmentSession: vi.fn(),
 }));
 
 vi.mock('../api/client', () => clientMock);
@@ -158,6 +164,7 @@ describe('Luồng giáo viên: ngân hàng, câu, đề và giao bài', () => {
       { id: 'class-1', name: '6A1', courseId: 'course-1', teacherSub: 'gv-1' },
     ]);
     clientMock.fetchAssignments.mockResolvedValue([]);
+    clientMock.fetchAttachments.mockResolvedValue([]);
   });
 
   it('tạo câu trắc nghiệm với đúng một đáp án đúng vào ngân hàng cá nhân và liệt kê câu vừa soạn', async () => {

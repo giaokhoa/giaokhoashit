@@ -20,6 +20,7 @@ import { NativeSelect } from '@lms/ui/components/native-select';
 import { Textarea } from '@lms/ui/components/textarea';
 import { PageShell } from '#components/page-shell';
 import type { QuestionContentInput } from '../api/client';
+import { AttachmentPanel } from '../components/attachment-panel';
 import { EmptyNote, ErrorNote, LoadingNote, SessionGate } from '../components/states';
 import { useClassroomSession } from '../hooks/use-session';
 import {
@@ -132,6 +133,7 @@ function VersionPanel({ questionId, version }: { questionId: string; version: Qu
         ) : null}
         {isLocked ? <LockedVersionView version={version} /> : null}
         {!isLocked ? <DraftVersionForm questionId={questionId} version={version} /> : null}
+        <AttachmentPanel questionId={questionId} version={version} />
         <VersionActions questionId={questionId} version={version} />
       </CardContent>
     </Card>

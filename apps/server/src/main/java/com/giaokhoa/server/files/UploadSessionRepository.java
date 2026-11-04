@@ -10,4 +10,6 @@ public interface UploadSessionRepository extends JpaRepository<UploadSession, UU
 
 	List<UploadSession> findByStatusInAndExpiresAtBefore(List<String> statuses, OffsetDateTime expiresAt);
 
+	List<UploadSession> findByTargetVersionId(UUID targetVersionId);
+
 }

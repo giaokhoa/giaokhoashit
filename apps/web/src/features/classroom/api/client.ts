@@ -11,6 +11,8 @@
 import { getKeycloakAdapter } from '#lib/kc-adapter';
 import type {
   AssignmentView,
+  AttachmentLinkView,
+  AttachmentPosition,
   AttemptView,
   BankEntryView,
   BankView,
@@ -25,6 +27,7 @@ import type {
   SubmitView,
   TeacherAttemptView,
   TeachingClassView,
+  UploadSessionView,
 } from '../types/server';
 import { ClassroomApiError } from './errors';
 
@@ -39,17 +42,42 @@ import { ClassroomApiError } from './errors';
  * @param init - Method và thân JSON (đã stringify ở hàm gọi) khi cần.
  * @returns Dữ kiện JSON đã parse theo kiểu `T`.
  */
-async function request<T>(path: string, init?: { method?: string; body?: string }): Promise<T> {
+async function request<T>(path: string, init?: { method?: string; body?: string | FormData }): Promise<T> {
+  const response = await fetchAuthed(path, init);
+  if (response.status === 204) {
+    return undefined as T;
+  }
+  return (await response.json()) as T;
+}
+
+/**
+ * Lõi fetch có xác thực dùng chung cho đáp ứng JSON, thân `FormData` và đáp ứng byte (Blob): cùng một bước
+ * kiểm tra phiên và làm mới token như `request`. Khi thân là `FormData` thì KHÔNG đặt `Content-Type` — theo
+ * tài liệu MDN về FormData, trình duyệt phải tự đặt header này kèm boundary của multipart, đặt tay sẽ làm
+ * mất boundary. Access token chỉ đi trong header `Authorization`, không bao giờ nằm trong URL.
+ *
+ * @param path - Đường tương đối bắt đầu bằng `/api/`.
+ * @param init - Method, thân (JSON đã stringify hoặc `FormData`) và `Accept` khi cần.
+ * @returns Đáp ứng đã qua kiểm tra lỗi (lỗi đã ném thành `ClassroomApiError`).
+ */
+async function fetchAuthed(
+  path: string,
+  init?: { method?: string; body?: string | FormData; accept?: string },
+): Promise<Response> {
   const keycloak = getKeycloakAdapter();
   if (!keycloak.authenticated) {
     throw new ClassroomApiError(401, 'UNAUTHENTICATED', 'Chưa đăng nhập.');
   }
   await keycloak.updateToken(30);
+  // Nhận diện thân FormData theo giao diện (có hàm `append`) thay cho `instanceof`: các realm khác nhau
+  // (iframe, môi trường test) mang các lớp FormData khác nhau dù cùng một giao diện.
+  const isForm =
+    typeof init?.body === 'object' && init.body !== null && typeof (init.body as FormData).append === 'function';
   const response = await fetch(path, {
     method: init?.method ?? 'GET',
     headers: {
-      Accept: 'application/json',
-      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      Accept: init?.accept ?? 'application/json',
+      ...(init?.body && !isForm ? { 'Content-Type': 'application/json' } : {}),
       Authorization: `Bearer ${keycloak.token ?? ''}`,
     },
     body: init?.body,
@@ -57,10 +85,7 @@ async function request<T>(path: string, init?: { method?: string; body?: string 
   if (!response.ok) {
     throw await toApiError(response);
   }
-  if (response.status === 204) {
-    return undefined as T;
-  }
-  return (await response.json()) as T;
+  return response;
 }
 
 /**
@@ -294,6 +319,125 @@ export function publishQuestionVersion(
   versionId: string,
 ): Promise<QuestionView['versions'][number]> {
   return request(`/api/questions/${questionId}/versions/${versionId}/publish`, { method: 'POST' });
+}
+
+/** Đường gốc của họ tệp đính kèm của một phiên bản câu. */
+function attachmentsBase(questionId: string, versionId: string): string {
+  return `/api/questions/${questionId}/versions/${versionId}/attachments`;
+}
+
+/**
+ * Mở một phiên tải lên tệp đính kèm: phiên khoá đích (phiên bản, vị trí gắn) và giới hạn ngay từ đầu; các
+ * bước sau không đổi được đích của phiên.
+ *
+ * @param questionId - Định danh câu hỏi.
+ * @param versionId - Định danh phiên bản nháp đích.
+ * @param input - Vị trí gắn, định danh khối khi gắn vào một khối nội dung, và tên hiển thị của tệp.
+ * @returns Phiên vừa mở ở trạng thái `uploading`.
+ */
+export function openAttachmentSession(
+  questionId: string,
+  versionId: string,
+  input: { position: AttachmentPosition; blockId?: string | null; displayName: string },
+): Promise<UploadSessionView> {
+  return request<UploadSessionView>(`${attachmentsBase(questionId, versionId)}/sessions`, {
+    method: 'POST',
+    body: json({ position: input.position, blockId: input.blockId ?? null, displayName: input.displayName }),
+  });
+}
+
+/**
+ * Tải byte của một ảnh vào phiên đã mở bằng `FormData`; server kiểm tra nội dung thật của tệp (không tin
+ * loại do client khai) và trả phiên ở trạng thái `ready` kèm dấu của bản ảnh đã xử lý khi đạt.
+ *
+ * @param questionId - Định danh câu hỏi.
+ * @param versionId - Định danh phiên bản nháp đích.
+ * @param sessionId - Định danh phiên tải lên.
+ * @param file - Tệp ảnh người dùng đã chọn.
+ * @returns Phiên sau bước kiểm tra và xử lý.
+ */
+export function uploadAttachmentContent(
+  questionId: string,
+  versionId: string,
+  sessionId: string,
+  file: File,
+): Promise<UploadSessionView> {
+  const form = new FormData();
+  form.append('file', file);
+  return request<UploadSessionView>(`${attachmentsBase(questionId, versionId)}/sessions/${sessionId}/content`, {
+    method: 'POST',
+    body: form,
+  });
+}
+
+/**
+ * Đọc byte của bản ảnh đã xử lý trong phiên để xem trước trước khi gắn: đây là đúng bản sẽ được chốt khi
+ * hoàn tất, hiển thị qua blob URL ở tầng giao diện.
+ *
+ * @param questionId - Định danh câu hỏi.
+ * @param versionId - Định danh phiên bản nháp đích.
+ * @param sessionId - Định danh phiên tải lên.
+ * @returns Blob ảnh đã xử lý của phiên.
+ */
+export async function fetchAttachmentPreview(
+  questionId: string,
+  versionId: string,
+  sessionId: string,
+): Promise<Blob> {
+  const response = await fetchAuthed(`${attachmentsBase(questionId, versionId)}/sessions/${sessionId}/preview`, {
+    accept: 'image/*',
+  });
+  return response.blob();
+}
+
+/**
+ * Hoàn tất phiên tải lên: server kiểm lại quyền tại thời điểm gắn và chốt blob bất biến từ đúng byte đã
+ * kiểm tra. Gọi lại với cùng đích là an toàn (trả lại đúng liên kết đã tạo); gọi với đích khác bị từ chối.
+ *
+ * @param questionId - Định danh câu hỏi.
+ * @param versionId - Định danh phiên bản nháp đích.
+ * @param sessionId - Định danh phiên tải lên.
+ * @returns Liên kết tệp vừa gắn vào bản nháp.
+ */
+export function completeAttachmentSession(
+  questionId: string,
+  versionId: string,
+  sessionId: string,
+): Promise<AttachmentLinkView> {
+  return request<AttachmentLinkView>(`${attachmentsBase(questionId, versionId)}/sessions/${sessionId}/complete`, {
+    method: 'POST',
+    body: json({}),
+  });
+}
+
+/**
+ * @param questionId - Định danh câu hỏi.
+ * @param versionId - Định danh phiên bản.
+ * @returns Các liên kết tệp đính kèm của phiên bản mà người gọi được thấy (tệp đáp án bị lược khi không có
+ * quyền xem đáp án).
+ */
+export function fetchAttachments(questionId: string, versionId: string): Promise<AttachmentLinkView[]> {
+  return request<AttachmentLinkView[]>(attachmentsBase(questionId, versionId));
+}
+
+/**
+ * Đọc byte của một tệp đính kèm đã gắn qua đường có xác thực; tầng giao diện hiển thị bằng blob URL, không
+ * có URL công khai hay URL ký nào cho tệp.
+ *
+ * @param questionId - Định danh câu hỏi.
+ * @param versionId - Định danh phiên bản chứa liên kết.
+ * @param linkId - Định danh liên kết tệp.
+ * @returns Blob byte của tệp.
+ */
+export async function fetchAttachmentContent(
+  questionId: string,
+  versionId: string,
+  linkId: string,
+): Promise<Blob> {
+  const response = await fetchAuthed(`${attachmentsBase(questionId, versionId)}/${linkId}/content`, {
+    accept: 'image/*',
+  });
+  return response.blob();
 }
 
 /**
