@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient, type UseMutationResult, type Use
 import {
   addBankEntry,
   addMember,
+  completeAttachmentSession,
   createAssignment,
   createBank,
   createClass,
@@ -21,6 +22,7 @@ import {
   createQuestionVersion,
   fetchAssignments,
   fetchAttemptResult,
+  fetchAttachments,
   fetchBanks,
   fetchClasses,
   fetchCourses,
@@ -46,6 +48,7 @@ import {
 } from '../api/client';
 import type {
   AssignmentView,
+  AttachmentLinkView,
   AttemptView,
   BankEntryView,
   BankView,
@@ -261,6 +264,33 @@ export function usePublishQuestionVersion(): UseMutationResult<
   return useMutation({
     mutationFn: ({ questionId, versionId }) => publishQuestionVersion(questionId, versionId),
     onSuccess: (_data, { questionId }) => void queryClient.invalidateQueries({ queryKey: classroomKeys.question(questionId) }),
+  });
+}
+
+/**
+ * @param questionId - Định danh câu hỏi.
+ * @param versionId - Định danh phiên bản.
+ * @returns Query danh sách tệp đính kèm của phiên bản câu.
+ */
+export function useAttachments(questionId: string, versionId: string): UseQueryResult<AttachmentLinkView[]> {
+  return useQuery({
+    queryKey: classroomKeys.attachments(questionId, versionId),
+    queryFn: () => fetchAttachments(questionId, versionId),
+  });
+}
+
+/** @returns Mutation hoàn tất một phiên tải lên tệp đính kèm; xong thì vô hiệu hoá danh sách tệp của phiên bản. */
+export function useCompleteAttachmentSession(): UseMutationResult<
+  AttachmentLinkView,
+  Error,
+  { questionId: string; versionId: string; sessionId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ questionId, versionId, sessionId }) =>
+      completeAttachmentSession(questionId, versionId, sessionId),
+    onSuccess: (_data, { questionId, versionId }) =>
+      void queryClient.invalidateQueries({ queryKey: classroomKeys.attachments(questionId, versionId) }),
   });
 }
 

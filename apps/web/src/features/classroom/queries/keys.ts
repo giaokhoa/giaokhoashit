@@ -31,6 +31,15 @@ export const classroomKeys = {
    */
   question: (questionId: string) => ['classroom', 'questions', questionId] as const,
   /**
+   * Các liên kết tệp đính kèm của một phiên bản câu.
+   *
+   * @param questionId - Định danh câu hỏi.
+   * @param versionId - Định danh phiên bản.
+   * @returns Khoá cache của danh sách tệp đính kèm của phiên bản đó.
+   */
+  attachments: (questionId: string, versionId: string) =>
+    ['classroom', 'questions', questionId, 'versions', versionId, 'attachments'] as const,
+  /**
    * Một đề cùng phiên bản đang đọc.
    *
    * @param examId - Định danh đề.
