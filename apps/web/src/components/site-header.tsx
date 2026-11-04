@@ -38,7 +38,7 @@ export function SiteHeader() {
         <div className="flex min-w-0 items-center gap-1 lg:gap-2">
           <SidebarTrigger />
           <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
-          <h1 className="truncate text-base font-medium">{match ? t(`${match.ns}:${match.key}`) : 'LMS'}</h1>
+          <h1 className="truncate text-base font-medium">{match ? t(`${match.ns}:${match.key}`) : 'Giáo khoa'}</h1>
         </div>
       </div>
     </header>

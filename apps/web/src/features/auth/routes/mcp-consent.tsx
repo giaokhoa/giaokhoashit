@@ -121,7 +121,7 @@ export default function McpConsentPage() {
           <CardTitle>Uỷ quyền cho ứng dụng AI</CardTitle>
           <CardDescription>
             {context
-              ? `Ứng dụng "${context.clientName}" xin được thay bạn thực hiện các việc sau trong LMS. Chỉ cấp những quyền bạn thật sự cần — bạn thu hồi được bằng cách ngừng kết nối trong ứng dụng.`
+              ? `Ứng dụng "${context.clientName}" xin được thay bạn thực hiện các việc sau trong Giáo khoa. Chỉ cấp những quyền bạn thật sự cần — bạn thu hồi được bằng cách ngừng kết nối trong ứng dụng.`
               : 'Đang tải thông tin uỷ quyền…'}
           </CardDescription>
         </CardHeader>

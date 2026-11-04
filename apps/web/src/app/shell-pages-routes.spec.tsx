@@ -24,7 +24,7 @@ import * as teacherCurriculumRoute from '#features/curriculum/routes/teacher-cur
  *  1. Export `ErrorBoundary` là ĐÚNG component dùng chung `RouteErrorBoundary` (so sánh đồng nhất tham chiếu, không
  *     phải một component trông giống) — lỗi của trang được chứa trong vùng nội dung theo cơ chế đã gác ở
  *     `routes/ssr-frame.spec.tsx`.
- *  2. `meta()` trả tiêu đề "<Tên trang> · LMS" dựng từ ĐÚNG khoá tiêu đề mà chính trang dùng cho heading của nó:
+ *  2. `meta()` trả tiêu đề "<Tên trang> · Giáo khoa" dựng từ ĐÚNG khoá tiêu đề mà chính trang dùng cho heading của nó:
  *     namespace `app` cho 9 trang (classesHeading cho classes và cho class-detail — heading của class-detail là tên lớp
  *     động, khoá này là heading dự phòng của chính trang khi chưa có dữ liệu lớp; classPublicTitle là khoá tiêu đề
  *     riêng bổ sung vào i18n cho class-public vì trang này chưa có khoá tiêu đề riêng — heading của nó là tên lớp động
@@ -54,7 +54,7 @@ describe('F-07/F-08 (#133): 10 page module trong shell — ErrorBoundary dùng c
     it(`trang ${name} meta() trả tiêu đề dựng từ khoá ${ns} riêng ${key}`, () => {
       const expectedTitle = i18n.t(key, { ns });
       expect(expectedTitle).not.toBe(key);
-      expect(route.meta()).toEqual([{ title: `${expectedTitle} · LMS` }]);
+      expect(route.meta()).toEqual([{ title: `${expectedTitle} · Giáo khoa` }]);
     });
   }
 });

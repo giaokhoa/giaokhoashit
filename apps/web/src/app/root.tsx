@@ -69,7 +69,7 @@ export async function loader({
  * thế; Layout không còn gắn cứng <title> nữa.
  */
 export function meta(): { title: string }[] {
-  return [{ title: 'LMS' }];
+  return [{ title: 'Giáo khoa' }];
 }
 
 /**
@@ -184,7 +184,7 @@ export function ErrorBoundary() {
     : 'Đã xảy ra lỗi không mong muốn.';
   return (
     <main className="flex min-h-svh flex-col items-center justify-center gap-3 p-6 text-center">
-      <h1 className="text-2xl font-semibold">LMS</h1>
+      <h1 className="text-2xl font-semibold">Giáo khoa</h1>
       <p className="text-sm text-muted-foreground">{message}</p>
       <a href="/" className="text-sm underline underline-offset-4">
         Về trang chủ
