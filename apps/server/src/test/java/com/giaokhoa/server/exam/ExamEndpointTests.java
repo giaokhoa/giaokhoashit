@@ -242,7 +242,7 @@ class ExamEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Xem trước phân tầng đáp án: chủ sở hữu thấy đủ đáp án trong bản nháp của mình; tenant-admin đọc đề thuộc trung tâm thấy nội dung câu nhưng đáp án bị lược bỏ")
+	@DisplayName("Xem trước phân tầng đáp án: chủ sở hữu thấy đủ đáp án trong bản nháp của mình; tenant-admin đọc đề thuộc trung tâm thấy nội dung câu nhưng đáp án và tiêu chí chấm bị lược bỏ")
 	void previewStripsAnswersByLayer() throws Exception {
 		String teacher = teacherToken("gv-a");
 		UUID ownQuestion = addQuestion("gv-a", "single_choice", false, SINGLE_CHOICE_CONTENT);
@@ -259,18 +259,23 @@ class ExamEndpointTests {
 		String admin = orgToken("qt-1", List.of("tenant-admin"));
 		String secondAdmin = orgToken("qt-2", List.of("tenant-admin"));
 		UUID catalogQuestion = addQuestion("gv-b", "single_choice", true, SINGLE_CHOICE_CONTENT);
+		UUID catalogEssay = addQuestion("gv-b", "essay_text", true, ESSAY_CONTENT);
 		JsonNode centerExam = createExamOk(admin, CENTER_ALIAS,
 				"{\"title\":\"Đề trung tâm xem trước\",\"workspace\":\"center\"}");
 		UUID centerExamId = UUID.fromString(centerExam.get("id").asText());
 		UUID centerVersionId = UUID.fromString(centerExam.get("versionId").asText());
 		putDraftOkAt(admin, CENTER_ALIAS, centerExamId, centerVersionId, centerExam.get("lockVersion").asLong(),
-				"[" + itemJson(catalogQuestion, "5") + "]");
+				"[" + itemJson(catalogQuestion, "5") + "," + itemJson(catalogEssay, "6") + "]");
 		JsonNode adminView = getExamOk(secondAdmin, CENTER_ALIAS, centerExamId, null);
 		JsonNode adminContent = adminView.get("items").get(0).get("content");
 		assertEquals("2 + 2 bằng mấy?", adminContent.get("stem").asText());
 		assertTrue(adminContent.has("choices"));
 		assertTrue(!adminContent.has("correctChoiceId"));
 		assertTrue(!adminContent.has("solution"));
+		JsonNode adminEssayContent = adminView.get("items").get(1).get("content");
+		assertEquals("Trình bày nguyên nhân thắng lợi.", adminEssayContent.get("stem").asText());
+		assertTrue(!adminEssayContent.has("rubric"));
+		assertTrue(!adminEssayContent.has("solution"));
 	}
 
 	@Test
