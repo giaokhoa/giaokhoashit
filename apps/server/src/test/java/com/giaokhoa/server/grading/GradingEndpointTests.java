@@ -424,17 +424,20 @@ class GradingEndpointTests {
 	}
 
 	@Test
-	@DisplayName("Học viên bị rút khỏi lớp vẫn giữ kết quả đã công bố của mình và vẫn có một hàng trong bảng bài nộp với dấu đã rút")
+	@DisplayName("Học viên bị rút khỏi lớp vẫn được giáo viên chấm và công bố như thường, vẫn giữ kết quả đã công bố của mình và vẫn có một hàng trong bảng bài nộp với dấu đã rút")
 	void removedStudentKeepsPublishedResultAndSubmissionsRow() throws Exception {
 		UUID classId = seedClass(TEACHER, TEACHER);
 		seedMember(classId, STUDENT_1, false);
-		UUID assignmentId = seedAssignment(classId, VERSION_MCQ);
+		UUID assignmentId = seedAssignment(classId, VERSION_FULL);
 		UUID attemptId = seedAttempt(assignmentId, STUDENT_1, "IN_PROGRESS");
 		seedAnswer(attemptId, MCQ_1, "{\"choiceId\":\"c1\"}");
+		seedAnswer(attemptId, ESSAY, "{\"text\":\"Bai lam\"}");
 		simulateSubmit(attemptId, STUDENT_1);
 		this.jdbcTemplate.update("update class_member set removed_at = current_timestamp where class_id = ? and student_sub = ?",
 				classId, STUDENT_1);
 		String teacher = token(TEACHER, List.of("tenant-teacher"));
+		gradeEssay(teacher, attemptId, 5);
+		assertEquals("GRADED", attemptStatus(attemptId));
 		this.mockMvc.perform(post("/api/assignments/" + assignmentId + "/publish-results")
 				.header("Authorization", "Bearer " + teacher)
 				.header("X-LMS-Organization-Alias", ALIAS))
@@ -446,14 +449,79 @@ class GradingEndpointTests {
 				.andExpect(content().string(containsString("\"studentSub\":\"" + STUDENT_1 + "\"")))
 				.andExpect(content().string(containsString("\"removed\":true")))
 				.andExpect(content().string(containsString("\"published\":true")))
-				.andExpect(content().string(containsString("\"totalScore\":4")));
+				.andExpect(content().string(containsString("\"totalScore\":9")));
 		String student = token(STUDENT_1, List.of("tenant-member"));
 		this.mockMvc.perform(get("/api/attempts/" + attemptId)
 				.header("Authorization", "Bearer " + student)
 				.header("X-LMS-Organization-Alias", ALIAS))
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("\"status\":\"PUBLISHED\"")))
-				.andExpect(content().string(containsString("\"totalScore\":4")));
+				.andExpect(content().string(containsString("\"totalScore\":9")));
+	}
+
+	@Test
+	@DisplayName("Ở trạng thái SUBMITTED học viên cũng không thấy trường điểm nào trong lượt làm của mình dù mục trắc nghiệm đã có điểm tự động")
+	void studentSeesNoScoresWhileSubmittedEither() throws Exception {
+		UUID classId = seedClass(TEACHER, TEACHER);
+		seedMember(classId, STUDENT_1, false);
+		UUID assignmentId = seedAssignment(classId, VERSION_FULL);
+		UUID attemptId = seedAttempt(assignmentId, STUDENT_1, "IN_PROGRESS");
+		seedAnswer(attemptId, MCQ_1, "{\"choiceId\":\"c1\"}");
+		seedAnswer(attemptId, ESSAY, "{\"text\":\"Bai lam\"}");
+		simulateSubmit(attemptId, STUDENT_1);
+		assertEquals("SUBMITTED", attemptStatus(attemptId));
+		this.mockMvc.perform(get("/api/attempts/" + attemptId)
+				.header("Authorization", "Bearer " + token(STUDENT_1, List.of("tenant-member")))
+				.header("X-LMS-Organization-Alias", ALIAS))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("\"status\":\"SUBMITTED\"")))
+				.andExpect(content().string(containsString("\"result\":null")))
+				.andExpect(content().string(not(containsString("totalScore"))))
+				.andExpect(content().string(not(containsString("\"score\""))))
+				.andExpect(content().string(not(containsString("correctChoiceId"))))
+				.andExpect(content().string(not(containsString("rubric"))));
+	}
+
+	@Test
+	@DisplayName("Thay phụ trách lớp thì quyền chấm đi theo phân công hiện hành: giáo viên cũ bị 403 ngay, giáo viên mới chấm được cả lượt đã nộp từ trước khi thay")
+	void teacherReassignmentMovesGradingRights() throws Exception {
+		UUID classId = seedClass(TEACHER, TEACHER);
+		seedMember(classId, STUDENT_1, false);
+		UUID assignmentId = seedAssignment(classId, VERSION_FULL);
+		UUID attemptId = seedAttempt(assignmentId, STUDENT_1, "SUBMITTED");
+		this.jdbcTemplate.update("update teaching_class set teacher_sub = ? where id = ?", OTHER_TEACHER, classId);
+		this.mockMvc.perform(post("/api/attempts/" + attemptId + "/grade")
+				.header("Authorization", "Bearer " + token(TEACHER, List.of("tenant-teacher")))
+				.header("X-LMS-Organization-Alias", ALIAS)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"items\":[{\"examItemId\":\"" + ESSAY + "\",\"score\":5}]}"))
+				.andExpect(status().isForbidden())
+				.andExpect(content().string(containsString("\"code\":\"RESOURCE_FORBIDDEN\"")));
+		assertEquals(0, gradeCount(attemptId));
+		gradeEssay(token(OTHER_TEACHER, List.of("tenant-teacher")), attemptId, 5);
+		assertEquals(new BigDecimal("5.00"), itemScore(attemptId, ESSAY));
+		assertEquals(OTHER_TEACHER, itemGrader(attemptId, ESSAY));
+	}
+
+	@Test
+	@DisplayName("Học viên của trung tâm khác không đọc được bảng bài nộp lẫn lượt làm của lần giao ở trung tâm này: cả hai đều 404 theo phân vùng của trang đang mở")
+	void crossCenterStudentCannotReadAssignmentData() throws Exception {
+		UUID classId = seedClass(TEACHER, TEACHER);
+		seedMember(classId, STUDENT_1, false);
+		UUID assignmentId = seedAssignment(classId, VERSION_FULL);
+		UUID attemptId = seedAttempt(assignmentId, STUDENT_1, "SUBMITTED");
+		String outsider = mint("hs-trung-tam-b", Map.of("organization",
+				Map.of("trung-tam-b", orgEntry("22222222-2222-2222-2222-222222222222", List.of("tenant-member")))));
+		this.mockMvc.perform(get("/api/assignments/" + assignmentId + "/submissions")
+				.header("Authorization", "Bearer " + outsider)
+				.header("X-LMS-Organization-Alias", "trung-tam-b"))
+				.andExpect(status().isNotFound())
+				.andExpect(content().string(containsString("\"code\":\"RESOURCE_NOT_FOUND\"")));
+		this.mockMvc.perform(get("/api/attempts/" + attemptId)
+				.header("Authorization", "Bearer " + outsider)
+				.header("X-LMS-Organization-Alias", "trung-tam-b"))
+				.andExpect(status().isNotFound())
+				.andExpect(content().string(containsString("\"code\":\"RESOURCE_NOT_FOUND\"")));
 	}
 
 	@Test
