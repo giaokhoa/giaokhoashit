@@ -8,10 +8,12 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -34,15 +36,23 @@ public class KeycloakOrganizationIds implements OrganizationIds {
 
 	private final String clientSecret;
 
+	@Autowired
 	public KeycloakOrganizationIds(@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri,
 			@Value("${app.keycloak.membership.client-secret:}") String clientSecret) {
-		int realmMarker = issuerUri.indexOf("/realms/");
-		String serverBase = issuerUri.substring(0, realmMarker);
-		this.realm = issuerUri.substring(realmMarker + "/realms/".length());
 		JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(
 				HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
 		requestFactory.setReadTimeout(Duration.ofSeconds(5));
-		this.keycloak = RestClient.builder().baseUrl(serverBase).requestFactory(requestFactory).build();
+		this(issuerUri, clientSecret, RestClient.builder().requestFactory(requestFactory));
+	}
+
+	// Constructor nhận builder để test ghim được máy chủ HTTP giả lập (MockRestServiceServer) vào đúng RestClient
+	// mà bản đọc này dùng, thay vì stub tại seam OrganizationIds.
+	KeycloakOrganizationIds(String issuerUri, String clientSecret, RestClient.Builder restClientBuilder) {
+		// Issuer có dạng <địa chỉ Keycloak>/realms/<realm>; token endpoint và Admin REST API suy ra từ cùng gốc này.
+		int realmMarker = issuerUri.indexOf("/realms/");
+		String serverBase = issuerUri.substring(0, realmMarker);
+		this.realm = issuerUri.substring(realmMarker + "/realms/".length());
+		this.keycloak = restClientBuilder.baseUrl(serverBase).build();
 		this.clientSecret = clientSecret;
 	}
 
@@ -74,7 +84,10 @@ public class KeycloakOrganizationIds implements OrganizationIds {
 					.map(organization -> UUID.fromString(organization.id()))
 					.findFirst();
 		}
-		catch (RestClientException | IllegalArgumentException ex) {
+		catch (RestClientException | HttpMessageConversionException | IllegalArgumentException ex) {
+			// HttpMessageConversionException không phải RestClientException trong Spring 7 (hai nhánh độc lập cùng
+			// kế thừa NestedRuntimeException): đáp ứng Keycloak sai hình dạng văng lỗi này, không bắt riêng thì nó
+			// lọt ra ngoài thành 500 thay vì kết quả rỗng fail-closed như hợp đồng của điểm nối.
 			return Optional.empty();
 		}
 	}
