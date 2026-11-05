@@ -21,10 +21,22 @@ public interface ExamVersionSnapshots {
 	}
 
 	record Item(UUID itemId, String type, int position, BigDecimal points, String prompt, List<Choice> choices,
-			String correctChoiceId, String rubric) {
+			String correctChoiceId, String rubric, List<Attachment> attachments, List<FormulaImage> formulaImages) {
 	}
 
 	record Choice(String choiceId, String text) {
+	}
+
+	// Tệp đính kèm đã đóng băng cùng snapshot: tham chiếu blob và số đo hiển thị, không có đường đọc nào
+	// quay lại liên kết sống của phiên bản câu. Khoá phân vùng nhà của blob được đóng băng cùng để đường
+	// đọc định vị blob trong đúng phân vùng của chủ phiên bản câu sau khi quyền đã quyết theo snapshot.
+	record Attachment(UUID blobId, String position, String blockId, String displayName, String contentType,
+			Integer width, Integer height, String blobPartitionKey) {
+	}
+
+	// Ảnh công thức đã đóng băng cùng snapshot: định danh bản ghi render cùng tham chiếu blob ảnh của nó.
+	record FormulaImage(String blockId, String section, int position, String fileRef, UUID imageBlobId,
+			Integer width, Integer height, Integer baselineOffset, String description, String blobPartitionKey) {
 	}
 
 }

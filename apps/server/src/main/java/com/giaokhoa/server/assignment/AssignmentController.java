@@ -101,6 +101,19 @@ public class AssignmentController {
 		return this.attempts.get(context(), id);
 	}
 
+	// Byte của tệp hay ảnh thuộc snapshot của chính lượt làm: định danh blob chỉ có nghĩa khi nó nằm trong
+	// bản kê đã đóng băng của phiên bản đề của lượt đó; quyết quyền nằm ở tầng dịch vụ.
+	@GetMapping("/attempts/{id}/files/{blobId}")
+	public org.springframework.http.ResponseEntity<byte[]> snapshotFile(@PathVariable UUID id,
+			@PathVariable UUID blobId) {
+		AttemptService.SnapshotFile file = this.attempts.snapshotFile(context(), id, blobId);
+		return org.springframework.http.ResponseEntity.ok()
+				.contentType(org.springframework.http.MediaType.parseMediaType(file.contentType()))
+				.header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+						"inline; filename=\"" + file.displayName() + "\"")
+				.body(file.bytes());
+	}
+
 	@GetMapping("/assignments/{id}/submissions")
 	public List<AttemptService.SubmissionRow> submissions(@PathVariable UUID id) {
 		return this.attempts.submissions(context(), id);
