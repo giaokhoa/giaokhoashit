@@ -669,9 +669,9 @@ class AssignmentEndpointTests {
 								prompt,
 								List.of(new ExamVersionSnapshots.Choice("c1", "3"),
 										new ExamVersionSnapshots.Choice("c2", "4")),
-								"c2", null),
+								"c2", null, List.of(), List.of()),
 						new ExamVersionSnapshots.Item(ITEM_ESSAY, "essay_text", 2, new BigDecimal("5"),
-								"Trình bày cách giải.", List.of(), null, "RUBRIC-BI-MAT")));
+								"Trình bày cách giải.", List.of(), null, "RUBRIC-BI-MAT", List.of(), List.of())));
 	}
 
 	private UUID createAssignment(String teacherToken, UUID versionId, UUID classId, OffsetDateTime opensAt,

@@ -131,7 +131,7 @@ class FilePostgresRlsTests {
 		List<String> versions = adminJdbc().queryForList(
 				"select version from flyway_schema_history where success order by installed_rank", String.class);
 		assertEquals(List.of("1", "2", "3", "10", "11", "20", "21", "30", "31", "40", "41", "50", "51", "60", "61",
-				"80", "90", "91", "92", "93", "94", "96", "96.1", "97"), versions);
+				"80", "90", "91", "92", "93", "94", "95", "96", "96.1", "97"), versions);
 	}
 
 	@Test
