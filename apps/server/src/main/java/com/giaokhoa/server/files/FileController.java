@@ -73,8 +73,9 @@ public class FileController {
 	}
 
 	@PostMapping("/blobs/{blobId}/quarantine")
-	public Map<String, String> quarantine(@PathVariable UUID blobId) {
-		this.service.quarantine(blobId);
+	public Map<String, String> quarantine(@PathVariable UUID blobId,
+			@RequestBody(required = false) Map<String, String> body) {
+		this.service.quarantine(blobId, (body != null) ? body.get("reason") : null);
 		return Map.of("status", "quarantined");
 	}
 

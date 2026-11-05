@@ -26,6 +26,8 @@ public class FileAuditLog {
 
 	public static final String ACTION_QUARANTINE = "quarantine";
 
+	public static final String ACTION_BLOB_COLLECTED = "blob_collected";
+
 	@Id
 	private UUID id;
 
@@ -46,6 +48,9 @@ public class FileAuditLog {
 
 	@Column(name = "link_id")
 	private UUID linkId;
+
+	@Column(name = "detail")
+	private String detail;
 
 	@TenantId
 	@Column(name = "partition_key", nullable = false)
@@ -108,6 +113,14 @@ public class FileAuditLog {
 
 	public void setLinkId(UUID linkId) {
 		this.linkId = linkId;
+	}
+
+	public String getDetail() {
+		return this.detail;
+	}
+
+	public void setDetail(String detail) {
+		this.detail = detail;
 	}
 
 	public String getPartitionKey() {

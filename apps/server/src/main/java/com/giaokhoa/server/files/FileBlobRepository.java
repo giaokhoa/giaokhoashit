@@ -1,5 +1,7 @@
 package com.giaokhoa.server.files;
 
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,5 +14,9 @@ public interface FileBlobRepository extends JpaRepository<FileBlob, UUID> {
 
 	@Query("select coalesce(sum(b.sizeBytes), 0) from FileBlob b")
 	long sumSizeInPartition();
+
+	List<FileBlob> findByStatus(String status);
+
+	List<FileBlob> findByGcMarkedAtIsNotNullAndGcMarkedAtBefore(OffsetDateTime gcMarkedAt);
 
 }

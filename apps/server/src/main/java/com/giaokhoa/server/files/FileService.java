@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,9 +30,10 @@ import com.giaokhoa.server.tenancy.TenantContexts;
 /**
  * Nghiệp vụ của nền tệp: phiên tải lên năm bước (xin phiên, nhận vào vùng tạm, kiểm chứng nội dung thật, chốt
  * blob bất biến, gắn vào bản nháp có kiểm lại quyền), liên kết tệp theo ngữ cảnh, đường đọc kiểm quyền tại thời
- * điểm truy cập và cách ly blob nguy hiểm phát hiện muộn. Mọi quyết định quyền đi qua
- * {@link AccessDecisionService} của lõi quyền trên đúng tài nguyên và phiên bản đích; người tải lên chỉ là truy
- * vết, không phải nguồn quyền.
+ * điểm truy cập và cách ly blob nguy hiểm phát hiện muộn. Vòng đời nằm ở cùng lớp này: dọn bản ghi phiên đã
+ * hết hạn, thu gom blob đã hết mọi tham chiếu hợp lệ theo thời hạn lưu và khoảng chờ an toàn. Mọi quyết định
+ * quyền đi qua {@link AccessDecisionService} của lõi quyền trên đúng tài nguyên và phiên bản đích; người tải
+ * lên chỉ là truy vết, không phải nguồn quyền.
  */
 @Service
 public class FileService {
@@ -89,6 +91,10 @@ public class FileService {
 
 	private final long maxWorkspaceBytes;
 
+	private final long blobRetentionDays;
+
+	private final long blobGraceHours;
+
 	public FileService(FileBlobRepository blobs, UploadSessionRepository sessionsRepo, FileLinkRepository links,
 			FileAuditLogRepository audit, AccessDecisionService decisions, ResourceGrantRepository grants,
 			PartitionSessions sessions,
@@ -97,7 +103,9 @@ public class FileService {
 			@Value("${app.files.max-megapixels:20000000}") long maxMegapixels,
 			@Value("${app.files.session-ttl-hours:24}") long sessionTtlHours,
 			@Value("${app.files.max-user-bytes:524288000}") long maxUserBytes,
-			@Value("${app.files.max-workspace-bytes:5368709120}") long maxWorkspaceBytes) {
+			@Value("${app.files.max-workspace-bytes:5368709120}") long maxWorkspaceBytes,
+			@Value("${app.files.blob-retention-days:30}") long blobRetentionDays,
+			@Value("${app.files.blob-grace-hours:24}") long blobGraceHours) {
 		this.blobs = blobs;
 		this.sessionsRepo = sessionsRepo;
 		this.links = links;
@@ -112,6 +120,8 @@ public class FileService {
 		this.sessionTtlHours = sessionTtlHours;
 		this.maxUserBytes = maxUserBytes;
 		this.maxWorkspaceBytes = maxWorkspaceBytes;
+		this.blobRetentionDays = blobRetentionDays;
+		this.blobGraceHours = blobGraceHours;
 	}
 
 	public SessionView createSession(CreateSessionRequest request) {
@@ -357,6 +367,15 @@ public class FileService {
 	}
 
 	public void quarantine(UUID blobId) {
+		quarantine(blobId, null);
+	}
+
+	/**
+	 * Cách ly một blob bị phát hiện nguy hiểm sau khi đã chốt: chỉ đổi trạng thái để đường đọc chặn phục vụ,
+	 * tuyệt đối không sửa byte của blob. Dòng kiểm toán của lần cách ly ghi người thực hiện, thời điểm và lý do
+	 * phát hiện muộn để truy vết được ai cách ly, khi nào và vì sao.
+	 */
+	public void quarantine(UUID blobId, String reason) {
 		TenantContext context = requireContext();
 		if (!context.platformAdmin()) {
 			throw AccessException.forbidden("Chỉ quản trị nền tảng được cách ly blob");
@@ -371,7 +390,7 @@ public class FileService {
 			blob.setStatus(FileBlob.STATUS_QUARANTINED);
 			blob.setUpdatedAt(OffsetDateTime.now());
 			this.blobs.save(blob);
-			writeAudit(context, FileAuditLog.ACTION_QUARANTINE, null, null, blobId, null);
+			writeAudit(context, FileAuditLog.ACTION_QUARANTINE, null, null, blobId, null, reason);
 		});
 	}
 
@@ -399,6 +418,120 @@ public class FileService {
 			}
 			return count;
 		});
+	}
+
+	/**
+	 * Xoá hẳn bản ghi của các phiên đã được đánh dấu hết hạn ở một lượt quét trước đó (mốc cập nhật cũ hơn
+	 * {@code now}) cùng byte tạm còn sót của chúng. Phiên còn hạn, phiên đã hoàn tất và blob đã chốt không bao
+	 * giờ bị đụng tới ở đây: bản ghi phiên hết hạn bị xoá không kéo theo blob của nó — blob chỉ rời hệ thống
+	 * qua đường thu gom theo tham chiếu.
+	 */
+	public int purgeExpiredSessions(String partitionKey, OffsetDateTime now) {
+		List<UploadSession> expired = this.sessions.inPartition(partitionKey, "system",
+				() -> this.sessionsRepo.findByStatusAndUpdatedAtBefore(UploadSession.STATUS_EXPIRED, now));
+		for (UploadSession session : expired) {
+			this.storage.deleteStaged(session.getStagingKey());
+		}
+		return this.sessions.inPartition(partitionKey, "system", () -> {
+			List<UploadSession> rows = this.sessionsRepo.findByStatusAndUpdatedAtBefore(
+					UploadSession.STATUS_EXPIRED, now);
+			this.sessionsRepo.deleteAll(rows);
+			return rows.size();
+		});
+	}
+
+	/**
+	 * Thu gom blob theo tham chiếu trong một phân vùng, hai lượt tách rời bởi khoảng chờ an toàn cấu hình được:
+	 * lượt này chỉ ghi mốc thu gom lên blob đã hết mọi tham chiếu hợp lệ và đã qua thời hạn lưu (blob có lại
+	 * tham chiếu thì mốc bị gỡ); blob có mốc đã qua khoảng chờ mới bị xoá, và việc xoá kiểm lại tham chiếu ngay
+	 * trong giao dịch của chính nó. Chốt chặn cuối cùng là khoá ngoại của cơ sở dữ liệu: liên kết tệp, phiên còn
+	 * hiệu lực và khối nội dung câu hỏi đều là khoá ngoại thật trỏ tới blob, và kiểm tra toàn vẹn tham chiếu
+	 * không bị RLS che (tài liệu PostgreSQL, mục Row Security Policies) — một tham chiếu vừa xuất hiện đồng
+	 * thời, kể cả từ bảng mà phiên làm việc của bộ thu gom không đọc được, làm câu lệnh xoá thất bại nguyên tử
+	 * và blob được giữ lại. Byte chỉ bị xoá sau khi bản ghi blob đã xoá thành công, nên không bao giờ còn bản
+	 * ghi trỏ tới byte đã mất. Blob đang bị cách ly là chứng cứ điều tra, không bao giờ là ứng viên thu gom.
+	 */
+	public int collectOrphanedBlobs(String partitionKey, OffsetDateTime now) {
+		OffsetDateTime retentionCutoff = now.minusDays(this.blobRetentionDays);
+		OffsetDateTime graceCutoff = now.minusHours(this.blobGraceHours);
+		List<UUID> candidates = this.sessions.inPartition(partitionKey, "system", () -> {
+			for (FileBlob blob : this.blobs.findByStatus(FileBlob.STATUS_READY)) {
+				if (hasLiveReference(blob.getId())) {
+					if (blob.getGcMarkedAt() != null) {
+						blob.setGcMarkedAt(null);
+						blob.setUpdatedAt(now);
+						this.blobs.save(blob);
+					}
+				}
+				else if (blob.getGcMarkedAt() == null && blob.getCreatedAt().isBefore(retentionCutoff)) {
+					blob.setGcMarkedAt(now);
+					blob.setUpdatedAt(now);
+					this.blobs.save(blob);
+				}
+			}
+			return this.blobs.findByGcMarkedAtIsNotNullAndGcMarkedAtBefore(graceCutoff).stream()
+					.map(FileBlob::getId).toList();
+		});
+		int collected = 0;
+		for (UUID blobId : candidates) {
+			String storageKey = deleteOrphanIfStillUnreferenced(partitionKey, blobId, now, retentionCutoff);
+			if (storageKey != null) {
+				this.storage.delete(storageKey);
+				collected++;
+			}
+		}
+		return collected;
+	}
+
+	private String deleteOrphanIfStillUnreferenced(String partitionKey, UUID blobId, OffsetDateTime now,
+			OffsetDateTime retentionCutoff) {
+		TenantContext systemContext = new TenantContext("system", null, null, List.of(), false, false,
+				partitionKey);
+		try {
+			return this.sessions.inPartition(partitionKey, "system", () -> {
+				FileBlob blob = this.blobs.findById(blobId).orElse(null);
+				if (blob == null || blob.getGcMarkedAt() == null
+						|| !FileBlob.STATUS_READY.equals(blob.getStatus())
+						|| !blob.getCreatedAt().isBefore(retentionCutoff)) {
+					return null;
+				}
+				if (hasLiveReference(blobId)) {
+					blob.setGcMarkedAt(null);
+					blob.setUpdatedAt(now);
+					this.blobs.save(blob);
+					return null;
+				}
+				// Phiên đã hết hạn không còn là tham chiếu hợp lệ nhưng khoá ngoại của nó vẫn chặn câu lệnh xoá
+				// blob; dọn chính các phiên đó trước, trong cùng giao dịch.
+				for (UploadSession session : this.sessionsRepo.findByBlobId(blobId)) {
+					if (UploadSession.STATUS_EXPIRED.equals(session.getStatus())) {
+						this.sessionsRepo.delete(session);
+					}
+				}
+				String storageKey = blob.getStorageKey();
+				this.blobs.delete(blob);
+				this.blobs.flush();
+				writeAudit(systemContext, FileAuditLog.ACTION_BLOB_COLLECTED, null, null, blobId, null);
+				return storageKey;
+			});
+		}
+		catch (DataIntegrityViolationException ex) {
+			// Một tham chiếu vừa xuất hiện đồng thời (liên kết mới của một thao tác sao chép/tạo bản chụp, hay
+			// khối nội dung mới trỏ tới blob này) đã chặn việc xoá bằng khoá ngoại: giữ blob lại, lượt quét sau
+			// tự gỡ mốc khi thấy tham chiếu.
+			return null;
+		}
+	}
+
+	// Tham chiếu hợp lệ của một blob là liên kết tệp còn tồn tại, hoặc một phiên chưa kết thúc vẫn giữ blob:
+	// phiên đã hoàn tất giữ blob qua liên kết nó tạo ra, phiên hết hạn không còn giữ gì.
+	private boolean hasLiveReference(UUID blobId) {
+		if (!this.links.findByBlobId(blobId).isEmpty()) {
+			return true;
+		}
+		return !this.sessionsRepo.findByBlobIdAndStatusIn(blobId,
+				List.of(UploadSession.STATUS_OPEN, UploadSession.STATUS_READY, UploadSession.STATUS_COMPLETED))
+				.isEmpty();
 	}
 
 	private record LocatedSession(UploadSession session, String partitionKey) {
@@ -504,6 +637,11 @@ public class FileService {
 
 	private void writeAudit(TenantContext context, String action, UUID resourceId, UUID versionId, UUID blobId,
 			UUID linkId) {
+		writeAudit(context, action, resourceId, versionId, blobId, linkId, null);
+	}
+
+	private void writeAudit(TenantContext context, String action, UUID resourceId, UUID versionId, UUID blobId,
+			UUID linkId, String detail) {
 		FileAuditLog entry = new FileAuditLog();
 		entry.setId(UuidV7.next());
 		entry.setActorSub(context.sub());
@@ -512,6 +650,7 @@ public class FileService {
 		entry.setResourceVersionId(versionId);
 		entry.setBlobId(blobId);
 		entry.setLinkId(linkId);
+		entry.setDetail((detail != null && detail.length() > 500) ? detail.substring(0, 500) : detail);
 		entry.setCreatedAt(OffsetDateTime.now());
 		this.audit.save(entry);
 	}

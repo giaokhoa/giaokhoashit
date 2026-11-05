@@ -50,6 +50,9 @@ public class FileBlob {
 	@Column(name = "uploaded_by_sub", nullable = false)
 	private String uploadedBySub;
 
+	@Column(name = "gc_marked_at")
+	private OffsetDateTime gcMarkedAt;
+
 	@TenantId
 	@Column(name = "partition_key", nullable = false)
 	private String partitionKey;
@@ -130,6 +133,14 @@ public class FileBlob {
 
 	public void setUploadedBySub(String uploadedBySub) {
 		this.uploadedBySub = uploadedBySub;
+	}
+
+	public OffsetDateTime getGcMarkedAt() {
+		return this.gcMarkedAt;
+	}
+
+	public void setGcMarkedAt(OffsetDateTime gcMarkedAt) {
+		this.gcMarkedAt = gcMarkedAt;
 	}
 
 	public String getPartitionKey() {

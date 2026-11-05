@@ -28,6 +28,12 @@ public interface BlobStorage {
 	/** Đọc byte của một blob đã chốt theo khoá lưu trữ. */
 	byte[] read(String storageKey);
 
+	/**
+	 * Xoá byte của một blob đã chốt theo khoá lưu trữ; chỉ việc thu gom vòng đời được gọi sau khi bản ghi blob
+	 * đã xoá thành công. Không làm gì khi khoá không còn tồn tại.
+	 */
+	void delete(String storageKey);
+
 	/** Dọn các tệp tạm có thời điểm sửa cuối trước mốc cho trước; trả số tệp đã xoá. */
 	int sweepStaging(Instant olderThan);
 
