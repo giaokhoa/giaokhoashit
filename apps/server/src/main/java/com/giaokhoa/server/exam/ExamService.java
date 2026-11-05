@@ -6,10 +6,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -24,12 +26,16 @@ import com.giaokhoa.server.access.ResourceDependency;
 import com.giaokhoa.server.access.ResourceDependencyRepository;
 import com.giaokhoa.server.access.ResourceVersion;
 import com.giaokhoa.server.access.ResourceVersionRepository;
+import com.giaokhoa.server.attachment.AttachmentStore;
 import com.giaokhoa.server.exam.ExamAccessDecider.Decision;
 import com.giaokhoa.server.exam.QuestionVersionSource.QuestionVersionInfo;
+import com.giaokhoa.server.files.UuidV7;
+import com.giaokhoa.server.math.MathFormulaService;
 import com.giaokhoa.server.tenancy.TenantContext;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
@@ -85,11 +91,15 @@ public class ExamService {
 
 	private final ObjectMapper objectMapper;
 
+	private final AttachmentStore attachmentStore;
+
+	private final MathFormulaService formulas;
+
 	public ExamService(ExamRepository exams, ExamVersionRepository versions, ExamItemRepository items,
 			ExamItemSnapshotRepository snapshots, ExamAccessDecider decider, QuestionVersionSource questionVersions,
 			PartitionSessions sessions, AccessResourceRepository resources,
 			ResourceVersionRepository coreVersions, ResourceDependencyRepository dependencies,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper, AttachmentStore attachmentStore, MathFormulaService formulas) {
 		this.exams = exams;
 		this.versions = versions;
 		this.items = items;
@@ -101,6 +111,8 @@ public class ExamService {
 		this.coreVersions = coreVersions;
 		this.dependencies = dependencies;
 		this.objectMapper = objectMapper;
+		this.attachmentStore = attachmentStore;
+		this.formulas = formulas;
 	}
 
 	public ExamView createExam(TenantContext context, boolean personalAuthor, String title, String workspace,
@@ -269,6 +281,121 @@ public class ExamService {
 		return readView(context, partition, examId, newVersionId);
 	}
 
+	// Sao chép một phiên bản đề thành một đề mới thuộc về người sao chép, theo cơ chế snapshot của đề: bản
+	// sao mang ngay snapshot của từng thành phần tại thời điểm sao chép (từ snapshot đã phát hành của nguồn
+	// nếu có, nếu chưa thì đóng băng từ nội dung sống) kèm tệp và ảnh theo đúng các tham chiếu đã đóng băng
+	// đó. Quyền dùng trên từng thành phần được đánh giá lại tại thời điểm sao chép như khi phát hành — một
+	// thành phần không qua được thì toàn bộ lần sao chép bị từ chối. Sao chép đề không tạo quyền nào trên
+	// các câu thành phần và không mang nguồn LaTeX đi đâu cả: snapshot vốn chỉ chứa mặt trình bày.
+	public ExamView copyExam(TenantContext context, boolean personalAuthor, UUID examId, UUID versionId) {
+		if (!personalAuthor) {
+			throw forbidden(
+					"Tài khoản không có quyền soạn nền tảng personal-author nên không tạo được bản sao đề cá nhân.");
+		}
+		String sourcePartition = locatePartition(context, examId);
+		LoadedData data = this.sessions.inPartition(sourcePartition, context.sub(), () -> {
+			Exam exam = this.exams.findById(examId).orElseThrow(ExamService::notFound);
+			ExamVersion version = versionOf(examId, versionId);
+			List<ExamItemSnapshot> snapshotRows = "published".equals(version.getStatus())
+					? this.snapshots.findByExamVersionIdOrderByPositionAsc(version.getId()) : List.of();
+			return new LoadedData(exam, version, this.items.findByExamVersionIdOrderByPositionAsc(version.getId()),
+					snapshotRows);
+		});
+		if (!this.decider.decide(context, data.exam(), data.version(), ExamAction.VIEW_CONTENT).allowed()) {
+			throw forbidden("Người gọi không có quyền sao chép phiên bản đề này.");
+		}
+		List<QuestionVersionInfo> infos = new ArrayList<>();
+		for (ExamItem item : data.itemRows()) {
+			QuestionVersionInfo info = this.questionVersions.find(item.getQuestionVersionId())
+					.orElseThrow(() -> forbidden("Phiên bản câu " + item.getQuestionVersionId()
+							+ " của mục tại vị trí " + item.getPosition() + " không còn tra cứu được."));
+			if (!this.decider.decideOnQuestion(context, info, ExamAction.USE).allowed()) {
+				throw forbidden("Không còn quyền dùng câu tại vị trí " + item.getPosition() + " (phiên bản câu "
+						+ item.getQuestionVersionId() + ") nên không sao chép được.");
+			}
+			infos.add(info);
+		}
+		Map<Integer, ExamItemSnapshot> sourceSnapshots = new HashMap<>();
+		for (ExamItemSnapshot snapshot : data.snapshotRows()) {
+			sourceSnapshots.put(snapshot.getPosition(), snapshot);
+		}
+		Exam source = data.exam();
+		OffsetDateTime now = OffsetDateTime.now();
+		Exam copy = new Exam();
+		copy.setId(UuidV7.next());
+		copy.setTitle(source.getTitle());
+		copy.setWorkspaceKind("personal");
+		copy.setOwnerType("user");
+		copy.setOwnerUserSub(context.sub());
+		copy.setCustodyKind("owned");
+		// Bộ sưu tập chỉ đi theo khi chính người sao chép là chủ của đề nguồn; bản sao từ đề của người khác
+		// không tự chui vào bộ sưu tập nào của chủ nguồn hay của người sao chép.
+		copy.setCollectionId(context.sub().equals(source.getOwnerUserSub()) ? source.getCollectionId() : null);
+		copy.setCreatedBySub(context.sub());
+		copy.setCreatedAt(now);
+		copy.setUpdatedAt(now);
+		ExamVersion copyVersion = new ExamVersion();
+		copyVersion.setId(UuidV7.next());
+		copyVersion.setExamId(copy.getId());
+		copyVersion.setVersionNumber(1);
+		copyVersion.setStatus("draft");
+		copyVersion.setCreatedBySub(context.sub());
+		copyVersion.setCreatedAt(now);
+		copyVersion.setUpdatedAt(now);
+		List<ExamItem> copyItems = new ArrayList<>();
+		List<ExamItemSnapshot> copySnapshots = new ArrayList<>();
+		for (int i = 0; i < data.itemRows().size(); i++) {
+			ExamItem sourceItem = data.itemRows().get(i);
+			ExamItem item = new ExamItem();
+			item.setId(UuidV7.next());
+			item.setExamId(copy.getId());
+			item.setExamVersionId(copyVersion.getId());
+			item.setQuestionVersionId(sourceItem.getQuestionVersionId());
+			item.setPosition(sourceItem.getPosition());
+			item.setScore(sourceItem.getScore());
+			item.setCreatedAt(now);
+			item.setUpdatedAt(now);
+			copyItems.add(item);
+			ExamItemSnapshot sourceSnapshot = sourceSnapshots.get(sourceItem.getPosition());
+			String content = sourceSnapshot != null ? sourceSnapshot.getContent()
+					: this.objectMapper.writeValueAsString(frozenContent(infos.get(i)));
+			ExamItemSnapshot snapshot = new ExamItemSnapshot();
+			snapshot.setId(UuidV7.next());
+			snapshot.setExamItemId(item.getId());
+			snapshot.setExamVersionId(copyVersion.getId());
+			snapshot.setQuestionVersionId(sourceItem.getQuestionVersionId());
+			snapshot.setQuestionType(infos.get(i).questionType());
+			snapshot.setPosition(sourceItem.getPosition());
+			snapshot.setScore(sourceItem.getScore());
+			snapshot.setContent(content);
+			snapshot.setCreatedAt(now);
+			snapshot.setUpdatedAt(now);
+			copySnapshots.add(snapshot);
+		}
+		copyVersion.setContentHash(contentHash(copySnapshots));
+		String targetPartition = "user:" + context.sub();
+		this.sessions.inPartition(targetPartition, context.sub(), () -> {
+			this.exams.save(copy);
+			this.versions.save(copyVersion);
+			saveResourceMirror(copy);
+			// Truy vết nguồn của bản sao đề nằm ở hàng gương của lõi quyền, cùng khuôn truy vết của bản
+			// nhận khi nộp: bản sao là tài nguyên mới nhưng luôn chỉ rõ nó sinh ra từ đề và phiên bản
+			// nào, mà không kế thừa quyền hay bộ sưu tập của nguồn.
+			this.resources.findById(copy.getId()).ifPresent((mirror) -> {
+				mirror.setSourceResourceId(source.getId());
+				mirror.setSourceVersionId(data.version().getId());
+				this.resources.save(mirror);
+			});
+			saveVersionMirror(copyVersion);
+			for (ExamItem item : copyItems) {
+				this.items.save(item);
+			}
+			this.snapshots.saveAll(copySnapshots);
+			return null;
+		});
+		return readView(context, targetPartition, copy.getId(), copyVersion.getId());
+	}
+
 	public ExamView publish(TenantContext context, UUID examId, UUID versionId) {
 		String partition = locatePartition(context, examId);
 		LoadedData data = this.sessions.inPartition(partition, context.sub(), () -> {
@@ -320,11 +447,18 @@ public class ExamService {
 				snapshot.setQuestionType(info.questionType());
 				snapshot.setPosition(item.getPosition());
 				snapshot.setScore(item.getScore());
-				snapshot.setContent(this.objectMapper.writeValueAsString(info.content()));
+				snapshot.setContent(this.objectMapper.writeValueAsString(frozenContent(info)));
 				snapshot.setCreatedAt(now);
 				snapshot.setUpdatedAt(now);
 				frozen.add(snapshot);
 			}
+			// Hàng snapshot có sẵn ở thời điểm này chỉ có thể đến từ thao tác sao chép đề (bản sao mang sẵn
+			// snapshot của nó): phát hành đóng băng lại từ nội dung sống nên tập cũ phải được thay trọn vẹn,
+			// không để hai tập snapshot cùng thuộc một phiên bản. Lệnh xoá phải được đẩy xuống cơ sở dữ
+			// kiện ngay (flush) trước khi ghi tập mới, vì thứ tự flush mặc định ghi hàng mới trước khi
+			// xoá hàng cũ và ràng buộc một snapshot cho mỗi mục đề sẽ chặn cả lượt phát hành.
+			this.snapshots.deleteAll(this.snapshots.findByExamVersionIdOrderByPositionAsc(version.getId()));
+			this.snapshots.flush();
 			this.snapshots.saveAll(frozen);
 			version.setStatus("published");
 			version.setPublishedAt(now);
@@ -522,7 +656,73 @@ public class ExamService {
 			copy.remove("rubric");
 			copy.remove("solution");
 		}
+		// Tệp và ảnh thuộc phần đáp án cũng là đáp án: chúng bị lược cùng quy tắc với các trường văn bản ở
+		// trên, trên chính bản sao đã lược, để người không có view_answer không đọc được chúng qua snapshot.
+		if (copy.get("attachments") instanceof ArrayNode attachments) {
+			for (int i = attachments.size() - 1; i >= 0; i--) {
+				String position = attachments.get(i).path("position").asString("");
+				if ("answer".equals(position) || "solution".equals(position)) {
+					attachments.remove(i);
+				}
+			}
+		}
+		if (copy.get("formulaImages") instanceof ArrayNode images) {
+			for (int i = images.size() - 1; i >= 0; i--) {
+				String section = images.get(i).path("section").asString("");
+				if ("solution".equals(section) || "rubric".equals(section)) {
+					images.remove(i);
+				}
+			}
+		}
 		return copy;
+	}
+
+	// Nội dung đóng băng của một mục đề: nội dung văn bản của phiên bản câu kèm bản kê tệp đính kèm và ảnh
+	// công thức đã render xong của đúng phiên bản đó, chụp tại thời điểm đóng băng. Bản chụp chỉ mang tham
+	// chiếu blob và số đo hiển thị — không mang nguồn LaTeX — nên đề đã giao tồn tại độc lập: câu nguồn có
+	// sửa, xoá hay render lại sau đó cũng không đổi được bản chụp này.
+	private JsonNode frozenContent(QuestionVersionInfo info) {
+		ObjectNode content = info.content() instanceof ObjectNode object ? object.deepCopy()
+				: this.objectMapper.createObjectNode();
+		// Phân vùng nhà của các blob thuộc phiên bản câu này: tệp đính kèm và ảnh render đều được ghi ở
+		// phân vùng của chủ phiên bản khi tạo, nên bản chụp ghi lại khoá đó để đường đọc của lượt làm
+		// định vị đúng blob sau khi đã quyết quyền theo snapshot, thay vì tìm trong phân vùng của người
+		// đọc vốn không chứa blob của người soạn.
+		String blobPartition = info.ownerOrganizationId() != null ? info.ownerOrganizationId()
+				: "user:" + info.ownerUserSub();
+		ArrayNode attachments = content.putArray("attachments");
+		for (AttachmentStore.Link link : this.attachmentStore.findLinksForVersion(info.questionVersionId())) {
+			ObjectNode node = attachments.addObject();
+			node.put("blobId", link.blobId().toString());
+			node.put("blobPartitionKey", blobPartition);
+			node.put("position", link.position());
+			node.put("blockId", link.blockId());
+			node.put("displayName", link.displayName());
+			this.attachmentStore.findBlob(link.blobId()).ifPresent((blob) -> {
+				node.put("contentType", blob.contentType());
+				node.put("width", blob.width());
+				node.put("height", blob.height());
+			});
+		}
+		ArrayNode images = content.putArray("formulaImages");
+		for (MathFormulaService.FormulaSnapshot formula : this.formulas.snapshotBlocks(info.questionVersionId())) {
+			if (formula.image() == null) {
+				continue;
+			}
+			ObjectNode node = images.addObject();
+			node.put("blockId", formula.blockId());
+			node.put("section", formula.section());
+			node.put("position", formula.position());
+			node.put("fileRef", formula.image().fileRef());
+			node.put("imageBlobId",
+					formula.image().imageBlobId() != null ? formula.image().imageBlobId().toString() : null);
+			node.put("blobPartitionKey", blobPartition);
+			node.put("width", formula.image().width());
+			node.put("height", formula.image().height());
+			node.put("baselineOffset", formula.image().baselineOffset());
+			node.put("description", formula.description());
+		}
+		return content;
 	}
 
 	// content_hash băm trên chính các văn bản snapshot đã ghi (theo thứ tự mục, kèm định danh phiên bản câu,

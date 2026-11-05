@@ -9,6 +9,9 @@ import java.util.UUID;
 
 import com.giaokhoa.server.access.AccessDecisionService.Decision;
 import com.giaokhoa.server.access.AccessDecisionService.Located;
+import com.giaokhoa.server.files.FileLink;
+import com.giaokhoa.server.files.FileLinkRepository;
+import com.giaokhoa.server.files.UuidV7;
 import com.giaokhoa.server.tenancy.TenantContext;
 
 import org.springframework.stereotype.Service;
@@ -17,8 +20,10 @@ import org.springframework.stereotype.Service;
  * Bàn giao chính thức tài nguyên từ kho cá nhân của giáo viên vào một trung tâm: trung tâm tạo yêu cầu, giáo viên
  * được nêu tên chọn phiên bản và nộp, API kiểm tra quyền {@code submit} trên từng mục ngay tại thời điểm nộp và —
  * chỉ khi mọi mục đều đạt — tạo các bản thuộc trung tâm kèm một biên nhận bất biến trong cùng một đơn vị ghi của
- * phân vùng trung tâm. Yêu cầu nộp không cấp cho trung tâm quyền đọc nào trên kho cá nhân của giáo viên, và một
- * mục không đạt làm toàn bộ lần nộp bị từ chối mà không tạo dữ kiện một phần nào.
+ * phân vùng trung tâm. Nội dung của từng bản nhận được đóng băng ngay tại thời điểm nộp (xem
+ * {@link SubmissionContentSnapshot}) và tệp của bản nhận là liên kết mới thuộc chính bản nhận, nên bản nhận tồn
+ * tại độc lập với kho cá nhân sau đó. Yêu cầu nộp không cấp cho trung tâm quyền đọc nào trên kho cá nhân của giáo
+ * viên, và một mục không đạt làm toàn bộ lần nộp bị từ chối mà không tạo dữ kiện một phần nào.
  */
 @Service
 public class HandoverService {
@@ -48,7 +53,8 @@ public class HandoverService {
 			OffsetDateTime submittedAt, List<SubmissionItemView> items) {
 	}
 
-	private record DecidedItem(AccessResource source, ResourceVersion sourceVersion) {
+	private record DecidedItem(AccessResource source, ResourceVersion sourceVersion, String partitionKey,
+			SubmissionContentSnapshot.FrozenContent frozen) {
 	}
 
 	private final HandoverRequestRepository requests;
@@ -65,9 +71,14 @@ public class HandoverService {
 
 	private final PartitionSessions sessions;
 
+	private final SubmissionContentSnapshot contentFreezer;
+
+	private final FileLinkRepository receiptLinks;
+
 	public HandoverService(HandoverRequestRepository requests, SubmissionRepository submissions,
 			SubmissionItemRepository submissionItems, AccessResourceRepository resources,
-			ResourceVersionRepository versions, AccessDecisionService decisions, PartitionSessions sessions) {
+			ResourceVersionRepository versions, AccessDecisionService decisions, PartitionSessions sessions,
+			SubmissionContentSnapshot contentFreezer, FileLinkRepository receiptLinks) {
 		this.requests = requests;
 		this.submissions = submissions;
 		this.submissionItems = submissionItems;
@@ -75,6 +86,8 @@ public class HandoverService {
 		this.versions = versions;
 		this.decisions = decisions;
 		this.sessions = sessions;
+		this.contentFreezer = contentFreezer;
+		this.receiptLinks = receiptLinks;
 	}
 
 	public HandoverRequestView createRequest(TenantContext context, CreateHandoverRequest request) {
@@ -164,7 +177,28 @@ public class HandoverService {
 			ResourceVersion sourceVersion = this.sessions.inPartition(located.partitionKey(), context.sub(),
 					() -> this.versions.findByIdAndResourceId(item.sourceVersionId(), item.sourceResourceId())
 							.orElse(null));
-			decided.add(new DecidedItem(located.resource(), sourceVersion));
+			SubmissionContentSnapshot.FrozenContent frozen = sourceVersion != null
+					? this.contentFreezer.freeze(context, located.resource(), sourceVersion,
+							located.partitionKey(), organizationPartition)
+					: new SubmissionContentSnapshot.FrozenContent(null, List.of());
+			decided.add(new DecidedItem(located.resource(), sourceVersion, located.partitionKey(), frozen));
+		}
+		// Nộp chốt phiên bản nguồn ở lõi như chia sẻ đã làm: bản nhận của trung tâm từ đây luôn khớp với một
+		// trạng thái nguồn cố định, và việc sửa tiếp trên nguồn chỉ đi qua phiên bản mới.
+		for (DecidedItem item : decided) {
+			if (item.sourceVersion() == null) {
+				continue;
+			}
+			this.sessions.inPartition(item.partitionKey(), context.sub(), () -> {
+				ResourceVersion version = this.versions
+						.findByIdAndResourceId(item.sourceVersion().getId(), item.source().getId()).orElse(null);
+				if (version != null && version.getLockedAt() == null) {
+					OffsetDateTime now = OffsetDateTime.now();
+					version.setLockedAt(now);
+					version.setUpdatedAt(now);
+					this.versions.save(version);
+				}
+			});
 		}
 		HandoverRequest target = handover;
 		return this.sessions.inPartition(partition, context.sub(), () -> {
@@ -205,9 +239,27 @@ public class HandoverService {
 				row.setSourceVersionId(item.sourceVersion().getId());
 				row.setReceivedResourceId(received.getId());
 				row.setReceivedVersionId(receivedVersion.getId());
+				row.setContentSnapshot(item.frozen().json());
 				row.setCreatedAt(now);
 				row.setUpdatedAt(now);
 				rows.add(this.submissionItems.save(row));
+				// Tệp của bản nhận là liên kết mới thuộc chính bản nhận, trỏ tới blob đã dời nhà vào
+				// phân vùng của trung tâm khi đóng băng: trung tâm đọc tệp qua liên kết của mình, và
+				// việc xoá hay sửa phía cá nhân sau đó không chạm được vào cả liên kết lẫn blob này.
+				for (SubmissionContentSnapshot.FrozenFile file : item.frozen().files()) {
+					FileLink link = new FileLink();
+					link.setId(UuidV7.next());
+					link.setResourceId(received.getId());
+					link.setResourceVersionId(receivedVersion.getId());
+					link.setPosition(file.position());
+					link.setBlockId(file.blockId());
+					link.setBlobId(file.blobId());
+					link.setDisplayName(file.displayName());
+					link.setCreatedBySub(context.sub());
+					link.setCreatedAt(now);
+					link.setUpdatedAt(now);
+					this.receiptLinks.save(link);
+				}
 			}
 			return view(submission, rows);
 		});
@@ -254,6 +306,23 @@ public class HandoverService {
 			}
 		});
 		return view(submission, rows);
+	}
+
+	// Nội dung đã đóng băng của một mục trong biên nhận: chỉ thành viên của chính trung tâm chứa biên nhận
+	// mới đọc được, và dữ kiện trả về là bản chụp tại thời điểm nộp — không đọc lại phía cá nhân của người
+	// nộp, nên bản cá nhân có bị sửa hay xoá sau đó cũng không đổi được nội dung này.
+	public String receiptContent(TenantContext context, UUID submissionId, UUID itemId) {
+		if (!this.decisions.isCenterMember(context)) {
+			throw AccessException.forbidden("Chỉ thành viên của trung tâm mới đọc được bản đã nhận");
+		}
+		return this.sessions.inPartition(context.organizationId(), context.sub(), () -> {
+			SubmissionItem item = this.submissionItems.findById(itemId)
+					.filter((row) -> row.getSubmissionId().equals(submissionId)).orElse(null);
+			if (item == null || item.getContentSnapshot() == null) {
+				throw AccessException.notFound("Không tìm thấy nội dung đã đóng băng của mục này");
+			}
+			return item.getContentSnapshot();
+		});
 	}
 
 	private static HandoverRequestView view(HandoverRequest row) {

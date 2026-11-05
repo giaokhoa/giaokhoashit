@@ -217,6 +217,38 @@ public class MathFormulaService {
 		}
 	}
 
+	public record FormulaImageSnapshot(String fileRef, UUID imageBlobId, Integer width, Integer height,
+			Integer baselineOffset) {
+	}
+
+	public record FormulaSnapshot(String blockId, String section, int position, String form, boolean display,
+			boolean systemOrigin, boolean answerBearing, String description, FormulaImageSnapshot image) {
+	}
+
+	// Hình chiếu đóng băng của các khối công thức của một phiên bản, dùng cho bản sao và bản nhận (bản chụp
+	// đề, bản nộp về trung tâm): mang dạng khối cùng tham chiếu ảnh render hiện hành, không mang nguồn ở
+	// bất kỳ dạng nào — khối có-nguồn cũng chỉ đóng băng ở phần ảnh. Quyền trên phiên bản đã được phía gọi
+	// quyết trước; hình chiếu này không tự mở thêm quyền đọc nào.
+	public List<FormulaSnapshot> snapshotBlocks(UUID versionId) {
+		return this.store.blocksOf(versionId).stream().map((block) -> {
+			FormulaRender render = this.store.currentRender(block).orElse(null);
+			FormulaImageSnapshot image = render != null && render.ready()
+					? new FormulaImageSnapshot(render.getId().toString(), render.getImageBlobId(),
+							render.getImageWidth(), render.getImageHeight(), render.getBaselineOffset())
+					: null;
+			return new FormulaSnapshot(block.getBlockId(), block.getSection(), block.getPosition(), block.getForm(),
+					block.isDisplay(), block.isSystemOrigin(), block.answerBearing(), block.getDescription(), image);
+		}).toList();
+	}
+
+	// Điểm nối cho thao tác sao chép câu hỏi: khối công thức và bản ghi render của chúng được mang sang
+	// phiên bản của bản sao theo đúng quy tắc nguồn của lần sao chép đó (xem MathFormulaStore.copyBlocksTo).
+	// Quyền sao chép đã được quyết ở dịch vụ câu hỏi trước khi gọi tới đây.
+	public void carryBlocksForCopy(UUID sourceVersionId, UUID targetVersionId, String targetOwnerSub,
+			boolean keepSource, String actorSub) {
+		this.store.copyBlocksTo(sourceVersionId, targetVersionId, targetOwnerSub, keepSource, actorSub);
+	}
+
 	private void renderAndAttach(MathFormulaStore.SavedSource saved, String actorSub) {
 		FormulaRender render = saved.render();
 		if (render.ready()) {

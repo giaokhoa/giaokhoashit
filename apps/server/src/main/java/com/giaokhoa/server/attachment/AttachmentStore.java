@@ -68,6 +68,15 @@ public interface AttachmentStore {
 
 	Optional<byte[]> readBlob(UUID blobId);
 
+	// Dời nhà cho một blob khi liên kết tham chiếu tới nó chuyển sang phân vùng khác (sao chép sang chủ
+	// khác, nộp về trung tâm): blob được đọc trong phân vùng nhà ghi trên hàng của nó và ghi thành một
+	// blob mới — định danh mới, cùng byte và metadata, cùng trạng thái — trong phân vùng đích, để mọi
+	// đường đọc vốn định vị blob theo phân vùng của bản ghi tham chiếu đều thấy đúng blob của mình và
+	// vòng đời của bản sao/bản nhận độc lập với blob nguồn. Hai phân vùng trùng nhau thì giữ nguyên định
+	// danh; không định vị được hàng blob ở phân vùng nguồn thì cũng giữ nguyên định danh (tham chiếu giữ
+	// nguyên như trước, thao tác mang liên kết không vì thế mà hỏng).
+	UUID rehomeBlob(UUID blobId, String fromPartitionKey, String toPartitionKey);
+
 	void stage(UUID sessionId, byte[] bytes);
 
 	Optional<byte[]> staged(UUID sessionId);

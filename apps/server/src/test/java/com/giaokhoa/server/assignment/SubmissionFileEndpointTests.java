@@ -169,7 +169,7 @@ class SubmissionFileEndpointTests {
 								new BigDecimal("5"), "Câu hỏi 1: 2 + 2 bằng mấy?",
 								List.of(new ExamVersionSnapshots.Choice("c1", "3"),
 										new ExamVersionSnapshots.Choice("c2", "4")),
-								"c2", null)))));
+								"c2", null, List.of(), List.of())))));
 		lenient().when(this.useDecisions.decideUse(any(), any(), any()))
 				.thenReturn(ExamUseDecisions.Verdict.ALLOWED);
 

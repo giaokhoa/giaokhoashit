@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.giaokhoa.server.attachment.AttachmentStore;
 import com.giaokhoa.server.grading.AttemptGradeSummary;
 import com.giaokhoa.server.grading.AttemptItemGrade;
 import com.giaokhoa.server.grading.AttemptItemGradeRepository;
@@ -36,6 +38,10 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AttemptService {
+
+	private static final Set<String> ANSWER_FILE_POSITIONS = Set.of("answer", "solution");
+
+	private static final Set<String> ANSWER_IMAGE_SECTIONS = Set.of("solution", "rubric");
 
 	private final ExamAssignmentRepository assignments;
 
@@ -61,11 +67,14 @@ public class AttemptService {
 
 	private final ExamSnapshotSource gradingSnapshots;
 
+	private final AttachmentStore attachmentStore;
+
 	public AttemptService(ExamAssignmentRepository assignments, ExamAttemptRepository attempts,
 			AttemptAnswerRepository answers, TeachingChecks teaching, ExamVersionSnapshots snapshots,
 			AssignmentPartitions partitions, ObjectMapper objectMapper, SubmissionGrading submissionGrading,
 			GradingService grading, AttemptItemGradeRepository itemGrades,
-			AttemptGradeSummaryRepository gradeSummaries, ExamSnapshotSource gradingSnapshots) {
+			AttemptGradeSummaryRepository gradeSummaries, ExamSnapshotSource gradingSnapshots,
+			AttachmentStore attachmentStore) {
 		this.assignments = assignments;
 		this.attempts = attempts;
 		this.answers = answers;
@@ -78,6 +87,7 @@ public class AttemptService {
 		this.itemGrades = itemGrades;
 		this.gradeSummaries = gradeSummaries;
 		this.gradingSnapshots = gradingSnapshots;
+		this.attachmentStore = attachmentStore;
 	}
 
 	// Phần kết quả chỉ tồn tại khi lượt làm đã công bố: trước mốc đó trường này luôn null và đáp ứng không mang
@@ -88,10 +98,23 @@ public class AttemptService {
 	}
 
 	public record ItemView(UUID examItemId, String type, int position, java.math.BigDecimal points, String prompt,
-			List<ChoiceView> choices) {
+			List<ChoiceView> choices, List<AttachmentView> attachments, List<FormulaImageView> formulaImages) {
 	}
 
 	public record ChoiceView(String choiceId, String text) {
+	}
+
+	// Tệp và ảnh công thức của đề bài, lấy từ chính snapshot đã đóng băng: chỉ mang tham chiếu blob và số đo
+	// hiển thị; byte được đọc qua đường tệp của snapshot với cùng điều kiện quyền của lượt làm.
+	public record AttachmentView(UUID blobId, String position, String blockId, String displayName,
+			String contentType, Integer width, Integer height) {
+	}
+
+	public record FormulaImageView(String blockId, String section, int position, String fileRef, UUID imageBlobId,
+			Integer width, Integer height, Integer baselineOffset, String description) {
+	}
+
+	public record SnapshotFile(byte[] bytes, String contentType, String displayName) {
 	}
 
 	public record AnswerView(UUID examItemId, JsonNode answer) {
@@ -158,6 +181,68 @@ public class AttemptService {
 		// Hình chiếu chấm do lát chấm dựng bằng giao dịch riêng trên ngữ cảnh thật của request, vì ngữ cảnh
 		// dữ kiện đã ghim trong phạm vi phân vùng ở trên không mang vai của người gọi.
 		return outcome.teacherView() ? this.grading.attemptView(attemptId) : outcome.view();
+	}
+
+	// Byte của một tệp hay ảnh thuộc chính snapshot của lượt làm: blob chỉ được phục vụ khi định danh của nó
+	// nằm trong bản kê đã đóng băng của phiên bản đề của lượt này (phần trình bày, không gồm phần đáp án),
+	// và người gọi là chủ lượt làm hoặc giáo viên được phân công dạy lớp đích. Đường này không đọc liên kết
+	// sống của phiên bản câu, nên tệp của đề đã giao không đổi khi câu nguồn thay đổi sau đó.
+	public SnapshotFile snapshotFile(TenantContext context, UUID attemptId, UUID blobId) {
+		String partition = readPartition(context);
+		return this.partitions.inPartition(partition, context.sub(), () -> {
+			ExamAttempt attempt = this.attempts.findById(attemptId)
+					.orElseThrow(() -> AssignmentException.notFound("Lượt làm không tồn tại."));
+			ExamAssignment assignment = assignmentOf(attempt);
+			boolean owner = context.sub().equals(attempt.getStudentSub());
+			boolean teacher = !context.guest() && this.teaching.isAssignedToTeach(context.sub(), partition,
+					assignment.getClassId());
+			if (!owner && !teacher) {
+				throw AssignmentException.notFound("Lượt làm không tồn tại.");
+			}
+			ExamVersionSnapshots.Snapshot snapshot = snapshotOf(assignment);
+			String displayName = null;
+			String contentType = null;
+			String blobPartition = null;
+			for (ExamVersionSnapshots.Item item : snapshot.items()) {
+				for (ExamVersionSnapshots.Attachment attachment : item.attachments()) {
+					if (blobId.equals(attachment.blobId())
+							&& !ANSWER_FILE_POSITIONS.contains(attachment.position())) {
+						displayName = attachment.displayName();
+						contentType = attachment.contentType();
+						blobPartition = attachment.blobPartitionKey();
+					}
+				}
+				for (ExamVersionSnapshots.FormulaImage image : item.formulaImages()) {
+					if (blobId.equals(image.imageBlobId()) && !ANSWER_IMAGE_SECTIONS.contains(image.section())) {
+						displayName = image.description();
+						contentType = "image/png";
+						blobPartition = image.blobPartitionKey();
+					}
+				}
+			}
+			if (contentType == null) {
+				throw AssignmentException.notFound("Tệp không thuộc snapshot của lượt làm này.");
+			}
+			byte[] bytes = readSnapshotBlob(blobPartition, partition, context.sub(), blobId)
+					.orElseThrow(() -> AssignmentException.notFound("Tệp không thuộc snapshot của lượt làm này."));
+			return new SnapshotFile(bytes, contentType, displayName != null ? displayName : "tep-ban-chup");
+		});
+	}
+
+	// Byte của blob trong snapshot đọc ở phân vùng nhà đã đóng băng cùng snapshot (phân vùng của chủ
+	// phiên bản câu), vì blob không nằm trong phân vùng của lượt làm; snapshot cũ không ghi khoá thì đọc
+	// ngay trong phân vùng hiện hành như trước. Blob chưa sẵn sàng (ví dụ đã bị cách ly) thì coi như
+	// không có tệp.
+	private java.util.Optional<byte[]> readSnapshotBlob(String blobPartition, String readPartition,
+			String actorSub, UUID blobId) {
+		java.util.function.Supplier<java.util.Optional<byte[]>> read = () -> this.attachmentStore
+				.findBlob(blobId)
+				.filter((candidate) -> AttachmentStore.BLOB_READY.equals(candidate.status()))
+				.flatMap((blob) -> this.attachmentStore.readBlob(blobId));
+		if (blobPartition != null && !blobPartition.equals(readPartition)) {
+			return this.partitions.inPartition(blobPartition, actorSub, read::get);
+		}
+		return read.get();
 	}
 
 	private record ReadOutcome(AttemptView view, boolean teacherView) {
@@ -388,7 +473,8 @@ public class AttemptService {
 
 	// Hình chiếu cho học viên do server tạo từ snapshot: chỉ định danh mục, loại câu, thân câu, các lựa chọn và
 	// điểm — đáp án đúng và tiêu chí chấm của snapshot không bao giờ được chép sang DTO này, ở bất kỳ trường
-	// nào.
+	// nào. Tệp và ảnh công thức đi theo cùng quy tắc: tệp ở vị trí đáp án và ảnh thuộc phần lời giải hay tiêu
+	// chí chấm bị lược khỏi hình chiếu này dù snapshot có mang chúng.
 	private AttemptView view(ExamAttempt attempt, ExamAssignment assignment) {
 		List<ItemView> items = this.snapshots.findByVersionId(assignment.getExamVersionId())
 				.map(snapshot -> snapshot.items().stream()
@@ -397,6 +483,18 @@ public class AttemptService {
 								item.prompt(),
 								item.choices().stream()
 										.map(choice -> new ChoiceView(choice.choiceId(), choice.text()))
+										.toList(),
+								item.attachments().stream()
+										.filter(attachment -> !ANSWER_FILE_POSITIONS.contains(attachment.position()))
+										.map(attachment -> new AttachmentView(attachment.blobId(), attachment.position(),
+												attachment.blockId(), attachment.displayName(), attachment.contentType(),
+												attachment.width(), attachment.height()))
+										.toList(),
+								item.formulaImages().stream()
+										.filter(image -> !ANSWER_IMAGE_SECTIONS.contains(image.section()))
+										.map(image -> new FormulaImageView(image.blockId(), image.section(),
+												image.position(), image.fileRef(), image.imageBlobId(), image.width(),
+												image.height(), image.baselineOffset(), image.description()))
 										.toList()))
 						.toList())
 				.orElse(List.of());

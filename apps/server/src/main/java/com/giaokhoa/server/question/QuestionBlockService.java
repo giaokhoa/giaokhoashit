@@ -113,7 +113,8 @@ public class QuestionBlockService {
 		}
 		for (BlockInput input : inputs) {
 			QuestionVersionBlock matched = (input.blockId() != null) ? existingById.get(input.blockId()) : null;
-			boolean writesSource = QuestionVersionBlock.KIND_FORMULA.equals(input.kind());
+			boolean writesSource = QuestionVersionBlock.KIND_FORMULA.equals(input.kind()) && input.source() != null
+					&& !input.source().isBlank();
 			// Xoá nguồn cũng là thao tác trên nguồn: khối có-nguồn được giữ định danh nhưng đầu vào đổi sang
 			// khối văn bản thì nguồn của nó mất đi, nên vẫn đòi quyền sửa nguồn như khi ghi nguồn mới.
 			boolean dropsSource = !writesSource && matched != null
@@ -157,16 +158,23 @@ public class QuestionBlockService {
 			}
 			else {
 				block.setTextContent(null);
-				boolean sameSource = QuestionVersionBlock.FORM_SOURCE_BACKED.equals(block.getFormulaForm())
-						&& input.source().equals(block.getMathSource());
-				// Nguồn không đổi thì giữ nguyên revision, trạng thái render và ảnh đã có của khối: định danh
-				// ổn định là để sửa văn bản quanh công thức mà không làm mất ảnh của nó; nguồn đổi thì revision
-				// tăng và render chạy lại, kết quả render của revision cũ không ghi đè được revision mới.
-				if (!sameSource) {
-					block.setFormulaForm(QuestionVersionBlock.FORM_SOURCE_BACKED);
-					block.setMathSource(input.source());
-					block.setRenderState(QuestionVersionBlock.RENDER_PENDING);
-					block.setSourceRevision(block.getSourceRevision() + 1);
+				// Đầu vào không kèm nguồn trên một khối đang có là lượt giữ nguyên khối đó: dạng khối,
+				// nguồn, trạng thái render, ảnh và revision đều không đổi — sửa văn bản quanh công thức
+				// không được đòi nguồn mới cho khối chỉ-có-ảnh và cũng không được làm mất nguồn của khối
+				// có-nguồn. Nguồn chỉ được ghi khi đầu vào thật sự mang nguồn mới.
+				if (input.source() != null && !input.source().isBlank()) {
+					boolean sameSource = QuestionVersionBlock.FORM_SOURCE_BACKED.equals(block.getFormulaForm())
+							&& input.source().equals(block.getMathSource());
+					// Nguồn không đổi thì giữ nguyên revision, trạng thái render và ảnh đã có của khối: định
+					// danh ổn định là để sửa văn bản quanh công thức mà không làm mất ảnh của nó; nguồn đổi
+					// thì revision tăng và render chạy lại, kết quả render của revision cũ không ghi đè
+					// được revision mới.
+					if (!sameSource) {
+						block.setFormulaForm(QuestionVersionBlock.FORM_SOURCE_BACKED);
+						block.setMathSource(input.source());
+						block.setRenderState(QuestionVersionBlock.RENDER_PENDING);
+						block.setSourceRevision(block.getSourceRevision() + 1);
+					}
 				}
 			}
 			this.blocks.save(block);
@@ -243,9 +251,9 @@ public class QuestionBlockService {
 	}
 
 	private static void validateInputs(List<BlockInput> inputs, List<QuestionVersionBlock> existing) {
-		Set<UUID> existingIds = new HashSet<>();
+		Map<UUID, QuestionVersionBlock> existingById = new HashMap<>();
 		for (QuestionVersionBlock row : existing) {
-			existingIds.add(row.getId());
+			existingById.put(row.getId(), row);
 		}
 		Set<UUID> referencedIds = new HashSet<>();
 		int formulas = 0;
@@ -256,7 +264,7 @@ public class QuestionBlockService {
 			// Định danh khối chỉ có nghĩa khi trỏ đúng một khối đang có của chính phiên bản này: nhận định
 			// danh lạ hay lặp lại một định danh hai lần trong cùng lượt lưu đều làm định danh hết ổn định.
 			if (input.blockId() != null
-					&& (!existingIds.contains(input.blockId()) || !referencedIds.add(input.blockId()))) {
+					&& (!existingById.containsKey(input.blockId()) || !referencedIds.add(input.blockId()))) {
 				throw QuestionException
 						.validation("Định danh khối không thuộc phiên bản này hoặc bị lặp trong cùng lượt lưu");
 			}
@@ -273,12 +281,20 @@ public class QuestionBlockService {
 			}
 			else if (QuestionVersionBlock.KIND_FORMULA.equals(input.kind())) {
 				formulas++;
-				if (input.source() == null || input.source().isBlank()) {
-					throw QuestionException
-							.validation("Khối công thức soạn qua hợp đồng này phải có nguồn LaTeX");
-				}
-				if (input.source().length() > MAX_SOURCE_LENGTH) {
-					throw QuestionException.validation("Nguồn LaTeX của một khối vượt quá 2000 ký tự");
+				// Đầu vào công thức trỏ tới một khối công thức đang có mà không kèm nguồn là lượt giữ
+				// nguyên khối đó (sửa văn bản quanh công thức theo M2), nên nguồn chỉ bắt buộc khi khối
+				// thật sự được tạo mới hay được ghi nguồn mới.
+				QuestionVersionBlock matched = input.blockId() != null ? existingById.get(input.blockId()) : null;
+				boolean keepsExisting = matched != null && QuestionVersionBlock.KIND_FORMULA.equals(matched.getKind())
+						&& (input.source() == null || input.source().isBlank());
+				if (!keepsExisting) {
+					if (input.source() == null || input.source().isBlank()) {
+						throw QuestionException
+								.validation("Khối công thức soạn qua hợp đồng này phải có nguồn LaTeX");
+					}
+					if (input.source().length() > MAX_SOURCE_LENGTH) {
+						throw QuestionException.validation("Nguồn LaTeX của một khối vượt quá 2000 ký tự");
+					}
 				}
 			}
 			else {

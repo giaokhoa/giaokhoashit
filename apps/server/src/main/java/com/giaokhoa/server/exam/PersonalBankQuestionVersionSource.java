@@ -163,7 +163,12 @@ public class PersonalBankQuestionVersionSource implements QuestionVersionSource 
 			}
 			mirror.setStatus(version.getStatus());
 			mirror.setContentHash(version.getContentHash());
-			mirror.setLockedAt(version.getLockedAt());
+			// Khoá ở lõi là một chiều: chia sẻ và nộp chốt phiên bản ở hàng lõi ngay cả khi phiên bản câu chưa
+			// khoá, nên lượt đồng bộ này không được mở lại một khoá lõi đang có — chỉ ghi khoá của phiên bản
+			// câu khi hàng lõi chưa từng bị khoá.
+			if (mirror.getLockedAt() == null) {
+				mirror.setLockedAt(version.getLockedAt());
+			}
 			mirror.setPublishedAt(
 					QuestionVersion.STATUS_PUBLISHED.equals(version.getStatus()) ? version.getLockedAt() : null);
 			mirror.setUpdatedAt(version.getUpdatedAt());

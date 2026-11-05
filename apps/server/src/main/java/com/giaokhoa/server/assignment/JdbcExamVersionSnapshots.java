@@ -140,7 +140,48 @@ public class JdbcExamVersionSnapshots implements ExamVersionSnapshots {
 			choicesNode.forEach(choice -> choices.add(new Choice(text(choice, "id"), text(choice, "text"))));
 		}
 		return new Item(itemId, type, position, points, text(content, "stem"), List.copyOf(choices),
-				text(content, "correctChoiceId"), text(content, "rubric"));
+				text(content, "correctChoiceId"), text(content, "rubric"), attachmentsOf(content),
+				formulaImagesOf(content));
+	}
+
+	private static List<Attachment> attachmentsOf(JsonNode content) {
+		List<Attachment> attachments = new ArrayList<>();
+		JsonNode nodes = content.get("attachments");
+		if (nodes == null || !nodes.isArray()) {
+			return List.of();
+		}
+		nodes.forEach(node -> attachments.add(new Attachment(uuid(node, "blobId"), text(node, "position"),
+				text(node, "blockId"), text(node, "displayName"), text(node, "contentType"), integer(node, "width"),
+				integer(node, "height"), text(node, "blobPartitionKey"))));
+		return List.copyOf(attachments);
+	}
+
+	private static List<FormulaImage> formulaImagesOf(JsonNode content) {
+		List<FormulaImage> images = new ArrayList<>();
+		JsonNode nodes = content.get("formulaImages");
+		if (nodes == null || !nodes.isArray()) {
+			return List.of();
+		}
+		nodes.forEach(node -> images.add(new FormulaImage(text(node, "blockId"), text(node, "section"),
+				integerOrZero(node, "position"), text(node, "fileRef"), uuid(node, "imageBlobId"),
+				integer(node, "width"), integer(node, "height"), integer(node, "baselineOffset"),
+				text(node, "description"), text(node, "blobPartitionKey"))));
+		return List.copyOf(images);
+	}
+
+	private static UUID uuid(JsonNode node, String field) {
+		String value = text(node, field);
+		return value != null ? UUID.fromString(value) : null;
+	}
+
+	private static Integer integer(JsonNode node, String field) {
+		JsonNode value = node.get(field);
+		return value != null && value.isNumber() ? value.asInt() : null;
+	}
+
+	private static int integerOrZero(JsonNode node, String field) {
+		Integer value = integer(node, field);
+		return value != null ? value : 0;
 	}
 
 	private static String text(JsonNode node, String field) {

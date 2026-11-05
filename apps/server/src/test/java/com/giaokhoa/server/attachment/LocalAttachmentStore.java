@@ -54,6 +54,12 @@ class LocalAttachmentStore implements AttachmentStore {
 		return Optional.ofNullable(this.blobBytes.get(blobId));
 	}
 
+	// Bản giả lập không có phân vùng: blob đọc được từ mọi ngữ cảnh nên dời nhà là giữ nguyên định danh.
+	@Override
+	public UUID rehomeBlob(UUID blobId, String fromPartitionKey, String toPartitionKey) {
+		return blobId;
+	}
+
 	@Override
 	public void stage(UUID sessionId, byte[] bytes) {
 		this.stagedBytes.put(sessionId, bytes);
