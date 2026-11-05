@@ -210,6 +210,30 @@ public class AttachmentService implements QuestionPublishGate {
 		return new Content(bytes, blob.contentType(), link.displayName());
 	}
 
+	// Điểm nối cho thao tác sao chép câu hỏi: tệp đính kèm của phiên bản nguồn được mang sang phiên bản của
+	// bản sao qua liên kết mới thuộc chính bản sao — blob vật lý dùng chung nhưng quyền và vòng đời tính
+	// theo liên kết của từng bản. Tệp ở vị trí đáp án chỉ đi theo khi người sao chép có view_answer trên
+	// phiên bản nguồn, khớp quy tắc đáp án của chính thao tác sao chép ở dịch vụ câu hỏi.
+	public void carryLinks(UUID sourceVersionId, UUID targetQuestionId, UUID targetVersionId,
+			boolean includeAnswers) {
+		// Blob của tệp nguồn ở phân vùng của chủ phiên bản nguồn; đích thuộc chủ khác thì blob được dời
+		// nhà sang phân vùng của chủ đích ngay khi mang liên kết, để bản sao đọc và phát hành được tệp
+		// của chính nó và vòng đời tệp của hai bản độc lập. Cùng chủ thì hai phân vùng trùng nhau và
+		// blob được dùng chung nguyên vẹn.
+		String sourcePartition = this.versions.findById(sourceVersionId)
+				.map((version) -> "user:" + version.getOwnerSub()).orElse(null);
+		String targetPartition = this.questions.findById(targetQuestionId)
+				.map((question) -> "user:" + question.getOwnerSub()).orElse(sourcePartition);
+		for (AttachmentStore.Link link : this.store.findLinksForVersion(sourceVersionId)) {
+			if (!includeAnswers && ANSWER_POSITIONS.contains(link.position())) {
+				continue;
+			}
+			UUID blobId = this.store.rehomeBlob(link.blobId(), sourcePartition, targetPartition);
+			this.store.saveLink(new AttachmentStore.Link(UuidV7.next(), targetQuestionId, targetVersionId,
+					link.position(), link.blockId(), blobId, link.displayName(), null));
+		}
+	}
+
 	// Cổng phát hành của feat câu hỏi: phiên bản còn phiên tải lên chưa chốt, hoặc còn liên kết trỏ tới blob
 	// chưa sẵn sàng hay đã mất byte, thì chưa được phát hành hay giao bài. Phiên chưa chốt nhưng đã quá hạn
 	// thì đã chết theo đúng thời hạn của nó: cổng đánh dấu hết hạn và dọn byte tạm ngay khi bắt gặp, thay vì

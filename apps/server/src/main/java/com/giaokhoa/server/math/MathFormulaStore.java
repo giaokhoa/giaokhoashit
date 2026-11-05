@@ -95,6 +95,65 @@ class MathFormulaStore {
 		return new SavedSource(saved, pendingRender(saved));
 	}
 
+	// Sao chép toàn bộ khối công thức của một phiên bản sang một phiên bản khác. Khi đích là nháp mới của
+	// cùng một tài nguyên (keepSource) nguồn đi theo nguyên vẹn để chủ sửa tiếp; khi đích là bản sao câu
+	// hỏi thì mọi khối thành chỉ-có-ảnh và cột nguồn để trống — sao chép không chuyển nguồn trong mọi
+	// trường hợp, kể cả khối tự soạn của chủ nguồn. Bản ghi render hiện hành được sao thành hàng mới trỏ
+	// cùng blob ảnh: ảnh dùng được ngay trên phiên bản đích, còn vòng đời của hai bản ghi tính riêng;
+	// trạng thái render chưa sẵn sàng cũng được sao nguyên trạng để cổng phát hành của phiên bản đích
+	// chặn đúng như ở nguồn.
+	@Transactional
+	void copyBlocksTo(UUID sourceVersionId, UUID targetVersionId, String targetOwnerSub, boolean keepSource,
+			String actorSub) {
+		OffsetDateTime now = OffsetDateTime.now();
+		for (FormulaBlock source : blocksOf(sourceVersionId)) {
+			FormulaBlock block = new FormulaBlock();
+			block.setId(UuidV7.generate());
+			block.setQuestionVersionId(targetVersionId);
+			block.setOwnerSub(targetOwnerSub);
+			block.setSection(source.getSection());
+			block.setBlockId(source.getBlockId());
+			block.setPosition(source.getPosition());
+			block.setDisplay(source.isDisplay());
+			block.setSystemOrigin(source.isSystemOrigin());
+			block.setDescription(source.getDescription());
+			boolean keep = keepSource && source.sourceBacked();
+			block.setForm(keep ? FormulaBlock.FORM_SOURCE_BACKED : FormulaBlock.FORM_RENDER_ONLY);
+			block.setSource(keep ? source.getSource() : null);
+			block.setCreatedAt(now);
+			block.setUpdatedAt(now);
+			FormulaBlock saved = this.blocks.saveAndFlush(block);
+			currentRender(source).ifPresent((render) -> {
+				FormulaRender copied = new FormulaRender();
+				copied.setId(UuidV7.generate());
+				copied.setFormulaBlockId(saved.getId());
+				// Revision của khối sao là khoá lạc quan do Hibernate khởi tạo lại từ đầu, nên bản ghi render
+				// của bản sao khoá theo đúng revision đó của khối sao — ảnh vẫn là ảnh của đúng nội dung khối
+				// tại thời điểm sao chép, chỉ số revision là của vòng đời mới.
+				copied.setSourceRevision(saved.getRevision());
+				copied.setSourceHash(render.getSourceHash());
+				copied.setStatus(render.getStatus());
+				// Ảnh render nằm ở phân vùng của chủ khối nguồn (đường đọc ảnh định vị blob theo chủ
+				// khối): khối sao thuộc chủ khác thì ảnh được dời nhà sang phân vùng của chủ mới với
+				// định danh blob mới, cùng byte; cùng chủ thì dùng chung blob như cũ.
+				UUID imageBlobId = render.getImageBlobId();
+				if (imageBlobId != null && !source.getOwnerSub().equals(targetOwnerSub)) {
+					imageBlobId = rehomeImage(imageBlobId, source.getOwnerSub(), targetOwnerSub, actorSub);
+				}
+				copied.setImageBlobId(imageBlobId);
+				copied.setImageWidth(render.getImageWidth());
+				copied.setImageHeight(render.getImageHeight());
+				copied.setBaselineOffset(render.getBaselineOffset());
+				copied.setRendererVersion(render.getRendererVersion());
+				copied.setRenderConfig(render.getRenderConfig());
+				copied.setErrorCode(render.getErrorCode());
+				copied.setCreatedAt(now);
+				copied.setUpdatedAt(now);
+				this.renders.save(copied);
+			});
+		}
+	}
+
 	@Transactional
 	SavedSource updateSource(UUID blockPk, String source, String description, boolean display) {
 		FormulaBlock block = this.blocks.findById(blockPk).orElseThrow();
@@ -190,6 +249,45 @@ class MathFormulaStore {
 				blob.setUpdatedAt(now);
 				this.blobs.save(blob);
 				return blobId;
+			});
+		}
+		catch (RuntimeException ex) {
+			this.storage.deleteStaged(stagingKey);
+			throw ex;
+		}
+	}
+
+	// Dời nhà cho ảnh render khi khối sao đổi chủ: byte được chốt lại ở khoá bất biến mới và hàng blob ghi
+	// trong phân vùng cá nhân của chủ mới với cùng metadata và trạng thái, để đường đọc ảnh theo chủ khối
+	// của bản sao thấy đúng blob của nó và vòng đời ảnh của hai bản độc lập. Không định vị được blob
+	// nguồn trong phân vùng của chủ nguồn thì giữ nguyên định danh (tham chiếu giữ như trước).
+	private UUID rehomeImage(UUID blobId, String sourceOwnerSub, String targetOwnerSub, String actorSub) {
+		FileBlob source = this.sessions.inPartition("user:" + sourceOwnerSub, actorSub,
+				() -> this.blobs.findById(blobId).orElse(null));
+		if (source == null) {
+			return blobId;
+		}
+		byte[] bytes = this.storage.read(source.getStorageKey());
+		UUID newId = UuidV7.generate();
+		String stagingKey = this.storage.stage(newId, bytes);
+		try {
+			return this.sessions.inPartition("user:" + targetOwnerSub, actorSub, () -> {
+				this.storage.promote(stagingKey, "blobs/" + newId);
+				FileBlob blob = new FileBlob();
+				blob.setId(newId);
+				blob.setStorageKey("blobs/" + newId);
+				blob.setContentType(source.getContentType());
+				blob.setSizeBytes(source.getSizeBytes());
+				blob.setChecksumSha256(source.getChecksumSha256());
+				blob.setWidth(source.getWidth());
+				blob.setHeight(source.getHeight());
+				blob.setStatus(source.getStatus());
+				blob.setUploadedBySub(targetOwnerSub);
+				OffsetDateTime now = OffsetDateTime.now();
+				blob.setCreatedAt(now);
+				blob.setUpdatedAt(now);
+				this.blobs.save(blob);
+				return newId;
 			});
 		}
 		catch (RuntimeException ex) {

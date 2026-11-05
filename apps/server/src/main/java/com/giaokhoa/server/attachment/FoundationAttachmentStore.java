@@ -24,6 +24,7 @@ import com.giaokhoa.server.files.FileLink;
 import com.giaokhoa.server.files.FileLinkRepository;
 import com.giaokhoa.server.files.UploadSession;
 import com.giaokhoa.server.files.UploadSessionRepository;
+import com.giaokhoa.server.files.UuidV7;
 import com.giaokhoa.server.question.Question;
 import com.giaokhoa.server.question.QuestionBank;
 import com.giaokhoa.server.question.QuestionBankRepository;
@@ -203,6 +204,54 @@ class FoundationAttachmentStore implements AttachmentStore {
 			}
 		}
 		return Optional.empty();
+	}
+
+	@Override
+	public UUID rehomeBlob(UUID blobId, String fromPartitionKey, String toPartitionKey) {
+		if (fromPartitionKey == null || fromPartitionKey.equals(toPartitionKey)) {
+			return blobId;
+		}
+		FileBlob source = this.partitions.inPartition(fromPartitionKey, actorSub(),
+				() -> this.blobs.findById(blobId).orElse(null));
+		if (source == null) {
+			for (String partition : candidatePartitions()) {
+				source = this.partitions.inPartition(partition, actorSub(),
+						() -> this.blobs.findById(blobId).orElse(null));
+				if (source != null) {
+					break;
+				}
+			}
+		}
+		if (source == null) {
+			return blobId;
+		}
+		byte[] bytes = this.storage.read(source.getStorageKey());
+		UUID newId = UuidV7.next();
+		String stagingKey = this.storage.stage(newId, bytes);
+		try {
+			OffsetDateTime now = OffsetDateTime.now();
+			FileBlob copy = new FileBlob();
+			copy.setId(newId);
+			copy.setStorageKey("blobs/" + newId);
+			copy.setContentType(source.getContentType());
+			copy.setSizeBytes(source.getSizeBytes());
+			copy.setChecksumSha256(source.getChecksumSha256());
+			copy.setWidth(source.getWidth());
+			copy.setHeight(source.getHeight());
+			copy.setStatus(source.getStatus());
+			copy.setUploadedBySub(actorSub());
+			copy.setCreatedAt(now);
+			copy.setUpdatedAt(now);
+			this.partitions.inPartition(toPartitionKey, actorSub(), () -> {
+				this.storage.promote(stagingKey, "blobs/" + newId);
+				this.blobs.save(copy);
+			});
+			return newId;
+		}
+		catch (RuntimeException ex) {
+			this.storage.deleteStaged(stagingKey);
+			throw ex;
+		}
 	}
 
 	@Override

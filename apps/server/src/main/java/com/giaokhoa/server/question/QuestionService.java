@@ -17,6 +17,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
+import com.giaokhoa.server.attachment.AttachmentService;
+import com.giaokhoa.server.math.MathFormulaService;
 import com.giaokhoa.server.tenancy.TenantContext;
 import com.giaokhoa.server.tenancy.TenantContexts;
 
@@ -85,10 +87,15 @@ public class QuestionService {
 
 	private final List<VersionPublishCheck> publishChecks;
 
+	private final MathFormulaService formulas;
+
+	private final AttachmentService attachments;
+
 	public QuestionService(QuestionBankRepository banks, QuestionRepository questions,
 			QuestionVersionRepository versions, BankEntryRepository entries, QuestionVersionBlockRepository blocks,
 			QuestionRights rights, ObjectMapper objectMapper, ObjectProvider<QuestionPublishGate> publishGates,
-			List<VersionPublishCheck> publishChecks) {
+			List<VersionPublishCheck> publishChecks, MathFormulaService formulas,
+			AttachmentService attachments) {
 		this.banks = banks;
 		this.questions = questions;
 		this.versions = versions;
@@ -98,6 +105,8 @@ public class QuestionService {
 		this.objectMapper = objectMapper;
 		this.publishGates = publishGates;
 		this.publishChecks = publishChecks;
+		this.formulas = formulas;
+		this.attachments = attachments;
 	}
 
 	// Tài nguyên do giáo viên soạn mặc định thuộc workspace cá nhân của chính tài khoản đó: chủ sở hữu luôn lấy
@@ -218,6 +227,10 @@ public class QuestionService {
 				source.getCorrectChoiceId(), source.getSolution(), source.getRubric());
 		QuestionVersion saved = this.versions.save(version);
 		carryBlocks(source, saved, true);
+		// Nháp mới của cùng một tài nguyên không phải chuyển chủ: khối công thức giữ nguồn và tệp đính kèm
+		// đi theo trọn vẹn như khối nội dung, để bản nháp mới sửa tiếp được đúng nội dung của bản đã khoá.
+		this.formulas.carryBlocksForCopy(source.getId(), saved.getId(), saved.getOwnerSub(), true, context.sub());
+		this.attachments.carryLinks(source.getId(), question.getId(), saved.getId(), true);
 		return versionView(context, question, saved);
 	}
 
@@ -249,7 +262,9 @@ public class QuestionService {
 
 	// Sao chép luôn tạo một tài nguyên mới thuộc về người sao chép; đáp án, lời giải và tiêu chí chấm của
 	// phiên bản nguồn chỉ đi theo khi người sao chép có view_answer trên đúng phiên bản nguồn đó, còn truy vết
-	// nguồn và giới hạn sử dụng của nguồn thì luôn đi theo và ràng buộc cả bản sao.
+	// nguồn và giới hạn sử dụng của nguồn thì luôn đi theo và ràng buộc cả bản sao. Khối công thức đi theo ở
+	// dạng ảnh render và tệp đính kèm đi theo qua liên kết mới của bản sao (tệp đáp án cũng theo quy tắc
+	// view_answer ở trên); nguồn LaTeX không đi theo bản sao trong mọi trường hợp sao chép.
 	@Transactional
 	public QuestionView copy(Jwt jwt, UUID questionId, UUID versionId, CopyRequest request) {
 		TenantContext context = requireContext();
@@ -295,6 +310,9 @@ public class QuestionService {
 				includeAnswers ? sourceVersion.getRubric() : null);
 		QuestionVersion savedCopy = this.versions.save(version);
 		carryBlocks(sourceVersion, savedCopy, false);
+		this.formulas.carryBlocksForCopy(sourceVersion.getId(), savedCopy.getId(), savedCopy.getOwnerSub(),
+				false, context.sub());
+		this.attachments.carryLinks(sourceVersion.getId(), copy.getId(), savedCopy.getId(), includeAnswers);
 		return questionView(context, copy);
 	}
 
@@ -339,8 +357,8 @@ public class QuestionService {
 	}
 
 	// Khối nội dung đi theo phiên bản khi tạo nháp mới hoặc sao chép. Tạo nháp mới của cùng một tài nguyên
-	// không phải chuyển chủ nên nguồn hợp lệ của chủ sở hữu được giữ nguyên; sao chép sang chủ khác thì khối
-	// công thức thành chỉ-có-ảnh — nguồn không tự chuyển theo bản sao, kể cả nguồn do chính giáo viên tự soạn.
+	// không phải chuyển chủ nên nguồn hợp lệ của chủ sở hữu được giữ nguyên; sao chép thì khối công thức
+	// thành chỉ-có-ảnh — nguồn không tự chuyển theo bản sao, kể cả nguồn do chính giáo viên tự soạn.
 	private void carryBlocks(QuestionVersion source, QuestionVersion target, boolean keepSource) {
 		OffsetDateTime now = OffsetDateTime.now();
 		for (QuestionVersionBlock sourceBlock : this.blocks.findByQuestionVersionId(source.getId())) {
@@ -370,6 +388,10 @@ public class QuestionService {
 					block.setFormulaForm(QuestionVersionBlock.FORM_RENDER_ONLY);
 					block.setRenderState(
 							sourceBlock.getImageBlobId() != null ? QuestionVersionBlock.RENDER_READY : null);
+					// Revision nguồn vẫn được mang theo như dữ kiện truy vết của ảnh (ảnh là ảnh của
+					// đúng trạng thái nguồn đó), dù bản sao không giữ nguồn: cùng vai trò của hash
+					// nguồn trên bản ghi render của khối công thức.
+					block.setSourceRevision(sourceBlock.getSourceRevision());
 				}
 			}
 			block.setCreatedAt(now);

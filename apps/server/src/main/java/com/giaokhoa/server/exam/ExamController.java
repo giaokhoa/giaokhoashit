@@ -76,6 +76,14 @@ public class ExamController {
 		return this.service.publish(TenantContexts.current(), id, versionId);
 	}
 
+	@PostMapping("/{id}/versions/{versionId}/copies")
+	public ResponseEntity<ExamService.ExamView> copy(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+			@PathVariable UUID versionId) {
+		ExamService.ExamView view = this.service.copyExam(TenantContexts.current(), personalAuthor(jwt), id,
+				versionId);
+		return ResponseEntity.status(HttpStatus.CREATED).body(view);
+	}
+
 	// personal-author là realm role ở cấp nền tảng, đọc tại realm_access của chính token đã xác minh — cùng
 	// khuôn đọc vai nền tảng của khung tenancy, không suy ra từ membership hay vai theo Organization.
 	private static boolean personalAuthor(Jwt jwt) {
