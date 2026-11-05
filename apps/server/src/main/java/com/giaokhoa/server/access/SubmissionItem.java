@@ -37,6 +37,9 @@ public class SubmissionItem {
 	@Column(name = "received_version_id", nullable = false)
 	private UUID receivedVersionId;
 
+	@Column(name = "content_snapshot")
+	private String contentSnapshot;
+
 	@Column(name = "created_at", nullable = false)
 	private OffsetDateTime createdAt;
 
@@ -93,6 +96,14 @@ public class SubmissionItem {
 
 	public void setReceivedVersionId(UUID receivedVersionId) {
 		this.receivedVersionId = receivedVersionId;
+	}
+
+	public String getContentSnapshot() {
+		return this.contentSnapshot;
+	}
+
+	public void setContentSnapshot(String contentSnapshot) {
+		this.contentSnapshot = contentSnapshot;
 	}
 
 	public OffsetDateTime getCreatedAt() {

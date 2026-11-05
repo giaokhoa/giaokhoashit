@@ -113,6 +113,15 @@ public class AccessCheckController {
 		return this.handoverService.review(context(), submissionId, request);
 	}
 
+	@GetMapping(value = "/submissions/{submissionId}/items/{itemId}/content",
+			produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+	org.springframework.http.ResponseEntity<String> receiptContent(@PathVariable UUID submissionId,
+			@PathVariable UUID itemId) {
+		return org.springframework.http.ResponseEntity.ok()
+				.contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+				.body(this.handoverService.receiptContent(context(), submissionId, itemId));
+	}
+
 	@PostMapping("/decisions")
 	DecisionView decide(@RequestBody AccessCheckService.DecisionRequest request) {
 		return this.checkService.decide(context(), request);
